@@ -11,12 +11,14 @@ mkdir -p build/web-ext
 web-ext sign --source-dir ./build/firefox --artifacts-dir ./build/firefox --api-key "$FIREFOX_AMO_ISSUER" --api-secret "$FIREFOX_AMO_SECRET"
 
 # Upload to gcp and make it public
-for filename in $(ls build/web-ext/*); do
-  gsutil cp "build/web-ext/$filename" "gs://sourcegraph-for-firefox/$filename"
-  gsutil cp "build/web-ext/$filename" "gs://sourcegraph-for-firefox/latest.xpi"
+pushd build/web-ext
+for filename in ./*; do
+  gsutil cp "$filename" "gs://sourcegraph-for-firefox/$filename"
+  gsutil cp "$filename" "gs://sourcegraph-for-firefox/latest.xpi"
   gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/$filename"
   gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/latest.xpi"
 done
+popd
 
 export TS_NODE_COMPILER_OPTIONS="{\"module\":\"commonjs\"}"
 
