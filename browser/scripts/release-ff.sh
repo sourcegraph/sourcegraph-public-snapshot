@@ -8,10 +8,10 @@ rm -rf build/web-ext
 mkdir -p build/web-ext
 
 # Sign the bundle
-web-ext sign --source-dir ./build/firefox --artifacts-dir . --api-key "$FIREFOX_AMO_ISSUER" --api-secret "$FIREFOX_AMO_SECRET"
+web-ext sign --source-dir ./build/firefox --artifacts-dir ./build/firefox --api-key "$FIREFOX_AMO_ISSUER" --api-secret "$FIREFOX_AMO_SECRET"
 
 # Upload to gcp and make it public
-for filename in build/web-ext/*; do
+for filename in $(ls build/web-ext/*); do
   gsutil cp "build/web-ext/$filename" "gs://sourcegraph-for-firefox/$filename"
   gsutil cp "build/web-ext/$filename" "gs://sourcegraph-for-firefox/latest.xpi"
   gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/$filename"
