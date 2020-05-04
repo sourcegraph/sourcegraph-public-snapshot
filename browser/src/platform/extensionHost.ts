@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
@@ -75,16 +75,19 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
     const id = uuid.v4()
     return new Observable(subscriber => {
         // This is run in the content script
-        const proxyPort = browser.runtime.connect({ name: `proxy-${id}` })
-        const exposePort = browser.runtime.connect({ name: `expose-${id}` })
-        const connect = (name: string): browser.runtime.Port => browser.runtime.connect({ name })
-        subscriber.next({
-            proxy: browserPortToMessagePort(proxyPort, 'comlink-proxy-', connect),
-            expose: browserPortToMessagePort(exposePort, 'comlink-expose-', connect),
-        })
-        return () => {
-            proxyPort.disconnect()
-            exposePort.disconnect()
+        const subscription = new Subscription()
+        const setup = (role: keyof EndpointPair): MessagePort => {
+            const port = browser.runtime.connect({ name: `${role}-${id}` })
+            subscription.add(() => port.disconnect())
+
+            const link = browserPortToMessagePort(port, `comlink-${role}-`, name => browser.runtime.connect({ name }))
+            subscription.add(link.subscription)
+            return link.messagePort
         }
+        subscriber.next({
+            proxy: setup('proxy'),
+            expose: setup('expose'),
+        })
+        return subscription
     })
 }

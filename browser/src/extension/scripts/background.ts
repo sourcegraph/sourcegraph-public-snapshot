@@ -190,7 +190,7 @@ async function main(): Promise<void> {
      * This listens to events on browser.runtime.onConnect, pairs emitted ports using their naming pattern,
      * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
      */
-    const browserPortPairs: Observable<Record<'proxy' | 'expose', browser.runtime.PortWithSender>> = fromBrowserEvent(
+    const browserPortPairs: Observable<Record<keyof EndpointPair, browser.runtime.PortWithSender>> = fromBrowserEvent(
         browser.runtime.onConnect
     ).pipe(
         map(([port]) => port),
@@ -228,61 +228,73 @@ async function main(): Promise<void> {
     // when a port disconnects, the worker is terminated. This means there should always be exactly one
     // extension host worker per active instance of the content script.
     subscriptions.add(
-        browserPortPairs.subscribe(
-            browserPortPair => {
-                console.log('Extension host client connected')
-                const { worker, clientEndpoints } = createExtensionHostWorker()
-
-                /**
-                 * Forwards all messages between two endpoints, in both directions.
-                 */
-                const forwardEndpoints = (contentScriptEndpoint: Endpoint, workerEndpoint: Endpoint): void => {
-                    contentScriptEndpoint.addEventListener('message', event => {
-                        const { data } = event as MessageEvent
-                        workerEndpoint.postMessage(data, [...findMessagePorts(data)])
-                    })
-                    workerEndpoint.addEventListener('message', event => {
-                        const { data } = event as MessageEvent
-                        contentScriptEndpoint.postMessage(data, [...findMessagePorts(data)])
-                    })
-                    // False positive https://github.com/eslint/eslint/issues/12822
-                    // eslint-disable-next-line no-unused-expressions
-                    contentScriptEndpoint.start?.()
-                    // eslint-disable-next-line no-unused-expressions
-                    workerEndpoint.start?.()
-                }
-
-                const linkPortAndEndpoint = (role: keyof EndpointPair): void => {
-                    const browserPort = browserPortPair[role]
-                    const endpoint = clientEndpoints[role]
-                    const tabId = browserPort.sender.tab?.id
-                    if (!tabId) {
-                        throw new Error('Expected Port to come from tab')
-                    }
-                    forwardEndpoints(
-                        browserPortToMessagePort(browserPort, `comlink-${role}-`, name =>
-                            browser.tabs.connect(tabId, { name })
-                        ),
-                        endpoint
-                    )
-                    // Kill worker when either port disconnects
-                    browserPort.onDisconnect.addListener(() => {
-                        worker.terminate()
-                    })
-                }
-
-                // Connect proxy client endpoint
-                linkPortAndEndpoint('proxy')
-                // Connect expose client endpoint
-                linkPortAndEndpoint('expose')
+        browserPortPairs.subscribe({
+            next: browserPortPair => {
+                subscriptions.add(handleBrowserPortPair(browserPortPair))
             },
-            err => {
+            error: err => {
                 console.error('Error handling extension host client connection', err)
-            }
-        )
+            },
+        })
     )
 
     console.log('Sourcegraph background page initialized')
+}
+
+/**
+ * Handle an incoming browser port pair coming from a content script.
+ */
+function handleBrowserPortPair(
+    browserPortPair: Record<keyof EndpointPair, browser.runtime.PortWithSender>
+): Subscription {
+    /** Subscriptions for this browser port pair */
+    const subscriptions = new Subscription()
+
+    console.log('Extension host client connected')
+    const { worker, clientEndpoints } = createExtensionHostWorker()
+    subscriptions.add(() => worker.terminate())
+
+    /** Forwards all messages between two endpoints (in one direction) */
+    const forwardEndpoint = (from: Endpoint, to: Endpoint): void => {
+        const messageListener = (event: Event): void => {
+            const { data } = event as MessageEvent
+            to.postMessage(data, [...findMessagePorts(data)])
+        }
+        from.addEventListener('message', messageListener)
+        subscriptions.add(() => from.removeEventListener('message', messageListener))
+
+        // False positive https://github.com/eslint/eslint/issues/12822
+        // eslint-disable-next-line no-unused-expressions
+        from.start?.()
+    }
+
+    const linkPortAndEndpoint = (role: keyof EndpointPair): void => {
+        const browserPort = browserPortPair[role]
+        const endpoint = clientEndpoints[role]
+        const tabId = browserPort.sender.tab?.id
+        if (!tabId) {
+            throw new Error('Expected Port to come from tab')
+        }
+        const link = browserPortToMessagePort(browserPort, `comlink-${role}-`, name =>
+            browser.tabs.connect(tabId, { name })
+        )
+        subscriptions.add(link.subscription)
+
+        forwardEndpoint(link.messagePort, endpoint)
+        forwardEndpoint(endpoint, link.messagePort)
+
+        // Clean up when the port disconnects
+        const disconnectListener = subscriptions.unsubscribe.bind(subscriptions)
+        browserPort.onDisconnect.addListener(disconnectListener)
+        subscriptions.add(() => browserPort.onDisconnect.removeListener(disconnectListener))
+    }
+
+    // Connect proxy client endpoint
+    linkPortAndEndpoint('proxy')
+    // Connect expose client endpoint
+    linkPortAndEndpoint('expose')
+
+    return subscriptions
 }
 
 // Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)

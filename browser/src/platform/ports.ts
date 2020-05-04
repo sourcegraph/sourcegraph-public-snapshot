@@ -1,6 +1,7 @@
 import { isObject } from 'lodash'
 import * as uuid from 'uuid'
 import type { Message, MessageType } from 'comlink/dist/esm/protocol'
+import { Subscription } from 'rxjs'
 
 /** Comlink enum value of release messages. */
 const RELEASE_MESSAGE_TYPE: MessageType.RELEASE = 5
@@ -21,7 +22,12 @@ export function browserPortToMessagePort(
     browserPort: browser.runtime.Port,
     prefix: string,
     connect: (name: string) => browser.runtime.Port
-): MessagePort {
+): {
+    messagePort: MessagePort
+    subscription: Subscription
+} {
+    const rootSubscription = new Subscription()
+
     /** Browser ports waiting for a message referencing them, by their ID */
     const connectedBrowserPorts = new Map<string, browser.runtime.Port>()
 
@@ -30,7 +36,7 @@ export function browserPortToMessagePort(
 
     // Listen to all incoming connections matching the prefix and memorize them
     // to have them available when a message arrives that references them.
-    browser.runtime.onConnect.addListener(incomingPort => {
+    const connectListener = (incomingPort: browser.runtime.PortWithSender): void => {
         if (!incomingPort.name.startsWith(prefix)) {
             return
         }
@@ -42,7 +48,9 @@ export function browserPortToMessagePort(
         } else {
             connectedBrowserPorts.set(id, incomingPort)
         }
-    })
+    }
+    browser.runtime.onConnect.addListener(connectListener)
+    rootSubscription.add(() => browser.runtime.onConnect.removeListener(connectListener))
 
     /** Run the given callback as soon as the given port ID is connected. */
     const whenConnected = (id: string, callback: (port: browser.runtime.Port) => void): void => {
@@ -64,6 +72,16 @@ export function browserPortToMessagePort(
      * @param adapterPort The `MessagePort` used to communicate with comlink.
      */
     function link(browserPort: browser.runtime.Port, adapterPort: MessagePort): void {
+        const subscription = new Subscription(() => {
+            const browserPortId = browserPort.name.slice(prefix.length)
+            connectedBrowserPorts.delete(browserPortId)
+            waitingForPorts.delete(browserPortId)
+            // Close both ports.
+            adapterPort.close()
+            browserPort.disconnect()
+        })
+        rootSubscription.add(subscription)
+
         const adapterListener = (event: MessageEvent): void => {
             const data: Message = event.data
             // Message from comlink needing to be forwarded to browser port with MessagePorts removed
@@ -84,21 +102,23 @@ export function browserPortToMessagePort(
             // Wrap message for the browser port to include all port IDs
             const browserPortMessage: BrowserPortMessage = { message: data, portRefs }
 
+            browserPort.postMessage(browserPortMessage)
+
             // Handle release messages (sent before the other end is closed)
             // by cleaning up all Ports we control
-            browserPort.postMessage(browserPortMessage)
             if (data.type === RELEASE_MESSAGE_TYPE) {
-                release()
+                subscription.unsubscribe()
             }
         }
         adapterPort.addEventListener('message', adapterListener)
+        subscription.add(() => adapterPort.removeEventListener('message', adapterListener))
 
         const browserPortListener = ({ message, portRefs }: BrowserPortMessage): void => {
             const transfer: MessagePort[] = []
             for (const portRef of portRefs) {
                 const { port1: comlinkMessagePort, port2: intermediateMessagePort } = new MessageChannel()
 
-                // Replace the port reference at the given path with a MessagePort that will be transferred. 
+                // Replace the port reference at the given path with a MessagePort that will be transferred.
                 replaceValueAtPath(message, portRef.path, comlinkMessagePort)
                 transfer.push(comlinkMessagePort)
 
@@ -112,32 +132,26 @@ export function browserPortToMessagePort(
             // Handle release messages (sent before the other end is closed)
             // by cleaning up all Ports we control
             if (message.type === RELEASE_MESSAGE_TYPE) {
-                release()
+                subscription.unsubscribe()
             }
         }
         browserPort.onMessage.addListener(browserPortListener)
+        subscription.add(() => browserPort.onMessage.removeListener(browserPortListener))
 
-        browserPort.onDisconnect.addListener(release)
+        const disconnectListener = subscription.unsubscribe.bind(subscription)
+        browserPort.onDisconnect.addListener(disconnectListener)
+        subscription.add(() => browserPort.onDisconnect.removeListener(disconnectListener))
 
         adapterPort.start()
-
-        /** Closes both ports. */
-        function release(): void {
-            const browserPortId = browserPort.name.slice(prefix.length)
-            connectedBrowserPorts.delete(browserPortId)
-            waitingForPorts.delete(browserPortId)
-            browserPort.onDisconnect.removeListener(release)
-            browserPort.onMessage.removeListener(browserPortListener)
-            adapterPort.removeEventListener('message', adapterListener)
-            adapterPort.close()
-            browserPort.disconnect()
-        }
     }
 
-    const { port1: returned, port2: adapterPort } = new MessageChannel()
+    const { port1: returnedMessagePort, port2: adapterPort } = new MessageChannel()
     link(browserPort, adapterPort)
 
-    return returned
+    return {
+        messagePort: returnedMessagePort,
+        subscription: rootSubscription,
+    }
 }
 
 interface PortRef {
