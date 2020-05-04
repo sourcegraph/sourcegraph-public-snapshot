@@ -62,7 +62,7 @@ func IsPending() bool {
 
 var baseURL = &url.URL{
 	Scheme: "https",
-	Host:   "sourcegraph.test:3443",
+	Host:   "sourcegraph.com",
 	Path:   "/.api/updates",
 }
 
