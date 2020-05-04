@@ -4,7 +4,7 @@ import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } fr
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
 import { isEqual } from 'lodash'
 import { asError, ErrorLike } from '../../../util/errors'
-import { isDefined, DeepReplace } from '../../../util/types'
+import { DeepReplace, isNot, isExactly } from '../../../util/types'
 
 /**
  * A view is a page or partial page.
@@ -135,14 +135,14 @@ export const getViewsForContainer = <W extends ContributableViewContainer>(
     where: W,
     params: ViewContexts[W],
     viewService: Pick<ViewService, 'getWhere'>
-): Observable<(View | null | ErrorLike)[]> =>
+): Observable<(View | undefined | ErrorLike)[]> =>
     viewService.getWhere(where).pipe(
         switchMap(providers =>
             combineLatest([
                 of(null), // don't block forever if no providers
                 ...providers.map(provider =>
                     concat(
-                        [null], // don't block on first emission
+                        [undefined], // don't block other providers on first emission
                         provider(params).pipe(
                             catchError((err): [ErrorLike] => {
                                 console.error('View provider errored:', err)
@@ -153,5 +153,5 @@ export const getViewsForContainer = <W extends ContributableViewContainer>(
                 ),
             ])
         ),
-        map(views => views.filter(isDefined))
+        map(views => views.filter(isNot(isExactly(null))))
     )
