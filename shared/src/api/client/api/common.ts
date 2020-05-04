@@ -117,7 +117,11 @@ export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<Pro
 /**
  * Helper function to register a remote provider returning an Observable, proxied by comlink, in a provider registry.
  *
- * @returns A Subscription that can be proxied through comlink.
+ * @param registry The registry to register the provider on.
+ * @param registrationOptions The registration options to pass to `registerProvider()`
+ * @param remoteProviderFunction The provider function in a remote thread, proxied by `comlink`.
+ *
+ * @returns A Subscription that can be proxied through comlink which will unregister the provider.
  */
 export function registerRemoteProvider<
     TRegistrationOptions,
@@ -132,12 +136,22 @@ export function registerRemoteProvider<
     registrationOptions: TRegistrationOptions,
     remoteProviderFunction: Remote<((params: TProviderParams) => ProxySubscribable<TProviderResult>) & ProxyMarked>
 ): Unsubscribable & ProxyMarked {
+    // This subscription will unregister the provider when unsubscribed.
     const subscription = new Subscription()
+
     subscription.add(
         registry.registerProvider(registrationOptions, params =>
+            // Wrap the remote, proxied Observable in an ordinary Observable
+            // and add its underlying proxy subscription to our subscription
+            // to release the proxy when the provider gets unregistered.
             wrapRemoteObservable(remoteProviderFunction(params), subscription)
         )
     )
+
+    // Track the underlying proxy subscription of the provider in our subscription
+    // so that the proxy gets released when the provider gets unregistered.
     subscription.add(new ProxySubscription(remoteProviderFunction))
+
+    // Prepare the subscription to be proxied to the remote side.
     return proxy(subscription)
 }
