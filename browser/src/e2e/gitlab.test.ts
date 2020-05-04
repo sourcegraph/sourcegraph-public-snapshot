@@ -49,10 +49,10 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
     const url = new URL(
         '/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
         GITLAB_BASE_URL
-    ).toString()
+    )
     testSingleFilePage({
         getDriver: () => driver,
-        url,
+        url: url.href,
         // Other than GitHub, the URL must not include the column in the hash.
         goToDefinitionURL: new URL('#L5', url.href).href,
         repoName: `${REPO_PATH_PREFIX}/sourcegraph/jsonrpc2`,
