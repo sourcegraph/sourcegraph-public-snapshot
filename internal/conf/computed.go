@@ -244,6 +244,10 @@ func CampaignsReadAccessEnabled() bool {
 	return false
 }
 
+func ExternalURL() string {
+	return Get().ExternalURL
+}
+
 func UsingExternalURL() bool {
 	url := Get().ExternalURL
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK

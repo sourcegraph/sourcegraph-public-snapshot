@@ -1,0 +1,10 @@
+.view-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    grid-gap: 0.5rem;
+
+    // Handle views with only a title
+    &__view-title:last-child {
+        margin-bottom: 0;
+    }
+}

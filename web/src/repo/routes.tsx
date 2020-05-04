@@ -12,7 +12,7 @@ const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const FilePathBreadcrumb = lazyComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
 const RepoRevSidebar = lazyComponent(() => import('./RepoRevSidebar'), 'RepoRevSidebar')
-const TreePage = lazyComponent(() => import('./TreePage'), 'TreePage')
+const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
 
 const RepositoryGitDataContainer = lazyComponent(
     () => import('./RepositoryGitDataContainer'),

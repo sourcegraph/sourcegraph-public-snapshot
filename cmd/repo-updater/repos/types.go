@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -91,25 +92,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 
 // Configuration returns the external service config.
 func (e ExternalService) Configuration() (cfg interface{}, _ error) {
-	switch strings.ToLower(e.Kind) {
-	case "awscodecommit":
-		cfg = &schema.AWSCodeCommitConnection{}
-	case "bitbucketserver":
-		cfg = &schema.BitbucketServerConnection{}
-	case "github":
-		cfg = &schema.GitHubConnection{}
-	case "gitlab":
-		cfg = &schema.GitLabConnection{}
-	case "gitolite":
-		cfg = &schema.GitoliteConnection{}
-	case "phabricator":
-		cfg = &schema.PhabricatorConnection{}
-	case "other":
-		cfg = &schema.OtherExternalServiceConnection{}
-	default:
-		return nil, fmt.Errorf("unknown external service kind %q", e.Kind)
-	}
-	return cfg, jsonc.Unmarshal(e.Config, cfg)
+	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 
 // Exclude changes the configuration of an external service to exclude the given

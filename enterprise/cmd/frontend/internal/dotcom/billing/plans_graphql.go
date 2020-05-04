@@ -112,6 +112,9 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 		if plan.Interval != stripe.PlanIntervalYear {
 			continue
 		}
+		if !plan.Product.Active || !plan.Active {
+			continue
+		}
 		gqlPlan, err := ToProductPlan(plan)
 		if err != nil {
 			return nil, err

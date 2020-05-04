@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -22,8 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -59,11 +59,11 @@ func (h Webhook) getRepoForPR(
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to load repository")
+		return nil, errors.Wrap(err, "failed to load repository")
 	}
 
 	if len(rs) != 1 {
-		return nil, fmt.Errorf("Fetched repositories have wrong length: %d", len(rs))
+		return nil, fmt.Errorf("fetched repositories have wrong length: %d", len(rs))
 	}
 
 	return rs[0], nil
@@ -253,8 +253,23 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 
 	sig := r.Header.Get("X-Hub-Signature")
 
+	rawID := r.FormValue(extsvc.IDParam)
+	var externalServiceID int64
+	// If a webhook was setup before we introduced the externalServiceID as part of the URL,
+	// the webhook requests may not contain the external service ID, so we need to fall back.
+	if rawID != "" {
+		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
+		}
+	}
+
 	var extSvc *repos.ExternalService
 	for _, e := range es {
+		if externalServiceID != 0 && e.ID != externalServiceID {
+			continue
+		}
+
 		c, _ := e.Configuration()
 		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
 			if hook.Secret == "" {
@@ -790,10 +805,8 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 	}
 }
 
-const externalServiceIDParam = "externalServiceID"
-
-// syncWebook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
-// the exising webhook config.
+// syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
+// the existing webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -824,7 +837,10 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, externalServiceID)
+	endpoint, err := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, conf.ExternalURL())
+	if err != nil {
+		return errors.Wrap(err, "getting webhook URL")
+	}
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
@@ -881,7 +897,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(externalServiceIDParam)
+	rawID := r.FormValue(extsvc.IDParam)
 	var externalServiceID int64
 	// id could be blank temporarily if we haven't updated the hook url to include the param yet
 	if rawID != "" {
