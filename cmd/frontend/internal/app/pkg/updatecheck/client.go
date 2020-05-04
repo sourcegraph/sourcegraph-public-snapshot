@@ -148,13 +148,13 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:         siteid.Get(),
-		DeployType:           conf.DeployType(),
-		ClientVersionString:  version.Version(),
-		LicenseKey: conf.Get().LicenseKey,
-		CodeIntelUsage: []byte("{}"),
-		SearchUsage: []byte("{}"),
-		CampaignsUsage: []byte("{}"),
+		ClientSiteID:        siteid.Get(),
+		DeployType:          conf.DeployType(),
+		ClientVersionString: version.Version(),
+		LicenseKey:          conf.Get().LicenseKey,
+		CodeIntelUsage:      []byte("{}"),
+		SearchUsage:         []byte("{}"),
+		CampaignsUsage:      []byte("{}"),
 	}
 
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
