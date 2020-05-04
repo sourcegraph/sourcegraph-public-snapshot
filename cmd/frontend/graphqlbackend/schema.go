@@ -1553,7 +1553,7 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
-    # An optional url that will be populated when webhooks have been configured for the external service.
+    # An optional URL that will be populated when webhooks have been configured for the external service.
     webhookURL: String
     # This is an optional field that's populated when we ran into errors on the
     # backend side when trying to create/update an ExternalService, but the
