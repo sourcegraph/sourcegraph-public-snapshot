@@ -44,9 +44,9 @@ var ctagsCommand = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (s
 // being highlighted improperly. See https://github.com/sourcegraph/sourcegraph/issues/7668.
 var rawPatternLengthLimit = env.Get("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags")
 
-// NewParser runs the ctags command from the CTAGS_COMMAND environment
+// New runs the ctags command from the CTAGS_COMMAND environment
 // variable, falling back to `universal-ctags`.
-func NewParser() (Parser, error) {
+func New() (Parser, error) {
 	patternLengthLimit, err := strconv.Atoi(rawPatternLengthLimit)
 	if err != nil {
 		return nil, fmt.Errorf("invalid pattern length limit: %s", rawPatternLengthLimit)

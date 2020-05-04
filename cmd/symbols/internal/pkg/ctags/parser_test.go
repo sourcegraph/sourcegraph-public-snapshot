@@ -13,7 +13,7 @@ func TestParser(t *testing.T) {
 		t.Skip("command not in PATH: universal-ctags")
 	}
 
-	p, err := NewParser()
+	p, err := New()
 	if err != nil {
 		if os.Getenv("CI") == "" {
 			t.Skipf("failed to start universal-ctags. Assuming it is due to our custom build of universal-ctags not being installed. Reason: %v", err)

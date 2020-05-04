@@ -49,7 +49,7 @@ func main() {
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
-		NewParser: ctags.NewParser,
+		NewParser: ctags.New,
 		Path:      cacheDir,
 	}
 	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

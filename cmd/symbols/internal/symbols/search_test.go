@@ -23,7 +23,7 @@ func BenchmarkSearch(b *testing.B) {
 	service := Service{
 		FetchTar: testutil.FetchTarFromGithub,
 		NewParser: func() (ctags.Parser, error) {
-			return ctags.NewParser()
+			return ctags.New()
 		},
 		Path: "/tmp/symbols-cache",
 	}
