@@ -7,7 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # actual image currently lives here:
 # https://github.com/sourcegraph/zoekt/blob/master/Dockerfile.indexserver
 #
-# The images are tagged using the same psuedo-versions as go mod, so we
+# The images are tagged using the same pseudo-versions as go mod, so we
 # extract the version from our go.mod
 
 version=$(go mod edit -print | awk '/sourcegraph\/zoekt/ {print substr($4, 2)}')
