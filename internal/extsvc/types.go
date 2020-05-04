@@ -8,7 +8,6 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -101,7 +100,7 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64) (string, error) {
+func WebhookURL(kind string, externalServiceID int64, externalURL string) (string, error) {
 	var path string
 	switch strings.ToLower(kind) {
 	case "github":
@@ -112,5 +111,5 @@ func WebhookURL(kind string, externalServiceID int64) (string, error) {
 		return "", fmt.Errorf("unknown external service kind: %q", kind)
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", conf.ExternalURL(), path, IDParam, externalServiceID), nil
+	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID), nil
 }

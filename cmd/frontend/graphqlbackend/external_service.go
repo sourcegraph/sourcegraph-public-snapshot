@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -89,7 +90,7 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 			r.webhookErr = errors.Wrap(err, "parsing external service config")
 			return
 		}
-		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID)
+		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, conf.ExternalURL())
 		if err != nil {
 			r.webhookErr = errors.Wrap(err, "creating webhook url")
 			return

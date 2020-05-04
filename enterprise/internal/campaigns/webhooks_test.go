@@ -147,7 +147,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u, err := extsvc.WebhookURL(github.ServiceType, extSvc.ID)
+						u, err := extsvc.WebhookURL(github.ServiceType, extSvc.ID, "https://example.com/")
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -322,7 +322,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u, err := extsvc.WebhookURL(bitbucketserver.ServiceType, extSvc.ID)
+						u, err := extsvc.WebhookURL(bitbucketserver.ServiceType, extSvc.ID, "https://example.com/")
 						if err != nil {
 							t.Fatal(err)
 						}
