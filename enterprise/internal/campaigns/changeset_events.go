@@ -214,6 +214,14 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) ([]changesetStatesA
 		}
 	}
 
+	// We don't have an event for the deletion of a Changeset, but we set
+	// ExternalDeletedAt manually in the Syncer.
+	deletedAt := ch.ExternalDeletedAt
+	if !deletedAt.IsZero() {
+		currentState = cmpgn.ChangesetStateClosed
+		pushStates(deletedAt)
+	}
+
 	return states, nil
 }
 

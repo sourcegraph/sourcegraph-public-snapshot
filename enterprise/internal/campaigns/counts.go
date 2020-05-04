@@ -21,19 +21,6 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
-// AddReviewState adds n to the corresponding counter for a given
-// ChangesetReviewState
-func (c *ChangesetCounts) AddReviewState(s campaigns.ChangesetReviewState, n int32) {
-	switch s {
-	case campaigns.ChangesetReviewStatePending:
-		c.OpenPending += n
-	case campaigns.ChangesetReviewStateApproved:
-		c.OpenApproved += n
-	case campaigns.ChangesetReviewStateChangesRequested:
-		c.OpenChangesRequested += n
-	}
-}
-
 func (cc *ChangesetCounts) String() string {
 	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
 		cc.Time.String(),
@@ -77,73 +64,55 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 	}
 
 	for changeset, csEvents := range byChangeset {
-		// We don't have an event for "open", so we check when it was
-		// created on codehost
-		openedAt := changeset.ExternalCreatedAt()
-		if openedAt.IsZero() {
-			continue
+		// Compute history of changeset
+		history, err := computeHistory(changeset, csEvents)
+		if err != nil {
+			return counts, err
 		}
 
-		// We don't have an event for the deletion of a Changeset, but we set
-		// ExternalDeletedAt manually in the Syncer.
-		deletedAt := changeset.ExternalDeletedAt
-
-		// For each changeset and its events, go through every point in time we
-		// want to record and reconstruct the state of the changeset at that
-		// point in time
+		// Go through every point in time we want to record and check the
+		// states of the changeset at that point in time
 		for _, c := range counts {
-			if openedAt.After(c.Time) {
-				// No need to look at events if changeset was not created yet
+			// No need to update c if first data point we have happened
+			// after c.Time
+			states := history[0]
+			if states.t.After(c.Time) {
 				continue
 			}
 
-			if !deletedAt.IsZero() && (deletedAt.Before(c.Time) || deletedAt.Equal(c.Time)) {
-				c.Total++
-				c.Closed++
-				continue
+			// Find the data point closest to c.Time
+			for _, s := range history {
+				if s.t.After(c.Time) {
+					break
+				}
+				states = s
 			}
 
-			err := computeCounts(c, changeset, csEvents)
-			if err != nil {
-				return counts, err
+			// states is now the different states of the changeset at c.Time
+
+			c.Total++
+			switch states.state {
+			case campaigns.ChangesetStateOpen:
+				c.Open += 1
+				switch states.reviewState {
+				case campaigns.ChangesetReviewStatePending:
+					c.OpenPending++
+				case campaigns.ChangesetReviewStateApproved:
+					c.OpenApproved++
+				case campaigns.ChangesetReviewStateChangesRequested:
+					c.OpenChangesRequested++
+				}
+
+			case campaigns.ChangesetStateMerged:
+				c.Merged += 1
+			case campaigns.ChangesetStateClosed:
+				c.Closed += 1
 			}
+
 		}
 	}
 
 	return counts, nil
-}
-
-func computeCounts(c *ChangesetCounts, ch *campaigns.Changeset, csEvents ChangesetEvents) error {
-	history, err := computeHistory(ch, csEvents)
-	if err != nil {
-		return err
-	}
-
-	var states changesetStatesAtTime
-
-	for _, s := range history {
-		if s.t.After(c.Time) {
-			break
-		}
-		states = s
-	}
-
-	if states.t.After(c.Time) {
-		return nil
-	}
-
-	c.Total += 1
-	switch states.state {
-	case campaigns.ChangesetStateOpen:
-		c.Open += 1
-		c.AddReviewState(states.reviewState, 1)
-	case campaigns.ChangesetStateMerged:
-		c.Merged += 1
-	case campaigns.ChangesetStateClosed:
-		c.Closed += 1
-	}
-
-	return nil
 }
 
 func generateTimestamps(start, end time.Time) []time.Time {
