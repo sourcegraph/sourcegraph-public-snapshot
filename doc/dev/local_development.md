@@ -33,10 +33,10 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
       - [Database migration failures](#database-migration-failures)
       - [Internal Server Error](#internal-server-error)
       - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
-    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+      - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+      - [Running out of disk space](#running-out-of-disk-space)
   - [How to Run Tests](#how-to-run-tests)
   - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
-  - [Running out of disk space](#running-out-of-disk-space)
   - [How to debug live code](#how-to-debug-live-code)
     - [Debug TypeScript code](#debug-typescript-code)
     - [Debug Go code](#debug-go-code)
@@ -465,13 +465,26 @@ If you ever need to wipe your local database and Redis, run the following comman
 ./dev/drop-entire-local-database-and-redis.sh
 ```
 
-### Caddy 2 certificate problems
+#### Caddy 2 certificate problems
 
 We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
 
 1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `caddy reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
+
+#### Running out of disk space
+if you see errors similar to this:
+```
+gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
+```
+you are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
+You can override that by setting this env variable
+```bash
+# means 5%. You may want to put that into .bashrc for convinience
+SRC_REPOS_DESIRED_PERCENT_FREE=5
+```
+
 
 ## How to Run Tests
 
@@ -497,17 +510,6 @@ If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line T
 3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
 3. Re-run the launch script (`./dev/start.sh`)
 
-## Running out of disk space
-if you see errors similar to this:
-```
-gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
-```
-you are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
-You can override that by setting this env variable
-```bash
-# means 5%. You may want to put that into .bashrc for convinience
-SRC_REPOS_DESIRED_PERCENT_FREE=5
-```
 
 ## How to debug live code
 
