@@ -12,6 +12,16 @@ func TestNormalizeRepo(t *testing.T) {
 		"gitHub.Com/FooBar.git":    "github.com/foobar",
 		"myServer.Com/FooBar.git":  "myserver.com/FooBar",
 		"myServer.Com/FooBar/.git": "myserver.com/FooBar",
+
+		// trying to escape gitserver root
+		"/etc/passwd":                       "etc/passwd",
+		"../../../etc/passwd":               "etc/passwd",
+		"foobar.git/../etc/passwd":          "etc/passwd",
+		"foobar.git/../../../../etc/passwd": "etc/passwd",
+
+		// Degenerate cases
+		"foo/bar/../..":  "",
+		"/foo/bar/../..": "",
 	}
 
 	for k, want := range cases {
