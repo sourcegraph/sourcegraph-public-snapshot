@@ -11,8 +11,8 @@ const RELEASE_MESSAGE_TYPE: MessageType.RELEASE = 5
  * with comlink over browser extension script boundaries.
  *
  * `browser.runtime.Port` objects do not support transfering `MessagePort` objects, which comlink relies on.
- * `MessagePort` tansfers are intervened and instead have new `browser.runtime.Port` connections created and linked
- * through IDs.
+ * A new `browser.runtime.Port`, with an associated unique ID, will be created for each `MessagePort` transfer.
+ * The ID is added to the message and the original `MessagePort` is removed from it.
  *
  * @param browserPort The browser extension Port to link
  * @param prefix A prefix unique to this call of `browserPortToMessagePort` (but the same on both sides) to prefix Port names. Incoming ports not matching this prefix will be ignored.
