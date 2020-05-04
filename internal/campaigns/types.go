@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SupportedExternalServices are the external service types currently supported

@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -20,11 +19,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -143,7 +147,12 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Data))
+						u, err := extsvc.WebhookURL(github.ServiceType, extSvc.ID, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -313,7 +322,10 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := fmt.Sprintf("http://example.com/?%s=%d", externalServiceIDParam, extSvc.ID)
+						u, err := extsvc.WebhookURL(bitbucketserver.ServiceType, extSvc.ID, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
