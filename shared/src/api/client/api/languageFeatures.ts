@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
@@ -7,8 +7,7 @@ import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
-import { wrapRemoteObservable, ProxySubscription } from './common'
-import { Subscription } from 'rxjs'
+import { registerRemoteProvider } from './common'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyMarked {
@@ -69,48 +68,21 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ((params: TextDocumentPositionParams) => ProxySubscribable<Hover | null | undefined>) & ProxyMarked
         >
     ): Unsubscribable & ProxyMarked {
-        const subscription = new Subscription()
-        subscription.add(
-            this.hoverRegistry.registerProvider({ documentSelector }, params => {
-                const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(remoteObservable.proxySubscription)
-                return remoteObservable
-            })
-        )
-        subscription.add(new ProxySubscription(providerFunction))
-        return proxy(subscription)
+        return registerRemoteProvider(this.hoverRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerDefinitionProvider(
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        const subscription = new Subscription()
-        subscription.add(
-            this.definitionRegistry.registerProvider({ documentSelector }, params => {
-                const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(remoteObservable.proxySubscription)
-                return remoteObservable
-            })
-        )
-        subscription.add(new ProxySubscription(providerFunction))
-        return proxy(subscription)
+        return registerRemoteProvider(this.definitionRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerReferenceProvider(
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        const subscription = new Subscription()
-        subscription.add(
-            this.referencesRegistry.registerProvider({ documentSelector }, params => {
-                const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(remoteObservable.proxySubscription)
-                return remoteObservable
-            })
-        )
-        subscription.add(new ProxySubscription(providerFunction))
-        return proxy(subscription)
+        return registerRemoteProvider(this.referencesRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerLocationProvider(
@@ -118,16 +90,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        const subscription = new Subscription()
-        subscription.add(
-            this.locationRegistry.registerProvider({ id, documentSelector }, params => {
-                const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(remoteObservable.proxySubscription)
-                return remoteObservable
-            })
-        )
-        subscription.add(new ProxySubscription(providerFunction))
-        return proxy(subscription)
+        return registerRemoteProvider(this.locationRegistry, { id, documentSelector }, providerFunction)
     }
 
     public $registerCompletionItemProvider(
@@ -136,15 +99,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyMarked
         >
     ): Unsubscribable & ProxyMarked {
-        const subscription = new Subscription()
-        subscription.add(
-            this.completionItemsRegistry.registerProvider({ documentSelector }, params => {
-                const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(remoteObservable.proxySubscription)
-                return remoteObservable
-            })
-        )
-        subscription.add(new ProxySubscription(providerFunction))
-        return proxy(subscription)
+        return registerRemoteProvider(this.completionItemsRegistry, { documentSelector }, providerFunction)
     }
 }

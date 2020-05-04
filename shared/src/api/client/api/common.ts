@@ -1,11 +1,12 @@
-import { Remote, proxyMarker, releaseProxy, ProxyMethods } from 'comlink'
+import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyMarked, proxy, UnproxyOrClone } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, Subscription } from 'rxjs'
+import { from, Observable, observable as symbolObservable, Subscription, Unsubscribable } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'
 import { asError } from '../../../util/errors'
+import { FeatureProviderRegistry } from '../services/registry'
 
 // We subclass because rxjs checks instanceof Subscription.
 // By exposing a Subscription as the interface to release the proxy,
@@ -47,9 +48,16 @@ export interface RemoteObservable<T> extends Observable<T>, ProxySubscribed {}
  * The returned Observable is augmented with the `releaseProxy` method from comlink to release the underlying `MessagePort`.
  *
  * @param proxyPromise The proxy to the `ProxyObservable` in the other thread
+ * @param addToSubscription If provided, directly adds the `ProxySubscription` to this Subscription.
  */
-export const wrapRemoteObservable = <T>(proxyPromise: Promise<Remote<ProxySubscribable<T>>>): RemoteObservable<T> => {
+export const wrapRemoteObservable = <T>(
+    proxyPromise: Promise<Remote<ProxySubscribable<T>>>,
+    addToSubscription?: Subscription
+): RemoteObservable<T> => {
     const proxySubscription = new Subscription()
+    if (addToSubscription) {
+        addToSubscription.add(proxySubscription)
+    }
     const observable = from(proxyPromise).pipe(
         mergeMap(
             (proxySubscribable): Subscribable<T> => {
@@ -104,4 +112,32 @@ export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<Pro
         return source
     }
     return source.pipe(finalize(() => proxySubscription.unsubscribe()))
+}
+
+/**
+ * Helper function to register a remote provider returning an Observable, proxied by comlink, in a provider registry.
+ *
+ * @returns A Subscription that can be proxied through comlink.
+ */
+export function registerRemoteProvider<
+    TRegistrationOptions,
+    TLocalProviderParams extends UnproxyOrClone<TProviderParams>,
+    TProviderParams,
+    TProviderResult
+>(
+    registry: FeatureProviderRegistry<
+        TRegistrationOptions,
+        (params: TLocalProviderParams) => Observable<TProviderResult>
+    >,
+    registrationOptions: TRegistrationOptions,
+    remoteProviderFunction: Remote<((params: TProviderParams) => ProxySubscribable<TProviderResult>) & ProxyMarked>
+): Unsubscribable & ProxyMarked {
+    const subscription = new Subscription()
+    subscription.add(
+        registry.registerProvider(registrationOptions, params =>
+            wrapRemoteObservable(remoteProviderFunction(params), subscription)
+        )
+    )
+    subscription.add(new ProxySubscription(remoteProviderFunction))
+    return proxy(subscription)
 }
