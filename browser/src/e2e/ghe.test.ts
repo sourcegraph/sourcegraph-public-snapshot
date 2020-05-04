@@ -47,18 +47,18 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
             }
             await gheLogin(driver)
             await driver.setExtensionSourcegraphUrl()
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.GITHUB,
+                displayName: 'GitHub Enterprise (e2e)',
+                config: JSON.stringify({
+                    url: GHE_BASE_URL,
+                    token: GHE_TOKEN,
+                    repos: ['sourcegraph/jsonrpc2'],
+                }),
+                ensureRepos: [`${REPO_PREFIX}/sourcegraph/jsonrpc2`],
+            })
         }
 
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
-            displayName: 'GitHub Enterprise (e2e)',
-            config: JSON.stringify({
-                url: GHE_BASE_URL,
-                token: GHE_TOKEN,
-                repos: ['sourcegraph/jsonrpc2'],
-            }),
-            ensureRepos: [`${REPO_PREFIX}/sourcegraph/jsonrpc2`],
-        })
         // GHE doesn't allow cloning public repos through the UI (only GitHub.com has the GitHub importer).
         // These tests expect that sourcegraph/jsonrpc2 is cloned on the GHE instance.
         await driver.page.goto(`${GHE_BASE_URL}/sourcegraph/jsonrpc2`)
