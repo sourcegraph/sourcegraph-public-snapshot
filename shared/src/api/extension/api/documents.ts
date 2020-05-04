@@ -1,4 +1,4 @@
-import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'

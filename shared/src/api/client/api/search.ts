@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { from } from 'rxjs'
 import { QueryTransformer, Unsubscribable } from 'sourcegraph'
 import { TransformQuerySignature } from '../services/queryTransformer'

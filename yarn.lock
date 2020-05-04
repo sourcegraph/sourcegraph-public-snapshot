@@ -1971,11 +1971,6 @@
     rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/comlink@^4.2.0-fork.2":
-  version "4.2.0-fork.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-4.2.0-fork.2.tgz#5f6c02f4eec6d1971b80c27f6ecd9f04d7feb9bc"
-  integrity sha512-qhuu947hyGhni5F0aGwpToo548QT2irTDc6qqdRBIZPWCnO1oD4nG8dniP2EwNuX1CmoixRB4waRZgtN032Qcg==
-
 "@sourcegraph/eslint-config@^0.16.0":
   version "0.16.0"
   resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.16.0.tgz#360de690156c55a25e37f1c2ae99821f31d6de94"
@@ -6378,6 +6373,11 @@ combined-stream@^1.0.6, combined-stream@~1.0.6:
   integrity sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==
   dependencies:
     delayed-stream "~1.0.0"
+
+comlink@^4.3.0:
+  version "4.3.0"
+  resolved "https://registry.npmjs.org/comlink/-/comlink-4.3.0.tgz#80b3366baccd87897dab3638ebfcfae28b2f87c7"
+  integrity sha512-mu4KKKNuW8TvkfpW/H88HBPeILubBS6T94BdD1VWBXNXfiyqVtwUCVNO1GeNOBTsIswzsMjWlycYr+77F5b84g==
 
 comma-separated-tokens@^1.0.0:
   version "1.0.5"

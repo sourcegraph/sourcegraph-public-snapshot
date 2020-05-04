@@ -1,9 +1,9 @@
-import * as MessageChannelAdapter from '@sourcegraph/comlink/dist/umd/string-channel.experimental'
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'
+import { browserPortToMessagePort } from './ports'
 
 function createInPageExtensionHost({
     assetsURL,
@@ -74,35 +74,20 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
     }
     const id = uuid.v4()
     return new Observable(subscriber => {
-        const proxyPort = browser.runtime.connect({ name: `proxy-${id}` })
-        const exposePort = browser.runtime.connect({ name: `expose-${id}` })
-        subscriber.next({
-            proxy: endpointFromPort(proxyPort),
-            expose: endpointFromPort(exposePort),
-        })
-        return () => {
-            proxyPort.disconnect()
-            exposePort.disconnect()
-        }
-    })
-}
+        // This is run in the content script
+        const subscription = new Subscription()
+        const setup = (role: keyof EndpointPair): MessagePort => {
+            const port = browser.runtime.connect({ name: `${role}-${id}` })
+            subscription.add(() => port.disconnect())
 
-/**
- * Partially wraps a browser.runtime.Port and returns a MessagePort created using
- * comlink's {@link MessageChannelAdapter}, so that the Port can be used
- * as a comlink Endpoint to transport messages between the content script and the extension host.
- *
- * It is necessary to wrap the port using MessageChannelAdapter because browser.runtime.Port objects do not support
- * transferring MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
- *
- */
-function endpointFromPort(port: browser.runtime.Port): MessagePort {
-    return MessageChannelAdapter.wrap({
-        send(data: string): void {
-            port.postMessage(data)
-        },
-        addMessageListener(listener): void {
-            port.onMessage.addListener(listener)
-        },
+            const link = browserPortToMessagePort(port, `comlink-${role}-`, name => browser.runtime.connect({ name }))
+            subscription.add(link.subscription)
+            return link.messagePort
+        }
+        subscriber.next({
+            proxy: setup('proxy'),
+            expose: setup('expose'),
+        })
+        return subscription
     })
 }

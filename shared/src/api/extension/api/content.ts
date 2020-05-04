@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { LinkPreviewProvider } from 'sourcegraph'
 import { ClientContentAPI } from '../../client/api/content'

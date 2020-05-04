@@ -1,4 +1,4 @@
-import { Remote } from '@sourcegraph/comlink'
+import { Remote } from 'comlink'
 import { ContextValues } from 'sourcegraph'
 import { ClientContextAPI } from '../../client/api/context'
 

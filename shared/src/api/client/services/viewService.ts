@@ -1,9 +1,10 @@
-import { Observable, Unsubscribable, BehaviorSubject, of, combineLatest, concat } from 'rxjs'
+import { Observable, BehaviorSubject, of, combineLatest, concat, Subscription } from 'rxjs'
 import { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
 import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } from 'rxjs/operators'
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
 import { isEqual } from 'lodash'
 import { asError, ErrorLike } from '../../../util/errors'
+import { finallyReleaseProxy } from '../api/common'
 import { DeepReplace, isNot, isExactly } from '../../../util/types'
 
 /**
@@ -33,7 +34,7 @@ export interface ViewService {
         id: string,
         where: W,
         provideView: ViewProviderFunction<ViewContexts[W]>
-    ): Unsubscribable
+    ): Subscription
 
     /**
      * Get all providers for the given container.
@@ -71,18 +72,16 @@ export const createViewService = (): ViewService => {
             const provider = { where, provideView }
             providers.value.set(id, provider as any) // TODO: find a type-safe way
             providers.next(providers.value)
-            return {
-                unsubscribe: () => {
-                    const p = providers.value.get(id)
-                    if (p?.provideView === provideView) {
-                        // Check equality to ensure we only unsubscribe the exact same provider we
-                        // registered, not some other provider that was registered later with the same
-                        // ID.
-                        providers.value.delete(id)
-                        providers.next(providers.value)
-                    }
-                },
-            }
+            return new Subscription(() => {
+                const p = providers.value.get(id)
+                if (p?.provideView === provideView) {
+                    // Check equality to ensure we only unsubscribe the exact same provider we
+                    // registered, not some other provider that was registered later with the same
+                    // ID.
+                    providers.value.delete(id)
+                    providers.next(providers.value)
+                }
+            })
         },
         getWhere: where =>
             providers.pipe(
@@ -93,7 +92,7 @@ export const createViewService = (): ViewService => {
             providers.pipe(
                 map(providers => providers.get(id)?.provideView),
                 distinctUntilChanged(),
-                switchMap(provider => (provider ? provider(context) : of(null)))
+                switchMap(provider => (provider ? provider(context).pipe(finallyReleaseProxy()) : of(null)))
             ),
     }
 }

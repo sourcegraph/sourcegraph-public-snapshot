@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
