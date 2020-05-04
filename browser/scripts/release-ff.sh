@@ -12,7 +12,7 @@ web-ext sign --source-dir ./build/firefox --artifacts-dir ./build/web-ext --api-
 
 # Upload to gcp and make it public
 pushd build/web-ext
-for filename in ./*; do
+for filename in *; do
   gsutil cp "$filename" "gs://sourcegraph-for-firefox/$filename"
   gsutil cp "$filename" "gs://sourcegraph-for-firefox/latest.xpi"
   gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/$filename"
