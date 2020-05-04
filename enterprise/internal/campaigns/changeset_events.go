@@ -22,55 +22,6 @@ func (ce ChangesetEvents) Less(i, j int) bool {
 	return ce[i].Timestamp().Before(ce[j].Timestamp())
 }
 
-// reviewState returns the overall review state of the review events in the
-// slice.
-// It should only be called by ComputeChangesetReviewState.
-func (ce ChangesetEvents) reviewState() (cmpgn.ChangesetReviewState, error) {
-	reviewsByAuthor := map[string]cmpgn.ChangesetReviewState{}
-
-	for _, e := range ce {
-		author, err := e.ReviewAuthor()
-		if err != nil {
-			return "", err
-		}
-		if author == "" {
-			continue
-		}
-		s, err := e.ReviewState()
-		if err != nil {
-			return "", err
-		}
-
-		switch s {
-		case cmpgn.ChangesetReviewStateApproved,
-			cmpgn.ChangesetReviewStateChangesRequested:
-			reviewsByAuthor[author] = s
-		case cmpgn.ChangesetReviewStateDismissed:
-			delete(reviewsByAuthor, author)
-		}
-	}
-
-	return computeReviewState(reviewsByAuthor), nil
-}
-
-// State returns the  state of the changeset to which the events belong and assumes the events
-// are sorted by ChangesetEvent.Timestamp().
-func (ce ChangesetEvents) State() cmpgn.ChangesetState {
-	state := cmpgn.ChangesetStateOpen
-	for _, e := range ce {
-		switch e.Kind {
-		case cmpgn.ChangesetEventKindGitHubClosed, cmpgn.ChangesetEventKindBitbucketServerDeclined:
-			state = cmpgn.ChangesetStateClosed
-		case cmpgn.ChangesetEventKindGitHubMerged, cmpgn.ChangesetEventKindBitbucketServerMerged:
-			// Merged is a final state. We can ignore everything after.
-			return cmpgn.ChangesetStateMerged
-		case cmpgn.ChangesetEventKindGitHubReopened, cmpgn.ChangesetEventKindBitbucketServerReopened:
-			state = cmpgn.ChangesetStateOpen
-		}
-	}
-	return state
-}
-
 type changesetStatesAtTime struct {
 	t           time.Time
 	state       cmpgn.ChangesetState
@@ -78,11 +29,21 @@ type changesetStatesAtTime struct {
 }
 
 func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) ([]changesetStatesAtTime, error) {
-	states := []changesetStatesAtTime{}
+	if len(ce) > 1 {
+		first, last := ce[0], ce[len(ce)-1]
+		if first.Timestamp().After(last.Timestamp()) {
+			return nil, errors.New("changeset events no ordered by timestamps")
+		}
+	}
 
-	currentState := cmpgn.ChangesetStateOpen
-	currentReviewState := cmpgn.ChangesetReviewStatePending
-	lastReviewByAuthor := map[string]campaigns.ChangesetReviewState{}
+	var (
+		states = []changesetStatesAtTime{}
+
+		currentState       = cmpgn.ChangesetStateOpen
+		currentReviewState = cmpgn.ChangesetReviewStatePending
+
+		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
+	)
 
 	pushStates := func(t time.Time) {
 		states = append(states, changesetStatesAtTime{
@@ -168,6 +129,9 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) ([]changesetStatesA
 			}
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved:
+			// TODO: What about webhook events?
+			//
+			//
 			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
 			// events since GitHub updates the original
 			// ChangesetEventKindGitHubReviewed event when a review has been
