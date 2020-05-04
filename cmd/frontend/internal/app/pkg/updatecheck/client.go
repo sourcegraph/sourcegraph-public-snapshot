@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	// "math/rand"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -106,7 +106,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
-		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventCounts:    true,
 		IncludeEventLatencies: true,
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) 
 		DayPeriods:         &days,
 		WeekPeriods:        &weeks,
 		MonthPeriods:       &months,
-		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventCounts: true,
 	})
 	if err != nil {
 		return nil, err
@@ -151,6 +151,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		ClientSiteID:         siteid.Get(),
 		DeployType:           conf.DeployType(),
 		ClientVersionString:  version.Version(),
+		LicenseKey: conf.Get().LicenseKey,
 		CodeIntelUsage: []byte("{}"),
 		SearchUsage: []byte("{}"),
 		CampaignsUsage: []byte("{}"),
@@ -211,7 +212,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("externalServicesKinds failed", "error", err)
 		}
 
-		r.LicenseKey = conf.Get().LicenseKey
 		r.HasExtURL = conf.UsingExternalURL()
 		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 		r.AuthProviders = authProviderTypes()

@@ -77,7 +77,7 @@ interface SourcegraphContext
      */
     site: Pick<
         import('./schema/site.schema').SiteConfiguration,
-        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled'
+        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled' | 'disableNonCriticalTelemetry'
     >
 
     /** Whether access tokens are enabled. */
