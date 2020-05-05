@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,17 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cmd/precise-code-intel-test/internal"
 )
 
-const MaxConcurrency = 3
-const MaxIndexConcurrency = 2
-const MaxQueryConcurrency = 25
-const BaseURL = "http://localhost:3080"
-const Token = "fd1a128890e12bc6e9d00a8a33d68b545b1adf0f"
-const CacheDir = "/tmp/precise-code-intel-test"
-const DataDir = "./internal/cmd/precise-code-intel-test/data"
-const CheckQueryResult = true
-const QueryReferenceReferences = false
+var (
+	MaxConcurrency              = flag.Int("maxConcurrency", 3, "The maximum number of concurrent operations")
+	BaseURL                     = flag.String("baseUrl", "https://sourcegraph.test:3443", "A Sourcegraph URL")
+	Token                       = flag.String("token", "fd1a128890e12bc6e9d00a8a33d68b545b1adf0f", "A Sourcegraph access token")
+	CacheDir                    = flag.String("cacheDir", "/tmp/precise-code-intel-test", "The location of the cache directory")
+	DataDir                     = flag.String("dataDir", "./internal/cmd/precise-code-intel-test/data", "The location of the data directory")
+	CheckQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")
+	QueryReferencesOfReferences = flag.Bool("queryReferencesOfReferences", false, "Whether to perform reference operations on test case references")
+)
 
 func main() {
+	flag.Parse()
+
 	commands := map[string]func() error{
 		"clone":  clone,
 		"index":  index,
@@ -68,7 +71,7 @@ func index() error {
 		return err
 	}
 
-	return internal.IndexParallel(CacheDir, MaxIndexConcurrency, repos)
+	return internal.IndexParallel(CacheDir, MaxConcurrency, repos)
 }
 
 func upload() error {
@@ -153,7 +156,7 @@ func query() error {
 				),
 			})
 
-			if QueryReferenceReferences {
+			if QueryReferencesOfReferences {
 				fns = append(fns, internal.FnPair{
 					Fn: func() error {
 						references, err := internal.QueryReferences(BaseURL, Token, localReference)
@@ -183,7 +186,7 @@ func query() error {
 
 	start := time.Now()
 
-	if err := internal.RunParallel(MaxQueryConcurrency, fns); err != nil {
+	if err := internal.RunParallel(MaxConcurrency, fns); err != nil {
 		return err
 	}
 
