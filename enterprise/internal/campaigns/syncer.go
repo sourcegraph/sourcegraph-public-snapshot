@@ -252,42 +252,30 @@ var syncerMetrics = struct {
 
 func init() {
 	syncerMetrics.syncs = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_syncs",
-		Help:      "Total number of changeset syncs",
+		Name: "src_repoupdater_changeset_syncer_syncs",
+		Help: "Total number of changeset syncs",
 	}, []string{"extsvc", "success"})
 	syncerMetrics.priorityQueued = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_priority_queued",
-		Help:      "Total number of priority items added to queue",
+		Name: "src_repoupdater_changeset_syncer_priority_queued",
+		Help: "Total number of priority items added to queue",
 	}, []string{"extsvc"})
 	syncerMetrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_sync_duration_seconds",
-		Help:      "Time spent syncing changesets",
-		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
+		Name:    "src_repoupdater_changeset_syncer_sync_duration_seconds",
+		Help:    "Time spent syncing changesets",
+		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
 	}, []string{"extsvc", "success"})
 	syncerMetrics.computeScheduleDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_compute_schedule_duration_seconds",
-		Help:      "Time spent computing changeset schedule",
-		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
+		Name:    "src_repoupdater_changeset_syncer_compute_schedule_duration_seconds",
+		Help:    "Time spent computing changeset schedule",
+		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
 	}, []string{"extsvc", "success"})
 	syncerMetrics.scheduleSize = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_schedule_size",
-		Help:      "The number of changesets scheduled to sync",
+		Name: "src_repoupdater_changeset_syncer_schedule_size",
+		Help: "The number of changesets scheduled to sync",
 	}, []string{"extsvc"})
 	syncerMetrics.behindSchedule = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "changeset_syncer_behind_schedule",
-		Help:      "The number of changesets behind schedule",
+		Name: "src_repoupdater_changeset_syncer_behind_schedule",
+		Help: "The number of changesets behind schedule",
 	}, []string{"extsvc"})
 }
 

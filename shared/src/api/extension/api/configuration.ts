@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { ReplaySubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'

@@ -29,6 +29,7 @@ type ObservedDB struct {
 	sameRepoPagerOperation             *observation.Operation
 	updatePackageReferencesOperation   *observation.Operation
 	packageReferencePagerOperation     *observation.Operation
+	hasCommitOperation                 *observation.Operation
 	updateCommitsOperation             *observation.Operation
 	repoNameOperation                  *observation.Operation
 }
@@ -146,6 +147,12 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 			LogName:      "DB.PackageReferencePager",
 			TraceName:    "db.package-reference-pager",
 			MetricLabels: []string{"package_reference_pager"},
+			Metrics:      metrics,
+		}),
+		hasCommitOperation: observationContext.Operation(observation.Op{
+			LogName:      "DB.HasCommit",
+			TraceName:    "db.has-commit",
+			MetricLabels: []string{"has_commit"},
 			Metrics:      metrics,
 		}),
 		updateCommitsOperation: observationContext.Operation(observation.Op{
@@ -315,6 +322,14 @@ func (db *ObservedDB) PackageReferencePager(ctx context.Context, scheme, name, v
 	defer endObservation(1, observation.Args{})
 
 	return db.db.PackageReferencePager(ctx, scheme, name, version, repositoryID, limit)
+}
+
+// HasCommit calls into the inner DB and registers the observed results.
+func (db *ObservedDB) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, endObservation := db.hasCommitOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return db.db.HasCommit(ctx, repositoryID, commit)
 }
 
 // UpdateCommits calls into the inner DB and registers the observed results.

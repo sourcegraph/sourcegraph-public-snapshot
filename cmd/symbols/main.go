@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -16,7 +15,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
@@ -51,14 +49,8 @@ func main() {
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
-		NewParser: func() (ctags.Parser, error) {
-			parser, err := ctags.NewParser(ctags.GetCommand())
-			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("command: %s", ctags.GetCommand()))
-			}
-			return parser, nil
-		},
-		Path: cacheDir,
+		NewParser: ctags.New,
+		Path:      cacheDir,
 	}
 	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
 		log.Fatalf("Invalid SYMBOLS_CACHE_SIZE_MB: %s", err)

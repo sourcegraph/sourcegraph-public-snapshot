@@ -248,12 +248,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		return resolvers, err
 	}
 
-	events := make([]ee.Event, len(es))
-	for i, e := range es {
-		events[i] = e
-	}
-
-	counts, err := ee.CalcCounts(start, end, cs, events...)
+	counts, err := ee.CalcCounts(start, end, cs, es...)
 	if err != nil {
 		return resolvers, err
 	}

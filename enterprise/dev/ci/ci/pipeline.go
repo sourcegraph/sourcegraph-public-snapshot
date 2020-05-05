@@ -82,6 +82,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExtensionReleaseSteps,
 		}
 
+	case c.isBextNightly:
+		// If this is a browser extension nightly build, run the browser-extension tests and
+		// e2e tests.
+		pipelineOperations = []func(*bk.Pipeline){
+			addLint,
+			addBrowserExt,
+			addSharedTests,
+			wait,
+			addBrowserExtensionE2ESteps,
+		}
+
 	case c.isQuick:
 		// Run fast steps only
 		pipelineOperations = []func(*bk.Pipeline){

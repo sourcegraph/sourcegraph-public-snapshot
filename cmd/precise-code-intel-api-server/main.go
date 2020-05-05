@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -45,7 +46,7 @@ func main() {
 
 	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_api_server")
 	bundleManagerClient := bundles.New(bundleManagerURL)
-	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient), observationContext)
+	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 
 	serverInst := server.New(server.ServerOpts{
 		Host:                host,
