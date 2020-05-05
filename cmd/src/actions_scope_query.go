@@ -31,7 +31,8 @@ Examples:
 	}
 
 	var (
-		fileFlag = flagSet.String("f", "-", "The action file. If not given or '-' standard input is used. (Required)")
+		fileFlag               = flagSet.String("f", "-", "The action file. If not given or '-' standard input is used. (Required)")
+		includeUnsupportedFlag = flagSet.Bool("include-unsupported", false, "When specified, also repos from unsupported codehosts are processed. Those can be created once the integration is done.")
 	)
 
 	handler := func(args []string) error {
@@ -60,17 +61,16 @@ Examples:
 
 		if *verbose {
 			log.Printf("# scopeQuery in action definition: %s\n", action.ScopeQuery)
+
+			if *includeUnsupportedFlag {
+				log.Printf("# Including repositories on unsupported codehost.\n")
+			}
 		}
 
-		repos, skipped, err := actionRepos(ctx, action.ScopeQuery)
+		logger := newActionLogger(*verbose, false)
+		repos, err := actionRepos(ctx, action.ScopeQuery, *includeUnsupportedFlag, logger)
 		if err != nil {
 			return err
-		}
-		for _, r := range skipped {
-			log.Printf("# Skipping repository %s because we couldn't determine default branch.\n", r)
-		}
-		if *verbose {
-			log.Printf("# %d repositories match.", len(repos))
 		}
 		for _, repo := range repos {
 			fmt.Println(repo.Name)

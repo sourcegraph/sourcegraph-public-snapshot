@@ -148,6 +148,8 @@ Format of the action JSON files:
 		createPatchSetFlag      = flagSet.Bool("create-patchset", false, "Create a patch set from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the patch set creation.")
 		forceCreatePatchSetFlag = flagSet.Bool("force-create-patchset", false, "Force creation of patch set from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
 
+		includeUnsupportedFlag = flagSet.Bool("include-unsupported", false, "When specified, also repos from unsupported codehosts are processed. Those can be created once the integration is done.")
+
 		apiFlags = newAPIFlags(flagSet)
 	)
 
@@ -229,14 +231,11 @@ Format of the action JSON files:
 
 		// Query repos over which to run action
 		logger.Infof("Querying %s for repositories matching '%s'...\n", cfg.Endpoint, action.ScopeQuery)
-		repos, skipped, err := actionRepos(ctx, action.ScopeQuery)
+		repos, err := actionRepos(ctx, action.ScopeQuery, *includeUnsupportedFlag, logger)
 		if err != nil {
 			return err
 		}
-		for _, r := range skipped {
-			logger.Infof("Skipping repository %s because we couldn't determine default branch.\n", r)
-		}
-		logger.Infof("%d repositories match. Use 'src actions scope-query' for help with scoping.\n", len(repos))
+		logger.Infof("Use 'src actions scope-query' for help with scoping.\n")
 
 		logger.Start()
 
@@ -397,10 +396,10 @@ type ActionRepo struct {
 	BaseRef string
 }
 
-func actionRepos(ctx context.Context, scopeQuery string) ([]ActionRepo, []string, error) {
+func actionRepos(ctx context.Context, scopeQuery string, includeUnsupported bool, logger *actionLogger) ([]ActionRepo, error) {
 	hasCount, err := regexp.MatchString(`count:\d+`, scopeQuery)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if !hasCount {
@@ -414,30 +413,37 @@ query ActionRepos($query: String!) {
 			results {
 				__typename
 				... on Repository {
-					id
-					name
-					defaultBranch {
-						name
-						target { oid }
-					}
+					...repositoryFields
 				}
 				... on FileMatch {
 					repository {
-						id
-						name
-						defaultBranch {
-							name
-							target { oid }
-						}
+						...repositoryFields
 					}
 				}
 			}
 		}
 	}
 }
+
+fragment repositoryFields on Repository {
+	id
+	name
+	externalRepository {
+		serviceType
+	}
+	defaultBranch {
+		name
+		target {
+			oid
+		}
+	}
+}
 `
 	type Repository struct {
-		ID, Name      string
+		ID, Name           string
+		ExternalRepository struct {
+			ServiceType string
+		}
 		DefaultBranch *struct {
 			Name   string
 			Target struct{ OID string }
@@ -448,8 +454,11 @@ query ActionRepos($query: String!) {
 			Search struct {
 				Results struct {
 					Results []struct {
-						Typename      string `json:"__typename"`
-						ID, Name      string
+						Typename           string `json:"__typename"`
+						ID, Name           string
+						ExternalRepository struct {
+							ServiceType string
+						}
 						DefaultBranch *struct {
 							Name   string
 							Target struct{ OID string }
@@ -486,14 +495,15 @@ query ActionRepos($query: String!) {
 		// returned.
 		exitCodeErr, ok := err.(*exitCodeError)
 		if !ok {
-			return nil, nil, err
+			return nil, err
 		}
 		if exitCodeErr.error != nil {
-			return nil, nil, exitCodeErr
+			return nil, exitCodeErr
 		}
 	}
 
 	skipped := []string{}
+	unsupported := []string{}
 	reposByID := map[string]ActionRepo{}
 	for _, searchResult := range result.Data.Search.Results.Results {
 
@@ -502,14 +512,21 @@ query ActionRepos($query: String!) {
 			repo = searchResult.Repository
 		} else {
 			repo = Repository{
-				ID:            searchResult.ID,
-				Name:          searchResult.Name,
-				DefaultBranch: searchResult.DefaultBranch,
+				ID:                 searchResult.ID,
+				Name:               searchResult.Name,
+				ExternalRepository: searchResult.ExternalRepository,
+				DefaultBranch:      searchResult.DefaultBranch,
 			}
 		}
 
+		// Skip repos from unsupported code hosts but don't report them explicitly.
+		if !includeUnsupported && strings.ToLower(repo.ExternalRepository.ServiceType) != "github" && strings.ToLower(repo.ExternalRepository.ServiceType) != "bitbucketserver" {
+			unsupported = append(unsupported, repo.Name)
+			continue
+		}
+
 		if repo.DefaultBranch == nil || repo.DefaultBranch.Name == "" {
-			skipped = append(skipped, searchResult.Repository.Name)
+			skipped = append(skipped, repo.Name)
 			continue
 		}
 
@@ -532,12 +549,30 @@ query ActionRepos($query: String!) {
 	for _, repo := range reposByID {
 		repos = append(repos, repo)
 	}
+	for _, r := range skipped {
+		logger.Infof("Skipping repository %s because we couldn't determine default branch.\n", r)
+	}
+	for _, r := range unsupported {
+		logger.Infof("# Skipping repository %s because it's on a not supported code host.\n", r)
+	}
+	matchesStr := fmt.Sprintf("%d repositories match.", len(repos))
+	unsupportedCount := len(unsupported)
+	if includeUnsupported {
+		if unsupportedCount > 0 {
+			matchesStr += fmt.Sprintf(" (Including %d on unsupported code hosts.)", unsupportedCount)
+		}
+	} else {
+		if unsupportedCount > 0 {
+			matchesStr += " (Some repositories were filtered out because their code host is not supported by campaigns. Use -include-unsupported to generate patches for them anyways.)"
+		}
+	}
+	logger.Infof("%s\n", matchesStr)
 
 	if len(repos) == 0 && !*verbose {
 		yellow.Fprintf(os.Stderr, "WARNING: No repositories matched by scopeQuery\n")
 	}
 
-	return repos, skipped, nil
+	return repos, nil
 }
 
 func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
