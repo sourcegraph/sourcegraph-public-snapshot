@@ -221,7 +221,7 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	if err != nil {
 		return nil, err
 	}
-	// unique map of all repos that matched the scope query
+	// Unique map of all repos that matched the scope query.
 	repoMap := make(map[string]*graphqlbackend.RepositoryResolver)
 	for _, _repo := range resultsResolver.Results() {
 		repo, ok := _repo.ToRepository()
@@ -231,6 +231,10 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 				return []actionRepo{}, errors.New("no valid search result")
 			}
 			repo = fm.Repository()
+		}
+		// Skip repos from unsupported code hosts.
+		if repo.ExternalRepository().ServiceType() != "github" && repo.ExternalRepository().ServiceType() != "bitbucketServer" {
+			continue
 		}
 		repoMap[repo.Name()] = repo
 	}

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -299,7 +298,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
+	campaign, _, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -994,7 +993,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			})
 		}
 	}
-	svc := ee.NewService(tx, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(tx, r.httpFactory)
 	// important: pass false for useTx, as our transaction will already be committed bu CreatePatchSetFromPatches
 	// otherwise, and we cannot update the execution within the tx anymore
 	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID, false)
@@ -1017,7 +1016,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	}
 	if action.CampaignID != 0 {
 		// todo: the tx is completed when the background go func of updateCampaign executes
-		if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
+		if _, _, err = svc.UpdateCampaign(ctx, ee.UpdateCampaignArgs{Campaign: action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
 			return nil, err
 		}
 	}
