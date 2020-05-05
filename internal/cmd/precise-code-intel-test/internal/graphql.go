@@ -30,6 +30,10 @@ func graphQL(baseURL, token, query string, variables map[string]interface{}, tar
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
