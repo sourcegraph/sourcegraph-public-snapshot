@@ -9,14 +9,43 @@ import (
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-// TODO: what about a `type ChangesetHistory []changesetStatesAtTime`
+// changesetHistory is a collection of a changesets states (open/closed/merged
+// state and review state) over time.
+type changesetHistory []*changesetStatesAtTime
+
+// StatesAtTime returns the changeset's states valid at the given time. If the
+// changeset didn't exist yet, the second parameter is false.
+func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool) {
+	if len(h) == 0 {
+		return changesetStatesAtTime{}, false
+	}
+
+	var (
+		states changesetStatesAtTime
+		found  bool
+	)
+
+	for _, s := range h {
+		if s.t.After(t) {
+			break
+		}
+		states = s
+		found = true
+	}
+
+	return states, found
+}
+
 type changesetStatesAtTime struct {
 	t           time.Time
 	state       cmpgn.ChangesetState
 	reviewState cmpgn.ChangesetReviewState
 }
 
-func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) ([]changesetStatesAtTime, error) {
+// computeHistory calcuates the changesetHistory for the given Changeset and
+// its ChangesetEvents.
+// The ChangesetEvents MUST be sorted by their Timestamp.
+func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
 	if len(ce) > 1 {
 		first, last := ce[0], ce[len(ce)-1]
 		if first.Timestamp().After(last.Timestamp()) {

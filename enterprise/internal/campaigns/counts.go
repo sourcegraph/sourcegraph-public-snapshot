@@ -73,22 +73,11 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 		// Go through every point in time we want to record and check the
 		// states of the changeset at that point in time
 		for _, c := range counts {
-			// No need to update c if first data point we have happened
-			// after c.Time
-			states := history[0]
-			if states.t.After(c.Time) {
+			states, ok := history.StatesAtTime(c.Time)
+			if !ok {
+				// Changeset didn't exist yet
 				continue
 			}
-
-			// Find the data point closest to c.Time
-			for _, s := range history {
-				if s.t.After(c.Time) {
-					break
-				}
-				states = s
-			}
-
-			// states is now the different states of the changeset at c.Time
 
 			c.Total++
 			switch states.state {
