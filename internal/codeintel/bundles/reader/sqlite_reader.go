@@ -58,11 +58,11 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 		}
 	}
 
-	x, err := r.serializer.UnmarshalDocumentData(data)
+	documentData, err := r.serializer.UnmarshalDocumentData(data)
 	if err != nil {
 		return types.DocumentData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalDocumentData")
 	}
-	return x, true, nil
+	return documentData, true, nil
 }
 
 func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
@@ -75,11 +75,11 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 		}
 	}
 
-	x, err := r.serializer.UnmarshalResultChunkData(data)
+	resultChunkData, err := r.serializer.UnmarshalResultChunkData(data)
 	if err != nil {
 		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalResultChunkData")
 	}
-	return x, true, nil
+	return resultChunkData, true, nil
 }
 
 func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
