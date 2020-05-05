@@ -559,6 +559,11 @@ query ActionRepos($query: String!) {
 	for _, repo := range reposByID {
 		repos = append(repos, repo)
 	}
+
+	if len(repos) == 0 && !*verbose {
+		yellow.Fprintf(os.Stderr, "WARNING: No repositories matched by scopeQuery\n")
+	}
+
 	return repos, skipped, nil
 }
 
