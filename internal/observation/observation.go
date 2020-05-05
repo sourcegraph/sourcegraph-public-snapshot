@@ -63,9 +63,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// Context holds the root objects that create loggers, trace spans, and registers metrics. Each
-// service should create one context on start and use it to create Operation objects owned and
-// used by the observed structs that perform the operation it represents.
+// Context carries context about where to send logs, trace spans, and register
+// metrics. It should be created once on service startup, and passed around to
+// any location that wants to use it for observing operations.
 type Context struct {
 	logger     logging.ErrorLogger
 	tracer     *trace.Tracer
