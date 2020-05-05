@@ -30,7 +30,7 @@ go run ./internal/cmd/precise-code-intel-test/main.go index --maxConcurrency=2
 Third, upload each of the index files to a running Sourcegraph instance with the following command. This will upload files in parallel then wait for all of them to complete processing.
 
 ```shell
-go run ./internal/cmd/precise-code-intel-test/main.go upload
+go run ./internal/cmd/precise-code-intel-test/main.go upload -token=<a sourcegraph access token>
 ```
 
 Fourth, query the GraphQL API with the following command to ensure that the expected code intelligence results are returned.

@@ -27,19 +27,19 @@ type errPair struct {
 // RunParallel runs each function in parallel. Returns the first error to occur. The
 // number of invocations is limited by maxConcurrency.
 func RunParallel(maxConcurrency int, fns []FnPair) error {
-	// create map with all work marked as pending
-	pending := map[int]bool{}
-	for i := 0; i < len(fns); i++ {
-		pending[i] = false
-	}
-	pendingMap := &pendingMap{pending: pending}
-
 	// queue all work
 	queue := make(chan int, len(fns))
 	for i := range fns {
 		queue <- i
 	}
 	close(queue)
+
+	// create map with all work marked as pending
+	pending := map[int]bool{}
+	for i := 0; i < len(fns); i++ {
+		pending[i] = false
+	}
+	pendingMap := &pendingMap{pending: pending}
 
 	// launch workers
 	errs := make(chan errPair, len(fns))
@@ -67,7 +67,9 @@ func RunParallel(maxConcurrency int, fns []FnPair) error {
 						// Drain queue to stop additional work
 						for range queue {
 						}
+					}()
 
+					go func() {
 						// Drain errors so we can close the channel safely
 						// without closing it while one of the worker goroutines
 						// above are still running.

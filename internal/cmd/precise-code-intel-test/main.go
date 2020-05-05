@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	BaseURL                     = flag.String("baseUrl", "https://sourcegraph.test:3443", "A Sourcegraph URL")
+	BaseURL                     = flag.String("baseUrl", "http://127.0.0.1:3080", "A Sourcegraph URL")
 	Token                       = flag.String("token", "", "A Sourcegraph access token")
 	MaxConcurrency              = flag.Int("maxConcurrency", 5, "The maximum number of concurrent operations")
 	CheckQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")

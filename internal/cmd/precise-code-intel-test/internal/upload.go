@@ -92,7 +92,7 @@ func upload(cacheDir, baseURL, owner, name, rev string) (string, error) {
 	return string(pattern.FindSubmatch(output)[1]), nil
 }
 
-// WaitForSuccessAll waits until all uploads have finished processing.If any upload
+// WaitForSuccessAll waits until all uploads have finished processing. If any upload
 // errors during processing, this function returns a non-nil error.
 func WaitForSuccessAll(baseURL, token string, uploads []Upload) error {
 	return pentimento.PrintProgress(func(p *pentimento.Printer) error {
@@ -104,6 +104,7 @@ func WaitForSuccessAll(baseURL, token string, uploads []Upload) error {
 
 			states, err := uploadStates(baseURL, token, ids)
 			if err != nil {
+				_ = p.Reset()
 				return err
 			}
 
@@ -111,6 +112,7 @@ func WaitForSuccessAll(baseURL, token string, uploads []Upload) error {
 			for _, upload := range uploads {
 				switch states[upload.UploadID] {
 				case "ERRORED":
+					_ = p.Reset()
 					return fmt.Errorf("upload %s/%s@%s errored", upload.Owner, upload.Name, upload.Rev)
 				case "COMPLETED":
 					continue
