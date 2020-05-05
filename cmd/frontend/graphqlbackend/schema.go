@@ -1626,7 +1626,7 @@ type Repository implements Node & GenericSearchResultInterface {
     mirrorInfo: MirrorRepositoryInfo!
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
-    externalRepository: ExternalRepository
+    externalRepository: ExternalRepository!
     # Whether the repository is a fork.
     isFork: Boolean!
     # Whether the repository has been archived.
