@@ -65,7 +65,7 @@ func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
