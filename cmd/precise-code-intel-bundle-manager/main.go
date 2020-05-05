@@ -6,12 +6,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -41,6 +46,12 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	observationContext := observation.NewContext(
+		log15.Root(),
+		&trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		prometheus.DefaultRegisterer,
+	)
+
 	serverInst, err := server.New(server.ServerOpts{
 		Host:                     host,
 		Port:                     3187,
@@ -48,6 +59,7 @@ func main() {
 		DatabaseCacheSize:        int64(databaseCacheSize),
 		DocumentDataCacheSize:    int64(documentDataCacheSize),
 		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
+		ObservationContext:       observationContext,
 	})
 	if err != nil {
 		log.Fatal(err)

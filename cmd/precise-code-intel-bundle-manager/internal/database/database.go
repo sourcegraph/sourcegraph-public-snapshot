@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -44,9 +43,9 @@ type Database interface {
 
 type databaseImpl struct {
 	filename             string
+	reader               reader.Reader         // database file reader
 	documentDataCache    *DocumentDataCache    // shared cache
 	resultChunkDataCache *ResultChunkDataCache // shared cache
-	reader               reader.Reader         // database file reader
 	numResultChunks      int                   // numResultChunks value from meta row
 }
 
@@ -101,13 +100,7 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
-	// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
-	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
-	if err != nil {
-		return nil, err
-	}
-
+func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
 	_, _, numResultChunks, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, err

@@ -20,7 +20,7 @@ func TestHover(t *testing.T) {
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientHover(t, mockBundleClient, "main.go", 10, 50, "text", testRange1, true)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := testAPI(mockDB, mockBundleManagerClient)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting hover text: %s", err)
@@ -42,7 +42,7 @@ func TestHoverUnknownDump(t *testing.T) {
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := testAPI(mockDB, mockBundleManagerClient)
 	if _, _, _, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting hover text. want=%q have=%q", ErrMissingDump, err)
 	}
@@ -68,7 +68,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	}, 15)
 	setMockBundleClientHover(t, mockBundleClient2, "foo.go", 10, 50, "text", testRange4, true)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := testAPI(mockDB, mockBundleManagerClient)
 	text, r, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting hover text: %s", err)
@@ -98,7 +98,7 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	setMockBundleClientPackageInformation(t, mockBundleClient, "main.go", "1234", testPackageInformation)
 	setMockDBGetPackage(t, mockDB, "gomod", "leftpad", "0.1.0", db.Dump{}, false)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := testAPI(mockDB, mockBundleManagerClient)
 	_, _, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting hover text: %s", err)

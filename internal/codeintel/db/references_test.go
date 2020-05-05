@@ -15,7 +15,7 @@ func TestSameRepoPager(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
@@ -65,7 +65,7 @@ func TestSameRepoPagerEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	totalCount, pager, err := db.SameRepoPager(context.Background(), 50, makeCommit(1), "gomod", "leftpad", "0.1.0", 5)
 	if err != nil {
@@ -83,7 +83,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "sub1/"},
@@ -145,7 +145,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "sub1/"}, // not visible
@@ -198,7 +198,7 @@ func TestPackageReferencePager(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), VisibleAtTip: true},
@@ -244,7 +244,7 @@ func TestPackageReferencePagerEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	totalCount, pager, err := db.PackageReferencePager(context.Background(), "gomod", "leftpad", "0.1.0", 50, 5)
 	if err != nil {
@@ -262,7 +262,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), VisibleAtTip: true, RepositoryID: 51},
@@ -329,7 +329,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
@@ -363,7 +363,7 @@ func TestUpdatePackageReferencesEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if err := db.UpdatePackageReferences(context.Background(), nil); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
@@ -383,7 +383,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})

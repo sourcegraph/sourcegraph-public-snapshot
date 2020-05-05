@@ -12,6 +12,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -178,7 +180,18 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
 
 	openDatabase := func() (database.Database, error) {
-		return database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+		// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
+		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
+		if err != nil {
+			return nil, err
+		}
+
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		if err != nil {
+			return nil, err
+		}
+
+		return s.wrapDatabase(database), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -195,4 +208,12 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
+	return reader.NewObserved(innerReader, s.observationContext, "precise_code_intel_bundle_manager")
+}
+
+func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
+	return database.NewObserved(innerDatabase, s.observationContext)
 }

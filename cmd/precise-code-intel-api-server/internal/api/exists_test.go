@@ -36,7 +36,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	setMockBundleClientExists(t, mockBundleClient3, "main.go", true)
 	setMockBundleClientExists(t, mockBundleClient4, "s1/main.go", false)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := testAPI(mockDB, mockBundleManagerClient)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest database: %s", err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -18,6 +19,7 @@ type Server struct {
 	databaseCache        *database.DatabaseCache
 	documentDataCache    *database.DocumentDataCache
 	resultChunkDataCache *database.ResultChunkDataCache
+	observationContext   *observation.Context
 }
 
 type ServerOpts struct {
@@ -27,6 +29,7 @@ type ServerOpts struct {
 	DatabaseCacheSize        int64
 	DocumentDataCacheSize    int64
 	ResultChunkDataCacheSize int64
+	ObservationContext       *observation.Context
 }
 
 func New(opts ServerOpts) (*Server, error) {
@@ -52,6 +55,7 @@ func New(opts ServerOpts) (*Server, error) {
 		databaseCache:        databaseCache,
 		documentDataCache:    documentDataCache,
 		resultChunkDataCache: resultChunkDataCache,
+		observationContext:   opts.ObservationContext,
 	}, nil
 }
 
