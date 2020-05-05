@@ -266,6 +266,10 @@ github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 h1:gclg6gY70GLy
 github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31/go.mod h1:Ogl1Tioa0aV7gstGFO7KhffUsb9M4ydbEbbxpcEDc24=
 github.com/go-critic/go-critic v0.4.1 h1:4DTQfT1wWwLg/hzxwD9bkdhDQrdJtxe6DUTadPlrIeE=
 github.com/go-critic/go-critic v0.4.1/go.mod h1:7/14rZGnZbY6E38VEGk2kVhoq6itzc1E68facVDK23g=
+github.com/go-git/gcfg v1.5.0/go.mod h1:5m20vg6GwYabIxaOonVkTdrILxQMpEShl1xiMF4ua+E=
+github.com/go-git/go-billy/v5 v5.0.0/go.mod h1:pmpqyWchKfYfrkb/UVH4otLvyi/5gJlGI4Hb3ZqZ3W0=
+github.com/go-git/go-git-fixtures/v4 v4.0.1/go.mod h1:m+ICp2rF3jDhFgEZ/8yziagdT1C+ZpZcrJjappBCDSw=
+github.com/go-git/go-git/v5 v5.0.0/go.mod h1:oYD8y9kWsGINPFJoLdaScGCN6dlKg23blmClfZwtUVA=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
@@ -889,6 +893,16 @@ github.com/sourcegraph/zoekt v0.0.0-20200429072728-1a9304f241c9 h1:6wfwD6/CE5vze
 github.com/sourcegraph/zoekt v0.0.0-20200429072728-1a9304f241c9/go.mod h1:myt55/e315SlJX+bvPR+Y1wnOijZ+tcoG0gkjexi9F4=
 github.com/sourcegraph/zoekt v0.0.0-20200504095446-118acdf7aa8f h1:5SvCsZHC8K7apQ+RsWimTds2aDCuEl4/Mwr3QHC/k4c=
 github.com/sourcegraph/zoekt v0.0.0-20200504095446-118acdf7aa8f/go.mod h1:myt55/e315SlJX+bvPR+Y1wnOijZ+tcoG0gkjexi9F4=
+github.com/sourcegraph/zoekt v0.0.0-20200505133012-65afa9fca706 h1:8hq3lLF53h+3Gu+BeqBhl2Y6/rsXx+X/PVc0dSFTofE=
+github.com/sourcegraph/zoekt v0.0.0-20200505133012-65afa9fca706/go.mod h1:Ujpwzx4P55N/bXA5Yei85SMhkf/86bOvbmFLvGkYP9Y=
+github.com/sourcegraph/zoekt v0.0.0-20200505135300-5a1aed890fc2 h1:bH3wpciZgiIcR/QX7lgsXnivcHsWTzPDiC0byMXAehQ=
+github.com/sourcegraph/zoekt v0.0.0-20200505135300-5a1aed890fc2/go.mod h1:Ujpwzx4P55N/bXA5Yei85SMhkf/86bOvbmFLvGkYP9Y=
+github.com/sourcegraph/zoekt v0.0.0-20200505140534-ef80237d5a29 h1:adSklELQdqa9QaYxJ53PUpkiuG48+O0fgxFYzNvt/uA=
+github.com/sourcegraph/zoekt v0.0.0-20200505140534-ef80237d5a29/go.mod h1:Ujpwzx4P55N/bXA5Yei85SMhkf/86bOvbmFLvGkYP9Y=
+github.com/sourcegraph/zoekt v0.0.0-20200505140849-75b1c46a56f9 h1:SckEKQLCrxd/5G/OOjroBQEhr/HuhaJflSG2U/59F6g=
+github.com/sourcegraph/zoekt v0.0.0-20200505140849-75b1c46a56f9/go.mod h1:Ujpwzx4P55N/bXA5Yei85SMhkf/86bOvbmFLvGkYP9Y=
+github.com/sourcegraph/zoekt v0.0.0-20200505143549-65235a0cdcf1 h1:B617BWi5fKeuXTsp/jJxwSraBVkWjzcocLul8J6bFqw=
+github.com/sourcegraph/zoekt v0.0.0-20200505143549-65235a0cdcf1/go.mod h1:Ujpwzx4P55N/bXA5Yei85SMhkf/86bOvbmFLvGkYP9Y=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
