@@ -11,7 +11,7 @@ import (
 
 // changesetHistory is a collection of a changesets states (open/closed/merged
 // state and review state) over time.
-type changesetHistory []*changesetStatesAtTime
+type changesetHistory []changesetStatesAtTime
 
 // StatesAtTime returns the changeset's states valid at the given time. If the
 // changeset didn't exist yet, the second parameter is false.
