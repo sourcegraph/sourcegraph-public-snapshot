@@ -625,6 +625,14 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 			return "", errors.New("activity user is blank")
 		}
 		return username, nil
+
+	case *bitbucketserver.ParticipantStatusEvent:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -656,7 +664,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		return s, nil
 
 	case ChangesetEventKindGitHubReviewDismissed,
-		ChangesetEventKindBitbucketServerUnapproved:
+		ChangesetEventKindBitbucketServerUnapproved,
+		ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -713,6 +722,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *github.CheckRun:
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
+		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.ParticipantStatusEvent:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))

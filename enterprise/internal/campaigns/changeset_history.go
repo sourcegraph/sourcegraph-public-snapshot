@@ -43,7 +43,7 @@ type changesetStatesAtTime struct {
 	reviewState cmpgn.ChangesetReviewState
 }
 
-// computeHistory calcuates the changesetHistory for the given Changeset and
+// computeHistory calculates the changesetHistory for the given Changeset and
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
 func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
@@ -101,7 +101,8 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 
 		case campaigns.ChangesetEventKindGitHubReviewed,
 			campaigns.ChangesetEventKindBitbucketServerApproved,
-			campaigns.ChangesetEventKindBitbucketServerReviewed:
+			campaigns.ChangesetEventKindBitbucketServerReviewed,
+			campaigns.ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
 
 			s, err := e.ReviewState()
 			if err != nil {
