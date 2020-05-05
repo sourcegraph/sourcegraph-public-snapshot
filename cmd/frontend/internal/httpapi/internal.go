@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -574,6 +576,35 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 
 	gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 	return nil
+}
+
+// gitServiceHandler are handlers which proxy git clone requests to the
+// gitserver for the repo.
+type gitServiceHandler struct {
+	Gitserver interface {
+		AddrForRepo(context.Context, api.RepoName) string
+	}
+}
+
+func (s *gitServiceHandler) serveInfoRefs(w http.ResponseWriter, r *http.Request) {
+	s.redirectToGitServer(w, r, "/info/refs")
+}
+
+func (s *gitServiceHandler) serveGitUploadPack(w http.ResponseWriter, r *http.Request) {
+	s.redirectToGitServer(w, r, "/git-upload-pack")
+}
+
+func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) {
+	repo := mux.Vars(r)["RepoName"]
+
+	u := &url.URL{
+		Scheme:   "http",
+		Host:     s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo)),
+		Path:     path.Join("/git", repo, gitPath),
+		RawQuery: r.URL.RawQuery,
+	}
+
+	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { isSettingsValid } from '../../../settings/settings'

@@ -2,9 +2,11 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignStatus } from './CampaignStatus'
 import { createRenderer } from 'react-test-renderer/shallow'
+import { createMemoryHistory } from 'history'
 
 const PROPS = {
     afterRetry: () => undefined,
+    history: createMemoryHistory(),
 }
 
 const CAMPAIGN: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {

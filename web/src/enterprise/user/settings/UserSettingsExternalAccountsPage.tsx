@@ -15,11 +15,6 @@ interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
 }
 
-class FilteredExternalAccountConnection extends FilteredConnection<
-    GQL.IExternalAccount,
-    Pick<ExternalAccountNodeProps, 'onDidUpdate' | 'showUser'>
-> {}
-
 /**
  * Displays the external accounts (from authentication providers) associated with the user's account.
  */
@@ -36,16 +31,17 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ExternalAccountNodeProps, 'onDidUpdate' | 'showUser'> = {
+        const nodeProps: Omit<ExternalAccountNodeProps, 'node'> = {
             onDidUpdate: this.onDidUpdateExternalAccount,
             showUser: false,
+            history: this.props.history,
         }
 
         return (
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
                 <h2>External accounts</h2>
-                <FilteredExternalAccountConnection
+                <FilteredConnection<GQL.IExternalAccount, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external account"
                     pluralNoun="external accounts"

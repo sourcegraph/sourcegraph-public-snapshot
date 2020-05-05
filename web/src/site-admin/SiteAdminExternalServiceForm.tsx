@@ -29,11 +29,11 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && <ErrorAlert error={this.props.error} />}
+                {this.props.error && <ErrorAlert error={this.props.error} history={this.props.history} />}
                 {this.props.warning && (
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <ErrorMessage error={this.props.warning} />
+                        <ErrorMessage error={this.props.warning} history={this.props.history} />
                     </div>
                 )}
                 {this.props.hideDisplayNameField || (

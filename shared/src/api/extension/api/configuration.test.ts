@@ -1,6 +1,6 @@
 import * as sinon from 'sinon'
 import { ExtConfiguration } from './configuration'
-import { Remote, proxyMarker, createEndpoint, releaseProxy } from '@sourcegraph/comlink'
+import { Remote, proxyMarker, createEndpoint, releaseProxy } from 'comlink'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
 import { noop } from 'lodash'
 import { addProxyMethods } from '../../util'

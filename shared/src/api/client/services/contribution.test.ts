@@ -13,7 +13,7 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './contribution'
-import { createTestEditorService } from './editorService.test'
+import { createTestViewerService } from './viewerService.test'
 import { ModelService } from './modelService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
@@ -97,7 +97,7 @@ describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
             new ContributionRegistry(
-                createTestEditorService({}),
+                createTestViewerService({}),
                 TEST_MODEL_SERVICE,
                 { data: of(EMPTY_SETTINGS_CASCADE) },
                 of({})
@@ -108,7 +108,7 @@ describe('ContributionRegistry', () => {
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
-            createTestEditorService({}),
+            createTestViewerService({}),
             TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
@@ -131,7 +131,7 @@ describe('ContributionRegistry', () => {
 
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
-            createTestEditorService({}),
+            createTestViewerService({}),
             TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
@@ -163,7 +163,7 @@ describe('ContributionRegistry', () => {
                     }
                 })(
                     {
-                        activeEditorUpdates: of(undefined),
+                        activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
                     { data: of(EMPTY_SETTINGS_CASCADE) },
@@ -196,7 +196,7 @@ describe('ContributionRegistry', () => {
                     }
                 })(
                     {
-                        activeEditorUpdates: of(undefined),
+                        activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
                     { data: of(EMPTY_SETTINGS_CASCADE) },
@@ -228,7 +228,7 @@ describe('ContributionRegistry', () => {
                     constructor() {
                         super(
                             {
-                                activeEditorUpdates: of(undefined),
+                                activeViewerUpdates: of(undefined),
                             },
                             TEST_MODEL_SERVICE,
                             {
@@ -270,7 +270,7 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            createTestEditorService({}),
+                            createTestViewerService({}),
                             TEST_MODEL_SERVICE,
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})

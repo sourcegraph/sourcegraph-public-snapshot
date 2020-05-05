@@ -7,9 +7,9 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductPlanPrice } from './ProductPlanPrice'
-import { ProductPlanTiered } from './ProductPlanTiered'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -20,6 +20,7 @@ interface Props {
 
     disabled?: boolean
     className?: string
+    history: H.History
 
     /** For mocking in tests only. */
     _queryProductPlans?: typeof queryProductPlans
@@ -35,8 +36,11 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     onChange,
     disabled,
     className = '',
+    history,
     _queryProductPlans = queryProductPlans,
 }) => {
+    const noPlanSelected = value === null // don't recompute observable below on every value change
+
     /**
      * The list of all possible product plans, loading, or an error.
      */
@@ -47,14 +51,14 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                     _queryProductPlans().pipe(
                         tap(plans => {
                             // If no plan is selected, select the 1st plan when the plans have loaded.
-                            if (plans.length > 0 && value === null) {
+                            if (plans.length > 0 && noPlanSelected) {
                                 onChange(plans[0].billingPlanID)
                             }
                         }),
                         catchError(err => [asError(err)]),
                         startWith(LOADING)
                     ),
-                [_queryProductPlans, onChange, value]
+                [_queryProductPlans, onChange, noPlanSelected]
             )
         ) || LOADING
 
@@ -72,7 +76,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
             {plans === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(plans) ? (
-                <ErrorAlert error={plans.message} />
+                <ErrorAlert error={plans.message} history={history} />
             ) : (
                 <>
                     <div className="list-group">
@@ -93,15 +97,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                                     <div>
                                         <strong>{plan.name}</strong>
                                         <div className="text-muted">
-                                            {plan.planTiers.length > 0 ? (
-                                                <ProductPlanTiered
-                                                    planTiers={plan.planTiers}
-                                                    tierMode={plan.tiersMode}
-                                                    minQuantity={plan.minQuantity}
-                                                />
-                                            ) : (
-                                                <ProductPlanPrice pricePerUserPerYear={plan.pricePerUserPerYear} />
-                                            )}
+                                            <ProductPlanPrice plan={plan} />
                                         </div>
                                     </div>
                                 </label>
@@ -128,6 +124,7 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
                         name
                         pricePerUserPerYear
                         minQuantity
+                        maxQuantity
                         tiersMode
                         planTiers {
                             unitAmount

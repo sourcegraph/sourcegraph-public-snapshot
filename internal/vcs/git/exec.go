@@ -58,6 +58,10 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 // ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
 // to its stdout.
 func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.ReadCloser, error) {
+	if Mocks.ExecReader != nil {
+		return Mocks.ExecReader(args)
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()

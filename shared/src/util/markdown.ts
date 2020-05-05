@@ -4,6 +4,7 @@ import { without } from 'lodash'
 // eslint-disable-next-line no-restricted-imports
 import marked from 'marked'
 import sanitize from 'sanitize-html'
+import { Overwrite } from 'utility-types'
 
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
@@ -38,6 +39,8 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
     }
 }
 
+const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
+
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
@@ -62,24 +65,48 @@ export const renderMarkdown = (
 ): string => {
     const rendered = marked(markdown, {
         gfm: true,
-        breaks: true,
+        breaks: false,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
 
-    let opt: sanitize.IDefaults
+    let opt: Overwrite<sanitize.IOptions, sanitize.IDefaults>
     if (options.plainText) {
         opt = { allowedAttributes: {}, allowedSchemes: [], allowedSchemesByTag: {}, allowedTags: [], selfClosing: [] }
     } else {
         opt = {
             ...sanitize.defaults,
+            // Ensure <object> must have type attribute set
+            exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
 
             // Allow highligh.js styles, e.g.
             // <span class="hljs-keyword">
             // <code class="language-javascript">
-            allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
+            allowedTags: [
+                ...without(sanitize.defaults.allowedTags, 'iframe'),
+                'h1',
+                'h2',
+                'span',
+                'img',
+                'object',
+                'svg',
+                'rect',
+                'circle',
+                'path',
+                'title',
+            ],
             allowedAttributes: {
                 ...sanitize.defaults.allowedAttributes,
+                a: [
+                    ...sanitize.defaults.allowedAttributes.a,
+                    'title',
+                    'data-tooltip', // TODO support fancy tooltips through native titles
+                ],
+                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
+                svg: ['width', 'height', 'viewbox', 'version'],
+                rect: ['x', 'y', 'width', 'height', ...svgPresentationAttributes],
+                path: ['d', ...svgPresentationAttributes],
+                circle: ['cx', 'cy', ...svgPresentationAttributes],
                 span: ['class'],
                 code: ['class'],
                 h1: ['id'],
@@ -91,7 +118,7 @@ export const renderMarkdown = (
             },
         }
         if (options.allowDataUriLinksAndDownloads) {
-            opt.allowedAttributes.a = [...sanitize.defaults.allowedAttributes.a, 'download']
+            opt.allowedAttributes.a = [...opt.allowedAttributes.a, 'download']
             opt.allowedSchemesByTag = {
                 ...opt.allowedSchemesByTag,
                 a: [...(opt.allowedSchemesByTag.a || opt.allowedSchemes), 'data'],

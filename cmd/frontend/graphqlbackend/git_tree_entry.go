@@ -23,10 +23,8 @@ import (
 
 var metricLabels = []string{"origin"}
 var codeIntelRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "lsif",
-	Name:      "requests",
-	Help:      "Counts LSIF requests.",
+	Name: "src_lsif_requests",
+	Help: "Counts LSIF requests.",
 }, metricLabels)
 
 func init() {

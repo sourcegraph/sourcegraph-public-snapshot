@@ -6,19 +6,21 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import * as H from 'history'
 
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string }> = ({
+export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string; history: H.History }> = ({
     alert,
+    history,
     className: commonClassName,
 }) => {
     const Icon = alertIconForType(alert.type)
     const content = (
         <>
             <Icon className="icon-inline mr-2 flex-shrink-0" />
-            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
+            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} history={history} />
         </>
     )
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`

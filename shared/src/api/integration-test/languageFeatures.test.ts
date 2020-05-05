@@ -151,7 +151,7 @@ function testLocationProvider<P>({
             await extensionAPI.internal.sync()
 
             services.model.addModel({ uri: 'file:///f2', languageId: 'l1', text: 't1' })
-            services.editor.addEditor({
+            services.viewer.addViewer({
                 type: 'CodeEditor',
                 resource: 'file:///f2',
                 selections: [],

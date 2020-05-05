@@ -28,6 +28,7 @@ import {
 import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 import { ErrorAlert } from '../../../../components/alerts'
 import { useEventObservable, useObservable } from '../../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -35,6 +36,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
+    history: H.History
 }
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
@@ -135,7 +137,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
             {productSubscription === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+                <ErrorAlert className="my-2" error={productSubscription} history={history} />
             ) : (
                 <>
                     <h2>Product subscription {productSubscription.name}</h2>
@@ -148,7 +150,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         >
                             Archive
                         </button>
-                        {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
+                        {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} history={history} />}
                     </div>
                     <div className="card mt-3">
                         <div className="card-header">Details</div>
@@ -216,6 +218,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
                                     onGenerate={onLicenseUpdate}
+                                    history={history}
                                 />
                             </div>
                         )}

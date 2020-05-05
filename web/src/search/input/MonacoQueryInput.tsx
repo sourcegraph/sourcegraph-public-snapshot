@@ -7,7 +7,7 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { toArray, map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
@@ -53,9 +53,7 @@ function addSouregraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, (query: string) =>
-        fetchSuggestions(query).pipe(toArray())
-    )
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(

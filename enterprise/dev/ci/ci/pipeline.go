@@ -79,7 +79,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addSharedTests,
 			wait,
-			addCodeCov,
 			addBrowserExtensionReleaseSteps,
 		}
 
@@ -95,8 +94,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
-			wait,
-			addCodeCov,
 		}
 
 	default:
@@ -120,7 +117,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addDockerfileLint, // ~0.2m
 			addDockerImages(c, false),
 			wait,
-			addCodeCov,
 			addDockerImages(c, true),
 		}
 	}

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 import { Link } from './Link'
 import classNames from 'classnames'
@@ -8,12 +8,9 @@ import { noop } from 'lodash'
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
-interface Props {
+interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     /** The link destination URL. */
     to?: H.LocationDescriptor
-
-    /** The link target. */
-    target?: '_self' | '_blank' | string
 
     /**
      * Called when the user clicks or presses enter on this element.
@@ -50,6 +47,7 @@ export const LinkOrButton: React.FunctionComponent<Props> = ({
     className = 'nav-link',
     to,
     target,
+    rel,
     disabled,
     pressed,
     'data-tooltip': tooltip,
@@ -100,7 +98,7 @@ export const LinkOrButton: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <Link {...commonProps} to={to} target={target}>
+        <Link {...commonProps} to={to} target={target} rel={rel}>
             {children}
         </Link>
     )

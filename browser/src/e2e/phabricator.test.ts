@@ -16,7 +16,7 @@ const PHABRICATOR_PASSWORD = process.env.PHABRICATOR_PASSWORD || 'sourcegraph'
 const TEST_NATIVE_INTEGRATION = Boolean(
     process.env.TEST_NATIVE_INTEGRATION && JSON.parse(process.env.TEST_NATIVE_INTEGRATION)
 )
-const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
+const { gitHubToken, sourcegraphBaseUrl, ...restConfig } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
 /**
  * Logs into Phabricator.
@@ -36,14 +36,19 @@ async function phabricatorLogin({ page }: Driver): Promise<void> {
  * Waits for the jrpc repository to finish cloning.
  */
 async function waitUntilRepositoryCloned(driver: Driver): Promise<void> {
-    await retry(async () => {
-        await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
-        expect(
-            await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.phui-status-item-target')].map(element => element.textContent!.trim())
-            )
-        ).toContain('Fully Imported')
-    })
+    await retry(
+        async () => {
+            await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
+            expect(
+                await driver.page.evaluate(() =>
+                    [...document.querySelectorAll('.phui-status-item-target')].map(element =>
+                        element.textContent!.trim()
+                    )
+                )
+            ).toContain('Fully Imported')
+        },
+        { retries: 20 }
+    )
 }
 
 /**
@@ -129,7 +134,9 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  * Runs initial setup for the Phabricator instance.
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
+    if (restConfig.testUserPassword) {
+        await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+    }
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.GITHUB,

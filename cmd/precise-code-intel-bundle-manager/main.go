@@ -29,7 +29,7 @@ func main() {
 		resultChunkDataCacheSize = mustParseInt(rawResultChunkDataCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
 		desiredPercentFree       = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
 		janitorInterval          = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUnconvertedUploadAge  = mustParseInterval(rawMaxUnconvertedUploadAge, "PRECISE_CODE_INTEL_MAX_UNCONVERTED_UPLOAD_AGE")
+		maxUploadAge             = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
 	)
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
@@ -54,14 +54,14 @@ func main() {
 	}
 
 	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
-		BundleDir:               bundleDir,
-		DesiredPercentFree:      desiredPercentFree,
-		JanitorInterval:         janitorInterval,
-		MaxUnconvertedUploadAge: maxUnconvertedUploadAge,
+		BundleDir:          bundleDir,
+		DesiredPercentFree: desiredPercentFree,
+		JanitorInterval:    janitorInterval,
+		MaxUploadAge:       maxUploadAge,
 	})
 
 	go serverInst.Start()
-	go janitorInst.Start()
+	go janitorInst.Run()
 	go debugserver.Start()
 	waitForSignal()
 }

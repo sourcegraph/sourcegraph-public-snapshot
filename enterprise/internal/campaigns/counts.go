@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -49,31 +48,12 @@ func (cc *ChangesetCounts) String() string {
 	)
 }
 
-// Event is a single event that happened in the lifetime of a single Changeset,
-// for example a review or a merge.
-type Event interface {
-	Timestamp() time.Time
-	Type() campaigns.ChangesetEventKind
-	Changeset() int64
-}
-
-// Events is a collection of Events that can be sorted by their Timestamps
-type Events []Event
-
-func (es Events) Len() int      { return len(es) }
-func (es Events) Swap(i, j int) { es[i], es[j] = es[j], es[i] }
-
-// Less sorts events by their timestamps
-func (es Events) Less(i, j int) bool {
-	return es[i].Timestamp().Before(es[j].Timestamp())
-}
-
 // CalcCounts calculates ChangesetCounts for the given Changesets and their
-// Events in the timeframe specified by the start and end parameters. The
-// number of ChangesetCounts returned is the number of 1 day intervals between
-// start and end, with each ChangesetCounts representing a point in time at the
-// boundary of each 24h interval.
-func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...Event) ([]*ChangesetCounts, error) {
+// ChangesetEvents in the timeframe specified by the start and end parameters.
+// The number of ChangesetCounts returned is the number of 1 day intervals
+// between start and end, with each ChangesetCounts representing a point in
+// time at the boundary of each 24h interval.
+func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaigns.ChangesetEvent) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
 	for i, t := range ts {
@@ -81,18 +61,18 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...Event) ([
 	}
 
 	// Sort all events once by their timestamps
-	events := Events(es)
+	events := ChangesetEvents(es)
 	sort.Sort(events)
 
 	// Grouping Events by their Changeset ID
-	byChangesetID := make(map[int64]Events)
+	byChangesetID := make(map[int64]ChangesetEvents)
 	for _, e := range events {
 		id := e.Changeset()
 		byChangesetID[id] = append(byChangesetID[id], e)
 	}
 
 	// Map Events to their Changeset
-	byChangeset := make(map[*campaigns.Changeset]Events)
+	byChangeset := make(map[*campaigns.Changeset]ChangesetEvents)
 	for _, c := range cs {
 		byChangeset[c] = byChangesetID[c.ID]
 	}
@@ -134,7 +114,7 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...Event) ([
 	return counts, nil
 }
 
-func computeCounts(c *ChangesetCounts, csEvents Events) error {
+func computeCounts(c *ChangesetCounts, csEvents ChangesetEvents) error {
 	var (
 		// Since "Merged" and "Closed" are exclusive events and cancel each others
 		// effects on ChangesetCounts out, we need to keep track of when a
@@ -207,7 +187,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			campaigns.ChangesetEventKindBitbucketServerApproved,
 			campaigns.ChangesetEventKindBitbucketServerReviewed:
 
-			s, err := reviewState(e)
+			s, err := e.ReviewState()
 			if err != nil {
 				return err
 			}
@@ -219,7 +199,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				continue
 			}
 
-			author, err := reviewAuthor(e)
+			author, err := e.ReviewAuthor()
 			if err != nil {
 				return err
 			}
@@ -256,7 +236,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			// ChangesetEventKindGitHubReviewed event when a review has been
 			// dismissed.
 
-			author, err := reviewAuthor(e)
+			author, err := e.ReviewAuthor()
 			if err != nil {
 				return err
 			}
@@ -317,22 +297,4 @@ func generateTimestamps(start, end time.Time) []time.Time {
 	}
 
 	return ts
-}
-
-func reviewState(e Event) (campaigns.ChangesetReviewState, error) {
-	changesetEvent, ok := e.(*campaigns.ChangesetEvent)
-	if !ok {
-		return "", errors.New("Reviewed event not ChangesetEvent")
-	}
-
-	return changesetEvent.ReviewState()
-}
-
-func reviewAuthor(e Event) (string, error) {
-	changesetEvent, ok := e.(*campaigns.ChangesetEvent)
-	if !ok {
-		return "", errors.New("Reviewed event not ChangesetEvent")
-	}
-
-	return changesetEvent.ReviewAuthor()
 }

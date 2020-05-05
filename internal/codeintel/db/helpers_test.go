@@ -7,21 +7,22 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-type PackageModel struct {
-	Scheme  string
-	Name    string
-	Version string
-	DumpID  int
+// makeCommit formats an integer as a 40-character git commit hash.
+func makeCommit(i int) string {
+	return fmt.Sprintf("%040d", i)
 }
 
-type ReferenceModel struct {
-	Scheme  string
-	Name    string
-	Version string
-	DumpID  int
-	Filter  []byte
+// getDumpVisibilities returns a map from dump identifiers to its visibility. Fails the test on error.
+func getDumpVisibilities(t *testing.T, db *sql.DB) map[int]bool {
+	visibilities, err := scanVisibilities(db.Query("SELECT id, visible_at_tip FROM lsif_dumps"))
+	if err != nil {
+		t.Fatalf("unexpected error while scanning dump visibility: %s", err)
+	}
+
+	return visibilities
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
@@ -78,87 +79,9 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 	}
 }
 
-// insertPackages populates the lsif_packages table with the given package models.
-func insertPackages(t *testing.T, db *sql.DB, packages ...PackageModel) {
-	for _, pkg := range packages {
-		query := sqlf.Sprintf(`
-			INSERT INTO lsif_packages (
-				scheme,
-				name,
-				version,
-				dump_id
-			) VALUES (%s, %s, %s, %s)
-		`,
-			pkg.Scheme,
-			pkg.Name,
-			pkg.Version,
-			pkg.DumpID,
-		)
-
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting package: %s", err)
-		}
+// insertPackageReferences populates the lsif_references table with the given package references.
+func insertPackageReferences(t *testing.T, db *dbImpl, packageReferences []types.PackageReference) {
+	if err := db.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
+		t.Fatalf("unexpected error updating package references: %s", err)
 	}
-}
-
-// insertReferences populates the lsif_references table with the given reference models.
-func insertReferences(t *testing.T, db *sql.DB, references ...ReferenceModel) {
-	for _, reference := range references {
-		query := sqlf.Sprintf(`
-			INSERT INTO lsif_references (
-				scheme,
-				name,
-				version,
-				dump_id,
-				filter
-			) VALUES (%s, %s, %s, %s, %s)
-		`,
-			reference.Scheme,
-			reference.Name,
-			reference.Version,
-			reference.DumpID,
-			reference.Filter,
-		)
-
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting reference: %s", err)
-		}
-	}
-}
-
-// insertCommits populates the lsif_commits table with the given commit-parent map.
-func insertCommits(t *testing.T, db *sql.DB, commits map[string][]string) {
-	var values []*sqlf.Query
-	for k, vs := range commits {
-		if len(vs) == 0 {
-			values = append(values, sqlf.Sprintf("(%d, %s, %v)", 50, k, nil))
-		}
-
-		for _, v := range vs {
-			values = append(values, sqlf.Sprintf("(%d, %s, %s)", 50, k, v))
-		}
-	}
-
-	query := sqlf.Sprintf(
-		"INSERT INTO lsif_commits (repository_id, commit, parent_commit) VALUES %s",
-		sqlf.Join(values, ", "),
-	)
-
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while inserting commits: %s", err)
-	}
-}
-
-// getDumpVisibilities returns a map from dump identifiers to its visibility. Fails the test on error.
-func getDumpVisibilities(t *testing.T, db *sql.DB) map[int]bool {
-	visibilities, err := scanVisibilities(db.Query("SELECT id, visible_at_tip FROM lsif_dumps"))
-	if err != nil {
-		t.Fatalf("unexpected error while scanning dump visibility: %s", err)
-	}
-
-	return visibilities
-}
-
-func makeCommit(i int) string {
-	return fmt.Sprintf("%040d", i)
 }

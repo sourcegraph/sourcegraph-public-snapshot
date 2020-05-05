@@ -6,6 +6,8 @@ import {
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
+    isExternalLink,
+    toAbsoluteBlobURL,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
 
@@ -14,7 +16,7 @@ import { SearchPatternType } from '../graphql/schema'
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
-function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
+function assertDeepStrictEqual(actual: any, expected: any): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
     expect(actual).toEqual(expected)
@@ -253,6 +255,34 @@ describe('util/url', () => {
             )
         })
     })
+
+    describe('toAbsoluteBlobURL', () => {
+        const target = {
+            repoName: 'github.com/gorilla/mux',
+            rev: '',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            filePath: 'mux.go',
+        }
+        const sourcegraphUrl = 'https://sourcegraph.com'
+
+        test('default sourcegraph URL, default context', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, target)).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, specified rev', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, rev: 'branch' })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, with position', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, position: { line: 1, character: 1 } })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go#L1:1'
+            )
+        })
+    })
 })
 
 describe('withWorkspaceRootInputRevision', () => {
@@ -434,5 +464,25 @@ describe('lprToSelectionsZeroIndexed', () => {
                 },
             ]
         )
+    })
+})
+
+describe('isExternalLink', () => {
+    it('returns false for the same site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://github.com/there')).toBe(false)
+    })
+    it('returns false for relative links', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('/there')).toBe(false)
+    })
+    it('returns false for invalid URLs', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+
+        expect(isExternalLink(' ')).toBe(false)
+    })
+    it('returns true for a different site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
     })
 })

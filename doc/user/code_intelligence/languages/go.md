@@ -7,7 +7,7 @@ This guide is meant to provide specific instructions to get you producing index 
 1. Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
 
 1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
-   ```console
+   ```
    curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
    chmod +x /usr/local/bin/src
    ```
@@ -15,12 +15,12 @@ This guide is meant to provide specific instructions to get you producing index 
    - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
 
 1. `cd` into your Go project's root (where the go.mod file lives, if you have one) and run:
-```console
-lsif-go # generates a file named dump.lsif
-```
+   ```
+   lsif-go # generates a file named dump.lsif
+   ```
 
 1. Upload the data to a Sourcegraph instance with
-   ```console
+   ```
    # for private instances
    src -endpoint=<your sourcegraph endpoint> lsif upload
    # for public instances

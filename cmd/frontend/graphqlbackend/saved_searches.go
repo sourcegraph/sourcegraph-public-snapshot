@@ -84,21 +84,24 @@ func (r SavedSearchResolver) Description() string { return r.s.Description }
 
 func (r SavedSearchResolver) Query() string { return r.s.Query }
 
-func (r SavedSearchResolver) UserID() *graphql.ID {
-	if r.s.UserID == nil {
-		return nil
+func (r SavedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+	if r.s.OrgID != nil {
+		n, err := NamespaceByID(ctx, marshalOrgID(*r.s.OrgID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
 	}
-	userID := MarshalUserID(*r.s.UserID)
-	return &userID
+	if r.s.UserID != nil {
+		n, err := NamespaceByID(ctx, MarshalUserID(*r.s.UserID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+	return nil, nil
 }
 
-func (r SavedSearchResolver) OrgID() *graphql.ID {
-	if r.s.OrgID == nil {
-		return nil
-	}
-	orgID := marshalOrgID(*r.s.OrgID)
-	return &orgID
-}
 func (r SavedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
 func toSavedSearchResolver(entry types.SavedSearch) *SavedSearchResolver {

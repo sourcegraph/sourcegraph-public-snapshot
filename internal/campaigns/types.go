@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -440,6 +439,19 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Metadata = c
 					events = append(events, &ev)
 				}
+
+			case *github.ReviewRequestedEvent:
+				// If the reviewer of a ReviewRequestedEvent has been deleted,
+				// the fields are blank and we cannot match the event to an
+				// entry in the database and/or reliably use it, so we drop it.
+				if e.ReviewerDeleted() {
+					continue
+				}
+				ev.Key = e.Key()
+				ev.Kind = ChangesetEventKindFor(e)
+				ev.Metadata = e
+				events = append(events, &ev)
+
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)

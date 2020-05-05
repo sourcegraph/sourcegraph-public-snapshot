@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/database"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -58,29 +59,29 @@ func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		return db.Exists(getQuery(r, "path"))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		return db.Exists(ctx, getQuery(r, "path"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		return db.Definitions(getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		return db.Definitions(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/references
 func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		return db.References(getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		return db.References(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/hover
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		text, hoverRange, exists, err := db.Hover(getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		text, hoverRange, exists, err := db.Hover(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 		if err != nil || !exists {
 			return nil, err
 		}
@@ -91,14 +92,14 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/monikersByPosition
 func (s *Server) handleMonikersByPosition(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		return db.MonikersByPosition(getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		return db.MonikersByPosition(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/monikerResults
 func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		var tableName string
 		switch getQuery(r, "modelType") {
 		case "definition":
@@ -109,12 +110,23 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			return nil, errors.New("illegal tableName supplied")
 		}
 
+		skip := getQueryInt(r, "skip")
+		if skip < 0 {
+			return nil, errors.New("illegal skip supplied")
+		}
+
+		take := getQueryIntDefault(r, "take", DefaultMonikerResultPageSize)
+		if take <= 0 {
+			return nil, errors.New("illegal take supplied")
+		}
+
 		locations, count, err := db.MonikerResults(
+			ctx,
 			tableName,
 			getQuery(r, "scheme"),
 			getQuery(r, "identifier"),
-			getQueryInt(r, "skip"),
-			getQueryIntDefault(r, "take", DefaultMonikerResultPageSize),
+			skip,
+			take,
 		)
 		if err != nil {
 			return nil, err
@@ -126,8 +138,12 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/packageInformation
 func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(db *database.Database) (interface{}, error) {
-		packageInformationData, exists, err := db.PackageInformation(getQuery(r, "path"), types.ID(getQuery(r, "packageInformationId")))
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		packageInformationData, exists, err := db.PackageInformation(
+			ctx,
+			getQuery(r, "path"),
+			types.ID(getQuery(r, "packageInformationId")),
+		)
 		if err != nil || !exists {
 			return nil, err
 		}
@@ -157,15 +173,16 @@ func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename f
 
 // dbQuery invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer.
-func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(db *database.Database) (interface{}, error)) {
+func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ctx context.Context, db database.Database) (interface{}, error)) {
+	ctx := r.Context()
 	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
 
-	openDatabase := func() (*database.Database, error) {
-		return database.OpenDatabase(filename, s.documentDataCache, s.resultChunkDataCache)
+	openDatabase := func() (database.Database, error) {
+		return database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
 	}
 
-	cacheHandler := func(db *database.Database) error {
-		payload, err := handler(db)
+	cacheHandler := func(db database.Database) error {
+		payload, err := handler(ctx, db)
 		if err != nil {
 			return err
 		}

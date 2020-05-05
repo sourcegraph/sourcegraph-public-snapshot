@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.14.3"}} {{$previousReleaseVersion := "3.14"}} {{$currentReleaseRevspec := "v3.15.0"}} {{$currentReleaseVersion := "3.15"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.14.3"}} {{$previousReleaseVersion := "3.14"}} {{$currentReleaseRevspec := "v3.15.1"}} {{$currentReleaseVersion := "3.15"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -364,7 +364,6 @@
                         <ul class="content-nav-section-group">
                             <li><a href="/dev/campaigns_development">Developing campaigns</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
-                            <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
                             <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
                             <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
                             <li><a href="/dev/phabricator_gitolite">Print info from Gitolite</a></li>
@@ -372,11 +371,11 @@
                             <li><a href="/dev/telemetry">Telemetry</a></li>
                             <li><a href="/dev/testing">Testing</a></li>
                             <li>
-                                <a href="/dev/typescript">TypeScript development guide</a>
+                                <a href="/dev/web">Developing the web clients</a>
                                 <li class="content-nav-no-hover">
                                     <ul class="content-nav-section-subsection">
-                                        <li><a href="/dev/typescript/build">Build</a></li>
-                                        <li><a href="/dev/typescript/patterns">Patterns</a></li>
+                                        <li><a href="/dev/web/web_app">Developing the web app</a></li>
+                                        <li><a href="/dev/web/build">Build setup</a></li>
                                     </ul>
                                 </li>
                             </li>

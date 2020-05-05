@@ -27,7 +27,7 @@ import { Subject, of, merge, Observable, NEVER } from 'rxjs'
 import { renderMarkdown, highlightCodeSafe } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, distinctUntilChanged } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -43,6 +43,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
 import { CampaignBranchField } from './form/CampaignBranchField'
+import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
@@ -63,13 +64,16 @@ interface Campaign
         | 'branch'
     > {
     patchSet: Pick<GQL.IPatchSet, 'id'> | null
-    changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
-    patches: Pick<GQL.ICampaign['patches'], 'nodes' | 'totalCount'>
+    changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
+    patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
+    diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
 }
 
 interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
-    patches: Pick<GQL.IPatchSet['patches'], 'nodes' | 'totalCount'>
+    diffStat: Pick<GQL.IPatchSet['diffStat'], 'added' | 'deleted' | 'changed'>
+    patches: Pick<GQL.IPatchSet['patches'], 'totalCount'>
 }
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
@@ -128,24 +132,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // on the very first fetch, a reload of the changesets is not required
         let isFirstCampaignFetch = true
 
-        let currentCampaign: Campaign | null
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
             .pipe(
                 switchMap(() =>
                     _fetchCampaignById(campaignID).pipe(
-                        tap(campaign => {
-                            currentCampaign = campaign
-                        }),
                         // repeat fetching the campaign as long as the state is still processing
-                        repeatWhen(obs =>
-                            obs.pipe(
-                                takeWhile(
-                                    () => currentCampaign?.status?.state === GQL.BackgroundProcessState.PROCESSING
-                                ),
-                                delay(2000)
-                            )
-                        )
+                        repeatUntil(campaign => campaign?.status?.state !== GQL.BackgroundProcessState.PROCESSING, {
+                            delay: 2000,
+                        })
                     )
                 ),
                 distinctUntilChanged((a, b) => isEqual(a, b))
@@ -206,7 +201,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onNameChange = useCallback(
         (newName: string): void => {
             if (!branchModified) {
-                setBranch(slugify(newName, { lower: true }))
+                setBranch(slugify(newName, { remove: /[*+~\\^.()'"!:@]/g, lower: true }))
             }
             setName(newName)
         },
@@ -404,9 +399,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 onDelete={onDelete}
                 formID={campaignFormID}
             />
-            {alertError && <ErrorAlert error={alertError} />}
+            {alertError && <ErrorAlert error={alertError} history={history} />}
             {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} />
+                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} history={history} />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 {['saving', 'editing'].includes(mode) && (
@@ -549,6 +544,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 <div className="card-body">
                                     <Markdown
                                         dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                                        history={history}
                                     />
                                 </div>
                             </div>
@@ -570,7 +566,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             Add a changeset to get started.
                                         </div>
                                     )}
-                                    <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                    <AddChangesetForm
+                                        campaignID={campaign.id}
+                                        onAdd={onAddChangeset}
+                                        history={history}
+                                    />
                                 </>
                             )}
                         </>

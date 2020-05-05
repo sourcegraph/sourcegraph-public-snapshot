@@ -2,15 +2,24 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
+
+var ErrIllegalLimit = errors.New("limit must be positive")
 
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories.
 func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+	if limit <= 0 {
+		return nil, Cursor{}, false, ErrIllegalLimit
+	}
+
 	rpr := &ReferencePageResolver{
 		db:                  api.db,
 		bundleManagerClient: api.bundleManagerClient,
@@ -248,11 +257,11 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		limit := s.remoteDumpLimit
 		newOffset := offset
 
-		var packageRefs []db.Reference
-		for len(packageRefs) < limit && newOffset < totalCount {
-			page, err := pager.PageFromOffset(newOffset)
+		var packageReferences []types.PackageReference
+		for len(packageReferences) < limit && newOffset < totalCount {
+			page, err := pager.PageFromOffset(ctx, newOffset)
 			if err != nil {
-				return nil, Cursor{}, false, pager.CloseTx(err)
+				return nil, Cursor{}, false, pager.Done(err)
 			}
 
 			if len(page) == 0 {
@@ -261,13 +270,13 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 				break
 			}
 
-			filtered, scanned := applyBloomFilter(page, identifier, limit-len(packageRefs))
-			packageRefs = append(packageRefs, filtered...)
+			filtered, scanned := applyBloomFilter(page, identifier, limit-len(packageReferences))
+			packageReferences = append(packageReferences, filtered...)
 			newOffset += scanned
 		}
 
 		var dumpIDs []int
-		for _, ref := range packageRefs {
+		for _, ref := range packageReferences {
 			dumpIDs = append(dumpIDs, ref.DumpID)
 		}
 
@@ -275,7 +284,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		cursor.SkipDumpsWhenBatching = newOffset
 		cursor.TotalDumpsWhenBatching = totalCount
 
-		if err := pager.CloseTx(nil); err != nil {
+		if err := pager.Done(nil); err != nil {
 			return nil, Cursor{}, false, err
 		}
 	}
@@ -332,10 +341,10 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 	return nil, Cursor{}, false, nil
 }
 
-func applyBloomFilter(refs []db.Reference, identifier string, limit int) ([]db.Reference, int) {
-	var filteredReferences []db.Reference
-	for i, ref := range refs {
-		test, err := decodeAndTestFilter([]byte(ref.Filter), identifier)
+func applyBloomFilter(packageReferences []types.PackageReference, identifier string, limit int) ([]types.PackageReference, int) {
+	var filteredReferences []types.PackageReference
+	for i, ref := range packageReferences {
+		test, err := bloomfilter.DecodeAndTestFilter([]byte(ref.Filter), identifier)
 		if err != nil || !test {
 			continue
 		}
@@ -347,5 +356,5 @@ func applyBloomFilter(refs []db.Reference, identifier string, limit int) ([]db.R
 		}
 	}
 
-	return filteredReferences, len(refs)
+	return filteredReferences, len(packageReferences)
 }

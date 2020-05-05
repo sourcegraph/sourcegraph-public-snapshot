@@ -226,7 +226,6 @@ body,
 // Pages
 @import './Layout';
 @import './api/APIConsole';
-@import './discussions/DiscussionsPage';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
@@ -268,7 +267,6 @@ body,
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
-@import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';

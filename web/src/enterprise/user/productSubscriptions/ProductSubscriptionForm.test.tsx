@@ -1,7 +1,8 @@
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { ProductSubscriptionForm } from './ProductSubscriptionForm'
+import { createMemoryHistory } from 'history'
+import { Router } from 'react-router'
 
 jest.mock('../../dotcom/billing/StripeWrapper', () => ({
     StripeWrapper: ({
@@ -29,10 +30,11 @@ jest.mock('./NewProductSubscriptionPaymentSection', () => ({
 
 describe('ProductSubscriptionForm', () => {
     test('new subscription for anonymous viewer (no account)', () => {
+        const history = createMemoryHistory()
         expect(
             renderer
                 .create(
-                    <MemoryRouter>
+                    <Router history={history}>
                         <ProductSubscriptionForm
                             accountID={null}
                             subscriptionID={null}
@@ -40,18 +42,20 @@ describe('ProductSubscriptionForm', () => {
                             submissionState={undefined}
                             primaryButtonText="Submit"
                             isLightTheme={false}
+                            history={history}
                         />
-                    </MemoryRouter>
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()
     })
 
     test('new subscription for existing account', () => {
+        const history = createMemoryHistory()
         expect(
             renderer
                 .create(
-                    <MemoryRouter>
+                    <Router history={history}>
                         <ProductSubscriptionForm
                             accountID="a"
                             subscriptionID={null}
@@ -59,18 +63,20 @@ describe('ProductSubscriptionForm', () => {
                             submissionState={undefined}
                             primaryButtonText="Submit"
                             isLightTheme={false}
+                            history={history}
                         />
-                    </MemoryRouter>
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()
     })
 
     test('edit existing subscription', () => {
+        const history = createMemoryHistory()
         expect(
             renderer
                 .create(
-                    <MemoryRouter>
+                    <Router history={history}>
                         <ProductSubscriptionForm
                             accountID="a"
                             subscriptionID="s"
@@ -79,8 +85,9 @@ describe('ProductSubscriptionForm', () => {
                             submissionState={undefined}
                             primaryButtonText="Submit"
                             isLightTheme={false}
+                            history={history}
                         />
-                    </MemoryRouter>
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()

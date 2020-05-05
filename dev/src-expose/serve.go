@@ -215,13 +215,6 @@ func configureRepos(logger *log.Logger, root string) []string {
 	return gitDirs
 }
 
-const postUpdateHook = `#!/bin/sh
-#
-# Added by Sourcegraph src-expose serve
-
-exec git update-server-info
-`
-
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.

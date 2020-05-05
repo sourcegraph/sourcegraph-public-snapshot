@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
@@ -204,7 +204,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                         {info.users > 1 &&
                             stats !== undefined &&
                             (isErrorLike(stats) ? (
-                                <ErrorAlert className="mb-3" error={stats} />
+                                <ErrorAlert className="mb-3" error={stats} history={history} />
                             ) : (
                                 <Collapsible
                                     title={

@@ -5,15 +5,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestDefinitions(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -40,8 +41,8 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestDefinitionsUnknownDump(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
 	api := New(mockDB, mockBundleManagerClient)
@@ -51,15 +52,15 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 }
 
 func TestDefinitionViaSameDumpMoniker(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientDefinitions(t, mockBundleClient, "main.go", 10, 50, nil)
 	setMockBundleClientMonikersByPosition(t, mockBundleClient, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker2}})
-	setMockBundleClientMonikerResults(t, mockBundleClient, "definitions", "gomod", "pad", 0, 0, []bundles.Location{
+	setMockBundleClientMonikerResults(t, mockBundleClient, "definition", "gomod", "pad", 0, 0, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -82,10 +83,10 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 }
 
 func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
@@ -93,7 +94,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	setMockBundleClientMonikersByPosition(t, mockBundleClient1, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
 	setMockBundleClientPackageInformation(t, mockBundleClient1, "main.go", "1234", testPackageInformation)
 	setMockDBGetPackage(t, mockDB, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleClientMonikerResults(t, mockBundleClient2, "definitions", "gomod", "pad", 0, 0, []bundles.Location{
+	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 0, 0, []bundles.Location{
 		{DumpID: 50, Path: "foo.go", Range: testRange1},
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},

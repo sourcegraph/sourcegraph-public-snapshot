@@ -24,8 +24,40 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
       <small
         className="form-text text-muted"
       >
-        An upgraded license key will be available immediately after payment.
+        An upgraded license key will be available immediately.
       </small>
+    }
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
     }
     initialValue={
       Object {

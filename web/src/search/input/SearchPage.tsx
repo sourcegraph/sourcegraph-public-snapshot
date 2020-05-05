@@ -151,6 +151,7 @@ export class SearchPage extends React.Component<Props, State> {
                                         className="my-3"
                                         location="home"
                                         settingsCascade={this.props.settingsCascade}
+                                        history={this.props.history}
                                     />
                                 </Form>
                             </>

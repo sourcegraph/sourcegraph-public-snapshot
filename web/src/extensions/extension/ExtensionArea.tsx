@@ -167,7 +167,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.extensionOrError} />}
+                    subtitle={<ErrorMessage error={this.state.extensionOrError} history={this.props.history} />}
                 />
             )
         }

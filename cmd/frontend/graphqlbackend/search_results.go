@@ -470,10 +470,8 @@ loop:
 }
 
 var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "search_response",
-	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+	Name: "src_graphql_search_response",
+	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type", "source", "request_name"})
 
 // logSearchLatency records search durations in the event database. This
@@ -756,6 +754,9 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if new != nil {
 				exhausted = exhausted && !new.limitHit
 				result, err = intersect(result, new)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 		if exhausted {
@@ -881,13 +882,13 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		//get settings to check if SearchUpperCase is active or not and, if so, run transformer
+		// Get settings to check if `search.uppercase` is active. If so, run transformer.
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if v := settings.SearchUpperCase; v != nil && *v {
-			q.Query = query.SearchUpperCase(q.Query)
+		if v := settings.SearchUppercase; v != nil && *v {
+			q.Query = query.SearchUppercase(q.Query)
 		}
 		return r.evaluate(ctx, q.Query)
 	}
@@ -976,10 +977,8 @@ func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSpa
 var (
 	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
 	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "search_results_stats_cache_hit",
-		Help:      "Counts cache hits and misses for search results stats (e.g. sparklines).",
+		Name: "src_graphql_search_results_stats_cache_hit",
+		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
 	}, []string{"type"})
 )
 

@@ -17,17 +17,41 @@ const REPO_PATH_PREFIX = new URL(BITBUCKET_BASE_URL).hostname
 
 const BITBUCKET_INTEGRATION_JAR_URL = 'https://storage.googleapis.com/sourcegraph-for-bitbucket-server/latest.jar'
 
-const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
+const { sourcegraphBaseUrl, ...restConfig } = getConfig('sourcegraphBaseUrl')
 
 /**
  * Logs into Bitbucket.
  */
 async function bitbucketLogin({ page }: Driver): Promise<void> {
-    await page.goto(BITBUCKET_BASE_URL)
+    await page.goto(new URL('/login', BITBUCKET_BASE_URL).toString())
     if (new URL(page.url()).pathname.endsWith('/login')) {
         await page.type('#j_username', BITBUCKET_USERNAME)
         await page.type('#j_password', BITBUCKET_PASSWORD)
-        await Promise.all([page.click('#submit'), page.waitForNavigation()])
+        await Promise.all([page.waitForNavigation(), page.click('#submit')])
+    }
+    if (new URL(page.url()).pathname.endsWith('/login')) {
+        throw new Error('Failed to authenticate to bitbucket server')
+    }
+}
+
+async function createProject(driver: Driver): Promise<void> {
+    await driver.page.goto(BITBUCKET_BASE_URL + '/projects')
+    await driver.page.waitForSelector('.entity-table')
+    const existingProject = await driver.page.evaluate(() =>
+        Array.from(document.querySelectorAll('span.project-name')).some(p => p.textContent === 'SOURCEGRAPH')
+    )
+    if (existingProject) {
+        return
+    }
+    await driver.page.goto(BITBUCKET_BASE_URL + '/projects?create')
+    await driver.page.type('form.project-settings input[name="key"]', 'SOURCEGRAPH')
+    await driver.page.type('form.project-settings input[name="name"]', 'SOURCEGRAPH')
+    await Promise.all([
+        driver.page.waitForNavigation(),
+        driver.page.click('form.project-settings input.aui-button-primary[type="submit"]'),
+    ])
+    if (new URL(driver.page.url()).search.endsWith('?create')) {
+        throw new Error('Failed to authenticate to bitbucket server')
     }
 }
 
@@ -35,6 +59,7 @@ async function bitbucketLogin({ page }: Driver): Promise<void> {
  * Adds sourcegraph/jsonrpc2 to this Bitbucket instance.
  */
 async function importBitbucketRepo(driver: Driver): Promise<void> {
+    await createProject(driver)
     // Import repo (idempotent)
     await driver.page.goto(BITBUCKET_BASE_URL + '/plugins/servlet/import-repository/SOURCEGRAPH')
     await driver.page.waitForSelector('button[data-source="GIT"]')
@@ -57,19 +82,26 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
 /**
  * Configures the Sourcegraph for Bitbucket Server integration on the Bitbucket instance.
  */
-async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
-    await driver.ensureHasCORSOrigin({ corsOriginURL: new URL(BITBUCKET_BASE_URL).origin })
-    await bitbucketLogin(driver)
+async function configureSourcegraphIntegration(driver: Driver, enable: boolean): Promise<void> {
     await driver.page.goto(BITBUCKET_BASE_URL + '/plugins/servlet/upm?source=side_nav_manage_addons')
     await driver.page.waitForSelector('#upm-manage-plugins-user-installed')
     const sourcegraphPluginSelector = '.upm-plugin[data-key="com.sourcegraph.plugins.sourcegraph-bitbucket"]'
     if (await driver.page.$(sourcegraphPluginSelector)) {
+        // Expand plugin menu
+        await driver.page.click(`${sourcegraphPluginSelector} .upm-plugin-row`)
         // Enable if needed
         if (await driver.page.$(`${sourcegraphPluginSelector}.disabled`)) {
-            await driver.page.click(`${sourcegraphPluginSelector} [data-action="ENABLE"]`)
+            if (enable) {
+                await driver.page.waitForSelector(`${sourcegraphPluginSelector} [data-action="ENABLE"]`)
+                await driver.page.click(`${sourcegraphPluginSelector} [data-action="ENABLE"]`)
+                await driver.page.waitForSelector(`${sourcegraphPluginSelector} [data-action="DISABLE"]`)
+            }
+        } else if (!enable) {
             await driver.page.waitForSelector(`${sourcegraphPluginSelector} [data-action="DISABLE"]`)
+            await driver.page.click(`${sourcegraphPluginSelector} [data-action="DISABLE"]`)
+            await driver.page.waitForSelector(`${sourcegraphPluginSelector} [data-action="ENABLE"]`)
         }
-    } else {
+    } else if (enable) {
         // Install
         await driver.page.click('#upm-upload')
         await driver.page.waitForSelector('#upm-upload-url')
@@ -78,44 +110,22 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
         await driver.page.waitForSelector(sourcegraphPluginSelector)
     }
     await driver.page.reload()
-    await driver.page.waitForSelector('#sourcegraph-admin-link')
-    await driver.page.click('#sourcegraph-admin-link')
-    await driver.page.waitForSelector('form#admin')
-    // The Sourcegraph URL input field is disabled until the Sourcegraph URL has been fetched.
-    await retry(async () => {
-        expect(
-            await driver.page.evaluate(() => document.querySelector<HTMLInputElement>('form#admin input#url')!.disabled)
-        ).toBe(false)
-    })
-    await driver.replaceText({ selector: 'form#admin input#url', newText: sourcegraphBaseUrl })
-    await driver.page.click('form#admin input#submit')
-    await driver.page.waitForSelector('.aui-message-success')
-}
-
-/**
- * Runs initial setup for the Bitbucket instance.
- */
-async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
-    if (TEST_NATIVE_INTEGRATION) {
-        await configureSourcegraphIntegration(driver)
-    } else {
-        await bitbucketLogin(driver)
-        await driver.setExtensionSourcegraphUrl()
+    if (enable) {
+        await driver.page.waitForSelector('#sourcegraph-admin-link')
+        await driver.page.click('#sourcegraph-admin-link')
+        await driver.page.waitForSelector('form#admin')
+        // The Sourcegraph URL input field is disabled until the Sourcegraph URL has been fetched.
+        await retry(async () => {
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLInputElement>('form#admin input#url')!.disabled
+                )
+            ).toBe(false)
+        })
+        await driver.replaceText({ selector: 'form#admin input#url', newText: sourcegraphBaseUrl })
+        await driver.page.click('form#admin input#submit')
+        await driver.page.waitForSelector('.aui-message-success')
     }
-    await importBitbucketRepo(driver)
-    await driver.ensureHasExternalService({
-        kind: ExternalServiceKind.BITBUCKETSERVER,
-        displayName: `Bitbucket ${BITBUCKET_BASE_URL}`,
-        config: JSON.stringify({
-            url: BITBUCKET_BASE_URL,
-            username: BITBUCKET_USERNAME,
-            password: BITBUCKET_PASSWORD,
-            repos: ['SOURCEGRAPH/jsonrpc2'],
-        }),
-        ensureRepos: [REPO_PATH_PREFIX + '/SOURCEGRAPH/jsonrpc2'],
-    })
-    await driver.ensureHasCORSOrigin({ corsOriginURL: BITBUCKET_BASE_URL })
 }
 
 describe('Sourcegraph browser extension on Bitbucket Server', () => {
@@ -124,7 +134,41 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
     before(async function () {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
-        await init(driver)
+        if (sourcegraphBaseUrl !== 'https://sourcegraph.com' && restConfig.testUserPassword) {
+            await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+        }
+
+        await bitbucketLogin(driver)
+
+        await configureSourcegraphIntegration(driver, TEST_NATIVE_INTEGRATION)
+
+        if (!TEST_NATIVE_INTEGRATION) {
+            await driver.setExtensionSourcegraphUrl()
+        }
+
+        await importBitbucketRepo(driver)
+
+        if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
+            if (restConfig.testUserPassword) {
+                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+            }
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.BITBUCKETSERVER,
+                displayName: `Bitbucket ${BITBUCKET_BASE_URL}`,
+                config: JSON.stringify({
+                    url: BITBUCKET_BASE_URL,
+                    username: BITBUCKET_USERNAME,
+                    password: BITBUCKET_PASSWORD,
+                    repos: ['SOURCEGRAPH/jsonrpc2'],
+                }),
+                ensureRepos: [REPO_PATH_PREFIX + '/SOURCEGRAPH/jsonrpc2'],
+            })
+
+            const bbsUrl = new URL(BITBUCKET_BASE_URL)
+            // On localhost, allow all.
+            const corsOrigin = bbsUrl.hostname === 'localhost' ? '*' : bbsUrl.origin
+            await driver.ensureHasCORSOrigin({ corsOriginURL: corsOrigin })
+        }
     })
 
     after(async () => {

@@ -14,6 +14,7 @@ exports[`ScopePage renders 1`] = `
 ",
         }
       }
+      onClick={[Function]}
     />
   </header>
   <section

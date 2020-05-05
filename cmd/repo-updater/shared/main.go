@@ -75,17 +75,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
-		for _, om := range []*repos.OperationMetrics{
-			m.Transact,
-			m.Done,
-			m.ListRepos,
-			m.UpsertRepos,
-			m.ListExternalServices,
-			m.UpsertExternalServices,
-			m.ListAllRepoNames,
-		} {
-			om.MustRegister(prometheus.DefaultRegisterer)
-		}
+		m.MustRegister(prometheus.DefaultRegisterer)
 
 		store = repos.NewObservedStore(
 			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),

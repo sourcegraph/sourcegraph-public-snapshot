@@ -9,6 +9,7 @@
     "**/out": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
+    "**/.nyc_output": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",

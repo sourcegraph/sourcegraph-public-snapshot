@@ -66,7 +66,7 @@ export function createPlatformContext(): PlatformContext {
                 variables
             ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
+        createExtensionHost: () => createExtensionHost(),
         urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,

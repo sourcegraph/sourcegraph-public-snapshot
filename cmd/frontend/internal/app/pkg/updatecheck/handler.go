@@ -32,12 +32,12 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.15.0")
+	latestReleaseDockerServerImageBuild = newBuild("3.15.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.15.0")
+	latestReleaseKubernetesBuild = newBuild("3.15.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
@@ -411,16 +411,12 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 var (
 	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests",
-		Help:      "Number of requests to the update check handler.",
+		Name: "src_updatecheck_requests",
+		Help: "Number of requests to the update check handler.",
 	})
 	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests_has_update",
-		Help:      "Number of requests to the update check handler where an update is available.",
+		Name: "src_updatecheck_requests_has_update",
+		Help: "Number of requests to the update check handler where an update is available.",
 	})
 )
 

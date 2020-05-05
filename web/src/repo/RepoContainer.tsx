@@ -38,6 +38,7 @@ import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
+import * as H from 'history'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -89,6 +90,7 @@ interface RepoContainerProps
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (state: QueryState) => void
+    history: H.History
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -284,7 +286,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.repoOrError} />}
+                    subtitle={<ErrorMessage error={this.state.repoOrError} history={this.props.history} />}
                 />
             )
         }

@@ -11,9 +11,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
 const DefaultUploadPageSize = 50
+const DefaultReferencesPageSize = 100
 
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
@@ -51,7 +53,9 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
-	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), getTipCommit)
+	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
+		return gitserver.Head(s.db, repositoryID)
+	})
 	if err != nil {
 		log15.Error("Failed to delete upload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to delete upload: %s", err.Error()), http.StatusInternalServerError)
@@ -122,7 +126,12 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, closer, err := s.db.Enqueue(
+	tx, err := s.db.Transact(r.Context())
+	if err != nil {
+		log15.Error("Failed to start transaction", "error", err)
+		http.Error(w, fmt.Sprintf("failed to start transaction: %s", err.Error()), http.StatusInternalServerError)
+	}
+	id, err := tx.Enqueue(
 		r.Context(),
 		getQuery(r, "commit"),
 		sanitizeRoot(getQuery(r, "root")),
@@ -131,7 +140,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		indexerName,
 	)
 	if err == nil {
-		err = closer.CloseTx(s.bundleManagerClient.SendUpload(r.Context(), id, f))
+		err = tx.Done(s.bundleManagerClient.SendUpload(r.Context(), id, f))
 	}
 	if err != nil {
 		log15.Error("Failed to enqueue payload", "error", err)
@@ -197,7 +206,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		getQueryInt(r, "line"),
 		getQueryInt(r, "character"),
 		getQueryInt(r, "uploadId"),
-		getQuery(r, "rawCursor"),
+		getQuery(r, "cursor"),
 		s.db,
 		s.bundleManagerClient,
 	)
@@ -212,11 +221,17 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limit := getQueryIntDefault(r, "limit", DefaultReferencesPageSize)
+	if limit <= 0 {
+		http.Error(w, "illegal limit", http.StatusBadRequest)
+		return
+	}
+
 	locations, newCursor, hasNewCursor, err := s.api.References(
 		r.Context(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
-		getQueryInt(r, "limit"),
+		limit,
 		cursor,
 	)
 	if err != nil {

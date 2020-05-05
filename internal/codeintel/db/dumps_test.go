@@ -44,7 +44,7 @@ func TestGetDumpByID(t *testing.T) {
 		Indexer:           "lsif-go",
 	}
 
-	insertUploads(t, db.db, Upload{
+	insertUploads(t, dbconn.Global, Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
@@ -82,7 +82,7 @@ func TestFindClosestDumps(t *testing.T) {
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(1)},
@@ -91,9 +91,11 @@ func TestFindClosestDumps(t *testing.T) {
 		makeCommit(6): {makeCommit(5)},
 		makeCommit(7): {makeCommit(6)},
 		makeCommit(8): {makeCommit(6)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1)},
 		Upload{ID: 2, Commit: makeCommit(3)},
 		Upload{ID: 3, Commit: makeCommit(7)},
@@ -126,7 +128,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -135,9 +137,11 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 		makeCommit(6): {makeCommit(5)},
 		makeCommit(7): {makeCommit(4)},
 		makeCommit(8): {makeCommit(7)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2)},
 	)
 
@@ -164,12 +168,14 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	//
 	// 1 --+-- [2]
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2), Root: "root1/"},
 		Upload{ID: 2, Commit: makeCommit(2), Root: "root2/"},
 	)
@@ -210,16 +216,18 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	// | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
 	// | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
 		makeCommit(4): {makeCommit(2)},
 		makeCommit(5): {makeCommit(3), makeCommit(4)},
 		makeCommit(6): {makeCommit(5)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "root3/"},
 		Upload{ID: 2, Commit: makeCommit(1), Root: "root4/", Indexer: "lsif-py"},
 		Upload{ID: 3, Commit: makeCommit(2), Root: "root1/"},
@@ -271,8 +279,11 @@ func TestFindClosestDumpsMaxTraversalLimit(t *testing.T) {
 		commits[makeCommit(i)] = []string{makeCommit(i + 1)}
 	}
 
-	insertCommits(t, db.db, commits)
-	insertUploads(t, db.db, Upload{ID: 1, Commit: makeCommit(0)})
+	if err := db.UpdateCommits(context.Background(), 50, commits); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, Commit: makeCommit(0)})
 
 	testFindClosestDumps(t, db, []FindClosestDumpsTestCase{
 		{commit: makeCommit(0), file: "file.ts", allOfIDs: []int{1}},
@@ -301,7 +312,7 @@ func TestDeleteOldestDump(t *testing.T) {
 	t3 := t1.Add(time.Minute * 2)
 	t4 := t1.Add(time.Minute * 3)
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, UploadedAt: t1},
 		Upload{ID: 2, UploadedAt: t2, VisibleAtTip: true},
 		Upload{ID: 3, UploadedAt: t3},
@@ -413,7 +424,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 	//
 	// [1] -- [2] -- [3] -- [4] -- 5 -- [6] -- [7]
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "r1/"},
 		Upload{ID: 2, Commit: makeCommit(2), Root: "r2/"},
 		Upload{ID: 3, Commit: makeCommit(3)},
@@ -422,7 +433,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 		Upload{ID: 6, Commit: makeCommit(7), Root: "r5/"},
 	)
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -430,14 +441,16 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 		makeCommit(5): {makeCommit(4)},
 		makeCommit(6): {makeCommit(5)},
 		makeCommit(7): {makeCommit(6)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(6))
+	err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(6))
 	if err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	visibilities := getDumpVisibilities(t, db.db)
+	visibilities := getDumpVisibilities(t, dbconn.Global)
 	expected := map[int]bool{1: false, 2: false, 3: false, 4: true, 5: true, 6: false}
 
 	if diff := cmp.Diff(expected, visibilities); diff != "" {
@@ -456,7 +469,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 	//
 	// [1] -- 2 -- [3] -- [4] -- [5] -- [6] -- [7]
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "r1/"},
 		Upload{ID: 2, Commit: makeCommit(3), Root: "r2/"},
 		Upload{ID: 3, Commit: makeCommit(4), Root: "r1/"},
@@ -468,7 +481,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 		Upload{ID: 9, Commit: makeCommit(5), Root: "r3/", Indexer: "lsif-tsc"},
 	)
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -476,14 +489,16 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 		makeCommit(5): {makeCommit(4)},
 		makeCommit(6): {makeCommit(5)},
 		makeCommit(7): {makeCommit(6)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(6))
+	err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(6))
 	if err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	visibilities := getDumpVisibilities(t, db.db)
+	visibilities := getDumpVisibilities(t, dbconn.Global)
 	expected := map[int]bool{1: false, 2: true, 3: true, 4: true, 5: false, 6: false, 7: false, 8: false, 9: true}
 	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
@@ -505,7 +520,7 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 	//     |                           |
 	//     +-- [6] --- 7 --------------+
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2), Root: "r2/"},
 		Upload{ID: 2, Commit: makeCommit(5), Root: "r2/a/"},
 		Upload{ID: 3, Commit: makeCommit(5), Root: "r2/b/"},
@@ -515,7 +530,7 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 		Upload{ID: 7, Commit: makeCommit(9), Root: "r3/"},
 	)
 
-	insertCommits(t, db.db, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -525,14 +540,16 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 		makeCommit(9): {makeCommit(7), makeCommit(8)},
 		makeCommit(6): {makeCommit(1)},
 		makeCommit(7): {makeCommit(6)},
-	})
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(9))
+	err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(9))
 	if err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	visibilities := getDumpVisibilities(t, db.db)
+	visibilities := getDumpVisibilities(t, dbconn.Global)
 	expected := map[int]bool{1: false, 2: true, 3: true, 4: false, 5: false, 6: true, 7: true}
 	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
@@ -555,36 +572,133 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 		commits[makeCommit(i)] = []string{makeCommit(i + 1)}
 	}
 
-	insertCommits(t, db.db, commits)
-	insertUploads(t, db.db, Upload{ID: 1, Commit: fmt.Sprintf("%040d", MaxTraversalLimit)})
+	if err := db.UpdateCommits(context.Background(), 50, commits); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
 
-	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(MaxTraversalLimit)); err != nil {
+	insertUploads(t, dbconn.Global, Upload{ID: 1, Commit: makeCommit(MaxTraversalLimit)})
+
+	if err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(MaxTraversalLimit)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	} else {
-		visibilities := getDumpVisibilities(t, db.db)
+		visibilities := getDumpVisibilities(t, dbconn.Global)
 		expected := map[int]bool{1: true}
 		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
 	}
 
-	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(1)); err != nil {
+	if err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(1)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	} else {
-		visibilities := getDumpVisibilities(t, db.db)
+		visibilities := getDumpVisibilities(t, dbconn.Global)
 		expected := map[int]bool{1: true}
 		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
 	}
 
-	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(0)); err != nil {
+	if err := db.UpdateDumpsVisibleFromTip(context.Background(), 50, makeCommit(0)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	} else {
-		visibilities := getDumpVisibilities(t, db.db)
+		visibilities := getDumpVisibilities(t, dbconn.Global)
 		expected := map[int]bool{1: false}
 		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
+	}
+}
+
+func TestDeleteOverlappingDumps(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+	})
+
+	err := db.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	if err != nil {
+		t.Fatalf("unexpected error deleting dump: %s", err)
+	}
+
+	// Original dump no longer exists
+	if _, exists, err := db.GetDumpByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
+func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+	})
+
+	testCases := []struct {
+		commit  string
+		root    string
+		indexer string
+	}{
+		{makeCommit(2), "cmd/", "lsif-go"},
+		{makeCommit(1), "cmds/", "lsif-go"},
+		{makeCommit(1), "cmd/", "lsif-tsc"},
+	}
+
+	for _, testCase := range testCases {
+		err := db.DeleteOverlappingDumps(context.Background(), 50, testCase.commit, testCase.root, testCase.indexer)
+		if err != nil {
+			t.Fatalf("unexpected error deleting dump: %s", err)
+		}
+	}
+
+	// Original dump still exists
+	if _, exists, err := db.GetDumpByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if !exists {
+		t.Fatal("expected dump record to still exist")
+	}
+}
+
+func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{
+		ID:      1,
+		Commit:  makeCommit(1),
+		Root:    "cmd/",
+		Indexer: "lsif-go",
+		State:   "queued",
+	})
+
+	err := db.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	if err != nil {
+		t.Fatalf("unexpected error deleting dump: %s", err)
+	}
+
+	// Original upload still exists
+	if _, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if !exists {
+		t.Fatal("expected dump record to still exist")
 	}
 }

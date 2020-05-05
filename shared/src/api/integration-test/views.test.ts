@@ -66,6 +66,7 @@ describe('Views (integration)', () => {
         const { extensionAPI, services } = await integrationTestContext()
 
         extensionAPI.app.registerViewProvider('v', {
+            where: ContributableViewContainer.GlobalPage,
             provideView: params => of({ title: `t${params.x}`, content: [] }),
         })
 

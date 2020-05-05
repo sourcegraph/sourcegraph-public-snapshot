@@ -2,40 +2,25 @@ import React, { useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { DiffStat } from '../../../components/diff/DiffStat'
 
-interface NodesWithDiffStat {
-    nodes: {
-        diff: {
-            fileDiffs: { diffStat: { added: number; changed: number; deleted: number } }
-        } | null
-    }[]
-}
-
 export interface CampaignDiffstatProps {
-    campaign?: Pick<GQL.ICampaign, '__typename'> & {
-        changesets: NodesWithDiffStat
-        patches: NodesWithDiffStat
+    campaign?: {
+        diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
     }
-    patchSet?: Pick<GQL.IPatchSet, '__typename'> & {
-        patches: NodesWithDiffStat
+    patchSet?: {
+        diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
     }
 
     className?: string
 }
 
-const sumDiffStat = (nodes: NodesWithDiffStat['nodes'], field: 'added' | 'changed' | 'deleted'): number =>
-    nodes.reduce((prev, next) => prev + (next.diff ? next.diff.fileDiffs.diffStat[field] : 0), 0)
-
 /**
  * Total diff stat of a campaign or patchset, including all changesets and patches
  */
 export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, patchSet, className }) => {
-    const nodesWithDiffStat = useMemo(
-        () => (campaign ? [...campaign.changesets.nodes, ...campaign.patches.nodes] : patchSet!.patches.nodes),
-        [campaign, patchSet]
-    )
-    const added = useMemo(() => sumDiffStat(nodesWithDiffStat, 'added'), [nodesWithDiffStat])
-    const changed = useMemo(() => sumDiffStat(nodesWithDiffStat, 'changed'), [nodesWithDiffStat])
-    const deleted = useMemo(() => sumDiffStat(nodesWithDiffStat, 'deleted'), [nodesWithDiffStat])
+    const { added, changed, deleted } = useMemo(() => (campaign ? campaign.diffStat : patchSet!.diffStat), [
+        campaign,
+        patchSet,
+    ])
 
     if (added + changed + deleted === 0) {
         return <></>

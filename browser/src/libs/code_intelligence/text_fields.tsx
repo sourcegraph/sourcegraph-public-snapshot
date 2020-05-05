@@ -1,6 +1,6 @@
 import React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, fromEvent, Observable, Subscription, Unsubscribable } from 'rxjs'
+import { asyncScheduler, fromEvent, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { observeOn } from 'rxjs/operators'
 import { COMMENT_URI_SCHEME } from '../../../../shared/src/api/client/types/textDocument'
 import { EditorCompletionWidget } from '../../../../shared/src/components/completion/EditorCompletionWidget'
@@ -30,7 +30,7 @@ export function handleTextFields(
     }: Pick<CodeHost, 'textFieldResolvers' | 'completionWidgetClassProps'>
 ): Unsubscribable {
     /** A stream of added or removed text fields. */
-    const textFields = mutations.pipe(trackViews(textFieldResolvers || []), observeOn(animationFrameScheduler))
+    const textFields = mutations.pipe(trackViews(textFieldResolvers || []), observeOn(asyncScheduler))
 
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected URI values in
     // test code (because the URIs would change depending on test execution order).
@@ -57,7 +57,7 @@ function synchronizeTextField(
     { element }: TextField
 ): Unsubscribable {
     const {
-        services: { editor: editorService, model: modelService },
+        services: { viewer: viewerService, model: modelService },
     } = extensionsController
 
     const subscriptions = new Subscription()
@@ -66,33 +66,33 @@ function synchronizeTextField(
     const modelUri = nextModelUri()
     const { text, selections } = EditorTextFieldUtils.getEditorDataFromElement(element)
     modelService.addModel({ uri: modelUri, languageId: 'plaintext', text })
-    const editor = editorService.addEditor({
+    const editor = viewerService.addViewer({
         type: 'CodeEditor',
         resource: modelUri,
         selections,
         isActive: true,
     })
-    subscriptions.add(() => editorService.removeEditor(editor))
+    subscriptions.add(() => viewerService.removeViewer(editor))
 
     // Keep the text field in sync with the editor and model.
     subscriptions.add(
         fromEvent(element, 'input')
-            .pipe(observeOn(animationFrameScheduler))
+            .pipe(observeOn(asyncScheduler))
             .subscribe(() => {
                 EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, element)
-                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, editor, element)
             })
     )
     subscriptions.add(
         fromEvent(element, 'keydown')
-            .pipe(observeOn(animationFrameScheduler))
+            .pipe(observeOn(asyncScheduler))
             .subscribe(() => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, editor, element)
             })
     )
     subscriptions.add(
         EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
-            editorService,
+            viewerService,
             modelService,
             editor,
             text => {
@@ -110,7 +110,7 @@ function synchronizeTextField(
         <EditorCompletionWidget
             {...completionWidgetClassProps}
             textArea={element}
-            editorId={editor.editorId}
+            viewerId={editor.viewerId}
             extensionsController={extensionsController}
         />,
         completionWidgetMount

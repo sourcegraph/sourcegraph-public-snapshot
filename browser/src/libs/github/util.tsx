@@ -28,7 +28,8 @@ export function getDiffFileName(container: HTMLElement): { headFilePath: string;
         }
         // On commit code views, or code views on a PR's files tab,
         // find the link contained in the .file-info element.
-        const link = fileInfoElement.querySelector<HTMLElement>('a')
+        // It is located right of the diffstat (makes sure to not match the code owner link on PRs left of the diffstat).
+        const link = fileInfoElement.querySelector<HTMLAnchorElement>('.diffstat + a')
         if (link) {
             return getPathNamesFromElement(link)
         }

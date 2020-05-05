@@ -15,6 +15,7 @@ import { HeroPage } from '../components/HeroPage'
 import { resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 import { ErrorMessage } from '../components/alerts'
+import * as H from 'history'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,
@@ -40,6 +41,7 @@ interface Props {
 
     /** The fragment to render if the repository's Git data is accessible. */
     children: React.ReactNode
+    history: H.History
 }
 
 interface State {
@@ -133,7 +135,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
+                    subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} history={this.props.history} />}
                 />
             )
         }

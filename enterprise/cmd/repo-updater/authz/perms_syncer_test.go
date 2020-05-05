@@ -110,14 +110,6 @@ func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, erro
 	return nil, nil
 }
 
-type mockPermsStore struct {
-	listExternalAccounts func(context.Context, int32) ([]*extsvc.Account, error)
-}
-
-func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.Account, error) {
-	return s.listExternalAccounts(ctx, userID)
-}
-
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: gitlab.ServiceType,

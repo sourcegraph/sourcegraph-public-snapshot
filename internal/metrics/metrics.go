@@ -130,7 +130,6 @@ func MustRegisterDiskMonitor(path string) {
 		_ = syscall.Statfs(path, &stat)
 		return float64(stat.Blocks * uint64(stat.Bsize))
 	}))
-
 }
 
 func mustRegisterOnce(c prometheus.Collector) {

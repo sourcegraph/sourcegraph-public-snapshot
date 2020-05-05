@@ -3,13 +3,11 @@ package campaigns
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -102,7 +100,9 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 				// This sets ExternalID, which we need to trigger the
 				// AlreadyExistsError.
-				ch.SetMetadata(meta)
+				if err := ch.SetMetadata(meta); err != nil {
+					t.Fatal(err)
+				}
 				// Now we can remove metadata.
 				ch.Metadata = nil
 
@@ -111,15 +111,15 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 			}
 
-			gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
+			gitClient := &FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-			sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
-				svc:          extSvc,
-				err:          nil,
-				exists:       tc.existsOnCodehost,
-				wantHeadRef:  headRef,
-				wantBaseRef:  baseRef,
-				fakeMetadata: meta,
+			sourcer := repos.NewFakeSourcer(nil, FakeChangesetSource{
+				Svc:             extSvc,
+				Err:             nil,
+				ChangesetExists: tc.existsOnCodehost,
+				WantHeadRef:     headRef,
+				WantBaseRef:     baseRef,
+				FakeMetadata:    meta,
 			})
 
 			changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
@@ -183,64 +183,6 @@ index d75b080..cf04b5b 100644
 -onto monto(int argc, char *argv[]) { printf("Nice."); }
 +int main(int argc, char *argv[]) { printf("Nice."); }
 `
-
-type fakeChangesetSource struct {
-	svc *repos.ExternalService
-
-	wantHeadRef string
-	wantBaseRef string
-
-	fakeMetadata interface{}
-	exists       bool
-	err          error
-}
-
-func (s fakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
-	if s.err != nil {
-		return s.exists, s.err
-	}
-
-	if c.HeadRef != s.wantHeadRef {
-		return s.exists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.wantHeadRef, c.HeadRef)
-	}
-
-	if c.BaseRef != s.wantBaseRef {
-		return s.exists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.wantBaseRef, c.BaseRef)
-	}
-
-	c.SetMetadata(s.fakeMetadata)
-
-	return s.exists, s.err
-}
-
-func (s fakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
-	if s.err != nil {
-		return s.err
-	}
-
-	if c.BaseRef != s.wantBaseRef {
-		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.wantBaseRef, c.BaseRef)
-	}
-
-	c.SetMetadata(s.fakeMetadata)
-	return nil
-}
-
-var fakeNotImplemented = errors.New("not implement in fakeChangesetSource")
-
-func (s fakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
-	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
-}
-
-func (s fakeChangesetSource) ExternalServices() repos.ExternalServices {
-	return repos.ExternalServices{s.svc}
-}
-func (s fakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	return fakeNotImplemented
-}
-func (s fakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
-	return fakeNotImplemented
-}
 
 func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService) {
 	t.Helper()
@@ -333,12 +275,6 @@ func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *St
 	}
 
 	return campaign, patch
-}
-
-var githubActor = github.Actor{
-	AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-	Login:     "mrnugget",
-	URL:       "https://github.com/mrnugget",
 }
 
 func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {

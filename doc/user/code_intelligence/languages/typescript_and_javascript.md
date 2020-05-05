@@ -1,11 +1,13 @@
 # TypeScript and JavaScript
 
+This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible. The [LSIF quick start](../lsif_quickstart.md) and [CI configuration](../adding_lsif_to_workflows.md) guides provide more in depth descriptions of each step and a lot of helpful context that we haven't duplicated in each language guide.
+
 ## Manual indexing
 
 1. Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
 
 1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
-   ```console
+   ```
    curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
    chmod +x /usr/local/bin/src
    ```
@@ -13,7 +15,7 @@
    - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
 
 1. `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
-   ```console
+   ```
    # for typescript projects
    lsif-tsc -p .
    # for javascript projects
@@ -22,7 +24,7 @@
    Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
 
 1. Upload the data to a Sourcegraph instance with
-   ```console
+   ```
    # for private instances
    src -endpoint=<your sourcegraph endpoint> lsif upload
    # for public instances

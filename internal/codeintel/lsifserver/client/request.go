@@ -135,13 +135,7 @@ func buildURL(baseURL, path string, cursor *string, query queryValues) (string, 
 	build := url.Parse
 	if len(path) > 0 && path[0] == '/' {
 		build = func(path string) (*url.URL, error) {
-			u, err := url.Parse(baseURL)
-			if err != nil {
-				return nil, err
-			}
-
-			u.Path = path
-			return u, nil
+			return url.Parse(baseURL + path)
 		}
 	}
 

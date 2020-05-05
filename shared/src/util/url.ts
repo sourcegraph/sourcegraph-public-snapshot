@@ -6,6 +6,7 @@ import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
+import { tryCatch } from './errors'
 
 export interface RepoSpec {
     /**
@@ -100,7 +101,7 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -466,16 +467,37 @@ function parseLineOrPosition(
 }
 
 /** Encodes a repository at a revspec for use in a URL. */
-export function encodeRepoRev(repo: string, rev?: string): string {
-    return rev ? `${repo}@${escapeRevspecForURL(rev)}` : repo
+export function encodeRepoRev({ repoName, rev }: RepoSpec & Partial<RevSpec>): string {
+    return rev ? `${repoName}@${escapeRevspecForURL(rev)}` : repoName
 }
 
 export function toPrettyBlobURL(
     target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeQuery(
-        target
-    )}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+    return `/${encodeRepoRev({ repoName: target.repoName, rev: target.rev })}/-/blob/${
+        target.filePath
+    }${toRenderModeQuery(target)}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+}
+
+/**
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    ctx: RepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(ctx)}`
+}
+
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+export function toRepoURL(target: RepoSpec & Partial<RevSpec>): string {
+    return '/' + encodeRepoRev(target)
 }
 
 /**
@@ -648,3 +670,9 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
     }
     return undefined
 }
+
+/**
+ * Returns true if the given URL points outside the current site.
+ */
+export const isExternalLink = (url: string): boolean =>
+    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)

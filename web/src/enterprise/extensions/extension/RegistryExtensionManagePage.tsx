@@ -19,6 +19,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
 function updateExtension(
     args: Pick<
@@ -56,6 +57,7 @@ function updateExtension(
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
+    history: H.History
 }
 
 interface State {
@@ -152,6 +154,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             value={publisher.id}
                             publishersOrError={[publisher]}
                             disabled={true}
+                            history={this.props.history}
                         />
                         <RegistryExtensionNameFormGroup
                             className="registry-extension-manage-page__input"
@@ -181,7 +184,9 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             )}
                         </button>
                     </Form>
-                    {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
+                    {isErrorLike(this.state.updateOrError) && (
+                        <ErrorAlert error={this.state.updateOrError} history={this.props.history} />
+                    )}
                     <div className="card mt-5 registry-extension-manage-page__other-actions">
                         <div className="card-header">Other actions</div>
                         <div className="card-body">

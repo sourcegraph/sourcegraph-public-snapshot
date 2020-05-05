@@ -1,11 +1,12 @@
 import {
-    RemoteObject,
     ProxyMarked,
     transferHandlers,
     ProxyMethods,
     createEndpoint,
     releaseProxy,
-} from '@sourcegraph/comlink'
+    TransferHandler,
+    Remote,
+} from 'comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
@@ -29,13 +30,12 @@ export const isURL = (value: unknown): value is URL =>
  * Idempotent.
  */
 export function registerComlinkTransferHandlers(): void {
-    transferHandlers.set('URL', {
+    const urlTransferHandler: TransferHandler<URL, string> = {
         canHandle: isURL,
-        // TODO the comlink types could be better here to avoid the any
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        serialize: (url: any) => url.href,
-        deserialize: (urlString: any) => new URL(urlString),
-    })
+        serialize: url => [url.href, []],
+        deserialize: urlString => new URL(urlString),
+    }
+    transferHandlers.set('URL', urlTransferHandler)
 }
 
 /**
@@ -43,16 +43,16 @@ export function registerComlinkTransferHandlers(): void {
  *
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
-export const syncSubscription = (
-    subscriptionPromise: Promise<RemoteObject<Unsubscribable & ProxyMarked>>
-): Subscription =>
+export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
-    new Subscription(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        subscriptionPromise.then(proxySubscription => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            proxySubscription.unsubscribe()
-        })
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    new Subscription(async function (this: any) {
+        const subscriptionProxy = await subscriptionPromise
+        await subscriptionProxy.unsubscribe()
+        subscriptionProxy[releaseProxy]()
+
+        this._unsubscribe = null // Workaround: rxjs doesn't null out the reference to this callback
+        ;(subscriptionPromise as any) = null
     })
 
 /**

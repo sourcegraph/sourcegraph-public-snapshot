@@ -1,4 +1,4 @@
-import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'
@@ -44,6 +44,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      *
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
+     *
+     * @deprecated `getSync()` makes no additional guarantees over `get()` anymore.
      */
     public async getSync(resource: string): Promise<ExtDocument> {
         const doc = this.documents.get(resource)
