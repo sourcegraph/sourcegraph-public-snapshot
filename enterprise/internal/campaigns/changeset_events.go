@@ -22,6 +22,7 @@ func (ce ChangesetEvents) Less(i, j int) bool {
 	return ce[i].Timestamp().Before(ce[j].Timestamp())
 }
 
+// TODO: what about a `type ChangesetHistory []changesetStatesAtTime`
 type changesetStatesAtTime struct {
 	t           time.Time
 	state       cmpgn.ChangesetState

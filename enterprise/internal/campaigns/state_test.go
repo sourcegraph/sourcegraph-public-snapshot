@@ -1,7 +1,6 @@
 package campaigns
 
 import (
-	"sort"
 	"testing"
 	"time"
 
@@ -262,197 +261,63 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 }
 
 func TestComputeReviewState(t *testing.T) {
-	// TODO: Make this a proper test in which input is history + changeset
-
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
 	tests := []struct {
-		events ChangesetEvents
-		want   cmpgn.ChangesetReviewState
+		name      string
+		changeset *campaigns.Changeset
+		history   []changesetStatesAtTime
+		want      cmpgn.ChangesetReviewState
 	}{
 		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(0), "user1", "APPROVED"),
+			name:      "github - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
 			want: cmpgn.ChangesetReviewStateApproved,
 		},
 		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-				ghReview(1, daysAgo(0), "user1", "COMMENTED"),
+			name:      "github - changeset newer than events",
+			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
 			want: cmpgn.ChangesetReviewStateApproved,
 		},
 		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "COMMENTED"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-				ghReview(1, daysAgo(0), "user1", "PENDING"),
+			name:      "bitbucketserver - changeset older than events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
 			want: cmpgn.ChangesetReviewStateApproved,
 		},
+
 		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "PENDING"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user2", "APPROVED"),
-				ghReview(1, daysAgo(0), "user3", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(3), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(2), "user2", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(3), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(2), "user2", "APPROVED"),
-				ghReview(1, daysAgo(0), "user1", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				// GitHub updates the state of the reviews when they're dismissed
-				ghReview(1, daysAgo(1), "user1", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
-			},
-			want: cmpgn.ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				// GitHub updates the state of the reviews when they're dismissed
-				ghReview(1, daysAgo(2), "user1", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(1), "user2", "user1"),
-				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				// GitHub updates the state of the reviews when they're dismissed
-				ghReview(1, daysAgo(2), "user1", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(1), "user2", "user1"),
-				ghReview(1, daysAgo(0), "user3", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
-			},
-			want: cmpgn.ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(1), "user1", "DISMISSED"),
-				ghReview(1, daysAgo(0), "user3", "APPROVED"),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user2", cmpgn.ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user2", cmpgn.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user3", cmpgn.ChangesetEventKindBitbucketServerApproved),
-			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user2", cmpgn.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user2", cmpgn.ChangesetEventKindBitbucketServerApproved),
-			},
-			want: cmpgn.ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user1", cmpgn.ChangesetEventKindBitbucketServerUnapproved),
-			},
-			want: cmpgn.ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(1, daysAgo(2), "user1", cmpgn.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user1", cmpgn.ChangesetEventKindBitbucketServerUnapproved),
-				bbsActivity(1, daysAgo(0), "user1", cmpgn.ChangesetEventKindBitbucketServerReviewed),
+			name:      "bitbucketserver - changeset newer than events",
+			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
 			want: cmpgn.ChangesetReviewStateChangesRequested,
 		},
 	}
 
 	for i, tc := range tests {
-		sort.Sort(tc.events)
+		t.Run(tc.name, func(t *testing.T) {
+			changeset := tc.changeset
 
-		changeset := &campaigns.Changeset{Metadata: &github.PullRequest{CreatedAt: daysAgo(10)}}
+			have, err := ComputeReviewState(changeset, tc.history)
+			if err != nil {
+				t.Fatalf("got error: %s", err)
+			}
 
-		history, err := computeHistory(changeset, tc.events)
-		if err != nil {
-			t.Fatalf("computing history failed: %s", err)
-		}
-
-		have, err := ComputeReviewState(changeset, history)
-		if err != nil {
-			t.Fatalf("got error: %s", err)
-		}
-
-		if have, want := have, tc.want; have != want {
-			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
-		}
+			if have, want := have, tc.want; have != want {
+				t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
+			}
+		})
 	}
 }
 
@@ -461,109 +326,86 @@ func TestComputeChangesetState(t *testing.T) {
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
 	tests := []struct {
-		sortedEvents ChangesetEvents
-		want         cmpgn.ChangesetState
+		name      string
+		changeset *campaigns.Changeset
+		history   []changesetStatesAtTime
+		want      cmpgn.ChangesetState
 	}{
 		{
-			sortedEvents: ChangesetEvents{},
-			want:         cmpgn.ChangesetStateOpen,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+			name:      "github - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
 			},
 			want: cmpgn.ChangesetStateClosed,
 		},
 		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
-			},
-			want: cmpgn.ChangesetStateClosed,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindGitHubReopened, 1),
+			name:      "github - changeset newer than events",
+			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
 			},
 			want: cmpgn.ChangesetStateOpen,
 		},
 		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindBitbucketServerReopened, 1),
+			name:      "bitbucketserver - changeset older than events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateClosed,
+		},
+
+		{
+			name:      "bitbucketserver - changeset newer than events",
+			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
 			},
 			want: cmpgn.ChangesetStateOpen,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(3), cmpgn.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindGitHubReopened, 1),
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindGitHubClosed, 1),
-			},
-			want: cmpgn.ChangesetStateClosed,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(3), cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindBitbucketServerReopened, 1),
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
-			},
-			want: cmpgn.ChangesetStateClosed,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindGitHubMerged, 1),
-			},
-			want: cmpgn.ChangesetStateMerged,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(2), cmpgn.ChangesetEventKindBitbucketServerMerged, 1),
-			},
-			want: cmpgn.ChangesetStateMerged,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(3), cmpgn.ChangesetEventKindGitHubMerged, 1),
-				// Merged is a final state. Events after should be ignored.
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindGitHubClosed, 1),
-			},
-			want: cmpgn.ChangesetStateMerged,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				event(t, daysAgo(3), cmpgn.ChangesetEventKindBitbucketServerMerged, 1),
-				// Merged is a final state. Events after should be ignored.
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
-			},
-			want: cmpgn.ChangesetStateMerged,
-		},
-		{
-			sortedEvents: ChangesetEvents{
-				// GitHub emits Closed and Merged events at the same time.
-				// We want to report Merged.
-				event(t, daysAgo(3), cmpgn.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(1), cmpgn.ChangesetEventKindGitHubMerged, 1),
-			},
-			want: cmpgn.ChangesetStateMerged,
 		},
 	}
 
 	for i, tc := range tests {
-		changeset := &campaigns.Changeset{Metadata: &github.PullRequest{CreatedAt: daysAgo(10)}}
+		t.Run(tc.name, func(t *testing.T) {
+			changeset := tc.changeset
 
-		history, err := computeHistory(changeset, tc.sortedEvents)
-		if err != nil {
-			t.Fatalf("computing history failed: %s", err)
-		}
+			have, err := ComputeChangesetState(changeset, tc.history)
+			if err != nil {
+				t.Fatalf("got error: %s", err)
+			}
 
-		have, err := ComputeChangesetState(changeset, history)
-		if err != nil {
-			t.Fatalf("got error: %s", err)
-		}
+			if have, want := have, tc.want; have != want {
+				t.Errorf("%d: wrong changeset state. have=%s, want=%s", i, have, want)
+			}
+		})
+	}
+}
 
-		if have, want := have, tc.want; have != want {
-			t.Errorf("%d: wrong state. have=%s, want=%s", i, have, want)
-		}
+func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: bitbucketserver.ServiceType,
+		UpdatedAt:           updatedAt,
+		Metadata: &bitbucketserver.PullRequest{
+			State: state,
+			// TODO: Reviewers should be its own struct
+			Reviewers: []struct {
+				User               *bitbucketserver.User `json:"user"`
+				LastReviewedCommit string                `json:"lastReviewedCommit"`
+				Role               string                `json:"role"`
+				Approved           bool                  `json:"approved"`
+				Status             string                `json:"status"`
+			}{
+				{Status: reviewStatus},
+			},
+		},
+	}
+}
+
+func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: github.ServiceType,
+		UpdatedAt:           updatedAt,
+		Metadata:            &github.PullRequest{State: state},
 	}
 }
