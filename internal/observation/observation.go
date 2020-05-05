@@ -16,9 +16,10 @@ type Args struct {
 	Metrics *metrics.OperationMetrics
 	Tracer  *trace.Tracer
 	// Err is a pointer to the operation's err result.
-	Err       *error
-	TraceName string
-	LogName   string
+	Err          *error
+	TraceName    string
+	LogName      string
+	MetricLabels []string
 	// LogFields are logged prior to the operation being performed.
 	LogFields []log.Field
 }
@@ -96,7 +97,7 @@ func With(ctx context.Context, args Args) (context.Context, FinishFn) {
 			kvs = append(kvs, field.Key(), field.Value())
 		}
 
-		args.Metrics.Observe(elapsed, count, args.Err)
+		args.Metrics.Observe(elapsed, count, args.Err, args.MetricLabels...)
 		logging.Log(args.Logger, args.LogName, args.Err, kvs...)
 
 		if tr != nil {
