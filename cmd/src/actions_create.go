@@ -8,7 +8,7 @@ import (
 )
 
 const actionDefinitionTemplate = `{
-  "$schema": "https://github.com/sourcegraph/src-cli/tree/master/schema/actions.schema.json",
+  "$schema": "https://raw.githubusercontent.com/sourcegraph/src-cli/master/schema/actions.schema.json",
   "scopeQuery": "",
   "steps": [
   ]
