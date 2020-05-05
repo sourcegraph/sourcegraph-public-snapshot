@@ -9,7 +9,10 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { Form } from '../../../components/Form'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
-import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
+import {
+    ProductSubscriptionUserCountFormControl,
+    MIN_USER_COUNT,
+} from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
@@ -79,7 +82,7 @@ interface Props extends ThemeProps {
     history: H.History
 }
 
-const DEFAULT_USER_COUNT = 1
+const DEFAULT_USER_COUNT = MIN_USER_COUNT
 
 /**
  * Displays a form for a product subscription.
