@@ -12,18 +12,18 @@ import (
 )
 
 var (
-	MaxConcurrency              = flag.Int("maxConcurrency", 3, "The maximum number of concurrent operations")
 	BaseURL                     = flag.String("baseUrl", "https://sourcegraph.test:3443", "A Sourcegraph URL")
-	Token                       = flag.String("token", "fd1a128890e12bc6e9d00a8a33d68b545b1adf0f", "A Sourcegraph access token")
-	CacheDir                    = flag.String("cacheDir", "/tmp/precise-code-intel-test", "The location of the cache directory")
-	DataDir                     = flag.String("dataDir", "./internal/cmd/precise-code-intel-test/data", "The location of the data directory")
+	Token                       = flag.String("token", "", "A Sourcegraph access token")
+	MaxConcurrency              = flag.Int("maxConcurrency", 3, "The maximum number of concurrent operations")
 	CheckQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")
 	QueryReferencesOfReferences = flag.Bool("queryReferencesOfReferences", false, "Whether to perform reference operations on test case references")
+
+	// Assumes running from the root of the repo
+	CacheDir = flag.String("cacheDir", "/tmp/precise-code-intel-test", "The location of the cache directory")
+	DataDir  = flag.String("dataDir", "./internal/cmd/precise-code-intel-test/data", "The location of the data directory")
 )
 
 func main() {
-	flag.Parse()
-
 	commands := map[string]func() error{
 		"clone":  clone,
 		"index":  index,
@@ -39,6 +39,11 @@ func main() {
 	command, ok := commands[os.Args[1]]
 	if !ok {
 		fmt.Println("subcommand (clone, index, upload, or query) is required")
+		os.Exit(1)
+	}
+
+	if err := flag.CommandLine.Parse(os.Args[2:]); err != nil {
+		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
 

@@ -11,8 +11,6 @@ Run a Sourcegraph instance locally with the following GitHub repositories:
 - sourcegraph-testing/titan
 - sourcegraph-testing/zap
 
-Modify main.go in this directory to include a Sourcegraph access token.
-
 ## Usage
 
 There are four steps to running this tool. It is currently assumed that all commands are ran from the root of the repository. This tool creates a scratch directory _/tmp/precise-code-intel-test_, which holds test repository clones and index files.
@@ -23,10 +21,10 @@ First, clone the test repos with the following command. This will clone each of 
 go run ./internal/cmd/precise-code-intel-test/main.go clone
 ```
 
-Second, index the cloned repos with the following command. This will invoke _lsif-go_, which is assumed to be present in your PATH, on each revision present in the _./data/repos.csv_ file.
+Second, index the cloned repos with the following command. This will invoke _lsif-go_, which is assumed to be present in your PATH, on each revision present in the _./data/repos.csv_ file. You may want to lower the concurrency limit here if you don't want your computer to catch fire.
 
 ```shell
-go run ./internal/cmd/precise-code-intel-test/main.go index
+go run ./internal/cmd/precise-code-intel-test/main.go index --maxConcurrency=2
 ```
 
 Third, upload each of the index files to a running Sourcegraph instance with the following command. This will upload files in parallel then wait for all of them to complete processing.
@@ -38,7 +36,7 @@ go run ./internal/cmd/precise-code-intel-test/main.go upload
 Fourth, query the GraphQL API with the following command to ensure that the expected code intelligence results are returned.
 
 ```shell
-go run ./internal/cmd/precise-code-intel-test/main.go query
+go run ./internal/cmd/precise-code-intel-test/main.go query -token=<a sourcegraph access token>
 ```
 
 The queries ran and expected results are determined by the _./data/test-cases.csv_ file. Each row in this file contains a definition location as well as the relative path to another CSV file that contains the expected reference result locations. The query test ensures that the definition has the expected reference, each reference has the expected definition, and the reference result set of the definition and each result are equivalent.
