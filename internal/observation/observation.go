@@ -5,13 +5,14 @@
 //     - Each service creates an observation Context that carries a root logger, tracer,
 //       and a metrics registerer as its context.
 //
-//     - An observation Context can create an observation Operation which is configured
-//       with log and trace names, a OperationMetrics value, and any log fields or metric
-//       labels appropriate for the operation.
+//     - An observation Context can create an observation Operation which represents a
+//       section of code that can be invoked many times. An observation Operation is
+//       configured with state that applies to all invocation of the code.
 //
-//     - An observation Operation can be prepared with its `With` method, which will prepare
-//       a trace and some state to be reconciled later. This method returns a function that,
-//       when deferred, will emit metrics, additional logs, and finalize the trace span.
+//     - An observation Operation can wrap a an invocation of a section of code by calling its
+//       With method. This prepares a trace and some state to be reconciled after the invocation
+//       has completed. The With method returns a function that, when deferred, will emit metrics,
+//       additional logs, and finalize the trace span.
 //
 // Sample usage:
 //
