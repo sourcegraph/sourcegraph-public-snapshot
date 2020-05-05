@@ -83,6 +83,6 @@ func (j *Janitor) cleanOldDump(pruneFn func(ctx context.Context) (int64, bool, e
 		return 0, false, err
 	}
 
-	j.metrics.OldDumps.Add(1)
+	j.metrics.EvictedDumps.Add(1)
 	return uint64(fileInfo.Size()), true, nil
 }

@@ -35,7 +35,7 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 
 // step performs a best-effort cleanup. See the following methods for more specifics.
 // Run periodically performs a best-effort cleanup process. See the following methods
-// for more specifics: cleanOldUploads, removeDeadDumps, and freeSpace.
+// for more specifics: cleanOldUploads, removeOrphanedDumps, and freeSpace.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
@@ -52,8 +52,8 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.cleanOldUploads")
 	}
 
-	if err := j.removeDeadDumps(defaultStatesFn); err != nil {
-		return errors.Wrap(err, "janitor.removeDeadDumps")
+	if err := j.removeOrphanedDumps(defaultStatesFn); err != nil {
+		return errors.Wrap(err, "janitor.removeOrphanedDumps")
 	}
 
 	if err := j.freeSpace(defaultPruneFn); err != nil {
