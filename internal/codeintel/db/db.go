@@ -93,6 +93,9 @@ type DB interface {
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
 
+	// HasCommit determines if the given commit is known for the given repository.
+	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
+
 	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
 

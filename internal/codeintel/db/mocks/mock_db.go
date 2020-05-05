@@ -50,6 +50,9 @@ type MockDB struct {
 	// GetUploadsByRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByRepo.
 	GetUploadsByRepoFunc *DBGetUploadsByRepoFunc
+	// HasCommitFunc is an instance of a mock function object controlling
+	// the behavior of the method HasCommit.
+	HasCommitFunc *DBHasCommitFunc
 	// PackageReferencePagerFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageReferencePager.
 	PackageReferencePagerFunc *DBPackageReferencePagerFunc
@@ -144,6 +147,11 @@ func NewMockDB() *MockDB {
 				return nil, 0, nil
 			},
 		},
+		HasCommitFunc: &DBHasCommitFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
+			},
+		},
 		PackageReferencePagerFunc: &DBPackageReferencePagerFunc{
 			defaultHook: func(context.Context, string, string, string, int, int) (int, db.ReferencePager, error) {
 				return 0, nil, nil
@@ -231,6 +239,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		GetUploadsByRepoFunc: &DBGetUploadsByRepoFunc{
 			defaultHook: i.GetUploadsByRepo,
+		},
+		HasCommitFunc: &DBHasCommitFunc{
+			defaultHook: i.HasCommit,
 		},
 		PackageReferencePagerFunc: &DBPackageReferencePagerFunc{
 			defaultHook: i.PackageReferencePager,
@@ -1618,6 +1629,117 @@ func (c DBGetUploadsByRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c DBGetUploadsByRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBHasCommitFunc describes the behavior when the HasCommit method of the
+// parent MockDB instance is invoked.
+type DBHasCommitFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []DBHasCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// HasCommit delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) HasCommit(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.HasCommitFunc.nextHook()(v0, v1, v2)
+	m.HasCommitFunc.appendCall(DBHasCommitFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasCommit method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBHasCommitFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasCommit method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBHasCommitFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBHasCommitFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBHasCommitFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBHasCommitFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBHasCommitFunc) appendCall(r0 DBHasCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBHasCommitFuncCall objects describing the
+// invocations of this function.
+func (f *DBHasCommitFunc) History() []DBHasCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]DBHasCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBHasCommitFuncCall is an object that describes an invocation of method
+// HasCommit on an instance of MockDB.
+type DBHasCommitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBHasCommitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBHasCommitFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBPackageReferencePagerFunc describes the behavior when the
