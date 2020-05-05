@@ -49,45 +49,45 @@ func main() {
 }
 
 func clone() error {
-	if err := os.MkdirAll(filepath.Join(CacheDir, "repos"), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(*CacheDir, "repos"), os.ModePerm); err != nil {
 		return err
 	}
 
-	repos, err := internal.ReadReposCSV(filepath.Join(DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
-	return internal.CloneParallel(CacheDir, MaxConcurrency, repos)
+	return internal.CloneParallel(*CacheDir, *MaxConcurrency, repos)
 }
 
 func index() error {
-	if err := os.MkdirAll(filepath.Join(CacheDir, "indexes"), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(*CacheDir, "indexes"), os.ModePerm); err != nil {
 		return err
 	}
 
-	repos, err := internal.ReadReposCSV(filepath.Join(DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
-	return internal.IndexParallel(CacheDir, MaxConcurrency, repos)
+	return internal.IndexParallel(*CacheDir, *MaxConcurrency, repos)
 }
 
 func upload() error {
-	repos, err := internal.ReadReposCSV(filepath.Join(DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
 	start := time.Now()
 
-	ids, err := internal.UploadParallel(CacheDir, BaseURL, MaxConcurrency, repos)
+	ids, err := internal.UploadParallel(*CacheDir, *BaseURL, *MaxConcurrency, repos)
 	if err != nil {
 		return err
 	}
 
-	if err := internal.WaitForSuccessAll(BaseURL, Token, ids); err != nil {
+	if err := internal.WaitForSuccessAll(*BaseURL, *Token, ids); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func upload() error {
 }
 
 func query() error {
-	testCases, err := internal.ReadTestCaseCSV(DataDir, filepath.Join(DataDir, "test-cases.csv"))
+	testCases, err := internal.ReadTestCaseCSV(*DataDir, filepath.Join(*DataDir, "test-cases.csv"))
 	if err != nil {
 		return err
 	}
@@ -108,11 +108,11 @@ func query() error {
 
 		fns = append(fns, internal.FnPair{
 			Fn: func() error {
-				references, err := internal.QueryReferences(BaseURL, Token, definition)
+				references, err := internal.QueryReferences(*BaseURL, *Token, definition)
 				if err != nil {
 					return err
 				}
-				if CheckQueryResult {
+				if *CheckQueryResult {
 					if diff := cmp.Diff(expectedReferences, references); diff != "" {
 						return fmt.Errorf("unexpected references (-want +got):\n%s\n", diff)
 					}
@@ -134,12 +134,12 @@ func query() error {
 
 			fns = append(fns, internal.FnPair{
 				Fn: func() error {
-					definitions, err := internal.QueryDefinitions(BaseURL, Token, localReference)
+					definitions, err := internal.QueryDefinitions(*BaseURL, *Token, localReference)
 					if err != nil {
 						return err
 					}
 
-					if CheckQueryResult {
+					if *CheckQueryResult {
 						if diff := cmp.Diff([]internal.Location{definition}, definitions); diff != "" {
 							return fmt.Errorf("unexpected definitions (-want +got):\n%s\n", diff)
 						}
@@ -156,15 +156,15 @@ func query() error {
 				),
 			})
 
-			if QueryReferencesOfReferences {
+			if *QueryReferencesOfReferences {
 				fns = append(fns, internal.FnPair{
 					Fn: func() error {
-						references, err := internal.QueryReferences(BaseURL, Token, localReference)
+						references, err := internal.QueryReferences(*BaseURL, *Token, localReference)
 						if err != nil {
 							return err
 						}
 
-						if CheckQueryResult {
+						if *CheckQueryResult {
 							if diff := cmp.Diff(expectedReferences, references); diff != "" {
 								return fmt.Errorf("unexpected references (-want +got):\n%s\n", diff)
 							}
@@ -186,7 +186,7 @@ func query() error {
 
 	start := time.Now()
 
-	if err := internal.RunParallel(MaxConcurrency, fns); err != nil {
+	if err := internal.RunParallel(*MaxConcurrency, fns); err != nil {
 		return err
 	}
 
