@@ -481,18 +481,21 @@ func Test_queryForStableResults(t *testing.T) {
 
 func TestVersionContext(t *testing.T) {
 	tcs := []struct {
-		name               string
-		searchQuery        string
-		versionContext     string
-		reposGetByNameMock func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-		wantResults        []*search.RepositoryRevisions
+		name           string
+		searchQuery    string
+		versionContext string
+		reposGetList   func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+		wantResults    []*search.RepositoryRevisions
 	}{
 		{
 			name:           "query with version context should return the right repositories",
 			searchQuery:    "foo",
 			versionContext: "ctx-1",
-			reposGetByNameMock: func(ctx context.Context, repo api.RepoName) (*types.Repo, error) {
-				return &types.Repo{Name: repo}, nil
+			reposGetList: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+				return []*types.Repo{
+					{Name: "github.com/sourcegraph/foo"},
+					{Name: "github.com/sourcegraph/bar"},
+				}, nil
 			},
 			wantResults: []*search.RepositoryRevisions{
 				{Repo: &types.Repo{Name: "github.com/sourcegraph/foo"}, Revs: []search.RevisionSpecifier{{RevSpec: "some-branch"}}},
@@ -526,11 +529,11 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				query:            qinfo,
-				versionContextID: &tc.versionContext,
+				query:              qinfo,
+				versionContextName: &tc.versionContext,
 			}
 
-			db.Mocks.Repos.GetByName = tc.reposGetByNameMock
+			db.Mocks.Repos.List = tc.reposGetList
 			gotResults, _, _, err := resolver.resolveRepositories(context.Background(), nil)
 			if err != nil {
 				t.Fatal(err)

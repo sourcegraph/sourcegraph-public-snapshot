@@ -122,13 +122,13 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	return &searchResolver{
-		query:            queryInfo,
-		originalQuery:    args.Query,
-		versionContextID: args.VersionContext,
-		pagination:       pagination,
-		patternType:      searchType,
-		zoekt:            search.Indexed(),
-		searcherURLs:     search.SearcherURLs(),
+		query:              queryInfo,
+		originalQuery:      args.Query,
+		versionContextName: args.VersionContext,
+		pagination:         pagination,
+		patternType:        searchType,
+		zoekt:              search.Indexed(),
+		searcherURLs:       search.SearcherURLs(),
 	}, nil
 }
 
@@ -236,11 +236,11 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query            query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery    string                // the raw string of the original search query
-	pagination       *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType      query.SearchType
-	versionContextID *string
+	query              query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery      string                // the raw string of the original search query
+	pagination         *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType        query.SearchType
+	versionContextName *string
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -431,8 +431,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	var versionContextName string
-	if r.versionContextID != nil {
-		versionContextName = *r.versionContextID
+	if r.versionContextName != nil {
+		versionContextName = *r.versionContextName
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -583,30 +583,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	maxRepoListSize := maxReposToSearch()
 
-	if op.versionContextName != "" {
-		vc, err := resolveVersionContext(op.versionContextName)
-		if err != nil {
-			return nil, nil, false, err
-		}
-
-		var repoRevisions []*search.RepositoryRevisions
-		for _, revision := range vc.Revisions {
-			repo, err := db.Repos.GetByName(ctx, api.RepoName(revision.Repo))
-			if err != nil {
-				return nil, nil, false, err
-			}
-
-			repoRevisions = append(repoRevisions, &search.RepositoryRevisions{
-				Repo: repo,
-				Revs: []search.RevisionSpecifier{
-					{RevSpec: revision.Ref},
-				},
-			})
-		}
-
-		return repoRevisions, nil, len(repoRevisions) > maxRepoListSize, nil
-	}
-
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
@@ -636,6 +612,22 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		return nil, nil, false, err
 	}
 
+	// If a version context is specified, gather the list of repository names
+	// to limit the results to these repositories.
+	var versionContextRepositories []string
+	var versionContext *schema.VersionContext
+	// If a ref is specified we skip using version contexts.
+	if len(includePatternRevs) == 0 && op.versionContextName != "" {
+		versionContext, err = resolveVersionContext(op.versionContextName)
+		if err != nil {
+			return nil, nil, false, err
+		}
+
+		for _, revision := range versionContext.Revisions {
+			versionContextRepositories = append(versionContextRepositories, revision.Repo)
+		}
+	}
+
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
@@ -656,9 +648,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	} else {
 		tr.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
-			OnlyRepoIDs:     true,
-			IncludePatterns: includePatterns,
-			ExcludePattern:  unionRegExps(excludePatterns),
+			OnlyRepoIDs:                true,
+			IncludePatterns:            includePatterns,
+			VersionContextRepositories: versionContextRepositories,
+			ExcludePattern:             unionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.noForks,
@@ -677,9 +670,30 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
+
 	for _, repo := range repos {
-		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-		repoRev := &search.RepositoryRevisions{Repo: repo}
+		var repoRev search.RepositoryRevisions
+		var revs []search.RevisionSpecifier
+		if versionContext != nil {
+			for _, vcRepoRef := range versionContext.Revisions {
+				if vcRepoRef.Repo == string(repo.Name) {
+					repoRev.Repo = repo
+					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Ref})
+					break
+				}
+			}
+		} else {
+			var clashingRevs []search.RevisionSpecifier
+			revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+			repoRev.Repo = repo
+			// if multiple specified revisions clash, report this usefully:
+			if len(revs) == 0 && clashingRevs != nil {
+				missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+					Repo: repo,
+					Revs: clashingRevs,
+				})
+			}
+		}
 
 		// We do in place filtering to reduce allocations. Common path is no
 		// filtering of revs.
@@ -687,13 +701,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			repoRev.Revs = revs[:0]
 		}
 
-		// if multiple specified revisions clash, report this usefully:
-		if len(revs) == 0 && clashingRevs != nil {
-			missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
-				Repo: repo,
-				Revs: clashingRevs,
-			})
-		}
 		// Check if the repository actually has the revisions that the user specified.
 		for _, rev := range revs {
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
@@ -730,7 +737,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
-		repoRevisions = append(repoRevisions, repoRev)
+		repoRevisions = append(repoRevisions, &repoRev)
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")

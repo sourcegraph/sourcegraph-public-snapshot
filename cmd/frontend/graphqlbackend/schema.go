@@ -1128,9 +1128,7 @@ type Query {
 
         # PREVIEW: Optionally specify the versionContext. If not specified the
         # default version context is used (all repositories on the default branch).
-        #
-        # GraphQL experts: Should this be the name or the ID?
-        versionContext: ID
+        versionContext: String
 
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
@@ -1157,11 +1155,6 @@ type Query {
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
     # PREVIEW: All version contexts.
-    #
-    # graphql experts: I made this a dumb list since I don't expect this to be a
-    # large list. If it ever does become a large list, I assume it is fine to
-    # just update the schema to be connection based. Or should we avoid just
-    # simple lists?
     versionContexts: [VersionContext!]!
     # The current site.
     site: Site!
@@ -1873,8 +1866,6 @@ type VersionContext implements Node {
     id: ID!
 
     # The name of the version context.
-    #
-    # Should this be unique?
     name: String!
 
     # The description of the version context.
