@@ -5,10 +5,9 @@
 //     - Each service creates an observation Context that carries a root logger, tracer,
 //       and a metrics registerer.
 //
-//     - An observation Context can create an observation Operation with a reference to
-//       the root logger and tracer. An operation is configured with log and trace names,
-//       a OperationMetrics value, and any log fields or metric labels appropriate for
-//       the operation.
+//     - An observation Context can create an observation Operation which is configured
+//       with log and trace names, a OperationMetrics value, and any log fields or metric
+//       labels appropriate for the operation.
 //
 //     - An observation Operation can be prepared with its `With` method, which will prepare
 //       a trace and some state to be reconciled later. This method returns a function that,
