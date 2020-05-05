@@ -74,7 +74,9 @@ type Context struct {
 // Op configures an Operation instance.
 type Op struct {
 	Metrics *metrics.OperationMetrics
-	// Name configures the trace and error log names.
+	// Name configures the trace and error log names. This string should be of the
+	// format {GroupName}.{OperationName}, where both sections are title cased
+	// (e.g. Store.GetRepoByID).
 	Name string
 	// MetricLabels that apply for every invocation of this operation.
 	MetricLabels []string
