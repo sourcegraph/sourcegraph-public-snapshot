@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"sort"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -46,11 +47,8 @@ type changesetStatesAtTime struct {
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
 func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
-	if len(ce) > 1 {
-		first, last := ce[0], ce[len(ce)-1]
-		if first.Timestamp().After(last.Timestamp()) {
-			return nil, errors.New("changeset events no ordered by timestamps")
-		}
+	if !sort.IsSorted(ce) {
+		return nil, errors.New("changeset events not sorted")
 	}
 
 	var (
