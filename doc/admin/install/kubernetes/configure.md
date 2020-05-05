@@ -27,8 +27,8 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
 - Commit customizations to your release branch:
 
    - Commit manual modifications to Kubernetes YAML files.
-   - Commit commands that should be run on every update (e.g. `kubectl apply`) to [./kubectl-apply-all.sh](../kubectl-apply-all.sh).
-   - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [./create-new-cluster.sh](../create-new-cluster.sh).
+   - Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
+   - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
    
 - When you upgrade, merge the corresponding upstream release tag into your release branch. E.g., `git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph` to add the upstream remote and `git checkout release && git merge v3.15.0` to merge the upstream release tag into your release branch.
 
@@ -50,7 +50,7 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Configure TLS/SSL](#configure-tlsssl)
 - [Configure repository cloning via SSH](#configure-repository-cloning-via-ssh)
 - [Configure language servers](#configure-language-servers)
-- [Configure SSDs to boost performance](../configure/ssd/README.md).
+- [Configure SSDs to boost performance](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md).
 - [Increase memory or CPU limits](#increase-memory-or-cpu-limits)
 
 ### Less common configuration
@@ -58,8 +58,8 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Configure gitserver replica count](#configure-gitserver-replica-count)
 - [Configure indexed-search replica count](#configure-indexed-search-replica-count)
 - [Assign resource-hungry pods to larger nodes](#assign-resource-hungry-pods-to-larger-nodes)
-- [Configure Alertmanager](../configure/prometheus/alertmanager/README.md)
-- [Disable or customize Jaeger tracing](../configure/jaeger/README.md)
+- [Configure Alertmanager](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/prometheus/alertmanager/README.md)
+- [Disable or customize Jaeger tracing](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/jaeger/README.md)
 - [Configure Lightstep tracing](#configure-lightstep-tracing)
 - [Configure custom Redis](#configure-custom-redis)
 - [Configure custom PostgreSQL](#configure-custom-postgres)

@@ -33,9 +33,9 @@ kubectl delete pvc lsif-server
 
 **Migrating**
 
-The lsif-server service has been replaced by a trio of services defined in [precise-code-intel](../base/precise-code-intel),
+The lsif-server service has been replaced by a trio of services defined in [precise-code-intel](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/precise-code-intel),
 and the persistent volume claim in which lsif-server  stored converted LSIF uploads has been replaced by
-[bundle storage](../base/precise-code-intel/bundle-storage.PersistentVolume.yaml).
+[bundle storage](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/precise-code-intel/bundle-storage.PersistentVolume.yaml).
 
 Upgrading to 3.15 will create a new empty volume for LSIF data. Without any action, the LSIF data previously uploaded
 to the instance will be lost. To retain old LSIF data, perform the following migration steps. This will cause some
@@ -117,7 +117,7 @@ kubectl apply -f base/indexed-search/indexed-search.StatefulSet.yaml
 
 ## 3.8
 
-If you're deploying Sourcegraph into a non-default namespace, refer to ["Use non-default namespace" in docs/configure.md](configure.md#use-non-default-namespace) for further configuration instructions.
+If you're deploying Sourcegraph into a non-default namespace, refer to ["Use non-default namespace" in docs/configure.md](../install/kubernetes/configure.md#use-non-default-namespace) for further configuration instructions.
 
 ## 3.7.2
 
@@ -125,7 +125,7 @@ Before upgrading or downgrading 3.7, please consult the [v3.7.2 migration guide]
 
 ## 3.0
 
-🚨 If you have not migrated off of helm yet, please refer to [docs/helm.migrate.md](helm.migrate.md) before reading the following notes for migrating to Sourcegraph 3.0.
+🚨 If you have not migrated off of helm yet, please refer to [helm.migrate.md](helm.migrate.md) before reading the following notes for migrating to Sourcegraph 3.0.
 
 🚨 Please upgrade your Sourcegraph instance to 2.13.x before reading the following notes for migrating to Sourcegraph 3.0.
 
@@ -137,7 +137,7 @@ After running 3.0, you should visit the configuration page (`/site-admin/configu
 
 ### `sourcegraph-frontend` service type 
 
-The type of the `sourcegraph-frontend` service ([base/frontend/sourcegraph-frontend.Service.yaml](../base/frontend/sourcegraph-frontend.Service.yaml)) has changed
+The type of the `sourcegraph-frontend` service ([base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml)) has changed
 from `NodePort` to `ClusterIP`. Directly applying this change [will
 fail](https://github.com/kubernetes/kubernetes/issues/42282). Instead, you must delete the old
 service and then create the new one (this will result in a few seconds of downtime):
@@ -153,9 +153,9 @@ Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in fa
 
 ### HTTPS / TLS
 
-Sourcegraph 3.0 removed HTTPS / TLS features from Sourcegraph in favor of relying on [Kubernetes Ingress Resources](https://kubernetes.io/docs/concepts/services-networking/ingress/). As a consequence, Sourcegraph 3.0 does not expose TLS as the NodePort 30433. Instead you need to ensure you have setup and configured either an ingress controller (recommended) or an explicit NGINX service. See [ingress controller documentation](configure.md#ingress-controller-recommended), [NGINX service documentation](configure.md#nginx-service), and [configure TLS/SSL documentation](configure.md#configure-tlsssl).
+Sourcegraph 3.0 removed HTTPS / TLS features from Sourcegraph in favor of relying on [Kubernetes Ingress Resources](https://kubernetes.io/docs/concepts/services-networking/ingress/). As a consequence, Sourcegraph 3.0 does not expose TLS as the NodePort 30433. Instead you need to ensure you have setup and configured either an ingress controller (recommended) or an explicit NGINX service. See [ingress controller documentation](../install/kubernetes/configure.md#ingress-controller-recommended), [NGINX service documentation](../install/kubernetes/configure.md#nginx-service), and [configure TLS/SSL documentation](../install/kubernetes/configure.md#configure-tlsssl).
 
-If you previously configured `TLS_KEY` and `TLS_CERT` environment variables, you can remove them from [base/frontend/sourcegraph-frontend.Deployment.yaml](../base/frontend/sourcegraph-frontend.Deployment.yaml)
+If you previously configured `TLS_KEY` and `TLS_CERT` environment variables, you can remove them from [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml)
 
 ### Postgres 11.1
 
@@ -163,4 +163,4 @@ Sourcegraph 3.0 ships with Postgres 11.1. The upgrade procedure is mostly automa
 
 ## 2.12
 
-Beginning in version 2.12.0, Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing). Follow the steps in [docs/configure.md](docs/configure.md#add-a-license-key).
+Beginning in version 2.12.0, Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing). Follow the steps in [docs/configure.md](../install/kubernetes/configure.md#add-a-license-key).

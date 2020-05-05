@@ -70,3 +70,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 ### Troubleshooting
 
 See the [Troubleshooting docs](troubleshoot.md).
+
+### Updating
+
+See the [Upgrading docs](../../updates/kubernetes.md).
