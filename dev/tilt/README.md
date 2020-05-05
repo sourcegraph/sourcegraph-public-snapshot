@@ -6,7 +6,7 @@
 - Install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 - Generate manifests from the [minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/minikube)
   and copy the `generated-cluster` directory into this directory.
-- `mkdir tilt-watch-targets`  
+- `mkdir tilt-watch-targets`
 - Prepare the cluster:
 
 ```shell script
@@ -15,7 +15,7 @@ kubectl create namespace ns-sourcegraph
 kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
 minikube service list
-``` 
+```
 
 - From the `minikube service list` output take the exposed port and modify the Caddyfile.
 - `caddy run` (this makes Sourcegraph from the minikube cluster available at https://sourcegraph.test:3443)
@@ -23,7 +23,7 @@ minikube service list
 - `tilt up` (starts tilt)
 
 Tilt will start an initial build of the frontend and deploy it. Whenever you are done editing and want to trigger another
-build, `touch tilt-watch-targets/frontend`. 
+build, `touch tilt-watch-targets/frontend`.
 
 Similar to the `frontend` you can add other `custom_build` statements to your `Tiltfile` to build and watch the other servers.
 
