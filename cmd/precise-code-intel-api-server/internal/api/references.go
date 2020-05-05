@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
+// RemoteDumpLimit is the limit for fetching batches of remote dumps.
+const RemoteDumpLimit = 20
+
+// ErrIllegalLimit occurs when a zero-length page of references is requested
 var ErrIllegalLimit = errors.New("limit must be positive")
 
 // References returns the list of source locations that reference the symbol at the given position.
@@ -26,6 +30,7 @@ func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commi
 		bundleManagerClient: api.bundleManagerClient,
 		repositoryID:        repositoryID,
 		commit:              commit,
+		remoteDumpLimit:     RemoteDumpLimit,
 		limit:               limit,
 	}
 
