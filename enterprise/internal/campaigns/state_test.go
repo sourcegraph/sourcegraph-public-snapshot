@@ -271,6 +271,12 @@ func TestComputeReviewState(t *testing.T) {
 		want      cmpgn.ChangesetReviewState
 	}{
 		{
+			name:      "github - no events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStatePending,
+		},
+		{
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
@@ -286,6 +292,13 @@ func TestComputeReviewState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetReviewStateApproved,
 		},
+		{
+			name:      "bitbucketserver - no events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStateChangesRequested,
+		},
+
 		{
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
@@ -332,6 +345,12 @@ func TestComputeChangesetState(t *testing.T) {
 		want      cmpgn.ChangesetState
 	}{
 		{
+			name:      "github - no events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
@@ -348,6 +367,20 @@ func TestComputeChangesetState(t *testing.T) {
 			want: cmpgn.ChangesetStateOpen,
 		},
 		{
+			name:      "github - changeset newer and deleted",
+			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateDeleted,
+		},
+		{
+			name:      "bitbucketserver - no events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
@@ -355,7 +388,6 @@ func TestComputeChangesetState(t *testing.T) {
 			},
 			want: cmpgn.ChangesetStateClosed,
 		},
-
 		{
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
@@ -363,6 +395,14 @@ func TestComputeChangesetState(t *testing.T) {
 				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
 			},
 			want: cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "bitbucketserver - changeset newer and deleted",
+			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateDeleted,
 		},
 	}
 
@@ -408,4 +448,9 @@ func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
 	}
+}
+
+func setDeletedAt(c *campaigns.Changeset, deletedAt time.Time) *campaigns.Changeset {
+	c.ExternalDeletedAt = deletedAt
+	return c
 }
