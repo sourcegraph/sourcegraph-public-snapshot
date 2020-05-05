@@ -3,7 +3,7 @@
 // High-level ideas:
 //
 //     - Each service creates an observation Context that carries a root logger, tracer,
-//       and a metrics registerer.
+//       and a metrics registerer as its context.
 //
 //     - An observation Context can create an observation Operation with a reference to
 //       the root logger and tracer. An operation is configured with log and trace names,
