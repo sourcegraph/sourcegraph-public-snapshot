@@ -9,6 +9,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 
+// TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
     __typename
     label {
