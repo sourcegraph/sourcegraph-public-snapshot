@@ -24,7 +24,6 @@ All notable changes to Sourcegraph are documented in this file.
   - Added [Smarty](#2885), [Ethereum / Solidity / Vyper)](#2440), [Cuda](#5907), [COBOL](#10154), [vb.NET](#4901), and [ASP.NET](#4262) syntax highlighting.
   - Fixed OCaml syntax highlighting #3545
   - Bazel/Starlark support improved (.star, BUILD, and many more extensions now properly highlighted). #8123
-- Added user setting `search.uppercase` that, when enabled, causes queries containing uppercase characters to be treated as case-insensitive. Used when searching for file contents using `and`- and `or`-expressions in queries and enabled via the existing global settings value `{"experimentalFeatures": {"andOrQuery": "enabled"}}` and the new setting `search.defaultPatternType`. [#10057](https://github.com/sourcegraph/sourcegraph/issues/10057)
 
 ### Changed
 
