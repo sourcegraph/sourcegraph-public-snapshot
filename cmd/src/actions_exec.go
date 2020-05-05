@@ -211,11 +211,6 @@ Format of the action JSON files:
 
 		logger := newActionLogger(*verbose, *keepLogsFlag)
 
-		err = validateAction(ctx, action)
-		if err != nil {
-			return errors.Wrap(err, "Validation of action failed")
-		}
-
 		// Build Docker images etc.
 		err = prepareAction(ctx, action)
 		if err != nil {
@@ -355,38 +350,16 @@ func validateActionDefinition(def []byte) error {
 	return errs.ErrorOrNil()
 }
 
-func validateAction(ctx context.Context, action Action) error {
-	for _, step := range action.Steps {
-		if step.Type == "docker" {
-			if step.Image == "" {
-				return fmt.Errorf("docker run step has to specify 'image'")
-			}
-
-			if step.ImageContentDigest != "" {
-				return errors.New("setting the ImageContentDigest field of a docker run step is not allowed")
-			}
-		}
-
-		if step.Type == "command" && len(step.Args) < 1 {
-			return errors.New("command run step has to specify 'args'")
-		}
-	}
-
-	return nil
-}
-
 func prepareAction(ctx context.Context, action Action) error {
 	// Build any Docker images.
 	for _, step := range action.Steps {
 		if step.Type == "docker" {
 			// Set digests for Docker images so we don't cache action runs in 2 different images with
 			// the same tag.
-			if step.Image != "" {
-				var err error
-				step.ImageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
-				if err != nil {
-					return errors.Wrap(err, "Failed to get Docker image content digest")
-				}
+			var err error
+			step.ImageContentDigest, err = getDockerImageContentDigest(ctx, step.Image)
+			if err != nil {
+				return errors.Wrap(err, "Failed to get Docker image content digest")
 			}
 		}
 	}
