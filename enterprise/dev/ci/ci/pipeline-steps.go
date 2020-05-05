@@ -144,8 +144,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
-// Release the browser extension.
-func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
@@ -157,10 +156,15 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
+			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts ./src/e2e/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
+}
+
+// Release the browser extension.
+func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+	addBrowserExtensionE2ESteps(pipeline)
 
 	pipeline.AddWait()
 
