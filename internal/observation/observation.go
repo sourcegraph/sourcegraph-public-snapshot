@@ -67,20 +67,9 @@ import (
 // metrics. It should be created once on service startup, and passed around to
 // any location that wants to use it for observing operations.
 type Context struct {
-	logger     logging.ErrorLogger
-	tracer     *trace.Tracer
-	registerer prometheus.Registerer
-}
-
-// NewContext creates a new context. If the logger, tracer, or registerer passed here is nil,
-// the operations created with this context will not have logging, tracing, or metrics enabled,
-// respectively.
-func NewContext(logger logging.ErrorLogger, tracer *trace.Tracer, registerer prometheus.Registerer) *Context {
-	return &Context{
-		logger:     logger,
-		tracer:     tracer,
-		registerer: registerer,
-	}
+	Logger     logging.ErrorLogger
+	Tracer     *trace.Tracer
+	Registerer prometheus.Registerer
 }
 
 // Op configures an Operation instance.
@@ -98,8 +87,8 @@ type Op struct {
 // should be owned and used by the code that performs the operation it represents. This will
 // immediately register any supplied metric with the context's metric registerer.
 func (c *Context) Operation(args Op) *Operation {
-	if c.registerer != nil && args.Metrics != nil {
-		args.Metrics.MustRegister(c.registerer)
+	if c.Registerer != nil && args.Metrics != nil {
+		args.Metrics.MustRegister(c.Registerer)
 	}
 
 	return &Operation{
@@ -156,11 +145,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // attached to the operation or to the args to With, they are emitted immediately. This returns
 // an unmodified context and a nil trace if no tracer was supplied on the observation context.
 func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
-	if op.context.tracer == nil {
+	if op.context.Tracer == nil {
 		return nil, ctx
 	}
 
-	tr, ctx := op.context.tracer.New(ctx, op.traceName, "")
+	tr, ctx := op.context.Tracer.New(ctx, op.traceName, "")
 	tr.LogFields(mergeLogFields(op.logFields, args.LogFields)...)
 	return tr, ctx
 }
@@ -170,7 +159,7 @@ func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, contex
 // to the finish function. This does nothing if the no logger was supplied on the observation
 // context.
 func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
-	if op.context.logger == nil {
+	if op.context.Logger == nil {
 		return
 	}
 
@@ -179,7 +168,7 @@ func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
 		kvs = append(kvs, field.Key(), field.Value())
 	}
 
-	logging.Log(op.context.logger, op.logName, err, kvs...)
+	logging.Log(op.context.Logger, op.logName, err, kvs...)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics
