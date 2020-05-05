@@ -27,91 +27,81 @@ type errPair struct {
 // RunParallel runs each function in parallel. Returns the first error to occur. The
 // number of invocations is limited by maxConcurrency.
 func RunParallel(maxConcurrency int, fns []FnPair) error {
+	// create map with all work marked as pending
+	pending := map[int]bool{}
+	for i := 0; i < len(fns); i++ {
+		pending[i] = false
+	}
+	pendingMap := &pendingMap{pending: pending}
+
+	// queue all work
+	queue := make(chan int, len(fns))
+	for i := range fns {
+		queue <- i
+	}
+	close(queue)
+
+	// launch workers
+	errs := make(chan errPair, len(fns))
+	for i := 0; i < maxConcurrency; i++ {
+		go func() {
+			for i := range queue {
+				pendingMap.set(i)
+				err := fns[i].Fn()
+				errs <- errPair{i, err}
+			}
+		}()
+	}
+
 	return pentimento.PrintProgress(func(p *pentimento.Printer) error {
-		queue := make(chan int, len(fns))
-		for i := range fns {
-			queue <- i
-		}
-
-		var m sync.RWMutex
-		pending := map[int]bool{}
-		for i := 0; i < len(fns); i++ {
-			pending[i] = false
-		}
-
-		errs := make(chan errPair, len(fns))
-		for i := 0; i < maxConcurrency; i++ {
-			go func() {
-				for i := range queue {
-					m.Lock()
-					pending[i] = true
-					m.Unlock()
-
-					err := fns[i].Fn()
-					errs <- errPair{i, err}
-				}
-			}()
-		}
-
 		for {
-			m.RLock()
-			n := len(pending)
-			m.RUnlock()
+			n := pendingMap.size()
 			if n == 0 {
 				break
 			}
-
-			content := pentimento.NewContent()
 
 			select {
 			case pair := <-errs:
 				if pair.err != nil {
 					go func() {
+						// Drain queue to stop additional work
+						for range queue {
+						}
+
+						// Drain errors so we can close the channel safely
+						// without closing it while one of the worker goroutines
+						// above are still running.
 						for i := 0; i < n; i++ {
 							<-errs
 						}
 						close(errs)
 					}()
 
+					// Clear the screen
 					_ = p.Reset()
 					return pair.err
 				}
 
-				m.Lock()
-				temp := map[int]bool{}
-				for i, processing := range pending {
-					if i != pair.i {
-						temp[i] = processing
-					}
-				}
-				pending = temp
-				m.Unlock()
+				// Nil-valued error, remove it from the pending map
+				pendingMap.filter(pair.i)
 
 			case <-time.After(time.Millisecond * 250):
+				// Time's up, fall through and update the screen
 			}
 
-			m.RLock()
-			var keys []int
-			for k := range pending {
-				keys = append(keys, k)
-			}
-			sort.Ints(keys)
+			content := pentimento.NewContent()
 
-			for count, i := range keys {
+			for count, i := range pendingMap.keys() {
 				if count > MaxDisplayLines {
+					content.AddLine("\n(additional pending tasks omitted)...")
 					break
 				}
 
-				if pending[i] {
+				if pendingMap.get(i) {
 					content.AddLine(fmt.Sprintf("%s %s", pentimento.Dots, fns[i].Description))
 				} else {
 					content.AddLine(fmt.Sprintf("%s %s", "   ", fns[i].Description))
 				}
-			}
-			m.RUnlock()
-
-			if len(keys) > MaxDisplayLines {
-				content.AddLine("\n(additional pending tasks omitted)...")
 			}
 
 			_ = p.WriteContent(content)
@@ -120,4 +110,44 @@ func RunParallel(maxConcurrency int, fns []FnPair) error {
 		_ = p.Reset()
 		return nil
 	})
+}
+
+type pendingMap struct {
+	m       sync.RWMutex
+	pending map[int]bool
+}
+
+func (m *pendingMap) filter(i int) {
+	m.m.Lock()
+	defer m.m.Unlock()
+	delete(m.pending, i)
+}
+
+func (m *pendingMap) keys() (keys []int) {
+	m.m.RLock()
+	defer m.m.RUnlock()
+
+	for k := range m.pending {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	return keys
+}
+
+func (m *pendingMap) set(i int) {
+	m.m.Lock()
+	defer m.m.Unlock()
+	m.pending[i] = true
+}
+
+func (m *pendingMap) get(i int) bool {
+	m.m.RLock()
+	defer m.m.RUnlock()
+	return m.pending[i]
+}
+
+func (m *pendingMap) size() int {
+	m.m.RLock()
+	defer m.m.RUnlock()
+	return len(m.pending)
 }
