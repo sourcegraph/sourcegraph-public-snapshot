@@ -29,8 +29,7 @@
 //     )
 //
 //     operation := observationContext.Operation(observation.Op{
-//         LogName:      "Thing.SomeOperation",
-//         TraceName:    "thing.some-operation",
+//         Name:         "Thing.SomeOperation",
 //         MetricLabels: []string{"some_operation"},
 //         Metrics:      metrics,
 //     })
@@ -74,9 +73,9 @@ type Context struct {
 
 // Op configures an Operation instance.
 type Op struct {
-	Metrics   *metrics.OperationMetrics
-	TraceName string
-	LogName   string
+	Metrics *metrics.OperationMetrics
+	// Name configures the trace and error log names.
+	Name string
 	// MetricLabels that apply for every invocation of this operation.
 	MetricLabels []string
 	// LogFields that apply for for every invocation of this operation.
@@ -94,8 +93,8 @@ func (c *Context) Operation(args Op) *Operation {
 	return &Operation{
 		context:      c,
 		metrics:      args.Metrics,
-		traceName:    args.TraceName,
-		logName:      args.LogName,
+		name:         args.Name,
+		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabels,
 		logFields:    args.LogFields,
 	}
@@ -105,8 +104,8 @@ func (c *Context) Operation(args Op) *Operation {
 type Operation struct {
 	context      *Context
 	metrics      *metrics.OperationMetrics
-	traceName    string
-	logName      string
+	name         string
+	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
 }
@@ -149,7 +148,7 @@ func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, contex
 		return nil, ctx
 	}
 
-	tr, ctx := op.context.Tracer.New(ctx, op.traceName, "")
+	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
 	tr.LogFields(mergeLogFields(op.logFields, args.LogFields)...)
 	return tr, ctx
 }
@@ -168,7 +167,7 @@ func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
 		kvs = append(kvs, field.Key(), field.Value())
 	}
 
-	logging.Log(op.context.Logger, op.logName, err, kvs...)
+	logging.Log(op.context.Logger, op.name, err, kvs...)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics
