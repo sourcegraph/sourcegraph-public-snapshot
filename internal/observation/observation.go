@@ -136,7 +136,7 @@ type Args struct {
 
 // With prepares the necessary timers, loggers, and metrics to observe the invocation of
 // an operation.
-func (op *Operation) With(ctx context.Context,err *error, args Args) (context.Context, FinishFn) {
+func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFn) {
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 
