@@ -30,7 +30,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    - Commit commands that should be run on every update (e.g. `kubectl apply`) to [./kubectl-apply-all.sh](../kubectl-apply-all.sh).
    - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [./create-new-cluster.sh](../create-new-cluster.sh).
    
-- When you upgrade, merge the corresponding upstream release tag into your release branch.
+- When you upgrade, merge the corresponding upstream release tag into your release branch. E.g., `git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph` to add the upstream remote and `git checkout release && git merge v3.15.0` to merge the upstream release tag into your release branch.
 
 ## Dependencies
 
