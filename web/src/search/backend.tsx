@@ -9,28 +9,26 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 
-const genericSearchResultInterfaceFields = gql`
-    fragment genericSearchResultInterfaceFields on GenericSearchResultInterface {
-        __typename
-        label {
-            html
-        }
+const genericSearchResultInterfaceFields = `
+    __typename
+    label {
+        html
+    }
+    url
+    icon
+    detail {
+        html
+    }
+    matches {
         url
-        icon
-        detail {
+        body {
+            text
             html
         }
-        matches {
-            url
-            body {
-                text
-                html
-            }
-            highlights {
-                line
-                character
-                length
-            }
+        highlights {
+            line
+            character
+            length
         }
     }
 `
@@ -48,12 +46,7 @@ export function search(
         switchMap(query =>
             queryGraphQL(
                 gql`
-                    query Search(
-                        $query: String!
-                        $version: SearchVersion!
-                        $patternType: SearchPatternType!
-                        $useCodemod: Boolean!
-                    ) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!) {
                         search(query: $query, version: $version, patternType: $patternType) {
                             results {
                                 __typename
@@ -83,7 +76,7 @@ export function search(
                                     ... on Repository {
                                         id
                                         name
-                                        ...genericSearchResultInterfaceFields
+                                        ${genericSearchResultInterfaceFields}
                                     }
                                     ... on FileMatch {
                                         file {
@@ -105,11 +98,7 @@ export function search(
                                             }
                                             ... on GitRevSpecExpr {
                                                 expr
-                                                object {
-                                                    commit {
-                                                        url
-                                                    }
-                                                }
+                                                object { commit { url } }
                                             }
                                             ... on GitObject {
                                                 abbreviatedOID
@@ -132,10 +121,10 @@ export function search(
                                         }
                                     }
                                     ... on CommitSearchResult {
-                                        ...genericSearchResultInterfaceFields
+                                        ${genericSearchResultInterfaceFields}
                                     }
-                                    ... on CodemodResult @include(if: $useCodemod) {
-                                        ...genericSearchResultInterfaceFields
+                                    ...on CodemodResult @include(if: $useCodemod) {
+                                        ${genericSearchResultInterfaceFields}
                                     }
                                 }
                                 alert {
@@ -150,8 +139,6 @@ export function search(
                             }
                         }
                     }
-
-                    ${genericSearchResultInterfaceFields}
                 `,
                 { query, version, patternType, useCodemod: USE_CODEMOD }
             ).pipe(
