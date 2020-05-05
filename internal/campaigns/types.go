@@ -1018,6 +1018,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Commit = o.Commit
 		}
 
+	case *bitbucketserver.ParticipantStatusEvent:
+		o := o.Metadata.(*bitbucketserver.ParticipantStatusEvent)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
 	case *bitbucketserver.CommitStatus:
 		o := o.Metadata.(*bitbucketserver.CommitStatus)
 		// We always get the full event, so safe to replace it
@@ -1166,6 +1181,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.ParticipantStatusEvent:
+		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
 	default:
@@ -1181,6 +1198,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:
 			return new(bitbucketserver.CommitStatus), nil
+		case ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
+			return new(bitbucketserver.ParticipantStatusEvent), nil
 		default:
 			return new(bitbucketserver.Activity), nil
 		}
@@ -1264,6 +1283,8 @@ const (
 	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
+
+	ChangesetEventKindBitbucketServerParticipationStatusUnapproved ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset

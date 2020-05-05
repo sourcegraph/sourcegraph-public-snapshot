@@ -951,11 +951,16 @@ func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, our
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
-	case *bbs.PullRequestEvent:
+	case *bbs.PullRequestActivityEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		prs = append(prs, pr)
 		return prs, e.Activity
+	case *bbs.PullRequestParticipantStatusEvent:
+		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
+		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
+		prs = append(prs, pr)
+		return prs, e.ParticipantStatusEvent
 	case *bbs.BuildStatusEvent:
 		for _, p := range e.PullRequests {
 			repoID := strconv.Itoa(p.FromRef.Repository.ID)
