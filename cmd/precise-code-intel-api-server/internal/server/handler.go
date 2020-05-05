@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
@@ -54,7 +55,11 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
 	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
-		return gitserver.Head(s.db, repositoryID)
+		tipCommit, err := gitserver.Head(s.db, repositoryID)
+		if err != nil {
+			return "", errors.Wrap(err, "gitserver.Head")
+		}
+		return tipCommit, nil
 	})
 	if err != nil {
 		log15.Error("Failed to delete upload", "error", err)
@@ -126,7 +131,12 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, closer, err := s.db.Enqueue(
+	tx, err := s.db.Transact(r.Context())
+	if err != nil {
+		log15.Error("Failed to start transaction", "error", err)
+		http.Error(w, fmt.Sprintf("failed to start transaction: %s", err.Error()), http.StatusInternalServerError)
+	}
+	id, err := tx.Enqueue(
 		r.Context(),
 		getQuery(r, "commit"),
 		sanitizeRoot(getQuery(r, "root")),
@@ -135,7 +145,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		indexerName,
 	)
 	if err == nil {
-		err = closer.CloseTx(s.bundleManagerClient.SendUpload(r.Context(), id, f))
+		err = tx.Done(s.bundleManagerClient.SendUpload(r.Context(), id, f))
 	}
 	if err != nil {
 		log15.Error("Failed to enqueue payload", "error", err)

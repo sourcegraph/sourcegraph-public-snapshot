@@ -777,7 +777,7 @@ declare module 'sourcegraph' {
 
     /**
      * Experimental view provider for directory pages.
-     * This API is experimtal subject to change or removal without notice.
+     * This API is experimental and is subject to change or removal without notice.
      */
     export interface DirectoryViewProvider {
         readonly where: 'directory'

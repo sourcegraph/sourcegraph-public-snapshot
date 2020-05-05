@@ -81,7 +81,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 
 // insertPackageReferences populates the lsif_references table with the given package references.
 func insertPackageReferences(t *testing.T, db *dbImpl, packageReferences []types.PackageReference) {
-	if err := db.UpdatePackageReferences(context.Background(), nil, packageReferences); err != nil {
+	if err := db.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}
 }

@@ -58,15 +58,9 @@ export function createPlatformContext(): PlatformContext {
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
-        requestGraphQL: ({ request, variables }) =>
-            requestGraphQL(
-                gql`
-                    ${request}
-                `,
-                variables
-            ),
+        requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
+        createExtensionHost: () => createExtensionHost(),
         urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,

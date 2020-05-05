@@ -11,37 +11,36 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { ActionItem } from '../../../shared/src/actions/ActionItem'
-import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
-import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection } from '../components/FilteredConnection'
-import { PageTitle } from '../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps } from '../search'
-import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
-import { basename } from '../util/path'
-import { fetchTreeEntries } from './backend'
-import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
-import { gitCommitFragment } from './commits/RepositoryCommitsPage'
-import { ThemeProps } from '../../../shared/src/theme'
-import { ErrorAlert } from '../components/alerts'
+import { ActionItem } from '../../../../shared/src/actions/ActionItem'
+import { ActionsContainer } from '../../../../shared/src/actions/ActionsContainer'
+import { ContributableMenu, ContributableViewContainer } from '../../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
+import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { queryGraphQL } from '../../backend/graphql'
+import { FilteredConnection } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
+import { PatternTypeProps, CaseSensitivityProps } from '../../search'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
+import { basename } from '../../util/path'
+import { fetchTreeEntries } from '../backend'
+import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
+import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorAlert } from '../../components/alerts'
 import { subYears, formatISO } from 'date-fns'
-import { pluralize } from '../../../shared/src/util/strings'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
-import { isDefined } from '../../../shared/src/util/types'
-import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
-import { ViewContent } from '../views/ViewContent'
-import { Settings } from '../schema/settings.schema'
+import { pluralize } from '../../../../shared/src/util/strings'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
+import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
+import { Settings } from '../../schema/settings.schema'
+import { ViewGrid } from './ViewGrid'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -237,7 +236,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                               },
                           },
                           services.view
-                      ).pipe(map(views => views.filter(isDefined)))
+                      )
                     : EMPTY,
             [codeInsightsEnabled, workspaceUri, uri, services.view]
         )
@@ -351,38 +350,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </h2>
                         </header>
                     )}
-                    {codeInsightsEnabled && (
-                        <div className="tree-page__section d-flex">
-                            {views === undefined ? (
-                                <div className="card flex-grow-1">
-                                    <div className="card-body d-flex flex-column align-items-center p-3">
-                                        <div>
-                                            <LoadingSpinner className="icon-inline" />
-                                        </div>
-                                        <div>Loading code insights</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                views.map((view, i) => (
-                                    <div key={i} className="card flex-grow-1">
-                                        {isErrorLike(view) ? (
-                                            <ErrorAlert className="m-0" error={view} history={props.history} />
-                                        ) : (
-                                            <div className="card-body">
-                                                <h3 className="tree-page__view-title">{view.title}</h3>
-                                                <ViewContent
-                                                    {...props}
-                                                    viewContent={view.content}
-                                                    settingsCascade={settingsCascade}
-                                                    caseSensitive={caseSensitive}
-                                                    patternType={patternType}
-                                                />{' '}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                    {views && (
+                        <ViewGrid
+                            {...props}
+                            className="tree-page__section"
+                            views={views}
+                            patternType={patternType}
+                            settingsCascade={settingsCascade}
+                            caseSensitive={caseSensitive}
+                        />
                     )}
                     <TreeEntriesSection
                         title="Files and directories"

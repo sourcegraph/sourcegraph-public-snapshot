@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
@@ -62,7 +63,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 
 	dump, exists, err := db.GetDumpByID(context.Background(), uploadID)
 	if err != nil {
-		return Cursor{}, err
+		return Cursor{}, errors.Wrap(err, "db.GetDumpByID")
 	}
 	if !exists {
 		return Cursor{}, ErrMissingDump
@@ -73,7 +74,7 @@ func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor 
 
 	rangeMonikers, err := bundleClient.MonikersByPosition(context.Background(), pathInBundle, line, character)
 	if err != nil {
-		return Cursor{}, err
+		return Cursor{}, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}
 
 	var flattened []bundles.MonikerData

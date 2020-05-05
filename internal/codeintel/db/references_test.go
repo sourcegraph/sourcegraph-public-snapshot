@@ -17,7 +17,7 @@ func TestSameRepoPager(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
 		Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
 		Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
@@ -34,7 +34,7 @@ func TestSameRepoPager(t *testing.T) {
 	}
 	insertPackageReferences(t, db, expected)
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -47,13 +47,13 @@ func TestSameRepoPager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 5 {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -71,7 +71,7 @@ func TestSameRepoPagerEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 0 {
 		t.Errorf("unexpected dump. want=%d have=%d", 0, totalCount)
@@ -85,7 +85,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "sub1/"},
 		Upload{ID: 2, Commit: makeCommit(1), Root: "sub2/"},
 		Upload{ID: 3, Commit: makeCommit(1), Root: "sub3/"},
@@ -110,7 +110,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 	}
 	insertPackageReferences(t, db, expected)
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 	}); err != nil {
 		t.Fatalf("unexpected error updating commits: %s", err)
@@ -120,7 +120,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 9 {
 		t.Errorf("unexpected dump. want=%d have=%d", 9, totalCount)
@@ -132,7 +132,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 			hi = len(expected)
 		}
 
-		if references, err := pager.PageFromOffset(lo); err != nil {
+		if references, err := pager.PageFromOffset(context.Background(), lo); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", lo, err)
 		} else if diff := cmp.Diff(expected[lo:hi], references); diff != "" {
 			t.Errorf("unexpected references at offset %d (-want +got):\n%s", lo, diff)
@@ -147,7 +147,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "sub1/"}, // not visible
 		Upload{ID: 2, Commit: makeCommit(2), Root: "sub2/"}, // not visible
 		Upload{ID: 3, Commit: makeCommit(3), Root: "sub1/"},
@@ -165,7 +165,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 		{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f2")},
 	}, expected...))
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(2)},
@@ -180,13 +180,13 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 3 {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -200,7 +200,7 @@ func TestPackageReferencePager(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), VisibleAtTip: true},
 		Upload{ID: 2, Commit: makeCommit(2), VisibleAtTip: true, RepositoryID: 51},
 		Upload{ID: 3, Commit: makeCommit(3), VisibleAtTip: true, RepositoryID: 52},
@@ -226,13 +226,13 @@ func TestPackageReferencePager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 5 {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -250,7 +250,7 @@ func TestPackageReferencePagerEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 0 {
 		t.Errorf("unexpected dump. want=%d have=%d", 0, totalCount)
@@ -264,7 +264,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	insertUploads(t, db.db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), VisibleAtTip: true, RepositoryID: 51},
 		Upload{ID: 2, Commit: makeCommit(2), VisibleAtTip: true, RepositoryID: 52},
 		Upload{ID: 3, Commit: makeCommit(3), VisibleAtTip: true, RepositoryID: 53},
@@ -293,7 +293,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error getting pager: %s", err)
 	}
-	defer func() { _ = pager.CloseTx(nil) }()
+	defer func() { _ = pager.Done(nil) }()
 
 	if totalCount != 9 {
 		t.Errorf("unexpected dump. want=%d have=%d", 9, totalCount)
@@ -316,7 +316,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if references, err := pager.PageFromOffset(testCase.offset); err != nil {
+		if references, err := pager.PageFromOffset(context.Background(), testCase.offset); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", testCase.offset, err)
 		} else if diff := cmp.Diff(expected[testCase.lo:testCase.hi], references); diff != "" {
 			t.Errorf("unexpected references at offset %d (-want +got):\n%s", testCase.offset, diff)
@@ -332,9 +332,9 @@ func TestUpdatePackageReferences(t *testing.T) {
 	db := &dbImpl{db: dbconn.Global}
 
 	// for foreign key relation
-	insertUploads(t, db.db, Upload{ID: 42})
+	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := db.UpdatePackageReferences(context.Background(), nil, []types.PackageReference{
+	if err := db.UpdatePackageReferences(context.Background(), []types.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -349,7 +349,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_references"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}
@@ -365,11 +365,11 @@ func TestUpdatePackageReferencesEmpty(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	if err := db.UpdatePackageReferences(context.Background(), nil, nil); err != nil {
+	if err := db.UpdatePackageReferences(context.Background(), nil); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_references"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}
@@ -386,9 +386,9 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 	db := &dbImpl{db: dbconn.Global}
 
 	// for foreign key relation
-	insertUploads(t, db.db, Upload{ID: 42})
+	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := db.UpdatePackageReferences(context.Background(), nil, []types.PackageReference{
+	if err := db.UpdatePackageReferences(context.Background(), []types.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -397,7 +397,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	if err := db.UpdatePackageReferences(context.Background(), nil, []types.PackageReference{
+	if err := db.UpdatePackageReferences(context.Background(), []types.PackageReference{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"}, // two copies
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"}, // two copies
 		{DumpID: 42, Scheme: "s4", Name: "n4", Version: "v4"},
@@ -410,7 +410,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_references"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}

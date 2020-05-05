@@ -1,7 +1,7 @@
 {
     "payloads": [
       {
-        "payload_type": "IGNORED_FOR_THIS_EVENT",
+        "payload_type": "pr:activity:status",
         "data": {
           "createdDate": "2020-04-29T2:13:01+0000",
           "user": {

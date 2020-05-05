@@ -5,6 +5,10 @@ import { Driver, createDriverForTest } from '../../../shared/src/e2e/driver'
 import { testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { getConfig } from '../../../shared/src/e2e/config'
+import { fromEvent } from 'rxjs'
+import { first, filter, timeout, mergeMap } from 'rxjs/operators'
+import { Target, Page } from 'puppeteer'
+import { isDefined } from '../../../shared/src/util/types'
 
 describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
@@ -17,6 +21,9 @@ describe('Sourcegraph browser extension on github.com', function () {
         this.timeout(90 * 1000)
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
+            if (restConfig.testUserPassword) {
+                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+            }
             await driver.setExtensionSourcegraphUrl()
         }
     })
@@ -37,6 +44,10 @@ describe('Sourcegraph browser extension on github.com', function () {
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })
 
+    const headGoToDefinitionUrl = new URL(
+        '/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
+        sourcegraphBaseUrl
+    ).toString()
     const tokens = {
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
         base: {
@@ -49,8 +60,7 @@ describe('Sourcegraph browser extension on github.com', function () {
         head: {
             token: 'host',
             lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeR247',
-            goToDefinitionURL:
-                'https://sourcegraph.com/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
+            goToDefinitionURL: headGoToDefinitionUrl,
         },
     }
 
@@ -69,10 +79,12 @@ describe('Sourcegraph browser extension on github.com', function () {
                             const lineNumberElement = await driver.page.waitForSelector(`#${lineId}`, {
                                 timeout: 10000,
                             })
-                            const row = (await driver.page.evaluateHandle(
-                                (element: Element) => element.closest('tr'),
-                                lineNumberElement
-                            ))!.asElement()!
+                            const row = (
+                                await driver.page.evaluateHandle(
+                                    (element: Element) => element.closest('tr'),
+                                    lineNumberElement
+                                )
+                            ).asElement()!
                             assert(row, 'Expected row to exist')
                             const tokenElement = (
                                 await driver.page.evaluateHandle(
@@ -100,13 +112,32 @@ describe('Sourcegraph browser extension on github.com', function () {
                             )
                             assert.strictEqual(href, goToDefinitionURL)
                         })
-                        await Promise.all([
-                            driver.page.waitForNavigation(),
-                            driver.page.click('.e2e-tooltip-go-to-definition'),
-                        ])
+                        let page: Page = driver.page
+                        if (new URL(goToDefinitionURL).hostname !== 'github.com') {
+                            ;[page] = await Promise.all([
+                                fromEvent<Target>(driver.browser, 'targetcreated')
+                                    .pipe(
+                                        timeout(5000),
+                                        mergeMap(target => target.page()),
+                                        filter(isDefined),
+                                        first()
+                                    )
+                                    .toPromise(),
+                                driver.page.click('.e2e-tooltip-go-to-definition'),
+                            ])
+                        } else {
+                            await Promise.all([
+                                driver.page.waitForNavigation(),
+                                driver.page.click('.e2e-tooltip-go-to-definition'),
+                            ])
+                        }
                         await retry(async () => {
-                            assert.strictEqual(await driver.page.evaluate(() => location.href), goToDefinitionURL)
+                            assert.strictEqual(await page.evaluate(() => location.href), goToDefinitionURL)
                         })
+                        // If an additional page was opened, close it so we return to the original `driver.page`.
+                        if (page !== driver.page) {
+                            await page.close()
+                        }
                     })
                 }
             })

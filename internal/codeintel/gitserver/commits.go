@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -16,14 +17,14 @@ func Head(db db.DB, repositoryID int) (string, error) {
 	// TODO(efritz) - remove dependency on codeintel/db package
 	repoName, err := db.RepoName(context.Background(), repositoryID)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "db.RepoName")
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
 	cmd.Repo = gitserver.Repo{Name: api.RepoName(repoName)}
 	out, err := cmd.CombinedOutput(context.Background())
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "gitserver.Command")
 	}
 
 	return string(bytes.TrimSpace(out)), nil
@@ -35,7 +36,7 @@ func CommitsNear(db db.DB, repositoryID int, commit string) (map[string][]string
 	// TODO(efritz) - remove dependency on codeintel/db package
 	repoName, err := db.RepoName(context.Background(), repositoryID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "db.RepoName")
 	}
 
 	// TODO(efritz) - move this declaration
@@ -45,7 +46,7 @@ func CommitsNear(db db.DB, repositoryID int, commit string) (map[string][]string
 	cmd.Repo = gitserver.Repo{Name: api.RepoName(repoName)}
 	out, err := cmd.CombinedOutput(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "gitserver.Command")
 	}
 
 	return parseCommitsNear(strings.Split(string(bytes.TrimSpace(out)), "\n")), nil

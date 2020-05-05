@@ -2,17 +2,14 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 )
-
-var ErrNoSavepoint = errors.New("no savepoint defined")
-var ErrJobNotFinalized = errors.New("job not finalized")
 
 // JobHandle wraps a transaction used by the upload converter. This transaction marks the upload as
 // ineligible for a dequeue to other worker processes. All updates to the database while this record
@@ -23,34 +20,33 @@ var ErrJobNotFinalized = errors.New("job not finalized")
 // MarkErrored. Failure to do so will result in an upload record that will be indefinitely selected
 // for processing.
 type JobHandle interface {
-	TxCloser
+	// DB retrieves the underlying Database object, which wraps the transaction in which the
+	// target upload is locked.
+	DB() DB
 
-	// Tx retrieves the underlying transaction object. This should be passed to all method of DB
-	// to ensure that if the job processing fails there are no externally visible changes to the
-	// database.
-	Tx() *sql.Tx
+	// Done closes the underlying transaction. If neither MarkComplete or MarkErrored were invoked,
+	// this method returns an error.
+	Done(err error) error
 
 	// Savepoint creates a named position in the transaction from which all additional work can
 	// be discarded.
-	Savepoint() error
+	Savepoint(ctx context.Context) error
 
 	// RollbackToLastSavepoint throws away all the work on the underlying transaction since the
 	// last call to Savepoint. This method returns an error if there is no live savepoint in this
 	// transaction.
-	RollbackToLastSavepoint() error
+	RollbackToLastSavepoint(ctx context.Context) error
 
 	// MarkComplete updates the state of the upload to complete.
-	MarkComplete() error
+	MarkComplete(ctx context.Context) error
 
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
-	MarkErrored(failureSummary, failureStacktrace string) error
+	MarkErrored(ctx context.Context, failureSummary, failureStacktrace string) error
 }
 
 type jobHandleImpl struct {
-	ctx             context.Context
+	db              *dbImpl
 	id              int
-	tw              *transactionWrapper
-	txCloser        TxCloser
 	savepoints      []string
 	marked          bool
 	markedSavepoint string
@@ -58,28 +54,28 @@ type jobHandleImpl struct {
 
 var _ JobHandle = &jobHandleImpl{}
 
-// CloseTx commits the transaction on a nil error value and performs a rollback
-// otherwise. If an error occurs during commit or rollback of the transaction,
-// the error is added to the resulting error value. If neither MarkComplete or
-// MarkErrored were invoked, this method returns an error.
-func (h *jobHandleImpl) CloseTx(err error) error {
-	if err == nil && !h.marked {
-		err = ErrJobNotFinalized
-	}
-
-	return h.txCloser.CloseTx(err)
+// DB retrieves the underlying Database object, which wraps the transaction in which the
+// target upload is locked.
+func (h *jobHandleImpl) DB() DB {
+	return h.db
 }
 
-// Tx retrieves the underlying transaction object. This should be passed to all method of DB
-// to ensure that if the job processing fails there are no externally visible changes to the
-// database.
-func (h *jobHandleImpl) Tx() *sql.Tx {
-	return h.tw.tx
+// ErrJobNotFinalized occurs when the job handler's transaction is closed without finalizing the job.
+var ErrJobNotFinalized = errors.New("job not finalized")
+
+// Done closes the underlying transaction. If neither MarkComplete or MarkErrored were invoked,
+// this method returns an error.
+func (h *jobHandleImpl) Done(err error) error {
+	if err == nil && !h.marked {
+		err = multierror.Append(err, ErrJobNotFinalized)
+	}
+
+	return h.db.Done(err)
 }
 
 // Savepoint creates a named position in the transaction from which all additional work can
 // be discarded.
-func (h *jobHandleImpl) Savepoint() error {
+func (h *jobHandleImpl) Savepoint(ctx context.Context) error {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
@@ -88,14 +84,16 @@ func (h *jobHandleImpl) Savepoint() error {
 	savepointID := fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_"))
 	h.savepoints = append(h.savepoints, savepointID)
 	// Unfortunately, it's a syntax error to supply this as a param
-	_, err = h.tw.exec(h.ctx, sqlf.Sprintf("SAVEPOINT "+savepointID))
-	return err
+	return h.db.exec(ctx, sqlf.Sprintf("SAVEPOINT "+savepointID))
 }
+
+// ErrNoSavepoint occurs when there is no savepont to rollback to.
+var ErrNoSavepoint = errors.New("no savepoint defined")
 
 // RollbackToLastSavepoint throws away all the work on the underlying transaction since the
 // last call to Savepoint. This method returns an error if there is no live savepoint in this
 // transaction.
-func (h *jobHandleImpl) RollbackToLastSavepoint() error {
+func (h *jobHandleImpl) RollbackToLastSavepoint(ctx context.Context) error {
 	n := len(h.savepoints)
 	if n == 0 {
 		return ErrNoSavepoint
@@ -112,34 +110,29 @@ func (h *jobHandleImpl) RollbackToLastSavepoint() error {
 	}
 
 	// Perform rollback
-	_, err := h.tw.exec(h.ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
-	return err
+	return h.db.exec(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
 }
 
 // MarkComplete updates the state of the upload to complete.
-func (h *jobHandleImpl) MarkComplete() (err error) {
-	query := `
+func (h *jobHandleImpl) MarkComplete(ctx context.Context) (err error) {
+	h.mark()
+
+	return h.db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'completed', finished_at = now()
 		WHERE id = %s
-	`
-
-	h.mark()
-	_, err = h.tw.exec(h.ctx, sqlf.Sprintf(query, h.id))
-	return err
+	`, h.id))
 }
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
-func (h *jobHandleImpl) MarkErrored(failureSummary, failureStacktrace string) (err error) {
-	query := `
+func (h *jobHandleImpl) MarkErrored(ctx context.Context, failureSummary, failureStacktrace string) (err error) {
+	h.mark()
+
+	return h.db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s
-	`
-
-	h.mark()
-	_, err = h.tw.exec(h.ctx, sqlf.Sprintf(query, failureSummary, failureStacktrace, h.id))
-	return err
+	`, failureSummary, failureStacktrace, h.id))
 }
 
 func (h *jobHandleImpl) mark() {

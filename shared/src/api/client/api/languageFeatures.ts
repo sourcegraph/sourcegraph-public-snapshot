@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
@@ -7,7 +7,7 @@ import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
-import { wrapRemoteObservable } from './common'
+import { registerRemoteProvider } from './common'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyMarked {
@@ -68,33 +68,21 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ((params: TextDocumentPositionParams) => ProxySubscribable<Hover | null | undefined>) & ProxyMarked
         >
     ): Unsubscribable & ProxyMarked {
-        return proxy(
-            this.hoverRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
+        return registerRemoteProvider(this.hoverRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerDefinitionProvider(
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        return proxy(
-            this.definitionRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
+        return registerRemoteProvider(this.definitionRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerReferenceProvider(
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        return proxy(
-            this.referencesRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
+        return registerRemoteProvider(this.referencesRegistry, { documentSelector }, providerFunction)
     }
 
     public $registerLocationProvider(
@@ -102,11 +90,7 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         documentSelector: DocumentSelector,
         providerFunction: Remote<((params: TextDocumentPositionParams) => ProxySubscribable<Location[]>) & ProxyMarked>
     ): Unsubscribable & ProxyMarked {
-        return proxy(
-            this.locationRegistry.registerProvider({ id, documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
+        return registerRemoteProvider(this.locationRegistry, { id, documentSelector }, providerFunction)
     }
 
     public $registerCompletionItemProvider(
@@ -115,10 +99,6 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
             ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyMarked
         >
     ): Unsubscribable & ProxyMarked {
-        return proxy(
-            this.completionItemsRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction(params))
-            )
-        )
+        return registerRemoteProvider(this.completionItemsRegistry, { documentSelector }, providerFunction)
     }
 }

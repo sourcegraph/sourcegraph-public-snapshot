@@ -1,6 +1,6 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph webapp. Please also see our general [TypeScript documentation](./typescript/index.md).
+Guide to contribute to the Sourcegraph webapp. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
 
 ## Naming files
 
@@ -82,10 +82,10 @@ We write unit tests and e2e tests.
 
 Unit tests are for things that can be tested in isolation; you provide inputs and make assertion on the outputs and/or side effects.
 
-React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](testing.md#react-component-snapshot-tests)" for more information.
+React component snapshot tests are a special kind of unit test that we use to test React components. See "[React component snapshot tests](../testing.md#react-component-snapshot-tests)" for more information.
 
-You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](testing.md)" for more information.
+You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to run only tests changed since the last commit). See "[Testing](../testing.md)" for more information.
 
 ### E2E tests
 
-See [testing.md](testing.md).
+See [testing.md](../testing.md).

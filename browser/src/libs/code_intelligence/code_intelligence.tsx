@@ -11,7 +11,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
 import {
-    animationFrameScheduler,
+    asyncScheduler,
     combineLatest,
     EMPTY,
     from,
@@ -370,7 +370,12 @@ function initCodeIntelligence({
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
-        registerHoverContributions({ extensionsController, platformContext, history: H.createBrowserHistory() })
+        registerHoverContributions({
+            extensionsController,
+            platformContext,
+            history: H.createBrowserHistory(),
+            locationAssign: location.assign.bind(location),
+        })
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
@@ -781,7 +786,7 @@ export function handleCodeHost({
                 })
             )
         ),
-        observeOn(animationFrameScheduler)
+        observeOn(asyncScheduler)
     )
 
     /** Map from workspace URI to number of editors referencing it */

@@ -9,12 +9,14 @@ import (
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
+	gitservermocks "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver/mocks"
 )
 
 func TestDefinitions(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockGitserverClient := gitservermocks.NewMockClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -24,7 +26,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	})
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -43,9 +45,10 @@ func TestDefinitions(t *testing.T) {
 func TestDefinitionsUnknownDump(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockGitserverClient := gitservermocks.NewMockClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
 	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
 	}
@@ -55,6 +58,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient := bundlemocks.NewMockBundleClient()
+	mockGitserverClient := gitservermocks.NewMockClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -66,7 +70,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	}, 3)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -87,6 +91,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	mockBundleClient1 := bundlemocks.NewMockBundleClient()
 	mockBundleClient2 := bundlemocks.NewMockBundleClient()
+	mockGitserverClient := gitservermocks.NewMockClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
@@ -100,7 +105,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
 	}, 15)
 
-	api := New(mockDB, mockBundleManagerClient)
+	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
