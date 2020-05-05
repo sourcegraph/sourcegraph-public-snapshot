@@ -541,8 +541,8 @@ func TestVersionContext(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(gotResults, tc.wantResults) {
-				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
+			if diff := cmp.Diff(gotResults, tc.wantResults); diff != "" {
+				t.Fatalf(diff)
 			}
 		})
 	}
