@@ -2,6 +2,7 @@ package lsif
 
 import (
 	"encoding/json"
+
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 )
 

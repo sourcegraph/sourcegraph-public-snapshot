@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -60,7 +61,7 @@ func (w *Worker) Start() error {
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 	upload, jobHandle, ok, err := w.db.Dequeue(ctx)
 	if err != nil || !ok {
-		return false, err
+		return false, errors.Wrap(err, "db.Dequeue")
 	}
 	defer func() {
 		if closeErr := jobHandle.Done(err); closeErr != nil {
@@ -72,7 +73,7 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
 
 		if markErr := jobHandle.MarkErrored(ctx, err.Error(), ""); markErr != nil {
-			return false, markErr
+			return false, errors.Wrap(markErr, "jobHandle.MarkErrored")
 		}
 	}
 
@@ -102,7 +103,7 @@ func process(
 	// Pull raw uploaded data from bundle manager
 	filename, err := bundleManagerClient.GetUpload(ctx, upload.ID, name)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
 
 	// Create target file for converted database
@@ -121,7 +122,11 @@ func process(
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
-			return gitserverClient.DirectoryChildren(db, upload.RepositoryID, upload.Commit, dirnames)
+			directoryChildren, err := gitserverClient.DirectoryChildren(db, upload.RepositoryID, upload.Commit, dirnames)
+			if err != nil {
+				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
+			}
+			return directoryChildren, nil
 		},
 	)
 	if err != nil {
@@ -134,7 +139,7 @@ func process(
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
 	if err := jobHandle.Savepoint(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "jobHandle.Savepoint")
 	}
 	defer func() {
 		if err != nil {
@@ -146,17 +151,17 @@ func process(
 
 	// Update package and package reference data to support cross-repo queries.
 	if err := db.UpdatePackages(ctx, packages); err != nil {
-		return err
+		return errors.Wrap(err, "db.UpdatePackages")
 	}
 	if err := db.UpdatePackageReferences(ctx, packageReferences); err != nil {
-		return err
+		return errors.Wrap(err, "db.UpdatePackageReferences")
 	}
 
 	// Before we mark the upload as complete, we need to delete any existing completed uploads
 	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 	// will fail as these values form a unique constraint.
 	if err := db.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-		return err
+		return errors.Wrap(err, "db.DeleteOverlappingDumps")
 	}
 
 	// Almost-success: we need to mark this upload as complete at this point as the next step changes
@@ -164,13 +169,13 @@ func process(
 	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
 	// still roll back to the save point and mark the upload as errored.
 	if err := jobHandle.MarkComplete(ctx); err != nil {
-		return err
+		return errors.Wrap(err, "jobHandle.MarkComplete")
 	}
 
 	// Discover commits around the current tip commit and the commit of this upload. Upsert these
 	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
 	if err := updateCommitsAndVisibility(ctx, db, gitserverClient, upload.RepositoryID, upload.Commit); err != nil {
-		return err
+		return errors.Wrap(err, "updateCommitsAndVisibility")
 	}
 
 	f, err := os.Open(newFilename)
@@ -181,7 +186,7 @@ func process(
 
 	// Send converted database file to bundle manager
 	if err := bundleManagerClient.SendDB(ctx, upload.ID, f); err != nil {
-		return err
+		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
 	return nil
@@ -192,11 +197,11 @@ func process(
 func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, repositoryID int, commit string) error {
 	tipCommit, err := gitserverClient.Head(db, repositoryID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "gitserver.Head")
 	}
 	newCommits, err := gitserverClient.CommitsNear(db, repositoryID, tipCommit)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "gitserver.CommitsNear")
 	}
 
 	if tipCommit != commit {
@@ -206,7 +211,7 @@ func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient g
 		// from the tip and all dumps will be invisible.
 		additionalCommits, err := gitserverClient.CommitsNear(db, repositoryID, commit)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "gitserver.CommitsNear")
 		}
 
 		for k, vs := range additionalCommits {
@@ -215,11 +220,11 @@ func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient g
 	}
 
 	if err := db.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
-		return err
+		return errors.Wrap(err, "db.UpdateCommits")
 	}
 
 	if err := db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-		return err
+		return errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
 	}
 
 	return nil
@@ -236,7 +241,7 @@ func convert(
 ) (_ []types.Package, _ []types.PackageReference, err error) {
 	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
 	if err := write(ctx, newFilename, groupedBundleData); err != nil {
@@ -258,21 +263,24 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		}
 	}()
 
-	fns := []func() error{
-		func() error {
-			return writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks)
-		},
-		func() error { return writer.WriteDocuments(ctx, groupedBundleData.Documents) },
-		func() error { return writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks) },
-		func() error { return writer.WriteDefinitions(ctx, groupedBundleData.Definitions) },
-		func() error { return writer.WriteReferences(ctx, groupedBundleData.References) },
-		func() error { return writer.Flush(ctx) },
+	if err := writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks); err != nil {
+		return errors.Wrap(err, "writer.WriteMeta")
+	}
+	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+		return errors.Wrap(err, "writer.WriteDocuments")
+	}
+	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+		return errors.Wrap(err, "writer.WriteResultChunks")
+	}
+	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+		return errors.Wrap(err, "writer.WriteDefinitions")
+	}
+	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
+		return errors.Wrap(err, "writer.WriteReferences")
 	}
 
-	for _, fn := range fns {
-		if err := fn(); err != nil {
-			return err
-		}
+	if err := writer.Flush(ctx); err != nil {
+		return errors.Wrap(err, "writer.Flush")
 	}
 
 	return nil

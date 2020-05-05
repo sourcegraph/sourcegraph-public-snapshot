@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
@@ -59,7 +60,7 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 
 	x, err := r.serializer.UnmarshalDocumentData(data)
 	if err != nil {
-		return types.DocumentData{}, false, err
+		return types.DocumentData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalDocumentData")
 	}
 	return x, true, nil
 }
@@ -76,7 +77,7 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 
 	x, err := r.serializer.UnmarshalResultChunkData(data)
 	if err != nil {
-		return types.ResultChunkData{}, false, err
+		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalResultChunkData")
 	}
 	return x, true, nil
 }

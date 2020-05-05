@@ -5,6 +5,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
@@ -302,7 +303,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 	for _, v := range uniques {
 		filter, err := bloomfilter.CreateFilter(v.Identifiers)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
 		}
 
 		packageReferences = append(packageReferences, types.PackageReference{

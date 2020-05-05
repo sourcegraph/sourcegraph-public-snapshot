@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -73,13 +74,17 @@ func (s *ReferencePageResolver) dispatchCursorHandler(ctx context.Context, curso
 		return nil, Cursor{}, false, fmt.Errorf("unknown cursor phase %s", cursor.Phase)
 	}
 
-	return fn(ctx, cursor)
+	locations, newCursor, hasNewCursor, err := fn(ctx, cursor)
+	if err != nil {
+		return nil, Cursor{}, false, pkgerrors.Wrap(err, cursor.Phase)
+	}
+	return locations, newCursor, hasNewCursor, nil
 }
 
 func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	dump, exists, err := s.db.GetDumpByID(ctx, cursor.DumpID)
 	if err != nil {
-		return nil, Cursor{}, false, err
+		return nil, Cursor{}, false, pkgerrors.Wrap(err, "db.GetDumpByID")
 	}
 	if !exists {
 		return nil, Cursor{}, false, ErrMissingDump
@@ -88,7 +93,7 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 
 	locations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
-		return nil, Cursor{}, false, err
+		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
 	}
 
 	hashLocation := func(location bundles.Location) string {
@@ -114,7 +119,7 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 	for _, moniker := range cursor.Monikers {
 		results, _, err := bundleClient.MonikerResults(ctx, "reference", moniker.Scheme, moniker.Identifier, 0, 0)
 		if err != nil {
-			return nil, Cursor{}, false, err
+			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.MonikerResults")
 		}
 
 		for _, location := range results {
@@ -159,7 +164,7 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 
 		packageInformation, err := s.bundleManagerClient.BundleClient(cursor.DumpID).PackageInformation(ctx, cursor.Path, moniker.PackageInformationID)
 		if err != nil {
-			return nil, Cursor{}, false, err
+			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleManagerClient.PackageInformation")
 		}
 
 		hasNextPhaseCursor = true
@@ -212,7 +217,11 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 
 func (s *ReferencePageResolver) handleSameRepoCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	locations, newCursor, hasNewCursor, err := s.resolveLocationsViaReferencePager(ctx, cursor, func(ctx context.Context) (int, db.ReferencePager, error) {
-		return s.db.SameRepoPager(ctx, s.repositoryID, s.commit, cursor.Scheme, cursor.Name, cursor.Version, s.remoteDumpLimit)
+		totalCount, pager, err := s.db.SameRepoPager(ctx, s.repositoryID, s.commit, cursor.Scheme, cursor.Name, cursor.Version, s.remoteDumpLimit)
+		if err != nil {
+			return 0, nil, pkgerrors.Wrap(err, "db.SameRepoPager")
+		}
+		return totalCount, pager, nil
 	})
 	if err != nil || hasNewCursor {
 		return locations, newCursor, hasNewCursor, err
@@ -236,7 +245,11 @@ func (s *ReferencePageResolver) handleSameRepoCursor(ctx context.Context, cursor
 
 func (s *ReferencePageResolver) handleRemoteRepoCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	return s.resolveLocationsViaReferencePager(ctx, cursor, func(ctx context.Context) (int, db.ReferencePager, error) {
-		return s.db.PackageReferencePager(ctx, cursor.Scheme, cursor.Name, cursor.Version, s.repositoryID, s.remoteDumpLimit)
+		totalCount, pager, err := s.db.PackageReferencePager(ctx, cursor.Scheme, cursor.Name, cursor.Version, s.repositoryID, s.remoteDumpLimit)
+		if err != nil {
+			return 0, nil, pkgerrors.Wrap(err, "db.PackageReferencePager")
+		}
+		return totalCount, pager, nil
 	})
 }
 
@@ -298,7 +311,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		dump, exists, err := s.db.GetDumpByID(ctx, batchDumpID)
 		if err != nil {
-			return nil, Cursor{}, false, err
+			return nil, Cursor{}, false, pkgerrors.Wrap(err, "db.GetDumpByID")
 		}
 		if !exists {
 			continue
@@ -307,7 +320,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		results, count, err := bundleClient.MonikerResults(ctx, "reference", scheme, identifier, cursor.SkipResultsInDump, limit)
 		if err != nil {
-			return nil, Cursor{}, false, err
+			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.MonikerResults")
 		}
 		if len(results) == 0 {
 			continue
