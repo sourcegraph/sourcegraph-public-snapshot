@@ -113,19 +113,19 @@ func RunParallel(maxConcurrency int, fns []FnPair) error {
 }
 
 type pendingMap struct {
-	m       sync.RWMutex
+	sync.RWMutex
 	pending map[int]bool
 }
 
 func (m *pendingMap) filter(i int) {
-	m.m.Lock()
-	defer m.m.Unlock()
+	m.Lock()
+	defer m.Unlock()
 	delete(m.pending, i)
 }
 
 func (m *pendingMap) keys() (keys []int) {
-	m.m.RLock()
-	defer m.m.RUnlock()
+	m.RLock()
+	defer m.RUnlock()
 
 	for k := range m.pending {
 		keys = append(keys, k)
@@ -135,19 +135,19 @@ func (m *pendingMap) keys() (keys []int) {
 }
 
 func (m *pendingMap) set(i int) {
-	m.m.Lock()
-	defer m.m.Unlock()
+	m.Lock()
+	defer m.Unlock()
 	m.pending[i] = true
 }
 
 func (m *pendingMap) get(i int) bool {
-	m.m.RLock()
-	defer m.m.RUnlock()
+	m.RLock()
+	defer m.RUnlock()
 	return m.pending[i]
 }
 
 func (m *pendingMap) size() int {
-	m.m.RLock()
-	defer m.m.RUnlock()
+	m.RLock()
+	defer m.RUnlock()
 	return len(m.pending)
 }
