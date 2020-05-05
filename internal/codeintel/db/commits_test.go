@@ -27,7 +27,7 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 	}); err != nil {
 		t.Fatalf("unexpected error updating commits: %s", err)

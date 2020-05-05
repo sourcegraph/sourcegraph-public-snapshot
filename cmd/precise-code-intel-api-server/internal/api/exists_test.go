@@ -77,16 +77,16 @@ func TestFindClosestDatabase(t *testing.T) {
 	}
 	if len(mockDB.UpdateCommitsFunc.History()) != 1 {
 		t.Errorf("unexpected number of update UpdateCommitsFunc calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
-	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg3); diff != "" {
+	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected update UpdateCommitsFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.UpdateDumpsVisibleFromTipFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdateDumpsVisibleFromTipFunc calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
-	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != 42 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 42, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2)
-	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg3 != makeCommit(30) {
-		t.Errorf("unexpected value for tip commit. want=%s have=%s", makeCommit(30), mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg3)
+	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1 != 42 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 42, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1)
+	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != makeCommit(30) {
+		t.Errorf("unexpected value for tip commit. want=%s have=%s", makeCommit(30), mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2)
 	}
 }
 

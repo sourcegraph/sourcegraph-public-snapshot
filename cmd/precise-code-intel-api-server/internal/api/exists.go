@@ -54,7 +54,7 @@ func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, reposit
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.CommitsNear")
 	}
-	if err := api.db.UpdateCommits(ctx, nil, repositoryID, newCommits); err != nil {
+	if err := api.db.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
 		return errors.Wrap(err, "db.UpdateCommits")
 	}
 
@@ -62,7 +62,7 @@ func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, reposit
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.Head")
 	}
-	if err := api.db.UpdateDumpsVisibleFromTip(ctx, nil, repositoryID, tipCommit); err != nil {
+	if err := api.db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
 		return errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
 	}
 

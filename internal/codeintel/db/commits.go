@@ -8,7 +8,7 @@ import (
 
 // HasCommit determines if the given commit is known for the given repository.
 func (db *dbImpl) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
-	count, err := scanInt(db.queryRow(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_commits WHERE repository_id = %s and commit = %s LIMIT 1`, repositoryID, commit)))
+	count, _, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_commits WHERE repository_id = %s and commit = %s LIMIT 1`, repositoryID, commit)))
 	return count > 0, err
 }
 
