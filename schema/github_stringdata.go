@@ -31,9 +31,32 @@ const GitHubSchemaJSON = `{
       "default": "http"
     },
     "token": {
-      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). The \"repo\" scope is required to mirror private repositories. If using only public repositories, you can create the token with no scopes.",
+      "description": "A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.",
       "type": "string",
       "minLength": 1
+    },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to GitHub.",
+      "title": "GitHubRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 5000,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPeHour": 5000
+      }
     },
     "certificate": {
       "description": "TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",

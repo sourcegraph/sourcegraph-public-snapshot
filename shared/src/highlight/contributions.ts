@@ -1,4 +1,5 @@
 import { registerLanguage } from 'highlight.js/lib/highlight'
+import { definer as graphQLLanguage } from 'highlightjs-graphql'
 
 let registered = false
 
@@ -46,6 +47,7 @@ export function registerHighlightContributions(): void {
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))
     registerLanguage('perl', require('highlight.js/lib/languages/perl'))
     registerLanguage('scala', require('highlight.js/lib/languages/scala'))
+    registerLanguage('graphql', graphQLLanguage)
     /* eslint-enable @typescript-eslint/no-require-imports */
     /* eslint-enable @typescript-eslint/no-var-requires */
 }

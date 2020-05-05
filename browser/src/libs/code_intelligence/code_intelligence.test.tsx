@@ -1,6 +1,6 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId, noop } from 'lodash'
+import { uniqueId, noop, isEmpty } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
@@ -14,7 +14,7 @@ import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
-import { isDefined, subTypeOf } from '../../../../shared/src/util/types'
+import { isDefined, subTypeOf, allOf, check, isTaggedUnionMember } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import {
@@ -31,6 +31,7 @@ import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
+import { MockIntersectionObserver } from './MockIntersectionObserver'
 
 const RENDER = sinon.spy()
 
@@ -92,6 +93,12 @@ const commonArgs = () =>
     })
 
 describe('code_intelligence', () => {
+    // Mock the global IntersectionObserver constructor with an implementation that
+    // will immediately signal all observed elements as intersecting.
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
     beforeEach(() => {
         document.body.innerHTML = ''
     })
@@ -189,7 +196,7 @@ describe('code_intelligence', () => {
         })
 
         test('detects code views based on selectors', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
@@ -240,10 +247,10 @@ describe('code_intelligence', () => {
                     }),
                 })
             )
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([
                 {
-                    editorId: 'editor#0',
+                    viewerId: 'viewer#0',
                     isActive: true,
                     // The repo name exposed to extensions is affected by repositoryPathPattern
                     resource: 'git://github/foo?1#/bar.ts',
@@ -260,7 +267,7 @@ describe('code_intelligence', () => {
             it('decorates a code view', async () => {
                 const { extensionAPI, services } = await integrationTestContext(undefined, {
                     roots: [],
-                    editors: [],
+                    viewers: [],
                 })
                 const codeView = createTestElement()
                 codeView.id = 'code'
@@ -304,6 +311,9 @@ describe('code_intelligence', () => {
                         take(1)
                     )
                     .toPromise()
+                if (activeEditor.type !== 'CodeEditor') {
+                    throw new Error(`Expected active editor to be CodeEditor, got ${activeEditor.type}`)
+                }
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
@@ -356,7 +366,7 @@ describe('code_intelligence', () => {
             it('decorates a diff code view', async () => {
                 const { extensionAPI, services } = await integrationTestContext(undefined, {
                     roots: [],
-                    editors: [],
+                    viewers: [],
                 })
                 const codeView = createTestElement()
                 codeView.id = 'code'
@@ -415,14 +425,19 @@ describe('code_intelligence', () => {
                 const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
-                        .pipe(skip(1), take(1))
+                        .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
-                const editors = extensionAPI.app.activeWindow!.visibleViewComponents
-                expect(editors).toHaveLength(2)
+                const viewers = extensionAPI.app.activeWindow!.visibleViewComponents
+                expect(viewers).toHaveLength(2)
 
-                const baseEditor = editors.find(e => e.document.uri === 'git://foo?1#/bar.ts')!
+                const baseEditor = viewers.find(
+                    allOf(
+                        isTaggedUnionMember('type', 'CodeEditor' as const),
+                        check(e => e.document.uri === 'git://foo?1#/bar.ts')
+                    )
+                )!
                 const baseDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),
@@ -451,7 +466,12 @@ describe('code_intelligence', () => {
                 ]
                 baseEditor.setDecorations(decorationType, baseDecorations)
 
-                const headEditor = editors.find(e => e.document.uri === 'git://foo?2#/bar.ts')!
+                const headEditor = viewers.find(
+                    allOf(
+                        isTaggedUnionMember('type', 'CodeEditor' as const),
+                        check(e => e.document.uri === 'git://foo?2#/bar.ts')
+                    )
+                )!
                 const headDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),
@@ -509,7 +529,7 @@ describe('code_intelligence', () => {
         test('removes code views and models', async () => {
             const { services } = await integrationTestContext(undefined, {
                 roots: [],
-                editors: [],
+                viewers: [],
             })
             const codeView1 = createTestElement()
             codeView1.className = 'code'
@@ -549,17 +569,17 @@ describe('code_intelligence', () => {
                     platformContext: createMockPlatformContext(),
                 })
             )
-            await from(services.editor.editorUpdates).pipe(skip(1), take(1)).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([
+            await from(services.viewer.viewerUpdates).pipe(skip(1), take(1)).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([
                 {
-                    editorId: 'editor#0',
+                    viewerId: 'viewer#0',
                     isActive: true,
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
                 },
                 {
-                    editorId: 'editor#1',
+                    viewerId: 'viewer#1',
                     isActive: true,
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
@@ -570,10 +590,10 @@ describe('code_intelligence', () => {
             // Simulate codeView1 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([
                 {
-                    editorId: 'editor#1',
+                    viewerId: 'viewer#1',
                     isActive: true,
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
@@ -584,13 +604,13 @@ describe('code_intelligence', () => {
             // Simulate codeView2 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([])
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
         })
 
         test('Hoverifies a view if the code host has no nativeTooltipResolvers', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -626,14 +646,14 @@ describe('code_intelligence', () => {
                     showGlobalDebug: true,
                 })
             )
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect(services.editor.editors.size).toEqual(1)
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect(services.viewer.viewers.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
 
         test('Does not hoverify a view if the code host has nativeTooltipResolvers and they are enabled from settings', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -680,15 +700,15 @@ describe('code_intelligence', () => {
                     },
                 })
             )
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
 
-            expect(services.editor.editors.size).toEqual(1)
+            expect(services.viewer.viewers.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
         })
 
         test('Hides native tooltips if they are disabled from settings', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -737,15 +757,15 @@ describe('code_intelligence', () => {
                     },
                 })
             )
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect(services.editor.editors.size).toEqual(1)
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect(services.viewer.viewers.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
         })
 
         test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const codeView = createTestElement()
             codeView.id = 'code'
             const fileInfo: FileInfo = {
@@ -787,10 +807,10 @@ describe('code_intelligence', () => {
                     }),
                 })
             )
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([
                 {
-                    editorId: 'editor#0',
+                    viewerId: 'viewer#0',
                     isActive: true,
                     // Repo name exposed in URIs is the raw repo name
                     resource: 'git://github.com/foo?1#/bar.ts',

@@ -89,6 +89,8 @@ describe('Organizations regression test suite', () => {
                 const rawSettings = await getViewerSettings(userGQLClient)
                 const settingsOrError = parseJSONCOrError<Settings>(rawSettings.final)
                 if (isErrorLike(settingsOrError)) {
+                    // TODO harmonize Error and ErrorLike interfaces
+                    // eslint-disable-next-line rxjs/throw-error, etc/throw-error
                     throw settingsOrError
                 }
                 return settingsOrError.quicklinks
@@ -106,9 +108,9 @@ describe('Organizations regression test suite', () => {
             })
             await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
-            await driver.page.waitForSelector('.monaco-editor')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             await driver.replaceText({
-                selector: '.monaco-editor',
+                selector: '.e2e-settings-file .monaco-editor',
                 newText: `{"quicklinks": [${JSON.stringify(quicklink)}]}`,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'paste',

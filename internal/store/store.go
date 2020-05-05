@@ -10,18 +10,21 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -102,6 +105,8 @@ func (s *Store) Start() {
 			BackgroundTimeout: 2 * time.Minute,
 			BeforeEvict:       s.ZipCache.delete,
 		}
+		_ = os.MkdirAll(s.Path, 0700)
+		metrics.MustRegisterDiskMonitor(s.Path)
 		go s.watchAndEvict()
 	})
 }
@@ -109,7 +114,7 @@ func (s *Store) Start() {
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
 func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.prepareZip")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
 		if err != nil {
@@ -187,7 +192,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 
 	fetching.Inc()
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo.Name)
 	span.SetTag("repoURL", repo.URL)
@@ -370,34 +375,24 @@ func ignoreSizeMax(name string, patterns []string) bool {
 
 var (
 	cacheSizeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "cache_size_bytes",
-		Help:      "The total size of items in the on disk cache.",
+		Name: "searcher_store_cache_size_bytes",
+		Help: "The total size of items in the on disk cache.",
 	})
 	evictions = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "evictions",
-		Help:      "The total number of items evicted from the cache.",
+		Name: "searcher_store_evictions",
+		Help: "The total number of items evicted from the cache.",
 	})
 	fetching = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetching",
-		Help:      "The number of fetches currently running.",
+		Name: "searcher_store_fetching",
+		Help: "The number of fetches currently running.",
 	})
 	fetchQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetch_queue_size",
-		Help:      "The number of fetch jobs enqueued.",
+		Name: "searcher_store_fetch_queue_size",
+		Help: "The number of fetch jobs enqueued.",
 	})
 	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "searcher",
-		Subsystem: "store",
-		Name:      "fetch_failed",
-		Help:      "The total number of archive fetches that failed.",
+		Name: "searcher_store_fetch_failed",
+		Help: "The total number of archive fetches that failed.",
 	})
 )
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd $(dirname "${BASH_SOURCE[0]}")/..
+cd "$(dirname "${BASH_SOURCE[0]}")"/..
 set -ex
 
 # Build a Sourcegraph server docker image to run for development purposes. Note

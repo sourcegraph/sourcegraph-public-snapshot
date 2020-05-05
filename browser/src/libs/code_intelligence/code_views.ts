@@ -3,9 +3,8 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip, OperatorFunction } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { isErrorLike } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { ButtonProps } from '../../shared/components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
@@ -47,7 +46,10 @@ export interface CodeView {
      * because some code hosts need to resolve this asynchronously. The
      * observable should only emit once.
      */
-    resolveFileInfo: (codeView: HTMLElement, requestGraphQL: PlatformContext['requestGraphQL']) => Observable<FileInfo>
+    resolveFileInfo: (
+        codeView: HTMLElement,
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ) => Observable<FileInfo> | FileInfo
     /**
      * In some situations, we need to be able to adjust the position going into
      * and coming out of codeintellify. For example, Phabricator converts tabs
@@ -132,8 +134,8 @@ export const fetchFileContents = (
                 catchError(() => [info])
             )
         }),
-        catchError((err: any) => {
-            if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+        catchError(err => {
+            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                 return [info]
             }
             throw err

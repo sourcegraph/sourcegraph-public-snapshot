@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type Commit struct {
@@ -84,7 +84,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
 func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
@@ -93,7 +93,7 @@ func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 
 // Commits returns all commits matching the options.
 func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Commits")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
@@ -107,7 +107,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
 func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitAfter")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
@@ -225,7 +225,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 // CommitCount returns the number of commits that would be returned by Commits.
 func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (uint, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 

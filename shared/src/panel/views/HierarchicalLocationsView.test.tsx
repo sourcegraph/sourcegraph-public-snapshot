@@ -8,7 +8,7 @@ import H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { concat, NEVER, Observable, of } from 'rxjs'
+import { concat, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 import { createContextService } from '../../api/client/context/contextService'
 import { parseTemplate } from '../../api/client/context/expr/evaluator'
@@ -16,6 +16,7 @@ import { ContributionsEntry, ContributionUnsubscribable } from '../../api/client
 import { Controller } from '../../extensions/controller'
 import { SettingsCascadeOrError } from '../../settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
 
@@ -63,7 +64,14 @@ describe('<HierarchicalLocationsView />', () => {
     test('shows a spinner if locations emits empty and is not complete', () => {
         const { props } = getProps()
         expect(
-            renderer.create(<HierarchicalLocationsView {...props} locations={of(concat(of([]), NEVER))} />).toJSON()
+            renderer
+                .create(
+                    <HierarchicalLocationsView
+                        {...props}
+                        locations={concat(of({ isLoading: true, result: [] }), NEVER)}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -108,7 +116,7 @@ describe('<HierarchicalLocationsView />', () => {
     }
 
     test('displays a single location when complete', () => {
-        const locations = of<Observable<Location[]>>(of([SAMPLE_LOCATION]))
+        const locations = of<MaybeLoadingResult<Location[]>>({ isLoading: false, result: [SAMPLE_LOCATION] })
         const props = {
             ...getProps().props,
             locations,
@@ -119,13 +127,13 @@ describe('<HierarchicalLocationsView />', () => {
     test('displays partial locations before complete', () => {
         const props = {
             ...getProps().props,
-            locations: concat(of(of([SAMPLE_LOCATION])), NEVER),
+            locations: concat(of({ isLoading: false, result: [SAMPLE_LOCATION] }), NEVER),
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
     })
 
     test('displays multiple locations grouped by file', () => {
-        const locations = of<Location[]>([
+        const locations: Location[] = [
             {
                 uri: 'git://github.com/foo/bar#file1.txt',
                 range: {
@@ -191,7 +199,7 @@ describe('<HierarchicalLocationsView />', () => {
                     },
                 },
             },
-        ])
+        ]
         const props: HierarchicalLocationsViewProps = {
             ...getProps().props,
             settingsCascade: {
@@ -200,7 +208,7 @@ describe('<HierarchicalLocationsView />', () => {
                     'panel.locations.groupByFile': true,
                 },
             },
-            locations: of(locations),
+            locations: of({ isLoading: false, result: locations }),
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
     })

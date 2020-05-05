@@ -1,0 +1,74 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
+<div
+  className="user-subscriptions-edit-product-subscription-page"
+>
+  <a
+    className="btn btn-link btn-sm mb-3"
+    href="/s"
+    onClick={[Function]}
+  >
+    <ArrowLeftIcon
+      className="icon-inline"
+    />
+     Subscription
+  </a>
+  <h2>
+    Upgrade or change subscription 
+    L-123
+  </h2>
+  <ProductSubscriptionForm
+    accountID="u"
+    afterPrimaryButton={
+      <small
+        className="form-text text-muted"
+      >
+        An upgraded license key will be available immediately.
+      </small>
+    }
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    initialValue={
+      Object {
+        "billingPlanID": "bp",
+        "userCount": 123,
+      }
+    }
+    isLightTheme={true}
+    onSubmit={[Function]}
+    primaryButtonText="Upgrade subscription"
+    subscriptionID="s"
+  />
+</div>
+`;

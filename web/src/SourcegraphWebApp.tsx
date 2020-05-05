@@ -57,6 +57,7 @@ import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
+import { SettingsExperimentalFeatures } from './schema/settings.schema'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -277,8 +278,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             from(this.platformContext.settings).subscribe(settingsCascade => {
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-                    const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
-                    this.setState({ splitSearchModes: splitSearchModes !== false, smartSearchField })
+                    const experimentalFeatures: SettingsExperimentalFeatures =
+                        settingsCascade.final.experimentalFeatures || {}
+                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
+                    this.setState({ splitSearchModes, smartSearchField })
                 }
             })
         )
@@ -321,6 +324,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             this.setState(state => ({
                 interactiveSearchMode: !state.interactiveSearchMode,
                 navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
+                filtersInQuery: {},
             }))
         } else {
             this.setState(state => ({
@@ -375,14 +379,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     authenticatedUser={authenticatedUser}
                                     viewerSubject={this.state.viewerSubject}
                                     settingsCascade={this.state.settingsCascade}
-                                    showCampaigns={
-                                        this.props.showCampaigns &&
-                                        window.context.experimentalFeatures.automation === 'enabled' &&
-                                        !window.context.sourcegraphDotComMode &&
-                                        !!authenticatedUser &&
-                                        (authenticatedUser.siteAdmin ||
-                                            !!window.context.site['campaigns.readAccess.enabled'])
-                                    }
+                                    showCampaigns={this.props.showCampaigns}
                                     // Theme
                                     isLightTheme={this.isLightTheme()}
                                     themePreference={this.state.themePreference}

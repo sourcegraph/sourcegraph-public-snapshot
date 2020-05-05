@@ -6,7 +6,7 @@
     "release": "node ./out/release.js",
     "build": "tsc -b .",
     "watch": "tsc -b . -w",
-    "tslint": "../../node_modules/.bin/tslint --project tsconfig.json --config ../../tslint.config.js 'src/**/*.ts'",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
-  }
+  },
+  "dependencies": {}
 }

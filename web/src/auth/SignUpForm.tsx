@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { from, Subscription } from 'rxjs'
@@ -10,6 +9,7 @@ import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
+import * as H from 'history'
 
 export interface SignUpArgs {
     email: string
@@ -21,13 +21,11 @@ export interface SignUpArgs {
 interface SignUpFormProps {
     className?: string
 
-    location: H.Location
-    history: H.History
-
     /** Called to perform the signup on the server. */
     doSignUp: (args: SignUpArgs) => Promise<void>
 
     buttonLabel?: string
+    history: H.History
 }
 
 interface SignUpFormState {
@@ -59,7 +57,9 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                 className={classNames('signin-signup-form', 'e2e-signup-form', this.props.className)}
                 onSubmit={this.handleSubmit}
             >
-                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                )}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"

@@ -6,32 +6,43 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
 import { Suggestion, FilterSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../shared/src/search/interactive/util'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
+import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
+
+interface SubmitSearchParams
+    extends Partial<Pick<ActivationProps, 'activation'>>,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'> {
+    history: H.History
+    query: string
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
+}
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
  * flow.
  */
-export function submitSearch(
-    history: H.History,
-    navbarQuery: string,
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
-    patternType: GQL.SearchPatternType,
-    caseSensitive: boolean,
-    activation?: ActivationProps['activation'],
-    filtersQuery?: FiltersToTypeAndValue
-): void {
-    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, caseSensitive, filtersQuery)
+export function submitSearch({
+    history,
+    query,
+    patternType,
+    caseSensitive,
+    activation,
+    filtersInQuery,
+    source,
+}: SubmitSearchParams): void {
+    const searchQueryParam = buildSearchURLQuery(query, patternType, caseSensitive, filtersInQuery)
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
     eventLogger.log('SearchSubmitted', {
-        query: [navbarQuery, generateFiltersQuery(filtersQuery || {})].filter(query => query.length > 0).join(' '),
+        query: [query, generateFiltersQuery(filtersInQuery || {})].filter(query => query.length > 0).join(' '),
         source,
     })
-    history.push(path, { ...history.location.state, query: navbarQuery })
+    history.push(path, { ...history.location.state, query })
     if (activation) {
         activation.update({ DidSearch: true })
     }

@@ -7,7 +7,6 @@ import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 
 describe('UserNavItem', () => {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const ORG_CONNECTION = {
         __typename: 'OrgConnection',
         nodes: [
@@ -16,7 +15,6 @@ describe('UserNavItem', () => {
         ] as unknown,
         totalCount: 2,
     } as GQL.IOrgConnection
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const USER = { username: 'u', url: '/u', settingsURL: '/u/settings', organizations: ORG_CONNECTION } as GQL.IUser
 
     const history = H.createMemoryHistory({ keyLength: 0 })
@@ -33,7 +31,6 @@ describe('UserNavItem', () => {
                             location={history.location}
                             authenticatedUser={USER}
                             showDotComMarketing={true}
-                            showDiscussions={true}
                         />
                     </MemoryRouter>
                 )

@@ -34,7 +34,6 @@ describe('SearchStatsPage', () => {
                 createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
             }
         )
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         act(() => undefined) // wait for _querySearchResultsStats to emit
         expect(component.toJSON()).toMatchSnapshot()
     })
@@ -62,7 +61,6 @@ describe('SearchStatsPage', () => {
                 createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
             }
         )
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         act(() => undefined) // wait for _querySearchResultsStats to emit
         expect(component.toJSON()).toMatchSnapshot()
     })

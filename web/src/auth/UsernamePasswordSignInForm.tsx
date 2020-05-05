@@ -43,7 +43,9 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
-                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} icon={false} />}
+                {this.state.error && (
+                    <ErrorAlert className="my-2" error={this.state.error} icon={false} history={this.props.history} />
+                )}
                 <div className="form-group">
                     <input
                         className="form-control signin-signup-form__input"

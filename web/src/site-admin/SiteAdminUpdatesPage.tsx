@@ -14,6 +14,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps<{}> {}
 
@@ -39,14 +40,14 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
             fetchSite()
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
-                    ([site, { buildVersion, productVersion, updateCheck }]) =>
+                    ([, { buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
                             buildVersion,
                             productVersion,
                             updateCheck,
                             error: undefined,
                         }),
-                    error => this.setState({ error: error.message })
+                    error => this.setState({ error: asError(error).message })
                 )
         )
     }
@@ -90,6 +91,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                 className="site-admin-updates-page__alert"
                                 prefix="Error checking for updates"
                                 error={this.state.updateCheck.errorMessage}
+                                history={this.props.history}
                             />
                         )}
                     </div>

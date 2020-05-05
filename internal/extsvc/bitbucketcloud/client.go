@@ -14,10 +14,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/time/rate"
 )
 
@@ -40,8 +40,8 @@ const (
 
 // Global limiter cache so that we reuse the same rate limiter for
 // the same code host, even between config changes.
-// The longer term plan is to have a rate limiter that is shared across
-// all services so the below is just a short term solution.
+// This is a failsafe to protect bitbucket as they do not impose their own
+// rate limiting.
 var limiterMu sync.Mutex
 var limiterCache = make(map[string]*rate.Limiter)
 
@@ -157,7 +157,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Cloud"),
 		nethttp.ClientTrace(false))

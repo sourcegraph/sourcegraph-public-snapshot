@@ -12,7 +12,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -252,7 +252,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query query.QueryInfo, limit int) (res []*FileMatchResolver, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
+	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

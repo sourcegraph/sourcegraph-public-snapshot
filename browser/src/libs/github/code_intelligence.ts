@@ -3,10 +3,9 @@ import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toAbsoluteBlobURL } from '../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
-import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { NativeTooltip } from '../code_intelligence/native_tooltips'
@@ -139,7 +138,7 @@ const snippetCodeView: Omit<CodeView, 'element'> = {
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     codeViewElement: HTMLElement
 ): HTMLElement => {
-    const className = 'sourcegraph-app-annotator'
+    const className = 'sourcegraph-github-file-code-view-toolbar-mount'
     const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
     if (existingMount) {
         return existingMount
@@ -285,8 +284,10 @@ export const githubCodeHost: CodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const parsedURL = parseURL()
         return {
-            ...parseURL(),
+            ...parsedURL,
+            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },

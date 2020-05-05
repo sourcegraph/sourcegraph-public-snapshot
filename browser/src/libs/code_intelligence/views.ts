@@ -1,4 +1,4 @@
-import { asyncScheduler, defer, from, Subscription, OperatorFunction } from 'rxjs'
+import { asyncScheduler, defer, from, Observable, OperatorFunction, Subscription } from 'rxjs'
 import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
@@ -103,5 +103,52 @@ export function trackViews<V extends View>(
                     )
                 )
             )
+        })
+}
+
+export type IntersectionObserverCallbackLike = (
+    entries: Pick<IntersectionObserverEntry, 'target' | 'isIntersecting'>[],
+    obs: Pick<IntersectionObserver, 'unobserve'>
+) => void
+
+export type IntersectionObserverLike = Pick<IntersectionObserver, 'observe' | 'unobserve' | 'disconnect'>
+
+/**
+ * An operator function that delays emitting views until they intersect with the viewport.
+ *
+ */
+export function delayUntilIntersecting<T extends View>(
+    options: IntersectionObserverInit,
+    createIntersectionObserver = (
+        cb: IntersectionObserverCallbackLike,
+        options: IntersectionObserverInit
+    ): IntersectionObserverLike => new IntersectionObserver(cb, options)
+): OperatorFunction<ViewWithSubscriptions<T>, ViewWithSubscriptions<T>> {
+    return views =>
+        new Observable(viewObserver => {
+            const subscriptions = new Subscription()
+            const delayedViews = new Map<HTMLElement, ViewWithSubscriptions<T>>()
+            const intersectionObserver = createIntersectionObserver((entries, obs) => {
+                for (const entry of entries) {
+                    const target = entry.target as HTMLElement
+                    if (entry.isIntersecting && delayedViews.get(target)) {
+                        viewObserver.next(delayedViews.get(target))
+                        obs.unobserve(entry.target)
+                        delayedViews.delete(target)
+                    }
+                }
+            }, options)
+            subscriptions.add(() => intersectionObserver.disconnect())
+            subscriptions.add(
+                views.subscribe(view => {
+                    delayedViews.set(view.element, view)
+                    intersectionObserver.observe(view.element)
+                    view.subscriptions.add(() => {
+                        delayedViews.delete(view.element)
+                        intersectionObserver.unobserve(view.element)
+                    })
+                })
+            )
+            return subscriptions
         })
 }

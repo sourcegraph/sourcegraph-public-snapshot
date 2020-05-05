@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
@@ -158,6 +159,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		Filepath:         p.Filepath,
 		Theme:            themechoice,
 		StabilizeTimeout: stabilizeTimeout,
+		Tracer:           ot.GetTracer(ctx),
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -224,10 +226,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 }
 
 var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "syntax_highlighting",
-	Name:      "requests",
-	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+	Name: "src_syntax_highlighting_requests",
+	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
 }, []string{"status"})
 
 func init() {
@@ -236,10 +236,10 @@ func init() {
 
 func firstCharacters(s string, n int) string {
 	v := []rune(s)
-	if len(v) < 10 {
+	if len(v) < n {
 		return string(v)
 	}
-	return string(v[:10])
+	return string(v[:n])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:

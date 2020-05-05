@@ -152,6 +152,8 @@ var getBySQLColumns = []string{
 	"uri",
 	"description",
 	"language",
+	"fork",
+	"archived",
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
@@ -218,6 +220,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullString{S: &r.URI},
 		&r.Description,
 		&r.Language,
+		&r.Fork,
+		&r.Archived,
 	)
 }
 
@@ -252,6 +256,12 @@ type ReposListOptions struct {
 
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
+
+	// NoPrivate excludes private repositories from the list.
+	NoPrivate bool
+
+	// OnlyPrivate excludes non-private repositories from the list.
+	OnlyPrivate bool
 
 	// OnlyRepoIDs skips fetching of RepoFields in each Repo.
 	OnlyRepoIDs bool
@@ -440,6 +450,12 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	}
 	if opt.OnlyArchived {
 		conds = append(conds, sqlf.Sprintf("archived"))
+	}
+	if opt.NoPrivate {
+		conds = append(conds, sqlf.Sprintf("NOT private"))
+	}
+	if opt.OnlyPrivate {
+		conds = append(conds, sqlf.Sprintf("private"))
 	}
 
 	if opt.Index != nil {

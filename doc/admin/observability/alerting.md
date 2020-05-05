@@ -56,3 +56,7 @@ After adding the appropriate notification channels, configure individual alerts 
 1. Verify your rule by clicking `Test Rule` or viewing `State History`.
 1. Return to the dashboard page by clicking the left arrow in the upper left. Save the dashboard by
    clicking the save icon in the upper right.
+
+### Understanding alerts
+
+See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing.

@@ -1,11 +1,8 @@
 package campaigns
 
 import (
-	"sort"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -180,6 +177,45 @@ func TestChangesetEvents(t *testing.T) {
 				Metadata:    commit,
 			}},
 		})
+
+		reviewRequestedActorEvent := &github.ReviewRequestedEvent{
+			RequestedReviewer: github.Actor{Login: "the-great-tortellini"},
+			Actor:             actor,
+			CreatedAt:         now,
+		}
+		reviewRequestedTeamEvent := &github.ReviewRequestedEvent{
+			RequestedTeam: github.Team{Name: "the-belgian-waffles"},
+			Actor:         actor,
+			CreatedAt:     now,
+		}
+
+		cases = append(cases, testCase{"github-blank-review-requested",
+			Changeset{
+				ID: 23,
+				Metadata: &github.PullRequest{
+					TimelineItems: []github.TimelineItem{
+						{Type: "ReviewRequestedEvent", Item: reviewRequestedActorEvent},
+						{Type: "ReviewRequestedEvent", Item: reviewRequestedTeamEvent},
+						{Type: "ReviewRequestedEvent", Item: &github.ReviewRequestedEvent{
+							// Both Team and Reviewer are blank.
+							Actor:     actor,
+							CreatedAt: now,
+						}},
+					},
+				},
+			},
+			[]*ChangesetEvent{{
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewRequested,
+				Key:         reviewRequestedActorEvent.Key(),
+				Metadata:    reviewRequestedActorEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewRequested,
+				Key:         reviewRequestedTeamEvent.Key(),
+				Metadata:    reviewRequestedTeamEvent,
+			}},
+		})
 	}
 
 	{ // Bitbucket Server
@@ -258,457 +294,4 @@ func TestChangesetEvents(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestChangesetEventsReviewState(t *testing.T) {
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
-	ghReview := func(t time.Time, login, state string) *ChangesetEvent {
-		return &ChangesetEvent{
-			Kind: ChangesetEventKindGitHubReviewed,
-			Metadata: &github.PullRequestReview{
-				UpdatedAt: t,
-				State:     state,
-				Author: github.Actor{
-					Login: login,
-				},
-			},
-		}
-	}
-
-	ghReviewDismissed := func(t time.Time, login, reviewer string) *ChangesetEvent {
-		return &ChangesetEvent{
-			Kind: ChangesetEventKindGitHubReviewDismissed,
-			Metadata: &github.ReviewDismissedEvent{
-				CreatedAt: t,
-				Actor:     github.Actor{Login: login},
-				Review: github.PullRequestReview{
-					Author: github.Actor{
-						Login: reviewer,
-					},
-				},
-			},
-		}
-	}
-
-	bbsActivity := func(t time.Time, login string, kind ChangesetEventKind) *ChangesetEvent {
-		return &ChangesetEvent{
-			Kind: kind,
-			Metadata: &bitbucketserver.Activity{
-				CreatedDate: timeToUnixMilli(t),
-				User: bitbucketserver.User{
-					Name: login,
-				},
-			},
-		}
-	}
-
-	tests := []struct {
-		events ChangesetEvents
-		want   ChangesetReviewState
-	}{
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(0), "user1", "APPROVED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "APPROVED"),
-				ghReview(daysAgo(0), "user1", "COMMENTED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(0), "user1", "COMMENTED"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "APPROVED"),
-				ghReview(daysAgo(0), "user1", "PENDING"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(0), "user1", "PENDING"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(2), "user1", "APPROVED"),
-				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(1), "user1", "APPROVED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(0), "user2", "APPROVED"),
-				ghReview(daysAgo(0), "user3", "APPROVED"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(3), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(2), "user2", "APPROVED"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(3), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(2), "user2", "APPROVED"),
-				ghReview(daysAgo(0), "user1", "APPROVED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReviewDismissed(daysAgo(0), "user2", "user1"),
-			},
-			want: ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReviewDismissed(daysAgo(1), "user2", "user1"),
-				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReviewDismissed(daysAgo(1), "user2", "user1"),
-				ghReview(daysAgo(0), "user3", "APPROVED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(0), "user1", "DISMISSED"),
-			},
-			want: ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(daysAgo(1), "user1", "DISMISSED"),
-				ghReview(daysAgo(0), "user3", "APPROVED"),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(daysAgo(0), "user3", ChangesetEventKindBitbucketServerApproved),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(daysAgo(0), "user2", ChangesetEventKindBitbucketServerApproved),
-			},
-			want: ChangesetReviewStateApproved,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
-			},
-			want: ChangesetReviewStatePending,
-		},
-		{
-			events: ChangesetEvents{
-				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
-				bbsActivity(daysAgo(0), "user1", ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: ChangesetReviewStateChangesRequested,
-		},
-	}
-
-	for i, tc := range tests {
-		have, err := tc.events.reviewState()
-		if err != nil {
-			t.Fatalf("got error: %s", err)
-		}
-
-		if have, want := have, tc.want; have != want {
-			t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
-		}
-	}
-}
-
-func TestComputeGithubCheckState(t *testing.T) {
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	commitEvent := func(minutesSinceSync int, context, state string) *ChangesetEvent {
-		commit := &github.CommitStatus{
-			Context:    context,
-			State:      state,
-			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
-		}
-		event := &ChangesetEvent{
-			Kind:     ChangesetEventKindCommitStatus,
-			Metadata: commit,
-		}
-		return event
-	}
-	checkRun := func(id, status, conclusion string) github.CheckRun {
-		return github.CheckRun{
-			ID:         id,
-			Status:     status,
-			Conclusion: conclusion,
-		}
-	}
-	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *ChangesetEvent {
-		suite := &github.CheckSuite{
-			ID:         id,
-			Status:     status,
-			Conclusion: conclusion,
-			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
-		}
-		suite.CheckRuns.Nodes = runs
-		event := &ChangesetEvent{
-			Kind:     ChangesetEventKindCheckSuite,
-			Metadata: suite,
-		}
-		return event
-	}
-
-	lastSynced := now.Add(-1 * time.Minute)
-	pr := &github.PullRequest{}
-
-	tests := []struct {
-		name   string
-		events []*ChangesetEvent
-		want   ChangesetCheckState
-	}{
-		{
-			name:   "empty slice",
-			events: nil,
-			want:   ChangesetCheckStateUnknown,
-		},
-		{
-			name: "single success",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "SUCCESS"),
-			},
-			want: ChangesetCheckStatePassed,
-		},
-		{
-			name: "success status and suite",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "SUCCESS"),
-				checkSuiteEvent(1, "cs1", "COMPLETED", "SUCCESS", checkRun("cr1", "COMPLETED", "SUCCESS")),
-			},
-			want: ChangesetCheckStatePassed,
-		},
-		{
-			name: "single pending",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "PENDING"),
-			},
-			want: ChangesetCheckStatePending,
-		},
-		{
-			name: "single error",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "ERROR"),
-			},
-			want: ChangesetCheckStateFailed,
-		},
-		{
-			name: "pending + error",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "PENDING"),
-				commitEvent(1, "ctx2", "ERROR"),
-			},
-			want: ChangesetCheckStatePending,
-		},
-		{
-			name: "pending + success",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "PENDING"),
-				commitEvent(1, "ctx2", "SUCCESS"),
-			},
-			want: ChangesetCheckStatePending,
-		},
-		{
-			name: "success + error",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "SUCCESS"),
-				commitEvent(1, "ctx2", "ERROR"),
-			},
-			want: ChangesetCheckStateFailed,
-		},
-		{
-			name: "success x2",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "SUCCESS"),
-				commitEvent(1, "ctx2", "SUCCESS"),
-			},
-			want: ChangesetCheckStatePassed,
-		},
-		{
-			name: "later events have precedence",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "PENDING"),
-				commitEvent(1, "ctx1", "SUCCESS"),
-			},
-			want: ChangesetCheckStatePassed,
-		},
-		{
-			name: "suites with zero runs should be ignored",
-			events: []*ChangesetEvent{
-				commitEvent(1, "ctx1", "SUCCESS"),
-				checkSuiteEvent(1, "cs1", "QUEUED", ""),
-			},
-			want: ChangesetCheckStatePassed,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := computeGitHubCheckState(lastSynced, pr, tc.events)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatalf(diff)
-			}
-		})
-	}
-}
-
-func TestChangesetEventsLabels(t *testing.T) {
-	now := time.Now()
-	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {
-		removed := kind == ChangesetEventKindGitHubUnlabeled
-		return &ChangesetEvent{
-			Kind:      kind,
-			UpdatedAt: when,
-			Metadata: &github.LabelEvent{
-				Actor: github.Actor{},
-				Label: github.Label{
-					Name: name,
-				},
-				CreatedAt: when,
-				Removed:   removed,
-			},
-		}
-	}
-	changeset := func(names []string, updated time.Time) *Changeset {
-		meta := &github.PullRequest{}
-		for _, name := range names {
-			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
-				Name: name,
-			})
-		}
-		return &Changeset{
-			UpdatedAt: updated,
-			Metadata:  meta,
-		}
-	}
-	labels := func(names ...string) []ChangesetLabel {
-		var ls []ChangesetLabel
-		for _, name := range names {
-			ls = append(ls, ChangesetLabel{Name: name})
-		}
-		return ls
-	}
-
-	tests := []struct {
-		name      string
-		changeset *Changeset
-		events    ChangesetEvents
-		want      []ChangesetLabel
-	}{
-		{
-			name: "zero values",
-		},
-		{
-			name:      "no events",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events:    ChangesetEvents{},
-			want:      labels("label1"),
-		},
-		{
-			name:      "remove event",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events: ChangesetEvents{
-				labelEvent("label1", ChangesetEventKindGitHubUnlabeled, now),
-			},
-			want: []ChangesetLabel{},
-		},
-		{
-			name:      "add event",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events: ChangesetEvents{
-				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
-			},
-			want: labels("label1", "label2"),
-		},
-		{
-			name:      "old add event",
-			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
-			events: ChangesetEvents{
-				labelEvent("label2", ChangesetEventKindGitHubLabeled, now),
-			},
-			want: labels("label1"),
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			have := tc.events.UpdateLabelsSince(tc.changeset)
-			want := tc.want
-			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
-			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
-			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func timeToUnixMilli(t time.Time) int {
-	return int(t.UnixNano()) / int(time.Millisecond)
 }

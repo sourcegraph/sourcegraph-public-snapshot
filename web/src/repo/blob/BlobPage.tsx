@@ -5,11 +5,11 @@ import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
@@ -22,11 +22,9 @@ import {
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
-import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
@@ -36,6 +34,8 @@ import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import { Redirect } from 'react-router'
+import { toTreeURL } from '../../util/url'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -74,15 +74,10 @@ const fetchBlob = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.highlight
-                ) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository?.commit?.file?.highlight) {
+                    throw new Error('Not found')
                 }
                 return data.repository.commit.file
             })
@@ -155,9 +150,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             isLightTheme,
                             disableTimeout: extendHighlightingTimeout,
                         }).pipe(
-                            catchError(error => {
+                            catchError((error): [ErrorLike] => {
                                 console.error(error)
-                                return [error]
+                                return [asError(error)]
                             })
                         )
                     )
@@ -169,7 +164,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
 
         // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsController.services.editor.removeAllEditors())
+        this.subscriptions.add(() => this.props.extensionsController.services.viewer.removeAllViewers())
 
         this.propsUpdates.next(this.props)
     }
@@ -232,20 +227,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                {isDiscussionsEnabled(this.props.settingsCascade) && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={20}
-                        element={
-                            <ToggleDiscussionsPanel
-                                key="toggle-blob-discussion-panel"
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
-                        }
-                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={30}
@@ -263,13 +244,20 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
 
         if (isErrorLike(this.state.blobOrError)) {
+            // Be helpful if the URL was actually a tree and redirect.
+            // Some extensions may optimistically construct blob URLs because
+            // they cannot easily determine eagerly if a file path is a tree or a blob.
+            // We don't have error names on GraphQL errors.
+            if (/not a blob/i.test(this.state.blobOrError.message)) {
+                return <Redirect to={toTreeURL(this.props)} />
+            }
             return (
                 <>
                     {alwaysRender}
                     <HeroPage
                         icon={AlertCircleIcon}
                         title="Error"
-                        subtitle={<ErrorMessage error={this.state.blobOrError} />}
+                        subtitle={<ErrorMessage error={this.state.blobOrError} history={this.props.history} />}
                     />
                 </>
             )
@@ -298,7 +286,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     />
                 )}
                 {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
-                    <RenderedFile dangerousInnerHTML={this.state.blobOrError.richHTML} location={this.props.location} />
+                    <RenderedFile
+                        dangerousInnerHTML={this.state.blobOrError.richHTML}
+                        location={this.props.location}
+                        history={this.props.history}
+                    />
                 )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
                     <div className="blob-page__aborted">

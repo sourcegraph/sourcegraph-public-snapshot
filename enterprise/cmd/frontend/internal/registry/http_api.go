@@ -14,7 +14,6 @@ import (
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -126,21 +125,6 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
-	builder := honey.Builder("registry")
-	builder.AddField("api_version", r.Header.Get("Accept"))
-	builder.AddField("url", r.URL.String())
-	ev := builder.NewEvent()
-	defer func() {
-		ev.AddField("success", err == nil)
-		if err == nil {
-			registryRequestsSuccessCounter.Inc()
-		} else {
-			registryRequestsErrorCounter.Inc()
-			ev.AddField("error", err.Error())
-		}
-		_ = ev.Send()
-	}()
-
 	// Identify this response as coming from the registry API.
 	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
 	w.Header().Set("Vary", registry.MediaTypeHeaderName)
@@ -165,14 +149,12 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	switch {
 	case urlPath == extensionsPath:
 		query := r.URL.Query().Get("q")
-		ev.AddField("query", query)
 		var opt dbExtensionsListOptions
 		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
 		xs, err := registryList(r.Context(), opt)
 		if err != nil {
 			return err
 		}
-		ev.AddField("results_count", len(xs))
 		result = xs
 
 	case strings.HasPrefix(urlPath, extensionsPath+"/"):
@@ -198,7 +180,6 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 			return err
 		}
-		ev.AddField("extension-id", x.ExtensionID)
 		result = x
 
 	default:
@@ -217,16 +198,12 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 
 var (
 	registryRequestsSuccessCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "registry",
-		Name:      "requests_success",
-		Help:      "Number of successful requests (HTTP 200) to the HTTP registry API",
+		Name: "src_registry_requests_success",
+		Help: "Number of successful requests (HTTP 200) to the HTTP registry API",
 	})
 	registryRequestsErrorCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "registry",
-		Name:      "requests_error",
-		Help:      "Number of failed (non-HTTP 200) requests to the HTTP registry API",
+		Name: "src_registry_requests_error",
+		Help: "Number of failed (non-HTTP 200) requests to the HTTP registry API",
 	})
 )
 

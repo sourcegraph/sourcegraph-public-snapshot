@@ -117,15 +117,12 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
 
         // Submit a search with the new values
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            this.props.caseSensitive,
-            undefined,
-            newFiltersInQuery
-        )
+        submitSearch({
+            ...this.props,
+            source: 'nav',
+            query: this.props.navbarSearchState.query,
+            filtersInQuery: newFiltersInQuery,
+        })
     }
 
     private onFilterDeleted = (filterKey: string): void => {
@@ -138,15 +135,12 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         if (!filterWasEmpty) {
             // Submit a search with the new values
-            submitSearch(
-                this.props.history,
-                this.props.navbarSearchState.query,
-                'nav',
-                this.props.patternType,
-                this.props.caseSensitive,
-                undefined,
-                newFiltersInQuery
-            )
+            submitSearch({
+                ...this.props,
+                source: 'nav',
+                query: this.props.navbarSearchState.query,
+                filtersInQuery: newFiltersInQuery,
+            })
         }
     }
 
@@ -177,16 +171,11 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
     private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
-
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            this.props.caseSensitive,
-            undefined,
-            this.props.filtersInQuery
-        )
+        submitSearch({
+            ...this.props,
+            source: 'nav',
+            query: this.props.navbarSearchState.query,
+        })
     }
 
     public render(): JSX.Element | null {
@@ -243,7 +232,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     caseSensitive={this.props.caseSensitive}
                                     setCaseSensitivity={this.props.setCaseSensitivity}
                                     autoFocus={true}
-                                    filterQuery={this.props.filtersInQuery}
+                                    filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
                                 />

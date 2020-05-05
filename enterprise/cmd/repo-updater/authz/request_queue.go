@@ -40,6 +40,7 @@ type requestMeta struct {
 	Type       requestType
 	ID         int32
 	NextSyncAt time.Time
+	NoPerms    bool
 }
 
 // syncRequest is a permissions syncing request with its current status in the queue.

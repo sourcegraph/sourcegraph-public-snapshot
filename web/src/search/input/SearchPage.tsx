@@ -151,6 +151,7 @@ export class SearchPage extends React.Component<Props, State> {
                                         className="my-3"
                                         location="home"
                                         settingsCascade={this.props.settingsCascade}
+                                        history={this.props.history}
                                     />
                                 </Form>
                             </>
@@ -167,14 +168,11 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onSubmit = (): void => {
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
-        submitSearch(
-            this.props.history,
+        submitSearch({
+            ...this.props,
             query,
-            'home',
-            this.props.patternType,
-            this.props.caseSensitive,
-            this.props.activation
-        )
+            source: 'home',
+        })
     }
 
     private onFormSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

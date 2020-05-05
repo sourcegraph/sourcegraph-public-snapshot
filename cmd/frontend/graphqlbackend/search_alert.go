@@ -42,6 +42,14 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
+func alertForCappedAndExpression() *searchAlert {
+	return &searchAlert{
+		prometheusType: "exceed_and_expression_search_limit",
+		title:          "Too many files to search for and-expression",
+		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+	}
+}
+
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {
@@ -67,6 +75,12 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 				proposedQueries: proposedQuotedQueries(queryString),
 			}
+		}
+	case *query.UnsupportedError, *query.ExpectedOperand:
+		return &searchAlert{
+			prometheusType: "unsupported_and_or_query",
+			title:          "Unable To Process Query",
+			description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
 		}
 	}
 	return &searchAlert{
@@ -341,23 +355,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
-func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
-	alert := &searchAlert{
-		prometheusType: "over_repo_limit",
-		title:          "Too many matching repositories",
-	}
-
-	if envvar.SourcegraphDotComMode() {
-		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
-	} else {
-		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
-	}
-
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	if isSiteAdmin {
-		alert.description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
-	}
-
+func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -370,84 +368,100 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, err := r.resolveRepositories(ctx, nil)
-	if err != nil {
-		return nil, err
+
+	var proposedQueries []*searchQueryDescription
+	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
+	if envvar.SourcegraphDotComMode() {
+		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
 	}
-	paths := make([]string, len(repos))
-	pathPatterns := make([]string, len(repos))
-	for i, repo := range repos {
-		paths[i] = string(repo.Repo.Name)
-		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
+	if backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
-	// See if we can narrow it down by using filters like
-	// repo:github.com/myorg/.
-	const maxParentsToPropose = 4
-	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
-	defer cancel()
-outer:
-	for i, repoParent := range pathParentsByFrequency(paths) {
-		if i >= maxParentsToPropose || ctx.Err() == nil {
-			break
+	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
+		return &searchAlert{
+			prometheusType:  "over_repo_limit",
+			title:           "Too many matching repositories",
+			proposedQueries: proposedQueries,
+			description:     description,
 		}
-		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-		repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+	}
 
-		for _, v := range repoFieldValues {
-			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
-				continue outer // this repo: filter is already applied
-			}
+	repos, _, _, _ := r.resolveRepositories(ctx, nil)
+	if len(repos) > 0 {
+		paths := make([]string, len(repos))
+		pathPatterns := make([]string, len(repos))
+		for i, repo := range repos {
+			paths[i] = string(repo.Repo.Name)
+			pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 		}
 
-		repoFieldValues = append(repoFieldValues, repoParentPattern)
-		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		// See if we can narrow it down by using filters like
+		// repo:github.com/myorg/.
+		const maxParentsToPropose = 4
+		ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 		defer cancel()
-		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
-		if ctx.Err() != nil {
-			continue
-		} else if err != nil {
-			return nil, err
-		}
-
-		var more string
-		if overLimit {
-			more = " (further filtering required)"
-		}
-
-		// We found a more specific repo: filter that may be narrow enough. Now
-		// add it to the user's query, but be smart. For example, if the user's
-		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
-		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
-		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-			description: "in repositories under " + repoParent + more,
-			query:       newExpr,
-			patternType: r.patternType,
-		})
-	}
-	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
-		// Propose specific repos' paths if we aren't able to propose
-		// anything else.
-		const maxReposToPropose = 4
-		shortest := append([]string{}, paths...) // prefer shorter repo names
-		sort.Slice(shortest, func(i, j int) bool {
-			return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
-		})
-		for i, pathToPropose := range shortest {
-			if i >= maxReposToPropose {
+	outer:
+		for i, repoParent := range pathParentsByFrequency(paths) {
+			if i >= maxParentsToPropose || ctx.Err() == nil {
 				break
 			}
-			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
-			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
+			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
+			repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+
+			for _, v := range repoFieldValues {
+				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
+					continue outer // this repo: filter is already applied
+				}
+			}
+
+			repoFieldValues = append(repoFieldValues, repoParentPattern)
+			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+			defer cancel()
+			_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			if ctx.Err() != nil {
+				continue
+			} else if err != nil {
+				return buildAlert([]*searchQueryDescription{}, description)
+			}
+
+			var more string
+			if overLimit {
+				more = "(further filtering required)"
+			}
+			// We found a more specific repo: filter that may be narrow enough. Now
+			// add it to the user's query, but be smart. For example, if the user's
+			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
+			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
+			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
 				patternType: r.patternType,
 			})
 		}
+		if len(proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
+			// Propose specific repos' paths if we aren't able to propose
+			// anything else.
+			const maxReposToPropose = 4
+			shortest := append([]string{}, paths...) // prefer shorter repo names
+			sort.Slice(shortest, func(i, j int) bool {
+				return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
+			})
+			for i, pathToPropose := range shortest {
+				if i >= maxReposToPropose {
+					break
+				}
+				newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
+					query:       newExpr,
+					patternType: r.patternType,
+				})
+			}
+		}
 	}
-
-	return alert, nil
+	return buildAlert(proposedQueries, description)
 }
 
 // alertForStructuralSearch filters certain errors from multiErr and converts

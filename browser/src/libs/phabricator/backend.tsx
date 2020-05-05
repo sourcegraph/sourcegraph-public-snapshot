@@ -8,7 +8,7 @@ import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
-import { EREPONOTFOUND } from '../../../../shared/src/backend/errors'
+import { isRepoNotFoundErrorLike } from '../../../../shared/src/backend/errors'
 import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../shared/src/backend/fetch'
@@ -155,19 +155,24 @@ export function queryConduitHelper<T>(endpoint: string, params: {}): Observable<
  * revision and diff IDs. {@link ConduitDiffDetails} notably contain the staging details for the diff,
  * including the base and head commit IDs on the staging repository.
  */
-function getDiffDetailsFromConduit(
-    { diffID, revisionID }: RevisionSpec & DiffSpec,
-    queryConduit = queryConduitHelper
-): Observable<ConduitDiffDetails> {
-    return queryConduit<ConduitDiffDetailsResponse>('/api/differential.querydiffs', {
-        ids: [diffID],
-        revisionIDs: [revisionID],
-    }).pipe(map(diffDetails => diffDetails[String(diffID)]))
-}
+const getDiffDetailsFromConduit = memoizeObservable(
+    ({
+        diffID,
+        revisionID,
+        queryConduit = queryConduitHelper,
+    }: RevisionSpec & DiffSpec & { queryConduit?: typeof queryConduitHelper }) =>
+        queryConduit<ConduitDiffDetailsResponse>('/api/differential.querydiffs', {
+            ids: [diffID],
+            revisionIDs: [revisionID],
+        }).pipe(map(diffDetails => diffDetails[String(diffID)])),
+    ({ diffID, revisionID }) => `${diffID}-${revisionID}`
+)
 
-function getRawDiffFromConduit(diffID: number, queryConduit = queryConduitHelper): Observable<string> {
-    return queryConduit<string>('/api/differential.getrawdiff', { diffID })
-}
+const getRawDiffFromConduit = memoizeObservable(
+    ({ diffID, queryConduit = queryConduitHelper }: { diffID: number; queryConduit?: typeof queryConduitHelper }) =>
+        queryConduit<string>('/api/differential.getrawdiff', { diffID }),
+    ({ diffID }) => diffID.toString()
+)
 
 interface ConduitDifferentialQueryResponse {
     [index: string]: {
@@ -179,18 +184,26 @@ interface ConduitDifferentialQueryResponse {
  * Queries the Phabricator Conduit API for the PHID (Phabricator's opaque unique ID)
  * of the repository matching the given revisionID.
  */
-function getRepoPHIDForRevisionID(revisionID: number, queryConduit = queryConduitHelper): Observable<string> {
-    return queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [revisionID] }).pipe(
-        map(result => {
-            const phid = result['0'].repositoryPHID
-            if (!phid) {
-                // This happens for revisions that were created without an associated repository
-                throw new Error(`no repositoryPHID for revision ${revisionID}`)
-            }
-            return phid
-        })
-    )
-}
+const getRepoPHIDForRevisionID = memoizeObservable(
+    ({
+        revisionID,
+        queryConduit = queryConduitHelper,
+    }: {
+        revisionID: number
+        queryConduit?: typeof queryConduitHelper
+    }) =>
+        queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [revisionID] }).pipe(
+            map(result => {
+                const phid = result['0'].repositoryPHID
+                if (!phid) {
+                    // This happens for revisions that were created without an associated repository
+                    throw new Error(`no repositoryPHID for revision ${revisionID}`)
+                }
+                return phid
+            })
+        ),
+    ({ revisionID }) => revisionID.toString()
+)
 
 interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGraphQL'> {
     callsign: string
@@ -268,46 +281,52 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
         .toPromise()
 }
 
-function getRepoDetailsFromRepoPHID(
-    phid: string,
-    requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitHelper
-): Observable<PhabricatorRepoDetails> {
-    return queryConduit<ConduitReposResponse>('/api/diffusion.repository.search', {
-        constraints: {
-            phids: [phid],
-        },
-        attachments: {
-            uris: true,
-        },
-    }).pipe(
-        switchMap(({ data }) => {
-            const repo = data[0]
-            if (!repo) {
-                throw new Error(`could not locate repo with phid ${phid}`)
-            }
-            if (!repo.attachments || !repo.attachments.uris) {
-                throw new Error(`could not locate git uri for repo with phid ${phid}`)
-            }
-            return from(convertConduitRepoToRepoDetails(repo)).pipe(
-                switchMap((details: PhabricatorRepoDetails | null) => {
-                    if (!details) {
-                        return throwError(new Error('could not parse repo details'))
-                    }
-                    if (!repo.fields || !repo.fields.callsign) {
-                        return throwError(new Error('callsign not found'))
-                    }
-                    return createPhabricatorRepo({
-                        callsign: repo.fields.callsign,
-                        repoName: details.rawRepoName,
-                        phabricatorURL: window.location.origin,
-                        requestGraphQL,
-                    }).pipe(mapTo(details))
-                })
-            )
-        })
-    )
-}
+const getRepoDetailsFromRepoPHID = memoizeObservable(
+    ({
+        phid,
+        requestGraphQL,
+        queryConduit = queryConduitHelper,
+    }: {
+        phid: string
+        requestGraphQL: PlatformContext['requestGraphQL']
+        queryConduit?: typeof queryConduitHelper
+    }) =>
+        queryConduit<ConduitReposResponse>('/api/diffusion.repository.search', {
+            constraints: {
+                phids: [phid],
+            },
+            attachments: {
+                uris: true,
+            },
+        }).pipe(
+            switchMap(({ data }) => {
+                const repo = data[0]
+                if (!repo) {
+                    throw new Error(`could not locate repo with phid ${phid}`)
+                }
+                if (!repo.attachments || !repo.attachments.uris) {
+                    throw new Error(`could not locate git uri for repo with phid ${phid}`)
+                }
+                return from(convertConduitRepoToRepoDetails(repo)).pipe(
+                    switchMap((details: PhabricatorRepoDetails | null) => {
+                        if (!details) {
+                            return throwError(new Error('could not parse repo details'))
+                        }
+                        if (!repo.fields || !repo.fields.callsign) {
+                            return throwError(new Error('callsign not found'))
+                        }
+                        return createPhabricatorRepo({
+                            callsign: repo.fields.callsign,
+                            repoName: details.rawRepoName,
+                            phabricatorURL: window.location.origin,
+                            requestGraphQL,
+                        }).pipe(mapTo(details))
+                    })
+                )
+            })
+        ),
+    ({ phid }) => phid
+)
 
 /**
  * Queries the Phabricator Conduit API for a repository matching the given revisionID,
@@ -318,8 +337,8 @@ export function getRepoDetailsFromRevisionID(
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit = queryConduitHelper
 ): Observable<PhabricatorRepoDetails> {
-    return getRepoPHIDForRevisionID(revisionID, queryConduit).pipe(
-        switchMap(repositoryPHID => getRepoDetailsFromRepoPHID(repositoryPHID, requestGraphQL, queryConduit))
+    return getRepoPHIDForRevisionID({ revisionID, queryConduit }).pipe(
+        switchMap(phid => getRepoDetailsFromRepoPHID({ phid, requestGraphQL, queryConduit }))
     )
 }
 
@@ -457,7 +476,7 @@ function getPropsWithDiffDetails(
     props: ResolveDiffOpt,
     queryConduit: QueryConduitHelper<any>
 ): Observable<PropsWithDiffDetails> {
-    return getDiffDetailsFromConduit(props, queryConduit).pipe(
+    return getDiffDetailsFromConduit({ ...props, queryConduit }).pipe(
         switchMap(diffDetails => {
             if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, diffDetails.changes)) {
                 // no need to update props
@@ -466,7 +485,7 @@ function getPropsWithDiffDetails(
                     diffDetails,
                 })
             }
-            return getDiffDetailsFromConduit(props, queryConduit).pipe(
+            return getDiffDetailsFromConduit({ ...props, queryConduit }).pipe(
                 map(
                     (diffDetails): PropsWithDiffDetails => ({
                         ...props,
@@ -560,7 +579,7 @@ export function resolveDiffRev(
                 // If there are no staging details, get the patch from the conduit API,
                 // create a one-off commit on the Sourcegraph instance from the patch,
                 // and resolve to the commit ID returned by the Sourcegraph instance.
-                return getRawDiffFromConduit(props.diffID, queryConduit).pipe(
+                return getRawDiffFromConduit({ diffID: props.diffID, queryConduit }).pipe(
                     switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
                 )
             }
@@ -576,10 +595,10 @@ export function resolveDiffRev(
                 // Otherwise, create a one-off commit containing the patch on the Sourcegraph instance,
                 // and resolve to the commit ID returned by the Sourcegraph instance.
                 catchError(error => {
-                    if (error.code !== EREPONOTFOUND) {
+                    if (!isRepoNotFoundErrorLike(error)) {
                         throw error
                     }
-                    return getRawDiffFromConduit(props.diffID, queryConduit).pipe(
+                    return getRawDiffFromConduit({ diffID: props.diffID, queryConduit }).pipe(
                         switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
                     )
                 })

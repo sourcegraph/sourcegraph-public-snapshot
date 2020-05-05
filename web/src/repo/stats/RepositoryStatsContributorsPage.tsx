@@ -415,7 +415,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         if (spec.path) {
             query.set('path', spec.path)
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return query.toString()
     }
 

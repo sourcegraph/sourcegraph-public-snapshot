@@ -39,7 +39,7 @@ type RevokeUserPermissionsArgs struct {
 	UserID int32
 	// The list of external accounts related to the user. This is list because a user could have
 	// multiple external accounts, including ones from code hosts and/or Sourcegraph authz provider.
-	Accounts []*extsvc.ExternalAccounts
+	Accounts []*extsvc.Accounts
 }
 
 // AuthzStore contains methods for manipulating user permissions.

@@ -120,7 +120,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
-    const needsSiteInit = window.context.showOnboarding
+    const needsSiteInit = window.context.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
     const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
@@ -141,6 +141,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
+                history={props.history}
             />
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />

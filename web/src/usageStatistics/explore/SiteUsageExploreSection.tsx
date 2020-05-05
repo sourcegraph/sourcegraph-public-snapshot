@@ -7,12 +7,14 @@ import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/err
 import { BarChart } from '../../components/d3/BarChart'
 import { fetchSiteUsageStatistics } from '../../site-admin/backend'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 interface Props {
     isLightTheme: boolean
+    history: H.History
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The site usage statistics, loading, or an error. */
@@ -44,7 +46,7 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
             <div className="site-usage-explore-section">
                 <h2>Site usage</h2>
                 {isErrorLike(this.state.siteUsageStatisticsOrError) ? (
-                    <ErrorAlert error={this.state.siteUsageStatisticsOrError} />
+                    <ErrorAlert error={this.state.siteUsageStatisticsOrError} history={this.props.history} />
                 ) : this.state.siteUsageStatisticsOrError === LOADING ? (
                     <p>Loading...</p>
                 ) : (

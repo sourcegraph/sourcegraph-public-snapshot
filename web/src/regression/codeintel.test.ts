@@ -175,11 +175,11 @@ describe('Code intelligence regression test suite', () => {
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 expectedDefinition: [
                     {
-                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
+                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L78:1`,
                         precise: false,
                     },
                     {
-                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go#L7:1`,
+                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:1`,
                         precise: false,
                     },
                 ],
@@ -228,9 +228,7 @@ describe('Code intelligence regression test suite', () => {
                     const sidebar = document.querySelector<HTMLElement>('.e2e-repo-rev-sidebar')
                     return sidebar && !sidebar.innerText.includes('backgroundEntry')
                 },
-                {
-                    timeout: 2 * 1000,
-                }
+                { timeout: 2 * 1000 }
             )
             await driver.findElementWithText('buildEntry', {
                 action: 'click',
@@ -301,23 +299,27 @@ describe('Code intelligence regression test suite', () => {
          *
          * All of these tests deal with the same SamplePair struct.
          */
-        const makeTestCase = (page: string, line: number): CodeNavigationTestCase => {
-            const prometheusCommonPrefix = `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/`
+        const makeTestCase = (
+            page: string,
+            line: number,
+            commonCommit: string = prometheusCommonLSIFCommit
+        ): CodeNavigationTestCase => {
+            const prometheusCommonPrefix = `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/`
             const prometheusCommonLocations = prometheusCommonSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusCommonPrefix}${path}#L${line}:${character}`,
+                url: `${prometheusCommonPrefix}${path}?subtree=true#L${line}:${character}`,
                 precise: true,
             }))
 
             const prometheusClientPrefix = `/github.com/sourcegraph-testing/prometheus-client-golang@${prometheusClientHeadCommit}/-/blob/`
             const prometheusClientLocations = prometheusClientSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusClientPrefix}${path}#L${line}:${character}`,
+                url: `${prometheusClientPrefix}${path}?subtree=true#L${line}:${character}`,
                 precise: true,
             }))
 
             const prometheusRedefinitionPrefix = `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/`
             const prometheusRedefinitionLocations = prometheusRedefinitionSamplePairLocations.map(
                 ({ path, line, character }) => ({
-                    url: `${prometheusRedefinitionPrefix}${path}#L${line}:${character}`,
+                    url: `${prometheusRedefinitionPrefix}${path}?subtree=true#L${line}:${character}`,
                     precise: false,
                 })
             )
@@ -329,7 +331,7 @@ describe('Code intelligence regression test suite', () => {
                 precise: true,
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 expectedDefinition: {
-                    url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/model/value.go#L78:6`,
+                    url: `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/model/value.go?subtree=true#L78:6`,
                     precise: true,
                 },
                 expectedReferences: prometheusCommonLocations
@@ -377,7 +379,8 @@ describe('Code intelligence regression test suite', () => {
                 config,
                 makeTestCase(
                     `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonFallbackCommit}/-/blob/model/value.go`,
-                    31
+                    31,
+                    prometheusCommonFallbackCommit
                 )
             )
         })

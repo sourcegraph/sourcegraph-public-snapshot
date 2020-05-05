@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -64,6 +65,9 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true} // when treating term as repo: field
@@ -130,6 +134,10 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		t.Skip("TODO(slimsag): this test is not reliable")
 		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
@@ -202,6 +210,10 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		calledReposList := false
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
@@ -252,6 +264,9 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("repo: field for language suggestions", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		db.Mocks.Repos.List = func(_ context.Context, have db.ReposListOptions) ([]*types.Repo, error) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
@@ -298,6 +313,9 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		calledReposList := false
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {

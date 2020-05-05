@@ -5,9 +5,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
@@ -21,6 +20,7 @@ const fetchRepositoryCommits = memoizeObservable(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $rev: String!, $query: String) {
                     node(id: $repo) {
+                        __typename
                         ... on Repository {
                             commit(rev: $rev) {
                                 ancestors(first: $first, query: $query) {
@@ -48,16 +48,18 @@ const fetchRepositoryCommits = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.node ||
-                    !(data.node as GQL.IRepository).commit ||
-                    !(data.node as GQL.IRepository).commit!.ancestors
-                ) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`Repository ${args.repo} not found`)
                 }
-                return (data.node as GQL.IRepository).commit!.ancestors
+                if (node.__typename !== 'Repository') {
+                    throw new Error(`Node is a ${node.__typename}, not a Repository`)
+                }
+                if (!node.commit?.ancestors) {
+                    throw new Error(`Cannot load ancestors for repository ${args.repo}`)
+                }
+                return node.commit.ancestors
             })
         ),
     x => JSON.stringify(x)
@@ -192,7 +194,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
                 >
-                    {RevisionsPopover.TABS.map((tab, i) =>
+                    {RevisionsPopover.TABS.map(tab =>
                         tab.type ? (
                             <FilteredGitRefConnection
                                 key={tab.id}

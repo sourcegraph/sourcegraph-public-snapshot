@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -76,7 +74,7 @@ func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.Account, repos []*types.Repo) (
 	perms []authz.RepoPerms,
 	err error,
 ) {
@@ -103,7 +101,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 
 	if acct != nil && acct.ServiceID == p.codeHost.ServiceID && acct.ServiceType == p.codeHost.ServiceType {
 		var user bitbucketserver.User
-		if err := json.Unmarshal(*acct.AccountData, &user); err != nil {
+		if err := json.Unmarshal(*acct.Data, &user); err != nil {
 			return nil, err
 		}
 
@@ -151,7 +149,7 @@ func (p *Provider) update(userName string) PermissionsUpdateFunc {
 }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.ExternalAccount) (acct *extsvc.ExternalAccount, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account) (acct *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
@@ -180,15 +178,15 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		return nil, err
 	}
 
-	return &extsvc.ExternalAccount{
+	return &extsvc.Account{
 		UserID: user.ID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
-		ExternalAccountData: extsvc.ExternalAccountData{
-			AccountData: (*json.RawMessage)(&accountData),
+		AccountData: extsvc.AccountData{
+			Data: (*json.RawMessage)(&accountData),
 		},
 	}, nil
 }
@@ -201,27 +199,27 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
-	case account.AccountData == nil:
+	case account.Data == nil:
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
-		return nil, fmt.Errorf("not a code host of the account: want %s but have %s",
-			p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID)
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
 	var user bitbucketserver.User
-	if err := json.Unmarshal(*account.AccountData, &user); err != nil {
+	if err := json.Unmarshal(*account.Data, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 
 	ids, err := p.repoIDs(ctx, user.Name, false)
 
-	extIDs := make([]extsvc.ExternalRepoID, 0, len(ids))
+	extIDs := make([]extsvc.RepoID, 0, len(ids))
 	for _, id := range ids {
-		extIDs = append(extIDs, extsvc.ExternalRepoID(strconv.FormatUint(uint64(id), 10)))
+		extIDs = append(extIDs, extsvc.RepoID(strconv.FormatUint(uint64(id), 10)))
 	}
 
 	return extIDs, err
@@ -229,27 +227,27 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given repo on the code host. The user ID has the same value as it would
-// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
-// direct access and inherited from the group membership.
+// be used as extsvc.Account.AccountID. The returned list includes both direct access
+// and inherited from the group membership.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	switch {
 	case repo == nil:
 		return nil, errors.New("no repo provided")
-	case !extsvc.IsHostOfRepo(p.codeHost, repo):
-		return nil, fmt.Errorf("not a code host of the repo: want %s but have %s",
+	case !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec):
+		return nil, fmt.Errorf("not a code host of the repo: want %q but have %q",
 			p.codeHost.ServiceID, repo.ServiceID)
 	}
 
 	ids, err := p.userIDs(ctx, repo.ID)
 
-	extIDs := make([]extsvc.ExternalAccountID, 0, len(ids))
+	extIDs := make([]extsvc.AccountID, 0, len(ids))
 	for _, id := range ids {
-		extIDs = append(extIDs, extsvc.ExternalAccountID(strconv.FormatInt(int64(id), 10)))
+		extIDs = append(extIDs, extsvc.AccountID(strconv.FormatInt(int64(id), 10)))
 	}
 
 	return extIDs, err

@@ -21,10 +21,12 @@ import (
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 )
@@ -47,15 +49,17 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 // with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
 // repository lookup requests by users, and requests for identifying which repositories a user has
 // access to (if authorization is in use) and requests for campaign synchronization if it is in use.
+//
+// These are our default values, they can be changed in configuration
 const (
-	rateLimitRequestsPerSecond = 8 // 480/min or 28,800/hr
-	RateLimitMaxBurstRequests  = 500
+	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
+	defaultRateLimitBurst = 500
 )
 
 // Global limiter cache so that we reuse the same rate limiter for
 // the same code host, even between config changes.
-// The longer term plan is to have a rate limiter that is shared across
-// all services so the below is just a short term solution.
+// This is a failsafe to protect bitbucket as they do not impose their own
+// rate limiting.
 var limiterMu sync.Mutex
 var limiterCache = make(map[string]*rate.Limiter)
 
@@ -85,54 +89,49 @@ type Client struct {
 	Oauth *oauth.Client
 }
 
-// NewClient returns a new Bitbucket Server API client at url. If a nil
-// httpClient is provided, http.DefaultClient will be used. To use API methods
-// which require authentication, set the Token or Username/Password fields of
-// the returned client.
-func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	httpClient = requestCounter.Doer(httpClient, categorize)
-
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	l, ok := limiterCache[url.String()]
-	if !ok {
-		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-		limiterCache[url.String()] = l
-	}
-
-	return &Client{
-		httpClient: httpClient,
-		URL:        url,
-		RateLimit:  l,
-	}
-}
-
-// NewClientWithConfig returns an authenticated Bitbucket Server API client with
-// the provided configuration.
-func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
+// NewClient returns an authenticated Bitbucket Server API client with
+// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// will be used.
+func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
 	}
 
-	client := NewClient(u, nil)
-	client.Username = c.Username
-	client.Password = c.Password
-	client.Token = c.Token
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	httpClient = requestCounter.Doer(httpClient, categorize)
+	u = extsvc.NormalizeBaseURL(u)
+
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	l, ok := limiterCache[u.String()]
+	if !ok {
+		l = rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
+		limiterCache[u.String()] = l
+	}
+
+	client := &Client{
+		httpClient: httpClient,
+		URL:        u,
+		Username:   c.Username,
+		Password:   c.Password,
+		Token:      c.Token,
+		RateLimit:  l,
+	}
+
 	if c.Authorization != nil {
 		err := client.SetOAuth(
 			c.Authorization.Oauth.ConsumerKey,
 			c.Authorization.Oauth.SigningKey,
 		)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
 		}
 	}
+
 	return client, nil
 }
 
@@ -643,16 +642,22 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 
 	t := &PageToken{Limit: 1000}
 
-	var statuses []*BuildStatus
+	var statuses []*CommitStatus
 	for t.HasMore() {
 		var page []*BuildStatus
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
-		statuses = append(statuses, page...)
+		for i := range page {
+			status := &CommitStatus{
+				Commit: latestCommit.ID,
+				Status: *page[i],
+			}
+			statuses = append(statuses, status)
+		}
 	}
 
-	pr.BuildStatuses = statuses
+	pr.CommitStatus = statuses
 	return nil
 }
 
@@ -771,9 +776,11 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
@@ -1088,8 +1095,11 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities    []*Activity    `json:"activities,omitempty"`
-	Commits       []*Commit      `json:"commits,omitempty"`
+	Activities   []*Activity     `json:"activities,omitempty"`
+	Commits      []*Commit       `json:"commits,omitempty"`
+	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
+
+	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
 	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
 }
 
@@ -1123,6 +1133,18 @@ type BuildStatus struct {
 	Name        string `json:"name,omitempty"`
 	Url         string `json:"url,omitempty"`
 	Description string `json:"description,omitempty"`
+	DateAdded   int64  `json:"dateAdded,omitempty"`
+}
+
+// Commit status is the build status for a specific commit
+type CommitStatus struct {
+	Commit string      `json:"commit,omitempty"`
+	Status BuildStatus `json:"status,omitempty"`
+}
+
+func (s *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%s", s.Commit, s.Status.Key, s.Status.Name, s.Status.Url)
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // ActivityAction defines the action taken in an Activity.

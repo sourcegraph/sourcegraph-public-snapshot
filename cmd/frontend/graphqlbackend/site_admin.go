@@ -41,14 +41,14 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.Wrap(err, "get user by ID")
 	}
 
-	var accounts []*extsvc.ExternalAccounts
+	var accounts []*extsvc.Accounts
 
 	extAccounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
 	for _, acct := range extAccounts {
-		accounts = append(accounts, &extsvc.ExternalAccounts{
+		accounts = append(accounts, &extsvc.Accounts{
 			ServiceType: acct.ServiceType,
 			ServiceID:   acct.ServiceID,
 			AccountIDs:  []string{acct.AccountID},
@@ -66,7 +66,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	for i := range verifiedEmails {
 		emailStrs[i] = verifiedEmails[i].Email
 	}
-	accounts = append(accounts, &extsvc.ExternalAccounts{
+	accounts = append(accounts, &extsvc.Accounts{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  append(emailStrs, user.Username),

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint rxjs/no-internal: warn */
 import { Observable, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
 import { fromArray } from 'rxjs/internal/observable/fromArray'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'

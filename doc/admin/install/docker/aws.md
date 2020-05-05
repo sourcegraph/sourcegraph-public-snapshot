@@ -14,7 +14,7 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
 - Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 - Add the following user data (as text) in the **Advanced Details** section:
 
-   ```yaml
+   ```
    #cloud-config
    repo_update: true
    repo_upgrade: all
@@ -33,12 +33,12 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
    - usermod -a -G docker ec2-user
 
    # Install and run Sourcegraph. Restart the container upon subsequent reboots
-   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.14.0' ]
+   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.15.1' ]
    ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
   - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/http_https_configuration.md#nginx-ssl-https-configuration))
 - Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the EC2 instance and viewing the logs:
 
      ```

@@ -21,10 +21,8 @@ import (
 )
 
 var authzFilterDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "frontend",
-	Name:      "authz_filter_duration_seconds",
-	Help:      "Time spent on performing authorization",
+	Name: "src_frontend_authz_filter_duration_seconds",
+	Help: "Time spent on performing authorization",
 }, []string{"success"})
 
 var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
@@ -168,7 +166,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			return nil, errors.Wrap(err, "list external accounts")
 		}
 
-		serviceToAccounts := make(map[string]*extsvc.ExternalAccount)
+		serviceToAccounts := make(map[string]*extsvc.Account)
 		for _, acct := range extAccounts {
 			serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 		}
@@ -204,7 +202,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 
 			// Save the external account and grant pending permissions for it later.
-			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.ExternalAccountSpec, acct.ExternalAccountData)
+			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.AccountSpec, acct.AccountData)
 			if err != nil {
 				return nil, errors.Wrap(err, "associate external account to user")
 			}
@@ -243,7 +241,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		return append(filtered, verified...), nil
 	}
 
-	var accts []*extsvc.ExternalAccount
+	var accts []*extsvc.Account
 	if len(authzProviders) > 0 && currentUser != nil {
 		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
 		if err != nil {
@@ -270,7 +268,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	verified := roaring.NewBitmap()
 	for _, authzProvider := range authzProviders {
 		// determine external account to use
-		var providerAcct *extsvc.ExternalAccount
+		var providerAcct *extsvc.Account
 		for _, acct := range accts {
 			if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
 				providerAcct = acct
@@ -282,7 +280,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
 				providerAcct = pr
 				if providerAcct != nil {
-					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.ExternalAccountSpec, providerAcct.ExternalAccountData)
+					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.AccountSpec, providerAcct.AccountData)
 					if err != nil {
 						return nil, err
 					}

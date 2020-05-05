@@ -14,6 +14,7 @@ import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import * as H from 'history'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -192,6 +193,7 @@ const quickConfigureActions: {
 
 interface Props extends RouteComponentProps<{}> {
     isLightTheme: boolean
+    history: H.History
 }
 
 interface State {
@@ -258,6 +260,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         } else {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
+                            // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
                             refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
                         this.setState({ restartToApply })
@@ -308,7 +311,12 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const alerts: JSX.Element[] = []
         if (this.state.error) {
             alerts.push(
-                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={this.state.error} />
+                <ErrorAlert
+                    key="error"
+                    className="site-admin-configuration-page__alert"
+                    error={this.state.error}
+                    history={this.props.history}
+                />
             )
         }
         if (this.state.reloadStartedAt) {

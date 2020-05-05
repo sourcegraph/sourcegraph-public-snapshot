@@ -1,24 +1,22 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { LinkPreview, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { LinkPreviewProviderRegistry } from '../services/linkPreview'
-import { wrapRemoteObservable } from './common'
+import { registerRemoteProvider } from './common'
 
 /** @internal */
-export interface ClientContentAPI extends ProxyValue {
+export interface ClientContentAPI extends ProxyMarked {
     $registerLinkPreviewProvider(
         urlMatchPattern: string,
-        provider: ProxyResult<((url: string) => ProxySubscribable<LinkPreview | null | undefined>) & ProxyValue>
-    ): Unsubscribable & ProxyValue
+        provider: Remote<((url: string) => ProxySubscribable<LinkPreview | null | undefined>) & ProxyMarked>
+    ): Unsubscribable & ProxyMarked
 }
 
 /** @internal */
-export function createClientContent(registry: LinkPreviewProviderRegistry): ClientContentAPI & ProxyValue {
+export function createClientContent(registry: LinkPreviewProviderRegistry): ClientContentAPI & ProxyMarked {
     return {
-        [proxyValueSymbol]: true,
+        [proxyMarker]: true,
         $registerLinkPreviewProvider: (urlMatchPattern, providerFunction) =>
-            proxyValue(
-                registry.registerProvider({ urlMatchPattern }, url => wrapRemoteObservable(providerFunction(url)))
-            ),
+            registerRemoteProvider(registry, { urlMatchPattern }, providerFunction),
     }
 }

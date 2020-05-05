@@ -16,7 +16,7 @@ import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, ModeSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -116,7 +116,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     relativeElement: repositoryCommitPageElement!,
                 })),
                 // Can't reposition HoverOverlay if it wasn't rendered
-                filter(propertyIsDefined('hoverOverlayElement'))
+                filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
@@ -204,7 +204,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 {this.state.commitOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.commitOrError} />
+                    <ErrorAlert className="mt-2" error={this.state.commitOrError} history={this.props.history} />
                 ) : (
                     <>
                         <div className="card repository-commit-page__card">

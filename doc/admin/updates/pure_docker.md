@@ -4,6 +4,34 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+## v3.13.2 -> v3.14.2 changes
+
+### Update image tags
+
+Change 3.13.2 → 3.14.2 for the following containers:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| frontend          | index.docker.io/sourcegraph/frontend:3.14.2     |
+| frontend-internal | index.docker.io/sourcegraph/frontend:3.14.2     |
+| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.14.2 |
+| gitserver         | index.docker.io/sourcegraph/gitserver:3.14.2    |
+| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.14.2  |
+| query-runner      | index.docker.io/sourcegraph/query-runner:3.14.2 |
+| replacer          | index.docker.io/sourcegraph/replacer:3.14.2     |
+| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.14.2 |
+| searcher          | index.docker.io/sourcegraph/searcher:3.14.2     |
+| symbols           | index.docker.io/sourcegraph/symbols:3.14.2      |
+
+Also change the follow which are not versioned alongside Sourcegraph currently:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| grafana           | index.docker.io/sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c |
+| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 |
+| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200318141948-0b140b7@sha256:b022fd7e4884a71786acae32e0ec8baf785c18350ebf5d574d52335a346364f9 |
+| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200318141342-0b140b7@sha256:0d0fbce55b51ec7bdd37927539f50459cd0f207b7cf219ca5122d07792012fb1 |
+
 ## v3.12.5 -> v3.13.2 changes
 
 ### Confirm file permissions

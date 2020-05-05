@@ -51,7 +51,7 @@ export interface TreeLayerProps extends AbsoluteRepo {
     setActiveNode: (node: TreeNode) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 interface TreeLayerState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
@@ -273,10 +273,10 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                 <ErrorAlert
                                                     className="tree__row-alert"
                                                     // needed because of dynamic styling
-                                                    // eslint-disable-next-line react/forbid-dom-props
                                                     style={treePadding(this.props.depth, true)}
                                                     error={treeOrError}
                                                     prefix="Error loading file tree"
+                                                    history={this.props.history}
                                                 />
                                             ) : (
                                                 treeOrError && (
@@ -343,7 +343,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     /**
      * linkRowClick is the click handler for <Link>
      */
-    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    private linkRowClick: React.MouseEventHandler<HTMLAnchorElement> = () => {
         this.props.setActiveNode(this.node)
         this.props.onSelect(this.node)
     }

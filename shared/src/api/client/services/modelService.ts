@@ -6,7 +6,7 @@ import { filter, takeWhile, map, startWith } from 'rxjs/operators'
 /**
  * A text model is a text document and associated metadata.
  *
- * How does this relate to editors (in {@link EditorService}? A model is the file, an editor is the
+ * How does this relate to editors (in {@link ViewerService}? A model is the file, an editor is the
  * window that the file is shown in. Things like the content and language are properties of the
  * model; things like decorations and the selection ranges are properties of the editor.
  */

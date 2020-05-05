@@ -20,9 +20,10 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
     >
         <WarningIcon className="icon-inline mr-2 flex-shrink-0" />
         Your Sourcegraph license{' '}
-        {isProductLicenseExpired(expiresAt)
-            ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'
-            : 'will expire in ' + formatDistanceStrict(expiresAt, Date.now()) // 'Will expire in two months'
+        {
+            isProductLicenseExpired(expiresAt)
+                ? 'expired ' + formatRelativeExpirationDate(expiresAt) // 'Expired two months ago'
+                : 'will expire in ' + formatDistanceStrict(expiresAt, Date.now()) // 'Will expire in two months'
         }
         .&nbsp;
         <Link className="site-alert__link" to="/site-admin/license">

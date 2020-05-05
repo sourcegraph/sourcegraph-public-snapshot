@@ -3,7 +3,6 @@
   // for the documentation about the extensions.json format
   "recommendations": [
     "EditorConfig.editorconfig",
-    "ms-vscode.vscode-typescript-tslint-plugin",
     "esbenp.prettier-vscode",
     "prisma.vscode-graphql",
     "ms-vscode.Go",
@@ -12,8 +11,8 @@
     "zignd.html-css-class-completion",
     "orta.vscode-jest",
     "dbaeumer.vscode-eslint",
+    "foxundermoon.shell-format",
+    "timonwong.shellcheck",
   ],
-  "unwantedRecommendations": [
-    "eg2.tslint", // deprecated
-  ],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
 }

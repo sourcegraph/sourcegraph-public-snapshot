@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -22,7 +22,7 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 		return Mocks.ReadFile(commit, name)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
 
@@ -45,7 +45,7 @@ func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 		return Mocks.NewFileReader(commit, name)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
 	span.SetTag("Name", name)
 	defer span.Finish()
 

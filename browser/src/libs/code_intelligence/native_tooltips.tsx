@@ -50,7 +50,7 @@ export function handleNativeTooltips(
         subscription: nativeTooltips.subscribe(({ element, subscriptions }) => {
             subscriptions.add(
                 // This subscription is correctly handled through the view's `subscriptions`
-                // tslint:disable-next-line rxjs-no-nested-subscribe
+                // eslint-disable-next-line rxjs/no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(enabled => {
                     element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, !enabled)
                 })

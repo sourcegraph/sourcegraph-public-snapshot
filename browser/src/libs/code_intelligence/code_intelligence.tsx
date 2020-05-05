@@ -4,13 +4,14 @@ import {
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
+    MaybeLoadingResult,
 } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
 import {
-    animationFrameScheduler,
+    asyncScheduler,
     combineLatest,
     EMPTY,
     from,
@@ -37,16 +38,21 @@ import {
     startWith,
     distinctUntilChanged,
     retryWhen,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
-import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/viewerService'
+import {
+    isPrivateRepoPublicSourcegraphComErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
+import { asObservable } from '../../../../shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
@@ -61,7 +67,7 @@ import {
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
+import { isDefined, isInstanceOf, property } from '../../../../shared/src/util/types'
 import {
     FileSpec,
     UIPositionSpec,
@@ -73,8 +79,10 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../shared/src/util/url'
+import { observeStorageKey } from '../../browser/storage'
 import { isInPage } from '../../context'
-import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { toTextDocumentIdentifier, toTextDocumentPositionParams } from '../../shared/backend/ext-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
@@ -97,9 +105,8 @@ import {
 } from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
-import { ViewResolver } from './views'
-import { observeStorageKey } from '../../browser/storage'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { delayUntilIntersecting, ViewResolver } from './views'
+
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
@@ -350,8 +357,6 @@ function initCodeIntelligence({
 } {
     const subscription = new Subscription()
 
-    const { getHover } = createLSPFromExtensions(extensionsController)
-
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
     const nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
@@ -365,7 +370,12 @@ function initCodeIntelligence({
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
-        registerHoverContributions({ extensionsController, platformContext, history: H.createBrowserHistory() })
+        registerHoverContributions({
+            extensionsController,
+            platformContext,
+            history: H.createBrowserHistory(),
+            locationAssign: location.assign.bind(location),
+        })
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
@@ -379,15 +389,22 @@ function initCodeIntelligence({
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-            filter(propertyIsDefined('hoverOverlayElement'))
+            filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
-                getHover({ ...rest, position: { line, character } }),
+                extensionsController.services.textDocumentHover.getHover(
+                    toTextDocumentPositionParams({ ...rest, position: { line, character } })
+                ),
                 getActiveHoverAlerts(hoverAlerts),
             ]).pipe(
-                map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
-                    hoverMerged ? { ...hoverMerged, alerts } : null
+                map(
+                    ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
+                        ExtensionHoverAlertType
+                    > | null> => ({
+                        isLoading,
+                        result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                    })
                 )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
@@ -565,8 +582,6 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
-
     const addedElements = mutations.pipe(
         concatAll(),
         concatMap(mutation => mutation.addedNodes),
@@ -657,12 +672,21 @@ export function handleCodeHost({
                 const { rawRepoName, rev } = getContext()
                 return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
-                    map(rev => !!rev),
-                    catchError(error => [asError(error)]),
+                    mapTo(true),
+                    catchError(error => {
+                        if (isRepoNotFoundErrorLike(error)) {
+                            return [false]
+                        }
+                        return [asError(error)]
+                    }),
                     startWith(undefined)
                 )
             })
         )
+        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+            event.preventDefault()
+            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+        }
 
         subscriptions.add(
             combineLatest([
@@ -677,13 +701,14 @@ export function handleCodeHost({
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
+                        codeHostType={codeHost.type}
                         getContext={getContext}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
                     mount
                 )
@@ -694,14 +719,17 @@ export function handleCodeHost({
     /** A stream of added or removed code views with the resolved file info */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        // Limit number of code views for perf reasons.
-        filter(() => codeViewCount.value < 50),
         tap(codeViewEvent => {
             codeViewCount.next(codeViewCount.value + 1)
             codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
+        // Delay emitting code views until they are in the viewport, or within 4000 vertical
+        // pixels of the viewport's top or bottom edges.
+        delayUntilIntersecting({ rootMargin: '4000px 0px' }),
         mergeMap(codeViewEvent =>
-            codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+            asObservable(() =>
+                codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)
+            ).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
                 mergeMap(fileInfo =>
                     fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
@@ -713,7 +741,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                         return EMPTY
                     }
                     throw err
@@ -758,7 +786,7 @@ export function handleCodeHost({
                 })
             )
         ),
-        observeOn(animationFrameScheduler)
+        observeOn(asyncScheduler)
     )
 
     /** Map from workspace URI to number of editors referencing it */
@@ -821,7 +849,7 @@ export function handleCodeHost({
                 selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                 isActive: true,
             }
-            const editorId = extensionsController.services.editor.addEditor(editorData)
+            const editorId = extensionsController.services.viewer.addViewer(editorData)
             const scope: CodeEditorWithPartialModel = {
                 ...editorData,
                 ...editorId,
@@ -831,15 +859,15 @@ export function handleCodeHost({
             addRootRef(rootURI, fileInfo.rev)
             codeViewEvent.subscriptions.add(() => {
                 deleteRootRef(rootURI)
-                extensionsController.services.editor.removeEditor(editorId)
+                extensionsController.services.viewer.removeViewer(editorId)
             })
 
             if (codeViewEvent.observeSelections) {
                 codeViewEvent.subscriptions.add(
                     // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
-                    // tslint:disable-next-line: rxjs-no-nested-subscribe
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
                     codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
-                        extensionsController.services.editor.setSelections(editorId, selections)
+                        extensionsController.services.viewer.setSelections(editorId, selections)
                     })
                 )
             }
@@ -860,7 +888,7 @@ export function handleCodeHost({
                         text: fileInfo.baseContent,
                     })
                 }
-                const editor = extensionsController.services.editor.addEditor({
+                const editor = extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     // There is no notion of a selection on diff views yet, so this is empty.
@@ -874,7 +902,7 @@ export function handleCodeHost({
                 addRootRef(baseRootURI, fileInfo.baseRev)
                 codeViewEvent.subscriptions.add(() => {
                     deleteRootRef(baseRootURI)
-                    extensionsController.services.editor.removeEditor(editor)
+                    extensionsController.services.viewer.removeViewer(editor)
                 })
             }
 
@@ -914,7 +942,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -946,7 +974,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -961,7 +989,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                // tslint:disable-next-line: rxjs-no-nested-subscribe
+                // eslint-disable-next-line rxjs/no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {

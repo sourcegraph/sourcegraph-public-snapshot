@@ -4,20 +4,17 @@ on:
 jobs:
   lsif-go:
     runs-on: ubuntu-latest
+    container: sourcegraph/lsif-go
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
-        with:
-          verbose: "true"
+        run: lsif-go
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
     runs-on: ubuntu-latest
-    container: node:13.8.0-alpine3.10
+    container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
       - name: Install build dependencies
@@ -25,35 +22,30 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: web
+        working-directory: web/
+        run: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          root: web
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: web/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
-  lsif-lsif:
+  lsif-precise-code-intel:
     runs-on: ubuntu-latest
-    container: node:13.8.0-alpine3.10
+    container: sourcegraph/lsif-node
+    defaults:
+      run:
+        working-directory: cmd/precise-code-intel
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
-        run: yarn --cwd lsif
+        run: yarn
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: lsif
+        run: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          root: lsif
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-shared:
     runs-on: ubuntu-latest
-    container: node:13.8.0-alpine3.10
+    container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
       - name: Install build dependencies
@@ -61,18 +53,15 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: shared
+        working-directory: shared/
+        run: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          root: shared
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: shared/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-browser:
     runs-on: ubuntu-latest
-    container: node:13.8.0-alpine3.10
+    container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
       - name: Install build dependencies
@@ -80,11 +69,8 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
-        with:
-          project_root: browser
+        working-directory: browser/
+        run: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          root: browser
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}

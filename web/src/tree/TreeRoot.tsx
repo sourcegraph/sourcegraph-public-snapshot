@@ -48,7 +48,7 @@ export interface TreeRootProps extends AbsoluteRepo {
     setActiveNode: (node: TreeNode) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
@@ -132,7 +132,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: TreeRootProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
     public componentWillUnmount(): void {
@@ -157,11 +157,11 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                 {isErrorLike(treeOrError) ? (
                     <ErrorAlert
                         // needed because of dynamic styling
-                        // eslint-disable-next-line react/forbid-dom-props
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
                         className="tree__row tree__row-alert"
                         prefix="Error loading tree"
                         error={treeOrError}
+                        history={this.props.history}
                     />
                 ) : (
                     <table className="tree-layer" tabIndex={0}>

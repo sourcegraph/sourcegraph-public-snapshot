@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 
 	"github.com/google/go-cmp/cmp"
@@ -76,7 +80,7 @@ func TestNextSync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextSync(clock, tt.h)
+			got := NextSync(clock, tt.h)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatal(diff)
 			}
@@ -177,7 +181,7 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -193,9 +197,9 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
+			SyncStore:        store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
 		}
 		go syncer.Run(ctx)
 		select {
@@ -210,7 +214,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -227,9 +231,9 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
+			SyncStore:        store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
 		}
 		syncer.Run(ctx)
 		if syncCalled {
@@ -241,7 +245,7 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{}, nil
 			},
 		}
@@ -250,10 +254,10 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
-			priorityNotify:          make(chan []int64, 1),
+			SyncStore:        store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
+			priorityNotify:   make(chan []int64, 1),
 		}
 		syncer.priorityNotify <- []int64{1}
 		go syncer.Run(ctx)
@@ -266,15 +270,199 @@ func TestSyncerRun(t *testing.T) {
 
 }
 
+func TestFilterSyncData(t *testing.T) {
+	testCases := []struct {
+		name      string
+		serviceID int64
+		data      []campaigns.ChangesetSyncData
+		want      []campaigns.ChangesetSyncData
+	}{
+		{
+			name:      "Empty",
+			serviceID: 1,
+			data:      []campaigns.ChangesetSyncData{},
+			want:      []campaigns.ChangesetSyncData{},
+		},
+		{
+			name:      "single item, should match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1},
+				},
+			},
+		},
+		{
+			name:      "single item, should not match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{},
+		},
+		{
+			name:      "multiple items, should match",
+			serviceID: 2,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+		},
+		{
+			name:      "multiple items, should not match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := filterSyncData(tc.serviceID, tc.data)
+			if diff := cmp.Diff(tc.want, data); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSyncRegistry(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	now := time.Now()
+
+	repoStore := MockRepoStore{
+		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
+			return []*repos.ExternalService{
+				{
+					ID:          1,
+					Kind:        "GITHUB",
+					DisplayName: "",
+					Config:      "",
+					CreatedAt:   time.Time{},
+					UpdatedAt:   time.Time{},
+				},
+			}, nil
+		},
+	}
+
+	syncStore := MockSyncStore{
+		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
+			return []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					UpdatedAt:          now,
+					ExternalServiceIDs: []int64{1},
+				},
+			}, nil
+		},
+	}
+
+	r := NewSyncRegistry(ctx, syncStore, repoStore, nil, nil)
+
+	assertSyncerCount := func(want int) {
+		r.mu.Lock()
+		if len(r.syncers) != want {
+			t.Fatalf("Expected %d syncer, got %d", want, len(r.syncers))
+		}
+		r.mu.Unlock()
+	}
+
+	assertSyncerCount(1)
+
+	// Adding it again should have no effect
+	r.Add(1)
+	assertSyncerCount(1)
+
+	// Simulate a service being removed
+	r.HandleExternalServiceSync(api.ExternalService{
+		ID:        1,
+		Kind:      "GITHUB",
+		DeletedAt: &now,
+	})
+	assertSyncerCount(0)
+
+	// And added again
+	r.HandleExternalServiceSync(api.ExternalService{
+		ID:        1,
+		Kind:      "GITHUB",
+		DeletedAt: nil,
+	})
+	assertSyncerCount(1)
+
+	syncChan := make(chan int64, 1)
+
+	// In order to test that priority items are delivered we'll inject our own syncer
+	// with a custom sync func
+	syncer := &ChangesetSyncer{
+		SyncStore:         syncStore,
+		ReposStore:        repoStore,
+		HTTPFactory:       nil,
+		externalServiceID: 1,
+		syncFunc: func(ctx context.Context, id int64) error {
+			syncChan <- id
+			return nil
+		},
+		priorityNotify: make(chan []int64, 1),
+	}
+	go syncer.Run(ctx)
+
+	// Set the syncer
+	r.mu.Lock()
+	r.syncers[1] = syncer
+	r.mu.Unlock()
+
+	// Send priority items
+	err := r.EnqueueChangesetSyncs(ctx, []int64{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case id := <-syncChan:
+		if id != 1 {
+			t.Fatalf("Expected 1, got %d", id)
+		}
+	case <-time.After(1 * time.Second):
+		t.Fatal("Timed out waiting for sync")
+	}
+}
+
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context) ([]campaigns.ChangesetSyncData, error)
+	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	listChangesets        func(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	updateChangesets      func(context.Context, ...*campaigns.Changeset) error
+	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
 	transact              func(context.Context) (*Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
-	return m.listChangesetSyncData(ctx)
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+	return m.listChangesetSyncData(ctx, opts)
 }
 
 func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campaigns.Changeset, error) {
@@ -285,6 +473,27 @@ func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOp
 	return m.listChangesets(ctx, opts)
 }
 
+func (m MockSyncStore) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
+	return m.updateChangesets(ctx, cs...)
+}
+
+func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error {
+	return m.upsertChangesetEvents(ctx, cs...)
+}
+
 func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 	return m.transact(ctx)
+}
+
+type MockRepoStore struct {
+	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
+func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+	return m.listExternalServices(ctx, args)
+}
+
+func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+	return m.listRepos(ctx, args)
 }

@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -91,20 +91,20 @@ function initializeExtensionHost(
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
-    ;(global as any).require = (modulePath: string): any => {
+    globalThis.require = ((modulePath: string): any => {
         if (modulePath === 'sourcegraph') {
             return extensionAPI
         }
         // All other requires/imports in the extension's code should not reach here because their JS
         // bundler should have resolved them locally.
         throw new Error(`require: module not found: ${modulePath}`)
-    }
+    }) as any
     subscription.add(() => {
-        ;(global as any).require = () => {
+        globalThis.require = (() => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
             throw new Error('require: Sourcegraph extension API was unsubscribed')
-        }
+        }) as any
     })
 
     return { subscription, extensionAPI, extensionHostAPI }
@@ -121,7 +121,9 @@ function createExtensionAPI(
     registerComlinkTransferHandlers()
 
     /** Proxy to main thread */
-    const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
+    const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
+    ;(endpoints.proxy as any).role = 'proxy'
+    ;(endpoints.proxy as any).side = 'ext-host'
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
@@ -144,7 +146,7 @@ function createExtensionAPI(
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
-        [comlink.proxyValueSymbol]: true,
+        [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
         configuration,
@@ -183,6 +185,7 @@ function createExtensionAPI(
             },
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
+            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
         workspace: {

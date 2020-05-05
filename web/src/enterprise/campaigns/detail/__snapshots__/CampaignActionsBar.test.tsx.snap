@@ -21,6 +21,12 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -35,24 +41,43 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
     <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={false}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
+      <React.Fragment>
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={false}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <CloseDeleteCampaignPrompt
+          buttonClassName="btn-secondary mr-1"
+          buttonText="Close"
+          changesetsCount={0}
+          disabled={false}
+          disabledTooltip="Cannot close while campaign is being created"
+          message={
+            <p>
+              Close campaign 
+              <strong>
+                Super campaign
+              </strong>
+              ?
+            </p>
+          }
+          onButtonClick={[Function]}
+        />
+      </React.Fragment>
       <CloseDeleteCampaignPrompt
-        buttonClassName="btn-secondary mr-1"
-        buttonText="Close"
+        buttonClassName="btn-danger"
+        buttonText="Delete"
         changesetsCount={0}
         disabled={false}
-        disabledTooltip="Cannot close while campaign is being created"
+        disabledTooltip="Cannot delete while campaign is being created"
         message={
           <p>
-            Close campaign 
+            Delete campaign 
             <strong>
               Super campaign
             </strong>
@@ -61,6 +86,52 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
         }
         onButtonClick={[Function]}
       />
+    </React.Fragment>
+  </span>
+</div>
+`;
+
+exports[`CampaignActionsBar closed 1`] = `
+<div
+  className="d-flex mb-2 position-relative"
+>
+  <h2
+    className="m-0"
+  >
+    <span
+      className="badge badge-danger mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Closed
+    </span>
+    <span>
+      <AnchorLink
+        to="/campaigns"
+      >
+        Campaigns
+      </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
+    </span>
+    <span
+      className="text-muted d-inline-block mx-2"
+    >
+      /
+    </span>
+    <span>
+      Super campaign
+    </span>
+  </h2>
+  <span
+    className="flex-grow-1 d-flex justify-content-end align-items-center"
+  >
+    <React.Fragment>
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
@@ -104,6 +175,12 @@ exports[`CampaignActionsBar edit mode 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -160,6 +237,12 @@ exports[`CampaignActionsBar editable 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -174,98 +257,34 @@ exports[`CampaignActionsBar editable 1`] = `
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
     <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={false}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
-      <CloseDeleteCampaignPrompt
-        buttonClassName="btn-secondary mr-1"
-        buttonText="Close"
-        changesetsCount={0}
-        disabled={false}
-        disabledTooltip="Cannot close while campaign is being created"
-        message={
-          <p>
-            Close campaign 
-            <strong>
-              Super campaign
-            </strong>
-            ?
-          </p>
-        }
-        onButtonClick={[Function]}
-      />
-      <CloseDeleteCampaignPrompt
-        buttonClassName="btn-danger"
-        buttonText="Delete"
-        changesetsCount={0}
-        disabled={false}
-        disabledTooltip="Cannot delete while campaign is being created"
-        message={
-          <p>
-            Delete campaign 
-            <strong>
-              Super campaign
-            </strong>
-            ?
-          </p>
-        }
-        onButtonClick={[Function]}
-      />
-    </React.Fragment>
-  </span>
-</div>
-`;
-
-exports[`CampaignActionsBar editable but closed 1`] = `
-<div
-  className="d-flex mb-2 position-relative"
->
-  <h2
-    className="m-0"
-  >
-    <span
-      className="badge badge-danger mr-2"
-    >
-      <Memo(ImageAutoAdjustIcon)
-        className="icon-inline campaign-actions-bar__campaign-icon"
-      />
-       Closed
-    </span>
-    <span>
-      <AnchorLink
-        to="/campaigns"
-      >
-        Campaigns
-      </AnchorLink>
-    </span>
-    <span
-      className="text-muted d-inline-block mx-2"
-    >
-      /
-    </span>
-    <span>
-      Super campaign
-    </span>
-  </h2>
-  <span
-    className="flex-grow-1 d-flex justify-content-end align-items-center"
-  >
-    <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={false}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
+      <React.Fragment>
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={false}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <CloseDeleteCampaignPrompt
+          buttonClassName="btn-secondary mr-1"
+          buttonText="Close"
+          changesetsCount={0}
+          disabled={false}
+          disabledTooltip="Cannot close while campaign is being created"
+          message={
+            <p>
+              Close campaign 
+              <strong>
+                Super campaign
+              </strong>
+              ?
+            </p>
+          }
+          onButtonClick={[Function]}
+        />
+      </React.Fragment>
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
@@ -309,6 +328,12 @@ exports[`CampaignActionsBar mode: closing 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -326,32 +351,34 @@ exports[`CampaignActionsBar mode: closing 1`] = `
       className="mr-2"
     />
     <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={true}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
-      <CloseDeleteCampaignPrompt
-        buttonClassName="btn-secondary mr-1"
-        buttonText="Close"
-        changesetsCount={0}
-        disabled={true}
-        disabledTooltip="Cannot close while campaign is being created"
-        message={
-          <p>
-            Close campaign 
-            <strong>
-              Super campaign
-            </strong>
-            ?
-          </p>
-        }
-        onButtonClick={[Function]}
-      />
+      <React.Fragment>
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={true}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <CloseDeleteCampaignPrompt
+          buttonClassName="btn-secondary mr-1"
+          buttonText="Close"
+          changesetsCount={0}
+          disabled={true}
+          disabledTooltip="Cannot close while campaign is being created"
+          message={
+            <p>
+              Close campaign 
+              <strong>
+                Super campaign
+              </strong>
+              ?
+            </p>
+          }
+          onButtonClick={[Function]}
+        />
+      </React.Fragment>
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
@@ -395,6 +422,12 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -412,32 +445,34 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
       className="mr-2"
     />
     <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={true}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
-      <CloseDeleteCampaignPrompt
-        buttonClassName="btn-secondary mr-1"
-        buttonText="Close"
-        changesetsCount={0}
-        disabled={true}
-        disabledTooltip="Cannot close while campaign is being created"
-        message={
-          <p>
-            Close campaign 
-            <strong>
-              Super campaign
-            </strong>
-            ?
-          </p>
-        }
-        onButtonClick={[Function]}
-      />
+      <React.Fragment>
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={true}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <CloseDeleteCampaignPrompt
+          buttonClassName="btn-secondary mr-1"
+          buttonText="Close"
+          changesetsCount={0}
+          disabled={true}
+          disabledTooltip="Cannot close while campaign is being created"
+          message={
+            <p>
+              Close campaign 
+              <strong>
+                Super campaign
+              </strong>
+              ?
+            </p>
+          }
+          onButtonClick={[Function]}
+        />
+      </React.Fragment>
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
@@ -481,6 +516,12 @@ exports[`CampaignActionsBar mode: saving 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -535,6 +576,12 @@ exports[`CampaignActionsBar new with patch set 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -567,6 +614,12 @@ exports[`CampaignActionsBar new without patch set 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -574,7 +627,7 @@ exports[`CampaignActionsBar new without patch set 1`] = `
       /
     </span>
     <span>
-      New manual campaign
+      New campaign
     </span>
   </h2>
   <span
@@ -604,6 +657,12 @@ exports[`CampaignActionsBar not editable 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -641,6 +700,12 @@ exports[`CampaignActionsBar processing 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -697,6 +762,12 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -711,32 +782,34 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
     className="flex-grow-1 d-flex justify-content-end align-items-center"
   >
     <React.Fragment>
-      <button
-        className="btn btn-secondary mr-1"
-        disabled={false}
-        id="e2e-campaign-edit"
-        onClick={[Function]}
-        type="button"
-      >
-        Edit
-      </button>
-      <CloseDeleteCampaignPrompt
-        buttonClassName="btn-secondary mr-1"
-        buttonText="Close"
-        changesetsCount={1}
-        disabled={false}
-        disabledTooltip="Cannot close while campaign is being created"
-        message={
-          <p>
-            Close campaign 
-            <strong>
-              Super campaign
-            </strong>
-            ?
-          </p>
-        }
-        onButtonClick={[Function]}
-      />
+      <React.Fragment>
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={false}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <CloseDeleteCampaignPrompt
+          buttonClassName="btn-secondary mr-1"
+          buttonText="Close"
+          changesetsCount={1}
+          disabled={false}
+          disabledTooltip="Cannot close while campaign is being created"
+          message={
+            <p>
+              Close campaign 
+              <strong>
+                Super campaign
+              </strong>
+              ?
+            </p>
+          }
+          onButtonClick={[Function]}
+        />
+      </React.Fragment>
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"

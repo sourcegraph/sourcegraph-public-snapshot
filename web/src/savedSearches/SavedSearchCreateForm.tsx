@@ -4,7 +4,7 @@ import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
 import { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
@@ -13,7 +13,7 @@ interface Props extends RouteComponentProps, NamespaceProps {
     authenticatedUser: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike
@@ -44,8 +44,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
                                 this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
-                                map(() => true),
-                                catchError(error => [error])
+                                map(() => true as const),
+                                catchError((error): [ErrorLike] => [asError(error)])
                             )
                         )
                     )

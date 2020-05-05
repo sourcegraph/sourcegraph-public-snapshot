@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -28,11 +29,12 @@ type changesetsConnectionResolver struct {
 	opts  ee.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
-	once       sync.Once
-	changesets []*campaigns.Changeset
-	reposByID  map[api.RepoID]*repos.Repo
-	next       int64
-	err        error
+	once           sync.Once
+	changesets     []*campaigns.Changeset
+	scheduledSyncs map[int64]time.Time
+	reposByID      map[api.RepoID]*repos.Repo
+	next           int64
+	err            error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ExternalChangesetResolver, error) {
@@ -52,6 +54,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			store:         r.store,
 			Changeset:     c,
 			preloadedRepo: repo,
+			nextSyncAt:    r.scheduledSyncs[c.ID],
 		})
 	}
 
@@ -84,6 +87,21 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			return
 		}
 
+		changesetIDs := make([]int64, len(r.changesets))
+		for i, c := range r.changesets {
+			changesetIDs[i] = c.ID
+		}
+
+		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.scheduledSyncs = make(map[int64]time.Time)
+		for _, d := range syncData {
+			r.scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+		}
+
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
 		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
@@ -98,7 +116,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 
 		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[api.RepoID(repo.ID)] = repo
+			r.reposByID[repo.ID] = repo
 		}
 	})
 
@@ -119,6 +137,9 @@ type changesetResolver struct {
 	eventsOnce sync.Once
 	events     []*campaigns.ChangesetEvent
 	eventsErr  error
+
+	// When the next sync is scheduled
+	nextSyncAt time.Time
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -198,6 +219,13 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
+func (r *changesetResolver) NextSyncAt() *graphqlbackend.DateTime {
+	if r.nextSyncAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
+}
+
 func (r *changesetResolver) Title() (string, error) {
 	return r.Changeset.Title()
 }
@@ -243,7 +271,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := campaigns.ChangesetEvents(es)
+	events := ee.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
 	sort.Slice(labels, func(i, j int) bool {
 		return labels[i].Name < labels[j].Name

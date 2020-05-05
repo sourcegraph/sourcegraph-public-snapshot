@@ -4,11 +4,11 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject, merge } from 'rxjs'
+import { Observable, Subject, merge, of } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
-import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
 import {
@@ -27,7 +27,7 @@ import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { getHover } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
@@ -78,8 +78,12 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
-                repeatWhen(obs => merge(obs, changesetUpdates).pipe(delay(5000)))
+            merge(of(undefined), changesetUpdates).pipe(
+                switchMap(() =>
+                    queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
+                        repeatWhen(obs => obs.pipe(delay(5000)))
+                    )
+                )
             ),
         [campaign.id, state, reviewState, checkState, queryChangesets, changesetUpdates]
     )
@@ -113,7 +117,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         relativeElement: relativeElement!,
                     })),
                     // Can't reposition HoverOverlay if it wasn't rendered
-                    filter(propertyIsDefined('hoverOverlayElement'))
+                    filter(property('hoverOverlayElement', isDefined))
                 ),
                 getHover: hoveredToken =>
                     getHover(getLSPTextDocumentPositionParams(hoveredToken), { extensionsController }),

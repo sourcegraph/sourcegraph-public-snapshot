@@ -10,7 +10,7 @@ export interface HoverMerged {
 }
 
 /** Create a merged hover from the given individual hovers. */
-export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | null | undefined)[]): HoverMerged | null {
+export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     let range: Range | undefined
     for (const result of values) {
@@ -27,5 +27,8 @@ export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | nu
             }
         }
     }
-    return contents.length === 0 ? null : range ? { contents, range } : { contents }
+    if (contents.length === 0) {
+        return null
+    }
+    return range ? { contents, range } : { contents }
 }

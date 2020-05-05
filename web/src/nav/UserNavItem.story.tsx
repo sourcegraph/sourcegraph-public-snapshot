@@ -6,15 +6,15 @@ import { MemoryRouter } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
-
-import './UserNavItem.scss'
+import webStyles from '../SourcegraphWebApp.scss'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 
 const { add } = storiesOf('UserNavItem', module).addDecorator(story => (
-    <div className="theme-light" style={{ display: 'inline-block', position: 'relative', margin: '2rem' }}>
-        {story()}
-    </div>
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light">{story()}</div>
+    </>
 ))
 
 const OpenUserNavItem: React.FunctionComponent<UserNavItem['props']> = props => {
@@ -48,7 +48,6 @@ add('Site admin', () => (
             themePreference={ThemePreference.Light}
             location={H.createMemoryHistory().location}
             onThemePreferenceChange={onThemePreferenceChange}
-            showDiscussions={true}
             showDotComMarketing={true}
         />
     </MemoryRouter>

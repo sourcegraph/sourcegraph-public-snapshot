@@ -78,6 +78,30 @@ func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
 	return &r.repo.ExternalRepo
 }
 
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Fork, nil
+}
+
+func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Archived, nil
+}
+
+func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.Private, nil
+}
+
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	err := r.hydrate(ctx)
 	if err != nil {
@@ -289,6 +313,10 @@ func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *Authoriz
 		RepositoryID:       r.ID(),
 		AuthorizedUserArgs: args,
 	})
+}
+
+func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
+	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

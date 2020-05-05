@@ -23,6 +23,12 @@ const SettingsSchemaJSON = `{
           "default": true,
           "!go": { "pointer": true }
         },
+        "codeInsights": {
+          "description": "Enables code insights on directory pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "searchStats": {
           "description": "Enables a new page that shows language statistics about the results for a search query.",
           "type": "boolean",
@@ -105,6 +111,18 @@ const SettingsSchemaJSON = `{
       "type": "string",
       "pattern": "literal|regexp"
     },
+    "search.includeForks": {
+      "description": "Whether searches should include searching forked repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
+    "search.includeArchived": {
+      "description": "Whether searches should include searching archived repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
       "type": "array",
@@ -164,6 +182,12 @@ const SettingsSchemaJSON = `{
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",
       "default": false
+    },
+    "search.uppercase": {
+      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
     }
   },
   "definitions": {

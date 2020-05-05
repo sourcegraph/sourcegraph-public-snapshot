@@ -5,8 +5,9 @@ import { withInfo } from '@storybook/addon-info'
 import { withKnobs } from '@storybook/addon-knobs'
 import { addDecorator, addParameters, configure } from '@storybook/react'
 import { themes } from '@storybook/theming'
+import { setLinkComponent, AnchorLink } from '../shared/src/components/Link'
 
-import './styles'
+setLinkComponent(AnchorLink)
 
 async function main(): Promise<void> {
     // Webpack provides require.context. TODO: If this is run in Jest in the future, we'll need to

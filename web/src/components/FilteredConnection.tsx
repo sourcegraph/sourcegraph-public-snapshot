@@ -24,9 +24,11 @@ import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
+import { hasProperty } from '../../../shared/src/util/types'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
+const hasID = (value: unknown): value is { id: GQL.ID } =>
+    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
 interface FilterProps {
     /** All filters. */
@@ -160,7 +162,7 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const ListComponent = this.props.listComponent || 'ul'
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
         const TotalCountSummaryComponent = this.props.totalCountSummaryComponent
@@ -702,7 +704,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.visible !== 0 && arg.visible !== arg.first) {
             q.set('visible', String(arg.visible))
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return q.toString()
     }
 
@@ -769,7 +770,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     <div className="alert alert-danger filtered-connection__error">
                         {errors.map((error, i) => (
                             <React.Fragment key={i}>
-                                <ErrorMessage error={error} />
+                                <ErrorMessage error={error} history={this.props.history} />
                             </React.Fragment>
                         ))}
                     </div>

@@ -202,7 +202,7 @@ func TestGetOrCreateUser(t *testing.T) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}
-					op.ExternalAccountData = extsvc.ExternalAccountData{} // ignore ExternalAccountData value
+					op.ExternalAccountData = extsvc.AccountData{} // ignore AccountData value
 					gotAuthUserOp = &op
 
 					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
@@ -249,8 +249,8 @@ func u(username, email string, emailIsVerified bool) db.NewUser {
 	}
 }
 
-func acct(serviceType, serviceID, clientID, accountID string) extsvc.ExternalAccountSpec {
-	return extsvc.ExternalAccountSpec{
+func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,

@@ -191,7 +191,7 @@ Background permissions syncing is currently behind a feature flag in the [site c
 }
 ```
 
->NOTE: Only GitLab and Bitbucket Server are supported at this time. Support for GitHub is coming soon in 3.15.
+>NOTE: Support for GitHub has been added in 3.15. Previously, only GitLab and Bitbucket Server were supported.
 
 Background permissions syncing has the following benefits:
 
@@ -205,7 +205,7 @@ Since the syncing of permissions happens in the background, there are a few thin
 1. It takes time to complete the first sync. Depending on how many private repositories and users you have on the Sourcegraph instance, it can take from a few minutes to several hours. This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.
 1. More requests to the code host API need to be done during the first sync, but their pace is controlled with rate limiting.
 
-Please contact Sourcegraph support if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
+Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
 ## Explicit permissions API
 

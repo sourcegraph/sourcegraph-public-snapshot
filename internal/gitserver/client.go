@@ -22,7 +22,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -33,14 +32,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
 
 // defaultTransport is the default transport used in the default client and the
-// default reverse proxy. nethttp.Transport will propagate opentracing spans.
-var defaultTransport = &nethttp.Transport{
+// default reverse proxy. ot.Transport will propagate opentracing spans.
+var defaultTransport = &ot.Transport{
 	RoundTripper: requestMeter.Transport(&http.Transport{
 		// Default is 2, but we can send many concurrent requests
 		MaxIdleConnsPerHost: 500,
@@ -164,7 +164,7 @@ func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) 
 
 // Archive produces an archive from a Git repository.
 func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ io.ReadCloser, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo.Name)
 	span.SetTag("Treeish", opt.Treeish)
 	defer func() {
@@ -224,7 +224,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.Repo.Name)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -274,10 +274,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 }
 
 var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "client_deadline_exceeded",
-	Help:      "Times that Client.sendExec() returned context.DeadlineExceeded",
+	Name: "src_gitserver_client_deadline_exceeded",
+	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
 func init() {
@@ -659,6 +657,76 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
+func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.AddrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoCloneProgressRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
+	}
+
+	type op struct {
+		req *protocol.RepoCloneProgressRequest
+		res *protocol.RepoCloneProgressResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoCloneProgress",
+					Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoCloneProgressResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+
+	return &res, err.ErrorOrNil()
+}
+
 // RepoInfo retrieves information about one or more repositories on gitserver.
 //
 // The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
@@ -761,7 +829,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, pay
 // do performs a request to a gitserver, sharding based on the given
 // repo name (the repo name is otherwise not used).
 func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, payload interface{}) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		span.LogKV("repo", string(repo), "method", method, "op", op)
 		if err != nil {

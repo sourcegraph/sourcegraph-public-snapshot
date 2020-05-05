@@ -127,7 +127,7 @@ local usersSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
 );
 local usersSyncRequestsErrorRatePanel = makeErrorRatePanel(
     title = 'User permissions sync',
-    metric ='src_repoupdater_perms_syncer_sync_errors_total',
+    metric ='src_repoupdater_perms_syncer_sync',
     filter = 'type="user"'
 );
 
@@ -141,7 +141,7 @@ local reposSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
 );
 local reposSyncRequestsErrorRatePanel = makeErrorRatePanel(
     title = 'Repo permissions sync',
-    metric ='src_repoupdater_perms_syncer_sync_errors_total',
+    metric ='src_repoupdater_perms_syncer_sync',
     filter = 'type="repo"'
 );
 

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -206,5 +207,38 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
 		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
+	}
+}
+
+func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	i := 0
+	for _, fork := range []bool{true, false} {
+		for _, archived := range []bool{true, false} {
+			i++
+			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
+
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+				t.Fatal(err)
+			}
+
+			rp, err := Repos.GetByName(ctx, name)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rp.Fork != fork {
+				t.Fatalf("rp.Fork: %v != %v", rp.Fork, fork)
+			}
+			if rp.Archived != archived {
+				t.Fatalf("rp.Archived: %v != %v", rp.Archived, archived)
+			}
+		}
 	}
 }

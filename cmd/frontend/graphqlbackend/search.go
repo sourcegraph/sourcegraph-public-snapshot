@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -38,6 +39,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
+var mockResolveRepositories func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error)
 
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
@@ -86,8 +88,11 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	var queryInfo query.QueryInfo
-	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(args.Query)
+	if conf.AndOrQueryEnabled() && searchType != query.SearchTypeLiteral && query.ContainsAndOrKeyword(args.Query) {
+		// To process the input as an and/or query, the flag must be enabled, not be a
+		// literal search, and must contain either an 'and' or 'or' expression.
+		// Else, fallback to the older existing parser.
+		queryInfo, err = query.ProcessAndOr(args.Query)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
@@ -98,22 +103,21 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		}
 	}
 
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		args, queryInfo, err = queryForStableResults(args, queryInfo)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.After)
+		pagination, err = processPaginationRequest(args, queryInfo)
 		if err != nil {
 			return nil, err
 		}
-		if *args.First < 0 || *args.First > 5000 {
-			return nil, errors.New("search: requested pagination 'first' value outside allowed range (0 - 5000)")
-		}
-		pagination = &searchPaginationInfo{
-			cursor: cursor,
-			limit:  *args.First,
-		}
-	} else if args.After != nil {
-		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
 	return &searchResolver{
@@ -128,6 +132,55 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(args)
+}
+
+// queryForStableResults transforms a query that returns a stable result
+// ordering. The transformed query uses pagination underneath the hood.
+func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
+	if queryInfo.BoolValue(query.FieldStable) {
+		var stableResultCount int32
+		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
+			count, _ := queryInfo.StringValue(query.FieldCount)
+			count64, err := strconv.ParseInt(count, 10, 32)
+			if err != nil {
+				return nil, nil, err
+			}
+			stableResultCount = int32(count64)
+			if stableResultCount > maxSearchResultsPerPaginatedRequest {
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
+			}
+		} else {
+			stableResultCount = defaultMaxSearchResults
+		}
+		args.First = &stableResultCount
+		fileValue := "file"
+		// Pagination only works for file content searches, and will
+		// raise an error otherwise. If stable is explicitly set, this
+		// is implied. So, force this query to only return file content
+		// results.
+		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
+	}
+	return args, queryInfo, nil
+}
+
+func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		cursor, err := unmarshalSearchCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
+			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.First,
+		}
+	} else if args.After != nil {
+		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
+	}
+	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -208,6 +261,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
 	if r.pagination != nil {
@@ -233,6 +287,23 @@ func (r *searchResolver) maxResults() int32 {
 	return defaultMaxSearchResults
 }
 
+var mockDecodedViewerFinalSettings *schema.Settings
+
+func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
+	if mockDecodedViewerFinalSettings != nil {
+		return mockDecodedViewerFinalSettings, nil
+	}
+	merged, err := viewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
 func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
@@ -243,12 +314,8 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
-	merged, err := viewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
-		return nil, err
-	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
@@ -287,6 +354,10 @@ func exactlyOneRepo(repoFilters []string) bool {
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
+	if mockResolveRepositories != nil {
+		return mockResolveRepositories(effectiveRepoFieldValues)
+	}
+
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
@@ -311,17 +382,38 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	var settingForks, settingArchived bool
+	if v := settings.SearchIncludeForks; v != nil {
+		settingForks = *v
+	}
+	if v := settings.SearchIncludeArchived; v != nil {
+		settingArchived = *v
+	}
+
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(repoFilters) {
-		fork = No // fork defaults to No unless exactly one repo is being searched.
+	if fork == Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
+		// fork defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes forks
+		fork = No
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(repoFilters) {
-		archived = No // archived defaults to No unless exactly one repo is being searched.
+	if archived == Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
+		// archived defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes archives in all searches
+		archived = No
 	}
+
+	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
+	visibility := query.ParseVisibility(visibilityStr)
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
@@ -334,6 +426,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		onlyPrivate:      visibility == query.Private,
+		onlyPublic:       visibility == query.Public,
 		commitAfter:      commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
@@ -448,6 +542,8 @@ type resolveRepoOp struct {
 	noArchived       bool
 	onlyArchived     bool
 	commitAfter      string
+	onlyPrivate      bool
+	onlyPublic       bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -525,6 +621,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyForks:    op.onlyForks,
 			NoArchived:   op.noArchived,
 			OnlyArchived: op.onlyArchived,
+			NoPrivate:    op.onlyPublic,
+			OnlyPrivate:  op.onlyPrivate,
 		})
 		tr.LazyPrintf("Repos.List - done")
 		if err != nil {
@@ -758,10 +856,11 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 	var queryInfo query.QueryInfo
 	var err error
 	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(plainQuery)
+		andOrQuery, err := query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}
+		queryInfo = &query.AndOrQuery{Query: andOrQuery}
 	} else {
 		queryInfo, err = query.ParseAndCheck(queryString)
 		if err != nil {

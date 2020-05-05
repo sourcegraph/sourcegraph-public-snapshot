@@ -75,7 +75,7 @@ func middleware(next http.Handler) http.Handler {
 		}
 		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
 			UserProps: db.NewUser{Username: username},
-			ExternalAccount: extsvc.ExternalAccountSpec{
+			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: providerType,
 				// Store rawUsername, not normalized username, to prevent two users with distinct
 				// pre-normalization usernames from being merged into the same normalized username

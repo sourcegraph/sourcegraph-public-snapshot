@@ -269,7 +269,7 @@ describe('Search regression test suite', () => {
                 config.sourcegraphBaseUrl +
                     '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
             )
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 3)
         })
         test('Global text search, fork:only, few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
@@ -344,7 +344,7 @@ describe('Search regression test suite', () => {
         })
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
@@ -677,7 +677,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('.filter-input')
             await driver.page.keyboard.type('auth0/go-jwt-middleware$')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%22auth0/go-jwt-middleware%24%22&patternType=literal')
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-search-result')
@@ -688,7 +688,9 @@ describe('Search regression test suite', () => {
             await driver.page.click('.e2e-query-input')
             await driver.page.keyboard.type('error')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=error+repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.assertWindowLocation(
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22&patternType=literal'
+            )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-file-match-children-item-wrapper')
@@ -702,7 +704,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README&patternType=literal'
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
@@ -719,7 +721,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('markdown')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README+lang:markdown&patternType=literal'
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22+lang:%22markdown%22&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
@@ -741,9 +743,9 @@ describe('Search regression test suite', () => {
 
                     return (
                         textContents.length === 3 &&
-                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
-                        textContents.includes('file:README') &&
-                        textContents.includes('lang:markdown')
+                        textContents.includes('repo:"auth0/go-jwt-middleware$"') &&
+                        textContents.includes('file:"README"') &&
+                        textContents.includes('lang:"markdown"')
                     )
                 })
             assert.strictEqual(await hasCorrectFilters(), true)
@@ -785,10 +787,11 @@ describe('Search regression test suite', () => {
 
         test('Querying from a repository tree page produces correct query and filter values', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware')
-            await driver.page.waitForSelector('.tree-page__section-search  .query-input2 .e2e-query-input')
-            await driver.page.click('.tree-page__section-search  .query-input2 .e2e-query-input')
+            await driver.page.waitForSelector('.query-input2 .e2e-query-input')
+            await driver.page.click('.query-input2 .e2e-query-input')
             await driver.page.keyboard.type('test')
             await driver.page.keyboard.press('Enter')
+            // TODO(uwedeportivo): the query string flips between "test" before or after the repo clause
             await driver.assertWindowLocation(
                 '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24+test&patternType=literal'
             )
@@ -877,7 +880,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/auth0/go-jwt-middleware%24%22&patternType=literal'
             )
         })
 
@@ -889,7 +892,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.press('Backspace')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middlewar&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/auth0/go-jwt-middlewar%22&patternType=literal'
             )
         })
         test('Adding and editing finite filters', async () => {
@@ -901,14 +904,14 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:%22no%22&patternType=literal')
             await driver.page.waitForSelector('.filter-input')
             await driver.page.click('.filter-input')
             await driver.page.waitForSelector('.e2e-filter-input-finite-form')
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:only&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:%22only%22&patternType=literal')
         })
     })
 })

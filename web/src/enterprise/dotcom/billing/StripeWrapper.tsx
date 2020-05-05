@@ -1,62 +1,58 @@
-import * as React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Elements, injectStripe, StripeProvider, ReactStripeElements } from 'react-stripe-elements'
 import { billingPublishableKey } from '../productSubscriptions/features'
 
 type Props<P> = P & { component: React.ComponentType<P & ReactStripeElements.InjectedStripeProps> }
 
-interface State<P> {
-    injectedComponent: React.ComponentType<P>
-    stripe: stripe.Stripe | null
-}
-
 /**
  * Wraps a React tree (of elements) and injects the Stripe API.
  */
-export class StripeWrapper<P extends object> extends React.PureComponent<Props<P>, State<P>> {
-    constructor(props: Props<P>) {
-        super(props)
-        this.state = {
-            injectedComponent: injectStripe<P>(props.component),
-            stripe: null,
+export const StripeWrapper = <P extends object>(props: Props<P>): JSX.Element | null => {
+    const [stripe, setStripe] = useState<stripe.Stripe | null>(null)
+    useEffect(() => {
+        if (stripe) {
+            return
         }
-    }
 
-    public componentDidMount(): void {
+        const initStripe = (): void => setStripe((window as any).Stripe(billingPublishableKey))
+
         const id = 'stripe-script'
         if (document.getElementById(id)) {
-            this.setStripeState()
+            initStripe()
             return // already loaded
         }
+
         const script = document.createElement('script')
         script.id = id
         script.src = 'https://js.stripe.com/v3/'
         script.async = true
-        script.onload = () => this.setStripeState()
+        script.onload = () => initStripe()
         document.body.appendChild(script)
-    }
+    }, [stripe])
 
-    public componentDidUpdate(prevProps: Props<P>): void {
-        if (prevProps.component !== this.props.component) {
-            /* eslint react/no-did-update-set-state: warn */
-            this.setState({ injectedComponent: injectStripe<P>(this.props.component) })
+    // Ensure that injectStripe gets called exactly once for each props.component, or else there
+    // will be a re-render loop.
+    const [lastComponent, setLastComponent] = useState<
+        React.ComponentType<P & ReactStripeElements.InjectedStripeProps>
+    >(() => props.component)
+    const [InjectedComponent, setInjectedComponent] = useState<React.ComponentType<P>>(() =>
+        injectStripe<P>(props.component)
+    )
+    useEffect(() => {
+        if (props.component !== lastComponent) {
+            setLastComponent(() => props.component)
+            setInjectedComponent(() => injectStripe<P>(props.component))
         }
-    }
+    }, [lastComponent, props.component])
 
-    public render(): JSX.Element | null {
-        if (!this.state.stripe) {
-            return null
-        }
-        const InjectedComponent = this.state.injectedComponent
-        return (
-            <StripeProvider stripe={this.state.stripe}>
-                <Elements>
-                    <InjectedComponent {...this.props} />
-                </Elements>
-            </StripeProvider>
-        )
+    if (!stripe || !InjectedComponent) {
+        return null
     }
-
-    private setStripeState(): void {
-        this.setState({ stripe: (window as any).Stripe(billingPublishableKey) })
-    }
+    return (
+        <StripeProvider stripe={stripe}>
+            <Elements>
+                <InjectedComponent {...props} />
+            </Elements>
+        </StripeProvider>
+    )
 }

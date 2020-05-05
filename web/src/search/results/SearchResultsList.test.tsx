@@ -137,7 +137,7 @@ describe('SearchResultsList', () => {
     it('shows error message when the search GraphQL request returns an error', () => {
         const { container } = render(
             <BrowserRouter>
-                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', code: 'error' }} />
+                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', name: 'TestError' }} />
             </BrowserRouter>
         )
         expect(getByTestId(container, 'search-results-list-error')).toBeTruthy()

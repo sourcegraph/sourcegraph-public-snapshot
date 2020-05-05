@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import React from 'react'
-import { SourcegraphIconButton } from '../../shared/components/Button'
-import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../shared/components/Button'
 import { CodeHostContext } from './code_intelligence'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
 import { SignInButton } from './SignInButton'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../shared/src/backend/errors'
+import { snakeCase } from 'lodash'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -13,12 +14,13 @@ export interface ViewOnSourcegraphButtonClassProps {
 }
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
+    codeHostType: string
     getContext: () => CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
     showSignInButton?: boolean
-    onConfigureSourcegraphClick?: () => void
+    onConfigureSourcegraphClick?: React.MouseEventHandler<HTMLAnchorElement>
 
     /**
      * A callback for when the user finished a sign in flow.
@@ -28,6 +30,7 @@ interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
+    codeHostType,
     repoExistsOrError,
     sourcegraphURL,
     getContext,
@@ -39,65 +42,99 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     iconClassName,
 }) => {
     className = classNames('open-on-sourcegraph', className)
+    const mutedIconClassName = classNames('open-on-sourcegraph__icon--muted', iconClassName)
+    const commonProps: Partial<SourcegraphIconButtonProps> = {
+        className,
+        iconClassName,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+    }
 
+    // Show nothing while loading
     if (repoExistsOrError === undefined) {
         return null
-    }
-    if (isErrorLike(repoExistsOrError)) {
-        if (failedWithHTTPStatus(repoExistsOrError, 401)) {
-            if (showSignInButton) {
-                return (
-                    <SignInButton
-                        sourcegraphURL={sourcegraphURL}
-                        onSignInClose={onSignInClose}
-                        className={className}
-                        iconClassName={iconClassName}
-                    />
-                )
-            }
-            // Sign in button may already be shown elsewhere on the page
-            return null
-        }
-        return (
-            <SourcegraphIconButton
-                label="Error"
-                title={repoExistsOrError.message}
-                ariaLabel={repoExistsOrError.message}
-                className={className}
-                iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
-                onClick={onConfigureSourcegraphClick}
-            />
-        )
-    }
-    // In minimal UI mode, only show the button as a CTA to sign in
-    if (minimalUI) {
-        return null
-    }
-
-    // If repo doesn't exist and the instance is sourcegraph.com, prompt
-    // user to configure Sourcegraph.
-    if (!repoExistsOrError && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && onConfigureSourcegraphClick) {
-        return (
-            <SourcegraphIconButton
-                label="Configure Sourcegraph"
-                title="Install Sourcegraph for search and code intelligence on private instance"
-                ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
-                className={className}
-                iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
-                onClick={onConfigureSourcegraphClick}
-            />
-        )
     }
 
     const { rawRepoName, rev } = getContext()
     const url = new URL(`/${rawRepoName}${rev ? `@${rev}` : ''}`, sourcegraphURL).href
+
+    if (isErrorLike(repoExistsOrError)) {
+        // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)
+        if (failedWithHTTPStatus(repoExistsOrError, 401)) {
+            if (showSignInButton) {
+                return <SignInButton {...commonProps} sourcegraphURL={sourcegraphURL} onSignInClose={onSignInClose} />
+            }
+            // Sign in button may already be shown elsewhere on the page
+            return null
+        }
+
+        const commonErrorCaseProps: Partial<SourcegraphIconButtonProps> = {
+            ...commonProps,
+            iconClassName: mutedIconClassName,
+            // If we are not running in the browser extension where we can open the options menu,
+            // open the documentation for how to configure the code host we are on.
+            href: new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href,
+            // onClick can call preventDefault() to prevent that and take a different action (opening the options menu).
+            onClick: onConfigureSourcegraphClick,
+        }
+
+        // If the problem is that repository is private and the Sourcegraph instance is sourcegraph.com,
+        // link user to how to configure a private Sourcegraph instance if we are not in minimal UI mode
+        if (isPrivateRepoPublicSourcegraphComErrorLike(repoExistsOrError)) {
+            if (minimalUI) {
+                return null
+            }
+            return (
+                <SourcegraphIconButton
+                    {...commonErrorCaseProps}
+                    label="Configure Sourcegraph"
+                    title="Setup Sourcegraph for search and code intelligence on private repositories"
+                    ariaLabel="Setup Sourcegraph for search and code intelligence on private repositories"
+                />
+            )
+        }
+
+        // If there was an unexpected error, show it in the tooltip.
+        // Still link to the Sourcegraph instance in native integrations
+        // as that might explain the error (e.g. not reachable).
+        // In the browser extension, let the onConfigureSourcegraphClick handler can handle this.
+        return (
+            <SourcegraphIconButton
+                {...commonErrorCaseProps}
+                href={url}
+                label="Error"
+                title={repoExistsOrError.message}
+                ariaLabel={repoExistsOrError.message}
+            />
+        )
+    }
+
+    // If the repository does not exist, communicate that to explain why e.g. code intelligence does not work
+    if (!repoExistsOrError) {
+        return (
+            <SourcegraphIconButton
+                {...commonProps}
+                href={url} // Still link to the repository (which will show a not found page, and can link to further actions)
+                iconClassName={mutedIconClassName}
+                label="Repository not found"
+                title={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
+                ariaLabel={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
+            />
+        )
+    }
+
+    // Otherwise don't render anything in minimal UI mode
+    if (minimalUI) {
+        return null
+    }
+
+    // Render a "View on Sourcegraph" button
     return (
         <SourcegraphIconButton
-            url={url}
+            {...commonProps}
+            href={url}
             title="View repository on Sourcegraph"
             ariaLabel="View repository on Sourcegraph"
-            className={className}
-            iconClassName={iconClassName}
         />
     )
 }

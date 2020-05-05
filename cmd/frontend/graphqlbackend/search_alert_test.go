@@ -1,9 +1,14 @@
 package graphqlbackend
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/go-multierror"
@@ -188,5 +193,94 @@ func Test_ErrorToAlertStructuralSearch(t *testing.T) {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
 		}
 
+	}
+}
+
+func TestAlertForOverRepoLimit(t *testing.T) {
+	ctx := context.Background()
+	calledResolveRepositories := false
+
+	generateRepoRevs := func(numRepos int) []*search.RepositoryRevisions {
+		repoRevs := make([]*search.RepositoryRevisions, numRepos)
+		chars := []string{"a", "b", "c"} // create some parent names
+		j := 0
+		for i := range repoRevs {
+			repoRevs[i] = &search.RepositoryRevisions{
+				Repo: &types.Repo{
+					ID:   api.RepoID(i),
+					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
+				},
+			}
+			if j == 2 {
+				j = 0
+			} else {
+				j++
+			}
+		}
+		return repoRevs
+	}
+
+	setMockResolveRepositories := func(numRepos int) {
+		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
+			calledResolveRepositories = true
+			missingRepoRevs = make([]*search.RepositoryRevisions, 0)
+			repoRevs = generateRepoRevs(numRepos)
+			return repoRevs, missingRepoRevs, true, nil
+		}
+	}
+	defer func() { mockResolveRepositories = nil }()
+
+	cases := []struct {
+		name      string
+		repoRevs  int
+		query     string
+		wantAlert *searchAlert
+	}{
+		{
+			name:     "should return default alert",
+			repoRevs: 0,
+			query:    "a query",
+			wantAlert: &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: nil,
+				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			},
+		},
+		{
+			name:     "should return default alert",
+			repoRevs: 1,
+			query:    "a query",
+			wantAlert: &searchAlert{
+				prometheusType: "over_repo_limit",
+				title:          "Too many matching repositories",
+				proposedQueries: []*searchQueryDescription{
+					{
+						"in the repository a/repoName0",
+						"a query repo:^a/repoName0$",
+						query.SearchType(0),
+					},
+				},
+				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			},
+		},
+	}
+	for _, test := range cases {
+		setMockResolveRepositories(test.repoRevs)
+		calledResolveRepositories = false
+		q, err := query.ParseAndCheck(test.query)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sr := searchResolver{query: q}
+		alert := sr.alertForOverRepoLimit(ctx)
+
+		if !calledResolveRepositories {
+			t.Error("!calledSearchRepositories")
+		}
+		wantAlert := test.wantAlert
+		if !reflect.DeepEqual(alert, wantAlert) {
+			t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
+		}
 	}
 }

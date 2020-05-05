@@ -84,7 +84,11 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     <div className="sourcegraph-notification-item__body">
                         <div
                             className="sourcegraph-notification-item__title"
-                            dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
+                            dangerouslySetInnerHTML={{
+                                __html: renderMarkdown(this.props.notification.message || '', {
+                                    allowDataUriLinksAndDownloads: true,
+                                }),
+                            }}
                         />
                         {this.state.progress && (
                             <div

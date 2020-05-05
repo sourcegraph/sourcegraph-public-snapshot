@@ -101,4 +101,16 @@ automatically while Grafana is running.
 
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
-  
+
+### FAQ
+
+#### Can I consume Sourcegraph's Prometheus metrics in my own monitoring system (Datadog, New Relic, etc.)?
+
+It is technically possible to consume all of Sourcegraph's Prometheus metrics in any external monitoring system that supports Prometheus scraping (both Datadog and New Relic support this). However, we would advise against it because Sourcegraph is a very complex system and defining all of the alerting thresholds and rules that are needed to ensure Sourcegraph is healthy is very tedious and changes with each release of Sourcegraph.
+
+One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafana monitoring is that you get builtin dashboards and alerting thresholds out-of-the-box, and as Sourcegraph's internals change with each update you can rest assured that the metrics and information you are monitoring is up-to-date.
+
+Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Less common approaches include:
+
+- Using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
+- Using [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) to pull in Sourcegraph's metrics into your own Prometheus instance, which includes our [high-level alerting metrics](metrics_guide.md) which we define via baked-in Prometheus rules.

@@ -1,12 +1,9 @@
 import * as React from 'react'
-
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
-
-import '../../app.scss'
-
 import { interval, Subscription } from 'rxjs'
 import { ConnectionErrors, ServerURLForm, ServerURLFormProps } from './ServerURLForm'
+import optionsStyles from '../../options.scss'
 
 class Container extends React.Component<{}, { value: string; status: ServerURLFormProps['status'] }> {
     public state = { value: 'https://sourcegraph.com', status: 'connected' as ServerURLFormProps['status'] }
@@ -87,6 +84,12 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
 }
 
 storiesOf('Options - ServerURLForm', module)
+    .addDecorator(story => (
+        <>
+            <style>{optionsStyles}</style>
+            <div>{story()}</div>
+        </>
+    ))
     .add('Interactive', () => <Container />)
     .add('Cycling Status', () => <CyclingStatus />)
     .add('Error Status', () => (

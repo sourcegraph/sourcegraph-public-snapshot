@@ -1,11 +1,13 @@
+/* eslint rxjs/no-async-subscribe: warn */
+/* eslint @typescript-eslint/no-misused-promises: warn */
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
-import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
+import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -70,23 +72,23 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 this.setState({ status: 'connecting', connectionError: undefined })
                 return this.props.ensureValidSite(url).pipe(
                     map(() => url),
-                    catchError(err => of(err))
+                    catchError(err => of(asError(err)))
                 )
             }),
-            catchError(err => of(err)),
+            catchError(err => of(asError(err))),
             share()
         )
 
         this.subscriptions.add(
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             fetchingSite.subscribe(async res => {
                 let url = ''
 
                 if (isErrorLike(res)) {
                     this.setState({
                         status: 'error',
-                        connectionError:
-                            res.code === ERAUTHREQUIRED ? ConnectionErrors.AuthError : ConnectionErrors.UnableToConnect,
+                        connectionError: failedWithHTTPStatus(res, 401)
+                            ? ConnectionErrors.AuthError
+                            : ConnectionErrors.UnableToConnect,
                     })
                     url = this.state.sourcegraphURL
                 } else {

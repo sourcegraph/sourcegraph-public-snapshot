@@ -32,17 +32,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.14.0")
+	latestReleaseDockerServerImageBuild = newBuild("3.15.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.14.0")
+	latestReleaseKubernetesBuild = newBuild("3.15.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.12.5-1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.14.2")
 )
 
 func getLatestRelease(deployType string) build {
@@ -164,7 +164,8 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string          `json:"site"`
+	ClientSiteID         string `json:"site"`
+	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
 	AuthProviders        []string        `json:"auth"`
@@ -197,7 +198,9 @@ func readPingRequest(r *http.Request) (*pingRequest, error) {
 
 func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 	return &pingRequest{
-		ClientSiteID:         q.Get("site"),
+		ClientSiteID: q.Get("site"),
+		// LicenseKey was added after the switch from query strings to POST data, so it's not
+		// available.
 		DeployType:           q.Get("deployType"),
 		ClientVersionString:  q.Get("version"),
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
@@ -254,6 +257,7 @@ type pingPayload struct {
 	RemoteIP             string          `json:"remote_ip"`
 	RemoteSiteVersion    string          `json:"remote_site_version"`
 	RemoteSiteID         string          `json:"remote_site_id"`
+	LicenseKey           string          `json:"license_key"`
 	HasUpdate            string          `json:"has_update"`
 	UniqueUsersToday     string          `json:"unique_users_today"`
 	SiteActivity         json.RawMessage `json:"site_activity"`
@@ -318,6 +322,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteIP:             clientAddr,
 		RemoteSiteVersion:    pr.ClientVersionString,
 		RemoteSiteID:         pr.ClientSiteID,
+		LicenseKey:           pr.LicenseKey,
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,       // no change in schema
@@ -406,16 +411,12 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 var (
 	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests",
-		Help:      "Number of requests to the update check handler.",
+		Name: "src_updatecheck_requests",
+		Help: "Number of requests to the update check handler.",
 	})
 	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests_has_update",
-		Help:      "Number of requests to the update check handler where an update is available.",
+		Name: "src_updatecheck_requests_has_update",
+		Help: "Number of requests to the update check handler where an update is available.",
 	})
 )
 

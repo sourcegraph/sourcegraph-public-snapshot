@@ -1,7 +1,7 @@
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
+import { cleanup, getAllByTestId, getByTestId, render, waitFor } from '@testing-library/react'
 import { noop, NEVER } from 'rxjs'
 import sinon from 'sinon'
 import {
@@ -59,7 +59,7 @@ describe('SearchResults', () => {
                 <SearchResults {...defaultProps} />
             </BrowserRouter>
         )
-        await waitForElement(() => getByTestId(container, 'filters-bar'))
+        await waitFor(() => getByTestId(container, 'filters-bar'))
         expect(getAllByTestId(container, 'filters-bar').length).toBe(1)
         expect(getAllByTestId(container, 'repo-filters-bar').length).toBe(1)
     })

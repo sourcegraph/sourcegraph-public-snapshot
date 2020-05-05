@@ -476,6 +476,44 @@ a:hover {
 .markdown-body li + li {
     margin-top: 0.25em;
 }
+
+.markdown-body > ol {
+    counter-reset:li;
+    list-style:none;
+    position:relative;
+    padding-left:0
+}
+
+.markdown-body > ol > li {
+    padding: 8px 0 8px 42px;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.markdown-body > ol > li p:first-child {
+    margin-top: 0px;
+}
+
+.markdown-body > ol > li p:last-child {
+    margin-bottom: 0px;
+}
+
+.markdown-body > ol > li:before {
+    content:counter(li);
+    counter-increment:li;
+    position:absolute;
+    top: 2px;
+    left:0;
+    height:100%;
+    width: 24px;
+    padding:0 10px 0 0;
+    color:#999;
+    font-size: 16px;
+    font-weight:bold;
+    line-height:35px;
+    text-align:right
+}
+
 .markdown-body dl {
     padding: 0;
 }

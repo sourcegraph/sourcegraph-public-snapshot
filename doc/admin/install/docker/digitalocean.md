@@ -16,7 +16,7 @@ This tutorial shows you how to deploy Sourcegraph to a single node running on Di
 1. Run the Sourcegraph Docker image as a daemon:
 
    ```
-   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.14.0
+   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.15.1
    ```
 1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
    DNS entry for the IP, configure `externalURL` to reflect that.
@@ -27,7 +27,7 @@ After initial setup, we recommend you do the following:
 
 * Restrict the accessibility of ports other than `80` and `443` via [Cloud
   Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
+* Set up [TLS/SSL](../../http_https_configuration.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---
 

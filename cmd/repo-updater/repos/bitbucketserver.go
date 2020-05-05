@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
@@ -27,24 +28,25 @@ type BitbucketServerSource struct {
 	config  *schema.BitbucketServerConnection
 	exclude excludeFunc
 	client  *bitbucketserver.Client
+
+	// rateLimiter should be used to limit requests made to the external service
+	rateLimiter *rate.Limiter
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+// rl is optional
+func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketServerSource(svc, &c, cf)
+	if rl == nil {
+		rl = rate.NewLimiter(rate.Inf, 0)
+	}
+	return newBitbucketServerSource(svc, &c, cf, rl)
 }
 
-func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	baseURL, err := url.Parse(c.Url)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-
+func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory, rl *rate.Limiter) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
@@ -70,16 +72,17 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	client := bitbucketserver.NewClient(baseURL, cli)
-	client.Token = c.Token
-	client.Username = c.Username
-	client.Password = c.Password
+	client, err := bitbucketserver.NewClient(c, cli)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BitbucketServerSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  client,
+		svc:         svc,
+		config:      c,
+		exclude:     exclude,
+		client:      client,
+		rateLimiter: rl,
 	}, nil
 }
 
@@ -106,6 +109,10 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.FromRef.Repository.Slug = repo.Slug
 	pr.FromRef.Repository.Project.Key = repo.Project.Key
 	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
+
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return false, errors.Wrap(err, "waiting for rate limiter")
+	}
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
@@ -139,6 +146,9 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.DeclinePullRequest(ctx, pr)
 	if err != nil {
 		return err
@@ -164,6 +174,9 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 		pr.ToRef.Repository.Slug = repo.Slug
 		pr.ToRef.Repository.Project.Key = repo.Project.Key
 
+		if err := s.rateLimiter.Wait(ctx); err != nil {
+			return errors.Wrap(err, "waiting for rate limiter")
+		}
 		err = s.client.LoadPullRequest(ctx, pr)
 		if err != nil {
 			if bitbucketserver.IsNotFound(err) {
@@ -194,6 +207,13 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 }
 
 func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	// Each request below asks for items in pages of 1000 so it's safe to assume we'll only be requesting
+	// one page per request for now.
+	// We make 3 API calls, so wait until the rate limiter allows them.
+	if err := s.rateLimiter.WaitN(ctx, 3); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
+
 	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
 		return errors.Wrap(err, "loading pr activities")
 	}
@@ -225,6 +245,9 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
 	update.ToRef.Repository.Project.Key = pr.ToRef.Repository.Project.Key
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	updated, err := s.client.UpdatePullRequest(ctx, update)
 	if err != nil {
 		return err
@@ -272,19 +295,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			// with GitURLType == "ssh"
 		}
 	}
-
-	// Repo Links
-	// var links *protocol.RepoLinks
-	// for _, l := range repo.Links.Self {
-	// 	root := strings.TrimSuffix(l.Href, "/browse")
-	// 	links = &protocol.RepoLinks{
-	// 		Root:   l.Href,
-	// 		Tree:   root + "/browse/{path}?at={rev}",
-	// 		Blob:   root + "/browse/{path}?at={rev}",
-	// 		Commit: root + "/commits/{commit}",
-	// 	}
-	// 	break
-	// }
 
 	urn := s.svc.URN()
 

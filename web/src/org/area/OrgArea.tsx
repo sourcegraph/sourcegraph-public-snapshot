@@ -6,11 +6,11 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -21,8 +21,9 @@ import { OrgInvitationPage } from './OrgInvitationPage'
 import { PatternTypeProps } from '../../search'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import * as H from 'history'
 
-function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
+function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
     return queryGraphQL(
         gql`
             query Organization($name: String!) {
@@ -51,9 +52,10 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.organization) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.organization) {
+                throw new Error(`Organization not found: ${JSON.stringify(args.name)}`)
             }
             return data.organization
         })
@@ -80,6 +82,7 @@ interface Props
      * The currently authenticated user.
      */
     authenticatedUser: GQL.IUser | null
+    history: H.History
 }
 
 interface State {
@@ -133,7 +136,7 @@ export class OrgArea extends React.Component<Props> {
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
                         return queryOrganization({ name }).pipe(
-                            catchError(error => [error]),
+                            catchError((error): [ErrorLike] => [asError(error)]),
                             map((c): PartialStateUpdate => ({ orgOrError: c })),
 
                             // Don't clear old org data while we reload, to avoid unmounting all components during
@@ -168,7 +171,7 @@ export class OrgArea extends React.Component<Props> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.orgOrError} />}
+                    subtitle={<ErrorMessage error={this.state.orgOrError} history={this.props.history} />}
                 />
             )
         }
@@ -187,7 +190,13 @@ export class OrgArea extends React.Component<Props> {
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
             // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            return (
+                <OrgInvitationPage
+                    {...context}
+                    onDidRespondToInvitation={this.onDidRespondToInvitation}
+                    history={this.props.history}
+                />
+            )
         }
 
         return (

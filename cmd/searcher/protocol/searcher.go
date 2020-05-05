@@ -170,6 +170,8 @@ type Response struct {
 type FileMatch struct {
 	Path        string
 	LineMatches []LineMatch
+	// MatchCount is the number of matches. Different from len(LineMatches), as multiple lines may correspond to one logical match.
+	MatchCount int
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool

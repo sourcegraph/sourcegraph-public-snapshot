@@ -12,11 +12,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -42,9 +41,9 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
-		// endpoint. This endpoint is unprotected, so we need to make sure the user
-		// provides a valid token proving contributor access to the repository.
+		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
+		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
+		// token proving contributor access to the repository.
 		if conf.Get().LsifEnforceAuth {
 			if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
 				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
@@ -55,13 +54,13 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
 			RepoID      api.RepoID
-			Commit      graphqlbackend.GitObjectID
+			Commit      api.CommitID
 			Root        string
 			IndexerName string
 			Body        io.ReadCloser
 		}{
 			RepoID:      repo.ID,
-			Commit:      graphqlbackend.GitObjectID(commit),
+			Commit:      api.CommitID(commit),
 			Root:        root,
 			IndexerName: indexerName,
 			Body:        r.Body,
@@ -121,7 +120,7 @@ func isSiteAdmin(ctx context.Context) bool {
 			return false
 		}
 
-		log15.Error("lsif-server proxy: failed to get up current user", "error", err)
+		log15.Error("precise-code-intel proxy: failed to get up current user", "error", err)
 		return false
 	}
 

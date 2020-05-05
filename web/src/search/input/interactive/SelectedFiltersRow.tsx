@@ -1,14 +1,10 @@
 import * as React from 'react'
 import { FilterInput } from './FilterInput'
 import { QueryState } from '../../helpers'
-import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/interactive/util'
+import { InteractiveSearchProps } from '../..'
 
-interface Props {
-    /**
-     * The filters currently added to the query.
-     */
-    filtersInQuery: FiltersToTypeAndValue
-
+interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * The query in the main query input.
      */

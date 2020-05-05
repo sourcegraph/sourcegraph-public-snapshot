@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -450,29 +452,28 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 
 var countChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountChangesets
-SELECT COUNT(id)
+SELECT COUNT(changesets.id)
 FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 `
 
 func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("external_state = %s", *opts.ExternalState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
 	if opts.ExternalReviewState != nil {
-		preds = append(preds, sqlf.Sprintf("external_review_state = %s", *opts.ExternalReviewState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
 	}
 	if opts.ExternalCheckState != nil {
-		preds = append(preds, sqlf.Sprintf("external_check_state = %s", *opts.ExternalCheckState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -554,9 +555,15 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets.
-func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
-	q := listChangesetSyncData()
+type ListChangesetSyncDataOpts struct {
+	// Return only the supplied changesets. If empty, all changesets are returned
+	ChangesetIDs []int64
+}
+
+// ListChangesetSyncData returns sync data on all non-externally-deleted changesets
+// that are part of at least one open campaign.
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+	q := listChangesetSyncData(opts)
 	results := make([]campaigns.ChangesetSyncData, 0)
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var h campaigns.ChangesetSyncData
@@ -573,25 +580,63 @@ func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.Changese
 }
 
 func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
-	return s.Scan(
+	var sources json.RawMessage
+	err := s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
 		&dbutil.NullTime{Time: &h.LatestEvent},
 		&dbutil.NullTime{Time: &h.ExternalUpdatedAt},
+		&sources,
 	)
+	if err != nil {
+		return err
+	}
+
+	infos := make(map[string]*repos.SourceInfo)
+	if err = json.Unmarshal(sources, &infos); err != nil {
+		return errors.Wrap(err, "scanChangesetSyncData: failed to unmarshal sources")
+	}
+	h.ExternalServiceIDs = make([]int64, 0, len(infos))
+	for _, v := range infos {
+		id := v.ExternalServiceID()
+		h.ExternalServiceIDs = append(h.ExternalServiceIDs, id)
+	}
+	sort.Slice(h.ExternalServiceIDs, func(i, j int) bool { return h.ExternalServiceIDs[i] < h.ExternalServiceIDs[j] })
+
+	return nil
 }
 
-func listChangesetSyncData() *sqlf.Query {
-	return sqlf.Sprintf(`
-SELECT changesets.id,
-       changesets.updated_at,
-       max(ce.updated_at) as latest_event,
-       changesets.external_updated_at
-FROM changesets
-LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-GROUP BY changesets.id
-ORDER BY changesets.id ASC
-`)
+func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
+	fmtString := `
+ SELECT changesets.id,
+        changesets.updated_at,
+        max(ce.updated_at) AS latest_event,
+        changesets.external_updated_at,
+        r.sources
+ FROM changesets
+ LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+ JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
+ JOIN repo r ON changesets.repo_id = r.id
+ WHERE %s
+ GROUP BY changesets.id, r.id
+ ORDER BY changesets.id ASC
+`
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaigns.closed_at IS NULL"),
+		sqlf.Sprintf("r.deleted_at IS NULL"),
+	}
+	if len(opts.ChangesetIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
+		for _, id := range opts.ChangesetIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
 }
 
 // ListChangesetsOpts captures the query options needed for
@@ -632,21 +677,22 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state
+  changesets.id,
+  changesets.repo_id,
+  changesets.created_at,
+  changesets.updated_at,
+  changesets.metadata,
+  changesets.campaign_ids,
+  changesets.external_id,
+  changesets.external_service_type,
+  changesets.external_branch,
+  changesets.external_deleted_at,
+  changesets.external_updated_at,
+  changesets.external_state,
+  changesets.external_review_state,
+  changesets.external_check_state
 FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 ORDER BY id ASC
 `
@@ -665,11 +711,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -679,21 +726,21 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 				ids = append(ids, sqlf.Sprintf("%d", id))
 			}
 		}
-		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if opts.WithoutDeleted {
-		preds = append(preds, sqlf.Sprintf("external_deleted_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("changesets.external_deleted_at IS NULL"))
 	}
 
 	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("external_state = %s", *opts.ExternalState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
 	if opts.ExternalReviewState != nil {
-		preds = append(preds, sqlf.Sprintf("external_review_state = %s", *opts.ExternalReviewState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
 	}
 	if opts.ExternalCheckState != nil {
-		preds = append(preds, sqlf.Sprintf("external_check_state = %s", *opts.ExternalCheckState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
 
 	return sqlf.Sprintf(
@@ -1590,10 +1637,20 @@ AND
 NOT EXISTS (
   SELECT 1
   FROM
-  campaigns
+    campaigns
   WHERE
-  campaigns.patch_set_id = patch_sets.id
-)
+    campaigns.patch_set_id = patch_sets.id
+  )
+AND
+NOT EXISTS (
+  SELECT 1
+  FROM
+    changeset_jobs
+  JOIN patches ON patches.id = changeset_jobs.patch_id
+  JOIN changesets ON changesets.id = changeset_jobs.changeset_id
+  WHERE
+    (SELECT COUNT(*) FROM jsonb_object_keys(changesets.campaign_ids)) > 0
+);
 `
 
 // CountPatchSets returns the number of code mods in the database.
@@ -2502,6 +2559,7 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	AND r.external_id = %s
 	AND r.external_service_type = %s
 	AND r.external_service_id = %s
+	AND r.deleted_at IS NULL
 	ORDER BY cs.id ASC;
 	`
 
@@ -2652,7 +2710,7 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
-		&c.Description,
+		&dbutil.NullString{S: &c.Description},
 		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},

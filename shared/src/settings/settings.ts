@@ -18,6 +18,9 @@ export interface IClient {
  */
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
+    experimentalFeatures?: {
+        showBadgeAttachments?: boolean
+    }
     [key: string]: any
 
     // These properties should never exist on Settings but do exist on SettingsCascade. This makes it so the
@@ -180,6 +183,7 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
     }
     const customFunctions: CustomMergeFunctions = {
         extensions: (base: any, add: any) => ({ ...base, ...add }),
+        experimentalFeatures: (base: any, add: any) => ({ ...base, ...add }),
         notices: (base: any, add: any) => [...base, ...add],
         'search.scopes': (base: any, add: any) => [...base, ...add],
         'search.savedQueries': (base: any, add: any) => [...base, ...add],
@@ -242,6 +246,6 @@ export function isSettingsValid<S extends Settings>(
 /**
  * React partial props for components needing the settings cascade.
  */
-export interface SettingsCascadeProps {
-    settingsCascade: SettingsCascadeOrError
+export interface SettingsCascadeProps<S extends Settings = Settings> {
+    settingsCascade: SettingsCascadeOrError<S>
 }

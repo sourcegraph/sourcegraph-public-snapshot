@@ -44,23 +44,23 @@ func enterpriseInit(
 	ctx := context.Background()
 	campaignsStore := campaigns.NewStore(db)
 
-	syncer := &campaigns.ChangesetSyncer{
-		Store:       campaignsStore,
-		ReposStore:  repoStore,
-		HTTPFactory: cf,
+	rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, repoStore)
+	if err != nil {
+		log15.Error("Creating rate limit registry", "err", err)
 	}
+
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf, rateLimiterRegistry)
 	if server != nil {
-		server.ChangesetSyncer = syncer
+		server.ChangesetSyncRegistry = syncRegistry
+		server.RateLimiterRegistry = rateLimiterRegistry
 	}
 
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
-
-	// Set up syncer
-	go syncer.Run(ctx)
+	sourcer := repos.NewSourcer(cf)
+	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
 
 	// Set up expired patch set deletion
 	go func() {

@@ -123,10 +123,8 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 }
 
 var projectsGitLabCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "projs",
-	Name:      "gitlab_cache_hit",
-	Help:      "Counts cache hits and misses for GitLab project metadata.",
+	Name: "src_projs_gitlab_cache_hit",
+	Help: "Counts cache hits and misses for GitLab project metadata.",
 }, []string{"type"})
 
 func init() {

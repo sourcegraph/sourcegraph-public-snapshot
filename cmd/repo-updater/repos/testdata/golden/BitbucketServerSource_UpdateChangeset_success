@@ -1,13 +1,13 @@
 {
   "id": 43,
-  "version": 4,
+  "version": 6,
   "title": "This is a new title",
   "description": "This is a new body",
   "state": "OPEN",
   "open": true,
   "closed": false,
   "createdDate": 1580213993810,
-  "updatedDate": 1584105395985,
+  "updatedDate": 1585578260504,
   "fromRef": {
    "id": "refs/heads/milton/file1txt-1580213978330",
    "repository": {

@@ -8,39 +8,31 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, cf, store.Clock())
+func NewService(store *Store, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{store: store, git: git, cf: cf, clock: clock}
+func NewServiceWithClock(store *Store, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{store: store, cf: cf, clock: clock}
 
 	return svc
 }
 
-type GitserverClient interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
-}
-
 type Service struct {
 	store *Store
-	git   GitserverClient
 	cf    *httpcli.Factory
 
 	clock func() time.Time
@@ -188,249 +180,6 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	}
 
 	return nil
-}
-
-// RunChangesetJob will run the given ChangesetJob for the given campaign. It
-// is idempotent and if the job has already been run it will not be rerun.
-func RunChangesetJob(
-	ctx context.Context,
-	clock func() time.Time,
-	store *Store,
-	gitClient GitserverClient,
-	cf *httpcli.Factory,
-	c *campaigns.Campaign,
-	job *campaigns.ChangesetJob,
-) (err error) {
-	// Store should already have an open transaction but ensure here anyway
-	store, err = store.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "creating transaction")
-	}
-
-	tr, ctx := trace.New(ctx, "service.RunChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	tr.LogFields(log.Bool("completed", job.SuccessfullyCompleted()), log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
-
-	if job.SuccessfullyCompleted() {
-		log15.Info("ChangesetJob already completed", "id", job.ID)
-		return nil
-	}
-
-	// We'll always run a final update but in the happy path it will run as
-	// part of a transaction in which case we don't want to run it again in
-	// the defer below
-	var changesetJobUpdated bool
-	runFinalUpdate := func(ctx context.Context, store *Store) {
-		if changesetJobUpdated {
-			// Don't run again
-			return
-		}
-		if err != nil {
-			job.Error = err.Error()
-		}
-		job.FinishedAt = clock()
-
-		if e := store.UpdateChangesetJob(ctx, job); e != nil {
-			if err == nil {
-				err = e
-			} else {
-				err = multierror.Append(err, e)
-			}
-		}
-		changesetJobUpdated = true
-	}
-	defer runFinalUpdate(ctx, store)
-
-	job.StartedAt = clock()
-
-	patch, err := store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
-	if err != nil {
-		return err
-	}
-
-	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(patch.RepoID)}})
-	if err != nil {
-		return err
-	}
-	if len(rs) != 1 {
-		return errors.Errorf("repo not found: %d", patch.RepoID)
-	}
-	repo := rs[0]
-
-	branch := c.Branch
-	ensureUniqueRef := true
-	if job.Branch != "" {
-		// If job.Branch is set that means this method has already been
-		// executed for the given job. In that case, we want to use job.Branch
-		// as the ref, since we created it, and not fallback to another ref.
-		branch = job.Branch
-		ensureUniqueRef = false
-	}
-
-	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
-		Repo:       api.RepoName(repo.Name),
-		BaseCommit: patch.Rev,
-		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     patch.Diff + "\n",
-		TargetRef: branch,
-		UniqueRef: ensureUniqueRef,
-		CommitInfo: protocol.PatchCommitInfo{
-			Message:     c.Name,
-			AuthorName:  "Sourcegraph Bot",
-			AuthorEmail: "campaigns@sourcegraph.com",
-			Date:        job.CreatedAt,
-		},
-		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
-		// expect and strip prefixes.
-		// Since we also produce diffs manually, we might not have context lines,
-		// so we need to disable that check with `--unidiff-zero`.
-		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
-		Push:         true,
-	})
-	if err != nil {
-		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q, output: %q)",
-				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, diffErr.CombinedOutput)
-		}
-		return err
-	}
-	if job.Branch != "" && job.Branch != ref {
-		return fmt.Errorf("ref %q doesn't match ChangesetJob's branch %q", ref, job.Branch)
-	}
-	job.Branch = ref
-
-	var externalService *repos.ExternalService
-	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
-
-		es, err := reposStore.ListExternalServices(ctx, args)
-		if err != nil {
-			return err
-		}
-
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				return err
-			}
-
-			switch cfg := cfg.(type) {
-			case *schema.GitHubConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			case *schema.BitbucketServerConnection:
-				if cfg.Token != "" {
-					externalService = e
-				}
-			}
-			if externalService != nil {
-				break
-			}
-		}
-	}
-
-	if externalService == nil {
-		return errors.Errorf("no external services found for repo %q", repo.Name)
-	}
-
-	src, err := repos.NewSource(externalService, cf)
-	if err != nil {
-		return err
-	}
-
-	baseRef := "refs/heads/master"
-	if patch.BaseRef != "" {
-		baseRef = patch.BaseRef
-	}
-
-	cs := repos.Changeset{
-		Title:   c.Name,
-		Body:    c.Description,
-		BaseRef: baseRef,
-		HeadRef: git.EnsureRefPrefix(ref),
-		Repo:    repo,
-		Changeset: &campaigns.Changeset{
-			RepoID:      repo.ID,
-			CampaignIDs: []int64{job.CampaignID},
-		},
-	}
-
-	ccs, ok := src.(repos.ChangesetSource)
-	if !ok {
-		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
-	}
-
-	// TODO: If we're updating the changeset, there's a race condition here.
-	// It's possible that `CreateChangeset` doesn't return the newest head ref
-	// commit yet, because the API of the codehost doesn't return it yet.
-	exists, err := ccs.CreateChangeset(ctx, &cs)
-	if err != nil {
-		return errors.Wrap(err, "creating changeset")
-	}
-	// If the Changeset already exists and our source can update it, we try to update it
-	if exists {
-		outdated, err := isOutdated(&cs)
-		if err != nil {
-			return errors.Wrap(err, "could not determine whether changeset needs update")
-		}
-
-		if outdated {
-			err := ccs.UpdateChangeset(ctx, &cs)
-			if err != nil {
-				return errors.Wrap(err, "updating changeset")
-			}
-		}
-	}
-
-	// We keep a clone because CreateChangesets might overwrite the changeset
-	// with outdated metadata.
-	clone := cs.Changeset.Clone()
-	events := clone.Events()
-	clone.SetDerivedState(events)
-	if err = store.CreateChangesets(ctx, clone); err != nil {
-		if _, ok := err.(AlreadyExistError); !ok {
-			return err
-		}
-
-		// Changeset already exists and the call to CreateChangesets overwrote
-		// the Metadata field with the metadata in the database that's possibly
-		// outdated.
-		// We restore the newest metadata returned by the
-		// `ccs.CreateChangesets` call above and then update the Changeset in
-		// the database.
-		if err := clone.SetMetadata(cs.Changeset.Metadata); err != nil {
-			return errors.Wrap(err, "setting changeset metadata")
-		}
-		events = clone.Events()
-		clone.SetDerivedState(events)
-		if err = store.UpdateChangesets(ctx, clone); err != nil {
-			return err
-		}
-	}
-	// the events don't have the changesetID yet, because it's not known at the point of cloning
-	for _, e := range events {
-		e.ChangesetID = clone.ID
-	}
-	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
-	}
-
-	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
-	if err = store.UpdateCampaign(ctx, c); err != nil {
-		return err
-	}
-
-	job.ChangesetID = clone.ID
-	runFinalUpdate(ctx, store)
-	return
 }
 
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
@@ -615,13 +364,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	}
 
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	syncer := ChangesetSyncer{
-		ReposStore:  reposStore,
-		Store:       s.store,
-		HTTPFactory: s.cf,
-	}
-
-	bySource, err := syncer.GroupChangesetsBySource(ctx, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, nil, cs...)
 	if err != nil {
 		return err
 	}
@@ -645,7 +388,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// to close the Changesets and not update the events (which is what
 	// SyncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	return syncer.SyncChangesetsWithSources(ctx, bySource)
+	return SyncChangesetsWithSources(ctx, s.store, bySource)
 }
 
 // CreateChangesetJobForPatch creates a ChangesetJob for the
@@ -727,9 +470,9 @@ var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch can
 // specified patch set is already attached to another campaign.
 var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
 
-// ErrClosedCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
-// is to be attached to a closed campaign.
-var ErrClosedCampaignUpdatePatchIllegal = errors.New("cannot update the patch set of a closed campaign")
+// ErrUpdateClosedCampaign is returned by UpdateCampaign if the Campaign
+// has been closed.
+var ErrUpdateClosedCampaign = errors.New("cannot update a closed Campaign")
 
 // ErrManualCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
 // is to be attached to a manual campaign.
@@ -756,8 +499,8 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
-	if args.PatchSet != nil && !campaign.ClosedAt.IsZero() {
-		return nil, nil, ErrClosedCampaignUpdatePatchIllegal
+	if !campaign.ClosedAt.IsZero() {
+		return nil, nil, ErrUpdateClosedCampaign
 	}
 
 	var updateAttributes, updatePatchSetID, updateBranch bool
@@ -1005,6 +748,14 @@ func computeCampaignUpdateDiff(
 		// Either we _don't_ have a matching _new_ Patch, then we delete
 		// the ChangesetJob and detach & close Changeset.
 		if group.newPatch == nil {
+			// But if we have already created a changeset for this repo and its
+			// merged or closed, we keep it.
+			if group.changeset != nil {
+				s := group.changeset.ExternalState
+				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
+					continue
+				}
+			}
 			diff.Delete = append(diff.Delete, group.changesetJob)
 			continue
 		}

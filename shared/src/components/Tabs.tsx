@@ -267,7 +267,6 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         }
         return {
             ...location,
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
             hash: hash.toString().replace(/%3A/g, ':').replace(/=$/, ''), // remove needless trailing `=` as in `#L12=`,
         }
     }

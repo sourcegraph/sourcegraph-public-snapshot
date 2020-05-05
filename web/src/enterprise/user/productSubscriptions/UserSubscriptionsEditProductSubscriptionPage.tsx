@@ -1,203 +1,172 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
-import * as React from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
-import {
-    catchError,
-    distinctUntilChanged,
-    filter,
-    map,
-    mapTo,
-    startWith,
-    switchMap,
-    tap,
-    withLatestFrom,
-} from 'rxjs/operators'
+import { Observable, throwError } from 'rxjs'
+import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ErrorAlert } from '../../../components/alerts'
+import { useEventObservable, useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
-    user: GQL.IUser
+    user: Pick<GQL.IUser, 'id'>
+
+    /** For mocking in tests only. */
+    _queryProductSubscription?: typeof queryProductSubscription
+    history: H.History
 }
 
-const LOADING: 'loading' = 'loading'
+type ProductSubscription = Pick<GQL.IProductSubscription, 'id' | 'name' | 'invoiceItem' | 'url'>
 
-interface State {
-    /**
-     * The product subscription, or loading, or an error.
-     */
-    productSubscriptionOrError: typeof LOADING | GQL.IProductSubscription | ErrorLike
-
-    /**
-     * The result of updating the paid product subscription: null when complete or not started yet,
-     * loading, or an error.
-     */
-    updateOrError: null | typeof LOADING | ErrorLike
-}
+const LOADING = 'loading' as const
 
 /**
  * Displays a page for editing a product subscription in the user subscriptions area.
  */
-export class UserSubscriptionsEditProductSubscriptionPage extends React.Component<Props, State> {
-    public state: State = {
-        productSubscriptionOrError: LOADING,
-        updateOrError: null,
-    }
+export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionComponent<Props> = ({
+    user,
+    match: {
+        params: { subscriptionUUID },
+    },
+    history,
+    isLightTheme,
+    _queryProductSubscription = queryProductSubscription,
+}) => {
+    useEffect(() => eventLogger.logViewEvent('UserSubscriptionsEditProductSubscription'), [])
 
-    private componentUpdates = new Subject<Props>()
-    private submits = new Subject<ProductSubscriptionFormData>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSubscriptionsEditProductSubscription')
-
-        const subscriptionUUIDChanges = this.componentUpdates.pipe(
-            map(props => props.match.params.subscriptionUUID),
-            distinctUntilChanged()
-        )
-
-        const productSubscriptionChanges = subscriptionUUIDChanges.pipe(
-            switchMap(subscriptionUUID =>
-                this.queryProductSubscription(subscriptionUUID).pipe(
-                    catchError(err => [asError(err)]),
-                    startWith(LOADING)
-                )
-            )
-        )
-
-        this.subscriptions.add(
-            productSubscriptionChanges
-                .pipe(map(result => ({ productSubscriptionOrError: result })))
-                .subscribe(stateUpdate => this.setState(stateUpdate))
-        )
-
-        this.subscriptions.add(
-            this.submits
-                .pipe(
-                    withLatestFrom(
-                        productSubscriptionChanges.pipe(
-                            filter((v): v is GQL.IProductSubscription => v !== LOADING && !isErrorLike(v))
-                        )
+    /**
+     * The product subscription, or loading, or an error.
+     */
+    const productSubscription =
+        useObservable(
+            useMemo(
+                () =>
+                    _queryProductSubscription(subscriptionUUID).pipe(
+                        catchError(err => [asError(err)]),
+                        startWith(LOADING)
                     ),
-                    switchMap(([args, productSubscription]) =>
-                        updatePaidProductSubscription({
+                [_queryProductSubscription, subscriptionUUID]
+            )
+        ) || LOADING
+
+    /**
+     * The result of updating the paid product subscription: undefined when complete or not started
+     * yet, loading, or an error.
+     */
+    const [nextUpdate, update] = useEventObservable(
+        useCallback(
+            (updates: Observable<ProductSubscriptionFormData>) =>
+                updates.pipe(
+                    switchMap(args => {
+                        const subscriptionID =
+                            productSubscription !== LOADING && !isErrorLike(productSubscription)
+                                ? productSubscription.id
+                                : null
+                        if (subscriptionID === null) {
+                            return throwError(new Error('no product subscription'))
+                        }
+                        return updatePaidProductSubscription({
                             update: args.productSubscription,
-                            subscriptionID: productSubscription.id,
+                            subscriptionID,
                             paymentToken: args.paymentToken,
                         }).pipe(
                             tap(({ productSubscription }) => {
                                 // Redirect back to subscription upon success.
-                                this.props.history.push(productSubscription.url)
+                                history.push(productSubscription.url)
                             }),
-                            mapTo(null),
+                            mapTo(undefined),
                             startWith(LOADING)
                         )
-                    ),
-                    catchError(err => [asError(err)]),
-                    map(c => ({ updateOrError: c }))
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                    }),
+                    catchError(err => [asError(err)])
+                ),
+            [history, productSubscription]
         )
+    )
 
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="user-subscriptions-edit-product-subscription-page">
-                <PageTitle title="Edit subscription" />
-                {this.state.productSubscriptionOrError === LOADING ? (
-                    <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
-                ) : (
-                    <>
-                        <Link to={this.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">
-                            <ArrowLeftIcon className="icon-inline" /> Subscription
-                        </Link>
-                        <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
-                        <ProductSubscriptionForm
-                            accountID={this.props.user.id}
-                            subscriptionID={this.state.productSubscriptionOrError.id}
-                            isLightTheme={this.props.isLightTheme}
-                            onSubmit={this.onSubmit}
-                            submissionState={this.state.updateOrError}
-                            initialValue={
-                                this.state.productSubscriptionOrError.invoiceItem
-                                    ? {
-                                          billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
-                                              .billingPlanID,
-                                          userCount: this.state.productSubscriptionOrError.invoiceItem.userCount,
-                                      }
-                                    : undefined
-                            }
-                            primaryButtonText="Upgrade subscription"
-                            afterPrimaryButton={
-                                <small className="form-text text-muted">
-                                    An upgraded license key will be available immediately after payment.
-                                </small>
-                            }
-                        />
-                    </>
-                )}
-            </div>
-        )
-    }
-
-    private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
-        queryGraphQL(
-            gql`
-                query ProductSubscription($uuid: String!) {
-                    dotcom {
-                        productSubscription(uuid: $uuid) {
-                            ...ProductSubscriptionFields
+    return (
+        <div className="user-subscriptions-edit-product-subscription-page">
+            <PageTitle title="Edit subscription" />
+            {productSubscription === LOADING ? (
+                <LoadingSpinner className="icon-inline" />
+            ) : isErrorLike(productSubscription) ? (
+                <ErrorAlert className="my-2" error={productSubscription} history={history} />
+            ) : (
+                <>
+                    <Link to={productSubscription.url} className="btn btn-link btn-sm mb-3">
+                        <ArrowLeftIcon className="icon-inline" /> Subscription
+                    </Link>
+                    <h2>Upgrade or change subscription {productSubscription.name}</h2>
+                    <ProductSubscriptionForm
+                        accountID={user.id}
+                        subscriptionID={productSubscription.id}
+                        isLightTheme={isLightTheme}
+                        onSubmit={nextUpdate}
+                        submissionState={update}
+                        initialValue={
+                            productSubscription.invoiceItem
+                                ? {
+                                      billingPlanID: productSubscription.invoiceItem.plan.billingPlanID,
+                                      userCount: productSubscription.invoiceItem.userCount,
+                                  }
+                                : undefined
                         }
+                        primaryButtonText="Upgrade subscription"
+                        afterPrimaryButton={
+                            <small className="form-text text-muted">
+                                An upgraded license key will be available immediately.
+                            </small>
+                        }
+                        history={history}
+                    />
+                </>
+            )}
+        </div>
+    )
+}
+
+function queryProductSubscription(uuid: string): Observable<ProductSubscription> {
+    return queryGraphQL(
+        gql`
+            query ProductSubscription($uuid: String!) {
+                dotcom {
+                    productSubscription(uuid: $uuid) {
+                        ...ProductSubscriptionFields
                     }
                 }
+            }
 
-                fragment ProductSubscriptionFields on ProductSubscription {
-                    id
-                    name
-                    invoiceItem {
-                        plan {
-                            billingPlanID
-                        }
-                        userCount
-                        expiresAt
+            fragment ProductSubscriptionFields on ProductSubscription {
+                id
+                name
+                invoiceItem {
+                    plan {
+                        billingPlanID
                     }
-                    url
+                    userCount
+                    expiresAt
                 }
-            `,
-            { uuid }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return data.dotcom.productSubscription
-            })
-        )
-
-    private onSubmit = (args: ProductSubscriptionFormData): void => {
-        this.submits.next(args)
-    }
+                url
+            }
+        `,
+        { uuid }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+            return data.dotcom.productSubscription
+        })
+    )
 }
 
 function updatePaidProductSubscription(
@@ -208,7 +177,7 @@ function updatePaidProductSubscription(
             mutation UpdatePaidProductSubscription(
                 $subscriptionID: ID!
                 $update: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     updatePaidProductSubscription(

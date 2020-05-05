@@ -12,8 +12,13 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
+
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+    history: H.History
+}
 
 interface State {
     /** The repositories, loading, or an error. */
@@ -23,7 +28,7 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<Omit<PatternTypeProps, 'setPatternType'>, State> {
+export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
@@ -78,7 +83,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Omit<Pattern
                 <h3 className="card-header">Repositories</h3>
                 <div className="list-group list-group-flush">
                     {isErrorLike(repositoriesOrError) ? (
-                        <ErrorAlert error={repositoriesOrError} />
+                        <ErrorAlert error={repositoriesOrError} history={this.props.history} />
                     ) : repositoriesOrError.length === 0 ? (
                         <p>No repositories.</p>
                     ) : (

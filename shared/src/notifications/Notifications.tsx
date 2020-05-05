@@ -46,7 +46,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                                     takeWhile(({ percentage }) => !percentage || percentage < 100),
                                     delay(1000)
                                 )
-                                // tslint:disable-next-line: rxjs-no-nested-subscribe
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
                                 .subscribe({
                                     error: err => {
                                         this.setState(({ notifications }) => ({

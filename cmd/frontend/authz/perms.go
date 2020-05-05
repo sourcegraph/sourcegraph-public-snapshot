@@ -88,14 +88,14 @@ func (e ErrStalePermissions) Error() string {
 }
 
 // UserPermissions are the permissions of a user to perform an action
-// on the given set of object IDs of the defined type that is scoped by
-// the provider.
+// on the given set of object IDs of the defined type.
 type UserPermissions struct {
-	UserID    int32
-	Perm      Perms
-	Type      PermType
-	IDs       *roaring.Bitmap
-	UpdatedAt time.Time
+	UserID    int32           // The internal database ID of a user
+	Perm      Perms           // The permission set
+	Type      PermType        // The type of the permissions
+	IDs       *roaring.Bitmap // The object IDs
+	UpdatedAt time.Time       // The last updated time
+	SyncedAt  time.Time       // The last user-centric synced time
 }
 
 // Expired returns true if these UserPermissions have elapsed the given ttl.
@@ -133,19 +133,20 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 		fs = append(fs,
 			otlog.Uint64("UserPermissions.IDs.Count", p.IDs.GetCardinality()),
 			otlog.String("UserPermissions.UpdatedAt", p.UpdatedAt.String()),
+			otlog.String("UserPermissions.SyncedAt", p.SyncedAt.String()),
 		)
 	}
 
 	return fs
 }
 
-// RepoPermissions declares which users have access to a given repository, as
-// defined by the permissions provider (either Bitbucket Server or Sourcegraph).
+// RepoPermissions declares which users have access to a given repository
 type RepoPermissions struct {
-	RepoID    int32
-	Perm      Perms
-	UserIDs   *roaring.Bitmap
-	UpdatedAt time.Time
+	RepoID    int32           // The internal database ID of a repository
+	Perm      Perms           // The permission set
+	UserIDs   *roaring.Bitmap // The user IDs
+	UpdatedAt time.Time       // The last updated time
+	SyncedAt  time.Time       // The last repo-centric synced time
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
@@ -164,6 +165,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 		fs = append(fs,
 			otlog.Uint64("RepoPermissions.UserIDs.Count", p.UserIDs.GetCardinality()),
 			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
+			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
 		)
 	}
 
@@ -177,10 +179,10 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 type UserPendingPermissions struct {
 	// The auto-generated internal database ID.
 	ID int32
-	// The type of the code host as if it would be used as ExternalAccountSpec.ServiceType,
+	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType,
 	// e.g. "github", "gitlab", "bitbucketServer" and "sourcegraph".
 	ServiceType string
-	// The ID of the code host as if it would be used as ExternalAccountSpec.ServiceID,
+	// The ID of the code host as if it would be used as extsvc.AccountSpec.ServiceID,
 	// e.g. "https://github.com/", "https://gitlab.com/" and "https://sourcegraph.com/".
 	ServiceID string
 	// The account ID that a code host (and its authz provider) uses to identify a user,

@@ -6,7 +6,6 @@ import * as React from 'react'
 
 interface Props {
     dirty?: boolean
-    disabled?: boolean
     saving?: boolean
     error?: Error
 
@@ -14,7 +13,7 @@ interface Props {
     onDiscard: () => void
 }
 
-export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, saving, error, onSave, onDiscard }) => {
+export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, saving, error, onSave, onDiscard }) => {
     const saveDiscardDisabled = saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {

@@ -17,9 +17,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/inconshreveable/log15"
@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -43,8 +43,8 @@ var (
 	requestCounter = metrics.NewRequestMeter("textsearch", "Total number of requests sent to the textsearch API.")
 
 	searchHTTPClient = &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
+		// ot.Transport will propagate opentracing spans
+		Transport: &ot.Transport{
 			RoundTripper: requestCounter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
@@ -67,6 +67,7 @@ type FileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
+	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
 	Repo         *types.Repo
@@ -147,7 +148,7 @@ func (fm *FileMatchResolver) searchResultURIs() (string, string) {
 }
 
 func (fm *FileMatchResolver) resultCount() int32 {
-	rc := len(fm.symbols) + len(fm.LineMatches())
+	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
 	}
@@ -272,9 +273,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		matches, limitHit, err = textSearchURL(ctx, url)
-		// Useful trace for debugging:
-		//
-		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
 		if err == nil || errcode.IsTimeout(err) {
 			return matches, limitHit, err
 		}
@@ -302,7 +300,7 @@ func textSearchURL(ctx context.Context, url string) ([]*FileMatchResolver, bool,
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
 		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
@@ -381,10 +379,13 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return nil, false, err
 	}
 	if !shouldBeSearched {
-		return matches, false, err
+		return nil, false, err
 	}
 
 	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {

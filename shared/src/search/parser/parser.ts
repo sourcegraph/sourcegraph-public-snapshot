@@ -99,7 +99,7 @@ export interface ParseSuccess<T = Token> {
 /**
  * Represents the result of running a {@link Parser} on a search query.
  */
-type ParserResult<T = Token> = ParseError | ParseSuccess<T>
+export type ParserResult<T = Token> = ParseError | ParseSuccess<T>
 
 type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
 

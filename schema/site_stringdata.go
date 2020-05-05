@@ -55,7 +55,7 @@ const SiteSchemaJSON = `{
       "additionalProperties": false,
       "properties": {
         "discussions": {
-          "description": "Enables the code discussions experiment.",
+          "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -164,8 +164,21 @@ const SiteSchemaJSON = `{
           ]
         }
       },
-      "group": "Experimental",
-      "hide": true
+      "examples": [
+        {
+          "customGitFetch": [
+            {
+              "domainPath": "somecodehost.com/path/to/repo",
+              "fetch": "customgitbinary someflag"
+            },
+            {
+              "domainPath": "somecodehost.com/path/to/anotherrepo",
+              "fetch": "customgitbinary someflag anotherflag"
+            }
+          ]
+        }
+      ],
+      "group": "Experimental"
     },
     "automation.readAccess.enabled": {
       "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
@@ -504,7 +517,7 @@ const SiteSchemaJSON = `{
       "group": "Extensions"
     },
     "discussions": {
-      "description": "Configures Sourcegraph code discussions.",
+      "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.",
       "type": "object",
       "properties": {
         "abuseProtection": {
@@ -556,25 +569,54 @@ const SiteSchemaJSON = `{
       "group": "Misc."
     },
     "externalURL": {
-      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
+      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
     "lightstepAccessToken": {
-      "description": "Access token for sending traces to LightStep.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "group": "Misc."
     },
     "lightstepProject": {
-      "description": "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "examples": ["myproject"],
       "group": "Misc."
     },
     "useJaeger": {
-      "description": "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, ` + "`" + `kubectl get pods` + "`" + `\nshould display pods prefixed with ` + "`" + `jaeger-cassandra` + "`" + `,\n` + "`" + `jaeger-collector` + "`" + `, and ` + "`" + `jaeger-query` + "`" + `. ` + "`" + `jaeger-collector` + "`" + ` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [` + "`" + `cqlsh` + "`" + `](https://pypi.python.org/pypi/cqlsh).\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042` + "`" + `\n1. ` + "`" + `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh` + "`" + `\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686` + "`" + `\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
+      "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
       "type": "boolean",
       "group": "Misc."
+    },
+    "observability.tracing": {
+      "description": "Controls the settings for distributed tracing.",
+      "type": "object",
+      "properties": {
+        "sampling": {
+          "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever ` + "`" + `?trace=1` + "`" + ` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
+          "type": "string",
+          "enum": ["selective", "all", "none"],
+          "default": "selective"
+        },
+        "debug": {
+          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "observability.logSlowSearches": {
+      "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
+    },
+    "observability.logSlowGraphQLRequests": {
+      "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",

@@ -5,7 +5,7 @@ Array [
   <h3
     className="mb-2 mt-4"
   >
-    Track changeset
+    Add changeset
   </h3>,
   <form
     className=" "
@@ -21,13 +21,13 @@ Array [
         <label
           htmlFor="changeset-repo"
         >
-          Repository name
+          Repository path
         </label>
         <input
-          className="form-control mr-1"
+          className="form-control mr-1 e2e-track-changeset-repo"
           id="changeset-repo"
           onChange={[Function]}
-          placeholder="Repository name"
+          placeholder="codehost.example.com/example-org/example-repository"
           required={true}
           size={35}
           type="text"
@@ -36,15 +36,17 @@ Array [
         <p
           className="form-text text-muted"
         >
-          Find the Sourcegraph repository name in the URL (e.g., 
+          The location of the repository in Sourcegraph. See the repository's directory URL:
+           
           http:
           //
           localhost
           /
           <strong>
-            &lt;REPOSITORY_NAME&gt;
+            &lt;REPOSITORY_PATH&gt;
           </strong>
-          )
+          <br />
+          (Depending on your instance's configuration the path may or may not contain the code host name)
         </p>
       </div>
       <div
@@ -56,11 +58,11 @@ Array [
           Changeset number
         </label>
         <input
-          className="form-control mr-1"
+          className="form-control mr-1 e2e-track-changeset-id"
           id="changeset-number"
           min={1}
           onChange={[Function]}
-          placeholder="Changeset number"
+          placeholder="1234"
           required={true}
           size={16}
           step={1}
@@ -70,7 +72,7 @@ Array [
       </div>
     </div>
     <button
-      className="btn btn-primary mr-1"
+      className="btn btn-primary mr-1 e2e-track-changeset-btn"
       disabled={false}
       type="submit"
     >

@@ -128,7 +128,11 @@ export class APIConsole extends React.PureComponent<Props, State> {
                         <LoadingSpinner className="icon-inline" /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (
-                    <ErrorAlert prefix="Error loading API console" error={this.state.graphiqlOrError} />
+                    <ErrorAlert
+                        prefix="Error loading API console"
+                        error={this.state.graphiqlOrError}
+                        history={this.props.history}
+                    />
                 ) : (
                     this.renderGraphiQL()
                 )}
@@ -233,8 +237,6 @@ async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<st
     })
     const responseBody = await response.text()
     try {
-        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
-        // eslint-disable-next-line @typescript-eslint/return-await
         return JSON.parse(responseBody)
     } catch (error) {
         return responseBody

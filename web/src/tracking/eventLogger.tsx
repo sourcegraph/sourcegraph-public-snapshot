@@ -22,6 +22,8 @@ export class EventLogger implements TelemetryService {
     private anonUid?: string
 
     constructor() {
+        // EventLogger is never teared down
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(() => {
             this.log('BrowserExtensionConnectedToServer')
 

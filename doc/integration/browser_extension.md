@@ -16,6 +16,8 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
   </a>
 </p>
 
+>NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
+
 ![Sourcegraph browser extension](https://storage.googleapis.com/sourcegraph-assets/BrowserExtension.gif)
 
 ## Features
@@ -105,7 +107,3 @@ Previously, the Sourcegraph browser extension was able to authenticate with inst
 Sourcegraph integrations never send any logs, pings, usage statistics, or telemetry to Sourcegraph.com. They will only connect to Sourcegraph.com as required to provide code intelligence or other functionality on public code. As a result, no private code, private repository names, usernames, or any other specific data is sent to Sourcegraph.com.
 
 If connected to a private, self-hosted Sourcegraph instance, Sourcegraph browser extensions will send notifications of usage to that private Sourcegraph instance only. This allows the site admins to see usage statistics.
-
-## Security
-
-[Sourcegraph Firefox Add-on security](firefox_security.md)

@@ -37,7 +37,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	h := ObservedHandler(
 		log15.Root(),
 		NewHandlerMetrics(),
-		opentracing.GlobalTracer(),
+		opentracing.NoopTracer{},
 	)(s.Handler())
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -860,7 +860,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/a/b"),
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/a/b"), true),
 		},
 		{
 			name: "found - GitHub",
@@ -971,7 +971,7 @@ func TestRepoLookup(t *testing.T) {
 				err: github.ErrNotFound,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -983,7 +983,7 @@ func TestRepoLookup(t *testing.T) {
 				err: &github.APIError{Code: http.StatusUnauthorized},
 			},
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
-			err:    "not authorized",
+			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -995,7 +995,7 @@ func TestRepoLookup(t *testing.T) {
 				err: &github.APIError{Message: "API rate limit exceeded"},
 			},
 			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
-			err:    "repository temporarily unavailable",
+			err:    fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -1061,7 +1061,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"), true),
 		},
 	}
 

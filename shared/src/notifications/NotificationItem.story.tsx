@@ -7,8 +7,8 @@ import { interval } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 import { NotificationItem } from './NotificationItem'
-
-import './NotificationItem.scss'
+import notificationItemStyles from './NotificationItem.scss'
+import webStyles from '../../../web/src/SourcegraphWebApp.scss'
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
@@ -21,8 +21,13 @@ const notificationClassNames = {
 const onDismiss = action('onDismiss')
 
 const { add } = storiesOf('NotificationItem', module).addDecorator(story => (
-    // tslint:disable-next-line: jsx-ban-props
-    <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
+    <>
+        <style>{webStyles}</style>
+        <style>{notificationItemStyles}</style>
+        <div className="theme-light" style={{ maxWidth: '20rem', margin: '2rem' }}>
+            {story()}
+        </div>
+    </>
 ))
 
 for (const [name, type] of Object.entries(NotificationType)) {

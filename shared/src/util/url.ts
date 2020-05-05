@@ -5,6 +5,8 @@ import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
+import { tryCatch } from './errors'
 
 export interface RepoSpec {
     /**
@@ -84,7 +86,7 @@ export interface UIPositionSpec {
     position: UIPosition
 }
 
-interface UIRangeSpec {
+export interface UIRangeSpec {
     /**
      * A 1-indexed range in the blob
      */
@@ -99,7 +101,7 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -115,7 +117,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-interface RenderModeSpec {
+export interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -465,16 +467,37 @@ function parseLineOrPosition(
 }
 
 /** Encodes a repository at a revspec for use in a URL. */
-export function encodeRepoRev(repo: string, rev?: string): string {
-    return rev ? `${repo}@${escapeRevspecForURL(rev)}` : repo
+export function encodeRepoRev({ repoName, rev }: RepoSpec & Partial<RevSpec>): string {
+    return rev ? `${repoName}@${escapeRevspecForURL(rev)}` : repoName
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
-        ctx
-    )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
+    return `/${encodeRepoRev({ repoName: target.repoName, rev: target.rev })}/-/blob/${
+        target.filePath
+    }${toRenderModeQuery(target)}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+}
+
+/**
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    ctx: RepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(ctx)}`
+}
+
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+export function toRepoURL(target: RepoSpec & Partial<RevSpec>): string {
+    return '/' + encodeRepoRev(target)
 }
 
 /**
@@ -572,7 +595,7 @@ export function buildSearchURLQuery(
         fullQuery = replaceRange(fullQuery, caseInQuery.range)
         searchParams.set('q', fullQuery)
 
-        if (caseInQuery.value === 'yes') {
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {
@@ -595,7 +618,6 @@ export function buildSearchURLQuery(
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
@@ -648,3 +670,9 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
     }
     return undefined
 }
+
+/**
+ * Returns true if the given URL points outside the current site.
+ */
+export const isExternalLink = (url: string): boolean =>
+    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)

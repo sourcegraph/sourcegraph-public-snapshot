@@ -54,25 +54,37 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 To run all e2e tests locally against your dev server, **create a user `test` with password `testtesttest`, promote as site admin**, then run:
 
 ```
-env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
+env TEST_USER_PASSWORD=testtesttest GITHUB_TOKEN=<token> yarn test-e2e
 ```
 
-> There's a test token in `../dev-private/enterprise/dev/external-services-config.json`
+There's a GitHub test token in `../dev-private/enterprise/dev/external-services-config.json`.
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
+During a test run, the console from the browser will also be printed to the terminal, prefixed with "🖥 Browser console:".
+Not every browser error log indicates a failure, but it can be helpful in debugging.
+Make sure to always first look at the test failure at the bottom of the logs, which includes the error message and stack trace.
+
+To stop the test run on the first failing test, append `--bail` to your command.
+You can find a complete list of all possible options in the [Mocha documentation](https://mochajs.org/#command-line-usage).
+
+When a test fails, a screenshot is saved to the `./puppeteer` directory.
+In iTerm (macOS) and on Buildkite, it is also displayed inline in the terminal.
+This may trigger a prompt "Allow Terminal-initiated download?" in iTerm.
+Tick "Remember my choice" and click "Yes" if you want the inline screenshots to show up.
+
 You can single-out one test with `test.only`:
 
-
 ```TypeScript
-        test.only('widgetizes quuxinators', async () => {
-            // ...
-        })
+test.only('widgetizes quuxinators', async () => {
+    // ...
+})
 ```
 
 Alternatively, you can use `-g` to filter tests: `env ... test-e2e -g "some test name"`.
 
-Run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality. See the test files for the environments and [repositories](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@6569fc255bb4c1c46752c99d828dc52b64785941/-/blob/web/src/regression/search.test.ts#L65-137) that are cloned for tests.
+For regression tests, you can also run tests selectively with a command like `yarn run test:regression:search`, which runs the tests for search functionality.
+See the test files for the environments and [repositories](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@6569fc255bb4c1c46752c99d828dc52b64785941/-/blob/web/src/regression/search.test.ts#L65-137) that are cloned for tests.
 
 ### Viewing e2e tests live in CI
 
@@ -96,11 +108,11 @@ Open VNC Viewer and type in `localhost:5900`. Hit <kbd>Enter</kbd> and accept th
 Open `web/src/e2e/e2e.test.ts` and add a new `test`:
 
 ```TypeScript
-        test('widgetizes quuxinators', async () => {
-            await page.goto(baseURL + '/quuxinator/widgetize')
-            await page.waitForSelector('.widgetize', { visible: true })
-            // ...
-        })
+test('widgetizes quuxinators', async () => {
+    await page.goto(baseURL + '/quuxinator/widgetize')
+    await page.waitForSelector('.widgetize', { visible: true })
+    // ...
+})
 ```
 
 The full [Puppeteer API](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md) is quite large, but most tests only use a few common commands:
@@ -126,7 +138,8 @@ If the element you are trying to select appears multiple times on the page (e.g.
 
 Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete-button`.
 
-Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
+**Important**: it's generally unreliable to hold references to items that are acted upon later.
+In other words, don't do this:
 
 ```ts
 const elem = page.selector(".selector")
@@ -172,11 +185,11 @@ Once you approve all of the changes, the Percy check will turn green ✅
 Open `web/src/e2e/index.e2e.test.tsx` and add a new e2e test:
 
 ```TypeScript
-        test('Repositories list', async () => {
-            await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-            await page.waitForSelector('[e2e-repository-name="/github.com/gorilla/mux"]', { visible: true })
-            await percySnapshot(page, 'Repositories list')
-        })
+test('Repositories list', async () => {
+    await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+    await page.waitForSelector('[e2e-repository-name="/github.com/gorilla/mux"]', { visible: true })
+    await percySnapshot(page, 'Repositories list')
+})
 ```
 
 The `percySnapshot()` function takes the snapshot and uploads it to Percy.io.
@@ -202,7 +215,7 @@ include:
 
 - all of the Go source files that have tests
 - dev/check/all.sh (gofmt, lint, go generator, no Security TODOs, Bash syntax, others)
-- JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
+- JS formatting/linting (prettier, eslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
 
@@ -224,5 +237,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 
 For testing with a single Docker image, run something like
 ```
-IMAGE=sourcegraph/server:3.14.0 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.15.1 ./dev/run-server-image.sh
 ```

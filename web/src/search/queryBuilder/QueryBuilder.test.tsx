@@ -1,5 +1,5 @@
 import React from 'react'
-import { cleanup, fireEvent, getByDisplayValue, queryByTestId, render, wait } from '@testing-library/react'
+import { cleanup, fireEvent, getByDisplayValue, queryByTestId, render, waitFor } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
@@ -75,13 +75,13 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
-        await wait(() => queryByTestId(container, 'test-author'))
+        await waitFor(() => queryByTestId(container, 'test-author'))
         expect(queryByTestId(container, 'test-author')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-after'))
+        await waitFor(() => queryByTestId(container, 'test-after'))
         expect(queryByTestId(container, 'test-after')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-before'))
+        await waitFor(() => queryByTestId(container, 'test-before'))
         expect(queryByTestId(container, 'test-before')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-message'))
+        await waitFor(() => queryByTestId(container, 'test-message'))
         expect(queryByTestId(container, 'test-message')).toBeTruthy()
     })
 
@@ -89,13 +89,13 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
-        await wait(() => queryByTestId(container, 'test-author'))
+        await waitFor(() => queryByTestId(container, 'test-author'))
         expect(queryByTestId(container, 'test-author')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-after'))
+        await waitFor(() => queryByTestId(container, 'test-after'))
         expect(queryByTestId(container, 'test-after')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-before'))
+        await waitFor(() => queryByTestId(container, 'test-before'))
         expect(queryByTestId(container, 'test-before')).toBeTruthy()
-        await wait(() => queryByTestId(container, 'test-message'))
+        await waitFor(() => queryByTestId(container, 'test-message'))
         expect(queryByTestId(container, 'test-message')).toBeTruthy()
     })
 
@@ -103,7 +103,7 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
-        await wait(() => queryByTestId(container, 'test-author'))
+        await waitFor(() => queryByTestId(container, 'test-author'))
         const authorField = container.querySelector('#query-builder-author')!
         fireEvent.change(authorField, { target: { value: 'alice' } })
         sinon.assert.calledTwice(onChange)
@@ -114,7 +114,7 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
-        await wait(() => queryByTestId(container, 'test-after'))
+        await waitFor(() => queryByTestId(container, 'test-after'))
         const afterField = container.querySelector('#query-builder-after')!
         fireEvent.change(afterField, { target: { value: '1 year ago' } })
 
@@ -126,7 +126,7 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
-        await wait(() => queryByTestId(container, 'test-before'))
+        await waitFor(() => queryByTestId(container, 'test-before'))
         const beforeField = container.querySelector('#query-builder-before')!
         fireEvent.change(beforeField, { target: { value: '1 year ago' } })
 
@@ -138,7 +138,7 @@ describe('QueryBuilder', () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
-        await wait(() => queryByTestId(container, 'test-message'))
+        await waitFor(() => queryByTestId(container, 'test-message'))
         const messageField = container.querySelector('#query-builder-message')!
         fireEvent.change(messageField, { target: { value: 'fix issue' } })
 

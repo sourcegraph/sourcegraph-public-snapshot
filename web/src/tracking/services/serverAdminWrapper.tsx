@@ -9,6 +9,8 @@ class ServerAdminWrapper {
     private isAuthenicated = false
 
     constructor() {
+        // ServerAdminWrapper is never teared down
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         authenticatedUser.subscribe(user => {
             if (user) {
                 this.isAuthenicated = true

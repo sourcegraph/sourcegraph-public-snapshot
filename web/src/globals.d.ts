@@ -63,9 +63,9 @@ interface SourcegraphContext
     siteGQLID: GQL.ID
 
     /**
-     * Status of onboarding
+     * Whether the site needs to be initialized.
      */
-    showOnboarding: boolean
+    needsSiteInit: boolean
 
     /**
      * Emails support enabled
@@ -127,6 +127,9 @@ interface SourcegraphContext
 
         brandName: string
     }
+
+    /** The publishable key for the billing service (Stripe). */
+    billingPublishableKey?: string
 }
 
 interface BrandAssets {
@@ -146,4 +149,9 @@ declare module 'worker-loader?*' {
         constructor()
     }
     export default WebpackWorker
+}
+
+declare module '*.scss' {
+    const cssModule: string
+    export default cssModule
 }

@@ -17,11 +17,7 @@ interface ChartData {
     dateFormat: string
 }
 
-interface ChartOptions {
-    daus: ChartData
-    waus: ChartData
-    maus: ChartData
-}
+type ChartOptions = Record<'daus' | 'waus' | 'maus', ChartData>
 
 const chartGeneratorOptions: ChartOptions = {
     daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },
@@ -238,7 +234,9 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
                 <h2>Usage statistics</h2>
-                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                )}
                 {this.state.stats && (
                     <>
                         <RadioButtons

@@ -326,9 +326,6 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	cli, save := NewTestClient(t, "PullRequests", *update)
-	defer save()
-
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
@@ -389,6 +386,10 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			name := "PullRequests-" + strings.Replace(tc.name, " ", "-", -1)
+			cli, save := NewTestClient(t, name, *update)
+			defer save()
+
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
 			}
@@ -603,8 +604,8 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 			name: "success",
 			pr: func() *PullRequest {
 				pr := *pr
-				pr.ID = 32
-				pr.Version = 0
+				pr.ID = 63
+				pr.Version = 2
 				return &pr
 			},
 		},

@@ -183,6 +183,7 @@ describe('Onboarding', () => {
         )
 
         // Do a search
+        await driver.page.waitForSelector('.e2e-query-input')
         await driver.page.type('.e2e-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
         await delay(500) // allow some time for confetti to play
@@ -227,7 +228,7 @@ describe('Onboarding', () => {
         // Wait for status bar to appear but it should be invisible
         await driver.page.waitForFunction(
             statusBarSelector => {
-                const element = document.querySelector(statusBarSelector)
+                const element = document.querySelector<Element>(statusBarSelector)
                 if (!element) {
                     return false
                 }

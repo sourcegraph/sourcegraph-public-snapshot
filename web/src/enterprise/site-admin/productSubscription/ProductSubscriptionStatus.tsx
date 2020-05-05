@@ -15,6 +15,7 @@ import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSumma
 import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =>
     queryGraphQL(gql`
@@ -48,12 +49,13 @@ interface Props {
      *
      */
     showTrueUpStatus?: boolean
+    history: H.History
 }
 
 /**
  * A component displaying information about and the status of the product subscription.
  */
-export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus }) => {
+export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus, history }) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
         useMemo(() => queryProductLicenseInfo().pipe(catchError((err): [ErrorLike] => [asError(err)])), [])
@@ -66,7 +68,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
         )
     }
     if (isErrorLike(statusOrError)) {
-        return <ErrorAlert error={statusOrError} prefix="Error checking product license" />
+        return <ErrorAlert error={statusOrError} prefix="Error checking product license" history={history} />
     }
 
     const {

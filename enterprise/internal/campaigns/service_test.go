@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -39,7 +38,6 @@ func TestService(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -58,7 +56,7 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreatePatchSetFromPatches", func(t *testing.T) {
-		svc := NewServiceWithClock(store, nil, nil, clock)
+		svc := NewServiceWithClock(store, nil, clock)
 
 		const patch = `diff f f
 --- f
@@ -113,7 +111,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, patchSet.ID)
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		// Without Patches it should fail
 		err = svc.CreateCampaign(ctx, campaign, false)
@@ -171,7 +169,7 @@ func TestService(t *testing.T) {
 
 		campaign := testCampaign(user.ID, patchSet.ID)
 
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
@@ -209,7 +207,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, patchSet.ID)
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
@@ -242,7 +240,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
@@ -280,6 +278,7 @@ func TestService(t *testing.T) {
 			name    string
 			branch  *string
 			draft   bool
+			closed  bool
 			process bool
 			err     string
 		}{
@@ -291,6 +290,12 @@ func TestService(t *testing.T) {
 			{
 				name:  "draft campaign",
 				draft: true,
+			},
+
+			{
+				name:   "closed campaign",
+				closed: true,
+				err:    ErrUpdateClosedCampaign.Error(),
 			},
 			{
 				name:    "change campaign branch",
@@ -330,8 +335,12 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				svc := NewServiceWithClock(store, gitClient, cf, clock)
+				svc := NewServiceWithClock(store, cf, clock)
 				campaign := testCampaign(user.ID, patchSet.ID)
+
+				if tc.closed {
+					campaign.ClosedAt = now
+				}
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -390,7 +399,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("UpdateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
@@ -456,7 +465,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -680,19 +688,40 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrClosedCampaignUpdatePatchIllegal,
+			wantErr: ErrUpdateClosedCampaign,
+		},
+		{
+			name:            "1 unmodified merged, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
+		},
+		{
+			name:            "1 unmodified closed, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, gitClient, cf, clock)
+			svc := NewServiceWithClock(store, cf, clock)
 
 			var (
 				campaign    *campaigns.Campaign
 				oldPatches  []*campaigns.Patch
-				newPatches  []*campaigns.Patch
 				patchesByID map[int64]*campaigns.Patch
 
 				changesetStateByPatchID map[int64]campaigns.ChangesetState
@@ -799,7 +828,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				newPatches = append(newPatches, j)
 				patchesByID[j.ID] = j
 			}
 
@@ -869,7 +897,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				if len(tt.individuallyPublished) != 0 {
 					wantChangesetJobLen = len(tt.individuallyPublished)
 				} else {
-					wantChangesetJobLen = len(newPatches)
+					wantChangesetJobLen = len(tt.wantCreated) + len(tt.wantUnmodified) + len(tt.wantModified)
 				}
 			} else {
 				wantChangesetJobLen = len(oldPatches)
@@ -1104,7 +1132,7 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
 	return &campaigns.Patch{
 		PatchSetID: patchSet,
-		RepoID:     api.RepoID(repo),
+		RepoID:     repo,
 		Rev:        "deadbeef",
 		BaseRef:    "refs/heads/master",
 		Diff:       "cool diff",
@@ -1137,13 +1165,4 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 		Metadata:            pr,
 		ExternalState:       state,
 	}
-}
-
-type dummyGitserverClient struct {
-	response    string
-	responseErr error
-}
-
-func (d *dummyGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	return d.response, d.responseErr
 }

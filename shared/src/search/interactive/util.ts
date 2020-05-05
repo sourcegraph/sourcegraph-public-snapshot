@@ -29,6 +29,7 @@ export enum FilterType {
     lang = 'lang',
     fork = 'fork',
     archived = 'archived',
+    visibility = 'visibility',
     count = 'count',
     timeout = 'timeout',
     before = 'before',

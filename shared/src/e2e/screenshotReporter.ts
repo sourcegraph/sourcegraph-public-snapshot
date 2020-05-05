@@ -41,7 +41,7 @@ async function takeScreenshot({
     } else if (process.env.TERM_PROGRAM === 'iTerm.app') {
         // Print image inline for iTerm2
         const nameBase64 = Buffer.from(fileName).toString('base64')
-        console.log(`\u001B]1337;File=name=${nameBase64};inline=1;width=auto:${screenshot.toString('base64')}\u0007`)
+        console.log(`\u001B]1337;File=name=${nameBase64};inline=1;width=500px:${screenshot.toString('base64')}\u0007`)
     } else {
         console.log(`📸  Saved screenshot of failure to ${path.relative(process.cwd(), filePath)}`)
     }

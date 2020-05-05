@@ -5,6 +5,10 @@ const config = require('./jest.config.base')
 
 /** @type {jest.InitialOptions} */
 module.exports = {
-  ...config,
-  projects: ['browser/jest.config.js', 'shared/jest.config.js', 'web/jest.config.js', 'lsif/jest.config.js'],
+  projects: [
+    'browser/jest.config.js',
+    'shared/jest.config.js',
+    'web/jest.config.js',
+    'cmd/precise-code-intel/jest.config.js',
+  ],
 }

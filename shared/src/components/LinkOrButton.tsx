@@ -1,14 +1,16 @@
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 import { Link } from './Link'
+import classNames from 'classnames'
+import { noop } from 'lodash'
 
-interface Props {
+const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
+    event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
+
+interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     /** The link destination URL. */
     to?: H.LocationDescriptor
-
-    /** The link target. */
-    target?: '_self' | '_blank' | string
 
     /**
      * Called when the user clicks or presses enter on this element.
@@ -41,58 +43,63 @@ interface Props {
  * It is keyboard accessible: unlike <Link> or <a>, pressing the enter key triggers it. Unlike
  * <button>, it shows a focus ring.
  */
-export class LinkOrButton extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        const className = `${this.props.className === undefined ? 'nav-link' : this.props.className} ${
-            this.props.disabled ? 'disabled' : ''
-        }`
+export const LinkOrButton: React.FunctionComponent<Props> = ({
+    className = 'nav-link',
+    to,
+    target,
+    rel,
+    disabled,
+    pressed,
+    'data-tooltip': tooltip,
+    onSelect = noop,
+    children,
+}) => {
+    // We need to set up a keypress listener because <a onclick> doesn't get
+    // triggered by enter.
+    const onAnchorKeyPress: React.KeyboardEventHandler<HTMLAnchorElement> = useCallback(
+        event => {
+            if (isSelectKeyPress(event)) {
+                onSelect(event)
+            }
+        },
+        [onSelect]
+    )
 
-        const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-            'data-tooltip': string | undefined
-            onAuxClick?: React.MouseEventHandler<HTMLAnchorElement>
-        } = {
-            className,
-            'data-tooltip': this.props['data-tooltip'],
-            'aria-label': this.props['data-tooltip'],
-            role: typeof this.props.pressed === 'boolean' ? 'button' : undefined,
-            'aria-pressed': this.props.pressed,
-            tabIndex: 0,
-            onClick: this.onAnchorClick,
-            onKeyPress: this.onAnchorKeyPress,
-        }
+    const commonProps: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+        'data-tooltip': string | undefined
+    } = {
+        className: classNames(className, disabled && 'disabled'),
+        'data-tooltip': tooltip,
+        'aria-label': tooltip,
+        role: typeof pressed === 'boolean' ? 'button' : undefined,
+        'aria-pressed': pressed,
+        tabIndex: 0,
+        onClick: onSelect,
+        onKeyPress: onAnchorKeyPress,
+    }
 
-        if (!this.props.to) {
-            // Use onAuxClick so that middle-clicks are caught.
-            commonProps.onAuxClick = this.onAnchorClick
+    const onClickPreventDefault: React.MouseEventHandler<HTMLAnchorElement> = useCallback(
+        event => {
+            // Prevent default action of reloading page because of empty href
+            event.preventDefault()
+            onSelect(event)
+        },
+        [onSelect]
+    )
 
-            // Render using an <a> with no href, so that we get a focus ring (when using Bootstrap).
-            // We need to set up a keypress listener because <a onclick> doesn't get triggered by
-            // enter.
-            return <a {...commonProps}>{this.props.children}</a>
-        }
-
+    if (!to) {
         return (
-            <Link {...commonProps} to={this.props.to} target={this.props.target}>
-                {this.props.children}
-            </Link>
+            // Need empty href for styling reasons
+            // Use onAuxClick so that middle-clicks are caught.
+            <a href="" {...commonProps} onClick={onClickPreventDefault} onAuxClick={onClickPreventDefault}>
+                {children}
+            </a>
         )
     }
 
-    private onAnchorClick: React.MouseEventHandler<HTMLAnchorElement> = e => {
-        if (this.props.onSelect) {
-            this.props.onSelect(e)
-        }
-    }
-
-    private onAnchorKeyPress: React.KeyboardEventHandler<HTMLAnchorElement> = e => {
-        if (isSelectKeyPress(e)) {
-            if (this.props.onSelect) {
-                this.props.onSelect(e)
-            }
-        }
-    }
-}
-
-function isSelectKeyPress(e: React.KeyboardEvent): boolean {
-    return e.key === Key.Enter && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey
+    return (
+        <Link {...commonProps} to={to} target={target} rel={rel}>
+            {children}
+        </Link>
+    )
 }

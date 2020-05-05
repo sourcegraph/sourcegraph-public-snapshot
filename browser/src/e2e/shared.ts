@@ -1,5 +1,7 @@
 import expect from 'expect'
 import { Driver } from '../../../shared/src/e2e/driver'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import assert from 'assert'
 
 /**
  * Defines e2e tests for a single-file page of a code host.
@@ -59,14 +61,15 @@ export function testSingleFilePage({
             const [token] = await line.$x('//span[text()="CallOption"]')
             await token.hover()
             await getDriver().page.waitForSelector('.e2e-tooltip-go-to-definition')
-            await Promise.all([
-                getDriver().page.waitForNavigation(),
-                getDriver().page.click('.e2e-tooltip-go-to-definition'),
-            ])
-            expect(await getDriver().page.evaluate(() => location.href)).toBe(
-                goToDefinitionURL ||
-                    `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
-            )
+            await retry(async () => {
+                assert.strictEqual(
+                    await getDriver().page.evaluate(
+                        () => document.querySelector<HTMLAnchorElement>('.e2e-tooltip-go-to-definition')?.href
+                    ),
+                    goToDefinitionURL ||
+                        `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
+                )
+            })
         })
     })
 }

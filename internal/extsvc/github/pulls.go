@@ -350,6 +350,13 @@ func (e ReviewRequestedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
+// ReviewerDeleted returns true if both RequestedReviewer and RequestedTeam are
+// blank, indicating that one or the other has been deleted.
+// We use it to drop the event.
+func (e ReviewRequestedEvent) ReviewerDeleted() bool {
+	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor
@@ -482,7 +489,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -534,7 +541,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -576,7 +583,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -658,7 +665,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		TimelineItems struct{ Nodes []TimelineItem }
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return err
 	}
@@ -700,7 +707,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		}
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}

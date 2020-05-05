@@ -88,7 +88,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
+        render: lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage'),
     },
     {
         path: '/site-admin',
@@ -109,11 +109,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/explore',
         render: lazyComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
-        exact: true,
-    },
-    {
-        path: '/discussions',
-        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
         exact: true,
     },
     {
@@ -151,6 +146,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
+    },
+    {
+        path: '/views',
+        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
     },
     {
         path: '/:repoRevAndRest+',

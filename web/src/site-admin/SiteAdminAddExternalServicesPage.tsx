@@ -61,6 +61,5 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
 function getAddURL(id: string): string {
     const params = new URLSearchParams()
     params.append('id', id)
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return `?${params.toString()}`
 }

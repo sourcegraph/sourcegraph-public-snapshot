@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -34,7 +34,7 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 		return Mocks.ExecSafe(params)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExecSafe")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecSafe")
 	defer span.Finish()
 
 	if len(params) == 0 {
@@ -58,7 +58,11 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 // ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
 // to its stdout.
 func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.ReadCloser, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExecReader")
+	if Mocks.ExecReader != nil {
+		return Mocks.ExecReader(args)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
 
@@ -257,13 +261,10 @@ func (c *commandRetryer) run() error {
 	// revision we want to ensure exists, etc.
 	tryAgain := func(err error) bool {
 		haveURL := c.cmd.Repo.URL != "" || c.remoteURLFunc != nil
-		if !haveURL || c.cmd.EnsureRevision == "" {
-			// We don't have a repository URL or know the revision in question,
-			// so we cannot retry the request.
-			return false
-		}
 		if vcs.IsRepoNotExist(err) {
-			return true // The repository doesn't exist yet, so retry after pulling.
+			// The repository doesn't exist yet, so retry after pulling if we
+			// know how to clone.
+			return haveURL
 		}
 		if gitserver.IsRevisionNotFound(err) {
 			// If we didn't find HEAD, the repo is empty and there is no reason to retry.
@@ -277,7 +278,7 @@ func (c *commandRetryer) run() error {
 	}
 
 	// Determine the remote URL, if needed, then retry the command.
-	if c.cmd.Repo.URL == "" {
+	if c.cmd.Repo.URL == "" && c.remoteURLFunc != nil {
 		// We do modify c.cmd here because the caller may want to reuse this
 		// information.
 		c.cmd.Repo.URL, err = c.remoteURLFunc()

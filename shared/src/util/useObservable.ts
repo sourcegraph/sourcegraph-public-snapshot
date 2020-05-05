@@ -43,12 +43,20 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
 /**
  * A React hook to handle a React event with an RxJS pipeline.
  *
+ * @template T The event type.
+ * @template R The result type.
  * @param transform An RxJS operator pipeline that is passed an Observable of
  * the events triggered on the next function and can transform it to values of
  * which the latest one is returned. **You need to wrap this callback with `useCallback()`**.
  * @returns A next function to be used in JSX as an event handler, and the latest result of the Observable pipeline.
  * @throws If the Observable pipeline errors.
  */
+export function useEventObservable<T, R>(
+    transform: (events: Observable<T>) => Observable<R>
+): [Observer<T>['next'], R | undefined]
+export function useEventObservable<R>(
+    transform: (events: Observable<void>) => Observable<R>
+): [() => void, R | undefined]
 export function useEventObservable<T, R>(
     transform: (events: Observable<T>) => Observable<R>
 ): [Observer<T>['next'], R | undefined] {

@@ -29,6 +29,7 @@ import { ActionItemAction } from '../../../../../../shared/src/actions/ActionIte
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset
@@ -61,14 +62,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     <div className="m-0 mb-2">
-                        <ChangesetStateIcon
-                            className={classNames(
-                                'mr-1 icon-inline',
-                                `text-${changesetStatusColorClasses[changesetState]}`
-                            )}
-                            data-tooltip={changesetStageLabels[changesetState]}
-                        />
                         <h3 className="m-0 d-inline">
+                            <ChangesetStateIcon
+                                className={classNames(
+                                    'mr-1 icon-inline',
+                                    `text-${changesetStatusColorClasses[changesetState]}`
+                                )}
+                                data-tooltip={changesetStageLabels[changesetState]}
+                            />
                             <LinkOrSpan
                                 /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                 to={
@@ -79,7 +80,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                {node.title} (#{node.externalID})
+                                {node.title} (#{node.externalID}){' '}
+                                {node.externalURL && node.state !== ChangesetState.DELETED && (
+                                    <ExternalLinkIcon size="1rem" />
+                                )}
                             </LinkOrSpan>
                         </h3>
                         {node.checkState && (
@@ -138,6 +142,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
+                    expandedButtonClassName="mb-3"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >

@@ -41,7 +41,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		expErr     error
 
 		// expected side effects
-		expSavedExtAccts                 map[int32][]extsvc.ExternalAccountSpec
+		expSavedExtAccts                 map[int32][]extsvc.AccountSpec
 		expUpdatedUsers                  map[int32][]db.UserUpdate
 		expCreatedUsers                  map[int32]db.NewUser
 		expCalledGrantPendingPermissions bool
@@ -56,7 +56,7 @@ func TestGetAndSaveUser(t *testing.T) {
 
 	oneUser := []userInfo{{
 		user: types.User{ID: 1, Username: "u1"},
-		extAccts: []extsvc.ExternalAccountSpec{
+		extAccts: []extsvc.AccountSpec{
 			ext("st1", "s1", "c1", "s1/u1"),
 		},
 		emails: []string{"u1@example.com"},
@@ -77,21 +77,21 @@ func TestGetAndSaveUser(t *testing.T) {
 			userInfos: []userInfo{
 				{
 					user: types.User{ID: 1, Username: "u1"},
-					extAccts: []extsvc.ExternalAccountSpec{
+					extAccts: []extsvc.AccountSpec{
 						ext("st1", "s1", "c1", "s1/u1"),
 					},
 					emails: []string{"u1@example.com"},
 				},
 				{
 					user: types.User{ID: 2, Username: "u2"},
-					extAccts: []extsvc.ExternalAccountSpec{
+					extAccts: []extsvc.AccountSpec{
 						ext("st1", "s1", "c1", "s1/u2"),
 					},
 					emails: []string{"u2@example.com"},
 				},
 				{
 					user:     types.User{ID: 3, Username: "u3"},
-					extAccts: []extsvc.ExternalAccountSpec{},
+					extAccts: []extsvc.AccountSpec{},
 					emails:   []string{},
 				},
 			},
@@ -106,7 +106,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
@@ -120,7 +120,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
@@ -134,7 +134,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
@@ -146,7 +146,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -171,7 +171,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -184,7 +184,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					CreateIfNotExist: true,
 				},
 				expUserID: 10001,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					10001: {ext("st1", "s1", "c1", "s1/u-new")},
 				},
 				expCreatedUsers: map[int32]db.NewUser{
@@ -211,7 +211,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				createIfNotExistIrrelevant: true,
 				actorUID:                   2,
 				expUserID:                  2,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					2: {ext("st1", "s1", "c1", "s1/u2")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -225,7 +225,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -240,7 +240,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -258,7 +258,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -272,7 +272,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "doesnotexist")},
 				},
 				expCalledGrantPendingPermissions: true,
@@ -362,7 +362,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		t.Run(oc.description, func(t *testing.T) {
 			for _, c := range oc.innerCases {
 				if c.expSavedExtAccts == nil {
-					c.expSavedExtAccts = map[int32][]extsvc.ExternalAccountSpec{}
+					c.expSavedExtAccts = map[int32][]extsvc.AccountSpec{}
 				}
 				if c.expUpdatedUsers == nil {
 					c.expUpdatedUsers = map[int32][]db.UserUpdate{}
@@ -424,7 +424,7 @@ func TestGetAndSaveUser(t *testing.T) {
 
 type userInfo struct {
 	user     types.User
-	extAccts []extsvc.ExternalAccountSpec
+	extAccts []extsvc.AccountSpec
 	emails   []string
 }
 
@@ -462,7 +462,7 @@ func newMocks(t *testing.T, m mockParams) *mocks {
 	return &mocks{
 		mockParams:    m,
 		t:             t,
-		savedExtAccts: make(map[int32][]extsvc.ExternalAccountSpec),
+		savedExtAccts: make(map[int32][]extsvc.AccountSpec),
 		updatedUsers:  make(map[int32][]db.UserUpdate),
 		createdUsers:  make(map[int32]db.NewUser),
 		nextUserID:    10001,
@@ -511,7 +511,7 @@ type mocks struct {
 	t *testing.T
 
 	// savedExtAccts tracks all ext acct "saves" for a given user ID
-	savedExtAccts map[int32][]extsvc.ExternalAccountSpec
+	savedExtAccts map[int32][]extsvc.AccountSpec
 
 	// createdUsers tracks user creations by user ID
 	createdUsers map[int32]db.NewUser
@@ -527,7 +527,7 @@ type mocks struct {
 }
 
 // LookupUserAndSave mocks db.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (userID int32, err error) {
+func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
 	if m.lookupUserAndSaveErr != nil {
 		return 0, m.lookupUserAndSaveErr
 	}
@@ -544,7 +544,7 @@ func (m *mocks) LookupUserAndSave(spec extsvc.ExternalAccountSpec, data extsvc.E
 }
 
 // CreateUserAndSave mocks db.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (createdUserID int32, err error) {
+func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
 	if m.createUserAndSaveErr != nil {
 		return 0, m.createUserAndSaveErr
 	}
@@ -579,7 +579,7 @@ func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.ExternalAccoun
 }
 
 // AssociateUserAndSave mocks db.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (err error) {
+func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
 	if m.associateUserAndSaveErr != nil {
 		return m.associateUserAndSaveErr
 	}
@@ -663,8 +663,8 @@ func (m *mocks) GrantPendingPermissions(context.Context, *db.GrantPendingPermiss
 	return nil
 }
 
-func ext(serviceType, serviceID, clientID, accountID string) extsvc.ExternalAccountSpec {
-	return extsvc.ExternalAccountSpec{
+func ext(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,

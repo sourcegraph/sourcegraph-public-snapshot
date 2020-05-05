@@ -44,7 +44,6 @@ async function init(): Promise<void> {
         return
     }
 
-    // eslint-disable-next-line require-atomic-updates
     window.SOURCEGRAPH_URL = sourcegraphURL
     const css = await getPhabricatorCSS(sourcegraphURL)
     const style = document.createElement('style')

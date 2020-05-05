@@ -15,7 +15,7 @@ import (
 )
 
 type authnResponseInfo struct {
-	spec                 extsvc.ExternalAccountSpec
+	spec                 extsvc.AccountSpec
 	email, displayName   string
 	unnormalizedUsername string
 	accountData          interface{}
@@ -58,7 +58,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email = pn
 	}
 	info := authnResponseInfo{
-		spec: extsvc.ExternalAccountSpec{
+		spec: extsvc.AccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,
@@ -85,7 +85,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data extsvc.ExternalAccountData
+	var data extsvc.AccountData
 	data.SetAccountData(info.accountData)
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)

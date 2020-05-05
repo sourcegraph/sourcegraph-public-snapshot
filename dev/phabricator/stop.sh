@@ -9,14 +9,14 @@ source ./dev/phabricator/shared.sh
 
 # if [ "$(docker ps -aq -f name=$db_container)" ];
 # then
-    # docker stop $db_container
-    # docker rm $db_container
+# docker stop $db_container
+# docker rm $db_container
 # fi
 
 docker ps -aq -f network=$network | xargs docker rm -f
 
 # if [ "$(docker ps -aq -f name=$app_container)" ];
 # then
-    # docker stop $app_container
-    # docker rm $app_container
+# docker stop $app_container
+# docker rm $app_container
 # fi

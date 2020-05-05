@@ -3,6 +3,7 @@ import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
+import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -41,11 +42,11 @@ export function searchURLIsCaseSensitive(query: string): boolean {
     const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
     if (queryCaseSensitivity) {
         // if `case:` filter exists in the query, override the existing case: query param
-        return queryCaseSensitivity.value === 'yes'
+        return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
     }
     const searchParams = new URLSearchParams(query)
     const caseSensitive = searchParams.get('case')
-    return caseSensitive === 'yes'
+    return discreteValueAliases.yes.includes(caseSensitive || '')
 }
 
 /**
@@ -76,9 +77,9 @@ export function parseSearchURL(
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
         finalQuery = replaceRange(finalQuery, caseInQuery.range)
 
-        if (caseInQuery.value === 'yes') {
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             caseSensitive = true
-        } else if (caseInQuery.value === 'no') {
+        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
             caseSensitive = false
         }
     }
@@ -86,8 +87,12 @@ export function parseSearchURL(
     return { query: finalQuery, patternType, caseSensitive }
 }
 
+export function repoFilterForRepoRev(repoName: string, rev?: string): string {
+    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)}`
+}
+
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+    return `repo:${repoFilterForRepoRev(repoName, rev)} `
 }
 
 function abbreviateOID(oid: string): string {

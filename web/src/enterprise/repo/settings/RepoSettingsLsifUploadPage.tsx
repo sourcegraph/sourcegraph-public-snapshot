@@ -16,6 +16,7 @@ import { Timestamp } from '../../../components/time/Timestamp'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
+import * as H from 'history'
 
 const REFRESH_INTERVAL_MS = 5000
 
@@ -24,6 +25,7 @@ interface Props extends RouteComponentProps<{ id: string }> {
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
+    history: H.History
 }
 
 const terminalStates = [GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED]
@@ -41,6 +43,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     match: {
         params: { id },
     },
+    history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
@@ -84,12 +87,12 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     return deletionOrError === 'deleted' ? (
         <Redirect to=".." />
     ) : isErrorLike(deletionOrError) ? (
-        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {isErrorLike(uploadOrError) ? (
-                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
+                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (

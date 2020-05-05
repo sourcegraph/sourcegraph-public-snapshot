@@ -75,17 +75,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
-		for _, om := range []*repos.OperationMetrics{
-			m.Transact,
-			m.Done,
-			m.ListRepos,
-			m.UpsertRepos,
-			m.ListExternalServices,
-			m.UpsertExternalServices,
-			m.ListAllRepoNames,
-		} {
-			om.MustRegister(prometheus.DefaultRegisterer)
-		}
+		m.MustRegister(prometheus.DefaultRegisterer)
 
 		store = repos.NewObservedStore(
 			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),
@@ -149,7 +139,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
-					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
+					server.GithubDotComSource, err = repos.NewGithubSource(e, cf, nil)
 				}
 			case *schema.GitLabConnection:
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {

@@ -1,12 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback } from 'react'
 import { Tooltip } from './Tooltip'
-
-import './Tooltip.scss'
+import tooltipStyles from './Tooltip.scss'
+import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
 
 const { add } = storiesOf('Tooltip', module).addDecorator(story => (
-    // tslint:disable-next-line: jsx-ban-props
-    <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
+    <>
+        <style>{bootstrapStyles}</style>
+        <style>{tooltipStyles}</style>
+        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
+    </>
 ))
 
 add('Hover', () => (

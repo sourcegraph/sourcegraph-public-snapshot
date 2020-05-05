@@ -15,7 +15,7 @@ import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import { isDefined, property } from '../../../../shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
@@ -29,13 +29,12 @@ import {
     ResolvedRevSpec,
     RevSpec,
     toPositionOrRangeHash,
+    toURIWithPath,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
-import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
-import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
 /**
@@ -65,9 +64,6 @@ interface BlobProps
 }
 
 interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
-    /** The desired position of the discussions gutter overlay */
-    discussionsGutterOverlayPosition?: { left: number; top: number }
-
     /**
      * lineDecorationAttachmentIDs is a map from line numbers with portal nodes created to portal IDs. It's used to
      * render the portals for {@link LineDecorationAttachment}. The line numbers are taken from the blob so they
@@ -170,7 +166,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 // After componentDidUpdate, the blob element is guaranteed to have been rendered
                 map(([, hoverOverlayElement, blobElement]) => ({ hoverOverlayElement, relativeElement: blobElement! })),
                 // Can't reposition HoverOverlay if it wasn't rendered
-                filter(propertyIsDefined('hoverOverlayElement'))
+                filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
@@ -295,16 +291,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     const row = element.parentElement as HTMLTableRowElement
                     row.classList.add('selected')
                 }
-
-                // Update overlay position for discussions gutter icon.
-                if (codeCells.length > 0) {
-                    const blobBounds = codeView.parentElement!.getBoundingClientRect()
-                    const row = codeCells[0].element.parentElement as HTMLTableRowElement
-                    const targetBounds = row.cells[0].getBoundingClientRect()
-                    const left = targetBounds.left - blobBounds.left
-                    const top = targetBounds.top + codeView.parentElement!.scrollTop - blobBounds.top
-                    this.setState({ discussionsGutterOverlayPosition: { left, top } })
-                }
             })
         )
 
@@ -320,7 +306,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
-                const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
+                const uri = toURIWithPath(model)
                 if (!this.props.extensionsController.services.model.hasModel(uri)) {
                     this.props.extensionsController.services.model.addModel({
                         uri,
@@ -328,8 +314,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         text: model.content,
                     })
                 }
-                this.props.extensionsController.services.editor.removeAllEditors()
-                this.props.extensionsController.services.editor.addEditor({
+                this.props.extensionsController.services.viewer.removeAllViewers()
+                this.props.extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     selections: lprToSelectionsZeroIndexed(pos),
@@ -518,15 +504,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {isDiscussionsEnabled(this.props.settingsCascade) &&
-                    this.state.selectedPosition &&
-                    this.state.selectedPosition.line !== undefined && (
-                        <DiscussionsGutterOverlay
-                            overlayPosition={this.state.discussionsGutterOverlayPosition}
-                            selectedPosition={this.state.selectedPosition}
-                            {...this.props}
-                        />
-                    )}
             </div>
         )
     }

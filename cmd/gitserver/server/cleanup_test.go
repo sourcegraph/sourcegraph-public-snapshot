@@ -165,8 +165,7 @@ func TestCleanupExpired(t *testing.T) {
 }
 
 func TestCleanupOldLocks(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	// Only recent lock files should remain.
 	mkFiles(t, root,
@@ -232,8 +231,7 @@ func TestCleanupOldLocks(t *testing.T) {
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	s := &Server{ReposDir: root}
 
@@ -295,8 +293,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 }
 
 func TestSetupAndClearTmp_Empty(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	s := &Server{ReposDir: root}
 
@@ -310,8 +307,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -341,8 +337,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory_Empty(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -422,13 +417,14 @@ func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 	return f.diskSize, nil
 }
 
-func tmpDir(t *testing.T) (string, func()) {
+func tmpDir(t *testing.T) string {
 	t.Helper()
-	dir, err := ioutil.TempDir("", t.Name())
+	dir, err := ioutil.TempDir("", filepath.Base(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return dir, func() { os.RemoveAll(dir) }
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
 }
 
 func mkFiles(t *testing.T, root string, paths ...string) {
@@ -585,38 +581,6 @@ func makeFakeRepo(d string, sizeBytes int) error {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil
-}
-
-func Test_findMountPoint(t *testing.T) {
-	type args struct {
-		d string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "mount point of root is root",
-			args:    args{d: "/"},
-			want:    "/",
-			wantErr: false,
-		},
-		// What else can we portably count on?
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := findMountPoint(tt.args.d)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("findMountPoint() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestMaybeCorruptStderrRe(t *testing.T) {

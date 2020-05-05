@@ -11,7 +11,6 @@ import (
 	"net/url"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,31 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
 
 var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of requests sent to repoupdater.")
 
-var (
-	// ErrNotFound is when a repository is not found.
-	ErrNotFound = errors.New("repository not found")
-
-	// ErrUnauthorized is when an authorization error occurred.
-	ErrUnauthorized = errors.New("not authorized")
-
-	// ErrTemporarilyUnavailable is when the repository was reported as being temporarily
-	// unavailable.
-	ErrTemporarilyUnavailable = errors.New("repository temporarily unavailable")
-)
-
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // REPO_UPDATER_URL environment variable.
 var DefaultClient = &Client{
 	URL: repoupdaterURL,
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
+		// ot.Transport will propagate opentracing spans and whether or not to trace
+		Transport: &ot.Transport{
 			RoundTripper: requestMeter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
@@ -89,7 +77,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -120,11 +108,20 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if err == nil && result != nil {
 		switch {
 		case result.ErrorNotFound:
-			err = ErrNotFound
+			err = &ErrNotFound{
+				Repo:       args.Repo,
+				IsNotFound: true,
+			}
 		case result.ErrorUnauthorized:
-			err = ErrUnauthorized
+			err = &ErrUnauthorized{
+				Repo:    args.Repo,
+				NoAuthz: true,
+			}
 		case result.ErrorTemporarilyUnavailable:
-			err = ErrTemporarilyUnavailable
+			err = &ErrTemporary{
+				Repo:        args.Repo,
+				IsTemporary: true,
+			}
 		}
 	}
 	return result, err
@@ -350,7 +347,7 @@ func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, er
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

@@ -26,14 +26,26 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
     scriptURL: string
 }
 
+/**
+ * The manifest of an extension sideloaded during local development.
+ *
+ * Doesn't include {@link ExtensionManifest#url}, as this is added when
+ * publishing an extension to the registry.
+ * Instead, the bundle URL is computed from the manifest's `main` field.
+ */
+interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
+    name: string
+    main: string
+}
+
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
     fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
         map(
-            (response: ExtensionManifest & { name: string; main: string }): ConfiguredExtension => ({
+            (response: SideloadedExtensionManifest): ConfiguredExtension => ({
                 id: response.name,
                 manifest: {
-                    url: `${baseUrl}/${response.main.replace('dist/', '')}`,
                     ...response,
+                    url: `${baseUrl}/${response.main.replace('dist/', '')}`,
                 },
                 rawManifest: null,
             })

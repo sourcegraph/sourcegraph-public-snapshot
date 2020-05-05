@@ -43,6 +43,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/typescript": true,
 	"sourcegraph/verilog":    true,
 	"sourcegraph/vhdl":       true,
+	"sourcegraph/git-extras": true,
 }
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"

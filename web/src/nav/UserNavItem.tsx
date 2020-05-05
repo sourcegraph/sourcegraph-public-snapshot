@@ -16,7 +16,6 @@ interface Props extends ThemeProps, ThemePreferenceProps {
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
     showDotComMarketing: boolean
-    showDiscussions: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
 
@@ -68,11 +67,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/extensions" className="dropdown-item">
                         Extensions
                     </Link>
-                    {this.props.showDiscussions && (
-                        <Link to="/discussions" className="dropdown-item">
-                            Discussions
-                        </Link>
-                    )}
                     <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
                         Saved searches
                     </Link>
@@ -80,8 +74,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
-                            {/* <Select> doesn't support small version */}
-                            {/* eslint-disable-next-line react/forbid-elements */}
                             <select
                                 className="custom-select custom-select-sm e2e-theme-toggle"
                                 onChange={this.onThemeChange}

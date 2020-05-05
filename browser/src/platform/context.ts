@@ -17,6 +17,7 @@ import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { requestGraphQLHelper } from '../shared/backend/requestGraphQL'
 import { failedWithHTTPStatus } from '../../../shared/src/backend/fetch'
+import { asError } from '../../../shared/src/util/errors'
 
 export interface SourcegraphIntegrationURLs {
     /**
@@ -125,7 +126,7 @@ export function createPlatformContext(
             try {
                 await updateSettings(context, subject, edit, mutateSettings)
             } catch (error) {
-                if ('message' in error && error.message.includes('version mismatch')) {
+                if (asError(error).message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
                     await context.refreshSettings()

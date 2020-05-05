@@ -30,7 +30,7 @@ export function submitSurvey(input: SurveyResponse): Observable<void> {
 export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQL.ISurveyResponseConnection> {
     return queryGraphQL(
         gql`
-            query FetchSurveyResponses() {
+            query FetchSurveyResponses {
                 surveyResponses {
                     nodes {
                         user {
@@ -104,7 +104,7 @@ export type SurveyResponseConnectionAggregates = Exclude<GQL.ISurveyResponseConn
 export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnectionAggregates> {
     return queryGraphQL(
         gql`
-            query FetchSurveyResponseAggregates() {
+            query FetchSurveyResponseAggregates {
                 surveyResponses {
                     totalCount
                     last30DaysCount
@@ -137,8 +137,9 @@ export const submitTrialRequest = (email: string): void => {
             map(dataOrThrowErrors),
             map(() => undefined)
         )
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         .subscribe({
-            error: error => {
+            error: () => {
                 // Swallow errors since the form submission is a non-blocking request that happens during site-init
                 // if a trial license key is requested.
             },

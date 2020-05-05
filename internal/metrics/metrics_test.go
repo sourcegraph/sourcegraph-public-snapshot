@@ -2,13 +2,20 @@ package metrics
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -71,5 +78,51 @@ func TestRequestMeterTransport(t *testing.T) {
 
 	if val != 1.0 {
 		t.Errorf("expected counter == 1, got %f", val)
+	}
+}
+
+func TestMustRegisterDiskMonitor(t *testing.T) {
+	registry := prometheus.NewPedanticRegistry()
+	registerer = registry
+	defer func() { registerer = prometheus.DefaultRegisterer }()
+
+	want := []string{}
+	for i := 0; i <= 2; i++ {
+		path, err := ioutil.TempDir("", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			path := path
+			_ = os.RemoveAll(path)
+		})
+		// Register twice to ensure we don't panic and we don't collect twice.
+		MustRegisterDiskMonitor(path)
+		MustRegisterDiskMonitor(path)
+		want = append(want,
+			fmt.Sprintf("src_disk_space_available_bytes{path=%s}", path),
+			fmt.Sprintf("src_disk_space_total_bytes{path=%s}", path))
+	}
+
+	mfs, err := registry.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got []string
+	for _, mf := range mfs {
+		for _, m := range mf.Metric {
+			var labels []string
+			for _, l := range m.Label {
+				labels = append(labels, fmt.Sprintf("%s=%s", *l.Name, *l.Value))
+			}
+			got = append(got, fmt.Sprintf("%s{%s}", *mf.Name, strings.Join(labels, " ")))
+		}
+	}
+
+	sort.Strings(want)
+	sort.Strings(got)
+	if !cmp.Equal(want, got) {
+		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
 	}
 }

@@ -55,7 +55,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -128,7 +128,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -212,7 +212,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -322,7 +322,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -361,7 +361,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 59, Version: 0}
+	pr := &bitbucketserver.PullRequest{ID: 59, Version: 4}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 
@@ -395,7 +395,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -430,7 +430,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 43, Version: 3}
+	pr := &bitbucketserver.PullRequest{ID: 43, Version: 5}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 
@@ -469,7 +469,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

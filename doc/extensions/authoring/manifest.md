@@ -66,7 +66,6 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
   "license": "MIT",
   "main": "dist/my-extension.js",
   "scripts": {
-    "tslint": "tslint -p tsconfig.json './src/**/*.ts'",
     "typecheck": "tsc -p tsconfig.json",
     "build": "parcel build --out-file dist/my-extension.js src/my-extension.ts",
     "serve": "parcel serve --no-hmr --out-file dist/my-extension.js src/my-extension.ts",
@@ -81,12 +80,12 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
     "last 1 Safari versions"
   ],
   "devDependencies": {
-    "@sourcegraph/tsconfig": "^3.0.0",
-    "@sourcegraph/tslint-config": "^12.0.0",
-    "parcel-bundler": "^1.10.3",
-    "sourcegraph": "^19.0.3",
-    "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "@sourcegraph/tsconfig": "^4.0.1",
+    "@sourcegraph/eslint-config": "^0.11.3",
+    "parcel-bundler": "^1.12.4",
+    "sourcegraph": "^24.0.0",
+    "eslint": "^6.8.0",
+    "typescript": "^3.8.3"
   }
 }
 ```

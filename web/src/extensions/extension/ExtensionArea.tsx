@@ -10,7 +10,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -132,7 +132,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
                         return queryExtension(extensionID).pipe(
-                            catchError(error => [error]),
+                            catchError((error): [ErrorLike] => [asError(error)]),
                             map((c): PartialStateUpdate => ({ extensionOrError: c })),
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
@@ -167,7 +167,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.extensionOrError} />}
+                    subtitle={<ErrorMessage error={this.state.extensionOrError} history={this.props.history} />}
                 />
             )
         }
@@ -224,7 +224,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
-function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {
+function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<GQL.IRegistryExtension>> {
     return queryGraphQL(
         gql`
             query RegistryExtension($extensionID: String!) {

@@ -1,5 +1,4 @@
 {
-  "tslint.nodePath": "./node_modules",
   "search.exclude": {
     "**/node_modules": true,
     "**/bower_components": true,
@@ -10,6 +9,7 @@
     "**/out": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
+    "**/.nyc_output": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
@@ -64,9 +64,10 @@
       "changeProcessCWD": true,
     },
     {
-      "directory": "lsif",
+      "directory": "cmd/precise-code-intel",
       "changeProcessCWD": true,
     },
   ],
   "go.lintTool": "golangci-lint",
+  "shellformat.flag": "-i 2 -ci",
 }

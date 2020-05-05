@@ -48,7 +48,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                         ))}
                     {filters
                         .filter(filter => filter.value !== '')
-                        .map((filter, i) => (
+                        .map(filter => (
                             <FilterChip
                                 query={navbarSearchQuery}
                                 onFilterChosen={onFilterClick}
@@ -66,7 +66,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 <div className="search-results-filter-bars__filters">
                     {results.dynamicFilters
                         .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                        .map((filter, i) => (
+                        .map(filter => (
                             <FilterChip
                                 name={filter.label}
                                 query={navbarSearchQuery}

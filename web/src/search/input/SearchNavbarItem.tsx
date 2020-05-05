@@ -28,8 +28,7 @@ interface Props
  */
 export class SearchNavbarItem extends React.PureComponent<Props> {
     private onSubmit = (): void => {
-        const { history, navbarSearchState, patternType, activation, caseSensitive } = this.props
-        submitSearch(history, navbarSearchState.query, 'nav', patternType, caseSensitive, activation)
+        submitSearch({ ...this.props, query: this.props.navbarSearchState.query, source: 'nav' })
     }
 
     private onFormSubmit = (e: React.FormEvent): void => {

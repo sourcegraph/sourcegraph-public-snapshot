@@ -115,7 +115,6 @@ function score1(selector: DocumentSelector[0], candidateUri: URL, candidateLangu
         }
     }
     if (baseUri) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         if (candidateUri.href.startsWith(baseUri.toString())) {
             ret = 5
         } else {

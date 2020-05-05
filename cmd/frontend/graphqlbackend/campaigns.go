@@ -24,7 +24,7 @@ type CreateCampaignArgs struct {
 	Input struct {
 		Namespace   graphql.ID
 		Name        string
-		Description string
+		Description *string
 		Branch      *string
 		PatchSet    *graphql.ID
 		Draft       *bool
@@ -202,7 +202,7 @@ type ListChangesetsArgs struct {
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
-	Description() string
+	Description() *string
 	Branch() *string
 	Author(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
@@ -211,6 +211,7 @@ type CampaignResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
+	OpenChangesets(ctx context.Context) (ExternalChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	PatchSet(ctx context.Context) (PatchSetResolver, error)
@@ -218,6 +219,7 @@ type CampaignResolver interface {
 	ClosedAt() *DateTime
 	PublishedAt(ctx context.Context) (*DateTime, error)
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type CampaignsConnectionResolver interface {
@@ -243,6 +245,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	NextSyncAt() *DateTime
 	Title() (string, error)
 	Body() (string, error)
 	State() campaigns.ChangesetState
@@ -311,6 +314,7 @@ type PatchSetResolver interface {
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
 
 	PreviewURL() string
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type PreviewFileDiff interface {

@@ -1,14 +1,27 @@
-import { ProxiedObject, ProxyValue, transferHandlers } from '@sourcegraph/comlink'
+import {
+    ProxyMarked,
+    transferHandlers,
+    ProxyMethods,
+    createEndpoint,
+    releaseProxy,
+    TransferHandler,
+    Remote,
+} from 'comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { hasProperty } from '../util/types'
+import { noop } from 'lodash'
 
 /**
  * Tests whether a value is a WHATWG URL object.
  */
-export const isURL = (value: any): value is URL =>
-    typeof value !== 'undefined' &&
+export const isURL = (value: unknown): value is URL =>
+    typeof value === 'object' &&
     value !== null &&
+    hasProperty('href')(value) &&
+    hasProperty('toString')(value) &&
     typeof value.toString === 'function' &&
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     value.href === value.toString()
 
 /**
@@ -17,12 +30,12 @@ export const isURL = (value: any): value is URL =>
  * Idempotent.
  */
 export function registerComlinkTransferHandlers(): void {
-    transferHandlers.set('URL', {
+    const urlTransferHandler: TransferHandler<URL, string> = {
         canHandle: isURL,
-        // TODO the comlink types could be better here to avoid the any
-        serialize: (url: any) => url.href,
-        deserialize: (urlString: any) => new URL(urlString),
-    })
+        serialize: url => [url.href, []],
+        deserialize: urlString => new URL(urlString),
+    }
+    transferHandlers.set('URL', urlTransferHandler)
 }
 
 /**
@@ -30,16 +43,16 @@ export function registerComlinkTransferHandlers(): void {
  *
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
-export const syncSubscription = (
-    subscriptionPromise: Promise<ProxiedObject<Unsubscribable & ProxyValue>>
-): Subscription =>
+export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
-    new Subscription(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        subscriptionPromise.then(proxySubscription => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            proxySubscription.unsubscribe()
-        })
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    new Subscription(async function (this: any) {
+        const subscriptionProxy = await subscriptionPromise
+        await subscriptionProxy.unsubscribe()
+        subscriptionProxy[releaseProxy]()
+
+        this._unsubscribe = null // Workaround: rxjs doesn't null out the reference to this callback
+        ;(subscriptionPromise as any) = null
     })
 
 /**
@@ -51,13 +64,20 @@ export const tryCatchPromise = async <T>(f: () => T | Promise<T>): Promise<T> =>
 /**
  * Reports whether value is a Promise.
  */
-export function isPromise(value: any): value is Promise<any> {
-    return typeof value.then === 'function'
-}
+export const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
+    typeof value === 'object' && value !== null && hasProperty('then')(value) && typeof value.then === 'function'
 
 /**
  * Reports whether value is a {@link sourcegraph.Subscribable}.
  */
-export function isSubscribable(value: any): value is Subscribable<any> {
-    return typeof value.subscribe === 'function'
-}
+export const isSubscribable = (value: unknown): value is Subscribable<unknown> =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('subscribe')(value) &&
+    typeof value.subscribe === 'function'
+
+export const addProxyMethods = <T>(value: T): T & ProxyMethods =>
+    Object.assign(value, {
+        [createEndpoint]: () => Promise.resolve(new MessagePort()),
+        [releaseProxy]: noop,
+    })

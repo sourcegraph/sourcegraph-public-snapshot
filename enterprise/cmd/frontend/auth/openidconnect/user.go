@@ -48,7 +48,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	var data extsvc.ExternalAccountData
+	var data extsvc.AccountData
 	data.SetAccountData(struct {
 		IDToken    *oidc.IDToken  `json:"idToken"`
 		UserInfo   *oidc.UserInfo `json:"userInfo"`
@@ -63,7 +63,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 			DisplayName:     displayName,
 			AvatarURL:       claims.Picture,
 		},
-		ExternalAccount: extsvc.ExternalAccountSpec{
+		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,

@@ -33,9 +33,9 @@ Why do we put up with this pain? As of October 2019, Syntect continues to be the
 - [Syntect vs. VS Code syntax highlighting
 ](https://docs.google.com/document/d/1MqqEgihKzRehdDS_k9kb8t_p8vROCymC2FWn1Yvj6Ng/edit)
 
-### lsif-server
+### Precise code intel system
 
-This was written in TypeScript so we could directly depend on the official [LSIF type definitions that are published by Microsoft as a TypeScript interface](https://github.com/microsoft/lsif-node/blob/master/protocol/src/protocol.ts).
+The processes in the [precise code intel](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/precise-code-intel) system were written in TypeScript so we could directly depend on the official [LSIF type definitions that are published by Microsoft as a TypeScript interface](https://github.com/microsoft/lsif-node/blob/master/protocol/src/protocol.ts).
 
 ### LSIF generators and language servers
 

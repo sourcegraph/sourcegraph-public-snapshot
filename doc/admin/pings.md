@@ -6,6 +6,7 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 - Deployment type (single-node or Kubernetes cluster)
 - Whether the instance is deployed on localhost (true/false)
 - Randomly generated site identifier
+- License key associated with your Sourcegraph subscription
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, and policy updates
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)

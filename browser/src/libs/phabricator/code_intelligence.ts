@@ -84,7 +84,7 @@ export const commitCodeView = {
     resolveFileInfo: resolveRevisionFileInfo,
     getPositionAdjuster,
     getToolbarMount: (codeView: HTMLElement): HTMLElement => {
-        let mount = codeView.querySelector<HTMLElement>('.sourcegraph-app-annotator')
+        let mount = codeView.querySelector<HTMLElement>('.sourcegraph-phabricator-code-view-toolbar-mount')
         if (mount) {
             return mount
         }
@@ -95,7 +95,7 @@ export const commitCodeView = {
 
         mount = document.createElement('div')
         mount.style.display = 'inline-block'
-        mount.classList.add('sourcegraph-app-annotator')
+        mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
         actions.insertAdjacentElement('afterbegin', mount)
 
@@ -109,7 +109,7 @@ export const diffCodeView = {
     resolveFileInfo: resolveDiffFileInfo,
     getPositionAdjuster,
     getToolbarMount: (codeView: HTMLElement): HTMLElement => {
-        const className = 'sourcegraph-app-annotator'
+        const className = 'sourcegraph-phabricator-code-view-toolbar-mount'
         const existingMount = codeView.querySelector<HTMLElement>('.' + className)
         if (existingMount) {
             return existingMount
@@ -152,7 +152,7 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
 
         const mount = document.createElement('div')
         mount.style.display = 'inline-block'
-        mount.classList.add('sourcegraph-app-annotator')
+        mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
         actions.insertAdjacentElement('afterbegin', mount)
 

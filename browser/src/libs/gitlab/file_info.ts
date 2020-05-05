@@ -1,4 +1,4 @@
-import { Observable, of, throwError, from } from 'rxjs'
+import { Observable, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { FileInfo } from '../code_intelligence'
@@ -13,32 +13,20 @@ import {
     getMergeRequestID,
     getDiffID,
 } from './scrape'
+import { asObservable } from '../../../../shared/src/util/rxjs/asObservable'
 
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
-export const resolveFileInfo = (): Observable<FileInfo> => {
+export const resolveFileInfo = (): FileInfo => {
     const { rawRepoName, filePath, rev } = getFilePageInfo()
     if (!filePath) {
-        return throwError(
-            new Error(
-                `Unable to determine the file path of the current file because the current URL (window.location ${window.location.href}) does not have a file path.`
-            )
+        throw new Error(
+            `Unable to determine the file path of the current file because the current URL (window.location ${window.location.href}) does not have a file path.`
         )
     }
-
-    try {
-        const commitID = getCommitIDFromPermalink()
-
-        return of({
-            rawRepoName,
-            filePath,
-            commitID,
-            rev,
-        })
-    } catch (error) {
-        return throwError(error)
-    }
+    const commitID = getCommitIDFromPermalink()
+    return { rawRepoName, filePath, commitID, rev }
 }
 
 /**
@@ -57,8 +45,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
  * Resolves file information for commit pages.
  */
 export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(undefined).pipe(
-        map(getCommitPageInfo),
+    asObservable(getCommitPageInfo).pipe(
         // Resolve base commit ID.
         switchMap(({ owner, projectName, commitID, rawRepoName }) =>
             getBaseCommitIDForCommit({ owner, projectName, commitID }).pipe(

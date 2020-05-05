@@ -24,6 +24,7 @@ export class EventLogger implements TelemetryService {
         const replaySubject = new ReplaySubject<string>(1)
         this.sourcegraphURLs = replaySubject.asObservable()
         // TODO pass this Observable as a parameter
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         observeSourcegraphURL(isExtension).subscribe(replaySubject)
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)

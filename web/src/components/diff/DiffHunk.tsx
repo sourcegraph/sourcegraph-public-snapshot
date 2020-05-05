@@ -7,7 +7,7 @@ import {
 } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 
 const DiffBoundary: React.FunctionComponent<{
@@ -130,7 +130,7 @@ export const DiffHunk: React.FunctionComponent<
                             {/* eslint-disable-next-line react/forbid-dom-props */}
                             <td className="diff-hunk__content" style={lineStyle}>
                                 {line}
-                                {decorationsForLine.filter(propertyIsDefined('after')).map((decoration, i) => {
+                                {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
                                     const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                     return (
                                         <React.Fragment key={i}>
