@@ -9,14 +9,15 @@
 - `mkdir tilt-watch-targets`
 - Prepare the cluster:
 
-```shell script
-minikube start
-kubectl create namespace ns-sourcegraph
-kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
-kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
-minikube service list
-```
+- Prepare the cluster:
 
+    ```shell
+    minikube start
+    kubectl create namespace ns-sourcegraph
+    kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+    kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
+    minikube service list
+    ```
 - From the `minikube service list` output take the exposed port and modify the Caddyfile.
 - `caddy run` (this makes Sourcegraph from the minikube cluster available at https://sourcegraph.test:3443)
 
