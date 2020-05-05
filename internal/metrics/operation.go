@@ -64,13 +64,13 @@ func WithLabels(labels ...string) OperationMetricsOption {
 	return func(o *operationMetricOptions) { o.labels = labels }
 }
 
-// NewOperationMetrics creates an OperationMetrics value. The supplied metricName should
+// NewOperationMetrics creates an OperationMetrics value. The supplied metricPrefix should
 // be underscore_cased as it is used in the metric name.
-func NewOperationMetrics(subsystem, metricName string, fns ...OperationMetricsOption) *OperationMetrics {
+func NewOperationMetrics(subsystem, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
 	options := &operationMetricOptions{
-		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", metricName),
-		countHelp:    fmt.Sprintf("Total number of %s operations", metricName),
-		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", metricName),
+		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", metricPrefix),
+		countHelp:    fmt.Sprintf("Total number of %s operations", metricPrefix),
+		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", metricPrefix),
 		labels:       nil,
 	}
 
@@ -82,19 +82,19 @@ func NewOperationMetrics(subsystem, metricName string, fns ...OperationMetricsOp
 		Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_duration_seconds", metricName),
+			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
 			Help:      options.durationHelp,
 		}, options.labels),
 		Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_total", metricName),
+			Name:      fmt.Sprintf("%s_total", metricPrefix),
 			Help:      options.countHelp,
 		}, options.labels),
 		Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_errors_total", metricName),
+			Name:      fmt.Sprintf("%s_errors_total", metricPrefix),
 			Help:      options.errorsHelp,
 		}, options.labels),
 	}
