@@ -14,7 +14,7 @@ import (
 var (
 	BaseURL                     = flag.String("baseUrl", "https://sourcegraph.test:3443", "A Sourcegraph URL")
 	Token                       = flag.String("token", "", "A Sourcegraph access token")
-	MaxConcurrency              = flag.Int("maxConcurrency", 3, "The maximum number of concurrent operations")
+	MaxConcurrency              = flag.Int("maxConcurrency", 5, "The maximum number of concurrent operations")
 	CheckQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")
 	QueryReferencesOfReferences = flag.Bool("queryReferencesOfReferences", false, "Whether to perform reference operations on test case references")
 
