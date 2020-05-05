@@ -1011,35 +1011,25 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_running",
-		Help:      "number of gitserver.Command running concurrently.",
+		Name: "src_gitserver_exec_running",
+		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
 	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_duration_seconds",
-		Help:      "gitserver.Command latencies in seconds.",
-		Buckets:   trace.UserLatencyBuckets,
+		Name:    "src_gitserver_exec_duration_seconds",
+		Help:    "gitserver.Command latencies in seconds.",
+		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "clone_queue",
-		Help:      "number of repos waiting to be cloned.",
+		Name: "src_gitserver_clone_queue",
+		Help: "number of repos waiting to be cloned.",
 	})
 	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "lsremote_queue",
-		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
+		Name: "src_gitserver_lsremote_queue",
+		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "repo_cloned",
-		Help:      "number of successful git clones run",
+		Name: "src_gitserver_repo_cloned",
+		Help: "number of successful git clones run",
 	})
 )
 

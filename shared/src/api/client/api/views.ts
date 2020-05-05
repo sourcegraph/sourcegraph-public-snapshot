@@ -1,6 +1,6 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { isEqual, omit } from 'lodash'
-import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
+import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
@@ -10,7 +10,7 @@ import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/p
 import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ProxySubscribable } from '../../extension/api/common'
-import { wrapRemoteObservable } from './common'
+import { wrapRemoteObservable, ProxySubscription } from './common'
 import { ViewService, ViewContexts } from '../services/viewService'
 
 /** @internal */
@@ -114,11 +114,14 @@ export class ClientViews implements ClientViewsAPI {
             ) => ProxySubscribable<View | null> & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
-        return comlink.proxy(
+        const subscription = new Subscription()
+        subscription.add(
             this.viewService.register(id, ContributableViewContainer.Directory, context =>
-                wrapRemoteObservable(provider(context))
+                wrapRemoteObservable(provider(context), subscription)
             )
         )
+        subscription.add(new ProxySubscription(provider))
+        return comlink.proxy(subscription)
     }
 
     public $registerGlobalPageViewProvider(
@@ -129,10 +132,13 @@ export class ClientViews implements ClientViewsAPI {
             ) => ProxySubscribable<View | null> & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
-        return comlink.proxy(
+        const subscription = new Subscription()
+        subscription.add(
             this.viewService.register(id, ContributableViewContainer.GlobalPage, context =>
-                wrapRemoteObservable(provider(context))
+                wrapRemoteObservable(provider(context), subscription)
             )
         )
+        subscription.add(new ProxySubscription(provider))
+        return comlink.proxy(subscription)
     }
 }

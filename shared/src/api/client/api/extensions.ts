@@ -1,4 +1,4 @@
-import { Remote } from '@sourcegraph/comlink'
+import { Remote } from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'

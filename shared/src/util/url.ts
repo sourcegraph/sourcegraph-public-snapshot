@@ -6,6 +6,7 @@ import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
+import { tryCatch } from './errors'
 
 export interface RepoSpec {
     /**
@@ -479,6 +480,18 @@ export function toPrettyBlobURL(
 }
 
 /**
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    ctx: RepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(ctx)}`
+}
+
+/**
  * Returns the URL path for the given repository name.
  *
  * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
@@ -657,3 +670,9 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
     }
     return undefined
 }
+
+/**
+ * Returns true if the given URL points outside the current site.
+ */
+export const isExternalLink = (url: string): boolean =>
+    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)

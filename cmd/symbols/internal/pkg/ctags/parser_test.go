@@ -9,12 +9,11 @@ import (
 
 func TestParser(t *testing.T) {
 	// TODO(sqs): find a way to make it easy to run these tests in local dev (w/o needing to install universal-ctags) and CI
-	const command = "universal-ctags"
-	if _, err := exec.LookPath(command); err != nil {
-		t.Skipf("command not in PATH: %s", command)
+	if _, err := exec.LookPath("universal-ctags"); err != nil {
+		t.Skip("command not in PATH: universal-ctags")
 	}
 
-	p, err := NewParser(command)
+	p, err := New()
 	if err != nil {
 		if os.Getenv("CI") == "" {
 			t.Skipf("failed to start universal-ctags. Assuming it is due to our custom build of universal-ctags not being installed. Reason: %v", err)

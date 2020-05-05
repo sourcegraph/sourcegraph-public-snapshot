@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -60,21 +61,33 @@ func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
 // GET /dbs/{id:[0-9]+}/exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		return db.Exists(ctx, getQuery(r, "path"))
+		exists, err := db.Exists(ctx, getQuery(r, "path"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.Exists")
+		}
+		return exists, nil
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		return db.Definitions(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		definitions, err := db.Definitions(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.Definitions")
+		}
+		return definitions, nil
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/references
 func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		return db.References(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		references, err := db.References(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.References")
+		}
+		return references, nil
 	})
 }
 
@@ -82,8 +95,11 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		text, hoverRange, exists, err := db.Hover(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
-		if err != nil || !exists {
-			return nil, err
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.Hover")
+		}
+		if !exists {
+			return nil, nil
 		}
 
 		return map[string]interface{}{"text": text, "range": hoverRange}, nil
@@ -93,7 +109,11 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 // GET /dbs/{id:[0-9]+}/monikersByPosition
 func (s *Server) handleMonikersByPosition(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		return db.MonikersByPosition(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		monikerLocations, err := db.MonikersByPosition(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.MonikersByPosition")
+		}
+		return monikerLocations, nil
 	})
 }
 
@@ -129,7 +149,7 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			take,
 		)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "db.MonikerResults")
 		}
 
 		return map[string]interface{}{"locations": locations, "count": count}, nil
@@ -144,8 +164,11 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 			getQuery(r, "path"),
 			types.ID(getQuery(r, "packageInformationId")),
 		)
-		if err != nil || !exists {
-			return nil, err
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.PackageInformation")
+		}
+		if !exists {
+			return nil, nil
 		}
 
 		return packageInformationData, nil
@@ -178,7 +201,11 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
 
 	openDatabase := func() (database.Database, error) {
-		return database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+		db, err := database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+		if err != nil {
+			return nil, err
+		}
+		return db, nil
 	}
 
 	cacheHandler := func(db database.Database) error {

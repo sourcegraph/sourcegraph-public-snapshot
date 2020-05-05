@@ -92,13 +92,13 @@ type GenerateProductLicenseForSubscriptionArgs struct {
 type CreatePaidProductSubscriptionArgs struct {
 	AccountID           graphql.ID
 	ProductSubscription ProductSubscriptionInput
-	PaymentToken        string
+	PaymentToken        *string
 }
 
 type UpdatePaidProductSubscriptionArgs struct {
 	SubscriptionID graphql.ID
 	Update         ProductSubscriptionInput
-	PaymentToken   string
+	PaymentToken   *string
 }
 
 // ProductSubscriptionInput implements the GraphQL type ProductSubscriptionInput.
@@ -204,6 +204,7 @@ type ProductPlan interface {
 	NameWithBrand() string
 	PricePerUserPerYear() int32
 	MinQuantity() *int32
+	MaxQuantity() *int32
 	TiersMode() string
 	PlanTiers() []PlanTier
 }

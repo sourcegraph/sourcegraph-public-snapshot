@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -23,19 +24,40 @@ func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err err
 	case "repo:build_status":
 		e = &BuildStatusEvent{}
 		return e, json.Unmarshal(payload, e)
-	default:
-		e = &PullRequestEvent{}
+	case "pr:activity:status", "pr:activity:event", "pr:activity:rescope", "pr:activity:merge", "pr:activity:comment", "pr:activity:reviewers":
+		e = &PullRequestActivityEvent{}
 		return e, json.Unmarshal(payload, e)
+	case "pr:participant:status":
+		e = &PullRequestParticipantStatusEvent{}
+		return e, json.Unmarshal(payload, e)
+	default:
+		return nil, fmt.Errorf("unknown webhook event type: %q", eventType)
 	}
 }
 
 type PingEvent struct{}
 
-type PullRequestEvent struct {
-	Date        time.Time   `json:"date"`
-	Actor       User        `json:"actor"`
+type PullRequestActivityEvent struct {
+	Date        time.Time      `json:"date"`
+	Actor       User           `json:"actor"`
+	PullRequest PullRequest    `json:"pullRequest"`
+	Action      ActivityAction `json:"action"`
+	Activity    *Activity      `json:"activity"`
+}
+
+type PullRequestParticipantStatusEvent struct {
+	*ParticipantStatusEvent
 	PullRequest PullRequest `json:"pullRequest"`
-	Activity    *Activity   `json:"activity"`
+}
+
+type ParticipantStatusEvent struct {
+	CreatedDate int            `json:"createdDate"`
+	User        User           `json:"user"`
+	Action      ActivityAction `json:"action"`
+}
+
+func (a *ParticipantStatusEvent) Key() string {
+	return fmt.Sprintf("%s:%d:%d", a.Action, a.User.ID, a.CreatedDate)
 }
 
 type BuildStatusEvent struct {
