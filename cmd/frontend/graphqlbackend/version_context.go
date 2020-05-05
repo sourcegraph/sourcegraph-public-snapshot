@@ -33,7 +33,7 @@ func NewVersionContextResolver(vc *schema.VersionContext) *versionContextResolve
 func (r *schemaResolver) VersionContexts(ctx context.Context) ([]*versionContextResolver, error) {
 	var versionContexts []*versionContextResolver
 
-	for _, vc := range conf.Get().VersionContexts {
+	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
 		versionContexts = append(versionContexts, NewVersionContextResolver(vc))
 	}
 

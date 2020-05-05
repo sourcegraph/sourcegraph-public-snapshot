@@ -507,12 +507,14 @@ func TestVersionContext(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					VersionContexts: []*schema.VersionContext{
-						{
-							Name: "ctx-1",
-							Revisions: []*schema.VersionContextRevision{
-								{Repo: "github.com/sourcegraph/foo", Ref: "some-branch"},
-								{Repo: "github.com/sourcegraph/bar", Ref: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						VersionContexts: []*schema.VersionContext{
+							{
+								Name: "ctx-1",
+								Revisions: []*schema.VersionContextRevision{
+									{Repo: "github.com/sourcegraph/foo", Ref: "some-branch"},
+									{Repo: "github.com/sourcegraph/bar", Ref: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+								},
 							},
 						},
 					},

@@ -405,6 +405,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// VersionContexts description: List of version contexts
+	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -1047,8 +1049,6 @@ type SiteConfiguration struct {
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
-	// VersionContexts description: List of version contexts
-	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

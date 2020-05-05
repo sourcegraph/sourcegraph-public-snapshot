@@ -333,7 +333,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 }
 
 func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
-	for _, vc := range conf.Get().VersionContexts {
+	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
 		if vc.Name == versionContext {
 			return vc, nil
 		}
