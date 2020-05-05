@@ -164,11 +164,11 @@ const SiteSchemaJSON = `{
           ]
         },
         "versionContexts": {
-          "description": "List of version contexts",
+          "description": "JSON array of version context configuration",
           "type": "array",
           "items": {
             "title": "VersionContext",
-            "description": "Description of the version context",
+            "description": "Configuration of the version context",
             "type": "object",
             "additionalProperties": false,
             "required": ["name", "revisions"],
@@ -197,6 +197,10 @@ const SiteSchemaJSON = `{
                     }
                   }
                 }
+              },
+              "description": {
+                "description": "Description of the version context",
+                "type": "string"
               }
             }
           },

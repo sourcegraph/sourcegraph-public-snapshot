@@ -1126,7 +1126,7 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
-        # PREVIEW: Optionally specify the versionContext. If not specified the
+        # (experimental) Optionally specify the versionContext. If not specified the
         # default version context is used (all repositories on the default branch).
         versionContext: String
 
@@ -1154,7 +1154,7 @@ type Query {
     savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
-    # PREVIEW: All version contexts.
+    # (experimental) All version contexts.
     versionContexts: [VersionContext!]!
     # The current site.
     site: Site!
@@ -1856,13 +1856,13 @@ type ExternalRepository {
     serviceID: String!
 }
 
-# PREVIEW: A version context. Used to change the set of default repository and
+# (experimental) A version context. Used to change the set of default repository and
 # revisions searched.
 #
 # Note: We do not expose the list of repositories and revisions in the version
 # context. This is intentional. However, if a need arises we can add it in.
 type VersionContext implements Node {
-    # The version context's unique ID.
+    # The version context ID is its name.
     id: ID!
 
     # The name of the version context.

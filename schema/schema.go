@@ -405,7 +405,7 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	// VersionContexts description: List of version contexts
+	// VersionContexts description: JSON array of version context configuration
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
@@ -1063,8 +1063,10 @@ type UsernameIdentity struct {
 	Type string `json:"type"`
 }
 
-// VersionContext description: Description of the version context
+// VersionContext description: Configuration of the version context
 type VersionContext struct {
+	// Description description: Description of the version context
+	Description string `json:"description,omitempty"`
 	// Name description: Name of the version context, it must be unique.
 	Name string `json:"name"`
 	// Revisions description: List of repositories of the version context

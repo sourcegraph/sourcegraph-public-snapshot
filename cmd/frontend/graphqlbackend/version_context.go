@@ -21,7 +21,7 @@ func (v *versionContextResolver) Name() string {
 }
 
 func (v *versionContextResolver) Description() string {
-	return ""
+	return v.vc.Description
 }
 
 func NewVersionContextResolver(vc *schema.VersionContext) *versionContextResolver {
