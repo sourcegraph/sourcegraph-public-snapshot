@@ -219,6 +219,12 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
 
 - Change your `externalURL` in [the site configuration](https://docs.sourcegraph.com/admin/config/site_config) to e.g. `https://sourcegraph.example.com`:
 
+  Update the ingress controller with the previous changes with the following command. 
+
+  ```bash
+  kubectl apply -f base/frontend/sourcegraph-frontend.Ingress.yaml
+  ```
+
 **WARNING:** Do NOT commit the actual TLS cert and key files to your fork (unless your fork is
 private **and** you are okay with storing secrets in it).
 
