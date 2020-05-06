@@ -427,8 +427,8 @@ func (r *richHunk) Kind() string {
 func (r *DiffHunk) RichBody() []*richHunk {
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
 	richHunks := make([]*richHunk, len(hunkLines))
-	var baseLine = r.hunk.OrigStartLine - 1
-	var headLine = r.hunk.NewStartLine - 1
+	baseLine := r.hunk.OrigStartLine - 1
+	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		var kind string
 		if len(hunkLine) == 0 {
@@ -447,18 +447,19 @@ func (r *DiffHunk) RichBody() []*richHunk {
 			headLine++
 		}
 
-		var line string
+		var hl, prefix string
 		switch kind {
 		case "unchanged":
-			hl := (*r.highlightedBase)[baseLine]
-			line = hl[:5] + " " + hl[5:]
+			hl = r.highlightedBase[baseLine]
+			prefix = " "
 		case "deletion":
-			hl := (*r.highlightedBase)[baseLine]
-			line = hl[:5] + "-" + hl[5:]
+			hl = r.highlightedBase[baseLine]
+			prefix = "-"
 		case "addition":
-			hl := (*r.highlightedHead)[headLine]
-			line = hl[:5] + "+" + hl[5:]
+			hl = r.highlightedHead[headLine]
+			prefix = "+"
 		}
+		line := hl[:5] + prefix + hl[5:]
 
 		richHunks[i] = &richHunk{
 			line: line,
