@@ -40,7 +40,6 @@ type Edge struct {
 }
 
 func UnmarshalEdge(element Element) (Edge, error) {
-
 	var payload struct {
 		OutV     ID   `json:"outV"`
 		InV      ID   `json:"inV"`
