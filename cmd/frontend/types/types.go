@@ -163,10 +163,10 @@ type Stages struct {
 // BigQuery, which requires the input match its schema exactly.
 type CampaignsUsageStatistics struct {
 	CampaignsCount               int32
-	GeneratedChangesetCount      int32
-	GeneratedChangesetMergeCount int32
-	ManualChangesetCount         int32
-	ManualChangesetMergeCount    int32
+	CreatedChangesetsCount       int32
+	CreatedChangesetsMergedCount int32
+	ManualChangesetsCount        int32
+	ManualChangesetsMergedCount  int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

@@ -10,28 +10,29 @@ import (
 // GetCampaignsUsageStatistics returns the current site's campaigns usage.
 func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
 	const campaignQuery = `
-WITH changeset_summary AS (
-    SELECT changesets.id changeset_id, cj.id job_id, changesets.external_state external_state FROM changesets
-    LEFT JOIN changeset_jobs cj ON changesets.id = cj.changeset_id
-)
-SELECT (SELECT COUNT(*) from campaigns) as campaign_count,
-       (SELECT COUNT(*) FROM changeset_summary WHERE job_id is not null) AS generated_changesets,
-       (SELECT COUNT(*) FROM changeset_summary WHERE job_id is not null and external_state = 'MERGED') AS generated_changesets_merged,
-       (SELECT COUNT(*) FROM changeset_summary WHERE job_id is null) AS manual_changesets,
-       (SELECT COUNT(*) FROM changeset_summary WHERE job_id is null and external_state = 'MERGED') AS manual_changesets_merged;
+SELECT
+    (SELECT COUNT(*) from campaigns) AS campaigns_count,
+    COUNT(*) FILTER (WHERE changeset_jobs.changeset_id IS NOT NULL) AS created_changesets,
+    COUNT(*) FILTER (WHERE changeset_jobs.changeset_id IS NOT NULL AND external_state = 'MERGED') AS created_changesets_merged,
+    COUNT(*) FILTER (WHERE changeset_jobs.changeset_id IS NULL) AS manual_changesets,
+    COUNT(*) FILTER (WHERE changeset_jobs.changeset_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
+    FROM changesets
+    LEFT JOIN changeset_jobs ON changesets.id = changeset_jobs.changeset_id
+    WHERE campaign_ids::text <> ''
+    AND campaign_ids::text <> '{}';
 `
 	var (
-		campaignCount             int
-		generatedChangesets       int
-		generatedChangesetsMerged int
-		manualChangesets          int
-		manualChangesetsMerged    int
+		campaignsCount          int
+		createdChangesets       int
+		createdChangesetsMerged int
+		manualChangesets        int
+		manualChangesetsMerged  int
 	)
 
 	if err := dbconn.Global.QueryRowContext(ctx, campaignQuery).Scan(
-		&campaignCount,
-		&generatedChangesets,
-		&generatedChangesetsMerged,
+		&campaignsCount,
+		&createdChangesets,
+		&createdChangesetsMerged,
 		&manualChangesets,
 		&manualChangesetsMerged,
 	); err != nil {
@@ -39,10 +40,10 @@ SELECT (SELECT COUNT(*) from campaigns) as campaign_count,
 	}
 
 	return &types.CampaignsUsageStatistics{
-		CampaignsCount:               int32(campaignCount),
-		GeneratedChangesetCount:      int32(generatedChangesets),
-		GeneratedChangesetMergeCount: int32(generatedChangesetsMerged),
-		ManualChangesetCount:         int32(manualChangesets),
-		ManualChangesetMergeCount:    int32(manualChangesetsMerged),
+		CampaignsCount:               int32(campaignsCount),
+		CreatedChangesetsCount:       int32(createdChangesets),
+		CreatedChangesetsMergedCount: int32(createdChangesetsMerged),
+		ManualChangesetsCount:        int32(manualChangesets),
+		ManualChangesetsMergedCount:  int32(manualChangesetsMerged),
 	}, nil
 }
