@@ -85,7 +85,7 @@ func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(contents), nil
+	return contents, nil
 }
 
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, error) {
@@ -97,7 +97,7 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(contents), nil
+	return contents, nil
 }
 
 func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
@@ -116,7 +116,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(contents), nil
+	return contents, nil
 }
 
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
@@ -134,7 +134,7 @@ func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) 
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(contents), nil
+	return contents, nil
 }
 
 func updateURL(ctx context.Context) string {
