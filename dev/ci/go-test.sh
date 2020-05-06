@@ -14,5 +14,8 @@ echo "--- comby install"
 echo "--- go mod download"
 go mod download
 
+echo "--- go coverage"
+go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+
 echo "--- go test"
-go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race -coverpkg=./... ./...
+go test -timeout 4m -race ./...
