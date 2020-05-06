@@ -66,7 +66,7 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(
-        baseUrl ? new URL(`/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, baseUrl).href : apiURL,
+        baseUrl ? new URL(apiURL, baseUrl).href : apiURL,
         {
             ...options,
             method: 'POST',
