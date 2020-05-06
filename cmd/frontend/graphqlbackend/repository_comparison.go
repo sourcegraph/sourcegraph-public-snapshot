@@ -296,12 +296,48 @@ type fileDiffResolver struct {
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks() []*DiffHunk {
+func (r *fileDiffResolver) Hunks(ctx context.Context, args struct{ IsLightTheme bool }) ([]*DiffHunk, error) {
 	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
-	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = NewDiffHunk(hunk)
+	highlightedBase, err := r.OldFile().Highlight(ctx, &struct {
+		DisableTimeout     bool
+		IsLightTheme       bool
+		HighlightLongLines bool
+		PlainResult        bool
+	}{
+		DisableTimeout:     false,
+		HighlightLongLines: true,
+		IsLightTheme:       args.IsLightTheme,
+		PlainResult:        true,
+	})
+	if err != nil {
+		return nil, err
 	}
-	return hunks
+	highlightedHead, err := r.NewFile().Highlight(ctx, &struct {
+		DisableTimeout     bool
+		IsLightTheme       bool
+		HighlightLongLines bool
+		PlainResult        bool
+	}{
+		DisableTimeout:     false,
+		HighlightLongLines: true,
+		IsLightTheme:       args.IsLightTheme,
+		PlainResult:        true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	baseLines, err := ParseLinesFromHighlight(highlightedBase.HTML())
+	if err != nil {
+		return nil, err
+	}
+	headLines, err := ParseLinesFromHighlight(highlightedHead.HTML())
+	if err != nil {
+		return nil, err
+	}
+	for i, hunk := range r.fileDiff.Hunks {
+		hunks[i] = NewDiffHunk(hunk, baseLines, headLines)
+	}
+	return hunks, nil
 }
 
 func (r *fileDiffResolver) Stat() *DiffStat {
@@ -348,12 +384,14 @@ func diffPathOrNull(path string) *string {
 	return &path
 }
 
-func NewDiffHunk(hunk *diff.Hunk) *DiffHunk {
-	return &DiffHunk{hunk: hunk}
+func NewDiffHunk(hunk *diff.Hunk, highlightedBase *map[int32]string, highlightedHead *map[int32]string) *DiffHunk {
+	return &DiffHunk{hunk: hunk, highlightedBase: highlightedBase, highlightedHead: highlightedHead}
 }
 
 type DiffHunk struct {
-	hunk *diff.Hunk
+	hunk            *diff.Hunk
+	highlightedBase *map[int32]string
+	highlightedHead *map[int32]string
 }
 
 func (r *DiffHunk) OldRange() *DiffHunkRange {
@@ -372,6 +410,63 @@ func (r *DiffHunk) Section() *string {
 }
 
 func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
+
+type richHunk struct {
+	line string
+	kind string
+}
+
+func (r *richHunk) Line() string {
+	return r.line
+}
+
+func (r *richHunk) Kind() string {
+	return r.kind
+}
+
+func (r *DiffHunk) RichBody() []*richHunk {
+	hunkLines := strings.Split(string(r.hunk.Body), "\n")
+	richHunks := make([]*richHunk, len(hunkLines))
+	var baseLine = r.hunk.OrigStartLine - 1
+	var headLine = r.hunk.NewStartLine - 1
+	for i, hunkLine := range hunkLines {
+		var kind string
+		if len(hunkLine) == 0 {
+			kind = "unchanged"
+			baseLine++
+			headLine++
+		} else if hunkLine[0] == '+' {
+			kind = "addition"
+			headLine++
+		} else if hunkLine[0] == '-' {
+			kind = "deletion"
+			baseLine++
+		} else {
+			kind = "unchanged"
+			baseLine++
+			headLine++
+		}
+
+		var line string
+		switch kind {
+		case "unchanged":
+			hl := (*r.highlightedBase)[baseLine]
+			line = hl[:5] + " " + hl[5:]
+		case "deletion":
+			hl := (*r.highlightedBase)[baseLine]
+			line = hl[:5] + "-" + hl[5:]
+		case "addition":
+			hl := (*r.highlightedHead)[headLine]
+			line = hl[:5] + "+" + hl[5:]
+		}
+
+		richHunks[i] = &richHunk{
+			line: line,
+			kind: kind,
+		}
+	}
+	return richHunks
+}
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
 	return &DiffHunkRange{startLine: startLine, lines: lines}

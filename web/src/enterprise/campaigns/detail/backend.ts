@@ -441,11 +441,11 @@ export async function syncChangeset(changeset: ID): Promise<void> {
 
 export const queryExternalChangesetFileDiffs = (
     externalChangeset: ID,
-    { first }: FilteredConnectionQueryArgs
+    { first, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
 ): Observable<IFileDiffConnection> =>
     queryGraphQL(
         gql`
-            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int) {
+            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int, $isLightTheme: Boolean!) {
                 node(id: $externalChangeset) {
                     __typename
                     ... on ExternalChangeset {
@@ -471,7 +471,7 @@ export const queryExternalChangesetFileDiffs = (
 
             ${DiffStatFields}
         `,
-        { externalChangeset, first }
+        { externalChangeset, first, isLightTheme }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -490,11 +490,11 @@ export const queryExternalChangesetFileDiffs = (
 
 export const queryPatchFileDiffs = (
     patch: ID,
-    { first }: FilteredConnectionQueryArgs
+    { first, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
 ): Observable<IPreviewFileDiffConnection> =>
     queryGraphQL(
         gql`
-            query PatchFileDiffs($patch: ID!, $first: Int) {
+            query PatchFileDiffs($patch: ID!, $first: Int, $isLightTheme: Boolean!) {
                 node(id: $patch) {
                     __typename
                     ... on Patch {
@@ -520,7 +520,7 @@ export const queryPatchFileDiffs = (
 
             ${DiffStatFields}
         `,
-        { patch, first }
+        { patch, first, isLightTheme }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

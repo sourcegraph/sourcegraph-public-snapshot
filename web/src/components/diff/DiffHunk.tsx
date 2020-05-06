@@ -64,91 +64,90 @@ export const DiffHunk: React.FunctionComponent<
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
-            {hunk.body
-                .split('\n')
-                .slice(0, -1)
-                .map((line, i) => {
-                    if (!line.startsWith('+')) {
-                        oldLine++
-                    }
-                    if (!line.startsWith('-')) {
-                        newLine++
-                    }
-                    const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
-                    const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
-                    const decorationsForLine = [
-                        // If the line was deleted, look for decorations in the base rev
-                        ...((line.startsWith('-') && decorations.base.get(oldLine - 1)) || []),
-                        // If the line wasn't deleted, look for decorations in the head rev
-                        ...((!line.startsWith('-') && decorations.head.get(newLine - 1)) || []),
-                    ]
-                    const lineStyle = decorationsForLine
-                        .filter(decoration => decoration.isWholeLine)
-                        .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
-                        .reduce((style, decoration) => ({ ...style, ...decoration }), {})
-                    return (
-                        <tr
-                            key={i}
-                            className={`diff-hunk__line ${line.startsWith(' ') ? 'diff-hunk__line--both' : ''} ${
-                                line.startsWith('-') ? 'diff-hunk__line--deletion' : ''
-                            } ${line.startsWith('+') ? 'diff-hunk__line--addition' : ''} ${
-                                (!line.startsWith('+') && location.hash === '#' + oldAnchor) ||
-                                (!line.startsWith('-') && location.hash === '#' + newAnchor)
-                                    ? 'diff-hunk__line--active'
-                                    : ''
-                            }`}
-                        >
-                            {lineNumbers && (
-                                <>
-                                    {!line.startsWith('+') ? (
-                                        <td
-                                            className="diff-hunk__num"
-                                            data-line={oldLine - 1}
-                                            data-part="base"
-                                            id={oldAnchor}
-                                            onClick={() => persistLines && history.push({ hash: oldAnchor })}
-                                        />
-                                    ) : (
-                                        <td className="diff-hunk__num diff-hunk__num--empty" />
-                                    )}
+            {hunk.richBody.map((line, i) => {
+                if (line.kind !== GQL.RichBodyKind.addition) {
+                    oldLine++
+                }
+                if (line.kind !== GQL.RichBodyKind.deletion) {
+                    newLine++
+                }
+                const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
+                const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
+                const decorationsForLine = [
+                    // If the line was deleted, look for decorations in the base rev
+                    ...((line.kind === GQL.RichBodyKind.deletion && decorations.base.get(oldLine - 1)) || []),
+                    // If the line wasn't deleted, look for decorations in the head rev
+                    ...((line.kind !== GQL.RichBodyKind.deletion && decorations.head.get(newLine - 1)) || []),
+                ]
+                const lineStyle = decorationsForLine
+                    .filter(decoration => decoration.isWholeLine)
+                    .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
+                    .reduce((style, decoration) => ({ ...style, ...decoration }), {})
+                return (
+                    <tr
+                        key={i}
+                        className={`diff-hunk__line ${
+                            line.kind === GQL.RichBodyKind.unchanged ? 'diff-hunk__line--both' : ''
+                        } ${line.kind === GQL.RichBodyKind.deletion ? 'diff-hunk__line--deletion' : ''} ${
+                            line.kind === GQL.RichBodyKind.addition ? 'diff-hunk__line--addition' : ''
+                        } ${
+                            (line.kind !== GQL.RichBodyKind.addition && location.hash === '#' + oldAnchor) ||
+                            (line.kind !== GQL.RichBodyKind.deletion && location.hash === '#' + newAnchor)
+                                ? 'diff-hunk__line--active'
+                                : ''
+                        }`}
+                    >
+                        {lineNumbers && (
+                            <>
+                                {line.kind !== GQL.RichBodyKind.addition ? (
+                                    <td
+                                        className="diff-hunk__num"
+                                        data-line={oldLine - 1}
+                                        data-part="base"
+                                        id={oldAnchor}
+                                        onClick={() => persistLines && history.push({ hash: oldAnchor })}
+                                    />
+                                ) : (
+                                    <td className="diff-hunk__num diff-hunk__num--empty" />
+                                )}
 
-                                    {!line.startsWith('-') ? (
-                                        <td
-                                            className="diff-hunk__num"
-                                            data-line={newLine - 1}
-                                            data-part="head"
-                                            id={newAnchor}
-                                            onClick={() => persistLines && history.push({ hash: newAnchor })}
-                                        />
-                                    ) : (
-                                        <td className="diff-hunk__num diff-hunk__num--empty" />
-                                    )}
-                                </>
-                            )}
+                                {line.kind !== GQL.RichBodyKind.deletion ? (
+                                    <td
+                                        className="diff-hunk__num"
+                                        data-line={newLine - 1}
+                                        data-part="head"
+                                        id={newAnchor}
+                                        onClick={() => persistLines && history.push({ hash: newAnchor })}
+                                    />
+                                ) : (
+                                    <td className="diff-hunk__num diff-hunk__num--empty" />
+                                )}
+                            </>
+                        )}
 
-                            {/* Needed for decorations */}
-                            {/* eslint-disable-next-line react/forbid-dom-props */}
-                            <td className="diff-hunk__content" style={lineStyle}>
-                                {line}
-                                {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
-                                    const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
-                                    return (
-                                        <React.Fragment key={i}>
-                                            {' '}
-                                            <LinkOrSpan
-                                                to={decoration.after.linkURL}
-                                                data-tooltip={decoration.after.hoverMessage}
-                                                style={style}
-                                            >
-                                                {decoration.after.contentText}
-                                            </LinkOrSpan>
-                                        </React.Fragment>
-                                    )
-                                })}
-                            </td>
-                        </tr>
-                    )
-                })}
+                        {/* Needed for decorations */}
+                        {/* eslint-disable-next-line react/forbid-dom-props */}
+                        <td className="diff-hunk__content" style={lineStyle}>
+                            <span dangerouslySetInnerHTML={{ __html: line.line }} />
+                            {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
+                                const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
+                                return (
+                                    <React.Fragment key={i}>
+                                        {' '}
+                                        <LinkOrSpan
+                                            to={decoration.after.linkURL}
+                                            data-tooltip={decoration.after.hoverMessage}
+                                            style={style}
+                                        >
+                                            {decoration.after.contentText}
+                                        </LinkOrSpan>
+                                    </React.Fragment>
+                                )
+                            })}
+                        </td>
+                    </tr>
+                )
+            })}
         </>
     )
 }

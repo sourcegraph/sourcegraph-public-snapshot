@@ -92,9 +92,10 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     )
 
     /** Fetches the file diffs for the changeset */
-    const queryFileDiffs = useCallback((args: FilteredConnectionQueryArgs) => queryPatchFileDiffs(node.id, args), [
-        node.id,
-    ])
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArgs) => queryPatchFileDiffs(node.id, { ...args, isLightTheme }),
+        [node.id, isLightTheme]
+    )
 
     return (
         <li className="list-group-item e2e-changeset-node">

@@ -397,12 +397,30 @@ type previewFileDiffResolver struct {
 func (r *previewFileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *previewFileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
 
-func (r *previewFileDiffResolver) Hunks() []*graphqlbackend.DiffHunk {
+func (r *previewFileDiffResolver) Hunks(ctx context.Context, args struct{ IsLightTheme bool }) ([]*graphqlbackend.DiffHunk, error) {
 	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
-	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = graphqlbackend.NewDiffHunk(hunk)
+	highlightedBase, err := r.OldFile().Highlight(ctx, &struct {
+		DisableTimeout     bool
+		IsLightTheme       bool
+		HighlightLongLines bool
+		PlainResult        bool
+	}{
+		DisableTimeout:     false,
+		HighlightLongLines: false,
+		IsLightTheme:       args.IsLightTheme,
+		PlainResult:        true,
+	})
+	if err != nil {
+		return nil, err
 	}
-	return hunks
+	lines, err := graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
+	if err != nil {
+		return nil, err
+	}
+	for i, hunk := range r.fileDiff.Hunks {
+		hunks[i] = graphqlbackend.NewDiffHunk(hunk, lines, lines)
+	}
+	return hunks, nil
 }
 
 func (r *previewFileDiffResolver) Stat() *graphqlbackend.DiffStat {

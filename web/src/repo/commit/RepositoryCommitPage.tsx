@@ -243,7 +243,9 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 },
                                 lineNumbers: true,
                             }}
-                            updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
+                            updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}:${String(
+                                this.props.isLightTheme
+                            )}`}
                             defaultFirst={25}
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
@@ -271,6 +273,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             repo: this.props.repo.id,
             base: commitParentOrEmpty(this.state.commitOrError as GQL.IGitCommit),
             head: (this.state.commitOrError as GQL.IGitCommit).oid,
+            isLightTheme: this.props.isLightTheme,
         })
 }
 

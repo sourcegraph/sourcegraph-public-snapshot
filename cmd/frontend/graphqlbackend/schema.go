@@ -1944,7 +1944,7 @@ type PreviewFileDiff {
     # The new path of the file if the diff was applied, or null if the file was deleted.
     newPath: String
     # Hunks that were would be changed from old to new.
-    hunks: [FileDiffHunk!]!
+    hunks(isLightTheme: Boolean!): [FileDiffHunk!]!
     # The diff stat for the whole file.
     stat: DiffStat!
     # FOR INTERNAL USE ONLY.
@@ -2009,7 +2009,7 @@ type FileDiff {
     # clients that want to show a "View" link to the file.
     mostRelevantFile: File2!
     # Hunks that were changed from old to new.
-    hunks: [FileDiffHunk!]!
+    hunks(isLightTheme: Boolean!): [FileDiffHunk!]!
     # The diff stat for the whole file.
     stat: DiffStat!
     # FOR INTERNAL USE ONLY.
@@ -2017,6 +2017,17 @@ type FileDiff {
     # An identifier for the file diff that is unique among all other file diffs in the list that
     # contains it.
     internalID: String!
+}
+
+enum RichBodyKind {
+    addition
+    unchanged
+    deletion
+}
+
+type RichBody {
+    line: String!
+    kind: RichBodyKind!
 }
 
 # A changed region ("hunk") in a file diff.
@@ -2031,6 +2042,8 @@ type FileDiffHunk {
     section: String
     # The hunk body, with lines prefixed with '-', '+', or ' '.
     body: String!
+
+    richBody: [RichBody!]!
 }
 
 # A hunk range in one side (old/new) of a diff.

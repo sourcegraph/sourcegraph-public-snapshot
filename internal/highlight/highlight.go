@@ -72,6 +72,8 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
+
+	PlainResult bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -206,6 +208,9 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			return table, false, err2
 		}
 		return "", false, err
+	}
+	if p.PlainResult {
+		return template.HTML(resp.Data), false, nil
 	}
 	// Note: resp.Data is properly HTML escaped by syntect_server
 	table, err := preSpansToTable(resp.Data)

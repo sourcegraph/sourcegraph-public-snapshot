@@ -23,7 +23,7 @@ export const FileDiffFields = gql`
         mostRelevantFile {
             url
         }
-        hunks {
+        hunks(isLightTheme: $isLightTheme) {
             oldRange {
                 startLine
                 lines
@@ -35,6 +35,10 @@ export const FileDiffFields = gql`
             }
             section
             body
+            richBody {
+                kind
+                line
+            }
         }
         stat {
             added
@@ -49,7 +53,7 @@ export const PreviewFileDiffFields = gql`
         __typename
         oldPath
         newPath
-        hunks {
+        hunks(isLightTheme: $isLightTheme) {
             oldRange {
                 startLine
                 lines
@@ -61,6 +65,10 @@ export const PreviewFileDiffFields = gql`
             }
             section
             body
+            richBody {
+                kind
+                line
+            }
         }
         stat {
             added

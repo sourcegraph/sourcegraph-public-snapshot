@@ -133,8 +133,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryExternalChangesetFileDiffs(node.id, args),
-        [node.id]
+        (args: FilteredConnectionQueryArgs) => queryExternalChangesetFileDiffs(node.id, { ...args, isLightTheme }),
+        [node.id, isLightTheme]
     )
 
     return (
