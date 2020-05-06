@@ -16,7 +16,7 @@ If your users have uploaded LSIF precise code intelligence data, you may keep it
 
 ```
 docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'cp -R /docker/volumes/docker-compose_lsif-server/_data/* /docker/volumes/docker-compose_precise-code-intel-bundle-manager/_data/'
-````
+```
 
 (No restart is required after running the above command.)
 
