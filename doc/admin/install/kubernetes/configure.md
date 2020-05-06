@@ -255,6 +255,31 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
    spec:
      containers:
        volumeMounts:
+         - mountPath: /root/.ssh
+           name: ssh
+     volumes:
+       - name: ssh
+         secret:
+           defaultMode: 0644
+           secretName: gitserver-ssh
+   ```
+
+   Convenience script:
+
+   ```bash
+   # This script requires https://github.com/sourcegraph/jy and https://github.com/sourcegraph/yj
+   GS=base/gitserver/gitserver.StatefulSet.yaml
+   cat $GS | yj | jq '.spec.template.spec.containers[].volumeMounts += [{mountPath: "/root/.ssh", name: "ssh"}]' | jy -o $GS
+   cat $GS | yj | jq '.spec.template.spec.volumes += [{name: "ssh", secret: {defaultMode: 384, secretName:"gitserver-ssh"}}]' | jy -o $GS
+   ```
+
+   If you run your installation with non-root users (the non-root overlay) then use the mount path `/home/sourcegraph/.ssh` instead of `/root/.ssh`:
+      
+   ```yaml
+   # base/gitserver/gitserver.StatefulSet.yaml
+   spec:
+     containers:
+       volumeMounts:
          - mountPath: /home/sourcegraph/.ssh
            name: ssh
      volumes:
@@ -272,7 +297,8 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
    cat $GS | yj | jq '.spec.template.spec.containers[].volumeMounts += [{mountPath: "/home/sourcegraph/.ssh", name: "ssh"}]' | jy -o $GS
    cat $GS | yj | jq '.spec.template.spec.volumes += [{name: "ssh", secret: {defaultMode: 384, secretName:"gitserver-ssh"}}]' | jy -o $GS
    ```
-
+   
+   
 3. Apply the updated `gitserver` configuration to your cluster.
 
    ```bash
