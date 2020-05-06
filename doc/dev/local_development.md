@@ -167,10 +167,10 @@ The following are two recommendations for installing these dependencies:
     ```
     sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
 
-    # install golang-migrate (you must move the extracted binary into your $PATH)
+    # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
 
-    # install comby (you must move the extracted binary into your $PATH)
+    # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
     # nvm (to manage Node.js)
