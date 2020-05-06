@@ -56,16 +56,17 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
 
 export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     request,
+    baseUrl,
     variables = {},
-    baseUrl = '',
     ...options
 }: GraphQLRequestOptions & {
     request: string
     variables?: {}
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+    const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(
-        new URL(`/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, baseUrl).href,
+        baseUrl ? new URL(apiURL, baseUrl).href : apiURL,
         {
             ...options,
             method: 'POST',
