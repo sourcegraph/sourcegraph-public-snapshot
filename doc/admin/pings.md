@@ -37,3 +37,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
 - Total count of code campaigns created
+- Total count of generated campaign changesets created
+- Total count of generated campaign changesets merged
+- Total count of manual campaign changesets created
+- Total count of manual campaign changesets merged

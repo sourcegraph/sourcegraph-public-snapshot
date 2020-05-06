@@ -105,6 +105,10 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         </ul>
                     </li>
                     <li>Total count of code campaigns created</li>
+                    <li>Total count of generated campaign changesets created</li>
+                    <li>Total count of generated campaign changesets merged</li>
+                    <li>Total count of manual campaign changesets created</li>
+                    <li>Total count of manual campaign changesets merged</li>
                 </ul>
                 {updatesDisabled ? (
                     <p>All telemetry is disabled.</p>
