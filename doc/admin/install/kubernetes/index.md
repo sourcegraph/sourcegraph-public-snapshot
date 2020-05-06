@@ -8,12 +8,18 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Kubernetes](https://kubernetes.io/) v1.9 or later
+## Requirements
+
+- [Kubernetes](https://kubernetes.io/) v1.9 or later with an SSD storage class
+  - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.9.7 or later
 - Access to server infrastructure on which you can create a Kubernetes cluster (see
   [resource allocation guidelines](scale.md)).
-- [Sourcegraph Enterprise license](./configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
-
+- [Sourcegraph Enterprise license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
+- A valid domain name for your Sourcegraph instance ([to enable SSL/TLS](configure.md#configure-tlsssl))
+- A valid TLS certificate (whether from a trusted certificate authority such as Comodo, RapidSSL, or others, a self-signed certificate that can be distributed and installed across all users' machines, or the ability to use an existing reverse proxy that provides SSL termination for the connection)
+- Access tokens or other credentials to [connect to your code hosts of choice](../../external_service/index.md)
+- [Administrative access to your single sign-on (SSO) provider of choice](../../index.md)
 
 ## Steps
 

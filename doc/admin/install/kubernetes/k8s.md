@@ -21,8 +21,8 @@ table.
 |Provider|Node type|Boot/ephemeral disk size|
 |--- |--- |--- |
 |Compute nodes| | |
-|[Amazon EKS (better than plain EC2)](k8s.eks.md)|m5.4xlarge|N/A|
+|[Amazon EKS (better than plain EC2)](eks.md)|m5.4xlarge|N/A|
 |[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|N/A|
 |[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
-|[Azure](k8s.azure.md)|D16 v3|100 GB (SSD preferred)|
+|[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
 |[Other](https://kubernetes.io/docs/setup/pick-right-solution/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|

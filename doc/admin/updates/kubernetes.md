@@ -125,7 +125,7 @@ Before upgrading or downgrading 3.7, please consult the [v3.7.2 migration guide]
 
 ## 3.0
 
-🚨 If you have not migrated off of helm yet, please refer to [helm.migrate.md](helm.migrate.md) before reading the following notes for migrating to Sourcegraph 3.0.
+🚨 If you have not migrated off of helm yet, please refer to [helm.migrate.md](helm_migrate.md) before reading the following notes for migrating to Sourcegraph 3.0.
 
 🚨 Please upgrade your Sourcegraph instance to 2.13.x before reading the following notes for migrating to Sourcegraph 3.0.
 
