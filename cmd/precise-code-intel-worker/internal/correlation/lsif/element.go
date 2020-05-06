@@ -15,13 +15,11 @@ type Element struct {
 }
 
 func UnmarshalElement(raw []byte) (Element, error) {
-	type RawElement struct {
+	var payload struct {
 		ID    ID     `json:"id"`
 		Type  string `json:"type"`
 		Label string `json:"label"`
 	}
-
-	var payload RawElement
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return Element{}, err
 	}
@@ -42,14 +40,13 @@ type Edge struct {
 }
 
 func UnmarshalEdge(element Element) (Edge, error) {
-	type RawEdge struct {
+
+	var payload struct {
 		OutV     ID   `json:"outV"`
 		InV      ID   `json:"inV"`
 		InVs     []ID `json:"inVs"`
 		Document ID   `json:"document"`
 	}
-
-	var payload RawEdge
 	if err := json.Unmarshal(element.Raw, &payload); err != nil {
 		return Edge{}, err
 	}
