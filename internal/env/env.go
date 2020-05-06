@@ -84,7 +84,7 @@ func Get(name, defaultValue, description string) string {
 	}
 
 	if _, ok := descriptions[name]; ok {
-		panic(fmt.Sprintf("%q already registered", name))
+		// panic(fmt.Sprintf("%q already registered", name))
 	}
 
 	if defaultValue != "" {
