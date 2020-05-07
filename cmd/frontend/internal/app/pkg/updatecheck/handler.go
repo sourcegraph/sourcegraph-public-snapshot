@@ -86,15 +86,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	latestReleaseBuild := getLatestRelease(pr.DeployType)
 	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
-	if err != nil {
-		// Still log pings on malformed version strings.
-		logPing(r, pr, false)
 
+	// Always log, even on malformed version strings
+	logPing(r, pr, hasUpdate)
+
+	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	logPing(r, pr, hasUpdate)
 
 	if !hasUpdate {
 		// No newer version.
