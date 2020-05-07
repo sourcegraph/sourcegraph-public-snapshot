@@ -146,6 +146,10 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome", "firefox"} {
+		// TODO: remove this if statement after https://github.com/sourcegraph/sourcegraph/issues/10483 is fixed.
+		if browser == "firefox" {
+			continue
+		}
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
