@@ -27,6 +27,7 @@ func TestCleanOldUploads(t *testing.T) {
 	j := &Janitor{
 		bundleDir:    bundleDir,
 		maxUploadAge: time.Minute,
+		metrics:      NewJanitorMetrics(),
 	}
 
 	if err := j.cleanOldUploads(); err != nil {

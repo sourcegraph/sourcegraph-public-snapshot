@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestRemoveDeadDumps(t *testing.T) {
+func TestRemoveOrphanedDumps(t *testing.T) {
 	bundleDir := testRoot(t)
 	ids := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
@@ -24,6 +24,7 @@ func TestRemoveDeadDumps(t *testing.T) {
 
 	j := &Janitor{
 		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(),
 	}
 
 	var idArgs [][]int
@@ -42,7 +43,7 @@ func TestRemoveDeadDumps(t *testing.T) {
 		}, nil
 	}
 
-	if err := j.removeDeadDumps(statesFn); err != nil {
+	if err := j.removeOrphanedDumps(statesFn); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 
@@ -62,7 +63,7 @@ func TestRemoveDeadDumps(t *testing.T) {
 	}
 }
 
-func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
+func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
 	bundleDir := testRoot(t)
 	var ids []int
 	for i := 1; i <= 225; i++ {
@@ -78,6 +79,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 
 	j := &Janitor{
 		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(),
 	}
 
 	var idArgs [][]int
@@ -93,7 +95,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 		return states, nil
 	}
 
-	if err := j.removeDeadDumps(statesFn); err != nil {
+	if err := j.removeOrphanedDumps(statesFn); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 

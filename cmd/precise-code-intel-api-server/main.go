@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -42,9 +43,13 @@ func main() {
 		GitserverClient:     gitserver.DefaultClient,
 	})
 
+	resetterMetrics := resetter.NewResetterMetrics()
+	resetterMetrics.MustRegister(prometheus.DefaultRegisterer)
+
 	uploadResetterInst := resetter.NewUploadResetter(resetter.UploadResetterOpts{
 		DB:            db,
 		ResetInterval: resetInterval,
+		Metrics:       resetterMetrics,
 	})
 
 	go serverInst.Start()

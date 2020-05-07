@@ -6,11 +6,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -36,28 +40,49 @@ func main() {
 		log.Fatalf("failed to prepare directories: %s", err)
 	}
 
+	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
+	}
+
+	documentDataCache, documentDataCacheMetrics, err := database.NewDocumentDataCache(int64(documentDataCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize document cache"))
+	}
+
+	resultChunkDataCache, resultChunkDataCacheMetrics, err := database.NewResultChunkDataCache(int64(resultChunkDataCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
+	}
+
+	metrics.MustRegisterDiskMonitor(bundleDir)
+	MustRegisterRistrettoMonitor("precise-code-intel-database", databaseCacheMetrics)
+	MustRegisterRistrettoMonitor("precise-code-intel-document-data", documentDataCacheMetrics)
+	MustRegisterRistrettoMonitor("precise-code-intel-result-chunk-data", resultChunkDataCacheMetrics)
+
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 
-	serverInst, err := server.New(server.ServerOpts{
-		Host:                     host,
-		Port:                     3187,
-		BundleDir:                bundleDir,
-		DatabaseCacheSize:        int64(databaseCacheSize),
-		DocumentDataCacheSize:    int64(documentDataCacheSize),
-		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
+	serverInst := server.New(server.ServerOpts{
+		Host:                 host,
+		Port:                 3187,
+		BundleDir:            bundleDir,
+		DatabaseCache:        databaseCache,
+		DocumentDataCache:    documentDataCache,
+		ResultChunkDataCache: resultChunkDataCache,
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	janitorMetrics := janitor.NewJanitorMetrics()
+	janitorMetrics.MustRegister(prometheus.DefaultRegisterer)
 
 	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
 		BundleDir:          bundleDir,
 		DesiredPercentFree: desiredPercentFree,
 		JanitorInterval:    janitorInterval,
 		MaxUploadAge:       maxUploadAge,
+		Metrics:            janitorMetrics,
 	})
 
 	go serverInst.Start()
