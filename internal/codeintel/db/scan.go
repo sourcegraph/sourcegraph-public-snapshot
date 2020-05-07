@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -66,6 +67,7 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 
 // scanUpload populates an Upload value from the given scanner.
 func scanUpload(scanner scanner) (upload Upload, err error) {
+	var uploadedParts []sql.NullInt32
 	err = scanner.Scan(
 		&upload.ID,
 		&upload.Commit,
@@ -80,8 +82,13 @@ func scanUpload(scanner scanner) (upload Upload, err error) {
 		&upload.TracingContext,
 		&upload.RepositoryID,
 		&upload.Indexer,
+		&upload.NumParts,
+		pq.Array(&uploadedParts),
 		&upload.Rank,
 	)
+	for _, uploadedPart := range uploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
 	return upload, err
 }
 

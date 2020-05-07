@@ -39,6 +39,14 @@ export class LsifUpload {
     @Column('text')
     public indexer!: string
 
+    /** The type of indexer used to produce the dump. */
+    @Column('int', { name: 'num_parts' })
+    public numParts!: number
+
+    /** The type of indexer used to produce the dump. */
+    @Column('int', { name: 'uploaded_parts', array: true })
+    public uploadedParts!: number[]
+
     /** The conversion state of the upload. May be `queued`, `processing`, `completed`, or `errored`. */
     @Column('text')
     public state!: LsifUploadState
