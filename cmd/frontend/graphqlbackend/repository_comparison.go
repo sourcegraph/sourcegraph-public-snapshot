@@ -296,68 +296,13 @@ type fileDiffResolver struct {
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks(ctx context.Context, args struct{ IsLightTheme bool }) ([]*DiffHunk, error) {
-	if len(r.fileDiff.Hunks) == 0 {
-		return []*DiffHunk{}, nil
-	}
+func (r *fileDiffResolver) Hunks(ctx context.Context) ([]*DiffHunk, error) {
 	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
-	var (
-		baseLines, headLines map[int32]string
-	)
-	if oldFile := r.OldFile(); oldFile != nil {
-		binary, err := oldFile.Binary(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !binary {
-			highlightedBase, err := oldFile.Highlight(ctx, &struct {
-				DisableTimeout     bool
-				IsLightTheme       bool
-				HighlightLongLines bool
-				PlainResult        bool
-			}{
-				DisableTimeout:     false,
-				HighlightLongLines: true,
-				IsLightTheme:       args.IsLightTheme,
-				PlainResult:        true,
-			})
-			if err != nil {
-				return nil, err
-			}
-			baseLines, err = ParseLinesFromHighlight(highlightedBase.HTML())
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if newFile := r.NewFile(); newFile != nil {
-		binary, err := newFile.Binary(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !binary {
-			highlightedHead, err := r.NewFile().Highlight(ctx, &struct {
-				DisableTimeout     bool
-				IsLightTheme       bool
-				HighlightLongLines bool
-				PlainResult        bool
-			}{
-				DisableTimeout:     false,
-				HighlightLongLines: true,
-				IsLightTheme:       args.IsLightTheme,
-				PlainResult:        true,
-			})
-			if err != nil {
-				return nil, err
-			}
-			headLines, err = ParseLinesFromHighlight(highlightedHead.HTML())
-			if err != nil {
-				return nil, err
-			}
-		}
+	highlighter := &fileDiffHighlighter{
+		fileDiffResolver: r,
 	}
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = NewDiffHunk(hunk, baseLines, headLines)
+		hunks[i] = NewDiffHunk(hunk, highlighter)
 	}
 	return hunks, nil
 }
@@ -406,14 +351,93 @@ func diffPathOrNull(path string) *string {
 	return &path
 }
 
-func NewDiffHunk(hunk *diff.Hunk, highlightedBase map[int32]string, highlightedHead map[int32]string) *DiffHunk {
-	return &DiffHunk{hunk: hunk, highlightedBase: highlightedBase, highlightedHead: highlightedHead}
+func NewDiffHunk(hunk *diff.Hunk, highlighter DiffHighlighter) *DiffHunk {
+	return &DiffHunk{hunk: hunk, highlighter: highlighter}
+}
+
+type DiffHighlighter interface {
+	Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, error)
+}
+
+type HighlightArgs struct {
+	DisableTimeout     bool
+	IsLightTheme       bool
+	HighlightLongLines bool
+}
+
+type fileDiffHighlighter struct {
+	fileDiffResolver *fileDiffResolver
+	highlightedBase  map[int32]string
+	highlightedHead  map[int32]string
+	highlightOnce    sync.Once
+	highlightErr     error
+}
+
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, error) {
+	r.highlightOnce.Do(func() {
+		if oldFile := r.fileDiffResolver.OldFile(); oldFile != nil {
+			var binary bool
+			binary, r.highlightErr = oldFile.Binary(ctx)
+			if r.highlightErr != nil {
+				return
+			}
+			if !binary {
+				var highlightedBase *highlightedFileResolver
+				highlightedBase, r.highlightErr = oldFile.Highlight(ctx, &struct {
+					DisableTimeout     bool
+					IsLightTheme       bool
+					HighlightLongLines bool
+					PlainResult        bool
+				}{
+					DisableTimeout:     args.DisableTimeout,
+					HighlightLongLines: args.HighlightLongLines,
+					IsLightTheme:       args.IsLightTheme,
+					PlainResult:        true,
+				})
+				if r.highlightErr != nil {
+					return
+				}
+				r.highlightedBase, r.highlightErr = ParseLinesFromHighlight(highlightedBase.HTML())
+				if r.highlightErr != nil {
+					return
+				}
+			}
+		}
+		if newFile := r.fileDiffResolver.NewFile(); newFile != nil {
+			var binary bool
+			binary, r.highlightErr = newFile.Binary(ctx)
+			if r.highlightErr != nil {
+				return
+			}
+			if !binary {
+				var highlightedHead *highlightedFileResolver
+				highlightedHead, r.highlightErr = newFile.Highlight(ctx, &struct {
+					DisableTimeout     bool
+					IsLightTheme       bool
+					HighlightLongLines bool
+					PlainResult        bool
+				}{
+					DisableTimeout:     args.DisableTimeout,
+					HighlightLongLines: args.HighlightLongLines,
+					IsLightTheme:       args.IsLightTheme,
+					PlainResult:        true,
+				})
+				if r.highlightErr != nil {
+					return
+				}
+				r.highlightedHead, r.highlightErr = ParseLinesFromHighlight(highlightedHead.HTML())
+				if r.highlightErr != nil {
+					return
+				}
+			}
+		}
+	})
+	return r.highlightedBase, r.highlightedHead, r.highlightErr
 }
 
 type DiffHunk struct {
-	hunk            *diff.Hunk
-	highlightedBase map[int32]string
-	highlightedHead map[int32]string
+	hunk        *diff.Hunk
+	highlighter DiffHighlighter
 }
 
 func (r *DiffHunk) OldRange() *DiffHunkRange {
@@ -434,19 +458,36 @@ func (r *DiffHunk) Section() *string {
 func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
 
 type richHunk struct {
-	line string
+	html string
 	kind string
 }
 
-func (r *richHunk) Line() string {
-	return r.line
+func (r *richHunk) HTML() string {
+	return r.html
 }
 
 func (r *richHunk) Kind() string {
 	return r.kind
 }
 
-func (r *DiffHunk) RichBody() []*richHunk {
+type highlightedHunkBody struct {
+	richHunks []*richHunk
+	aborted   bool
+}
+
+func (r *highlightedHunkBody) Aborted() bool {
+	return r.aborted
+}
+
+func (r *highlightedHunkBody) Lines() []*richHunk {
+	return r.richHunks
+}
+
+func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedHunkBody, error) {
+	highlightedBase, highlightedHead, err := r.highlighter.Highlight(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
 	// Remove final empty line on files that end with a newline, as it is not part of the actual file.
 	if hunkLines[len(hunkLines)-1] == "" {
@@ -456,49 +497,30 @@ func (r *DiffHunk) RichBody() []*richHunk {
 	baseLine := r.hunk.OrigStartLine - 1
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
-		var kind string
-		if len(hunkLine) == 0 {
-			kind = "unchanged"
+		richHunk := richHunk{}
+		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
 			baseLine++
 			headLine++
+			richHunk.kind = "UNCHANGED"
+			richHunk.html = highlightedBase[baseLine]
 		} else if hunkLine[0] == '+' {
-			kind = "addition"
 			headLine++
+			richHunk.kind = "ADDITION"
+			richHunk.html = highlightedHead[headLine]
 		} else if hunkLine[0] == '-' {
-			kind = "deletion"
 			baseLine++
+			richHunk.kind = "DELETION"
+			richHunk.html = highlightedBase[baseLine]
 		} else {
-			kind = "unchanged"
-			baseLine++
-			headLine++
+			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}
 
-		var hl string
-		switch kind {
-		case "unchanged":
-			hl = r.highlightedBase[baseLine]
-			// prefix = " "
-		case "deletion":
-			hl = r.highlightedBase[baseLine]
-			// prefix = "-"
-		case "addition":
-			hl = r.highlightedHead[headLine]
-			// prefix = "+"
-		}
-		// var line string
-		// if len(hl) > 5 {
-		// 	line = hl[:5] + prefix + hl[5:]
-		// } else {
-		// 	println(i)
-		// 	line = prefix + hl
-		// }
-
-		richHunks[i] = &richHunk{
-			line: hl,
-			kind: kind,
-		}
+		richHunks[i] = &richHunk
 	}
-	return richHunks
+	return &highlightedHunkBody{
+		richHunks: richHunks,
+		aborted:   false,
+	}, nil
 }
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {

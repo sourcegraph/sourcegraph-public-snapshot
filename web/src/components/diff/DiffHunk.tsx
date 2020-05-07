@@ -64,20 +64,20 @@ export const DiffHunk: React.FunctionComponent<
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
-            {hunk.richBody.map((line, i) => {
-                if (line.kind !== GQL.RichBodyKind.addition) {
+            {hunk.highlight.lines.map((line, i) => {
+                if (line.kind !== GQL.HunkLineType.ADDITION) {
                     oldLine++
                 }
-                if (line.kind !== GQL.RichBodyKind.deletion) {
+                if (line.kind !== GQL.HunkLineType.DELETION) {
                     newLine++
                 }
                 const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                 const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                 const decorationsForLine = [
                     // If the line was deleted, look for decorations in the base rev
-                    ...((line.kind === GQL.RichBodyKind.deletion && decorations.base.get(oldLine - 1)) || []),
+                    ...((line.kind === GQL.HunkLineType.DELETION && decorations.base.get(oldLine - 1)) || []),
                     // If the line wasn't deleted, look for decorations in the head rev
-                    ...((line.kind !== GQL.RichBodyKind.deletion && decorations.head.get(newLine - 1)) || []),
+                    ...((line.kind !== GQL.HunkLineType.DELETION && decorations.head.get(newLine - 1)) || []),
                 ]
                 const lineStyle = decorationsForLine
                     .filter(decoration => decoration.isWholeLine)
@@ -87,19 +87,19 @@ export const DiffHunk: React.FunctionComponent<
                     <tr
                         key={i}
                         className={`diff-hunk__line ${
-                            line.kind === GQL.RichBodyKind.unchanged ? 'diff-hunk__line--both' : ''
-                        } ${line.kind === GQL.RichBodyKind.deletion ? 'diff-hunk__line--deletion' : ''} ${
-                            line.kind === GQL.RichBodyKind.addition ? 'diff-hunk__line--addition' : ''
+                            line.kind === GQL.HunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
+                        } ${line.kind === GQL.HunkLineType.DELETION ? 'diff-hunk__line--deletion' : ''} ${
+                            line.kind === GQL.HunkLineType.ADDITION ? 'diff-hunk__line--addition' : ''
                         } ${
-                            (line.kind !== GQL.RichBodyKind.addition && location.hash === '#' + oldAnchor) ||
-                            (line.kind !== GQL.RichBodyKind.deletion && location.hash === '#' + newAnchor)
+                            (line.kind !== GQL.HunkLineType.ADDITION && location.hash === '#' + oldAnchor) ||
+                            (line.kind !== GQL.HunkLineType.DELETION && location.hash === '#' + newAnchor)
                                 ? 'diff-hunk__line--active'
                                 : ''
                         }`}
                     >
                         {lineNumbers && (
                             <>
-                                {line.kind !== GQL.RichBodyKind.addition ? (
+                                {line.kind !== GQL.HunkLineType.ADDITION ? (
                                     <td
                                         className="diff-hunk__num"
                                         data-line={oldLine - 1}
@@ -111,7 +111,7 @@ export const DiffHunk: React.FunctionComponent<
                                     <td className="diff-hunk__num diff-hunk__num--empty" />
                                 )}
 
-                                {line.kind !== GQL.RichBodyKind.deletion ? (
+                                {line.kind !== GQL.HunkLineType.DELETION ? (
                                     <td
                                         className="diff-hunk__num"
                                         data-line={newLine - 1}
@@ -128,7 +128,7 @@ export const DiffHunk: React.FunctionComponent<
                         {/* Needed for decorations */}
                         {/* eslint-disable-next-line react/forbid-dom-props */}
                         <td className="diff-hunk__content" style={lineStyle}>
-                            <span dangerouslySetInnerHTML={{ __html: line.line }} />
+                            <span dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (

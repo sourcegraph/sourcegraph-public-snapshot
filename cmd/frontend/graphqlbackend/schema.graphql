@@ -1951,7 +1951,7 @@ type PreviewFileDiff {
     # The new path of the file if the diff was applied, or null if the file was deleted.
     newPath: String
     # Hunks that were would be changed from old to new.
-    hunks(isLightTheme: Boolean!): [FileDiffHunk!]!
+    hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.
     stat: DiffStat!
     # FOR INTERNAL USE ONLY.
@@ -2016,7 +2016,7 @@ type FileDiff {
     # clients that want to show a "View" link to the file.
     mostRelevantFile: File2!
     # Hunks that were changed from old to new.
-    hunks(isLightTheme: Boolean!): [FileDiffHunk!]!
+    hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.
     stat: DiffStat!
     # FOR INTERNAL USE ONLY.
@@ -2026,15 +2026,28 @@ type FileDiff {
     internalID: String!
 }
 
-enum RichBodyKind {
-    addition
-    unchanged
-    deletion
+# The type of content in a hunk line.
+enum HunkLineType {
+    # Added line.
+    ADDITION
+    # Unchanged line.
+    UNCHANGED
+    # Deleted line.
+    DELETION
 }
 
-type RichBody {
-    line: String!
-    kind: RichBodyKind!
+type HighlightedHunkLine {
+    # The html.
+    html: String!
+    # The kind of this line, in patches it is prefixed with '+', '-', ' '.
+    kind: HunkLineType!
+}
+
+type HighlightedHunkBody {
+    # Whether or not it was aborted.
+    aborted: Boolean!
+    # The highlighted lines.
+    lines: [HighlightedHunkLine!]!
 }
 
 # A changed region ("hunk") in a file diff.
@@ -2049,8 +2062,16 @@ type FileDiffHunk {
     section: String
     # The hunk body, with lines prefixed with '-', '+', or ' '.
     body: String!
-
-    richBody: [RichBody!]!
+    # Highlight the hunk.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedHunkBody!
 }
 
 # A hunk range in one side (old/new) of a diff.

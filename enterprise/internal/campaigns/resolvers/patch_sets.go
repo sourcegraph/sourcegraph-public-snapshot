@@ -401,118 +401,148 @@ type previewFileDiffResolver struct {
 func (r *previewFileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *previewFileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
 
-func (r *previewFileDiffResolver) Hunks(ctx context.Context, args struct{ IsLightTheme bool }) ([]*graphqlbackend.DiffHunk, error) {
-	if len(r.fileDiff.Hunks) == 0 {
-		return []*graphqlbackend.DiffHunk{}, nil
-	}
+type previewFileDiffHighlighter struct {
+	previewFileDiffResolver *previewFileDiffResolver
+	highlightedBase         map[int32]string
+	highlightedHead         map[int32]string
+	highlightOnce           sync.Once
+	highlightErr            error
+}
 
-	var (
-		baseLines, headLines map[int32]string
-	)
-	if oldFile := r.OldFile(); oldFile != nil {
-		binary, err := r.OldFile().Binary(ctx)
-		if err != nil {
-			return nil, err
+func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (map[int32]string, map[int32]string, error) {
+	r.highlightOnce.Do(func() {
+		if oldFile := r.previewFileDiffResolver.OldFile(); oldFile != nil {
+			binary, err := oldFile.Binary(ctx)
+			if err != nil {
+				r.highlightErr = err
+				return
+			}
+			if !binary {
+				highlightedBase, err := oldFile.Highlight(ctx, &struct {
+					DisableTimeout     bool
+					IsLightTheme       bool
+					HighlightLongLines bool
+					PlainResult        bool
+				}{
+					DisableTimeout:     args.DisableTimeout,
+					HighlightLongLines: args.HighlightLongLines,
+					IsLightTheme:       args.IsLightTheme,
+					PlainResult:        true,
+				})
+				if err != nil {
+					r.highlightErr = err
+					return
+				}
+				r.highlightedBase, r.highlightErr = graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
+				if r.highlightErr != nil {
+					return
+				}
+			}
 		}
-		if !binary {
-			highlightedBase, err := oldFile.Highlight(ctx, &struct {
-				DisableTimeout     bool
-				IsLightTheme       bool
-				HighlightLongLines bool
-				PlainResult        bool
-			}{
-				DisableTimeout:     false,
-				HighlightLongLines: false,
+
+		if newPath := r.previewFileDiffResolver.NewPath(); newPath != nil {
+			var content string
+			if oldFile := r.previewFileDiffResolver.OldFile(); oldFile != nil {
+				var err error
+				content, err = r.previewFileDiffResolver.OldFile().Content(ctx)
+				if err != nil {
+					r.highlightErr = err
+					return
+				}
+			}
+			contentLines := make(map[int32]string)
+			newContentLines := make(map[int32]string)
+			lines := strings.Split(content, "\n")
+			for i, line := range lines {
+				contentLines[int32(i+1)] = line
+			}
+			var lastLine, currentLine int32
+			// Assumes the hunks are sorted by ascending lines
+			for _, hunk := range r.previewFileDiffResolver.fileDiff.Hunks {
+				currentLine = hunk.NewStartLine
+				// Detect holes.
+				if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine+1 {
+					for ; lastLine < hunk.OrigStartLine; lastLine++ {
+						newContentLines[lastLine] = contentLines[lastLine]
+					}
+				}
+				hunkLines := strings.Split(string(hunk.Body), "\n")
+				for _, line := range hunkLines {
+					if line == "" {
+						continue
+					}
+					if !strings.HasPrefix(line, "+") {
+						if !strings.HasPrefix(line, "-") {
+							newContentLines[currentLine] = contentLines[lastLine]
+							currentLine++
+						}
+						lastLine++
+						continue
+					}
+					newContentLines[currentLine] = line[1:]
+					currentLine++
+				}
+			}
+			// Append remaining lines from original file.
+			if origLines := int32(len(contentLines)); origLines > 0 && origLines-1 != lastLine {
+				for i := lastLine; i < origLines; i++ {
+					newContentLines[i] = contentLines[currentLine]
+					currentLine++
+				}
+			}
+			content = ""
+			keys := make([]int, 0, len(newContentLines))
+			for key := range newContentLines {
+				keys = append(keys, int(key))
+			}
+			sort.Ints(keys)
+			first := true
+			for _, key := range keys {
+				// The 0 key is initialized, but can never contain code, so skip it.
+				if key == 0 {
+					continue
+				}
+				if !first {
+					content += "\n"
+				} else {
+					first = false
+				}
+				content += newContentLines[int32(key)]
+			}
+			highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
+				Content:  []byte(content),
+				Filepath: *newPath,
+				Metadata: highlight.Metadata{
+					RepoName: r.previewFileDiffResolver.commit.Repository().Name(),
+					Revision: string(r.previewFileDiffResolver.commit.OID()),
+				},
+				DisableTimeout:     args.DisableTimeout,
+				HighlightLongLines: args.HighlightLongLines,
 				IsLightTheme:       args.IsLightTheme,
 				PlainResult:        true,
 			})
 			if err != nil {
-				return nil, err
+				r.highlightErr = err
+				return
 			}
-			baseLines, err = graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
+			if aborted {
+				r.highlightErr = errors.New("Highlighting aborted")
+				return
+			}
+			r.highlightedHead, err = graphqlbackend.ParseLinesFromHighlight(string(highlightedHead))
 			if err != nil {
-				return nil, err
+				r.highlightErr = err
+				return
 			}
 		}
-	}
+	})
+	return r.highlightedBase, r.highlightedHead, r.highlightErr
+}
 
-	if newPath := r.NewPath(); newPath != nil {
-		content, err := r.OldFile().Content(ctx)
-		if err != nil {
-			return nil, err
-		}
-		contentLines := make(map[int32]string)
-		newContentLines := make(map[int32]string)
-		lines := strings.Split(content, "\n")
-		for i, line := range lines {
-			contentLines[int32(i+1)] = line
-		}
-		var lastLine int32
-		// Assumes the hunks are sorted by ascending lines
-		for _, hunk := range r.fileDiff.Hunks {
-			currentLine := hunk.NewStartLine
-			// Detect holes.
-			if hunk.OrigStartLine != lastLine+1 {
-				for ; lastLine < hunk.OrigStartLine; lastLine++ {
-					newContentLines[lastLine] = contentLines[lastLine]
-				}
-			}
-			hunkLines := strings.Split(string(hunk.Body), "\n")
-			for _, line := range hunkLines {
-				if !strings.HasPrefix(line, "+") {
-					if !strings.HasPrefix(line, "-") {
-						newContentLines[currentLine] = contentLines[lastLine]
-						currentLine++
-					}
-					lastLine++
-					continue
-				}
-				newContentLines[currentLine] = line[1:]
-				currentLine++
-			}
-		}
-		content = ""
-		keys := make([]int, 0, len(newContentLines))
-		for key := range newContentLines {
-			keys = append(keys, int(key))
-		}
-		sort.Ints(keys)
-		first := true
-		for _, key := range keys[1:] {
-			if !first {
-				content += "\n"
-			} else {
-				first = false
-			}
-			content += newContentLines[int32(key)]
-		}
-		highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
-			Content:  []byte(content),
-			Filepath: *newPath,
-			Metadata: highlight.Metadata{
-				RepoName: r.commit.Repository().Name(),
-				Revision: string(r.commit.OID()),
-			},
-			DisableTimeout:     false,
-			HighlightLongLines: false,
-			IsLightTheme:       args.IsLightTheme,
-			PlainResult:        true,
-		})
-		if err != nil {
-			return nil, err
-		}
-		if aborted {
-			return nil, errors.New("Highlighting aborted")
-		}
-		headLines, err = graphqlbackend.ParseLinesFromHighlight(string(highlightedHead))
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func (r *previewFileDiffResolver) Hunks(ctx context.Context) ([]*graphqlbackend.DiffHunk, error) {
 	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = graphqlbackend.NewDiffHunk(hunk, baseLines, headLines)
+		hunks[i] = graphqlbackend.NewDiffHunk(hunk, &previewFileDiffHighlighter{previewFileDiffResolver: r})
 	}
 	return hunks, nil
 }
@@ -523,6 +553,9 @@ func (r *previewFileDiffResolver) Stat() *graphqlbackend.DiffStat {
 }
 
 func (r *previewFileDiffResolver) OldFile() *graphqlbackend.GitTreeEntryResolver {
+	if diffPathOrNull(r.fileDiff.OrigName) == nil {
+		return nil
+	}
 	fileStat := graphqlbackend.CreateFileInfo(r.fileDiff.OrigName, false)
 	return graphqlbackend.NewGitTreeEntryResolver(r.commit, fileStat)
 }
