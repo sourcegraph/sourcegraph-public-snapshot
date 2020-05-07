@@ -241,11 +241,12 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
-	// VersionContextRepositories is a list of repository names used to limit the results to that
+	// Names is a list of repository names used to limit the results to that
 	// set of repositories.
-	// Note: In future iterations, version contexts may have their own table
+	// Note: This is currently used for version contexts. In future iterations,
+	// version contexts may have their own table
 	// and this may be replaced by the version context name.
-	VersionContextRepositories []string
+	Names []string
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -463,13 +464,13 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	if opt.OnlyPrivate {
 		conds = append(conds, sqlf.Sprintf("private"))
 	}
-	if len(opt.VersionContextRepositories) > 0 {
+	if len(opt.Names) > 0 {
 		var builder strings.Builder
 		builder.WriteString("name IN (")
-		args := make([]interface{}, 0, len(opt.VersionContextRepositories))
-		for i, repo := range opt.VersionContextRepositories {
+		args := make([]interface{}, 0, len(opt.Names))
+		for i, repo := range opt.Names {
 			builder.WriteString("%s")
-			if i < len(opt.VersionContextRepositories)-1 {
+			if i < len(opt.Names)-1 {
 				builder.WriteString(", ")
 			}
 			args = append(args, repo)

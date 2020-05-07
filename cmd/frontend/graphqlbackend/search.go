@@ -122,13 +122,13 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	return &searchResolver{
-		query:              queryInfo,
-		originalQuery:      args.Query,
-		versionContextName: args.VersionContext,
-		pagination:         pagination,
-		patternType:        searchType,
-		zoekt:              search.Indexed(),
-		searcherURLs:       search.SearcherURLs(),
+		query:          queryInfo,
+		originalQuery:  args.Query,
+		versionContext: args.VersionContext,
+		pagination:     pagination,
+		patternType:    searchType,
+		zoekt:          search.Indexed(),
+		searcherURLs:   search.SearcherURLs(),
 	}, nil
 }
 
@@ -236,11 +236,11 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query              query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery      string                // the raw string of the original search query
-	pagination         *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType        query.SearchType
-	versionContextName *string
+	query          query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery  string                // the raw string of the original search query
+	pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType    query.SearchType
+	versionContext *string
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -332,6 +332,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	return groups, nil
 }
 
+// NOTE: This function is not called if the version context is not used
 func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
 	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
 		if vc.Name == versionContext {
@@ -431,8 +432,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	var versionContextName string
-	if r.versionContextName != nil {
-		versionContextName = *r.versionContextName
+	if r.versionContext != nil {
+		versionContextName = *r.versionContext
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -648,10 +649,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	} else {
 		tr.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
-			OnlyRepoIDs:                true,
-			IncludePatterns:            includePatterns,
-			VersionContextRepositories: versionContextRepositories,
-			ExcludePattern:             unionRegExps(excludePatterns),
+			OnlyRepoIDs:     true,
+			IncludePatterns: includePatterns,
+			Names:           versionContextRepositories,
+			ExcludePattern:  unionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.noForks,
