@@ -67,6 +67,8 @@ Examples:
 		indexerNameFlag = flagSet.String("indexerName", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
 		openFlag        = flagSet.Bool("open", false, `Open the LSIF upload page in your browser.`)
 		apiFlags        = newAPIFlags(flagSet)
+
+		ignoreUploadFailures = flagSet.Bool("ignore-upload-failure", false, `Exit with status code zero on upload failure.`)
 	)
 
 	handler := func(args []string) error {
@@ -209,6 +211,10 @@ Examples:
 		// Perform the request.
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
+			if *ignoreUploadFailures {
+				fmt.Printf("error: %s\n", err)
+				return nil
+			}
 			return err
 		}
 		defer resp.Body.Close()
@@ -235,6 +241,11 @@ Examples:
 				fmt.Println("You may need to specify or update your GitHub access token to use this endpoint.")
 				fmt.Println("See https://github.com/sourcegraph/src-cli#authentication")
 				fmt.Println("")
+			}
+
+			if resp.StatusCode == http.StatusInternalServerError && *ignoreUploadFailures {
+				fmt.Printf("error: %s\n\n%s", resp.Status, body)
+				return nil
 			}
 			return fmt.Errorf("error: %s\n\n%s", resp.Status, body)
 		}
