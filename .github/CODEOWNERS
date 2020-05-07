@@ -227,9 +227,10 @@ Dockerfile @sourcegraph/distribution
 /cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /cmd/precise-code-intel-worker/ @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
+/internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
