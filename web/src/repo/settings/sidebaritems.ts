@@ -20,5 +20,6 @@ export const repoSettingsSidebarItems: RepoSettingsSideBarItems = [
         to: '/permissions',
         exact: true,
         label: 'Permissions',
+        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
     },
 ]

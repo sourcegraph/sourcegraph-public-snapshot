@@ -19,7 +19,8 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserSettingsSidebarItemConditionContext {
-    user: Pick<GQL.IUser, 'viewerCanAdminister' | 'builtinAuth'>
+    user: Pick<GQL.IUser, 'id' | 'viewerCanAdminister' | 'builtinAuth'>
+    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'> | null
 }
 
 export type UserSettingsSidebarItems = Record<
@@ -55,7 +56,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupItems>
                     {props.items.account.map(
                         ({ label, to, exact, condition = () => true }) =>
-                            condition({ user: props.user }) && (
+                            condition({ user: props.user, authenticatedUser: props.authenticatedUser }) && (
                                 <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label}
                                 </SidebarNavItem>
