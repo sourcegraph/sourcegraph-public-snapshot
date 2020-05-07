@@ -1,8 +1,8 @@
-# Migrations
+# Updating a Kubernetes Sourcegraph instance
 
-This document records manual migrations that are necessary to apply when upgrading to certain
-Sourcegraph versions. All manual migrations between the version you are upgrading from and the
-version you are upgrading to should be applied (unless otherwise noted).
+This document describes the exact changes needed to update a Kubernetes Sourcegraph instance.
+
+**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
 ## 3.15
 
