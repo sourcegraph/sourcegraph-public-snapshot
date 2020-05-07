@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -413,7 +415,7 @@ func (r *previewFileDiffResolver) Hunks(ctx context.Context, args struct{ IsLigh
 			return nil, err
 		}
 		if !binary {
-			highlightedBase, err := r.OldFile().Highlight(ctx, &struct {
+			highlightedBase, err := oldFile.Highlight(ctx, &struct {
 				DisableTimeout     bool
 				IsLightTheme       bool
 				HighlightLongLines bool
@@ -439,7 +441,51 @@ func (r *previewFileDiffResolver) Hunks(ctx context.Context, args struct{ IsLigh
 		if err != nil {
 			return nil, err
 		}
-		// TODO: Apply patch.
+		contentLines := make(map[int32]string)
+		newContentLines := make(map[int32]string)
+		lines := strings.Split(content, "\n")
+		for i, line := range lines {
+			contentLines[int32(i+1)] = line
+		}
+		var lastLine int32
+		// Assumes the hunks are sorted by ascending lines
+		for _, hunk := range r.fileDiff.Hunks {
+			currentLine := hunk.NewStartLine
+			// Detect holes.
+			if hunk.OrigStartLine != lastLine+1 {
+				for ; lastLine < hunk.OrigStartLine; lastLine++ {
+					newContentLines[lastLine] = contentLines[lastLine]
+				}
+			}
+			hunkLines := strings.Split(string(hunk.Body), "\n")
+			for _, line := range hunkLines {
+				if !strings.HasPrefix(line, "+") {
+					if !strings.HasPrefix(line, "-") {
+						newContentLines[currentLine] = contentLines[lastLine]
+						currentLine++
+					}
+					lastLine++
+					continue
+				}
+				newContentLines[currentLine] = line[1:]
+				currentLine++
+			}
+		}
+		content = ""
+		keys := make([]int, 0, len(newContentLines))
+		for key := range newContentLines {
+			keys = append(keys, int(key))
+		}
+		sort.Ints(keys)
+		first := true
+		for _, key := range keys[1:] {
+			if !first {
+				content += "\n"
+			} else {
+				first = false
+			}
+			content += newContentLines[int32(key)]
+		}
 		highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
 			Content:  []byte(content),
 			Filepath: *newPath,
