@@ -85,7 +85,7 @@ func RunParallel(maxConcurrency int, fns []FnPair) error {
 				}
 
 				// Nil-valued error, remove it from the pending map
-				pendingMap.filter(pair.i)
+				pendingMap.remove(pair.i)
 
 			case <-time.After(time.Millisecond * 250):
 				// Time's up, fall through and update the screen
@@ -119,7 +119,7 @@ type pendingMap struct {
 	pending map[int]bool
 }
 
-func (m *pendingMap) filter(i int) {
+func (m *pendingMap) remove(i int) {
 	m.Lock()
 	defer m.Unlock()
 	delete(m.pending, i)

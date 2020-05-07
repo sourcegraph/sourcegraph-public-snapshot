@@ -12,15 +12,15 @@ import (
 )
 
 var (
-	BaseURL                     = flag.String("baseUrl", "http://127.0.0.1:3080", "A Sourcegraph URL")
-	Token                       = flag.String("token", "", "A Sourcegraph access token")
-	MaxConcurrency              = flag.Int("maxConcurrency", 5, "The maximum number of concurrent operations")
-	CheckQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")
-	QueryReferencesOfReferences = flag.Bool("queryReferencesOfReferences", false, "Whether to perform reference operations on test case references")
+	baseURL                     = flag.String("baseUrl", "http://127.0.0.1:3080", "A Sourcegraph URL")
+	token                       = flag.String("token", "", "A Sourcegraph access token")
+	maxConcurrency              = flag.Int("maxConcurrency", 5, "The maximum number of concurrent operations")
+	checkQueryResult            = flag.Bool("checkQueryResult", true, "Whether to confirm query results are correct")
+	queryReferencesOfReferences = flag.Bool("queryReferencesOfReferences", false, "Whether to perform reference operations on test case references")
 
 	// Assumes running from the root of the repo
-	CacheDir = flag.String("cacheDir", "/tmp/precise-code-intel-test", "The location of the cache directory")
-	DataDir  = flag.String("dataDir", "./internal/cmd/precise-code-intel-test/data", "The location of the data directory")
+	cacheDir = flag.String("cacheDir", "/tmp/precise-code-intel-test", "The location of the cache directory")
+	dataDir  = flag.String("dataDir", "./internal/cmd/precise-code-intel-test/data", "The location of the data directory")
 )
 
 func main() {
@@ -54,45 +54,45 @@ func main() {
 }
 
 func clone() error {
-	if err := os.MkdirAll(filepath.Join(*CacheDir, "repos"), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(*cacheDir, "repos"), os.ModePerm); err != nil {
 		return err
 	}
 
-	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*dataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
-	return internal.CloneParallel(*CacheDir, *MaxConcurrency, repos)
+	return internal.CloneParallel(*cacheDir, *maxConcurrency, repos)
 }
 
 func index() error {
-	if err := os.MkdirAll(filepath.Join(*CacheDir, "indexes"), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(*cacheDir, "indexes"), os.ModePerm); err != nil {
 		return err
 	}
 
-	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*dataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
-	return internal.IndexParallel(*CacheDir, *MaxConcurrency, repos)
+	return internal.IndexParallel(*cacheDir, *maxConcurrency, repos)
 }
 
 func upload() error {
-	repos, err := internal.ReadReposCSV(filepath.Join(*DataDir, "repos.csv"))
+	repos, err := internal.ReadReposCSV(filepath.Join(*dataDir, "repos.csv"))
 	if err != nil {
 		return err
 	}
 
 	start := time.Now()
 
-	ids, err := internal.UploadParallel(*CacheDir, *BaseURL, *MaxConcurrency, repos)
+	ids, err := internal.UploadParallel(*cacheDir, *baseURL, *maxConcurrency, repos)
 	if err != nil {
 		return err
 	}
 
-	if err := internal.WaitForSuccessAll(*BaseURL, *Token, ids); err != nil {
+	if err := internal.WaitForSuccessAll(*baseURL, *token, ids); err != nil {
 		return err
 	}
 
@@ -101,7 +101,7 @@ func upload() error {
 }
 
 func query() error {
-	testCases, err := internal.ReadTestCaseCSV(*DataDir, filepath.Join(*DataDir, "test-cases.csv"))
+	testCases, err := internal.ReadTestCaseCSV(*dataDir, filepath.Join(*dataDir, "test-cases.csv"))
 	if err != nil {
 		return err
 	}
@@ -113,11 +113,11 @@ func query() error {
 
 		fns = append(fns, internal.FnPair{
 			Fn: func() error {
-				references, err := internal.QueryReferences(*BaseURL, *Token, definition)
+				references, err := internal.QueryReferences(*baseURL, *token, definition)
 				if err != nil {
 					return err
 				}
-				if *CheckQueryResult {
+				if *checkQueryResult {
 					if diff := cmp.Diff(expectedReferences, references); diff != "" {
 						return fmt.Errorf("unexpected references (-want +got):\n%s\n", diff)
 					}
@@ -139,12 +139,12 @@ func query() error {
 
 			fns = append(fns, internal.FnPair{
 				Fn: func() error {
-					definitions, err := internal.QueryDefinitions(*BaseURL, *Token, localReference)
+					definitions, err := internal.QueryDefinitions(*baseURL, *token, localReference)
 					if err != nil {
 						return err
 					}
 
-					if *CheckQueryResult {
+					if *checkQueryResult {
 						if diff := cmp.Diff([]internal.Location{definition}, definitions); diff != "" {
 							return fmt.Errorf("unexpected definitions (-want +got):\n%s\n", diff)
 						}
@@ -161,15 +161,15 @@ func query() error {
 				),
 			})
 
-			if *QueryReferencesOfReferences {
+			if *queryReferencesOfReferences {
 				fns = append(fns, internal.FnPair{
 					Fn: func() error {
-						references, err := internal.QueryReferences(*BaseURL, *Token, localReference)
+						references, err := internal.QueryReferences(*baseURL, *token, localReference)
 						if err != nil {
 							return err
 						}
 
-						if *CheckQueryResult {
+						if *checkQueryResult {
 							if diff := cmp.Diff(expectedReferences, references); diff != "" {
 								return fmt.Errorf("unexpected references (-want +got):\n%s\n", diff)
 							}
@@ -191,7 +191,7 @@ func query() error {
 
 	start := time.Now()
 
-	if err := internal.RunParallel(*MaxConcurrency, fns); err != nil {
+	if err := internal.RunParallel(*maxConcurrency, fns); err != nil {
 		return err
 	}
 

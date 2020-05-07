@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-// CloneParallel ensures that all of the given revisions have been indexed.
+// IndexParallel ensures that all of the given revisions have been indexed.
 func IndexParallel(cacheDir string, maxConcurrency int, repos []Repo) error {
 	var fns []FnPair
 	for _, repo := range repos {
