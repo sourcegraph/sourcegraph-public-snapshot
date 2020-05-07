@@ -141,3 +141,28 @@ func mustRegisterOnce(c prometheus.Collector) {
 		panic(err)
 	}
 }
+
+type REDClient struct {
+	// RED metrics
+	cli *OperationMetrics
+}
+
+// NewREDClient creates a new REDClient.
+func NewREDClient(service string) *REDClient {
+	labels := []string{"method"}
+	cli := NewOperationMetrics(service, service, WithLabels(labels...))
+
+	return &REDClient{
+		cli: cli,
+	}
+}
+
+// Record returns a record fn that is called on any given return err. If an error is encountered
+// it will register the err metric. The err is never altered.
+func (c *REDClient) Record(method string) func(error) error {
+	start := time.Now()
+	return func(err error) error {
+		c.cli.Observe(time.Since(start).Seconds(), 1, &err, method)
+		return err
+	}
+}

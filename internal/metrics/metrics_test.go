@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -124,5 +125,67 @@ func TestMustRegisterDiskMonitor(t *testing.T) {
 	sort.Strings(got)
 	if !cmp.Equal(want, got) {
 		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+	}
+}
+
+func TestREDClientRecord(t *testing.T) {
+	rm := NewREDClient("foosystems")
+	rec := rm.Record("foo")
+	func(err error) {
+		rec(err)
+	}(nil)
+
+	val := testutil.ToFloat64(rm.cli.Count)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected entries in histogram, got %f, expected %f", got, want)
+	}
+
+	m, err := rm.cli.Count.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected counter to inc, got %f, expected %f", got, want)
+	}
+
+	m, err = rm.cli.Errors.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 0.0; got != want {
+		t.Errorf("error counter should not increment, got %f, expected %f", got, want)
+	}
+}
+
+func TestREDClientRecord_Error(t *testing.T) {
+	rm := NewREDClient("failure")
+	rec := rm.Record("foo")
+	func(err error) {
+		rec(err)
+	}(errors.New("boom"))
+
+	val := testutil.ToFloat64(rm.cli.Count)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected entries in histogram, got %f, expected %f", got, want)
+	}
+
+	m, err := rm.cli.Count.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected counter to inc, got %f, expected %f", got, want)
+	}
+
+	m, err = rm.cli.Errors.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("error counter should increment, got %f, expected %f", got, want)
 	}
 }
