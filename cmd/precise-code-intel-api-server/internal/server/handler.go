@@ -154,7 +154,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	writeJSON(w, map[string]interface{}{"id": id})
+	writeJSON(w, map[string]interface{}{"id": fmt.Sprintf("%d", id)})
 }
 
 // GET /exists
