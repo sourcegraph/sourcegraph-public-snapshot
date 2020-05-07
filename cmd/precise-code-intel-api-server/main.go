@@ -56,9 +56,13 @@ func main() {
 		CodeIntelAPI:        codeIntelAPI,
 	})
 
+	resetterMetrics := resetter.NewResetterMetrics()
+	resetterMetrics.MustRegister(prometheus.DefaultRegisterer)
+
 	uploadResetterInst := resetter.NewUploadResetter(resetter.UploadResetterOpts{
 		DB:            db,
 		ResetInterval: resetInterval,
+		Metrics:       resetterMetrics,
 	})
 
 	go serverInst.Start()

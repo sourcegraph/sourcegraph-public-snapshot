@@ -11,17 +11,20 @@ import (
 type UploadResetter struct {
 	db            db.DB
 	resetInterval time.Duration
+	metrics       ResetterMetrics
 }
 
 type UploadResetterOpts struct {
 	DB            db.DB
 	ResetInterval time.Duration
+	Metrics       ResetterMetrics
 }
 
 func NewUploadResetter(opts UploadResetterOpts) *UploadResetter {
 	return &UploadResetter{
 		db:            opts.DB,
 		resetInterval: opts.ResetInterval,
+		metrics:       opts.Metrics,
 	}
 }
 

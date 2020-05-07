@@ -29,10 +29,10 @@ func defaultStatesFn(ctx context.Context, ids []int) (map[int]string, error) {
 	return states, nil
 }
 
-// removeDeadDumps calls the precise-code-intel-api-server to get the current
+// removeOrphanedDumps calls the precise-code-intel-api-server to get the current
 // state of the dumps known by this bundle manager. Any dump on disk that is
 // in an errored state or is unknown by the API is removed.
-func (j *Janitor) removeDeadDumps(statesFn StatesFn) error {
+func (j *Janitor) removeOrphanedDumps(statesFn StatesFn) error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
 		return err
@@ -55,16 +55,19 @@ func (j *Janitor) removeDeadDumps(statesFn StatesFn) error {
 		}
 	}
 
+	count := 0
 	for id, path := range pathsByID {
 		if state, exists := allStates[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
 				return err
 			}
 
+			count++
 			log15.Debug("Removed dead dump", "id", id)
 		}
 	}
 
+	j.metrics.OrphanedDumps.Add(float64(count))
 	return nil
 }
 

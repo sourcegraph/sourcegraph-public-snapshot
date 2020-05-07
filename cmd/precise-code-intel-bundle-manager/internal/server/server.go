@@ -23,40 +23,25 @@ type Server struct {
 }
 
 type ServerOpts struct {
-	Host                     string
-	Port                     int
-	BundleDir                string
-	DatabaseCacheSize        int64
-	DocumentDataCacheSize    int64
-	ResultChunkDataCacheSize int64
-	ObservationContext       *observation.Context
+	Host                 string
+	Port                 int
+	BundleDir            string
+	DatabaseCache        *database.DatabaseCache
+	DocumentDataCache    *database.DocumentDataCache
+	ResultChunkDataCache *database.ResultChunkDataCache
+	ObservationContext   *observation.Context
 }
 
-func New(opts ServerOpts) (*Server, error) {
-	databaseCache, err := database.NewDatabaseCache(opts.DatabaseCacheSize)
-	if err != nil {
-		return nil, err
-	}
-
-	documentDataCache, err := database.NewDocumentDataCache(opts.DocumentDataCacheSize)
-	if err != nil {
-		return nil, err
-	}
-
-	resultChunkDataCache, err := database.NewResultChunkDataCache(opts.ResultChunkDataCacheSize)
-	if err != nil {
-		return nil, err
-	}
-
+func New(opts ServerOpts) *Server {
 	return &Server{
 		host:                 opts.Host,
 		port:                 opts.Port,
 		bundleDir:            opts.BundleDir,
-		databaseCache:        databaseCache,
-		documentDataCache:    documentDataCache,
-		resultChunkDataCache: resultChunkDataCache,
+		databaseCache:        opts.DatabaseCache,
+		documentDataCache:    opts.DocumentDataCache,
+		resultChunkDataCache: opts.ResultChunkDataCache,
 		observationContext:   opts.ObservationContext,
-	}, nil
+	}
 }
 
 func (s *Server) Start() {

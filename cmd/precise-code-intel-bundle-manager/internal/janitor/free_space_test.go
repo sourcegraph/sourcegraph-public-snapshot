@@ -39,6 +39,7 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 
 	j := &Janitor{
 		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(),
 	}
 
 	if err := j.cleanOldDumps(pruneFn, 100); err != nil {
@@ -91,6 +92,7 @@ func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
 
 	j := &Janitor{
 		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(),
 	}
 
 	if err := j.cleanOldDumps(pruneFn, 100); err != nil {

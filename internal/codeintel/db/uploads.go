@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +25,8 @@ type Upload struct {
 	TracingContext    string     `json:"tracingContext"`
 	RepositoryID      int        `json:"repositoryId"`
 	Indexer           string     `json:"indexer"`
+	NumParts          int        `json:"numParts"`
+	UploadedParts     []int      `json:"uploadedParts"`
 	Rank              *int       `json:"placeInQueue"`
 }
 
@@ -44,6 +47,8 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 			u.tracing_context,
 			u.repository_id,
 			u.indexer,
+			u.num_parts,
+			u.uploaded_parts,
 			s.rank
 		FROM lsif_uploads u
 		LEFT JOIN (
@@ -104,6 +109,8 @@ func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state,
 				u.tracing_context,
 				u.repository_id,
 				u.indexer,
+				u.num_parts,
+				u.uploaded_parts,
 				s.rank
 			FROM lsif_uploads u
 			LEFT JOIN (
@@ -145,10 +152,10 @@ func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext stri
 	id, _, err := scanFirstInt(db.query(
 		ctx,
 		sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (commit, root, tracing_context, repository_id, indexer)
-			VALUES (%s, %s, %s, %s, %s)
+			INSERT INTO lsif_uploads (commit, root, tracing_context, repository_id, indexer, num_parts, uploaded_parts)
+			VALUES (%s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
-		`, commit, root, tracingContext, repositoryID, indexerName),
+		`, commit, root, tracingContext, repositoryID, indexerName, 1, pq.Array([]int{0})),
 	))
 	if err != nil {
 		return 0, err
@@ -218,7 +225,24 @@ func (db *dbImpl) dequeue(ctx context.Context, id int) (_ Upload, _ JobHandle, _
 	upload, exists, err := scanFirstUpload(tx.query(
 		ctx,
 		sqlf.Sprintf(`
-			SELECT u.*, NULL FROM lsif_uploads u
+			SELECT
+				u.id,
+				u.commit,
+				u.root,
+				u.visible_at_tip,
+				u.uploaded_at,
+				u.state,
+				u.failure_summary,
+				u.failure_stacktrace,
+				u.started_at,
+				u.finished_at,
+				u.tracing_context,
+				u.repository_id,
+				u.indexer,
+				u.num_parts,
+				u.uploaded_parts,
+				NULL
+			FROM lsif_uploads u
 			WHERE id = %s
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1

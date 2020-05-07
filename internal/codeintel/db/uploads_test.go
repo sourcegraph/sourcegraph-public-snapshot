@@ -51,6 +51,8 @@ func TestGetUploadByID(t *testing.T) {
 		TracingContext:    `{"id": 42}`,
 		RepositoryID:      123,
 		Indexer:           "lsif-go",
+		NumParts:          1,
+		UploadedParts:     nil,
 		Rank:              nil,
 	}
 
@@ -215,6 +217,8 @@ func TestEnqueue(t *testing.T) {
 		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
+		NumParts:          1,
+		UploadedParts:     []int{0},
 		Rank:              &rank,
 	}
 

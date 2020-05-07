@@ -10,12 +10,14 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const DefaultMonikerResultPageSize = 100
@@ -196,22 +198,49 @@ func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename f
 	}
 }
 
+type dbQueryHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
+
 // dbQuery invokes the given handler with the database instance chosen from the
-// route's id value and serializes the resulting value to the response writer.
-func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ctx context.Context, db database.Database) (interface{}, error)) {
+// route's id value and serializes the resulting value to the response writer. If an
+// error occurs it will be written to the body of a 500-level response.
+func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
+	if err := s.dbQueryErr(w, r, handler); err != nil {
+		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+}
+
+// queryBundleErr invokes the given handler with the database instance chosen from the
+// route's id value and serializes the resulting value to the response writer. If an
+// error occurs it will be returned.
+func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
 	ctx := r.Context()
 	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
+	cached := true
+
+	span, ctx := ot.StartSpanFromContext(ctx, "dbQuery")
+	span.SetTag("filename", filename)
+	defer func() {
+		span.SetTag("cached", cached)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
 
 	openDatabase := func() (database.Database, error) {
+		cached = false
+
 		// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
 		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
 		return s.wrapDatabase(database), nil
@@ -227,10 +256,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 		return nil
 	}
 
-	if err := s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler); err != nil {
-		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
+	return s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler)
 }
 
 func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
