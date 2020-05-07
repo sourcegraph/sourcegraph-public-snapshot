@@ -9,12 +9,14 @@ import (
 	"time"
 )
 
-func withRoot(t *testing.T, testFunc func(bundleDir string)) {
+func testRoot(t *testing.T) string {
 	bundleDir, err := ioutil.TempDir("", "precise-code-intel-bundle-manager-")
 	if err != nil {
 		t.Fatalf("unexpected error creating test directory: %s", err)
 	}
-	defer os.RemoveAll(bundleDir)
+	t.Cleanup(func() {
+		os.RemoveAll(bundleDir)
+	})
 
 	for _, dir := range []string{"", "uploads", "dbs"} {
 		path := filepath.Join(bundleDir, dir)
@@ -23,7 +25,7 @@ func withRoot(t *testing.T, testFunc func(bundleDir string)) {
 		}
 	}
 
-	testFunc(bundleDir)
+	return bundleDir
 }
 
 func makeFile(path string, mtimes time.Time) error {
