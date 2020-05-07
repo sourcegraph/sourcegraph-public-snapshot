@@ -14,7 +14,9 @@ type ObservedDB struct {
 	db                                 DB
 	getUploadByIDOperation             *observation.Operation
 	getUploadsByRepoOperation          *observation.Operation
-	enqueueOperation                   *observation.Operation
+	insertUploadOperation              *observation.Operation
+	markQueuedOperation                *observation.Operation
+	addUploadPartOperation             *observation.Operation
 	dequeueOperation                   *observation.Operation
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
@@ -57,9 +59,19 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 			MetricLabels: []string{"get_uploads_by_repo"},
 			Metrics:      metrics,
 		}),
-		enqueueOperation: observationContext.Operation(observation.Op{
-			Name:         "DB.Enqueue",
-			MetricLabels: []string{"enqueue"},
+		insertUploadOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.InsertUpload",
+			MetricLabels: []string{"insert_upload"},
+			Metrics:      metrics,
+		}),
+		markQueuedOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.MarkQueued",
+			MetricLabels: []string{"mark_queued"},
+			Metrics:      metrics,
+		}),
+		addUploadPartOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.AddUploadPart",
+			MetricLabels: []string{"add_upload_part"},
 			Metrics:      metrics,
 		}),
 		dequeueOperation: observationContext.Operation(observation.Op{
@@ -178,12 +190,28 @@ func (db *ObservedDB) GetUploadsByRepo(ctx context.Context, repositoryID int, st
 	return db.db.GetUploadsByRepo(ctx, repositoryID, state, term, visibleAtTip, limit, offset)
 }
 
-// Enqueue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (_ int, err error) {
-	ctx, endObservation := db.enqueueOperation.With(ctx, &err, observation.Args{})
+// InsertUpload calls into the inner DB and registers the observed result.
+func (db *ObservedDB) InsertUpload(ctx context.Context, upload *Upload) (_ int, err error) {
+	ctx, endObservation := db.insertUploadOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return db.db.Enqueue(ctx, commit, root, tracingContext, repositoryID, indexerName)
+	return db.db.InsertUpload(ctx, upload)
+}
+
+// MarkQueued calls into the inner DB and registers the observed result.
+func (db *ObservedDB) MarkQueued(ctx context.Context, uploadID int) (err error) {
+	ctx, endObservation := db.markQueuedOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return db.db.MarkQueued(ctx, uploadID)
+}
+
+// AddUploadPart calls into the inner DB and registers the observed result.
+func (db *ObservedDB) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
+	ctx, endObservation := db.addUploadPartOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return db.db.AddUploadPart(ctx, uploadID, partIndex)
 }
 
 // Dequeue calls into the inner DB and registers the observed results.
