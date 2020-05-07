@@ -675,6 +675,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
 		var revs []search.RevisionSpecifier
+		// versionContext will be nil if the query contains revision specifiers
 		if versionContext != nil {
 			for _, vcRepoRef := range versionContext.Revisions {
 				if vcRepoRef.Repo == string(repo.Name) {
