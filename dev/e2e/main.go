@@ -16,7 +16,7 @@ import (
 */
 
 func main() {
-	baseURL := flag.String("base-url", "http://localhost:7080", "The base URL of the Sourcegraph instance")
+	baseURL := flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
 	email := flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
 	username := flag.String("username", "e2e-admin", "The username of the admin user")
 	password := flag.String("password", "supersecurepassword", "The password of the admin user")
