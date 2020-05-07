@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -19,7 +18,7 @@ type Server struct {
 	port                int
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
-	api                 api.CodeIntelAPI
+	codeIntelAPI        api.CodeIntelAPI
 }
 
 type ServerOpts struct {
@@ -27,7 +26,7 @@ type ServerOpts struct {
 	Port                int
 	DB                  db.DB
 	BundleManagerClient bundles.BundleManagerClient
-	GitserverClient     gitserver.Client
+	CodeIntelAPI        api.CodeIntelAPI
 }
 
 func New(opts ServerOpts) *Server {
@@ -36,7 +35,7 @@ func New(opts ServerOpts) *Server {
 		port:                opts.Port,
 		db:                  opts.DB,
 		bundleManagerClient: opts.BundleManagerClient,
-		api:                 api.New(opts.DB, opts.BundleManagerClient, opts.GitserverClient),
+		codeIntelAPI:        opts.CodeIntelAPI,
 	}
 }
 

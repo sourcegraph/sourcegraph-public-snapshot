@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
@@ -149,5 +150,6 @@ func testReader(t *testing.T) Reader {
 	}
 	t.Cleanup(func() { _ = reader.Close() })
 
-	return reader
+	// Wrap in observed, as that's how it's used in production
+	return NewObserved(reader, &observation.Context{}, "test")
 }

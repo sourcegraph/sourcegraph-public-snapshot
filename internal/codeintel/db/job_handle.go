@@ -44,8 +44,16 @@ type JobHandle interface {
 	MarkErrored(ctx context.Context, failureSummary, failureStacktrace string) error
 }
 
+// execer is the interface that the DB reference in jobHandleImpl must conform to. This allows the
+// job handler to call any method in the working tranaction, and also call dbImpl's unexported
+// exec method to run execute SQL.
+type execer interface {
+	DB
+	exec(ctx context.Context, query *sqlf.Query) error
+}
+
 type jobHandleImpl struct {
-	db              *dbImpl
+	db              execer
 	id              int
 	savepoints      []string
 	marked          bool

@@ -16,7 +16,7 @@ func TestGetPackage(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Package does not exist initially
 	if _, exists, err := db.GetPackage(context.Background(), "gomod", "leftpad", "0.1.0"); err != nil {
@@ -80,7 +80,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
@@ -114,7 +114,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if err := db.UpdatePackages(context.Background(), nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
@@ -134,7 +134,7 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})

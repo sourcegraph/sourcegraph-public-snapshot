@@ -39,11 +39,11 @@ export class LsifUpload {
     @Column('text')
     public indexer!: string
 
-    /** The type of indexer used to produce the dump. */
+    /** The number of parts expected to be uploaded. */
     @Column('int', { name: 'num_parts' })
     public numParts!: number
 
-    /** The type of indexer used to produce the dump. */
+    /** The index of parts that have already been uploaded. */
     @Column('int', { name: 'uploaded_parts', array: true })
     public uploadedParts!: number[]
 
