@@ -32,32 +32,27 @@ func NewObserved(reader Reader, observationContext *observation.Context, subsyst
 	return &ObservedReader{
 		reader: reader,
 		readMetaOperation: observationContext.Operation(observation.Op{
-			LogName:      "Reader.ReadMeta",
-			TraceName:    "reader.read-meta",
+			Name:         "Reader.ReadMeta",
 			MetricLabels: []string{"read_meta"},
 			Metrics:      metrics,
 		}),
 		readDocumentOperation: observationContext.Operation(observation.Op{
-			LogName:      "Reader.ReadDocument",
-			TraceName:    "reader.read-document",
+			Name:         "Reader.ReadDocument",
 			MetricLabels: []string{"read_document"},
 			Metrics:      metrics,
 		}),
 		readResultChunkOperation: observationContext.Operation(observation.Op{
-			LogName:      "Reader.ReadResultChunk",
-			TraceName:    "reader.read-result-chunk",
+			Name:         "Reader.ReadResultChunk",
 			MetricLabels: []string{"read_result-chunk"},
 			Metrics:      metrics,
 		}),
 		readDefinitionsOperation: observationContext.Operation(observation.Op{
-			LogName:      "Reader.ReadDefinitions",
-			TraceName:    "reader.read-definitions",
+			Name:         "Reader.ReadDefinitions",
 			MetricLabels: []string{"read_definitions"},
 			Metrics:      metrics,
 		}),
 		readReferencesOperation: observationContext.Operation(observation.Op{
-			LogName:      "Reader.ReadReferences",
-			TraceName:    "reader.read-references",
+			Name:         "Reader.ReadReferences",
 			MetricLabels: []string{"read_references"},
 			Metrics:      metrics,
 		}),

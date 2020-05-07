@@ -38,11 +38,11 @@ func main() {
 		host = "127.0.0.1"
 	}
 
-	observationContext := observation.NewContext(
-		log15.Root(),
-		&trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		prometheus.DefaultRegisterer,
-	)
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 
 	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_api_server")
 	bundleManagerClient := bundles.New(bundleManagerURL)

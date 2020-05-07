@@ -32,26 +32,22 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 	return &ObservedCodeIntelAPI{
 		codeIntelAPI: codeIntelAPI,
 		findClosestDumpsOperation: observationContext.Operation(observation.Op{
-			LogName:      "CodeIntelAPI.FindClosestDumps",
-			TraceName:    "code-intel-api.find-closest-dumps",
+			Name:         "CodeIntelAPI.FindClosestDumps",
 			MetricLabels: []string{"find_closest_dumps"},
 			Metrics:      metrics,
 		}),
 		definitionsOperation: observationContext.Operation(observation.Op{
-			LogName:      "CodeIntelAPI.Definitions",
-			TraceName:    "code-intel-api.definitions",
+			Name:         "CodeIntelAPI.Definitions",
 			MetricLabels: []string{"definitions"},
 			Metrics:      metrics,
 		}),
 		referencesOperation: observationContext.Operation(observation.Op{
-			LogName:      "CodeIntelAPI.References",
-			TraceName:    "code-intel-api.references",
+			Name:         "CodeIntelAPI.References",
 			MetricLabels: []string{"references"},
 			Metrics:      metrics,
 		}),
 		hoverOperation: observationContext.Operation(observation.Op{
-			LogName:      "CodeIntelAPI.Hover",
-			TraceName:    "code-intel-api.hover",
+			Name:         "CodeIntelAPI.Hover",
 			MetricLabels: []string{"hover"},
 			Metrics:      metrics,
 		}),
