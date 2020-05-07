@@ -147,20 +147,56 @@ func makeSearchCondition(term string) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
-// Enqueue inserts a new upload with a "queued" state and returns its identifier.
-func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error) {
+// InsertUpload inserts a new upload and returns its identifier.
+func (db *dbImpl) InsertUpload(ctx context.Context, upload *Upload) (int, error) {
+	if upload.UploadedParts == nil {
+		upload.UploadedParts = []int{}
+	}
+
 	id, _, err := scanFirstInt(db.query(
 		ctx,
 		sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (commit, root, tracing_context, repository_id, indexer)
-			VALUES (%s, %s, %s, %s, %s)
+			INSERT INTO lsif_uploads (
+				commit,
+				root,
+				repository_id,
+				indexer,
+				state,
+				num_parts,
+				uploaded_parts,
+				tracing_context
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
-		`, commit, root, tracingContext, repositoryID, indexerName),
+		`,
+			upload.Commit,
+			upload.Root,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.State,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			"{}",
+		),
 	))
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
+}
+
+// MarkQueued updates the state of the upload to queued.
+func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
+	return db.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
+}
+
+// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
+// (the resulting array is deduplicated on update).
+func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
+		WHERE id = %s
+	`, partIndex, uploadID))
 }
 
 // ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.

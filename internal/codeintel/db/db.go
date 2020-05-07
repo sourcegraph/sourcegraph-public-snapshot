@@ -36,8 +36,15 @@ type DB interface {
 	// GetUploadsByRepo returns a list of uploads for a particular repo and the total count of records matching the given conditions.
 	GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) ([]Upload, int, error)
 
-	// Enqueue inserts a new upload with a "queued" state and returns its identifier.
-	Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error)
+	// InsertUpload inserts a new upload and returns its identifier.
+	InsertUpload(ctx context.Context, upload *Upload) (int, error)
+
+	// MarkQueued updates the state of the upload to queued.
+	MarkQueued(ctx context.Context, uploadID int) error
+
+	// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
+	// (the resulting array is deduplicated on update).
+	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
 	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
