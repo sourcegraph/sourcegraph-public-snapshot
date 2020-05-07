@@ -465,18 +465,11 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		conds = append(conds, sqlf.Sprintf("private"))
 	}
 	if len(opt.Names) > 0 {
-		var builder strings.Builder
-		builder.WriteString("name IN (")
-		args := make([]interface{}, 0, len(opt.Names))
-		for i, repo := range opt.Names {
-			builder.WriteString("%s")
-			if i < len(opt.Names)-1 {
-				builder.WriteString(", ")
-			}
-			args = append(args, repo)
+		queries := make([]*sqlf.Query, 0, len(opt.Names))
+		for _, repo := range opt.Names {
+			queries = append(queries, sqlf.Sprintf("%s", repo))
 		}
-		builder.WriteString(")")
-		conds = append(conds, sqlf.Sprintf(builder.String(), args...))
+		conds = append(conds, sqlf.Sprintf("NAME IN (%s)", sqlf.Join(queries, ", ")))
 	}
 
 	if opt.Index != nil {
