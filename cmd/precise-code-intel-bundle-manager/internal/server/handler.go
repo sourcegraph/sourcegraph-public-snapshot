@@ -14,6 +14,8 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -229,11 +231,19 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 
 	openDatabase := func() (database.Database, error) {
 		cached = false
-		db, err := database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+
+		// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
+		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "OpenDatabase")
+			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
-		return db, nil
+
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
+		}
+
+		return s.wrapDatabase(database), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -247,4 +257,12 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	}
 
 	return s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler)
+}
+
+func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
+	return reader.NewObserved(innerReader, s.observationContext, "precise_code_intel_bundle_manager")
+}
+
+func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
+	return database.NewObserved(innerDatabase, s.observationContext)
 }

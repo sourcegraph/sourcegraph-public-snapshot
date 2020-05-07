@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
@@ -15,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -65,6 +69,12 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
 	serverInst := server.New(server.ServerOpts{
 		Host:                 host,
 		Port:                 3187,
@@ -72,6 +82,7 @@ func main() {
 		DatabaseCache:        databaseCache,
 		DocumentDataCache:    documentDataCache,
 		ResultChunkDataCache: resultChunkDataCache,
+		ObservationContext:   observationContext,
 	})
 
 	janitorMetrics := janitor.NewJanitorMetrics()

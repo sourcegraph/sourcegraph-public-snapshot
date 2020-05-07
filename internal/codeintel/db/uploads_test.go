@@ -26,7 +26,7 @@ func TestGetUploadByID(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Upload does not exist initially
 	if _, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
@@ -72,7 +72,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 5)
@@ -117,7 +117,7 @@ func TestGetUploadsByRepo(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -195,7 +195,7 @@ func TestEnqueue(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	id, err := db.Enqueue(context.Background(), makeCommit(1), "sub/", `{"id": 42}`, 50, "lsif-go")
 	if err != nil {
@@ -241,7 +241,7 @@ func TestDequeueConversionSuccess(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
@@ -284,7 +284,7 @@ func TestDequeueConversionError(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
@@ -339,7 +339,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued", Indexer: "lsif-go"})
@@ -386,7 +386,7 @@ func TestDequeueSkipsLocked(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Minute)
@@ -432,7 +432,7 @@ func TestDequeueEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	_, jobHandle, ok, err := db.Dequeue(context.Background())
 	if err != nil {
@@ -449,7 +449,7 @@ func TestDequeueConcurrency(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
@@ -474,7 +474,7 @@ func TestGetStates(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, State: "queued"},
@@ -501,7 +501,7 @@ func TestDeleteUploadByID(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1},
@@ -534,7 +534,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	getTipCommit := func(repositoryID int) (string, error) {
 		return "", nil
@@ -552,7 +552,7 @@ func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(4), Root: "sub1/", VisibleAtTip: true},
@@ -596,7 +596,7 @@ func TestResetStalled(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	now := time.Unix(1587396557, 0).UTC()
 	t1 := now.Add(-time.Second * 6) // old

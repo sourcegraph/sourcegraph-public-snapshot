@@ -5,7 +5,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
@@ -239,6 +242,14 @@ func TestDatabasePackageInformation(t *testing.T) {
 }
 
 func openTestDatabase(t *testing.T) Database {
+	filename := "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db"
+
+	// TODO - rewrite test not to require actual reader
+	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
+	if err != nil {
+		t.Fatalf("unexpected error creating reader: %s", err)
+	}
+
 	documentDataCache, _, err := NewDocumentDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
@@ -249,10 +260,12 @@ func openTestDatabase(t *testing.T) Database {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
+	db, err := OpenDatabase(context.Background(), filename, reader, documentDataCache, resultChunkDataCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 	t.Cleanup(func() { _ = db.Close })
-	return db
+
+	// Wrap in observed, as that's how it's used in production
+	return NewObserved(db, &observation.Context{})
 }

@@ -13,7 +13,7 @@ func TestRepoName(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if _, err := dbconn.Global.Exec(`INSERT INTO repo (id, name) VALUES (50, 'github.com/foo/bar')`); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)

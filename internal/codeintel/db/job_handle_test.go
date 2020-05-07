@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -14,7 +13,7 @@ func TestJobHandleUnmarkedClose(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -35,7 +34,7 @@ func TestJobHandleRollbackNoSavepoint(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -56,7 +55,7 @@ func TestJobHandleSavepointRollback(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -87,7 +86,7 @@ func TestJobHandlePartialSavepointRollback(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
