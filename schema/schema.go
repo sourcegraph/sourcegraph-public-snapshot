@@ -405,6 +405,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// VersionContexts description: JSON array of version context configuration
+	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -1061,6 +1063,24 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VersionContext description: Configuration of the version context
+type VersionContext struct {
+	// Description description: Description of the version context
+	Description string `json:"description,omitempty"`
+	// Name description: Name of the version context, it must be unique.
+	Name string `json:"name"`
+	// Revisions description: List of repositories of the version context
+	Revisions []*VersionContextRevision `json:"revisions"`
+}
+
+// VersionContextRevision description: Description of the chosen repository and revision
+type VersionContextRevision struct {
+	// Ref description: Branch, tag, or commit hash
+	Ref string `json:"ref"`
+	// Repo description: Repository name
+	Repo string `json:"repo"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"

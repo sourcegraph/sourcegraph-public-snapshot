@@ -3,8 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -37,40 +35,6 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	}
 
 	return payload.Uploads, nil
-}
-
-func (c *Client) Upload(ctx context.Context, args *struct {
-	RepoID      api.RepoID
-	Commit      api.CommitID
-	Root        string
-	IndexerName string
-	Body        io.ReadCloser
-}) (int64, bool, error) {
-	query := queryValues{}
-	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("commit", string(args.Commit))
-	query.Set("root", args.Root)
-	query.Set("indexerName", args.IndexerName)
-
-	req := &lsifRequest{
-		path:       "/upload",
-		method:     "POST",
-		query:      query,
-		body:       args.Body,
-		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
-	}
-
-	payload := struct {
-		ID int64 `json:"id"`
-	}{}
-
-	meta, err := c.do(ctx, req, &payload)
-	if err != nil {
-		return 0, false, err
-	}
-
-	return payload.ID, meta.statusCode == http.StatusAccepted, nil
-
 }
 
 func (c *Client) Definitions(ctx context.Context, args *struct {

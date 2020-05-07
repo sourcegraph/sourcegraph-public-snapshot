@@ -2,17 +2,17 @@
 //
 // High-level ideas:
 //
-//     - Each service creates an observation Context that wraps a root logger, tracer,
-//       and a metrics registerer.
+//     - Each service creates an observation Context that carries a root logger, tracer,
+//       and a metrics registerer as its context.
 //
-//     - An observation Context can create an observation Operation with a reference to
-//       the root logger and tracer. An operation is configured with log and trace names,
-//       a OperationMetrics value, and any log fields or metric labels appropriate for
-//       the operation.
+//     - An observation Context can create an observation Operation which represents a
+//       section of code that can be invoked many times. An observation Operation is
+//       configured with state that applies to all invocation of the code.
 //
-//     - An observation Operation can be prepared with its `With` method, which will prepare
-//       a trace and some state to be reconciled later. This method returns a function that,
-//       when deferred, will emit metrics, additional logs, and finalize the trace span.
+//     - An observation Operation can wrap a an invocation of a section of code by calling its
+//       With method. This prepares a trace and some state to be reconciled after the invocation
+//       has completed. The With method returns a function that, when deferred, will emit metrics,
+//       additional logs, and finalize the trace span.
 //
 // Sample usage:
 //
@@ -29,8 +29,7 @@
 //     )
 //
 //     operation := observationContext.Operation(observation.Op{
-//         LogName:      "Thing.SomeOperation",
-//         TraceName:    "thing.some-operation",
+//         Name:         "Thing.SomeOperation",
 //         MetricLabels: []string{"some_operation"},
 //         Metrics:      metrics,
 //     })
@@ -63,31 +62,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// Context holds the root objects that create loggers, trace spans, and registers metrics. Each
-// service should create one context on start and use it to create Operation objects owned and
-// used by the observed structs that perform the operation it represents.
+// Context carries context about where to send logs, trace spans, and register
+// metrics. It should be created once on service startup, and passed around to
+// any location that wants to use it for observing operations.
 type Context struct {
-	logger     logging.ErrorLogger
-	tracer     *trace.Tracer
-	registerer prometheus.Registerer
-}
-
-// NewContext creates a new context. If the logger, tracer, or registerer passed here is nil,
-// the operations created with this context will not have logging, tracing, or metrics enabled,
-// respectively.
-func NewContext(logger logging.ErrorLogger, tracer *trace.Tracer, registerer prometheus.Registerer) *Context {
-	return &Context{
-		logger:     logger,
-		tracer:     tracer,
-		registerer: registerer,
-	}
+	Logger     logging.ErrorLogger
+	Tracer     *trace.Tracer
+	Registerer prometheus.Registerer
 }
 
 // Op configures an Operation instance.
 type Op struct {
-	Metrics   *metrics.OperationMetrics
-	TraceName string
-	LogName   string
+	Metrics *metrics.OperationMetrics
+	// Name configures the trace and error log names. This string should be of the
+	// format {GroupName}.{OperationName}, where both sections are title cased
+	// (e.g. Store.GetRepoByID).
+	Name string
 	// MetricLabels that apply for every invocation of this operation.
 	MetricLabels []string
 	// LogFields that apply for for every invocation of this operation.
@@ -98,15 +88,15 @@ type Op struct {
 // should be owned and used by the code that performs the operation it represents. This will
 // immediately register any supplied metric with the context's metric registerer.
 func (c *Context) Operation(args Op) *Operation {
-	if c.registerer != nil && args.Metrics != nil {
-		args.Metrics.MustRegister(c.registerer)
+	if c.Registerer != nil && args.Metrics != nil {
+		args.Metrics.MustRegister(c.Registerer)
 	}
 
 	return &Operation{
 		context:      c,
 		metrics:      args.Metrics,
-		traceName:    args.TraceName,
-		logName:      args.LogName,
+		name:         args.Name,
+		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabels,
 		logFields:    args.LogFields,
 	}
@@ -116,8 +106,8 @@ func (c *Context) Operation(args Op) *Operation {
 type Operation struct {
 	context      *Context
 	metrics      *metrics.OperationMetrics
-	traceName    string
-	logName      string
+	name         string
+	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
 }
@@ -156,11 +146,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // attached to the operation or to the args to With, they are emitted immediately. This returns
 // an unmodified context and a nil trace if no tracer was supplied on the observation context.
 func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
-	if op.context.tracer == nil {
+	if op.context.Tracer == nil {
 		return nil, ctx
 	}
 
-	tr, ctx := op.context.tracer.New(ctx, op.traceName, "")
+	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
 	tr.LogFields(mergeLogFields(op.logFields, args.LogFields)...)
 	return tr, ctx
 }
@@ -170,7 +160,7 @@ func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, contex
 // to the finish function. This does nothing if the no logger was supplied on the observation
 // context.
 func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
-	if op.context.logger == nil {
+	if op.context.Logger == nil {
 		return
 	}
 
@@ -179,7 +169,7 @@ func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
 		kvs = append(kvs, field.Key(), field.Value())
 	}
 
-	logging.Log(op.context.logger, op.logName, err, kvs...)
+	logging.Log(op.context.Logger, op.name, err, kvs...)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics

@@ -356,6 +356,9 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
 		return nil, err
 	}
+	if codeIntelUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.CodeIntelUsagePeriod
@@ -388,6 +391,9 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	var searchUsage *types.SearchUsageStatistics
 	if err := json.Unmarshal(payload, &searchUsage); err != nil {
 		return nil, err
+	}
+	if searchUsage == nil {
+		return nil, nil
 	}
 
 	singlePeriodUsage := struct {
