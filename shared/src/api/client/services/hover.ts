@@ -8,6 +8,7 @@ import { TextDocumentPositionParams } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { isNot, isExactly } from '../../../util/types'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
+import { finallyReleaseProxy } from '../api/common'
 
 export type ProvideTextDocumentHoverSignature = (
     params: TextDocumentPositionParams
@@ -47,6 +48,7 @@ export function getHover(
                     concat(
                         [LOADING],
                         provider(params).pipe(
+                            finallyReleaseProxy(),
                             defaultIfEmpty<typeof LOADING | Hover | null | undefined>(null),
                             catchError(err => {
                                 if (logErrors) {

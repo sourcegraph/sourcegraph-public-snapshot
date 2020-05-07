@@ -18,6 +18,7 @@ func (j *Janitor) cleanOldUploads() error {
 		return err
 	}
 
+	count := 0
 	for _, fileInfo := range fileInfos {
 		age := time.Since(fileInfo.ModTime())
 		if age < j.maxUploadAge {
@@ -29,8 +30,10 @@ func (j *Janitor) cleanOldUploads() error {
 			return err
 		}
 
+		count++
 		log15.Debug("Removed old upload", "path", fileInfo.Name(), "age", age)
 	}
 
+	j.metrics.OldUploads.Add(float64(count))
 	return nil
 }

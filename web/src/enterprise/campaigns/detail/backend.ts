@@ -16,7 +16,7 @@ import {
     IPatchesOnCampaignArguments,
     IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
@@ -469,8 +469,6 @@ export const queryExternalChangesetFileDiffs = (
 
             ${FileDiffFields}
 
-            ${FileDiffHunkRangeFields}
-
             ${DiffStatFields}
         `,
         { externalChangeset, first }
@@ -519,8 +517,6 @@ export const queryPatchFileDiffs = (
             }
 
             ${PreviewFileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,

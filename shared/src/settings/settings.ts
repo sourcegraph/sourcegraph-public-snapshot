@@ -183,6 +183,7 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
     }
     const customFunctions: CustomMergeFunctions = {
         extensions: (base: any, add: any) => ({ ...base, ...add }),
+        experimentalFeatures: (base: any, add: any) => ({ ...base, ...add }),
         notices: (base: any, add: any) => [...base, ...add],
         'search.scopes': (base: any, add: any) => [...base, ...add],
         'search.savedQueries': (base: any, add: any) => [...base, ...add],

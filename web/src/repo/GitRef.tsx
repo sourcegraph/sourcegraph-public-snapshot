@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
@@ -17,13 +16,13 @@ interface GitRefNodeProps {
     /** Link URL; if undefined, node.url is used. */
     url?: string
 
-    /** Whether the top-level element is a link. */
-    rootIsLink?: boolean
+    /** Whether any ancestor element higher up in the tree is an `<a>` element. */
+    ancestorIsLink?: boolean
 
     children?: React.ReactNode
 }
 
-export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, rootIsLink, children }) => {
+export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, ancestorIsLink, children }) => {
     const mostRecentSig =
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
@@ -33,15 +32,9 @@ export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={url}>
+        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!ancestorIsLink ? url : undefined}>
             <span>
-                {rootIsLink ? (
-                    <code className="git-ref-tag-2">{node.displayName}</code>
-                ) : (
-                    <Link className="git-ref-tag-2" to={url}>
-                        <code>{node.displayName}</code>
-                    </Link>
-                )}
+                <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
                     <small className="text-muted pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}

@@ -24,6 +24,7 @@ require (
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
+	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/emersion/go-imap v1.0.4
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
@@ -90,6 +91,7 @@ require (
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/mschoch/smat v0.2.0 // indirect
+	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
 	github.com/opentracing/opentracing-go v1.1.0
@@ -155,7 +157,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200417123535-6727685ef676
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200505143549-65235a0cdcf1
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

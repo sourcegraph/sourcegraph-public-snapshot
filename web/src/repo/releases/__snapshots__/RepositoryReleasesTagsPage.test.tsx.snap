@@ -1,0 +1,63 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RepositoryReleasesTagsPage renders 1`] = `
+<div
+  className="repository-releases-page"
+>
+  <PageTitle
+    title="Tags"
+  />
+  <FilteredConnection
+    autoFocus={true}
+    className="my-3"
+    defaultFirst={20}
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    listClassName="list-group list-group-flush"
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+    nodeComponent={[Function]}
+    noun="tag"
+    pluralNoun="tags"
+    queryConnection={[Function]}
+    useURLQuery={true}
+  />
+</div>
+`;

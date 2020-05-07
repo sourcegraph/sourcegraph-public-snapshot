@@ -90,7 +90,7 @@ const GitRefPopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
         <GitRefNode
             node={node}
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
-            rootIsLink={true}
+            ancestorIsLink={true}
         >
             {isCurrent && (
                 <CircleChevronLeftIcon

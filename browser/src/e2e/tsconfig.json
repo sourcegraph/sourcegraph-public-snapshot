@@ -6,6 +6,13 @@
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "../../out/src/e2e",
+    "plugins": [
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "../../../cmd/frontend/graphqlbackend/schema.graphql",
+        "tag": "gql",
+      },
+    ],
   },
   "include": ["**/*"],
   "exclude": [],

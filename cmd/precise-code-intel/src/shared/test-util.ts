@@ -139,6 +139,8 @@ export async function insertDump(
     upload.uploadedAt = new Date()
     upload.state = 'completed'
     upload.tracingContext = '{}'
+    upload.numParts = 1
+    upload.uploadedParts = [0]
     await connection.createEntityManager().save(upload)
 
     const dump = new pgModels.LsifDump()

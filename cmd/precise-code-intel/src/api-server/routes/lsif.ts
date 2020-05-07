@@ -80,7 +80,7 @@ export function createLsifRouter(
     }
 
     interface UploadResponse {
-        id: number
+        id: string
     }
 
     router.post(
@@ -132,7 +132,7 @@ export function createLsifRouter(
                     // Upload conversion will complete asynchronously, send an accepted response
                     // with the upload id so that the client can continue to track the progress
                     // asynchronously.
-                    res.status(202).send({ id })
+                    res.status(202).send({ id: `${id}` })
                 } finally {
                     // Remove local file
                     await fs.unlink(filename)

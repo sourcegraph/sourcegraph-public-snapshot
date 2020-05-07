@@ -34,28 +34,68 @@ func (m *OperationMetrics) MustRegister(r prometheus.Registerer) {
 	r.MustRegister(m.Errors)
 }
 
-// NewOperationMetrics creates an OperationMetrics value without any
-// specific labels. The supplied operationName should be underscore_cased
-// as it is used in the metric name.
-func NewOperationMetrics(subsystem, metricPrefix, operationName string) *OperationMetrics {
+type operationMetricOptions struct {
+	durationHelp string
+	countHelp    string
+	errorsHelp   string
+	labels       []string
+}
+
+// OperationMetricsOption alter the default behavior of NewOperationMetrics.
+type OperationMetricsOption func(o *operationMetricOptions)
+
+// WithDurationHelp overrides the default help text for duration metrics.
+func WithDurationHelp(text string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.durationHelp = text }
+}
+
+// WithCountHelp overrides the default help text for count metrics.
+func WithCountHelp(text string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.countHelp = text }
+}
+
+// WithErrorsHelp overrides the default help text for errors metrics.
+func WithErrorsHelp(text string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.errorsHelp = text }
+}
+
+// WithLabels overrides the default labels for all metrics.
+func WithLabels(labels ...string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.labels = labels }
+}
+
+// NewOperationMetrics creates an OperationMetrics value. The supplied metricPrefix should
+// be underscore_cased as it is used in the metric name.
+func NewOperationMetrics(subsystem, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
+	options := &operationMetricOptions{
+		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", metricPrefix),
+		countHelp:    fmt.Sprintf("Total number of %s operations", metricPrefix),
+		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", metricPrefix),
+		labels:       nil,
+	}
+
+	for _, fn := range fns {
+		fn(options)
+	}
+
 	return &OperationMetrics{
 		Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_duration_seconds", metricPrefix, operationName),
-			Help:      "Time spent performing %s operations",
-		}, []string{}),
+			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
+			Help:      options.durationHelp,
+		}, options.labels),
 		Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_total", metricPrefix, operationName),
-			Help:      fmt.Sprintf("Total number of %s operations", operationName),
-		}, []string{}),
+			Name:      fmt.Sprintf("%s_total", metricPrefix),
+			Help:      options.countHelp,
+		}, options.labels),
 		Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_errors_total", metricPrefix, operationName),
-			Help:      fmt.Sprintf("Total number of errors when performing %s operations", operationName),
-		}, []string{}),
+			Name:      fmt.Sprintf("%s_errors_total", metricPrefix),
+			Help:      options.errorsHelp,
+		}, options.labels),
 	}
 }

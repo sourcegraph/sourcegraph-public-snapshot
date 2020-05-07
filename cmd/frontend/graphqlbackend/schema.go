@@ -1132,6 +1132,10 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
+        # (experimental) Optionally specify the versionContext. If not specified the
+        # default version context is used (all repositories on the default branch).
+        versionContext: String
+
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
         # https://docs.sourcegraph.com/api/graphql/search
@@ -1156,6 +1160,8 @@ type Query {
     savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
+    # (experimental) All version contexts.
+    versionContexts: [VersionContext!]!
     # The current site.
     site: Site!
     # Retrieve responses to surveys.
@@ -1559,6 +1565,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # An optional URL that will be populated when webhooks have been configured for the external service.
+    webhookURL: String
     # This is an optional field that's populated when we ran into errors on the
     # backend side when trying to create/update an ExternalService, but the
     # create/update still succeeded.
@@ -1624,7 +1632,7 @@ type Repository implements Node & GenericSearchResultInterface {
     mirrorInfo: MirrorRepositoryInfo!
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
-    externalRepository: ExternalRepository
+    externalRepository: ExternalRepository!
     # Whether the repository is a fork.
     isFork: Boolean!
     # Whether the repository has been archived.
@@ -1854,6 +1862,22 @@ type ExternalRepository {
     #
     # Example: For GitHub.com, this is "https://github.com/".
     serviceID: String!
+}
+
+# (experimental) A version context. Used to change the set of default repository and
+# revisions searched.
+#
+# Note: We do not expose the list of repositories and revisions in the version
+# context. This is intentional. However, if a need arises we can add it in.
+type VersionContext implements Node {
+    # The version context ID is its name.
+    id: ID!
+
+    # The name of the version context.
+    name: String!
+
+    # The description of the version context.
+    description: String!
 }
 
 # Information about a repository's text search index.
@@ -3987,8 +4011,9 @@ type DotcomMutation {
         accountID: ID!
         # The details of the product subscription.
         productSubscription: ProductSubscriptionInput!
-        # The token that represents the payment method used to purchase this product subscription.
-        paymentToken: String!
+        # The token that represents the payment method used to purchase this product subscription,
+        # or null if no payment is required.
+        paymentToken: String
     ): CreatePaidProductSubscriptionResult!
     # Updates a new product subscription and credits or debits the associated payment method.
     #
@@ -4004,8 +4029,8 @@ type DotcomMutation {
         # value").
         update: ProductSubscriptionInput!
         # The token that represents the payment method used to pay for (or receive credit for) this
-        # product subscription update.
-        paymentToken: String!
+        # product subscription update, or null if no payment is required.
+        paymentToken: String
     ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #
@@ -4211,6 +4236,8 @@ type ProductPlan {
     pricePerUserPerYear: Int!
     # The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
     minQuantity: Int
+    # The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    maxQuantity: Int
     # Defines if the tiering price should be graduated or volume based.
     tiersMode: String!
     # The tiered pricing for the plan.
@@ -4221,11 +4248,11 @@ type ProductPlan {
 #
 # FOR INTERNAL USE ONLY.
 type PlanTier {
-    # The per-user amount.
+    # The per-user amount for this tier.
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
-    # The base fee that this tier applies to.
+    # The flat fee for this tier.
     flatAmount: Int!
 }
 

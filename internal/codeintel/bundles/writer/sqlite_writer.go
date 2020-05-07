@@ -3,9 +3,11 @@ package writer
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer/schema"
@@ -41,7 +43,7 @@ func NewSQLiteWriter(filename string, serializer serializer.Serializer) (_ Write
 	}()
 
 	if _, err := db.Exec(schema.TableDefinitions); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating tables")
 	}
 
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -67,18 +69,21 @@ func NewSQLiteWriter(filename string, serializer serializer.Serializer) (_ Write
 }
 
 func (w *sqliteWriter) WriteMeta(ctx context.Context, lsifVersion string, numResultChunks int) error {
-	return w.metaInserter.Insert(ctx, lsifVersion, InternalVersion, numResultChunks)
+	if err := w.metaInserter.Insert(ctx, lsifVersion, InternalVersion, numResultChunks); err != nil {
+		return errors.Wrap(err, "metaInserter.Insert")
+	}
+	return nil
 }
 
 func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
 	for k, v := range documents {
 		ser, err := w.serializer.MarshalDocumentData(v)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "serializer.MarshalDocumentData")
 		}
 
 		if err := w.documentInserter.Insert(ctx, k, ser); err != nil {
-			return err
+			return errors.Wrap(err, "documentInserter.Insert")
 		}
 	}
 	return nil
@@ -88,11 +93,11 @@ func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[i
 	for k, v := range resultChunks {
 		ser, err := w.serializer.MarshalResultChunkData(v)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "serializer.MarshalResultChunkData")
 		}
 
 		if err := w.resultChunkInserter.Insert(ctx, k, ser); err != nil {
-			return err
+			return errors.Wrap(err, "resultChunkInserter.Insert")
 		}
 	}
 	return nil
@@ -101,7 +106,7 @@ func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[i
 func (w *sqliteWriter) WriteDefinitions(ctx context.Context, definitions []types.DefinitionReferenceRow) error {
 	for _, r := range definitions {
 		if err := w.definitionInserter.Insert(ctx, r.Scheme, r.Identifier, r.URI, r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter); err != nil {
-			return err
+			return errors.Wrap(err, "definitionInserter.Insert")
 		}
 	}
 	return nil
@@ -110,24 +115,24 @@ func (w *sqliteWriter) WriteDefinitions(ctx context.Context, definitions []types
 func (w *sqliteWriter) WriteReferences(ctx context.Context, references []types.DefinitionReferenceRow) error {
 	for _, r := range references {
 		if err := w.referenceInserter.Insert(ctx, r.Scheme, r.Identifier, r.URI, r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter); err != nil {
-			return err
+			return errors.Wrap(err, "referenceInserter.Insert")
 		}
 	}
 	return nil
 }
 
 func (w *sqliteWriter) Flush(ctx context.Context) error {
-	inserters := []*sqliteutil.BatchInserter{
-		w.metaInserter,
-		w.documentInserter,
-		w.resultChunkInserter,
-		w.definitionInserter,
-		w.referenceInserter,
+	inserters := map[string]*sqliteutil.BatchInserter{
+		"metaInserter":        w.metaInserter,
+		"documentInserter":    w.documentInserter,
+		"resultChunkInserter": w.resultChunkInserter,
+		"definitionInserter":  w.definitionInserter,
+		"referenceInserter":   w.referenceInserter,
 	}
 
-	for _, inserter := range inserters {
+	for name, inserter := range inserters {
 		if err := inserter.Flush(ctx); err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("%s.Flush", name))
 		}
 	}
 
@@ -136,7 +141,7 @@ func (w *sqliteWriter) Flush(ctx context.Context) error {
 	}
 
 	if _, err := w.db.ExecContext(ctx, schema.IndexDefinitions); err != nil {
-		return err
+		return errors.Wrap(err, "creating indexes")
 	}
 
 	return nil

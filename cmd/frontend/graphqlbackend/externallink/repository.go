@@ -135,10 +135,8 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 }
 
 var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "links_for_repository_failed_total",
-	Help:      "The total number of times the GraphQL field LinksForRepository failed.",
+	Name: "src_graphql_links_for_repository_failed_total",
+	Help: "The total number of times the GraphQL field LinksForRepository failed.",
 })
 
 func init() {
