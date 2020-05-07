@@ -278,6 +278,13 @@ type pingPayload struct {
 }
 
 func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			log15.Warn("logPing: panic", "recover", r)
+			errorCounter.Inc()
+		}
+	}()
+
 	var clientAddr string
 	if v := r.Header.Get("x-forwarded-for"); v != "" {
 		clientAddr = v
@@ -287,11 +294,13 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
+		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
 	} else {
 		if pubsubutil.Enabled() {
 			err := pubsubutil.Publish(pubSubPingsTopicID, string(message))
 			if err != nil {
+				errorCounter.Inc()
 				log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 			}
 		}
@@ -423,6 +432,10 @@ var (
 	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_updatecheck_requests_has_update",
 		Help: "Number of requests to the update check handler where an update is available.",
+	})
+	errorCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_errors",
+		Help: "Number of errors that occur while publishing server pings.",
 	})
 )
 
