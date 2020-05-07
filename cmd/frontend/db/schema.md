@@ -394,6 +394,8 @@ Foreign-key constraints:
  tracing_context    | text                     | not null
  repository_id      | integer                  | not null
  indexer            | text                     | not null
+ num_parts          | integer                  | not null
+ uploaded_parts     | integer[]                | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
