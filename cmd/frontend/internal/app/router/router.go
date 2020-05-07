@@ -6,6 +6,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 )

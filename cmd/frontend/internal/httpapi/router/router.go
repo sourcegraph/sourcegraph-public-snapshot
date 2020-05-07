@@ -13,6 +13,8 @@ const (
 	SrcCliVersion  = "src-cli.version"
 	SrcCliDownload = "src-cli.download"
 
+	UsageStatsDownload = "usage-stats.download"
+
 	Registry = "registry"
 
 	RepoShield  = "repo.shield"
