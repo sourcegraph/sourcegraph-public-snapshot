@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 )
 
 const patchSetIDKind = "PatchSet"
@@ -398,27 +400,73 @@ func (r *previewFileDiffResolver) OldPath() *string { return diffPathOrNull(r.fi
 func (r *previewFileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
 
 func (r *previewFileDiffResolver) Hunks(ctx context.Context, args struct{ IsLightTheme bool }) ([]*graphqlbackend.DiffHunk, error) {
+	if len(r.fileDiff.Hunks) == 0 {
+		return []*graphqlbackend.DiffHunk{}, nil
+	}
+
+	var (
+		baseLines, headLines map[int32]string
+	)
+	if oldFile := r.OldFile(); oldFile != nil {
+		binary, err := r.OldFile().Binary(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !binary {
+			highlightedBase, err := r.OldFile().Highlight(ctx, &struct {
+				DisableTimeout     bool
+				IsLightTheme       bool
+				HighlightLongLines bool
+				PlainResult        bool
+			}{
+				DisableTimeout:     false,
+				HighlightLongLines: false,
+				IsLightTheme:       args.IsLightTheme,
+				PlainResult:        true,
+			})
+			if err != nil {
+				return nil, err
+			}
+			baseLines, err = graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if newPath := r.NewPath(); newPath != nil {
+		content, err := r.OldFile().Content(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// TODO: Apply patch.
+		highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
+			Content:  []byte(content),
+			Filepath: *newPath,
+			Metadata: highlight.Metadata{
+				RepoName: r.commit.Repository().Name(),
+				Revision: string(r.commit.OID()),
+			},
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+			IsLightTheme:       args.IsLightTheme,
+			PlainResult:        true,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if aborted {
+			return nil, errors.New("Highlighting aborted")
+		}
+		headLines, err = graphqlbackend.ParseLinesFromHighlight(string(highlightedHead))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
-	highlightedBase, err := r.OldFile().Highlight(ctx, &struct {
-		DisableTimeout     bool
-		IsLightTheme       bool
-		HighlightLongLines bool
-		PlainResult        bool
-	}{
-		DisableTimeout:     false,
-		HighlightLongLines: false,
-		IsLightTheme:       args.IsLightTheme,
-		PlainResult:        true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	lines, err := graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
-	if err != nil {
-		return nil, err
-	}
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = graphqlbackend.NewDiffHunk(hunk, lines, lines)
+		hunks[i] = graphqlbackend.NewDiffHunk(hunk, baseLines, headLines)
 	}
 	return hunks, nil
 }

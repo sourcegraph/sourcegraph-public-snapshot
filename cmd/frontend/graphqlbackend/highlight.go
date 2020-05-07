@@ -40,7 +40,7 @@ func fromVCSHighlights(vcsHighlights []git.Highlight) []*highlightedRange {
 	return highlights
 }
 
-func ParseLinesFromHighlight(input string) (*map[int32]string, error) {
+func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 	doc, err := html.Parse(strings.NewReader(input))
 	if err != nil {
 		return nil, err
@@ -69,7 +69,6 @@ func ParseLinesFromHighlight(input string) (*map[int32]string, error) {
 		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
 		return nil
 	}
-
 	for next != nil {
 		nextSibling := next.NextSibling
 		switch {
@@ -113,7 +112,14 @@ func ParseLinesFromHighlight(input string) (*map[int32]string, error) {
 		default:
 			return nil, fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
 		}
+		// If the last element in the tree was no text node, need to create one more line from the existing content.
+		if nextSibling == nil && next.Type != html.TextNode {
+			err = newRow()
+			if err != nil {
+				return nil, err
+			}
+		}
 		next = nextSibling
 	}
-	return &lines, nil
+	return lines, nil
 }
