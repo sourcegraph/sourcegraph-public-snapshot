@@ -33,6 +33,10 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 		commit := q.Get("commit")
 		ctx := r.Context()
 
+		// We only need to translate the repository id and check for auth on the first
+		// upload request. If there is an upload identifier, this check has already
+		// been performed (or someone is uploading to an unknown identifier, which will
+		// naturally result in an error response).
 		if q.Get("uploadId") == "" {
 			repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
 			if !ok {
