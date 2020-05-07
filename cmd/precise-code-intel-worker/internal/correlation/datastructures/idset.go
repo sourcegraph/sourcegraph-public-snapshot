@@ -2,8 +2,6 @@ package datastructures
 
 import "sort"
 
-// TODO(efritz) - these need to be IDs not strings
-
 // IDSet is a set of string identifiers.
 type IDSet map[string]struct{}
 

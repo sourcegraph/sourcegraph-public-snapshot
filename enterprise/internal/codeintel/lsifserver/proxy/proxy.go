@@ -54,7 +54,6 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 					}
 				}
 			}
-
 		}
 
 		host, err := client.SelectRandomHost()
