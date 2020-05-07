@@ -52,6 +52,10 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
                             name
                         }
                     }
+                    permissionsInfo {
+                        syncedAt
+                        updatedAt
+                    }
                 }
             }
         `,
