@@ -10,11 +10,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/linkheader"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type lsifRequest struct {
@@ -55,41 +52,16 @@ func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload inter
 		return nil, err
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "lsifserver.client.do")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
 	req, err := http.NewRequest(method, url, lsifRequest.body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(
-		span.Tracer(),
-		req,
-		nethttp.OperationName("LSIF client"),
-		nethttp.ClientTrace(false),
-	)
-	defer ht.Finish()
-
-	// Do not use ctxhttp.Do here as it will re-wrap the request
-	// with a context and this will causes the ot-headers not to
-	// propagate correctly.
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.RawRequest(ctx, req)
 	if err != nil {
-		if ctx.Err() != nil {
-			err = ctx.Err()
-		}
-		return nil, errors.Wrap(err, "lsif request failed")
+		return nil, err
 	}
-
 	defer resp.Body.Close()
 
 	content, err := ioutil.ReadAll(resp.Body)

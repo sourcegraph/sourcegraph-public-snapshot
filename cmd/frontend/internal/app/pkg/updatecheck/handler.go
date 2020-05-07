@@ -356,6 +356,9 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
 		return nil, err
 	}
+	if codeIntelUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.CodeIntelUsagePeriod
@@ -389,6 +392,9 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(payload, &searchUsage); err != nil {
 		return nil, err
 	}
+	if searchUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.SearchUsagePeriod
@@ -411,16 +417,12 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 var (
 	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests",
-		Help:      "Number of requests to the update check handler.",
+		Name: "src_updatecheck_requests",
+		Help: "Number of requests to the update check handler.",
 	})
 	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests_has_update",
-		Help:      "Number of requests to the update check handler where an update is available.",
+		Name: "src_updatecheck_requests_has_update",
+		Help: "Number of requests to the update check handler where an update is available.",
 	})
 )
 

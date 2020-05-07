@@ -1,4 +1,4 @@
-import { Remote } from '@sourcegraph/comlink'
+import { Remote } from 'comlink'
 import { Subscription } from 'rxjs'
 import { ExtRootsAPI } from '../../extension/api/roots'
 import { WorkspaceService } from '../services/workspaceService'

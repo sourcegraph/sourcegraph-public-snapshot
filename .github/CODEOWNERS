@@ -195,8 +195,7 @@ Dockerfile @sourcegraph/distribution
 /README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/dev/typescript/ @felixfbecker @sourcegraph/web
-/doc/dev/web_app.md @felixfbecker @sourcegraph/web
+/doc/dev/web/ @felixfbecker @sourcegraph/web
 
 # Browser extensions
 /browser/ @sourcegraph/web

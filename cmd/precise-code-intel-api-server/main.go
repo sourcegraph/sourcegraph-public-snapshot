@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -39,6 +40,7 @@ func main() {
 		Port:                3186,
 		DB:                  db,
 		BundleManagerClient: bundles.New(bundleManagerURL),
+		GitserverClient:     gitserver.DefaultClient,
 	})
 
 	resetterMetrics := resetter.NewResetterMetrics()

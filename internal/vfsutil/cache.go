@@ -79,10 +79,8 @@ func initArchiveCacheDir() {
 }
 
 var cachedFileEvict = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "vfsutil",
-	Subsystem: "vfs",
-	Name:      "cached_file_evict",
-	Help:      "Total number of evictions to cachedFetch archives.",
+	Name: "vfsutil_vfs_cached_file_evict",
+	Help: "Total number of evictions to cachedFetch archives.",
 })
 
 func init() {

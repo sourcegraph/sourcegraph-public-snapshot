@@ -21,17 +21,13 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 var githubRepoRx = lazyregexp.New(`^github\.com/[\w.-]{1,100}/[\w.-]{1,100}$`)
 
 var ghFetch = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "vfsutil",
-	Subsystem: "vfs",
-	Name:      "github_fetch_total",
-	Help:      "Total number of fetches by GitHubRepoVFS.",
+	Name: "vfsutil_vfs_github_fetch_total",
+	Help: "Total number of fetches by GitHubRepoVFS.",
 })
 
 var ghFetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "vfsutil",
-	Subsystem: "vfs",
-	Name:      "github_fetch_failed_total",
-	Help:      "Total number of fetches by GitHubRepoVFS that failed.",
+	Name: "vfsutil_vfs_github_fetch_failed_total",
+	Help: "Total number of fetches by GitHubRepoVFS that failed.",
 })
 
 func init() {

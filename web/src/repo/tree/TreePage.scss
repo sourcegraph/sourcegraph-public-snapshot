@@ -1,5 +1,6 @@
-@import '../search/input/SearchButton';
-@import '../search/input/QueryInput';
+@import '../../search/input/SearchButton';
+@import '../../search/input/QueryInput';
+@import './ViewGrid';
 
 .tree-page {
     overflow-y: auto;
@@ -29,10 +30,6 @@
                 margin-top: -2px;
             }
         }
-    }
-
-    &__view-title:last-child {
-        margin-bottom: 0;
     }
 
     // To avoid having empty columns (and thus the items appearing not flush with the left margin),

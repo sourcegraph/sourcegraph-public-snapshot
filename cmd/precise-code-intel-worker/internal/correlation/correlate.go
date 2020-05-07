@@ -13,6 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 )
 
+// LineBufferSize is the maximum size of the buffer used to read each line of a raw LSIF index. Lines in
+// LSIF can get very long as it include escaped hover text (package documentation), as well as large edges
+// such as the contains edge of large documents.
+//
+// This corresponds a 10MB buffer that can accommodate 10 million characters.
+const LineBufferSize = 1e7
+
 // Correlate reads the given gzipped upload file and returns a correlation state object with the
 // same data canonicalized and pruned for storage.
 func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
@@ -55,15 +62,23 @@ func correlateFromReader(r io.Reader, root string) (*State, error) {
 	wrappedState := newWrappedState(root)
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
+	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
+	lineNumber := 0
 	for scanner.Scan() {
-		element, err := lsif.UnmarshalElement(scanner.Bytes())
+		lineNumber++
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		element, err := lsif.UnmarshalElement(line)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
 		}
 
 		if err := correlateElement(wrappedState, element); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
 		}
 	}
 

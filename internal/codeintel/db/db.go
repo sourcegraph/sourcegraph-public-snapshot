@@ -68,7 +68,7 @@ type DB interface {
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
 	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-	UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error)
+	UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) error
 
 	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 	// commit, root, and indexer. This is necessary to perform during conversions before changing
@@ -92,6 +92,9 @@ type DB interface {
 	// and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
+
+	// HasCommit determines if the given commit is known for the given repository.
+	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 
 	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error

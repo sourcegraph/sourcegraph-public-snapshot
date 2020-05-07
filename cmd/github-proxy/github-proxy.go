@@ -34,10 +34,8 @@ const port = "3180"
 var requestMu sync.Mutex
 
 var rateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "github",
-	Name:      "rate_limit_remaining",
-	Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
+	Name: "src_github_rate_limit_remaining",
+	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
 }, []string{"resource"})
 
 func init() {
@@ -153,40 +151,32 @@ func main() {
 func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
 	var (
 		inFlightGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "src",
-			Subsystem: "githubproxy",
-			Name:      "in_flight_requests",
-			Help:      "A gauge of requests currently being served by github-proxy.",
+			Name: "src_githubproxy_in_flight_requests",
+			Help: "A gauge of requests currently being served by github-proxy.",
 		})
 
 		counter = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "githubproxy",
-				Name:      "requests_total",
-				Help:      "A counter for requests to github-proxy.",
+				Name: "src_githubproxy_requests_total",
+				Help: "A counter for requests to github-proxy.",
 			},
 			[]string{"code", "method"},
 		)
 
 		duration = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
-				Namespace: "src",
-				Subsystem: "githubproxy",
-				Name:      "request_duration_seconds",
-				Help:      "A histogram of latencies for requests.",
-				Buckets:   []float64{.25, .5, 1, 2.5, 5, 10},
+				Name:    "src_githubproxy_request_duration_seconds",
+				Help:    "A histogram of latencies for requests.",
+				Buckets: []float64{.25, .5, 1, 2.5, 5, 10},
 			},
 			[]string{"method"},
 		)
 
 		responseSize = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
-				Namespace: "src",
-				Subsystem: "githubproxy",
-				Name:      "response_size_bytes",
-				Help:      "A histogram of response sizes for requests.",
-				Buckets:   []float64{200, 500, 900, 1500},
+				Name:    "src_githubproxy_response_size_bytes",
+				Help:    "A histogram of response sizes for requests.",
+				Buckets: []float64{200, 500, 900, 1500},
 			},
 			[]string{},
 		)

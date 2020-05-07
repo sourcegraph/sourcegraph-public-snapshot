@@ -126,7 +126,7 @@ func Test_Hoist(t *testing.T) {
 	}
 }
 
-func Test_SearchUpperCase(t *testing.T) {
+func TestSearchUppercase(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -173,9 +173,9 @@ func Test_SearchUpperCase(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		t.Run("searchUpperCase", func(t *testing.T) {
+		t.Run("searchUppercase", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
-			got := prettyPrint(SearchUpperCase(query))
+			got := prettyPrint(SearchUppercase(query))
 			if diff := cmp.Diff(got, c.want); diff != "" {
 				t.Fatal(diff)
 			}

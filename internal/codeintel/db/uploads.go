@@ -189,7 +189,7 @@ func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) 
 				continue
 			}
 
-			return Upload{}, nil, false, err
+			return Upload{}, nil, false, errors.Wrap(err, "db.dequeue")
 		}
 
 		return upload, jobHandle, ok, nil
@@ -273,7 +273,7 @@ func (db *dbImpl) DeleteUploadByID(ctx context.Context, id int, getTipCommit Get
 			}
 
 			if err := tx.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
-				return false, err
+				return false, errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
 			}
 		}
 

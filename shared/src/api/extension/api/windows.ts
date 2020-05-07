@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
 import { sortBy } from 'lodash'
 import { BehaviorSubject, Observable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
