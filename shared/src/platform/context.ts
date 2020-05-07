@@ -1,4 +1,4 @@
-import { Endpoint } from '@sourcegraph/comlink'
+import { Endpoint } from 'comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'

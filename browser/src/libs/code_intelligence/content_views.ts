@@ -1,4 +1,4 @@
-import { animationFrameScheduler, merge, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { asyncScheduler, merge, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, observeOn, tap, throttleTime } from 'rxjs/operators'
 import { LinkPreviewProviderRegistry } from '../../../../shared/src/api/client/services/linkPreview'
 import { applyLinkPreview } from '../../../../shared/src/components/linkPreviews/linkPreviews'
@@ -36,10 +36,7 @@ export function handleContentViews(
     }: Pick<CodeHost, 'contentViewResolvers' | 'linkPreviewContentClass' | 'setElementTooltip'>
 ): Unsubscribable {
     /** A stream of added or removed content views. */
-    const contentViews = mutations.pipe(
-        trackViews<ContentView>(contentViewResolvers || []),
-        observeOn(animationFrameScheduler)
-    )
+    const contentViews = mutations.pipe(trackViews<ContentView>(contentViewResolvers || []), observeOn(asyncScheduler))
 
     /** Pause DOM MutationObserver while we are making changes to avoid duplicating work. */
     const pauseMutationObserver = new Subject<boolean>()
@@ -82,7 +79,7 @@ export function handleContentViews(
                      * jsdom.
                      */
                     observeMutations(contentViewEvent.element, { childList: true }, pauseMutationObserver).pipe(
-                        observeOn(animationFrameScheduler),
+                        observeOn(asyncScheduler),
                         map(() => contentViewEvent.element.innerHTML),
                         distinctUntilChanged(),
                         tap(() => console.log('Content view updated', { contentViewEvent })),

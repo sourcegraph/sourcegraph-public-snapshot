@@ -16,7 +16,7 @@ import * as settings from './settings'
  * directory, as we watch the DB to ensure we're on at least this version prior to
  * making use of the DB (which the frontend may still be migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395666
+const MINIMUM_MIGRATION_VERSION = 1528395670
 
 /**
  * Create a Postgres connection. This creates a typorm connection pool with

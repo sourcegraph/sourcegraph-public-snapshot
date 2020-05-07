@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
@@ -13,7 +14,7 @@ import (
 func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
 	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "db.GetDumpByID")
 	}
 	if !exists {
 		return nil, ErrMissingDump
@@ -27,7 +28,7 @@ func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, cha
 func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
 	locations, err := bundleClient.Definitions(ctx, pathInBundle, line, character)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "bundleClient.Definitions")
 	}
 	if len(locations) > 0 {
 		return resolveLocationsWithDump(dump, locations), nil
@@ -35,13 +36,13 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 
 	rangeMonikers, err := bundleClient.MonikersByPosition(context.Background(), pathInBundle, line, character)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}
 
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.db, api.bundleManagerClient, dump.ID, pathInBundle, "definitions", moniker, 0, 0)
+				locations, _, err := lookupMoniker(api.db, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, 0)
 				if err != nil {
 					return nil, err
 				}
@@ -53,9 +54,9 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 				// table of our own database in case there was a definition that wasn't properly
 				// attached to a result set but did have the correct monikers attached.
 
-				locations, _, err := bundleClient.MonikerResults(context.Background(), "definitions", moniker.Scheme, moniker.Identifier, 0, 0)
+				locations, _, err := bundleClient.MonikerResults(context.Background(), "definition", moniker.Scheme, moniker.Identifier, 0, 0)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "bundleClient.MonikerResults")
 				}
 				if len(locations) > 0 {
 					return resolveLocationsWithDump(dump, locations), nil
@@ -70,7 +71,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 func (api *codeIntelAPI) definitionRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
 	resolved, err := api.definitionsRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 	if err != nil || len(resolved) == 0 {
-		return ResolvedLocation{}, false, err
+		return ResolvedLocation{}, false, errors.Wrap(err, "api.definitionsRaw")
 	}
 
 	return resolved[0], true, nil

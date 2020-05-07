@@ -123,7 +123,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
                         primaryButtonText="Upgrade subscription"
                         afterPrimaryButton={
                             <small className="form-text text-muted">
-                                An upgraded license key will be available immediately after payment.
+                                An upgraded license key will be available immediately.
                             </small>
                         }
                         history={history}
@@ -177,7 +177,7 @@ function updatePaidProductSubscription(
             mutation UpdatePaidProductSubscription(
                 $subscriptionID: ID!
                 $update: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     updatePaidProductSubscription(

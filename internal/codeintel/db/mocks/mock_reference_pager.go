@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	"context"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
@@ -13,9 +14,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/db) used for unit
 // testing.
 type MockReferencePager struct {
-	// CloseTxFunc is an instance of a mock function object controlling the
-	// behavior of the method CloseTx.
-	CloseTxFunc *ReferencePagerCloseTxFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *ReferencePagerDoneFunc
 	// PageFromOffsetFunc is an instance of a mock function object
 	// controlling the behavior of the method PageFromOffset.
 	PageFromOffsetFunc *ReferencePagerPageFromOffsetFunc
@@ -25,13 +26,13 @@ type MockReferencePager struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockReferencePager() *MockReferencePager {
 	return &MockReferencePager{
-		CloseTxFunc: &ReferencePagerCloseTxFunc{
+		DoneFunc: &ReferencePagerDoneFunc{
 			defaultHook: func(error) error {
 				return nil
 			},
 		},
 		PageFromOffsetFunc: &ReferencePagerPageFromOffsetFunc{
-			defaultHook: func(int) ([]types.PackageReference, error) {
+			defaultHook: func(context.Context, int) ([]types.PackageReference, error) {
 				return nil, nil
 			},
 		},
@@ -43,8 +44,8 @@ func NewMockReferencePager() *MockReferencePager {
 // overwritten.
 func NewMockReferencePagerFrom(i db.ReferencePager) *MockReferencePager {
 	return &MockReferencePager{
-		CloseTxFunc: &ReferencePagerCloseTxFunc{
-			defaultHook: i.CloseTx,
+		DoneFunc: &ReferencePagerDoneFunc{
+			defaultHook: i.Done,
 		},
 		PageFromOffsetFunc: &ReferencePagerPageFromOffsetFunc{
 			defaultHook: i.PageFromOffset,
@@ -52,35 +53,35 @@ func NewMockReferencePagerFrom(i db.ReferencePager) *MockReferencePager {
 	}
 }
 
-// ReferencePagerCloseTxFunc describes the behavior when the CloseTx method
-// of the parent MockReferencePager instance is invoked.
-type ReferencePagerCloseTxFunc struct {
+// ReferencePagerDoneFunc describes the behavior when the Done method of the
+// parent MockReferencePager instance is invoked.
+type ReferencePagerDoneFunc struct {
 	defaultHook func(error) error
 	hooks       []func(error) error
-	history     []ReferencePagerCloseTxFuncCall
+	history     []ReferencePagerDoneFuncCall
 	mutex       sync.Mutex
 }
 
-// CloseTx delegates to the next hook function in the queue and stores the
+// Done delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockReferencePager) CloseTx(v0 error) error {
-	r0 := m.CloseTxFunc.nextHook()(v0)
-	m.CloseTxFunc.appendCall(ReferencePagerCloseTxFuncCall{v0, r0})
+func (m *MockReferencePager) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(ReferencePagerDoneFuncCall{v0, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the CloseTx method of
-// the parent MockReferencePager instance is invoked and the hook queue is
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockReferencePager instance is invoked and the hook queue is
 // empty.
-func (f *ReferencePagerCloseTxFunc) SetDefaultHook(hook func(error) error) {
+func (f *ReferencePagerDoneFunc) SetDefaultHook(hook func(error) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CloseTx method of the parent MockReferencePager instance inovkes the hook
-// at the front of the queue and discards it. After the queue is empty, the
+// Done method of the parent MockReferencePager instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ReferencePagerCloseTxFunc) PushHook(hook func(error) error) {
+func (f *ReferencePagerDoneFunc) PushHook(hook func(error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -88,7 +89,7 @@ func (f *ReferencePagerCloseTxFunc) PushHook(hook func(error) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReferencePagerCloseTxFunc) SetDefaultReturn(r0 error) {
+func (f *ReferencePagerDoneFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(error) error {
 		return r0
 	})
@@ -96,13 +97,13 @@ func (f *ReferencePagerCloseTxFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReferencePagerCloseTxFunc) PushReturn(r0 error) {
+func (f *ReferencePagerDoneFunc) PushReturn(r0 error) {
 	f.PushHook(func(error) error {
 		return r0
 	})
 }
 
-func (f *ReferencePagerCloseTxFunc) nextHook() func(error) error {
+func (f *ReferencePagerDoneFunc) nextHook() func(error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -115,26 +116,26 @@ func (f *ReferencePagerCloseTxFunc) nextHook() func(error) error {
 	return hook
 }
 
-func (f *ReferencePagerCloseTxFunc) appendCall(r0 ReferencePagerCloseTxFuncCall) {
+func (f *ReferencePagerDoneFunc) appendCall(r0 ReferencePagerDoneFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ReferencePagerCloseTxFuncCall objects
+// History returns a sequence of ReferencePagerDoneFuncCall objects
 // describing the invocations of this function.
-func (f *ReferencePagerCloseTxFunc) History() []ReferencePagerCloseTxFuncCall {
+func (f *ReferencePagerDoneFunc) History() []ReferencePagerDoneFuncCall {
 	f.mutex.Lock()
-	history := make([]ReferencePagerCloseTxFuncCall, len(f.history))
+	history := make([]ReferencePagerDoneFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ReferencePagerCloseTxFuncCall is an object that describes an invocation
-// of method CloseTx on an instance of MockReferencePager.
-type ReferencePagerCloseTxFuncCall struct {
+// ReferencePagerDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockReferencePager.
+type ReferencePagerDoneFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 error
@@ -145,13 +146,13 @@ type ReferencePagerCloseTxFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ReferencePagerCloseTxFuncCall) Args() []interface{} {
+func (c ReferencePagerDoneFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ReferencePagerCloseTxFuncCall) Results() []interface{} {
+func (c ReferencePagerDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -159,24 +160,24 @@ func (c ReferencePagerCloseTxFuncCall) Results() []interface{} {
 // PageFromOffset method of the parent MockReferencePager instance is
 // invoked.
 type ReferencePagerPageFromOffsetFunc struct {
-	defaultHook func(int) ([]types.PackageReference, error)
-	hooks       []func(int) ([]types.PackageReference, error)
+	defaultHook func(context.Context, int) ([]types.PackageReference, error)
+	hooks       []func(context.Context, int) ([]types.PackageReference, error)
 	history     []ReferencePagerPageFromOffsetFuncCall
 	mutex       sync.Mutex
 }
 
 // PageFromOffset delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReferencePager) PageFromOffset(v0 int) ([]types.PackageReference, error) {
-	r0, r1 := m.PageFromOffsetFunc.nextHook()(v0)
-	m.PageFromOffsetFunc.appendCall(ReferencePagerPageFromOffsetFuncCall{v0, r0, r1})
+func (m *MockReferencePager) PageFromOffset(v0 context.Context, v1 int) ([]types.PackageReference, error) {
+	r0, r1 := m.PageFromOffsetFunc.nextHook()(v0, v1)
+	m.PageFromOffsetFunc.appendCall(ReferencePagerPageFromOffsetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the PageFromOffset
 // method of the parent MockReferencePager instance is invoked and the hook
 // queue is empty.
-func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
 	f.defaultHook = hook
 }
 
@@ -184,7 +185,7 @@ func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(int) ([]type
 // PageFromOffset method of the parent MockReferencePager instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -193,7 +194,7 @@ func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(int) ([]types.Pack
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []types.PackageReference, r1 error) {
-	f.SetDefaultHook(func(int) ([]types.PackageReference, error) {
+	f.SetDefaultHook(func(context.Context, int) ([]types.PackageReference, error) {
 		return r0, r1
 	})
 }
@@ -201,12 +202,12 @@ func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []types.PackageRe
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ReferencePagerPageFromOffsetFunc) PushReturn(r0 []types.PackageReference, r1 error) {
-	f.PushHook(func(int) ([]types.PackageReference, error) {
+	f.PushHook(func(context.Context, int) ([]types.PackageReference, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(int) ([]types.PackageReference, error) {
+func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(context.Context, int) ([]types.PackageReference, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -241,7 +242,10 @@ func (f *ReferencePagerPageFromOffsetFunc) History() []ReferencePagerPageFromOff
 type ReferencePagerPageFromOffsetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.PackageReference
@@ -253,7 +257,7 @@ type ReferencePagerPageFromOffsetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ReferencePagerPageFromOffsetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

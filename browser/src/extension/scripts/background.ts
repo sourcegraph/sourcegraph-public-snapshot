@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../polyfills'
 
-import { Endpoint } from '@sourcegraph/comlink'
+import { Endpoint } from 'comlink'
 import { without } from 'lodash'
 import { noop, Observable, Subscription } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap } from 'rxjs/operators'
@@ -19,6 +19,8 @@ import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { isDefined } from '../../../../shared/src/util/types'
+import { browserPortToMessagePort, findMessagePorts } from '../../platform/ports'
+import { EndpointPair } from '../../../../shared/src/platform/context'
 
 const IS_EXTENSION = true
 
@@ -188,7 +190,7 @@ async function main(): Promise<void> {
      * This listens to events on browser.runtime.onConnect, pairs emitted ports using their naming pattern,
      * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
      */
-    const endpointPairs: Observable<Record<'proxy' | 'expose', browser.runtime.Port>> = fromBrowserEvent(
+    const browserPortPairs: Observable<Record<keyof EndpointPair, browser.runtime.PortWithSender>> = fromBrowserEvent(
         browser.runtime.onConnect
     ).pipe(
         map(([port]) => port),
@@ -226,38 +228,73 @@ async function main(): Promise<void> {
     // when a port disconnects, the worker is terminated. This means there should always be exactly one
     // extension host worker per active instance of the content script.
     subscriptions.add(
-        endpointPairs.subscribe(
-            ({ proxy, expose }) => {
-                console.log('Extension host client connected')
-                // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transferring MessagePorts.
-                // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
-                const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-                const connectPortAndEndpoint = (port: browser.runtime.Port, endpoint: Endpoint): void => {
-                    // False positive https://github.com/eslint/eslint/issues/12822
-                    // eslint-disable-next-line no-unused-expressions
-                    endpoint.start?.()
-                    port.onMessage.addListener(message => {
-                        endpoint.postMessage(message)
-                    })
-                    endpoint.addEventListener('message', event => {
-                        port.postMessage((event as MessageEvent).data)
-                    })
-                }
-                // Connect proxy client endpoint
-                connectPortAndEndpoint(proxy, clientEndpoints.proxy)
-                // Connect expose client endpoint
-                connectPortAndEndpoint(expose, clientEndpoints.expose)
-                // Kill worker when either port disconnects
-                proxy.onDisconnect.addListener(() => worker.terminate())
-                expose.onDisconnect.addListener(() => worker.terminate())
+        browserPortPairs.subscribe({
+            next: browserPortPair => {
+                subscriptions.add(handleBrowserPortPair(browserPortPair))
             },
-            err => {
+            error: err => {
                 console.error('Error handling extension host client connection', err)
-            }
-        )
+            },
+        })
     )
 
     console.log('Sourcegraph background page initialized')
+}
+
+/**
+ * Handle an incoming browser port pair coming from a content script.
+ */
+function handleBrowserPortPair(
+    browserPortPair: Record<keyof EndpointPair, browser.runtime.PortWithSender>
+): Subscription {
+    /** Subscriptions for this browser port pair */
+    const subscriptions = new Subscription()
+
+    console.log('Extension host client connected')
+    const { worker, clientEndpoints } = createExtensionHostWorker()
+    subscriptions.add(() => worker.terminate())
+
+    /** Forwards all messages between two endpoints (in one direction) */
+    const forwardEndpoint = (from: Endpoint, to: Endpoint): void => {
+        const messageListener = (event: Event): void => {
+            const { data } = event as MessageEvent
+            to.postMessage(data, [...findMessagePorts(data)])
+        }
+        from.addEventListener('message', messageListener)
+        subscriptions.add(() => from.removeEventListener('message', messageListener))
+
+        // False positive https://github.com/eslint/eslint/issues/12822
+        // eslint-disable-next-line no-unused-expressions
+        from.start?.()
+    }
+
+    const linkPortAndEndpoint = (role: keyof EndpointPair): void => {
+        const browserPort = browserPortPair[role]
+        const endpoint = clientEndpoints[role]
+        const tabId = browserPort.sender.tab?.id
+        if (!tabId) {
+            throw new Error('Expected Port to come from tab')
+        }
+        const link = browserPortToMessagePort(browserPort, `comlink-${role}-`, name =>
+            browser.tabs.connect(tabId, { name })
+        )
+        subscriptions.add(link.subscription)
+
+        forwardEndpoint(link.messagePort, endpoint)
+        forwardEndpoint(endpoint, link.messagePort)
+
+        // Clean up when the port disconnects
+        const disconnectListener = subscriptions.unsubscribe.bind(subscriptions)
+        browserPort.onDisconnect.addListener(disconnectListener)
+        subscriptions.add(() => browserPort.onDisconnect.removeListener(disconnectListener))
+    }
+
+    // Connect proxy client endpoint
+    linkPortAndEndpoint('proxy')
+    // Connect expose client endpoint
+    linkPortAndEndpoint('expose')
+
+    return subscriptions
 }
 
 // Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)

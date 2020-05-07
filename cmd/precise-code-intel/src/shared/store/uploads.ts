@@ -272,7 +272,15 @@ export class UploadManager {
                 .createQueryBuilder()
                 .insert()
                 .into(pgModels.LsifUpload)
-                .values({ repositoryId, commit, root, indexer, tracingContext: JSON.stringify(tracing) })
+                .values({
+                    repositoryId,
+                    commit,
+                    root,
+                    indexer,
+                    tracingContext: JSON.stringify(tracing),
+                    numParts: 1,
+                    uploadedParts: [0],
+                })
                 .execute()
         )
 
