@@ -441,4 +441,5 @@ var (
 func init() {
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(requestHasUpdateCounter)
+	prometheus.MustRegister(errorCounter)
 }
