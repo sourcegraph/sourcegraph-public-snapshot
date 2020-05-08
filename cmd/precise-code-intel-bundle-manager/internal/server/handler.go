@@ -139,8 +139,8 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			return nil, errors.New("illegal skip supplied")
 		}
 
-		take := getQueryIntDefault(r, "take", DefaultMonikerResultPageSize)
-		if take <= 0 {
+		take := getQueryInt(r, "take")
+		if take < 0 {
 			return nil, errors.New("illegal take supplied")
 		}
 
