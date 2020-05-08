@@ -2,9 +2,9 @@
 
 > This is still a work in progress. `tilt` is useful when you have to develop k8s code and need a local cluster for your edit/compile/test cycle.
 > `tilt` can also be used with [bare processes](https://blog.tilt.dev/2020/02/12/local-dev.html) but we haven't converted and optimized our build
-> pipeline to it. The `tilt` team have given us a [starting point](https://github.com/windmilleng/sourcegraph/blob/master/Tiltfile) (thanks!). 
+> pipeline to it. The `tilt` team have given us a [starting point](https://github.com/windmilleng/sourcegraph/blob/master/Tiltfile) (thanks!).
 > For now, (until we convert, test and optimize this approach) please still use `enterprise/dev/start.sh`.
-  
+
 (Instructions assume you are in this directory)
 
 - Install [tilt](https://docs.tilt.dev/install.html)
@@ -13,14 +13,14 @@
 - `mkdir tilt-watch-targets`
 - Prepare the cluster:
 
-    ```shell
-    minikube start
-    kubectl create namespace ns-sourcegraph
-    kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
-    kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
-    minikube service list
-    ```
-  
+  ```shell
+  minikube start
+  kubectl create namespace ns-sourcegraph
+  kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+  kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
+  minikube service list
+  ```
+
 - From the `minikube service list` output take the exposed port and modify the Caddyfile.
 - `caddy run` (this makes Sourcegraph from the minikube cluster available at https://sourcegraph.test:3443)
 - `tilt up` (starts tilt)
