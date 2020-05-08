@@ -24,6 +24,11 @@ import (
 )
 
 func main() {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -32,11 +37,6 @@ func main() {
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
-
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
 
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
@@ -47,26 +47,24 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_api_server")
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
+	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 
-	serverInst := server.New(server.ServerOpts{
+	server := server.Server{
 		Host:                host,
 		Port:                3186,
 		DB:                  db,
 		BundleManagerClient: bundleManagerClient,
 		CodeIntelAPI:        codeIntelAPI,
-	})
+	}
+	go server.Start()
 
-	resetterMetrics := resetter.NewResetterMetrics()
-	resetterMetrics.MustRegister(prometheus.DefaultRegisterer)
-
-	uploadResetterInst := resetter.NewUploadResetter(resetter.UploadResetterOpts{
+	uploadResetter := resetter.UploadResetter{
 		DB:            db,
 		ResetInterval: resetInterval,
 		Metrics:       resetterMetrics,
-	})
+	}
+	go uploadResetter.Run()
 
-	go serverInst.Start()
-	go uploadResetterInst.Run()
 	go debugserver.Start()
 	waitForSignal()
 }
@@ -75,7 +73,7 @@ func mustInitializeDatabase() db.DB {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
