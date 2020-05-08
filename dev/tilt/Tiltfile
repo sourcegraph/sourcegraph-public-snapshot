@@ -1,4 +1,3 @@
-
 k8s_yaml(listdir('generated-cluster'))
 
 custom_build(
