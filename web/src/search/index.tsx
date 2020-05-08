@@ -130,3 +130,8 @@ export interface InteractiveSearchProps {
 export interface SmartSearchFieldProps {
     smartSearchField: boolean
 }
+
+export function parseURLVersionContext(query: string): string | undefined {
+    const searchParams = new URLSearchParams(query)
+    return searchParams.get('c') || undefined
+}

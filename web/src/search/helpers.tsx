@@ -18,6 +18,7 @@ interface SubmitSearchParams
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     query: string
+    versionContext: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
 }
 
@@ -30,11 +31,12 @@ export function submitSearch({
     query,
     patternType,
     caseSensitive,
+    versionContext,
     activation,
     filtersInQuery,
     source,
 }: SubmitSearchParams): void {
-    const searchQueryParam = buildSearchURLQuery(query, patternType, caseSensitive, filtersInQuery)
+    const searchQueryParam = buildSearchURLQuery(query, patternType, caseSensitive, versionContext, filtersInQuery)
 
     // Go to search results page
     const path = '/search?' + searchQueryParam

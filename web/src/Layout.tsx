@@ -107,8 +107,10 @@ export interface LayoutProps
         query: QueryState['query'],
         version: string,
         patternType: GQL.SearchPatternType,
+        versionContext: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+    versionContext: string
 
     isSourcegraphDotCom: boolean
     showCampaigns: boolean

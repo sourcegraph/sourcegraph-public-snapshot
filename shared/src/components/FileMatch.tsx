@@ -70,6 +70,8 @@ interface Props extends SettingsCascadeProps {
     allExpanded?: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+
+    versionContext: string
 }
 
 export class FileMatch extends React.PureComponent<Props> {

@@ -42,6 +42,8 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
     isLightTheme: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+
+    versionContext: string
 }
 
 interface State {
@@ -234,6 +236,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     settingsCascade={this.props.settingsCascade}
+                    versionContext={this.props.versionContext}
                 />
             </div>
         )

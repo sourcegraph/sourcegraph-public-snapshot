@@ -46,6 +46,8 @@ interface Props extends SettingsCascadeProps {
     isLightTheme: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+
+    versionContext: string
 }
 
 const LOADING = 'loading' as const
@@ -148,6 +150,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             isLightTheme={this.props.isLightTheme}
                             fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                             settingsCascade={this.props.settingsCascade}
+                            versionContext={this.props.versionContext}
                         />
                     ))}
                 />

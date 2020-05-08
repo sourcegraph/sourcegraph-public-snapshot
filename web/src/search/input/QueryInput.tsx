@@ -51,6 +51,9 @@ interface Props
     /** Called when the value changes */
     onChange: (newValue: QueryState) => void
 
+    /** The version context currently enabled */
+    versionContext: string
+
     /**
      * A string that is appended to the query input's query before
      * fetching suggestions.

@@ -124,6 +124,13 @@ export interface RenderModeSpec {
     renderMode: RenderMode
 }
 
+export interface VersionContextSpec {
+    /**
+     * The version context.
+     */
+    versionContext: string
+}
+
 /**
  * Properties of a RepoURI (like git://github.com/gorilla/mux#mux.go) or a URL (like https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go)
  */
@@ -134,7 +141,8 @@ export interface ParsedRepoURI
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
         Partial<UIPositionSpec>,
-        Partial<UIRangeSpec> {}
+        Partial<UIRangeSpec>,
+        Partial<VersionContextSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -556,6 +564,8 @@ export function withWorkspaceRootInputRevision(
     return uri // unchanged
 }
 
+export const VERSION_CONTEXT_DEFAULT_VALUE = ''
+
 /**
  * Builds a URL query for the given query (without leading `?`).
  *
@@ -571,6 +581,7 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+    versionContext: string,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     const searchParams = new URLSearchParams()
@@ -616,6 +627,10 @@ export function buildSearchURLQuery(
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
             searchParams.delete('case')
         }
+    }
+
+    if (versionContext !== VERSION_CONTEXT_DEFAULT_VALUE) {
+        searchParams.set('c', versionContext)
     }
 
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')

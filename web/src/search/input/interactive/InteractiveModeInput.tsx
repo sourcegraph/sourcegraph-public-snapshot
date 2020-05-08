@@ -24,6 +24,7 @@ import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -43,6 +44,7 @@ interface InteractiveModeProps
     onNavbarQueryChange: (userQuery: QueryState) => void
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
+    versionContext: string
 
     // For NavLinks
     authRequired?: boolean
@@ -217,6 +219,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
+                        <VersionContextDropdown />
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />

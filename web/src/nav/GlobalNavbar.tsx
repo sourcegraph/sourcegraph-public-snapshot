@@ -27,6 +27,7 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
+import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
     extends SettingsCascadeProps,
@@ -68,6 +69,8 @@ interface Props
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
+
+    versionContext: string
 }
 
 interface State {
@@ -194,6 +197,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
                                     lowProfile={!this.props.isSearchRelatedPage}
+                                    versionContext={this.props.versionContext}
                                 />
                             )
                         ) : (
@@ -201,6 +205,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logoLink}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                                        <VersionContextDropdown />
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}

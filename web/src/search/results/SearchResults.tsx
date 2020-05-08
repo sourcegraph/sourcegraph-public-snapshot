@@ -50,10 +50,12 @@ export interface SearchResultsProps
         query: string,
         version: string,
         patternType: GQL.SearchPatternType,
+        versionContext: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    versionContext: string
 }
 
 interface SearchResultsState {
@@ -99,7 +101,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
             const newLoc =
                 '/search?' +
-                buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
+                buildSearchURLQuery(
+                    navbarQuery,
+                    GQL.SearchPatternType.regexp,
+                    this.props.caseSensitive,
+                    this.props.versionContext,
+                    filtersInQuery
+                )
             window.location.replace(newLoc)
         }
 
@@ -153,6 +161,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
+                                    this.props.versionContext,
                                     this.props
                                 )
                                 .pipe(

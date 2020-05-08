@@ -49,6 +49,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    versionContext: string
 
     // For NavLinks
     authRequired?: boolean

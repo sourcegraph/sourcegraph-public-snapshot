@@ -20,6 +20,7 @@ export interface TogglesProps
     navbarSearchQuery: string
     history: H.History
     location: H.Location
+    versionContext: string
     hasGlobalQueryBehavior?: boolean
     className?: string
 }
@@ -34,7 +35,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         window.context.experimentalFeatures.structuralSearch === 'disabled'
 
     const submitOnToggle = (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
-        const { history, navbarSearchQuery, filtersInQuery } = props
+        const { history, navbarSearchQuery, filtersInQuery, versionContext } = props
         const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
         const shouldSubmitSearch = props.hasGlobalQueryBehavior && searchQueryNotEmpty
         const activation = undefined
@@ -51,6 +52,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 source,
                 patternType,
                 caseSensitive,
+                versionContext,
                 activation,
                 filtersInQuery,
             })

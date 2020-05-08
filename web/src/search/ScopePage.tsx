@@ -46,6 +46,7 @@ interface Props
         CaseSensitivityProps {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
+    versionContext: string
     history: H.History
 }
 

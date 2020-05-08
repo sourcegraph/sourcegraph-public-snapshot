@@ -20,6 +20,7 @@ interface Props
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
+    versionContext: string
     onChange: (newValue: QueryState) => void
 }
 
