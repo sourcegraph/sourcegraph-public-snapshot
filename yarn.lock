@@ -1993,14 +1993,14 @@
     rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.16.0":
-  version "0.16.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.16.0.tgz#360de690156c55a25e37f1c2ae99821f31d6de94"
-  integrity sha512-fzhSaRk0I1AtGQSTphw91/FU9SGBUj1GArwKYTtgcsThuKeJ1WxlR8/5DcT+MqJ7G7NCCBT/cOu76YbgWNlflA==
+"@sourcegraph/eslint-config@^0.16.3":
+  version "0.16.3"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.16.3.tgz#9dc43699b5b225da820e0f66a06f3ced42213e3e"
+  integrity sha512-OqJxeTUMxa0+vIMXXPfoDS0fODZpexiuvjmyUp/ArEEEq8iDmuINZVIY6g2jxOvrmUz4U8f0LpTHu1WdfyXUSg==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
-    "@typescript-eslint/eslint-plugin" "^2.27.0"
-    "@typescript-eslint/parser" "^2.27.0"
+    "@typescript-eslint/eslint-plugin" "^2.31.0"
+    "@typescript-eslint/parser" "^2.31.0"
     eslint-config-prettier "^6.10.1"
     eslint-plugin-ban "^1.4.0"
     eslint-plugin-etc "^0.0.1-beta.25"
@@ -2008,7 +2008,7 @@
     eslint-plugin-jsdoc "^22.1.0"
     eslint-plugin-react "^7.19.0"
     eslint-plugin-react-hooks "^3.0.0"
-    eslint-plugin-rxjs "^0.0.2-beta.18"
+    eslint-plugin-rxjs "^0.0.2-beta.20"
 
 "@sourcegraph/event-positions@^1.0.4":
   version "1.0.4"
@@ -3579,40 +3579,40 @@
   dependencies:
     "@types/yargs-parser" "*"
 
-"@typescript-eslint/eslint-plugin@^2.27.0":
-  version "2.27.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-2.27.0.tgz#e479cdc4c9cf46f96b4c287755733311b0d0ba4b"
-  integrity sha512-/my+vVHRN7zYgcp0n4z5A6HAK7bvKGBiswaM5zIlOQczsxj/aiD7RcgD+dvVFuwFaGh5+kM7XA6Q6PN0bvb1tw==
+"@typescript-eslint/eslint-plugin@^2.31.0":
+  version "2.31.0"
+  resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-2.31.0.tgz#942c921fec5e200b79593c71fafb1e3f57aa2e36"
+  integrity sha512-iIC0Pb8qDaoit+m80Ln/aaeu9zKQdOLF4SHcGLarSeY1gurW6aU4JsOPMjKQwXlw70MvWKZQc6S2NamA8SJ/gg==
   dependencies:
-    "@typescript-eslint/experimental-utils" "2.27.0"
+    "@typescript-eslint/experimental-utils" "2.31.0"
     functional-red-black-tree "^1.0.1"
     regexpp "^3.0.0"
     tsutils "^3.17.1"
 
-"@typescript-eslint/experimental-utils@2.27.0":
-  version "2.27.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/experimental-utils/-/experimental-utils-2.27.0.tgz#801a952c10b58e486c9a0b36cf21e2aab1e9e01a"
-  integrity sha512-vOsYzjwJlY6E0NJRXPTeCGqjv5OHgRU1kzxHKWJVPjDYGbPgLudBXjIlc+OD1hDBZ4l1DLbOc5VjofKahsu9Jw==
+"@typescript-eslint/experimental-utils@2.31.0":
+  version "2.31.0"
+  resolved "https://registry.npmjs.org/@typescript-eslint/experimental-utils/-/experimental-utils-2.31.0.tgz#a9ec514bf7fd5e5e82bc10dcb6a86d58baae9508"
+  integrity sha512-MI6IWkutLYQYTQgZ48IVnRXmLR/0Q6oAyJgiOror74arUMh7EWjJkADfirZhRsUMHeLJ85U2iySDwHTSnNi9vA==
   dependencies:
     "@types/json-schema" "^7.0.3"
-    "@typescript-eslint/typescript-estree" "2.27.0"
+    "@typescript-eslint/typescript-estree" "2.31.0"
     eslint-scope "^5.0.0"
     eslint-utils "^2.0.0"
 
-"@typescript-eslint/parser@^2.27.0":
-  version "2.27.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-2.27.0.tgz#d91664335b2c46584294e42eb4ff35838c427287"
-  integrity sha512-HFUXZY+EdwrJXZo31DW4IS1ujQW3krzlRjBrFRrJcMDh0zCu107/nRfhk/uBasO8m0NVDbBF5WZKcIUMRO7vPg==
+"@typescript-eslint/parser@^2.31.0":
+  version "2.31.0"
+  resolved "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-2.31.0.tgz#beddd4e8efe64995108b229b2862cd5752d40d6f"
+  integrity sha512-uph+w6xUOlyV2DLSC6o+fBDzZ5i7+3/TxAsH4h3eC64tlga57oMb96vVlXoMwjR/nN+xyWlsnxtbDkB46M2EPQ==
   dependencies:
     "@types/eslint-visitor-keys" "^1.0.0"
-    "@typescript-eslint/experimental-utils" "2.27.0"
-    "@typescript-eslint/typescript-estree" "2.27.0"
+    "@typescript-eslint/experimental-utils" "2.31.0"
+    "@typescript-eslint/typescript-estree" "2.31.0"
     eslint-visitor-keys "^1.1.0"
 
-"@typescript-eslint/typescript-estree@2.27.0":
-  version "2.27.0"
-  resolved "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-2.27.0.tgz#a288e54605412da8b81f1660b56c8b2e42966ce8"
-  integrity sha512-t2miCCJIb/FU8yArjAvxllxbTiyNqaXJag7UOpB5DVoM3+xnjeOngtqlJkLRnMtzaRcJhe3CIR9RmL40omubhg==
+"@typescript-eslint/typescript-estree@2.31.0":
+  version "2.31.0"
+  resolved "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-2.31.0.tgz#ac536c2d46672aa1f27ba0ec2140d53670635cfd"
+  integrity sha512-vxW149bXFXXuBrAak0eKHOzbcu9cvi6iNcJDzEtOkRwGHxJG15chiAQAwhLOsk+86p9GTr/TziYvw+H9kMaIgA==
   dependencies:
     debug "^4.1.1"
     eslint-visitor-keys "^1.1.0"
@@ -8342,10 +8342,10 @@ eslint-plugin-react@^7.19.0:
     string.prototype.matchall "^4.0.2"
     xregexp "^4.3.0"
 
-eslint-plugin-rxjs@^0.0.2-beta.18:
-  version "0.0.2-beta.18"
-  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.18.tgz#6f9723df3af2016047fa182de842cf6c6174728c"
-  integrity sha512-3hA3bv7Moej/71nsGz4zl/StXdxFj99+p9AXwTphglpsjys3oVFjwCD0gLbpDGZ5r2jeRVhVjJClLadolGBzRw==
+eslint-plugin-rxjs@^0.0.2-beta.20:
+  version "0.0.2-beta.20"
+  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.20.tgz#85cb398d98d4afd4f8525801a5c4eca43d3074f5"
+  integrity sha512-AQPd7Sa8Lt063F5eTQNJT1erKvugeoZK/8DQCeUpMj3I0dLB2bqRvZ7FrmGFn6dB1wISFD3dBdeu5RV6JvuV/Q==
   dependencies:
     common-tags "^1.8.0"
     decamelize "^3.0.0"
