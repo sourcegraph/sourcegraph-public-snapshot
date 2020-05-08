@@ -33,7 +33,10 @@ type resolveRepoOp struct {
 type repositoryResolver struct {
 	resolveRepoOp
 
-	tr *trace.Trace
+	tr              *trace.Trace
+	includePatterns []string
+	excludePatterns []string
+	maxRepoListSize int
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -44,24 +47,22 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}()
 
 	r := repositoryResolver{
-		resolveRepoOp: op,
-		tr:            tr,
+		resolveRepoOp:   op,
+		tr:              tr,
+		includePatterns: op.repoFilters,
+		excludePatterns: op.minusRepoFilters,
+		maxRepoListSize: maxReposToSearch(),
+	}
+
+	if r.includePatterns != nil {
+		// Copy to avoid race condition.
+		r.includePatterns = append([]string{}, r.includePatterns...)
 	}
 
 	return r.resolveRepositories(ctx, op)
 }
 
 func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
-	includePatterns := op.repoFilters
-	if includePatterns != nil {
-		// Copy to avoid race condition.
-		includePatterns = append([]string{}, includePatterns...)
-	}
-
-	excludePatterns := op.minusRepoFilters
-
-	maxRepoListSize := maxReposToSearch()
-
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
@@ -76,17 +77,17 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
 			}
 		}
-		includePatterns = append(includePatterns, unionRegExps(patterns))
+		r.includePatterns = append(r.includePatterns, unionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group.
-		if len(patterns) > maxRepoListSize {
-			maxRepoListSize = len(patterns)
+		if len(patterns) > r.maxRepoListSize {
+			r.maxRepoListSize = len(patterns)
 		}
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
-	includePatternRevs, err := findPatternRevs(includePatterns)
+	includePatternRevs, err := findPatternRevs(r.includePatterns)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -108,7 +109,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	}
 
 	var defaultRepos []*types.Repo
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+	if envvar.SourcegraphDotComMode() && len(r.includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
 		}
@@ -121,18 +122,18 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	var repos []*types.Repo
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
-		if len(repos) > maxRepoListSize {
-			repos = repos[:maxRepoListSize]
+		if len(repos) > r.maxRepoListSize {
+			repos = repos[:r.maxRepoListSize]
 		}
 	} else {
 		r.tr.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
-			IncludePatterns: includePatterns,
+			IncludePatterns: r.includePatterns,
 			Names:           versionContextRepositories,
-			ExcludePattern:  unionRegExps(excludePatterns),
+			ExcludePattern:  unionRegExps(r.excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
+			LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
 			NoForks:      op.noForks,
 			OnlyForks:    op.onlyForks,
 			NoArchived:   op.noArchived,
@@ -145,7 +146,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			return nil, nil, false, err
 		}
 	}
-	overLimit = len(repos) >= maxRepoListSize
+	overLimit = len(repos) >= r.maxRepoListSize
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	r.tr.LazyPrintf("Associate/validate revs - start")
