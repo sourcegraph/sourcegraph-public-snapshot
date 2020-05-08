@@ -48,7 +48,6 @@ func TestGetUploadByID(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         &startedAt,
 		FinishedAt:        nil,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      123,
 		Indexer:           "lsif-go",
 		NumParts:          1,
@@ -197,7 +196,7 @@ func TestEnqueue(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	id, err := db.Enqueue(context.Background(), makeCommit(1), "sub/", `{"id": 42}`, 50, "lsif-go")
+	id, err := db.Enqueue(context.Background(), makeCommit(1), "sub/", 50, "lsif-go")
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
 	}
@@ -214,7 +213,6 @@ func TestEnqueue(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         nil,
 		FinishedAt:        nil,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 		NumParts:          1,

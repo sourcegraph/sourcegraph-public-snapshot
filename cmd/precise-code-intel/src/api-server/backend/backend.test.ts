@@ -25,7 +25,6 @@ const zeroUpload: pgModels.LsifUpload = {
     finishedAt: null,
     failureSummary: null,
     failureStacktrace: null,
-    tracingContext: '',
     visibleAtTip: false,
 }
 

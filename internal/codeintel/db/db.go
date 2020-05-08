@@ -37,7 +37,7 @@ type DB interface {
 	GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) ([]Upload, int, error)
 
 	// Enqueue inserts a new upload with a "queued" state and returns its identifier.
-	Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error)
+	Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (int, error)
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
 	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
