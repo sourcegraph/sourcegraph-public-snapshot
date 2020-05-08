@@ -116,41 +116,10 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	r.repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	r.tr.LazyPrintf("Associate/validate revs - start")
 
-	for _, repo := range repos {
-		var repoRev search.RepositoryRevisions
-		var revs []search.RevisionSpecifier
-		// versionContext will be nil if the query contains revision specifiers
-		if versionContext != nil {
-			for _, vcRepoRef := range versionContext.Revisions {
-				if vcRepoRef.Repo == string(repo.Name) {
-					repoRev.Repo = repo
-					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Ref})
-					break
-				}
-			}
-		} else {
-			var clashingRevs []search.RevisionSpecifier
-			revs, clashingRevs = getRevsForMatchedRepo(repo.Name, r.includePatternRevs)
-			repoRev.Repo = repo
-			// if multiple specified revisions clash, report this usefully:
-			if len(revs) == 0 && clashingRevs != nil {
-				r.missingRepoRevisions = append(r.missingRepoRevisions, &search.RepositoryRevisions{
-					Repo: repo,
-					Revs: clashingRevs,
-				})
-			}
-		}
-
-		// We do in place filtering to reduce allocations. Common path is no
-		// filtering of revs.
-		if len(revs) > 0 {
-			repoRev.Revs = revs[:0]
-		}
-
-		// Check if the repository actually has the revisions that the user specified.
-		revsFound := r.findRepositoryRevisions(ctx, &repoRev, revs)
-		repoRev.Revs = append(repoRev.Revs, revsFound...)
-		r.repoRevisions = append(r.repoRevisions, &repoRev)
+	if versionContext != nil {
+		r.validateAndAssociateWithVersionContext(ctx, repos, versionContext)
+	} else {
+		r.validateAndAssociate(ctx, repos)
 	}
 
 	r.tr.LazyPrintf("Associate/validate revs - done")
@@ -292,4 +261,60 @@ func (r *repositoryResolver) findRepositoryRevisions(ctx context.Context, repo *
 	}
 
 	return
+}
+
+// validate and associate repositories with revisions
+func (r *repositoryResolver) validateAndAssociate(ctx context.Context, repos []*types.Repo) {
+	for _, repo := range repos {
+		var repoRev search.RepositoryRevisions
+		var revs []search.RevisionSpecifier
+		var clashingRevs []search.RevisionSpecifier
+		revs, clashingRevs = getRevsForMatchedRepo(repo.Name, r.includePatternRevs)
+		repoRev.Repo = repo
+		// if multiple specified revisions clash, report this usefully:
+		if len(revs) == 0 && clashingRevs != nil {
+			r.missingRepoRevisions = append(r.missingRepoRevisions, &search.RepositoryRevisions{
+				Repo: repo,
+				Revs: clashingRevs,
+			})
+		}
+
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
+		}
+
+		// Check if the repository actually has the revisions that the user specified.
+		revsFound := r.findRepositoryRevisions(ctx, &repoRev, revs)
+		repoRev.Revs = append(repoRev.Revs, revsFound...)
+		r.repoRevisions = append(r.repoRevisions, &repoRev)
+	}
+}
+
+// validate and associate repositories and revisions within a version context
+func (r *repositoryResolver) validateAndAssociateWithVersionContext(ctx context.Context, repos []*types.Repo, versionContext *schema.VersionContext) {
+	for _, repo := range repos {
+		var repoRev search.RepositoryRevisions
+		var revs []search.RevisionSpecifier
+		// versionContext will be nil if the query contains revision specifiers
+		for _, vcRepoRef := range versionContext.Revisions {
+			if vcRepoRef.Repo == string(repo.Name) {
+				repoRev.Repo = repo
+				revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Ref})
+				break
+			}
+		}
+
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
+		}
+
+		// Check if the repository actually has the revisions that the user specified.
+		revsFound := r.findRepositoryRevisions(ctx, &repoRev, revs)
+		repoRev.Revs = append(repoRev.Revs, revsFound...)
+		r.repoRevisions = append(r.repoRevisions, &repoRev)
+	}
 }
