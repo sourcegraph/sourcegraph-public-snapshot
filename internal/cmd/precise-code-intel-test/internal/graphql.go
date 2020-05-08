@@ -6,7 +6,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/hashicorp/go-multierror"
 )
+
+type ErrorPayload struct {
+	Errors []GraphQLError `json:"errors"`
+}
+
+type GraphQLError struct {
+	Message string `json:"message"`
+}
 
 // graphQL performs GraphQL query on the frontend.
 func graphQL(baseURL, token, query string, variables map[string]interface{}, target interface{}) error {
@@ -30,13 +40,23 @@ func graphQL(baseURL, token, query string, variables map[string]interface{}, tar
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d\n%s\n", resp.StatusCode, contents)
+	}
+
+	var errorPayload ErrorPayload
+	if err := json.Unmarshal(contents, &errorPayload); err == nil && len(errorPayload.Errors) > 0 {
+		var combined error
+		for _, err := range errorPayload.Errors {
+			combined = multierror.Append(combined, fmt.Errorf("%s", err.Message))
+		}
+
+		return combined
 	}
 
 	return json.Unmarshal(contents, &target)

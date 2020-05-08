@@ -31,13 +31,13 @@ This section documents the available search pattern syntax and interpretation in
 Literal search interprets search patterns literally to simplify searching for words or punctuation.
 
 | Search pattern syntax | Description |
-| --- | --- | 
+| --- | --- |
 | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
 
-As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`. 
+As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`.
 
-### Regexp search 
+### Regexp search
 
 Click the <img src=../img/regex.png> toggle to interpret search patterns as regexps. [RE2 syntax](https://golang.org/s/re2syntax) is supported. In general, special characters may be escaped with `\`. Here is a list of valid syntax and behavior:
 
@@ -54,10 +54,10 @@ Click the <img src=../img/brackets.png> toggle to activate [structural search](s
 
 | Search pattern syntax | Description |
 | --- | --- |
-| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). | 
+| [`New(:[args])`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph++New%28:%5Bargs%5D%29+lang:go&patternType=structural) | Match the string `New` followed by _balanced parentheses_ containing zero or more characters, including newlines. Matching is _case-sensitive_. Make the search [language-aware](structural.md#current-functionality-and-restrictions) by adding a `lang:` [keyword](#keywords-all-searches). |
 | [`"New(:[args])"`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%22New%28:%5Bargs%5D%29%22+lang:go&patternType=structural) or<br/> [`'New(:[args])'`](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+%27New%28:%5Bargs%5D%29%27+lang:go&patternType=structural) | Quoting the search pattern has the same meaning as `New(:[args])`, but avoids syntax errors that may conflict with [keyword syntax](#keywords-all-searches). Special characters like `"` and `\` may be escaped. |
 
-Note: It is not possible to perform case-insensitive matching with structural search. 
+Note: It is not possible to perform case-insensitive matching with structural search.
 
 ## Keywords (all searches)
 
@@ -99,17 +99,17 @@ Use operators to create more expressive searches.
 | --- | --- |
 | `and`, `AND` | [`conf.Get( and log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28&patternType=regexp), [`conf.Get( and log15.Error( and after`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28+and+after&patternType=regexp) |
 
-Returns results for files containing matches on the left _and_ right side of the `and` (set intersection). The number of results reports the number of files containing both strings. 
+Returns results for files containing matches on the left _and_ right side of the `and` (set intersection). The number of results reports the number of files containing both strings.
 
 | Operator | Example |
 | --- | --- |
-| `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)| 
+| `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)|
 
-Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings. 
+Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.
 
 ### Operator precedence and groups
 
-Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`. 
+Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`.
 
 Expressions may be grouped with parentheses to change the default precedence and meaning. For example: `a and (b or c) and d`.
 
@@ -122,7 +122,7 @@ Since we don't yet support search subexpressions with different scopes, the abov
 
 ### Operator support
 
-Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported. 
+Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported.
 
 ---
 

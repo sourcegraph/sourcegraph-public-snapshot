@@ -12,9 +12,15 @@ import (
 // An ObservedDB wraps another DB with error logging, Prometheus metrics, and tracing.
 type ObservedDB struct {
 	db                                 DB
+	savepointOperation                 *observation.Operation
+	rollbackToSavepointOperation       *observation.Operation
+	doneOperation                      *observation.Operation
 	getUploadByIDOperation             *observation.Operation
 	getUploadsByRepoOperation          *observation.Operation
+	queueSizeOperation                 *observation.Operation
 	enqueueOperation                   *observation.Operation
+	markCompleteOperation              *observation.Operation
+	markErroredOperation               *observation.Operation
 	dequeueOperation                   *observation.Operation
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
@@ -48,6 +54,21 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 
 	return &ObservedDB{
 		db: db,
+		savepointOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.Savepoint",
+			MetricLabels: []string{"savepoint"},
+			Metrics:      metrics,
+		}),
+		rollbackToSavepointOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.RollbackToSavepoint",
+			MetricLabels: []string{"rollback_to_savepoint"},
+			Metrics:      metrics,
+		}),
+		doneOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.Done",
+			MetricLabels: []string{"done"},
+			Metrics:      metrics,
+		}),
 		getUploadByIDOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.GetUploadByID",
 			MetricLabels: []string{"get_upload_by_id"},
@@ -58,9 +79,24 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 			MetricLabels: []string{"get_uploads_by_repo"},
 			Metrics:      metrics,
 		}),
+		queueSizeOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.QueueSize",
+			MetricLabels: []string{"queue_size"},
+			Metrics:      metrics,
+		}),
 		enqueueOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.Enqueue",
 			MetricLabels: []string{"enqueue"},
+			Metrics:      metrics,
+		}),
+		markCompleteOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.MarkComplete",
+			MetricLabels: []string{"mark_complete"},
+			Metrics:      metrics,
+		}),
+		markErroredOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.MarkErrored",
+			MetricLabels: []string{"mark_errored"},
 			Metrics:      metrics,
 		}),
 		dequeueOperation: observationContext.Operation(observation.Op{
@@ -151,40 +187,110 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 	}
 }
 
-// Transact calls into the inner DB.
-func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
-	return db.db.Transact(ctx)
+// wrap the given database with the same observed operations as the receiver database.
+func (db *ObservedDB) wrap(other DB) DB {
+	return &ObservedDB{
+		db:                                 other,
+		savepointOperation:                 db.savepointOperation,
+		rollbackToSavepointOperation:       db.rollbackToSavepointOperation,
+		doneOperation:                      db.doneOperation,
+		getUploadByIDOperation:             db.getUploadByIDOperation,
+		getUploadsByRepoOperation:          db.getUploadsByRepoOperation,
+		queueSizeOperation:                 db.queueSizeOperation,
+		enqueueOperation:                   db.enqueueOperation,
+		markCompleteOperation:              db.markCompleteOperation,
+		markErroredOperation:               db.markErroredOperation,
+		dequeueOperation:                   db.dequeueOperation,
+		getStatesOperation:                 db.getStatesOperation,
+		deleteUploadByIDOperation:          db.deleteUploadByIDOperation,
+		resetStalledOperation:              db.resetStalledOperation,
+		getDumpByIDOperation:               db.getDumpByIDOperation,
+		findClosestDumpsOperation:          db.findClosestDumpsOperation,
+		deleteOldestDumpOperation:          db.deleteOldestDumpOperation,
+		updateDumpsVisibleFromTipOperation: db.updateDumpsVisibleFromTipOperation,
+		deleteOverlappingDumpsOperation:    db.deleteOverlappingDumpsOperation,
+		getPackageOperation:                db.getPackageOperation,
+		updatePackagesOperation:            db.updatePackagesOperation,
+		sameRepoPagerOperation:             db.sameRepoPagerOperation,
+		updatePackageReferencesOperation:   db.updatePackageReferencesOperation,
+		packageReferencePagerOperation:     db.packageReferencePagerOperation,
+		hasCommitOperation:                 db.hasCommitOperation,
+		updateCommitsOperation:             db.updateCommitsOperation,
+		repoNameOperation:                  db.repoNameOperation,
+	}
 }
 
-// Done calls into the inner DB.
-func (db *ObservedDB) Done(err error) error {
-	return db.db.Done(err)
+// Transact calls into the inner DB and wraps the resulting value in an ObservedDB.
+func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
+	tx, err := db.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.wrap(tx), nil
+}
+
+// Savepoint calls into the inner DB and registers the observed results.
+func (db *ObservedDB) Savepoint(ctx context.Context, name string) (err error) {
+	ctx, endObservation := db.savepointOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.Savepoint(ctx, name)
+}
+
+// RollbackToSavepoint calls into the inner DB and registers the observed results.
+func (db *ObservedDB) RollbackToSavepoint(ctx context.Context, name string) (err error) {
+	ctx, endObservation := db.rollbackToSavepointOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.RollbackToSavepoint(ctx, name)
+}
+
+// Done calls into the inner DB and registers the observed results.
+func (db *ObservedDB) Done(e error) (err error) {
+	_, endObservation := db.doneOperation.With(context.Background(), &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.Done(e)
 }
 
 // GetUploadByID calls into the inner DB and registers the observed results.
 func (db *ObservedDB) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
 	ctx, endObservation := db.getUploadByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.GetUploadByID(ctx, id)
 }
 
 // GetUploadsByRepo calls into the inner DB and registers the observed results.
 func (db *ObservedDB) GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) (uploads []Upload, _ int, err error) {
 	ctx, endObservation := db.getUploadsByRepoOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(uploads)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(uploads)), observation.Args{}) }()
 	return db.db.GetUploadsByRepo(ctx, repositoryID, state, term, visibleAtTip, limit, offset)
+}
+
+// QueueSize  calls into the inner DB and registers the observed results.
+func (db *ObservedDB) QueueSize(ctx context.Context) (_ int, err error) {
+	ctx, endObservation := db.queueSizeOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.QueueSize(ctx)
 }
 
 // Enqueue calls into the inner DB and registers the observed results.
 func (db *ObservedDB) Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (_ int, err error) {
 	ctx, endObservation := db.enqueueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.Enqueue(ctx, commit, root, repositoryID, indexerName)
+}
+
+// MarkComplete calls into the inner DB and registers the observed results.
+func (db *ObservedDB) MarkComplete(ctx context.Context, id int) (err error) {
+	ctx, endObservation := db.markCompleteOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.MarkComplete(ctx, id)
+}
+
+// MarkErrored calls into the inner DB and registers the observed results.
+func (db *ObservedDB) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+	ctx, endObservation := db.markErroredOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.MarkErrored(ctx, id, failureSummary, failureStacktrace)
 }
 
 // Dequeue calls into the inner DB and registers the observed results.
@@ -192,16 +298,20 @@ func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ JobHandle, _ boo
 	ctx, endObservation := db.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return db.db.Dequeue(ctx)
+	upload, jobHandle, ok, err := db.db.Dequeue(ctx)
+	if err == nil && ok {
+		// TODO(efritz) - find a way to do this without casting
+		if impl, ok := jobHandle.(*jobHandleImpl); ok {
+			impl.db = db.wrap(impl.db)
+		}
+	}
+	return upload, jobHandle, ok, err
 }
 
 // GetStates calls into the inner DB and registers the observed results.
 func (db *ObservedDB) GetStates(ctx context.Context, ids []int) (states map[int]string, err error) {
 	ctx, endObservation := db.getStatesOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(states)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(states)), observation.Args{}) }()
 	return db.db.GetStates(ctx, ids)
 }
 
@@ -209,17 +319,13 @@ func (db *ObservedDB) GetStates(ctx context.Context, ids []int) (states map[int]
 func (db *ObservedDB) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (_ bool, err error) {
 	ctx, endObservation := db.deleteUploadByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.DeleteUploadByID(ctx, id, getTipCommit)
 }
 
 // ResetStalled calls into the inner DB and registers the observed results.
 func (db *ObservedDB) ResetStalled(ctx context.Context, now time.Time) (ids []int, err error) {
 	ctx, endObservation := db.resetStalledOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(ids)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
 	return db.db.ResetStalled(ctx, now)
 }
 
@@ -227,17 +333,13 @@ func (db *ObservedDB) ResetStalled(ctx context.Context, now time.Time) (ids []in
 func (db *ObservedDB) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err error) {
 	ctx, endObservation := db.getDumpByIDOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.GetDumpByID(ctx, id)
 }
 
 // FindClosestDumps calls into the inner DB and registers the observed results.
 func (db *ObservedDB) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (dumps []Dump, err error) {
 	ctx, endObservation := db.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(dumps)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
 	return db.db.FindClosestDumps(ctx, repositoryID, commit, file)
 }
 
@@ -245,7 +347,6 @@ func (db *ObservedDB) FindClosestDumps(ctx context.Context, repositoryID int, co
 func (db *ObservedDB) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err error) {
 	ctx, endObservation := db.deleteOldestDumpOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.DeleteOldestDump(ctx)
 }
 
@@ -253,7 +354,6 @@ func (db *ObservedDB) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err 
 func (db *ObservedDB) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
 	ctx, endObservation := db.updateDumpsVisibleFromTipOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit)
 }
 
@@ -261,7 +361,6 @@ func (db *ObservedDB) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryI
 func (db *ObservedDB) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	ctx, endObservation := db.deleteOverlappingDumpsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.DeleteOverlappingDumps(ctx, repositoryID, commit, root, indexer)
 }
 
@@ -269,7 +368,6 @@ func (db *ObservedDB) DeleteOverlappingDumps(ctx context.Context, repositoryID i
 func (db *ObservedDB) GetPackage(ctx context.Context, scheme, name, version string) (_ Dump, _ bool, err error) {
 	ctx, endObservation := db.getPackageOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.GetPackage(ctx, scheme, name, version)
 }
 
@@ -277,7 +375,6 @@ func (db *ObservedDB) GetPackage(ctx context.Context, scheme, name, version stri
 func (db *ObservedDB) UpdatePackages(ctx context.Context, packages []types.Package) (err error) {
 	ctx, endObservation := db.updatePackagesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.UpdatePackages(ctx, packages)
 }
 
@@ -285,7 +382,6 @@ func (db *ObservedDB) UpdatePackages(ctx context.Context, packages []types.Packa
 func (db *ObservedDB) SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (_ int, _ ReferencePager, err error) {
 	ctx, endObservation := db.sameRepoPagerOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.SameRepoPager(ctx, repositoryID, commit, scheme, name, version, limit)
 }
 
@@ -293,7 +389,6 @@ func (db *ObservedDB) SameRepoPager(ctx context.Context, repositoryID int, commi
 func (db *ObservedDB) UpdatePackageReferences(ctx context.Context, packageReferences []types.PackageReference) (err error) {
 	ctx, endObservation := db.updatePackageReferencesOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.UpdatePackageReferences(ctx, packageReferences)
 }
 
@@ -301,7 +396,6 @@ func (db *ObservedDB) UpdatePackageReferences(ctx context.Context, packageRefere
 func (db *ObservedDB) PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (_ int, _ ReferencePager, err error) {
 	ctx, endObservation := db.packageReferencePagerOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.PackageReferencePager(ctx, scheme, name, version, repositoryID, limit)
 }
 
@@ -309,7 +403,6 @@ func (db *ObservedDB) PackageReferencePager(ctx context.Context, scheme, name, v
 func (db *ObservedDB) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, endObservation := db.hasCommitOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.HasCommit(ctx, repositoryID, commit)
 }
 
@@ -317,7 +410,6 @@ func (db *ObservedDB) HasCommit(ctx context.Context, repositoryID int, commit st
 func (db *ObservedDB) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (err error) {
 	ctx, endObservation := db.updateCommitsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.UpdateCommits(ctx, repositoryID, commits)
 }
 
@@ -325,6 +417,5 @@ func (db *ObservedDB) UpdateCommits(ctx context.Context, repositoryID int, commi
 func (db *ObservedDB) RepoName(ctx context.Context, repositoryID int) (_ string, err error) {
 	ctx, endObservation := db.repoNameOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.db.RepoName(ctx, repositoryID)
 }
