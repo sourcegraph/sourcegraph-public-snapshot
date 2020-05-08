@@ -6,6 +6,12 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## v3.14.2 → v3.15.1 changes
 
+This release:
+
+- Removes the 4-container Jaeger deployment, which had performance issues, in favor of a single-container one that works well.
+- Removes the old `lsif-server` service deployment, replacing it with 3 `precise-code-intel` services.
+- Changes the versions of all Sourcegraph images to be consistent (just `3.15.1` instead of some being inconsistent), which in some cases required changing the names of the images (but the containers / services / shell scripts remain the same for now).
+
 ### Update environment variables
 
 - On `frontend` and `frontend-internal` containers: Remove the `LSIF_SERVER_URL` environment variable.
