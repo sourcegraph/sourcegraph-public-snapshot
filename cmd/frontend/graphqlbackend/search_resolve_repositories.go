@@ -41,6 +41,7 @@ type repositoryResolver struct {
 
 	includePatternRevs         []patternRevspec
 	versionContextRepositories []string
+	defaultRepos               []*types.Repo
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -84,12 +85,11 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		return nil, nil, false, err
 	}
 
-	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(r.includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
 		}
-		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
+		r.defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
@@ -102,33 +102,11 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		return nil, nil, false, err
 	}
 
-	var repos []*types.Repo
-	if len(defaultRepos) > 0 {
-		repos = defaultRepos
-		if len(repos) > r.maxRepoListSize {
-			repos = repos[:r.maxRepoListSize]
-		}
-	} else {
-		r.tr.LazyPrintf("Repos.List - start")
-		repos, err = db.Repos.List(ctx, db.ReposListOptions{
-			OnlyRepoIDs:     true,
-			IncludePatterns: r.includePatterns,
-			Names:           r.versionContextRepositories,
-			ExcludePattern:  unionRegExps(r.excludePatterns),
-			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
-			NoForks:      op.noForks,
-			OnlyForks:    op.onlyForks,
-			NoArchived:   op.noArchived,
-			OnlyArchived: op.onlyArchived,
-			NoPrivate:    op.onlyPublic,
-			OnlyPrivate:  op.onlyPrivate,
-		})
-		r.tr.LazyPrintf("Repos.List - done")
-		if err != nil {
-			return nil, nil, false, err
-		}
+	repos, err := r.getRepos(ctx)
+	if err != nil {
+		return nil, nil, false, err
 	}
+
 	overLimit = len(repos) >= r.maxRepoListSize
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
@@ -268,4 +246,38 @@ func (r *repositoryResolver) getVersionContext() (*schema.VersionContext, error)
 	}
 
 	return versionContext, nil
+}
+
+// get repositories from the database or from the default repositories.
+func (r *repositoryResolver) getRepos(ctx context.Context) ([]*types.Repo, error) {
+	var err error
+	var repos []*types.Repo
+	if len(r.defaultRepos) > 0 {
+		repos = r.defaultRepos
+		if len(repos) > r.maxRepoListSize {
+			repos = repos[:r.maxRepoListSize]
+		}
+	} else {
+		r.tr.LazyPrintf("Repos.List - start")
+		repos, err = db.Repos.List(ctx, db.ReposListOptions{
+			OnlyRepoIDs:     true,
+			IncludePatterns: r.includePatterns,
+			Names:           r.versionContextRepositories,
+			ExcludePattern:  unionRegExps(r.excludePatterns),
+			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+			LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
+			NoForks:      r.noForks,
+			OnlyForks:    r.onlyForks,
+			NoArchived:   r.noArchived,
+			OnlyArchived: r.onlyArchived,
+			NoPrivate:    r.onlyPublic,
+			OnlyPrivate:  r.onlyPrivate,
+		})
+		r.tr.LazyPrintf("Repos.List - done")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return repos, nil
 }
