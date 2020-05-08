@@ -946,12 +946,12 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	return clone
 }
 
-type ExternalServicesLister interface {
+type externalServiceLister interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 }
 
 type RateLimiterRegistry struct {
-	serviceLister ExternalServicesLister
+	serviceLister externalServiceLister
 	mu            sync.Mutex
 	// Rate limiter per code host, keys are the normalized base URL for a
 	// code host.
@@ -960,7 +960,7 @@ type RateLimiterRegistry struct {
 
 // NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
 // empty registry is returned which can still to handle syncs.
-func NewRateLimiterRegistry(ctx context.Context, serviceLister ExternalServicesLister) (*RateLimiterRegistry, error) {
+func NewRateLimiterRegistry(ctx context.Context, serviceLister externalServiceLister) (*RateLimiterRegistry, error) {
 	r := &RateLimiterRegistry{
 		serviceLister: serviceLister,
 		rateLimiters:  make(map[string]*rate.Limiter),
