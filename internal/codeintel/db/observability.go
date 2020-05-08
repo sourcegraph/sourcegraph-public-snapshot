@@ -39,6 +39,7 @@ var _ DB = &ObservedDB{}
 // NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
 func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
 	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		subsystem,
 		"db",
 		metrics.WithLabels("op"),
@@ -179,11 +180,11 @@ func (db *ObservedDB) GetUploadsByRepo(ctx context.Context, repositoryID int, st
 }
 
 // Enqueue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (_ int, err error) {
+func (db *ObservedDB) Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (_ int, err error) {
 	ctx, endObservation := db.enqueueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return db.db.Enqueue(ctx, commit, root, tracingContext, repositoryID, indexerName)
+	return db.db.Enqueue(ctx, commit, root, repositoryID, indexerName)
 }
 
 // Dequeue calls into the inner DB and registers the observed results.

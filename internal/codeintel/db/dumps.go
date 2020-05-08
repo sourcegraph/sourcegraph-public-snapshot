@@ -20,7 +20,6 @@ type Dump struct {
 	FailureStacktrace *string    `json:"failureStacktrace"`
 	StartedAt         *time.Time `json:"startedAt"`
 	FinishedAt        *time.Time `json:"finishedAt"`
-	TracingContext    string     `json:"tracingContext"`
 	RepositoryID      int        `json:"repositoryId"`
 	Indexer           string     `json:"indexer"`
 }
@@ -39,7 +38,6 @@ func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.failure_stacktrace,
 			d.started_at,
 			d.finished_at,
-			d.tracing_context,
 			d.repository_id,
 			d.indexer
 		FROM lsif_dumps d WHERE id = %d
@@ -82,7 +80,6 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 				d.failure_stacktrace,
 				d.started_at,
 				d.finished_at,
-				d.tracing_context,
 				d.repository_id,
 				d.indexer
 			FROM lsif_dumps d WHERE id IN (%s)

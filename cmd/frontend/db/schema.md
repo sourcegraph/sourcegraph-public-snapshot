@@ -391,7 +391,6 @@ Foreign-key constraints:
  failure_stacktrace | text                     | 
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
- tracing_context    | text                     | not null
  repository_id      | integer                  | not null
  indexer            | text                     | not null
  num_parts          | integer                  | not null
