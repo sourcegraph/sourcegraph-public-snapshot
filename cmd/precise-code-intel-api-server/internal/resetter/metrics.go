@@ -22,11 +22,6 @@ func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
 		Help:      "Total number of errors when running the janitor",
 	})
 
-	if r != nil {
-		r.MustRegister(stalledJobs)
-		r.MustRegister(errors)
-	}
-
 	return ResetterMetrics{
 		StalledJobs: stalledJobs,
 		Errors:      errors,
