@@ -3,7 +3,6 @@ package reader
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,20 +20,15 @@ type ObservedReader struct {
 
 var _ Reader = &ObservedReader{}
 
-// createOperationMetrics creates the metric instance for all operations in an ObservedReader.
-func createOperationMetrics(r prometheus.Registerer, subsystem string) *metrics.OperationMetrics {
-	return metrics.NewOperationMetrics(
-		r,
+// NewObservedReader wraps the given Reader with error logging, Prometheus metrics, and tracing.
+func NewObserved(reader Reader, observationContext *observation.Context, subsystem string) Reader {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		subsystem,
 		"reader",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
-}
-
-// NewObservedReader wraps the given Reader with error logging, Prometheus metrics, and tracing.
-func NewObserved(reader Reader, observationContext *observation.Context, subsystem string) Reader {
-	metrics := createOperationMetrics(observationContext.Registerer, subsystem)
 
 	return &ObservedReader{
 		reader: reader,

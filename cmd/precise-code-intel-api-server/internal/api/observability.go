@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -21,20 +20,15 @@ type ObservedCodeIntelAPI struct {
 
 var _ CodeIntelAPI = &ObservedCodeIntelAPI{}
 
-// createOperationMetrics creates the metric instance for all operations in an ObservedCodeIntelAPI.
-func createOperationMetrics(r prometheus.Registerer) *metrics.OperationMetrics {
-	return metrics.NewOperationMetrics(
-		r,
+// NewObservedCodeIntelAPI wraps the given CodeIntelAPI with error logging, Prometheus metrics, and tracing.
+func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Context) CodeIntelAPI {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		"precise_code_intel_api_server",
 		"code_intel_api",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
-}
-
-// NewObservedCodeIntelAPI wraps the given CodeIntelAPI with error logging, Prometheus metrics, and tracing.
-func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Context) CodeIntelAPI {
-	metrics := createOperationMetrics(observationContext.Registerer)
 
 	return &ObservedCodeIntelAPI{
 		codeIntelAPI: codeIntelAPI,

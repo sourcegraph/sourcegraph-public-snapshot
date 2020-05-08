@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,20 +22,15 @@ type ObservedDatabase struct {
 
 var _ Database = &ObservedDatabase{}
 
-// createOperationMetrics creates the metric instance for all operations in an ObservedCodeIntelAPI.
-func createOperationMetrics(r prometheus.Registerer) *metrics.OperationMetrics {
-	return metrics.NewOperationMetrics(
-		r,
+// NewObservedDatabase wraps the given Database with error logging, Prometheus metrics, and tracing.
+func NewObserved(database Database, observationContext *observation.Context) Database {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		"precise_code_intel_bundle_manager",
 		"database",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
-}
-
-// NewObservedDatabase wraps the given Database with error logging, Prometheus metrics, and tracing.
-func NewObserved(database Database, observationContext *observation.Context) Database {
-	metrics := createOperationMetrics(observationContext.Registerer)
 
 	return &ObservedDatabase{
 		database: database,
