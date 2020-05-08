@@ -47,7 +47,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const subscriptions = new Subscription()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -71,7 +77,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -95,7 +107,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -115,7 +133,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -135,7 +159,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -159,7 +189,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -183,7 +219,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -207,7 +249,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]
@@ -265,7 +313,13 @@ Array [
         }
       }
     >
-               const subscriptions = new Subscription()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
        
       <span
         className=""
@@ -301,7 +355,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -325,7 +385,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -350,7 +416,13 @@ Array [
         }
       }
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
        
       <span
         className=""
@@ -382,7 +454,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -406,7 +484,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -430,7 +514,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -454,7 +544,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]
@@ -511,7 +607,13 @@ Array [
         }
       }
     >
-               const subscriptions = new Subscription()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
        
       <span
         className=""
@@ -547,7 +649,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -571,7 +679,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -595,7 +709,13 @@ Array [
         }
       }
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
        
       <span
         className=""
@@ -627,7 +747,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -651,7 +777,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -675,7 +807,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -699,7 +837,13 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <span
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]
