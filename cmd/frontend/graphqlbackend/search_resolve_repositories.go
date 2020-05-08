@@ -30,7 +30,19 @@ type resolveRepoOp struct {
 	onlyPublic         bool
 }
 
+type repositoryResolver struct {
+	resolveRepoOp
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
+	r := repositoryResolver{
+		resolveRepoOp: op,
+	}
+
+	return r.resolveRepositories(ctx, op)
+}
+
+func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
 	defer func() {
 		tr.SetError(err)
