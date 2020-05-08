@@ -80,8 +80,6 @@ func recordOperation(method string) func(error) error {
 	}
 }
 
-// Record returns a record fn that is called on any given return err. If an error is encountered
-// it will register the err metric. The err is never altered.
 func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json.RawMessage, error) {
 	rec := recordOperation("getAndMarshalSiteActivityJSON")
 
