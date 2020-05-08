@@ -57,7 +57,7 @@
     "@types/jaeger-client": "3.15.3",
     "@types/jest": "25.2.1",
     "@types/json5": "0.0.30",
-    "@types/lodash": "4.14.149",
+    "@types/lodash": "4.14.150",
     "@types/logform": "1.2.0",
     "@types/mz": "2.7.0",
     "@types/on-finished": "2.3.1",
