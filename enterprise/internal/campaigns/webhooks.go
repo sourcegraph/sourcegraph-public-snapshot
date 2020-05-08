@@ -669,10 +669,9 @@ func (*GitHubWebhook) closedOrMergeEvent(e *gh.PullRequestEvent) keyer {
 		// We actually have a merged event
 		if pr.GetMerged() {
 			mergedEvent := &github.MergedEvent{
-				Actor:        closeEvent.Actor,
-				MergeRefName: pr.GetBase().GetRef(),
-				URL:          closeEvent.URL,
-				CreatedAt:    closeEvent.CreatedAt,
+				Actor:     closeEvent.Actor,
+				URL:       closeEvent.URL,
+				CreatedAt: closeEvent.CreatedAt,
 			}
 			if base := pr.GetBase(); base != nil {
 				mergedEvent.MergeRefName = base.GetRef()
