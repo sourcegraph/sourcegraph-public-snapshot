@@ -42,24 +42,14 @@ type ObservedDB struct {
 
 var _ DB = &ObservedDB{}
 
-// TODO - document
-func createMetrics(observationContext *observation.Context, subsystem string) *metrics.OperationMetrics {
-	if observationContext.Registerer == nil {
-		return nil
-	}
-
-	return metrics.NewOperationMetrics(
-		observationContext.Registerer,
+// NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
+func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
+	metrics := metrics.NewOperationMetrics(
 		subsystem,
 		"db",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
-}
-
-// NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
-func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
-	metrics := createMetrics(observationContext, subsystem)
 
 	return &ObservedDB{
 		db: db,
