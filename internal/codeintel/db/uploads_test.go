@@ -385,6 +385,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	}
 
 	// alter record in the underlying transacted db
+	// TODO(efritz) - find a way to do this without casting
 	underlyingDB := jobHandle.DB().(*ObservedDB).db.(*dbImpl)
 	if err := underlyingDB.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)

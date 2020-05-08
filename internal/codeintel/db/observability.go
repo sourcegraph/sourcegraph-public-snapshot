@@ -186,6 +186,7 @@ func NewObserved(db DB, observationContext *observation.Context, subsystem strin
 	}
 }
 
+// wrap the given database with the same observed operations as the receiver database.
 func (db *ObservedDB) wrap(other DB) DB {
 	return &ObservedDB{
 		db:                                 other,
@@ -218,7 +219,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 	}
 }
 
-// Transact calls into the inner DB.
+// Transact calls into the inner DB and wraps the resulting value in an ObservedDB.
 func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
 	tx, err := db.db.Transact(ctx)
 	if err != nil {
@@ -298,8 +299,10 @@ func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ JobHandle, _ boo
 
 	upload, jobHandle, ok, err := db.db.Dequeue(ctx)
 	if err == nil && ok {
-		// TODO - ew
-		jobHandle.(*jobHandleImpl).db = db.wrap(jobHandle.(*jobHandleImpl).db)
+		// TODO(efritz) - find a way to do this without casting
+		if impl, ok := jobHandle.(*jobHandleImpl); ok {
+			impl.db = db.wrap(impl.db)
+		}
 	}
 	return upload, jobHandle, ok, err
 }
