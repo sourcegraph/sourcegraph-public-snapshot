@@ -85,13 +85,8 @@ type Op struct {
 }
 
 // Operation combines the state of the parent context to create a new operation. This value
-// should be owned and used by the code that performs the operation it represents. This will
-// immediately register any supplied metric with the context's metric registerer.
+// should be owned and used by the code that performs the operation it represents.
 func (c *Context) Operation(args Op) *Operation {
-	if c.Registerer != nil && args.Metrics != nil {
-		args.Metrics.MustRegister(c.Registerer)
-	}
-
 	return &Operation{
 		context:      c,
 		metrics:      args.Metrics,
