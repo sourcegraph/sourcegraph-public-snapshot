@@ -6,6 +6,7 @@ import (
 
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
 // CodeIntelAPI is the main interface into precise code intelligence data.
@@ -30,15 +31,17 @@ type CodeIntelAPI interface {
 type codeIntelAPI struct {
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
+	gitserverClient     gitserver.Client
 }
 
 var _ CodeIntelAPI = &codeIntelAPI{}
 
 var ErrMissingDump = errors.New("no dump")
 
-func New(db db.DB, bundleManagerClient bundles.BundleManagerClient) CodeIntelAPI {
+func New(db db.DB, bundleManagerClient bundles.BundleManagerClient, gitserverClient gitserver.Client) CodeIntelAPI {
 	return &codeIntelAPI{
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
+		gitserverClient:     gitserverClient,
 	}
 }

@@ -26,6 +26,25 @@ func TestUnmarshalElement(t *testing.T) {
 	}
 }
 
+func TestUnmarshalElementNumericIDs(t *testing.T) {
+	raw := `{"id": 47, "type": "edge", "label": "contains", "outV": 2, "inVs": [4, 5, 6]}`
+
+	element, err := UnmarshalElement([]byte(raw))
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling element data: %s", err)
+	}
+
+	expectedElement := Element{
+		ID:    "47",
+		Type:  "edge",
+		Label: "contains",
+		Raw:   json.RawMessage(raw),
+	}
+	if diff := cmp.Diff(expectedElement, element); diff != "" {
+		t.Errorf("unexpected element (-want +got):\n%s", diff)
+	}
+}
+
 func TestUnmarshalEdge(t *testing.T) {
 	edge, err := UnmarshalEdge(Element{
 		ID:    "35",
@@ -42,6 +61,28 @@ func TestUnmarshalEdge(t *testing.T) {
 		InV:      "",
 		InVs:     []string{"07"},
 		Document: "03",
+	}
+	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
+		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+	}
+}
+
+func TestUnmarshalEdgeNumericIDs(t *testing.T) {
+	edge, err := UnmarshalEdge(Element{
+		ID:    "35",
+		Type:  "edge",
+		Label: "item",
+		Raw:   json.RawMessage(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "document": 3}`),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+	}
+
+	expectedEdge := Edge{
+		OutV:     "12",
+		InV:      "",
+		InVs:     []string{"7"},
+		Document: "3",
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
 		t.Errorf("unexpected edge (-want +got):\n%s", diff)

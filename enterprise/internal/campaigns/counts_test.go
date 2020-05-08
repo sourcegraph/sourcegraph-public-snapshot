@@ -1,7 +1,6 @@
 package campaigns
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -404,6 +403,25 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			name:      "single changeset open, reviewed, unapproved",
+			changesets: []*campaigns.Changeset{
+				bbsChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []*campaigns.ChangesetEvent{
+				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
+				bbsParticipantEvent(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerParticipationStatusUnapproved),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
@@ -1198,8 +1216,8 @@ func TestCalcCounts(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(have, tc.want) {
-				t.Errorf("wrong counts calculated. diff=%s", cmp.Diff(have, tc.want))
+			if diff := cmp.Diff(have, tc.want); diff != "" {
+				t.Errorf("wrong counts calculated. diff=%s", diff)
 			}
 		})
 	}
@@ -1292,6 +1310,19 @@ func bbsActivity(id int64, t time.Time, username string, kind campaigns.Changese
 		ChangesetID: id,
 		Kind:        kind,
 		Metadata: &bitbucketserver.Activity{
+			CreatedDate: timeToUnixMilli(t),
+			User: bitbucketserver.User{
+				Name: username,
+			},
+		},
+	}
+}
+
+func bbsParticipantEvent(id int64, t time.Time, username string, kind campaigns.ChangesetEventKind) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        kind,
+		Metadata: &bitbucketserver.ParticipantStatusEvent{
 			CreatedDate: timeToUnixMilli(t),
 			User: bitbucketserver.User{
 				Name: username,

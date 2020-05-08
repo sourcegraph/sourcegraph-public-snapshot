@@ -66,8 +66,13 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context) (json.RawMessage, error) {
-	days, weeks, months := 2, 1, 1
+func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json.RawMessage, error) {
+	var days, weeks, months int
+	if criticalOnly {
+		months = 1
+	} else {
+		days, weeks, months = 2, 1, 1
+	}
 	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
@@ -101,7 +106,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
 		MonthPeriods:          &months,
-		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventCounts:    true,
 		IncludeEventLatencies: true,
 	})
 	if err != nil {
@@ -120,7 +125,7 @@ func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) 
 		DayPeriods:         &days,
 		WeekPeriods:        &weeks,
 		MonthPeriods:       &months,
-		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventCounts: true,
 	})
 	if err != nil {
 		return nil, err
@@ -142,76 +147,79 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		logFunc = log15.Warn
 	}
 
-	// TODO(Dan): migrate this to the new usagestats package.
-	//
-	// For the time being, instances will report daily active users through the legacy package via this argument,
-	// as well as using the new package through the `act` argument below. This will allow comparison during the
-	// transition.
-	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
-	if err != nil {
-		logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
+	r := &pingRequest{
+		ClientSiteID:        siteid.Get(),
+		DeployType:          conf.DeployType(),
+		ClientVersionString: version.Version(),
+		LicenseKey:          conf.Get().LicenseKey,
+		CodeIntelUsage:      []byte("{}"),
+		SearchUsage:         []byte("{}"),
+		CampaignsUsage:      []byte("{}"),
 	}
+
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
 	if err != nil {
 		logFunc("db.Users.Count failed", "error", err)
 	}
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
-	hasRepos := totalRepos > 0
-	if err != nil {
-		logFunc("db.Repos.Count failed", "error", err)
-	}
-	searchOccurred, err := usagestats.HasSearchOccurred()
-	if err != nil {
-		logFunc("usagestats.HasSearchOccurred failed", "error", err)
-	}
-	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
-	if err != nil {
-		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
-	}
-	act, err := getAndMarshalSiteActivityJSON(ctx)
-	if err != nil {
-		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
-	}
-	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
-	if err != nil {
-		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
-	}
-	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
-	if err != nil {
-		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
-	}
-	searchUsage, err := getAndMarshalSearchUsageJSON(ctx)
-	if err != nil {
-		logFunc("getAndMarshalSearchUsageJSON failed", "error", err)
-	}
-	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	r.TotalUsers = int32(totalUsers)
+	r.InitialAdminEmail, err = db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
-	svcs, err := externalServiceKinds(ctx)
-	if err != nil {
-		logFunc("externalServicesKinds failed", "error", err)
+
+	if !conf.Get().DisableNonCriticalTelemetry {
+		// TODO(Dan): migrate this to the new usagestats package.
+		//
+		// For the time being, instances will report daily active users through the legacy package via this argument,
+		// as well as using the new package through the `act` argument below. This will allow comparison during the
+		// transition.
+		count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
+		if err != nil {
+			logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
+		}
+		r.UniqueUsers = int32(count)
+		totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+		if err != nil {
+			logFunc("db.Repos.Count failed", "error", err)
+		}
+		r.HasRepos = totalRepos > 0
+		r.EverSearched, err = usagestats.HasSearchOccurred()
+		if err != nil {
+			logFunc("usagestats.HasSearchOccurred failed", "error", err)
+		}
+		r.EverFindRefs, err = usagestats.HasFindRefsOccurred()
+		if err != nil {
+			logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
+		}
+		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
+		if err != nil {
+			logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
+		}
+		r.CampaignsUsage, err = getAndMarshalCampaignsUsageJSON(ctx)
+		if err != nil {
+			logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
+		}
+		r.CodeIntelUsage, err = getAndMarshalCodeIntelUsageJSON(ctx)
+		if err != nil {
+			logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
+		}
+		r.SearchUsage, err = getAndMarshalSearchUsageJSON(ctx)
+		if err != nil {
+			logFunc("getAndMarshalSearchUsageJSON failed", "error", err)
+		}
+		r.ExternalServices, err = externalServiceKinds(ctx)
+		if err != nil {
+			logFunc("externalServicesKinds failed", "error", err)
+		}
+
+		r.HasExtURL = conf.UsingExternalURL()
+		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
+		r.AuthProviders = authProviderTypes()
+	} else {
+		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 	}
-	contents, err := json.Marshal(&pingRequest{
-		ClientSiteID:         siteid.Get(),
-		LicenseKey:           conf.Get().LicenseKey,
-		DeployType:           conf.DeployType(),
-		ClientVersionString:  version.Version(),
-		AuthProviders:        authProviderTypes(),
-		ExternalServices:     svcs,
-		BuiltinSignupAllowed: conf.IsBuiltinSignupAllowed(),
-		HasExtURL:            conf.UsingExternalURL(),
-		UniqueUsers:          int32(count),
-		Activity:             act,
-		CampaignsUsage:       campaignsUsage,
-		CodeIntelUsage:       codeIntelUsage,
-		SearchUsage:          searchUsage,
-		InitialAdminEmail:    initAdminEmail,
-		TotalUsers:           int32(totalUsers),
-		HasRepos:             hasRepos,
-		EverSearched:         hasRepos && searchOccurred, // Searches only count if repos have been added.
-		EverFindRefs:         findRefsOccurred,
-	})
+
+	contents, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
 	}

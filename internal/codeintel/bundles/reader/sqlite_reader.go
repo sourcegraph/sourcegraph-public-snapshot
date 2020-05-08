@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
@@ -57,11 +58,11 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 		}
 	}
 
-	x, err := r.serializer.UnmarshalDocumentData(data)
+	documentData, err := r.serializer.UnmarshalDocumentData(data)
 	if err != nil {
-		return types.DocumentData{}, false, err
+		return types.DocumentData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalDocumentData")
 	}
-	return x, true, nil
+	return documentData, true, nil
 }
 
 func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
@@ -74,28 +75,31 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 		}
 	}
 
-	x, err := r.serializer.UnmarshalResultChunkData(data)
+	resultChunkData, err := r.serializer.UnmarshalResultChunkData(data)
 	if err != nil {
-		return types.ResultChunkData{}, false, err
+		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalResultChunkData")
 	}
-	return x, true, nil
+	return resultChunkData, true, nil
 }
 
 func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	query := `
-		SELECT ` + strings.Join(definitionReferenceColumns, ", ") + `
-		FROM definitions
-		WHERE scheme = %s AND identifier = %s
-		LIMIT %d OFFSET %d
-	`
+	var query *sqlf.Query
+	if take == 0 && skip == 0 {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM definitions
+			WHERE scheme = %s AND identifier = %s
+		`, scheme, identifier)
+	} else {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM definitions
+			WHERE scheme = %s AND identifier = %s
+			LIMIT %d OFFSET %d
+		`, scheme, identifier, take, skip)
+	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, sqlf.Sprintf(
-		query,
-		scheme,
-		identifier,
-		take,
-		skip,
-	)))
+	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -114,20 +118,23 @@ func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier s
 }
 
 func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	query := `
-		SELECT ` + strings.Join(definitionReferenceColumns, ", ") + `
-		FROM "references"
-		WHERE scheme = %s AND identifier = %s
-		LIMIT %d OFFSET %d
-	`
+	var query *sqlf.Query
+	if take == 0 && skip == 0 {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM "references"
+			WHERE scheme = %s AND identifier = %s
+		`, scheme, identifier)
+	} else {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM "references"
+			WHERE scheme = %s AND identifier = %s
+			LIMIT %s OFFSET %d
+		`, scheme, identifier, take, skip)
+	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, sqlf.Sprintf(
-		query,
-		scheme,
-		identifier,
-		take,
-		skip,
-	)))
+	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}

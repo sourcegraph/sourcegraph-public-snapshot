@@ -65,7 +65,7 @@ func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -144,8 +144,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
-// Release the browser extension.
-func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
@@ -157,10 +156,15 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
+			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts ./src/e2e/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
+}
+
+// Release the browser extension.
+func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+	addBrowserExtensionE2ESteps(pipeline)
 
 	pipeline.AddWait()
 
@@ -194,10 +198,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests for renovate and release branches
+	// Run e2e tests for release branches
 	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",

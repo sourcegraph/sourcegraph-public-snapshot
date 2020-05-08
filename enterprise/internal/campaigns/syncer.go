@@ -628,7 +628,11 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 	for _, e := range es {
 		var rl *rate.Limiter
 		if rlr != nil {
-			rl = rlr.GetRateLimiter(e.ID)
+			u, err := e.BaseURL()
+			if err != nil {
+				return nil, errors.Wrap(err, "getting base URL")
+			}
+			rl = rlr.GetRateLimiter(u.String())
 		}
 		css, err := repos.NewChangesetSource(e, cf, rl)
 		if err != nil {

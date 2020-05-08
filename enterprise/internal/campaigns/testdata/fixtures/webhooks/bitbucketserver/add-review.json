@@ -1,7 +1,7 @@
 {
     "payloads": [
       {
-        "payload_type": "IGNORED_FOR_THIS_EVENT",
+        "payload_type": "pr:activity:status",
         "data": {
           "createdDate": "2020-04-29T2:34:04+0000",
           "user": {
@@ -218,7 +218,7 @@
         }
       },
       {
-        "payload_type": "IGNORED_FOR_THIS_EVENT",
+        "payload_type": "pr:activity:status",
         "data": {
           "createdDate": "2020-04-29T2:35:05+0000",
           "user": {

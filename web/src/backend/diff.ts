@@ -25,17 +25,21 @@ export const FileDiffFields = gql`
         }
         hunks {
             oldRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             oldNoNewlineAt
             newRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             section
             body
         }
         stat {
-            ...DiffStatFields
+            added
+            changed
+            deleted
         }
         internalID
     }
@@ -47,17 +51,21 @@ export const PreviewFileDiffFields = gql`
         newPath
         hunks {
             oldRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             oldNoNewlineAt
             newRange {
-                ...FileDiffHunkRangeFields
+                startLine
+                lines
             }
             section
             body
         }
         stat {
-            ...DiffStatFields
+            added
+            changed
+            deleted
         }
         internalID
     }

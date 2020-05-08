@@ -8,38 +8,24 @@ import (
 )
 
 type Janitor struct {
-	bundleDir          string
-	desiredPercentFree int
-	janitorInterval    time.Duration
-	maxUploadAge       time.Duration
-}
-
-type JanitorOpts struct {
 	BundleDir          string
 	DesiredPercentFree int
 	JanitorInterval    time.Duration
 	MaxUploadAge       time.Duration
-}
-
-func NewJanitor(opts JanitorOpts) *Janitor {
-	return &Janitor{
-		bundleDir:          opts.BundleDir,
-		desiredPercentFree: opts.DesiredPercentFree,
-		janitorInterval:    opts.JanitorInterval,
-		maxUploadAge:       opts.MaxUploadAge,
-	}
+	Metrics            JanitorMetrics
 }
 
 // step performs a best-effort cleanup. See the following methods for more specifics.
 // Run periodically performs a best-effort cleanup process. See the following methods
-// for more specifics: cleanOldUploads, removeDeadDumps, and freeSpace.
+// for more specifics: cleanOldUploads, removeOrphanedDumps, and freeSpace.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
+			j.Metrics.Errors.Inc()
 			log15.Error("Failed to run janitor process", "err", err)
 		}
 
-		time.Sleep(j.janitorInterval)
+		time.Sleep(j.JanitorInterval)
 	}
 }
 
@@ -48,8 +34,8 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.cleanOldUploads")
 	}
 
-	if err := j.removeDeadDumps(defaultStatesFn); err != nil {
-		return errors.Wrap(err, "janitor.removeDeadDumps")
+	if err := j.removeOrphanedDumps(defaultStatesFn); err != nil {
+		return errors.Wrap(err, "janitor.removeOrphanedDumps")
 	}
 
 	if err := j.freeSpace(defaultPruneFn); err != nil {

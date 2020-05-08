@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `userID` and `orgID` fields in the SavedSearch type in the GraphQL API have been replaced with a `namespace` field. To get the ID of the user or org that owns the saved search, use `namespace.id`. [#5327](https://github.com/sourcegraph/sourcegraph/pull/5327)
 - Tree pages now redirect to blob pages if the path is not a tree and vice versa. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
 - Files and directories that are not found now return a 404 status code. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
+- The site admin flag `disableNonCriticalTelemetry` now allows Sourcegraph admins to disable most anonymous telemetry. Visit https://docs.sourcegraph.com/admin/pings to learn more. [#10402](https://github.com/sourcegraph/sourcegraph/pull/10402)
 
 ### Fixed
 
@@ -85,7 +86,6 @@ All notable changes to Sourcegraph are documented in this file.
   - Jaeger is now included in the Sourcegraph deployment configuration by default if you are using Kubernetes, Docker Compose, or the pure Docker cluster deployment model. (It is not yet included in the single Docker container distribution.) It will be included as part of upgrading to 3.15 in these deployment models, unless disabled.
   - The site configuration field, `useJaeger`, is deprecated in favor of `observability.tracing`.
   - Support for configuring Lightstep as a distributed tracer is deprecated and will be removed in a subsequent release. Instances that use Lightstep with Sourcegraph are encouraged to migrate to Jaeger (directions for running Jaeger alongside Sourcegraph are included in the installation instructions).
-  - Added user setting `search.uppercase` that, when enabled, causes queries containing uppercase characters to be treated as case-insensitive. Used when searching for file contents using `and`- and `or`-expressions in queries and enabled via the existing global settings value `{"experimentalFeatures": {"andOrQuery": "enabled"}}` and the new setting `search.defaultPatternType`. [#10057](https://github.com/sourcegraph/sourcegraph/issues/10057)
 
 ### Changed
 

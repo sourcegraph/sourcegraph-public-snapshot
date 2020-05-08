@@ -159,23 +159,6 @@ func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChun
 //
 //
 
-// // UnmarshalJSON converts a JSON number or string into an identifier. This
-// // maintains the same functionality that exists on the TypeScript side by
-// // simply running JSON.parse() on document and result chunk data blobs.
-// func (id *ID) UnmarshalJSON(b []byte) error {
-// 	if b[0] == '"' {
-// 		return json.Unmarshal(b, (*string)(id))
-// 	}
-
-// 	var value int64
-// 	if err := json.Unmarshal(b, &value); err != nil {
-// 		return err
-// 	}
-
-// 	*id = ID(strconv.FormatInt(value, 10))
-// 	return nil
-// }
-
 func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeData, error) {
 	m := map[types.ID]types.RangeData{}
 	for _, pair := range pairs {
@@ -337,9 +320,16 @@ func unmarshalWrappedDocumentIdRangeIDs(pairs []json.RawMessage) (map[types.ID][
 func compress(uncompressed []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)
-	_, err := io.Copy(gzipWriter, bytes.NewReader(uncompressed))
-	gzipWriter.Close()
-	return buf.Bytes(), err
+
+	if _, err := io.Copy(gzipWriter, bytes.NewReader(uncompressed)); err != nil {
+		return nil, err
+	}
+
+	if err := gzipWriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // unmarshalGzippedJSON unmarshals the gzip+json encoded data.

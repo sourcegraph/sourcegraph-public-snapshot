@@ -27,6 +27,7 @@ type Config struct {
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
+	isBextNightly       bool
 	isRenovateBranch    bool
 	patch               bool
 	patchNoTest         bool
@@ -93,6 +94,7 @@ func ComputeConfig() Config {
 		isQuick:             isQuick,
 		isMasterDryRun:      isMasterDryRun,
 		profilingEnabled:    profilingEnabled,
+		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
 	}
 }
 

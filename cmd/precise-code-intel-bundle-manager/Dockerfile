@@ -31,8 +31,8 @@ RUN apk --no-cache add pcre-dev
 # dumb, this is just Docker: https://github.com/docker/compose/issues/3270#issuecomment-363478501.
 USER root
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
-USER sourcegraph
 
+USER sourcegraph
 COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundle-manager
 
 EXPOSE 3187

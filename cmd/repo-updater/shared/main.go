@@ -90,7 +90,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
-		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Count)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Duration)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Errors)
 
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
@@ -111,7 +113,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	var handler http.Handler
 	{
 		m := repoupdater.NewHandlerMetrics()
-		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Count)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Duration)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Errors)
 		handler = repoupdater.ObservedHandler(
 			log15.Root(),
 			m,

@@ -39,6 +39,14 @@ export class LsifUpload {
     @Column('text')
     public indexer!: string
 
+    /** The number of parts expected to be uploaded. */
+    @Column('int', { name: 'num_parts' })
+    public numParts!: number
+
+    /** The index of parts that have already been uploaded. */
+    @Column('int', { name: 'uploaded_parts', array: true })
+    public uploadedParts!: number[]
+
     /** The conversion state of the upload. May be `queued`, `processing`, `completed`, or `errored`. */
     @Column('text')
     public state!: LsifUploadState
@@ -62,10 +70,6 @@ export class LsifUpload {
     /** The stacktrace of the error that occurred during processing (if any). */
     @Column('text', { name: 'failure_stacktrace', nullable: true })
     public failureStacktrace!: string | null
-
-    /** The opentracing headers from the upload request. */
-    @Column('text', { name: 'tracing_context' })
-    public tracingContext!: string
 
     /** Whether or not this commit is visible at the tip of the default branch. */
     @Column('boolean', { name: 'visible_at_tip' })

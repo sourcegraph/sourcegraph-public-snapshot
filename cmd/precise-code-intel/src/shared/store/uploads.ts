@@ -1,6 +1,5 @@
 import * as pgModels from '../models/pg'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
 import { Logger } from 'winston'
@@ -258,21 +257,21 @@ export class UploadManager {
             /** The indexer binary name that produced this dump as specified by the metadata. */
             indexer: string
         },
-        entityManager: EntityManager = this.connection.createEntityManager(),
-        tracer?: Tracer,
-        span?: Span
+        entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<number> {
-        const tracing = {}
-        if (tracer && span) {
-            tracer.inject(span, FORMAT_TEXT_MAP, tracing)
-        }
-
         const { identifiers } = await instrumentQuery(() =>
             entityManager
                 .createQueryBuilder()
                 .insert()
                 .into(pgModels.LsifUpload)
-                .values({ repositoryId, commit, root, indexer, tracingContext: JSON.stringify(tracing) })
+                .values({
+                    repositoryId,
+                    commit,
+                    root,
+                    indexer,
+                    numParts: 1,
+                    uploadedParts: [0],
+                })
                 .execute()
         )
 
