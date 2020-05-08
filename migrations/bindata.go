@@ -2380,7 +2380,7 @@ func _1528395671_remove_tracing_contextUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395672_emptyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\x4c\xcf\x53\x28\xc9\x57\x28\xcd\x4b\xc9\x57\xe4\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x54\xc8\xa7\x15\x25\x00\x00\x00")
+var __1528395672_emptyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x28\xcd\x4b\xc9\x57\xe4\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x48\xaf\x33\x57\x25\x00\x00\x00")
 
 func _1528395672_emptyDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -2396,7 +2396,7 @@ func _1528395672_emptyDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395672_empty.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbb, 0x1d, 0x5f, 0xbe, 0xeb, 0xdf, 0x31, 0xb, 0x81, 0xaf, 0x3d, 0xb9, 0x21, 0xb0, 0xd5, 0x61, 0x33, 0x1f, 0x9b, 0xd5, 0x74, 0x29, 0xb3, 0x3b, 0xbd, 0x15, 0xd3, 0xbf, 0xc9, 0xf4, 0x57, 0x70}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0xac, 0x64, 0xe1, 0xcf, 0xa9, 0x52, 0x6c, 0x98, 0xe7, 0xcc, 0x45, 0xac, 0x94, 0xbe, 0x7, 0x1e, 0xf5, 0xf8, 0x2, 0x8d, 0xc8, 0xe9, 0x9, 0x73, 0xa5, 0x5, 0x68, 0x10, 0x41, 0x93, 0xff}}
 	return a, nil
 }
 
