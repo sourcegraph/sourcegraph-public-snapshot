@@ -39,7 +39,6 @@ func TestGetPackage(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         &startedAt,
 		FinishedAt:        &finishedAt,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 	}
@@ -55,7 +54,6 @@ func TestGetPackage(t *testing.T) {
 		FailureStacktrace: expected.FailureStacktrace,
 		StartedAt:         expected.StartedAt,
 		FinishedAt:        expected.FinishedAt,
-		TracingContext:    expected.TracingContext,
 		RepositoryID:      expected.RepositoryID,
 		Indexer:           expected.Indexer,
 	})

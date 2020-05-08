@@ -271,10 +271,10 @@ func (db *ObservedDB) QueueSize(ctx context.Context) (_ int, err error) {
 }
 
 // Enqueue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (_ int, err error) {
+func (db *ObservedDB) Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (_ int, err error) {
 	ctx, endObservation := db.enqueueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.Enqueue(ctx, commit, root, tracingContext, repositoryID, indexerName)
+	return db.db.Enqueue(ctx, commit, root, repositoryID, indexerName)
 }
 
 // MarkComplete calls into the inner DB and registers the observed results.

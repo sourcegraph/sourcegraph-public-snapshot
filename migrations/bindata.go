@@ -108,6 +108,8 @@
 // 1528395669_add_synced_at_to_perms_tables.up.sql (143B)
 // 1528395670_lsif_uploading.down.sql (1.047kB)
 // 1528395670_lsif_uploading.up.sql (1.605kB)
+// 1528395671_remove_tracing_context.down.sql (422B)
+// 1528395671_remove_tracing_context.up.sql (300B)
 
 package migrations
 
@@ -2336,6 +2338,46 @@ func _1528395670_lsif_uploadingUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395671_remove_tracing_contextDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xbd\x6e\xe3\x30\x10\x84\x7b\x3e\xc5\x74\x06\x0e\x67\xbf\x80\x70\x85\x2c\xf1\xee\x0c\xe8\xc7\x90\xe9\x38\x9d\xc1\x88\xeb\x88\x88\x4c\x12\xe2\x2a\x71\x10\xe4\xdd\x03\x59\x55\x1c\x24\xe5\x62\x67\x67\xe6\xdb\xb5\xfc\xb7\xa9\x12\x21\x96\x4b\xe4\x83\x0f\x78\xb6\xf4\x02\xed\x0c\xac\x33\x74\x01\x77\x9a\x61\x28\x90\x33\x11\xde\x81\x3b\x1b\xc1\xaf\x81\x44\xde\xd4\x5b\xdc\x6d\xe4\x01\x7d\xb4\xa7\xa3\x19\xcf\x21\xce\x3e\xa9\x31\x78\xd0\xed\x13\xb8\x23\xb4\xbe\x1f\xcf\x4e\xa4\x85\x92\x0d\x54\xba\x2e\xe4\xac\x1f\x43\xef\xb5\x89\x48\xf3\x1c\x59\x5d\xec\xcb\x0a\x3c\xe8\xd6\xba\xc7\x63\xeb\x1d\xd3\x85\xa1\xe4\xbd\x4a\xc4\x7e\x9b\xa7\xea\xe6\x68\x27\xd5\x17\xf5\x1f\x2c\xde\xde\x17\xc9\x0f\x49\xd7\xc5\x37\x59\x93\x63\x55\x2b\x54\xfb\xa2\x98\x29\x1a\x8a\xec\x07\xba\x42\x4c\x4f\x11\x59\x23\xa7\x22\x37\xc8\x48\x77\xd8\xc9\x42\x66\x0a\xe3\xea\xd7\x6f\x8c\xab\x93\x75\x36\x76\x64\x8e\x9a\xa1\x23\xc2\xe0\x5b\x8a\x71\x9e\xff\x36\x75\xf9\xb9\xd5\x88\xc3\x7f\xd9\x48\x44\xd6\x4c\x13\x44\xeb\xcf\xa1\x27\x26\xb3\x48\x84\xc8\xea\xb2\xdc\xa8\x44\x7c\x04\x00\x00\xff\xff\x07\xfe\x83\x2e\xa6\x01\x00\x00")
+
+func _1528395671_remove_tracing_contextDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395671_remove_tracing_contextDownSql,
+		"1528395671_remove_tracing_context.down.sql",
+	)
+}
+
+func _1528395671_remove_tracing_contextDownSql() (*asset, error) {
+	bytes, err := _1528395671_remove_tracing_contextDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395671_remove_tracing_context.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x24, 0x90, 0x31, 0xd2, 0x12, 0x7c, 0xd4, 0xef, 0x4, 0x88, 0x5c, 0x78, 0x88, 0x70, 0x1d, 0x3c, 0x52, 0xc6, 0x77, 0x24, 0x67, 0xd8, 0x18, 0x4e, 0x8b, 0x1c, 0x7b, 0xea, 0x4a, 0xcf, 0x86, 0x48}}
+	return a, nil
+}
+
+var __1528395671_remove_tracing_contextUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\xce\xc1\x4a\xc3\x40\x10\xc6\xf1\xfb\x3e\xc5\x77\x2b\x88\xed\x0b\x14\x0f\x69\xba\x6a\x21\x69\x64\x1b\xed\x31\x2c\xd9\xa9\x59\x48\x76\x97\xcc\x6c\xad\x6f\x2f\x1a\x3c\xe8\x71\x60\xf8\x7d\xff\x9d\x7e\x3a\x1c\xb7\x4a\xad\xd7\xd8\xcf\x31\xe1\xea\xe9\x03\x36\x38\xf8\xe0\xe8\x06\x19\xac\xc0\x51\xa2\xe0\x18\x31\x40\x06\xcf\x90\xcf\x44\x6a\x6f\x9a\x17\xbc\x1d\xf4\x19\x23\xfb\x4b\xe7\xf2\x94\x78\x71\x0c\x4d\xf1\x4a\x90\x81\xd0\xc7\x31\x4f\x41\x15\x55\xab\x0d\xda\x62\x57\xe9\xe5\x3b\xa7\x31\x5a\xc7\xf8\x41\xca\xa6\x7a\xad\x8f\x90\xd9\xf6\x3e\xbc\x77\x7d\x0c\x42\x37\xf9\xb5\x58\xe2\xbc\x60\xdf\x69\xaa\x34\xba\x68\xf5\xff\x61\x14\x27\x9c\x74\xa5\xcb\x16\x79\x73\x77\x8f\xbc\xb9\xf8\xe0\x79\x20\xd7\x59\x81\x65\xa4\x39\xf6\xc4\xbc\xdc\x8f\xa6\xa9\xff\x76\x64\x9c\x9f\xb5\xd1\x60\xb1\x42\x78\xc0\xaa\x8f\x53\x1a\x49\xc8\xad\xb6\x4a\x95\x4d\x5d\x1f\xda\xad\xfa\x0a\x00\x00\xff\xff\x80\x9b\x79\xd8\x2c\x01\x00\x00")
+
+func _1528395671_remove_tracing_contextUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395671_remove_tracing_contextUpSql,
+		"1528395671_remove_tracing_context.up.sql",
+	)
+}
+
+func _1528395671_remove_tracing_contextUpSql() (*asset, error) {
+	bytes, err := _1528395671_remove_tracing_contextUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395671_remove_tracing_context.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4d, 0x8d, 0xc3, 0x5f, 0x90, 0x3a, 0xfd, 0xc, 0xe0, 0x50, 0xb1, 0xae, 0xf8, 0xc, 0x2f, 0x31, 0x91, 0x20, 0xb1, 0x7e, 0x60, 0x4b, 0x1a, 0xa4, 0xa4, 0x87, 0x28, 0x9, 0x5a, 0xf6, 0x2c, 0x2a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2535,6 +2577,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395669_add_synced_at_to_perms_tables.up.sql":                         _1528395669_add_synced_at_to_perms_tablesUpSql,
 	"1528395670_lsif_uploading.down.sql":                                      _1528395670_lsif_uploadingDownSql,
 	"1528395670_lsif_uploading.up.sql":                                        _1528395670_lsif_uploadingUpSql,
+	"1528395671_remove_tracing_context.down.sql":                              _1528395671_remove_tracing_contextDownSql,
+	"1528395671_remove_tracing_context.up.sql":                                _1528395671_remove_tracing_contextUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2686,6 +2730,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395669_add_synced_at_to_perms_tables.up.sql":                         {_1528395669_add_synced_at_to_perms_tablesUpSql, map[string]*bintree{}},
 	"1528395670_lsif_uploading.down.sql":                                      {_1528395670_lsif_uploadingDownSql, map[string]*bintree{}},
 	"1528395670_lsif_uploading.up.sql":                                        {_1528395670_lsif_uploadingUpSql, map[string]*bintree{}},
+	"1528395671_remove_tracing_context.down.sql":                              {_1528395671_remove_tracing_contextDownSql, map[string]*bintree{}},
+	"1528395671_remove_tracing_context.up.sql":                                {_1528395671_remove_tracing_contextUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

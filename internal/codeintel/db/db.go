@@ -48,7 +48,7 @@ type DB interface {
 	QueueSize(ctx context.Context) (int, error)
 
 	// Enqueue inserts a new upload with a "queued" state and returns its identifier.
-	Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error)
+	Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (int, error)
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error
