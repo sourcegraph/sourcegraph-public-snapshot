@@ -983,7 +983,7 @@ func (r *RateLimiterRegistry) GetRateLimiter(baseURL string) *rate.Limiter {
 	return l
 }
 
-// SyncRateLimiters will sync all rate limiters with current config.
+// SyncRateLimiters syncs all rate limiters with current config.
 // We need to sync all as we need to pick the lowest configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
