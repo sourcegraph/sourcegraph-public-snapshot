@@ -110,6 +110,8 @@
 // 1528395670_lsif_uploading.up.sql (1.605kB)
 // 1528395671_remove_tracing_context.down.sql (422B)
 // 1528395671_remove_tracing_context.up.sql (300B)
+// 1528395672_empty.down.sql (37B)
+// 1528395672_empty.up.sql (159B)
 
 package migrations
 
@@ -2378,6 +2380,46 @@ func _1528395671_remove_tracing_contextUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395672_emptyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x28\xcd\x4b\xc9\x57\xe4\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x48\xaf\x33\x57\x25\x00\x00\x00")
+
+func _1528395672_emptyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395672_emptyDownSql,
+		"1528395672_empty.down.sql",
+	)
+}
+
+func _1528395672_emptyDownSql() (*asset, error) {
+	bytes, err := _1528395672_emptyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395672_empty.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0xac, 0x64, 0xe1, 0xcf, 0xa9, 0x52, 0x6c, 0x98, 0xe7, 0xcc, 0x45, 0xac, 0x94, 0xbe, 0x7, 0x1e, 0xf5, 0xf8, 0x2, 0x8d, 0xc8, 0xe9, 0x9, 0x73, 0xa5, 0x5, 0x68, 0x10, 0x41, 0x93, 0xff}}
+	return a, nil
+}
+
+var __1528395672_emptyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\xcd\x41\x0a\xc2\x30\x10\x46\xe1\x7d\x4e\xf1\x5f\xa0\xbd\x40\x77\x16\x91\x2e\xaa\x9b\x5e\x60\x1a\x26\x66\x68\x32\x29\xce\x40\xed\xed\xc5\x8d\xb8\x7d\xf0\xf8\x2e\xd7\xdb\x74\x1f\x42\xe8\x3a\x2c\x59\x0c\x55\x9e\x2f\x72\x69\x8a\x4c\x86\x95\x59\x21\xea\xac\xdf\x44\xa5\x9c\x28\x9c\x1c\x6b\x21\xdd\xfa\xdf\x24\x06\x6f\x30\x66\x48\xc2\xc1\x88\xa4\x48\xf2\x86\x67\xc6\x4a\x71\x8b\xad\xee\xe4\x70\x36\x37\x88\x62\x9c\x70\x88\x67\x90\x82\xeb\xee\xe7\x9f\x9a\xa4\x70\x1f\xc2\xf8\x98\xe7\x69\x19\xc2\x27\x00\x00\xff\xff\x21\xb0\x80\xee\x9f\x00\x00\x00")
+
+func _1528395672_emptyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395672_emptyUpSql,
+		"1528395672_empty.up.sql",
+	)
+}
+
+func _1528395672_emptyUpSql() (*asset, error) {
+	bytes, err := _1528395672_emptyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395672_empty.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc2, 0x4a, 0x91, 0x40, 0x5c, 0x79, 0xe2, 0x5a, 0x33, 0xb6, 0x97, 0x8a, 0x55, 0x94, 0x4b, 0x25, 0x53, 0xe3, 0xa, 0xc8, 0xa3, 0x1a, 0x93, 0x49, 0xab, 0xc9, 0x8b, 0x99, 0x2e, 0x4c, 0x80, 0x13}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2579,6 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395670_lsif_uploading.up.sql":                                        _1528395670_lsif_uploadingUpSql,
 	"1528395671_remove_tracing_context.down.sql":                              _1528395671_remove_tracing_contextDownSql,
 	"1528395671_remove_tracing_context.up.sql":                                _1528395671_remove_tracing_contextUpSql,
+	"1528395672_empty.down.sql":                                               _1528395672_emptyDownSql,
+	"1528395672_empty.up.sql":                                                 _1528395672_emptyUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2732,6 +2776,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395670_lsif_uploading.up.sql":                                        {_1528395670_lsif_uploadingUpSql, map[string]*bintree{}},
 	"1528395671_remove_tracing_context.down.sql":                              {_1528395671_remove_tracing_contextDownSql, map[string]*bintree{}},
 	"1528395671_remove_tracing_context.up.sql":                                {_1528395671_remove_tracing_contextUpSql, map[string]*bintree{}},
+	"1528395672_empty.down.sql":                                               {_1528395672_emptyDownSql, map[string]*bintree{}},
+	"1528395672_empty.up.sql":                                                 {_1528395672_emptyUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

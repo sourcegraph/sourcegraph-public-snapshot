@@ -23,10 +23,11 @@ var _ Reader = &ObservedReader{}
 // NewObservedReader wraps the given Reader with error logging, Prometheus metrics, and tracing.
 func NewObserved(reader Reader, observationContext *observation.Context, subsystem string) Reader {
 	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		subsystem,
 		"reader",
 		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of bundle results returned"),
+		metrics.WithCountHelp("Total number of results returned"),
 	)
 
 	return &ObservedReader{
