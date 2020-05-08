@@ -42,6 +42,8 @@ type repositoryResolver struct {
 	includePatternRevs         []patternRevspec
 	versionContextRepositories []string
 	defaultRepos               []*types.Repo
+	missingRepoRevisions       []*search.RepositoryRevisions
+	repoRevisions              []*search.RepositoryRevisions
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -67,7 +69,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	return r.resolveRepositories(ctx, op)
 }
 
-func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
+func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) ([]*search.RepositoryRevisions, []*search.RepositoryRevisions, bool, error) {
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
@@ -77,6 +79,8 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			return nil, nil, false, err
 		}
 	}
+
+	var err error
 
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
@@ -107,9 +111,9 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		return nil, nil, false, err
 	}
 
-	overLimit = len(repos) >= r.maxRepoListSize
+	overLimit := len(repos) >= r.maxRepoListSize
 
-	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
+	r.repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	r.tr.LazyPrintf("Associate/validate revs - start")
 
 	for _, repo := range repos {
@@ -130,7 +134,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			repoRev.Repo = repo
 			// if multiple specified revisions clash, report this usefully:
 			if len(revs) == 0 && clashingRevs != nil {
-				missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+				r.missingRepoRevisions = append(r.missingRepoRevisions, &search.RepositoryRevisions{
 					Repo: repo,
 					Revs: clashingRevs,
 				})
@@ -166,7 +170,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 						// Report as HEAD not "" (empty string) to avoid user confusion.
 						rev.RevSpec = "HEAD"
 					}
-					missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+					r.missingRepoRevisions = append(r.missingRepoRevisions, &search.RepositoryRevisions{
 						Repo: repo,
 						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
@@ -179,16 +183,16 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
-		repoRevisions = append(repoRevisions, &repoRev)
+		r.repoRevisions = append(r.repoRevisions, &repoRev)
 	}
 
 	r.tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
-		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+		r.repoRevisions, err = filterRepoHasCommitAfter(ctx, r.repoRevisions, op.commitAfter)
 	}
 
-	return repoRevisions, missingRepoRevisions, overLimit, err
+	return r.repoRevisions, r.missingRepoRevisions, overLimit, err
 }
 
 // If any repo groups are specified, take the intersection of the repo
