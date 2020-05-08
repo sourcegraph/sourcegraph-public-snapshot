@@ -418,6 +418,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
                                     versionContext={this.state.versionContext}
+                                    setVersionContext={this.setVersionContext}
                                 />
                             )}
                         />
@@ -456,6 +457,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({
             searchCaseSensitivity: caseSensitive,
         })
+    }
+
+    private setVersionContext = (versionContext: string): void => {
+        this.setState({ versionContext })
     }
 }
 

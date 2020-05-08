@@ -45,6 +45,7 @@ interface InteractiveModeProps
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
     versionContext: string
+    setVersionContext: (versionContext: string) => void
 
     // For NavLinks
     authRequired?: boolean
@@ -219,7 +220,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
-                        <VersionContextDropdown />
+                        <VersionContextDropdown
+                            versionContext={this.props.versionContext}
+                            setVersionContext={this.props.setVersionContext}
+                        />
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />

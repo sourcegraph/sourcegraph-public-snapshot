@@ -50,7 +50,7 @@ interface Props
     history: H.History
     isSourcegraphDotCom: boolean
     versionContext: string
-
+    setVersionContext: (versionContext: string) => void
     // For NavLinks
     authRequired?: boolean
     showCampaigns: boolean

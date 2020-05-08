@@ -8,6 +8,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
+import { VersionContext } from '../schema/site.schema'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
@@ -482,5 +483,40 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
+    )
+}
+
+// export function fetchVersionContexts(): Observable<GQL.IVersionContext[]> {
+//     return queryGraphQL(gql`
+//         query versionContexts {
+//             versionContexts {
+//                 id
+//                 name
+//                 description
+//             }
+//         }
+//     `).pipe(
+//         map(({ data, errors }) => {
+//             if (!data || !data.versionContexts) {
+//                 throw createAggregateError(errors)
+//             }
+//             return data.versionContexts
+//         })
+//     )
+// }
+
+export function fetchVersionContexts(): Observable<GQL.IVersionContext[]> {
+    return queryGraphQL(gql`
+        query versionContexts {
+            versionContexts {
+                id
+                name
+                description
+            }
+        }
+    `).pipe(
+        map(dataOrThrowErrors),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        map(data => data.versionContexts as GQL.IVersionContext[])
     )
 }

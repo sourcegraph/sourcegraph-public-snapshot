@@ -111,6 +111,7 @@ export interface LayoutProps
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     versionContext: string
+    setVersionContext: (versionContext: string) => void
 
     isSourcegraphDotCom: boolean
     showCampaigns: boolean

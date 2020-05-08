@@ -71,6 +71,7 @@ interface Props
     hideNavLinks: boolean
 
     versionContext: string
+    setVersionContext: (versionContext: string) => void
 }
 
 interface State {
@@ -205,7 +206,10 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logoLink}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                        <VersionContextDropdown />
+                                        <VersionContextDropdown
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                        />
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
