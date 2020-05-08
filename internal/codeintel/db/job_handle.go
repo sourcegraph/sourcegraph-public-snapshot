@@ -82,7 +82,6 @@ func (h *jobHandleImpl) Savepoint(ctx context.Context) error {
 
 	savepointID := fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_"))
 	h.savepoints = append(h.savepoints, savepointID)
-	// Unfortunately, it's a syntax error to supply this as a param
 	return h.db.Savepoint(ctx, savepointID)
 }
 
@@ -108,7 +107,6 @@ func (h *jobHandleImpl) RollbackToLastSavepoint(ctx context.Context) error {
 		h.markedSavepoint = ""
 	}
 
-	// Perform rollback
 	return h.db.RollbackToSavepoint(ctx, savepointID)
 }
 

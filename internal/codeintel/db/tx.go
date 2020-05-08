@@ -54,7 +54,6 @@ func (db *dbImpl) transact(ctx context.Context) (*dbImpl, bool, error) {
 // ErrNoTransaction occurs when Savepoint or RollbackToSavepoint is called outside of a transaction.
 var ErrNoTransaction = errors.New("db: not in a transaction")
 
-// TODO - test
 // Savepoint creates a named position in the transaction from which all additional work can
 // be discarded.
 func (db *dbImpl) Savepoint(ctx context.Context, name string) error {
@@ -62,18 +61,18 @@ func (db *dbImpl) Savepoint(ctx context.Context, name string) error {
 		return ErrNoTransaction
 	}
 
+	// Unfortunately, it's a syntax error to supply this as a param
 	return db.exec(ctx, sqlf.Sprintf("SAVEPOINT "+name))
 }
 
-// TODO - test
 // RollbackToSavepoint throws away all the work on the underlying transaction since the
 // savepoint with the given name was created.
 func (db *dbImpl) RollbackToSavepoint(ctx context.Context, name string) error {
-
 	if _, ok := db.db.(dbutil.Tx); !ok {
 		return ErrNoTransaction
 	}
 
+	// Unfortunately, it's a syntax error to supply this as a param
 	return db.exec(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+name))
 }
 
