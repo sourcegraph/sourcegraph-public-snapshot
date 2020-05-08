@@ -263,6 +263,50 @@ func TestEnqueue(t *testing.T) {
 	}
 }
 
+func TestMarkComplete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
+
+	if err := db.MarkComplete(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "completed" {
+		t.Errorf("unexpected state. want=%q have=%q", "completed", upload.State)
+	}
+}
+
+func TestMarkErrored(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
+
+	if err := db.MarkErrored(context.Background(), 1, "oops", ""); err != nil {
+		t.Fatalf("unexpected error marking upload as errored: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", upload.State)
+	}
+}
+
 func TestDequeueConversionSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

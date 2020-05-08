@@ -166,7 +166,6 @@ func (db *dbImpl) Enqueue(ctx context.Context, commit, root string, repositoryID
 	return id, nil
 }
 
-// TODO - test
 // MarkComplete updates the state of the upload to complete.
 func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
@@ -176,7 +175,6 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 	`, id))
 }
 
-// TODO - test
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
 func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
