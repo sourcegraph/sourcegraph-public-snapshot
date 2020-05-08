@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,14 +37,25 @@ type ObservedDB struct {
 
 var _ DB = &ObservedDB{}
 
-// NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
-func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
-	metrics := metrics.NewOperationMetrics(
+// createOperationMetrics creates the metric instance for all operations in an ObservedDB.
+// No metrics are created if the given registerer is nil.
+func createOperationMetrics(r prometheus.Registerer, subsystem string) *metrics.OperationMetrics {
+	if r == nil {
+		return nil
+	}
+
+	return metrics.NewOperationMetrics(
+		r,
 		subsystem,
 		"db",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
+}
+
+// NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
+func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
+	metrics := createOperationMetrics(observationContext.Registerer, subsystem)
 
 	return &ObservedDB{
 		db: db,
