@@ -10201,24 +10201,29 @@ graphql-request@^1.5.0:
   dependencies:
     cross-fetch "2.2.2"
 
-graphql-schema-linter@^0.2.5:
-  version "0.2.5"
-  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.2.5.tgz#09b23307240aef1fd1184bdb885f1afa26e2cb33"
-  integrity sha512-kROp2+1huToojoNEFHSUXz2pz8QfwPjFYB+ZSAjSas9C08d8T0vIjZQ+9pxrzzbIgYUABODLuZsfzutjYjRsig==
+graphql-schema-linter@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.4.0.tgz#3fa099ea45cba6fd239130cdf0387e36cb1cc3b7"
+  integrity sha512-3aTKlMJKA+xjjRROG5d9wqNzWFJNcqfZI4/Oo58wR6kembBPJEARsMu6l0QH/2spZNQSLdqUUaN+/m4FyJ2bOQ==
   dependencies:
     chalk "^2.0.1"
     columnify "^1.5.4"
     commander "^3.0.0"
     cosmiconfig "^5.2.1"
     glob "^7.1.2"
-    graphql "^14.0.0"
+    graphql "^15.0.0"
 
-"graphql@>= 0.10 <15", graphql@^14.0.0, graphql@^14.6.0:
+"graphql@>= 0.10 <15", graphql@^14.6.0:
   version "14.6.0"
   resolved "https://registry.npmjs.org/graphql/-/graphql-14.6.0.tgz#57822297111e874ea12f5cd4419616930cd83e49"
   integrity sha512-VKzfvHEKybTKjQVpTFrA5yUq2S9ihcZvfJAtsDBBCuV6wauPu1xl/f9ehgVf0FcEJJs4vz6ysb/ZMkGigQZseg==
   dependencies:
     iterall "^1.2.2"
+
+graphql@^15.0.0:
+  version "15.0.0"
+  resolved "https://registry.npmjs.org/graphql/-/graphql-15.0.0.tgz#042a5eb5e2506a2e2111ce41eb446a8e570b8be9"
+  integrity sha512-ZyVO1xIF9F+4cxfkdhOJINM+51B06Friuv4M66W7HzUOeFd+vNzUn4vtswYINPi6sysjf1M2Ri/rwZALqgwbaQ==
 
 growl@1.10.5:
   version "1.10.5"
