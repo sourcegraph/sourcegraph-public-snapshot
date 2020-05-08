@@ -38,13 +38,6 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 		Help:      "Total number of errors when running the janitor",
 	})
 
-	if r != nil {
-		r.MustRegister(oldUploads)
-		r.MustRegister(orphanedDumps)
-		r.MustRegister(evictedDumps)
-		r.MustRegister(errors)
-	}
-
 	return JanitorMetrics{
 		OldUploads:    oldUploads,
 		OrphanedDumps: orphanedDumps,

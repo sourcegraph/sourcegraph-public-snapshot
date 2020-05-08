@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
 func TestRemoveOrphanedDumps(t *testing.T) {
@@ -24,7 +25,7 @@ func TestRemoveOrphanedDumps(t *testing.T) {
 
 	j := &Janitor{
 		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(nil),
+		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	var idArgs [][]int
@@ -79,7 +80,7 @@ func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
 
 	j := &Janitor{
 		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(nil),
+		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	var idArgs [][]int
