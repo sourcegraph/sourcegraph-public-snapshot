@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"html"
 	"io"
 	"strings"
 	"sync"
@@ -513,7 +514,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			richHunk.kind = "UNCHANGED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				if len(hunkLine) != 0 {
-					richHunk.html = hunkLine[1:]
+					richHunk.html = html.EscapeString(hunkLine[1:])
 				}
 			} else {
 				richHunk.html = highlightedBase[baseLine]
@@ -522,7 +523,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			headLine++
 			richHunk.kind = "ADDITION"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
-				richHunk.html = hunkLine[1:]
+				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
 				richHunk.html = highlightedHead[headLine]
 			}
@@ -530,7 +531,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			baseLine++
 			richHunk.kind = "DELETION"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
-				richHunk.html = hunkLine[1:]
+				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
 				richHunk.html = highlightedBase[baseLine]
 			}
