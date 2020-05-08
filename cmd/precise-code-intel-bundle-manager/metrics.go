@@ -5,12 +5,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// TODO - document
+// MustRegisterCacheMonitor emits metrics for a ristretto cache.
 func MustRegisterCacheMonitor(r prometheus.Registerer, cacheName string, metrics *ristretto.Metrics) {
-	if r == nil {
-		return
-	}
-
 	cacheCost := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name:        "src_cache_cost",
 		Help:        "Current cost of the cache.",
