@@ -37,6 +37,8 @@ type repositoryResolver struct {
 	includePatterns []string
 	excludePatterns []string
 	maxRepoListSize int
+
+	includePatternRevs []patternRevspec
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -75,7 +77,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
-	includePatternRevs, err := findPatternRevs(r.includePatterns)
+	r.includePatternRevs, err = findPatternRevs(r.includePatterns)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -85,7 +87,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	var versionContextRepositories []string
 	var versionContext *schema.VersionContext
 	// If a ref is specified we skip using version contexts.
-	if len(includePatternRevs) == 0 && op.versionContextName != "" {
+	if len(r.includePatternRevs) == 0 && op.versionContextName != "" {
 		versionContext, err = resolveVersionContext(op.versionContextName)
 		if err != nil {
 			return nil, nil, false, err
@@ -153,7 +155,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			}
 		} else {
 			var clashingRevs []search.RevisionSpecifier
-			revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+			revs, clashingRevs = getRevsForMatchedRepo(repo.Name, r.includePatternRevs)
 			repoRev.Repo = repo
 			// if multiple specified revisions clash, report this usefully:
 			if len(revs) == 0 && clashingRevs != nil {
