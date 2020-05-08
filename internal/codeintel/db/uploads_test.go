@@ -190,6 +190,35 @@ func TestGetUploadsByRepo(t *testing.T) {
 	}
 }
 
+func TestQueueSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, State: "queued"},
+		Upload{ID: 2, State: "errored"},
+		Upload{ID: 3, State: "processing"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "queued"},
+		Upload{ID: 7, State: "processing"},
+		Upload{ID: 8, State: "completed"},
+		Upload{ID: 9, State: "processing"},
+		Upload{ID: 10, State: "queued"},
+	)
+
+	count, err := db.QueueSize(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting queue size: %s", err)
+	}
+	if count != 3 {
+		t.Errorf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
 func TestEnqueue(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -358,7 +387,8 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	}
 
 	// alter record in the underlying transacted db
-	if err := jobHandle.(*jobHandleImpl).db.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
+	underlyingDB := jobHandle.DB().(*ObservedDB).db.(*dbImpl)
+	if err := underlyingDB.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)
 	}
 

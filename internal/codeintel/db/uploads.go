@@ -147,6 +147,12 @@ func makeSearchCondition(term string) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
+// QueueSize returns the number of uploads in the queued state.
+func (db *dbImpl) QueueSize(ctx context.Context) (int, error) {
+	count, _, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads WHERE state = 'queued'`)))
+	return count, err
+}
+
 // Enqueue inserts a new upload with a "queued" state and returns its identifier.
 func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error) {
 	id, _, err := scanFirstInt(db.query(
@@ -161,6 +167,26 @@ func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext stri
 		return 0, err
 	}
 	return id, nil
+}
+
+// TODO - test
+// MarkComplete updates the state of the upload to complete.
+func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET state = 'completed', finished_at = now()
+		WHERE id = %s
+	`, id))
+}
+
+// TODO - test
+// MarkErrored updates the state of the upload to errored and updates the failure summary data.
+func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
+		WHERE id = %s
+	`, failureSummary, failureStacktrace, id))
 }
 
 // ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.
