@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -38,7 +39,8 @@ type repositoryResolver struct {
 	excludePatterns []string
 	maxRepoListSize int
 
-	includePatternRevs []patternRevspec
+	includePatternRevs         []patternRevspec
+	versionContextRepositories []string
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -82,22 +84,6 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		return nil, nil, false, err
 	}
 
-	// If a version context is specified, gather the list of repository names
-	// to limit the results to these repositories.
-	var versionContextRepositories []string
-	var versionContext *schema.VersionContext
-	// If a ref is specified we skip using version contexts.
-	if len(r.includePatternRevs) == 0 && op.versionContextName != "" {
-		versionContext, err = resolveVersionContext(op.versionContextName)
-		if err != nil {
-			return nil, nil, false, err
-		}
-
-		for _, revision := range versionContext.Revisions {
-			versionContextRepositories = append(versionContextRepositories, revision.Repo)
-		}
-	}
-
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(r.includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
@@ -107,6 +93,13 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
+	}
+
+	// If a version context is specified, gather the list of repository names
+	// to limit the results to these repositories.
+	versionContext, err := r.getVersionContext()
+	if err != nil {
+		return nil, nil, false, err
 	}
 
 	var repos []*types.Repo
@@ -120,7 +113,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
 			IncludePatterns: r.includePatterns,
-			Names:           versionContextRepositories,
+			Names:           r.versionContextRepositories,
 			ExcludePattern:  unionRegExps(r.excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
@@ -243,4 +236,36 @@ func (r *repositoryResolver) mergeRepoWithRepoGroups(ctx context.Context, groupN
 	}
 
 	return nil
+}
+
+// If a version context is specified, gather the list of repository names
+// to limit the results to these repositories.
+// If no version context was specified or if the user query contains a reference, a nil context is returned.
+func (r *repositoryResolver) getVersionContext() (*schema.VersionContext, error) {
+	// If a ref is specified we ignore the version context.
+	if len(r.includePatternRevs) > 0 {
+		return nil, nil
+	}
+
+	// if no version context is specified, we return nothing
+	if r.versionContextName == "" {
+		return nil, nil
+	}
+
+	var versionContext *schema.VersionContext
+	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
+		if vc.Name == r.versionContextName {
+			versionContext = vc
+			break
+		}
+	}
+	if versionContext == nil {
+		return nil, errors.New("version context not found")
+	}
+
+	for _, revision := range versionContext.Revisions {
+		r.versionContextRepositories = append(r.versionContextRepositories, revision.Repo)
+	}
+
+	return versionContext, nil
 }
