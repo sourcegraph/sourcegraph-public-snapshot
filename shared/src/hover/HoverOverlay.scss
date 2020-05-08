@@ -90,8 +90,8 @@
         position: absolute;
         top: 1px;
         right: 1px;
-        width: 100%;
         text-align: right;
+        display: flex;
     }
     &:hover &__badge--offset {
         right: 1.5rem;

@@ -1144,28 +1144,42 @@ declare module 'sourcegraph' {
      * A style for {@link BadgeAttachmentRenderOptions}.
      */
     export interface ThemableBadgeAttachmentStyle {
-        /** The icon (a base64-encoded image icon) to display next to the wrapped value. */
+        /**
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         * The icon (a base64-encoded image icon) to display next to the wrapped value.
+         * */
         icon?: string
 
-        /** The CSS background-color property value for the attachment. */
+        /**
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         * The CSS background-color property value for the attachment. */
         backgroundColor?: string
 
-        /** The CSS color property value for the attachment. */
+        /**
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         *  The CSS color property value for the attachment. */
         color?: string
     }
 
     /** An attachment adds content to a hover tooltip or result in a locations panel. */
     export interface BadgeAttachmentRenderOptions extends ThemableBadgeAttachmentStyle {
+        /** Predefined icons for badge attachments */
+        kind: 'info' | 'error' | 'warning'
+
         /** Tooltip text to display when hovering over the attachment. */
         hoverMessage?: string
 
         /** If set, the attachment becomes a link with this destination URL. */
         linkURL?: string
 
-        /** Overwrite style for light themes. */
+        /**
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         *  Overwrite style for light themes. */
         light?: ThemableBadgeAttachmentStyle
 
-        /** Overwrite style for dark themes. */
+        /**
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         *  Overwrite style for dark themes. */
         dark?: ThemableBadgeAttachmentStyle
     }
 
