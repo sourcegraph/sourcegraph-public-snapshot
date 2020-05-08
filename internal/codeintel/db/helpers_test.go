@@ -57,12 +57,11 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				failure_stacktrace,
 				started_at,
 				finished_at,
-				tracing_context,
 				repository_id,
 				indexer,
 				num_parts,
 				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -74,7 +73,6 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.FailureStacktrace,
 			upload.StartedAt,
 			upload.FinishedAt,
-			upload.TracingContext,
 			upload.RepositoryID,
 			upload.Indexer,
 			upload.NumParts,

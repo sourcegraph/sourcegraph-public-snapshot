@@ -2,11 +2,10 @@ import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
-import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
+import { addTags, logAndTraceCall, TracingContext } from '../shared/tracing'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { ensureDirectory } from '../shared/paths'
-import { Span, FORMAT_TEXT_MAP, followsFrom } from 'opentracing'
 import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
 import { waitForConfiguration } from '../shared/config/config'
@@ -41,9 +40,6 @@ async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
     const fetchConfiguration = await waitForConfiguration(logger)
 
-    // Configure distributed tracing
-    const tracer = createTracer('precise-code-intel-worker', fetchConfiguration())
-
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
 
@@ -59,18 +55,8 @@ async function main(logger: Logger): Promise<void> {
     const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
-        let span: Span | undefined
-        if (tracer) {
-            // Extract tracing context from upload
-            const publisher = tracer.extract(FORMAT_TEXT_MAP, JSON.parse(upload.tracingContext))
-            span = tracer.startSpan(
-                'Upload selected for conversion',
-                publisher ? { references: [followsFrom(publisher)] } : {}
-            )
-        }
-
         // Tag tracing context with uploadId and arguments
-        const ctx = addTags({ logger, span }, { uploadId: upload.id, ...pick(upload, 'repository', 'commit', 'root') })
+        const ctx = addTags({ logger }, { uploadId: upload.id, ...pick(upload, 'repository', 'commit', 'root') })
 
         await instrument(
             metrics.uploadConversionDurationHistogram,
@@ -116,7 +102,7 @@ async function main(logger: Logger): Promise<void> {
                             upload.commit,
                             upload.root,
                             upload.indexer,
-                            { logger, span },
+                            { logger },
                             entityManager
                         )
 
