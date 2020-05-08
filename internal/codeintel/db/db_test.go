@@ -16,6 +16,6 @@ func rawTestDB() *dbImpl {
 
 func testDB() DB {
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(rawTestDB(), &observation.Context{}, "test")
+	return NewObserved(rawTestDB(), &observation.TestContext, "test")
 
 }

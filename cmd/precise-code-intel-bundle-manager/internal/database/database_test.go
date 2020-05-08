@@ -267,5 +267,5 @@ func openTestDatabase(t *testing.T) Database {
 	t.Cleanup(func() { _ = db.Close })
 
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(db, &observation.Context{})
+	return NewObserved(db, &observation.TestContext)
 }

@@ -140,7 +140,9 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertExternalServices,
 		sm.ListAllRepoNames,
 	} {
-		om.MustRegister(r)
+		r.MustRegister(om.Count)
+		r.MustRegister(om.Duration)
+		r.MustRegister(om.Errors)
 	}
 }
 
