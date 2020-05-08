@@ -7,24 +7,23 @@ type ResetterMetrics struct {
 	Errors      prometheus.Counter
 }
 
-func (rm ResetterMetrics) MustRegister(r prometheus.Registerer) {
-	r.MustRegister(rm.StalledJobs)
-	r.MustRegister(rm.Errors)
-}
+func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
+	stalledJobs := prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "precise_code_intel_api_server",
+		Name:      "resetter_stalled_jobs",
+		Help:      "Total number of reset stalled jobs",
+	})
 
-func NewResetterMetrics() ResetterMetrics {
+	errors := prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "precise_code_intel_api_server",
+		Name:      "resetter_errors",
+		Help:      "Total number of errors when running the janitor",
+	})
+
 	return ResetterMetrics{
-		StalledJobs: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "src",
-			Subsystem: "precise-code-intel-api-server",
-			Name:      "resetter_stalled_jobs",
-			Help:      "Total number of reset stalled jobs",
-		}),
-		Errors: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "src",
-			Subsystem: "precise-code-intel-api-server",
-			Name:      "resetter_errors",
-			Help:      "Total number of errors when running the janitor",
-		}),
+		StalledJobs: stalledJobs,
+		Errors:      errors,
 	}
 }
