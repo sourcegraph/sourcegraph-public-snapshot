@@ -19,9 +19,6 @@ type ObservedCodeIntelAPI struct {
 	hoverOperation            *observation.Operation
 }
 
-
-
-
 var _ CodeIntelAPI = &ObservedCodeIntelAPI{}
 
 // createOperationMetrics creates the metric instance for all operations in an ObservedCodeIntelAPI.
