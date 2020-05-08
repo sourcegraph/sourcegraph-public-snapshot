@@ -106,7 +106,7 @@ func NewOperationMetrics(r prometheus.Registerer, subsystem, metricPrefix string
 }
 
 type SingletonOperationMetrics struct {
-	sync.Mutex
+	sync.Once
 	metrics *OperationMetrics
 }
 
@@ -114,10 +114,8 @@ type SingletonOperationMetrics struct {
 // created yet, one is constructed with the given create function. This method is safe to
 // access concurrently.
 func (m *SingletonOperationMetrics) Get(create func() *OperationMetrics) *OperationMetrics {
-	m.Lock()
-	defer m.Unlock()
-	if m.metrics == nil {
+	m.Do(func() {
 		m.metrics = create()
-	}
+	})
 	return m.metrics
 }
