@@ -22,18 +22,13 @@ type ObservedCodeIntelAPI struct {
 var _ CodeIntelAPI = &ObservedCodeIntelAPI{}
 
 // createOperationMetrics creates the metric instance for all operations in an ObservedCodeIntelAPI.
-// No metrics are created if the given registerer is nil.
 func createOperationMetrics(r prometheus.Registerer) *metrics.OperationMetrics {
-	if r == nil {
-		return nil
-	}
-
 	return metrics.NewOperationMetrics(
 		r,
 		"precise_code_intel_api_server",
 		"code_intel_api",
 		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of code intel returned"),
+		metrics.WithCountHelp("Total number of results returned"),
 	)
 }
 

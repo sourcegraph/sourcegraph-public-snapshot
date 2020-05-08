@@ -22,16 +22,11 @@ type ObservedReader struct {
 var _ Reader = &ObservedReader{}
 
 // createOperationMetrics creates the metric instance for all operations in an ObservedReader.
-// No metrics are created if the given registerer is nil.
 func createOperationMetrics(r prometheus.Registerer, subsystem string) *metrics.OperationMetrics {
-	if r == nil {
-		return nil
-	}
-
 	return metrics.NewOperationMetrics(
 		r,
 		subsystem,
-		"db",
+		"reader",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)

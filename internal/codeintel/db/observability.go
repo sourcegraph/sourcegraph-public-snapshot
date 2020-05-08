@@ -38,12 +38,7 @@ type ObservedDB struct {
 var _ DB = &ObservedDB{}
 
 // createOperationMetrics creates the metric instance for all operations in an ObservedDB.
-// No metrics are created if the given registerer is nil.
 func createOperationMetrics(r prometheus.Registerer, subsystem string) *metrics.OperationMetrics {
-	if r == nil {
-		return nil
-	}
-
 	return metrics.NewOperationMetrics(
 		r,
 		subsystem,
