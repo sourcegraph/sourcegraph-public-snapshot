@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -102,4 +103,19 @@ func NewOperationMetrics(r prometheus.Registerer, subsystem, metricPrefix string
 		Count:    count,
 		Errors:   errors,
 	}
+}
+
+type SingletonOperationMetrics struct {
+	sync.Once
+	metrics *OperationMetrics
+}
+
+// SingletonOperationMetrics returns an operation metrics instance. If no instance has been
+// created yet, one is constructed with the given create function. This method is safe to
+// access concurrently.
+func (m *SingletonOperationMetrics) Get(create func() *OperationMetrics) *OperationMetrics {
+	m.Do(func() {
+		m.metrics = create()
+	})
+	return m.metrics
 }

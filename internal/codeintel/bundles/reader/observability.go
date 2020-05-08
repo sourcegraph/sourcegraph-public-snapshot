@@ -20,15 +20,22 @@ type ObservedReader struct {
 
 var _ Reader = &ObservedReader{}
 
+// singletonMetrics ensures that the operation metrics required by ObservedReader are
+// constructed only once as there may be many readers instantiated by a single replica
+// of precise-code-intel-bundle-manager.
+var singletonMetrics = &metrics.SingletonOperationMetrics{}
+
 // NewObservedReader wraps the given Reader with error logging, Prometheus metrics, and tracing.
 func NewObserved(reader Reader, observationContext *observation.Context, subsystem string) Reader {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		subsystem,
-		"reader",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of results returned"),
-	)
+	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
+		return metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			subsystem,
+			"reader",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of results returned"),
+		)
+	})
 
 	return &ObservedReader{
 		reader: reader,
