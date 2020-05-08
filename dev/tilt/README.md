@@ -4,8 +4,7 @@
 
 - Install [tilt](https://docs.tilt.dev/install.html)
 - Install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-- Generate manifests from the [minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/minikube)
-  and copy the `generated-cluster` directory into this directory.
+- Generate manifests from the [minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/minikube) and copy the `generated-cluster` directory into this directory.
 - `mkdir tilt-watch-targets`
 - Prepare the cluster:
 
