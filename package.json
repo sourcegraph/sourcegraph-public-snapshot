@@ -150,7 +150,7 @@
     "@types/storybook__addon-storyshots": "5.1.2",
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
-    "@types/uuid": "7.0.2",
+    "@types/uuid": "7.0.3",
     "@types/webpack": "4.41.10",
     "@types/webpack-dev-server": "3.10.1",
     "@types/whatwg-url": "6.4.0",

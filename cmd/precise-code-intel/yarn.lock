@@ -684,10 +684,10 @@
   resolved "https://registry.npmjs.org/@types/triple-beam/-/triple-beam-1.3.0.tgz#56d9a2d9e4fbd7bc363825d2521868537e4606ee"
   integrity sha512-tl34wMtk3q+fSdRSJ+N83f47IyXLXPPuLjHm7cmAx0fE2Wml2TZCQV3FmQdSR5J6UEGV3qafG054e0cVVFCqPA==
 
-"@types/uuid@7.0.2":
-  version "7.0.2"
-  resolved "https://registry.npmjs.org/@types/uuid/-/uuid-7.0.2.tgz#d680a9c596ef84abf5c4c07a32ffd66d582526f8"
-  integrity sha512-8Ly3zIPTnT0/8RCU6Kg/G3uTICf9sRwYOpUzSIM3503tLIKcnJPRuinHhXngJUy2MntrEf6dlpOHXJju90Qh5w==
+"@types/uuid@7.0.3":
+  version "7.0.3"
+  resolved "https://registry.npmjs.org/@types/uuid/-/uuid-7.0.3.tgz#45cd03e98e758f8581c79c535afbd4fc27ba7ac8"
+  integrity sha512-PUdqTZVrNYTNcIhLHkiaYzoOIaUi5LFg/XLerAdgvwQrUCx+oSbtoBze1AMyvYbcwzUSNC+Isl58SM4Sm/6COw==
 
 "@types/yallist@3.0.1":
   version "3.0.1"
