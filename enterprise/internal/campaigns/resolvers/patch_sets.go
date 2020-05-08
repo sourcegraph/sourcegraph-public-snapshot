@@ -454,70 +454,12 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 					return
 				}
 			}
-			contentLines := make(map[int32]string)
-			newContentLines := make(map[int32]string)
-			lines := strings.Split(content, "\n")
-			for i, line := range lines {
-				contentLines[int32(i+1)] = line
-			}
-			var lastLine, currentLine int32
-			// Assumes the hunks are sorted by ascending lines
-			for _, hunk := range r.previewFileDiffResolver.fileDiff.Hunks {
-				currentLine = hunk.NewStartLine
-				// Detect holes.
-				if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine+1 {
-					for ; lastLine < hunk.OrigStartLine; lastLine++ {
-						newContentLines[lastLine] = contentLines[lastLine]
-					}
-				}
-				hunkLines := strings.Split(string(hunk.Body), "\n")
-				for _, line := range hunkLines {
-					if line == "" {
-						continue
-					}
-					if !strings.HasPrefix(line, "+") {
-						if !strings.HasPrefix(line, "-") {
-							newContentLines[currentLine] = contentLines[lastLine]
-							currentLine++
-						}
-						lastLine++
-						continue
-					}
-					newContentLines[currentLine] = line[1:]
-					currentLine++
-				}
-			}
-			// Append remaining lines from original file.
-			if origLines := int32(len(contentLines)); origLines > 0 && origLines-1 != lastLine {
-				for i := lastLine; i < origLines; i++ {
-					newContentLines[i] = contentLines[currentLine]
-					currentLine++
-				}
-			}
-			content = ""
-			keys := make([]int, 0, len(newContentLines))
-			for key := range newContentLines {
-				keys = append(keys, int(key))
-			}
-			sort.Ints(keys)
-			first := true
-			for _, key := range keys {
-				// The 0 key is initialized, but can never contain code, so skip it.
-				if key == 0 {
-					continue
-				}
-				if !first {
-					content += "\n"
-				} else {
-					first = false
-				}
-				content += newContentLines[int32(key)]
-			}
-			if highlight.IsBinary([]byte(content)) {
+			newContent := applyPatch(content, r.previewFileDiffResolver.fileDiff)
+			if highlight.IsBinary([]byte(newContent)) {
 				return
 			}
 			highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
-				Content:  []byte(content),
+				Content:  []byte(newContent),
 				Filepath: *newPath,
 				Metadata: highlight.Metadata{
 					RepoName: r.previewFileDiffResolver.commit.Repository().Name(),
@@ -578,4 +520,67 @@ func diffPathOrNull(path string) *string {
 		return nil
 	}
 	return &path
+}
+
+func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
+	contentLines := make(map[int32]string)
+	newContentLines := make(map[int32]string)
+	lines := strings.Split(fileContent, "\n")
+	for i, line := range lines {
+		contentLines[int32(i+1)] = line
+	}
+	var lastLine, currentLine int32
+	// Assumes the hunks are sorted by ascending lines
+	for _, hunk := range fileDiff.Hunks {
+		currentLine = hunk.NewStartLine
+		// Detect holes.
+		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine+1 {
+			for ; lastLine < hunk.OrigStartLine; lastLine++ {
+				newContentLines[lastLine] = contentLines[lastLine]
+			}
+		}
+		hunkLines := strings.Split(string(hunk.Body), "\n")
+		for _, line := range hunkLines {
+			if line == "" {
+				continue
+			}
+			if !strings.HasPrefix(line, "+") {
+				if !strings.HasPrefix(line, "-") {
+					newContentLines[currentLine] = contentLines[lastLine]
+					currentLine++
+				}
+				lastLine++
+				continue
+			}
+			newContentLines[currentLine] = line[1:]
+			currentLine++
+		}
+	}
+	// Append remaining lines from original file.
+	if origLines := int32(len(contentLines)); origLines > 0 && origLines-1 != lastLine {
+		for i := lastLine; i < origLines; i++ {
+			newContentLines[i] = contentLines[currentLine]
+			currentLine++
+		}
+	}
+	content := ""
+	keys := make([]int, 0, len(newContentLines))
+	for key := range newContentLines {
+		keys = append(keys, int(key))
+	}
+	sort.Ints(keys)
+	first := true
+	for _, key := range keys {
+		// The 0 key is initialized, but can never contain code, so skip it.
+		if key == 0 {
+			continue
+		}
+		if !first {
+			content += "\n"
+		} else {
+			first = false
+		}
+		content += newContentLines[int32(key)]
+	}
+	return content
 }
