@@ -39,6 +39,7 @@ var _ DB = &ObservedDB{}
 // NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
 func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
 	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
 		subsystem,
 		"db",
 		metrics.WithLabels("op"),
