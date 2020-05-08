@@ -1,5 +1,5 @@
 BEGIN;
 
--- Nothign to undo!
+-- Nothing to undo!
 
 COMMIT;
