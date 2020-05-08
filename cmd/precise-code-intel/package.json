@@ -21,7 +21,7 @@
     "delay": "^4.3.0",
     "express": "^4.17.1",
     "express-opentracing": "^0.1.1",
-    "express-validator": "^6.4.0",
+    "express-validator": "^6.4.1",
     "express-winston": "^4.0.3",
     "got": "^10.7.0",
     "jaeger-client": "^3.17.2",
