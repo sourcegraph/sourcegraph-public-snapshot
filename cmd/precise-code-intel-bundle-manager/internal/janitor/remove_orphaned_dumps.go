@@ -67,13 +67,13 @@ func (j *Janitor) removeOrphanedDumps(statesFn StatesFn) error {
 		}
 	}
 
-	j.metrics.OrphanedDumps.Add(float64(count))
+	j.Metrics.OrphanedDumps.Add(float64(count))
 	return nil
 }
 
 // databasePathsByID returns map of dump ids to their path on disk.
 func (j *Janitor) databasePathsByID() (map[int]string, error) {
-	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.bundleDir))
+	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.BundleDir))
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (j *Janitor) databasePathsByID() (map[int]string, error) {
 	pathsByID := map[int]string{}
 	for _, fileInfo := range fileInfos {
 		if id, err := strconv.Atoi(strings.Split(fileInfo.Name(), ".")[0]); err == nil {
-			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
+			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.BundleDir), fileInfo.Name())
 		}
 	}
 

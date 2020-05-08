@@ -23,8 +23,8 @@ func TestRemoveOrphanedDumps(t *testing.T) {
 	}
 
 	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(),
+		BundleDir: bundleDir,
+		Metrics:   NewJanitorMetrics(nil),
 	}
 
 	var idArgs [][]int
@@ -78,8 +78,8 @@ func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
 	}
 
 	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(),
+		BundleDir: bundleDir,
+		Metrics:   NewJanitorMetrics(nil),
 	}
 
 	var idArgs [][]int
