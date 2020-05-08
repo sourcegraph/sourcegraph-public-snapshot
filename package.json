@@ -283,7 +283,7 @@
     "regenerator-runtime": "^0.13.5",
     "rxjs": "^6.5.5",
     "sanitize-html": "^1.22.1",
-    "semver": "^7.1.3",
+    "semver": "^7.3.2",
     "slugify": "^1.4.0",
     "sourcegraph": "link:packages/sourcegraph-extension-api",
     "string-score": "^1.0.1",
