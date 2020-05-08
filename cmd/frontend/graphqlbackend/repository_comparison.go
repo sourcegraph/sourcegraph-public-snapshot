@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -403,7 +404,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 					r.highlightAborted = true
 					return
 				}
-				r.highlightedBase, r.highlightErr = ParseLinesFromHighlight(highlightedBase.HTML())
+				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
 				if r.highlightErr != nil {
 					return
 				}
@@ -435,7 +436,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 					r.highlightAborted = true
 					return
 				}
-				r.highlightedHead, r.highlightErr = ParseLinesFromHighlight(highlightedHead.HTML())
+				r.highlightedHead, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedHead.HTML())
 				if r.highlightErr != nil {
 					return
 				}

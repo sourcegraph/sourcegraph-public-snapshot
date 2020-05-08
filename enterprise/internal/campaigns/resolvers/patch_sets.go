@@ -437,7 +437,7 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 					r.highlightAborted = true
 					return
 				}
-				r.highlightedBase, r.highlightErr = graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
+				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
 				if r.highlightErr != nil {
 					return
 				}
@@ -536,7 +536,7 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				r.highlightAborted = true
 				return
 			}
-			r.highlightedHead, err = graphqlbackend.ParseLinesFromHighlight(string(highlightedHead))
+			r.highlightedHead, err = highlight.ParseLinesFromHighlight(string(highlightedHead))
 			if err != nil {
 				r.highlightErr = err
 				return
