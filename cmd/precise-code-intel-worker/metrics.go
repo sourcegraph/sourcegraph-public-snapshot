@@ -8,12 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
-// TODO - document
+// MustRegisterQueueMonitor emits a metric for the current queue size.
 func MustRegisterQueueMonitor(r prometheus.Registerer, db db.DB) {
-	if r == nil {
-		return
-	}
-
 	queueSize := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_precise_code_intel_worker_queue_size",
 		Help: "Total number of queued in the queued state.",
