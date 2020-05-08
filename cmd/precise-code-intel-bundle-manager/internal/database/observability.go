@@ -22,15 +22,22 @@ type ObservedDatabase struct {
 
 var _ Database = &ObservedDatabase{}
 
+// singletonMetrics ensures that the operation metrics required by ObservedDatabase are
+// constructed only once as there may be many databases instantiated by a single replica
+// of precise-code-intel-bundle-manager.
+var singletonMetrics = &metrics.SingletonOperationMetrics{}
+
 // NewObservedDatabase wraps the given Database with error logging, Prometheus metrics, and tracing.
 func NewObserved(database Database, observationContext *observation.Context) Database {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"precise_code_intel_bundle_manager",
-		"database",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of results returned"),
-	)
+	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
+		return metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"precise_code_intel_bundle_manager",
+			"database",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of results returned"),
+		)
+	})
 
 	return &ObservedDatabase{
 		database: database,
