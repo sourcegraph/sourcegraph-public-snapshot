@@ -967,7 +967,7 @@ func NewRateLimiterRegistry(ctx context.Context, serviceLister ExternalServicesL
 	}
 
 	// We'll return r either way as we'll try again if a service is added or updated
-	return r, r.syncRateLimiters(ctx)
+	return r, r.SyncRateLimiters(ctx)
 }
 
 // GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
@@ -983,18 +983,10 @@ func (r *RateLimiterRegistry) GetRateLimiter(baseURL string) *rate.Limiter {
 	return l
 }
 
-// HandleExternalServiceSync will update the rate limiter associated with the supplied external service
-// so that it's settings match the service config.
-func (r *RateLimiterRegistry) HandleExternalServiceSync() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return r.syncRateLimiters(ctx)
-}
-
-// syncRateLimiters will sync all rate limiters with current config.
+// SyncRateLimiters will sync all rate limiters with current config.
 // We need to sync all as we need to pick the lowest configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
-func (r *RateLimiterRegistry) syncRateLimiters(ctx context.Context) error {
+func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
 	svcs, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")

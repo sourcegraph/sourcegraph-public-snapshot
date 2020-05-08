@@ -473,6 +473,7 @@ func formatJSON(t testing.TB, s string) string {
 
 func TestRateLimiterRegistry(t *testing.T) {
 	now := time.Now()
+	ctx := context.Background()
 
 	baseURL := "http://gitlab.com/"
 	makeConfig := func(u string, perHour int) string {
@@ -528,7 +529,7 @@ func TestRateLimiterRegistry(t *testing.T) {
 		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
 	}
 
-	err := r.HandleExternalServiceSync()
+	err := r.SyncRateLimiters(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -543,7 +544,7 @@ func TestRateLimiterRegistry(t *testing.T) {
 		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
 	}
 
-	err = r.HandleExternalServiceSync()
+	err = r.SyncRateLimiters(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
