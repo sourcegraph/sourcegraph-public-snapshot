@@ -749,7 +749,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITHUB",
 			desc:   "invalid repos",
 			config: `{"repos": [""]}`,
-			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.\-_]+$'`),
 		},
 		{
 			kind:   "GITHUB",
@@ -785,7 +785,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITHUB",
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.\-_]+$'`),
+		},
+		{
+			kind:   "GITHUB",
+			desc:   "valid exclude item name",
+			config: `{"exclude": [{"name": "sourcegraph-testing/the-way-to-go"}]}`,
+			assert: excludes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.\-_]+$'`),
 		},
 		{
 			kind:   "GITHUB",

@@ -67,7 +67,7 @@ const GitHubSchemaJSON = `{
     "repos": {
       "description": "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.-]+$" },
+      "items": { "type": "string", "pattern": "^[\\w-]+/[\\w.\\-_]+$" },
       "examples": [["owner/name"], ["kubernetes/kubernetes", "golang/go", "facebook/react"]]
     },
     "orgs": {
@@ -125,7 +125,7 @@ const GitHubSchemaJSON = `{
           "name": {
             "description": "The name of a GitHub repository (\"owner/name\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
+            "pattern": "^[\\w-]+/[\\w.\\-_]+$"
           },
           "id": {
             "description": "The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
