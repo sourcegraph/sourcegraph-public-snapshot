@@ -72,6 +72,9 @@ type Context struct {
 	Registerer prometheus.Registerer
 }
 
+// TestContext is a behaviorless Context usable for unit tests.
+var TestContext = Context{Registerer: metrics.TestRegisterer}
+
 // Op configures an Operation instance.
 type Op struct {
 	Metrics *metrics.OperationMetrics
