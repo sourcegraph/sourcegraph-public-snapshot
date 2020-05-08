@@ -66,22 +66,10 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
-		groups, err := resolveRepoGroups(ctx)
+	if groupNames := r.repoGroupFilters; len(groupNames) > 0 {
+		err := r.mergeRepoWithRepoGroups(ctx, groupNames)
 		if err != nil {
 			return nil, nil, false, err
-		}
-		var patterns []string
-		for _, groupName := range groupNames {
-			for _, repo := range groups[groupName] {
-				patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
-			}
-		}
-		r.includePatterns = append(r.includePatterns, unionRegExps(patterns))
-
-		// Ensure we don't omit any repos explicitly included via a repo group.
-		if len(patterns) > r.maxRepoListSize {
-			r.maxRepoListSize = len(patterns)
 		}
 	}
 
@@ -228,4 +216,29 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	}
 
 	return repoRevisions, missingRepoRevisions, overLimit, err
+}
+
+// If any repo groups are specified, take the intersection of the repo
+// groups and the set of repos specified with repo:. (If none are specified
+// with repo:, then include all from the group.)
+func (r *repositoryResolver) mergeRepoWithRepoGroups(ctx context.Context, groupNames []string) error {
+	groups, err := resolveRepoGroups(ctx)
+	if err != nil {
+		return err
+	}
+	var patterns []string
+	for _, groupName := range groupNames {
+		for _, repo := range groups[groupName] {
+			patterns = append(patterns, "^"+regexp.QuoteMeta(string(repo.Name))+"$")
+		}
+	}
+
+	r.includePatterns = append(r.includePatterns, unionRegExps(patterns))
+
+	// Ensure we don't omit any repos explicitly included via a repo group.
+	if len(patterns) > r.maxRepoListSize {
+		r.maxRepoListSize = len(patterns)
+	}
+
+	return nil
 }
