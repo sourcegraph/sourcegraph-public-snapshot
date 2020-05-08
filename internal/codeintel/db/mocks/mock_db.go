@@ -113,7 +113,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		EnqueueFunc: &DBEnqueueFunc{
-			defaultHook: func(context.Context, string, string, string, int, string) (int, error) {
+			defaultHook: func(context.Context, string, string, int, string) (int, error) {
 				return 0, nil
 			},
 		},
@@ -825,23 +825,23 @@ func (c DBDoneFuncCall) Results() []interface{} {
 // DBEnqueueFunc describes the behavior when the Enqueue method of the
 // parent MockDB instance is invoked.
 type DBEnqueueFunc struct {
-	defaultHook func(context.Context, string, string, string, int, string) (int, error)
-	hooks       []func(context.Context, string, string, string, int, string) (int, error)
+	defaultHook func(context.Context, string, string, int, string) (int, error)
+	hooks       []func(context.Context, string, string, int, string) (int, error)
 	history     []DBEnqueueFuncCall
 	mutex       sync.Mutex
 }
 
 // Enqueue delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Enqueue(v0 context.Context, v1 string, v2 string, v3 string, v4 int, v5 string) (int, error) {
-	r0, r1 := m.EnqueueFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.EnqueueFunc.appendCall(DBEnqueueFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+func (m *MockDB) Enqueue(v0 context.Context, v1 string, v2 string, v3 int, v4 string) (int, error) {
+	r0, r1 := m.EnqueueFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.EnqueueFunc.appendCall(DBEnqueueFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Enqueue method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBEnqueueFunc) SetDefaultHook(hook func(context.Context, string, string, string, int, string) (int, error)) {
+func (f *DBEnqueueFunc) SetDefaultHook(hook func(context.Context, string, string, int, string) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -849,7 +849,7 @@ func (f *DBEnqueueFunc) SetDefaultHook(hook func(context.Context, string, string
 // Enqueue method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, string, int, string) (int, error)) {
+func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, int, string) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -858,7 +858,7 @@ func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, stri
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBEnqueueFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, int, string) (int, error) {
+	f.SetDefaultHook(func(context.Context, string, string, int, string) (int, error) {
 		return r0, r1
 	})
 }
@@ -866,12 +866,12 @@ func (f *DBEnqueueFunc) SetDefaultReturn(r0 int, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBEnqueueFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, string, string, int, string) (int, error) {
+	f.PushHook(func(context.Context, string, string, int, string) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBEnqueueFunc) nextHook() func(context.Context, string, string, string, int, string) (int, error) {
+func (f *DBEnqueueFunc) nextHook() func(context.Context, string, string, int, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -915,13 +915,10 @@ type DBEnqueueFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 int
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -933,7 +930,7 @@ type DBEnqueueFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBEnqueueFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

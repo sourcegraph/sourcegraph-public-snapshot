@@ -140,7 +140,6 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		getQuery(r, "commit"),
 		sanitizeRoot(getQuery(r, "root")),
-		"{}", // TODO(efritz) - write tracing code
 		getQueryInt(r, "repositoryId"),
 		indexerName,
 	)

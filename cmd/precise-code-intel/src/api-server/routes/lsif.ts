@@ -111,9 +111,7 @@ export function createLsifRouter(
                         // Add upload record
                         const uploadId = await uploadManager.enqueue(
                             { repositoryId, commit, root, indexer },
-                            entityManager,
-                            tracer,
-                            ctx.span
+                            entityManager
                         )
 
                         // Upload the payload file where it can be found by the worker
