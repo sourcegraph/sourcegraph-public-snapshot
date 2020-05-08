@@ -247,7 +247,7 @@
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
-    "core-js": "^3.6.4",
+    "core-js": "^3.6.5",
     "d3-axis": "^1.0.12",
     "d3-scale": "^3.2.1",
     "d3-selection": "^1.4.1",
