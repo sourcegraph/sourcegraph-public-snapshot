@@ -32,23 +32,26 @@ type resolveRepoOp struct {
 
 type repositoryResolver struct {
 	resolveRepoOp
+
+	tr *trace.Trace
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
-	r := repositoryResolver{
-		resolveRepoOp: op,
-	}
-
-	return r.resolveRepositories(ctx, op)
-}
-
-func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
+	r := repositoryResolver{
+		resolveRepoOp: op,
+		tr:            tr,
+	}
+
+	return r.resolveRepositories(ctx, op)
+}
+
+func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
 	includePatterns := op.repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
@@ -122,7 +125,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			repos = repos[:maxRepoListSize]
 		}
 	} else {
-		tr.LazyPrintf("Repos.List - start")
+		r.tr.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
 			IncludePatterns: includePatterns,
@@ -137,7 +140,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 			NoPrivate:    op.onlyPublic,
 			OnlyPrivate:  op.onlyPrivate,
 		})
-		tr.LazyPrintf("Repos.List - done")
+		r.tr.LazyPrintf("Repos.List - done")
 		if err != nil {
 			return nil, nil, false, err
 		}
@@ -145,7 +148,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	overLimit = len(repos) >= maxRepoListSize
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-	tr.LazyPrintf("Associate/validate revs - start")
+	r.tr.LazyPrintf("Associate/validate revs - start")
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -217,7 +220,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		repoRevisions = append(repoRevisions, &repoRev)
 	}
 
-	tr.LazyPrintf("Associate/validate revs - done")
+	r.tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
 		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
