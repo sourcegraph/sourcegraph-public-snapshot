@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"net/url"
 	"sort"
@@ -407,9 +406,10 @@ type previewFileDiffHighlighter struct {
 	highlightedHead         map[int32]string
 	highlightOnce           sync.Once
 	highlightErr            error
+	highlightAborted        bool
 }
 
-func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (map[int32]string, map[int32]string, error) {
+func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (map[int32]string, map[int32]string, bool, error) {
 	r.highlightOnce.Do(func() {
 		if oldFile := r.previewFileDiffResolver.OldFile(); oldFile != nil {
 			binary, err := oldFile.Binary(ctx)
@@ -431,6 +431,10 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				})
 				if err != nil {
 					r.highlightErr = err
+					return
+				}
+				if highlightedBase.Aborted() {
+					r.highlightAborted = true
 					return
 				}
 				r.highlightedBase, r.highlightErr = graphqlbackend.ParseLinesFromHighlight(highlightedBase.HTML())
@@ -509,6 +513,9 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				}
 				content += newContentLines[int32(key)]
 			}
+			if highlight.IsBinary([]byte(content)) {
+				return
+			}
 			highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
 				Content:  []byte(content),
 				Filepath: *newPath,
@@ -526,7 +533,7 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				return
 			}
 			if aborted {
-				r.highlightErr = errors.New("Highlighting aborted")
+				r.highlightAborted = true
 				return
 			}
 			r.highlightedHead, err = graphqlbackend.ParseLinesFromHighlight(string(highlightedHead))
@@ -536,13 +543,14 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 			}
 		}
 	})
-	return r.highlightedBase, r.highlightedHead, r.highlightErr
+	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
 
 func (r *previewFileDiffResolver) Hunks(ctx context.Context) ([]*graphqlbackend.DiffHunk, error) {
+	highlighter := &previewFileDiffHighlighter{previewFileDiffResolver: r}
 	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = graphqlbackend.NewDiffHunk(hunk, &previewFileDiffHighlighter{previewFileDiffResolver: r})
+		hunks[i] = graphqlbackend.NewDiffHunk(hunk, highlighter)
 	}
 	return hunks, nil
 }

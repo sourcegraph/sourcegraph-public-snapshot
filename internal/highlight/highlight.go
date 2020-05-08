@@ -175,6 +175,9 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		tr.LogFields(otlog.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
+		if p.PlainResult {
+			return template.HTML(code), true, nil
+		}
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
@@ -204,6 +207,9 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			// user an error.
 			tr.LogFields(otlog.Bool(problem, true))
 			prometheusStatus = problem
+			if p.PlainResult {
+				return template.HTML(code), true, nil
+			}
 			table, err2 := generatePlainTable(code)
 			return table, false, err2
 		}

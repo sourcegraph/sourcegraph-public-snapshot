@@ -72,7 +72,6 @@ export const PreviewFileDiffFields = gql`
                 lines
             }
             section
-            body
             highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
                 aborted
                 lines {

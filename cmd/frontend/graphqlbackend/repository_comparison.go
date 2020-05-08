@@ -356,7 +356,7 @@ func NewDiffHunk(hunk *diff.Hunk, highlighter DiffHighlighter) *DiffHunk {
 }
 
 type DiffHighlighter interface {
-	Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, bool, error)
 }
 
 type HighlightArgs struct {
@@ -371,9 +371,10 @@ type fileDiffHighlighter struct {
 	highlightedHead  map[int32]string
 	highlightOnce    sync.Once
 	highlightErr     error
+	highlightAborted bool
 }
 
-func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, error) {
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, bool, error) {
 	r.highlightOnce.Do(func() {
 		if oldFile := r.fileDiffResolver.OldFile(); oldFile != nil {
 			var binary bool
@@ -395,6 +396,10 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 					PlainResult:        true,
 				})
 				if r.highlightErr != nil {
+					return
+				}
+				if highlightedBase.Aborted() {
+					r.highlightAborted = true
 					return
 				}
 				r.highlightedBase, r.highlightErr = ParseLinesFromHighlight(highlightedBase.HTML())
@@ -425,6 +430,10 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 				if r.highlightErr != nil {
 					return
 				}
+				if highlightedHead.Aborted() {
+					r.highlightAborted = true
+					return
+				}
 				r.highlightedHead, r.highlightErr = ParseLinesFromHighlight(highlightedHead.HTML())
 				if r.highlightErr != nil {
 					return
@@ -432,7 +441,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			}
 		}
 	})
-	return r.highlightedBase, r.highlightedHead, r.highlightErr
+	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
 
 type DiffHunk struct {
@@ -484,12 +493,12 @@ func (r *highlightedHunkBody) Lines() []*richHunk {
 }
 
 func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedHunkBody, error) {
-	highlightedBase, highlightedHead, err := r.highlighter.Highlight(ctx, args)
+	highlightedBase, highlightedHead, aborted, err := r.highlighter.Highlight(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
-	// Remove final empty line on files that end with a newline, as it is not part of the actual file.
+	// Remove final empty line on files that end with a newline, as most code hosts do.
 	if hunkLines[len(hunkLines)-1] == "" {
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
@@ -502,15 +511,29 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			baseLine++
 			headLine++
 			richHunk.kind = "UNCHANGED"
-			richHunk.html = highlightedBase[baseLine]
+			if aborted {
+				if len(hunkLine) != 0 {
+					richHunk.html = hunkLine[1:]
+				}
+			} else {
+				richHunk.html = highlightedBase[baseLine]
+			}
 		} else if hunkLine[0] == '+' {
 			headLine++
 			richHunk.kind = "ADDITION"
-			richHunk.html = highlightedHead[headLine]
+			if aborted {
+				richHunk.html = hunkLine[1:]
+			} else {
+				richHunk.html = highlightedHead[headLine]
+			}
 		} else if hunkLine[0] == '-' {
 			baseLine++
 			richHunk.kind = "DELETION"
-			richHunk.html = highlightedBase[baseLine]
+			if aborted {
+				richHunk.html = hunkLine[1:]
+			} else {
+				richHunk.html = highlightedBase[baseLine]
+			}
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}
@@ -519,7 +542,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	}
 	return &highlightedHunkBody{
 		richHunks: richHunks,
-		aborted:   false,
+		aborted:   aborted,
 	}, nil
 }
 
