@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dgraph-io/ristretto"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -24,6 +25,11 @@ import (
 )
 
 func main() {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -44,6 +50,50 @@ func main() {
 		log.Fatalf("failed to prepare directories: %s", err)
 	}
 
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	metrics.MustRegisterDiskMonitor(bundleDir)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	databaseCache, documentDataCache, resultChunkDataCache := prepCaches(
+		observationContext.Registerer,
+		databaseCacheSize,
+		documentDataCacheSize,
+		resultChunkDataCacheSize,
+	)
+
+	server := server.Server{
+		Host:                 host,
+		Port:                 3187,
+		BundleDir:            bundleDir,
+		DatabaseCache:        databaseCache,
+		DocumentDataCache:    documentDataCache,
+		ResultChunkDataCache: resultChunkDataCache,
+		ObservationContext:   observationContext,
+	}
+	go server.Start()
+
+	janitor := janitor.Janitor{
+		BundleDir:          bundleDir,
+		DesiredPercentFree: desiredPercentFree,
+		JanitorInterval:    janitorInterval,
+		MaxUploadAge:       maxUploadAge,
+		Metrics:            janitorMetrics,
+	}
+	go janitor.Run()
+
+	go debugserver.Start()
+	waitForSignal()
+}
+
+func prepCaches(r prometheus.Registerer, databaseCacheSize, documentDataCacheSize, resultChunkDataCacheSize int) (
+	*database.DatabaseCache,
+	*database.DocumentDataCache,
+	*database.ResultChunkDataCache,
+) {
 	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
@@ -59,47 +109,16 @@ func main() {
 		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
 	}
 
-	metrics.MustRegisterDiskMonitor(bundleDir)
-	MustRegisterRistrettoMonitor("precise-code-intel-database", databaseCacheMetrics)
-	MustRegisterRistrettoMonitor("precise-code-intel-document-data", documentDataCacheMetrics)
-	MustRegisterRistrettoMonitor("precise-code-intel-result-chunk-data", resultChunkDataCacheMetrics)
-
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
+	cacheMetrics := map[string]*ristretto.Metrics{
+		"precise-code-intel-database":          databaseCacheMetrics,
+		"precise-code-intel-document-data":     documentDataCacheMetrics,
+		"precise-code-intel-result-chunk-data": resultChunkDataCacheMetrics,
+	}
+	for cacheName, metrics := range cacheMetrics {
+		MustRegisterCacheMonitor(r, cacheName, metrics)
 	}
 
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
-	serverInst := server.New(server.ServerOpts{
-		Host:                 host,
-		Port:                 3187,
-		BundleDir:            bundleDir,
-		DatabaseCache:        databaseCache,
-		DocumentDataCache:    documentDataCache,
-		ResultChunkDataCache: resultChunkDataCache,
-		ObservationContext:   observationContext,
-	})
-
-	janitorMetrics := janitor.NewJanitorMetrics()
-	janitorMetrics.MustRegister(prometheus.DefaultRegisterer)
-
-	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
-		BundleDir:          bundleDir,
-		DesiredPercentFree: desiredPercentFree,
-		JanitorInterval:    janitorInterval,
-		MaxUploadAge:       maxUploadAge,
-		Metrics:            janitorMetrics,
-	})
-
-	go serverInst.Start()
-	go janitorInst.Run()
-	go debugserver.Start()
-	waitForSignal()
+	return databaseCache, documentDataCache, resultChunkDataCache
 }
 
 func waitForSignal() {

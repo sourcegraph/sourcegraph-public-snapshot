@@ -25,13 +25,13 @@ func defaultPruneFn(ctx context.Context) (int64, bool, error) {
 // then calls cleanOldDumps to free enough space to get back below the disk usage threshold.
 func (j *Janitor) freeSpace(pruneFn PruneFn) error {
 	var fs syscall.Statfs_t
-	if err := syscall.Statfs(j.bundleDir, &fs); err != nil {
+	if err := syscall.Statfs(j.BundleDir, &fs); err != nil {
 		return err
 	}
 
 	diskSizeBytes := fs.Blocks * uint64(fs.Bsize)
 	freeBytes := fs.Bavail * uint64(fs.Bsize)
-	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.desiredPercentFree) / 100.0)
+	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.DesiredPercentFree) / 100.0)
 
 	if freeBytes < desiredFreeBytes {
 		return j.cleanOldDumps(pruneFn, uint64(desiredFreeBytes-freeBytes))
@@ -72,7 +72,7 @@ func (j *Janitor) cleanOldDump(pruneFn func(ctx context.Context) (int64, bool, e
 		return 0, false, err
 	}
 
-	filename := paths.DBFilename(j.bundleDir, id)
+	filename := paths.DBFilename(j.BundleDir, id)
 
 	fileInfo, err := os.Stat(filename)
 	if err != nil {
@@ -83,6 +83,6 @@ func (j *Janitor) cleanOldDump(pruneFn func(ctx context.Context) (int64, bool, e
 		return 0, false, err
 	}
 
-	j.metrics.EvictedDumps.Add(1)
+	j.Metrics.EvictedDumps.Add(1)
 	return uint64(fileInfo.Size()), true, nil
 }
