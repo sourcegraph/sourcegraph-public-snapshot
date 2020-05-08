@@ -2029,6 +2029,7 @@ enum HunkLineType {
     DELETION
 }
 
+# A single highlighted line, including the kind of line.
 type HighlightedHunkLine {
     # The html.
     html: String!
@@ -2036,6 +2037,7 @@ type HighlightedHunkLine {
     kind: HunkLineType!
 }
 
+# A highlighted hunk, consisting of all it's lines.
 type HighlightedHunkBody {
     # Whether or not it was aborted.
     aborted: Boolean!
