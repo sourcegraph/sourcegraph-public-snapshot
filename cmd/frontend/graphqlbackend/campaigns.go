@@ -320,7 +320,7 @@ type PatchSetResolver interface {
 type PreviewFileDiff interface {
 	OldPath() *string
 	NewPath() *string
-	Hunks(ctx context.Context) ([]*DiffHunk, error)
+	Hunks() []*DiffHunk
 	Stat() *DiffStat
 	OldFile() *GitTreeEntryResolver
 	InternalID() string

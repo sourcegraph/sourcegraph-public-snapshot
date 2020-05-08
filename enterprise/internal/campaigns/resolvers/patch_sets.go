@@ -546,13 +546,13 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
 
-func (r *previewFileDiffResolver) Hunks(ctx context.Context) ([]*graphqlbackend.DiffHunk, error) {
+func (r *previewFileDiffResolver) Hunks() []*graphqlbackend.DiffHunk {
 	highlighter := &previewFileDiffHighlighter{previewFileDiffResolver: r}
 	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
 		hunks[i] = graphqlbackend.NewDiffHunk(hunk, highlighter)
 	}
-	return hunks, nil
+	return hunks
 }
 
 func (r *previewFileDiffResolver) Stat() *graphqlbackend.DiffStat {

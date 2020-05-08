@@ -296,7 +296,7 @@ type fileDiffResolver struct {
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks(ctx context.Context) ([]*DiffHunk, error) {
+func (r *fileDiffResolver) Hunks() []*DiffHunk {
 	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
 	highlighter := &fileDiffHighlighter{
 		fileDiffResolver: r,
@@ -304,7 +304,7 @@ func (r *fileDiffResolver) Hunks(ctx context.Context) ([]*DiffHunk, error) {
 	for i, hunk := range r.fileDiff.Hunks {
 		hunks[i] = NewDiffHunk(hunk, highlighter)
 	}
-	return hunks, nil
+	return hunks
 }
 
 func (r *fileDiffResolver) Stat() *DiffStat {
