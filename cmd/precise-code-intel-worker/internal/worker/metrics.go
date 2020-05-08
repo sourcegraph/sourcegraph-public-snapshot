@@ -10,7 +10,7 @@ type WorkerMetrics struct {
 }
 
 func NewWorkerMetrics(r prometheus.Registerer) WorkerMetrics {
-	jobs := metrics.NewOperationMetrics("precise_code_intel_worker", "jobs")
+	jobs := metrics.NewOperationMetrics(r, "precise_code_intel_worker", "jobs")
 
 	return WorkerMetrics{
 		Jobs: jobs,
