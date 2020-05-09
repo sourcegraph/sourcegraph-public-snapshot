@@ -486,25 +486,6 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
     )
 }
 
-// export function fetchVersionContexts(): Observable<GQL.IVersionContext[]> {
-//     return queryGraphQL(gql`
-//         query versionContexts {
-//             versionContexts {
-//                 id
-//                 name
-//                 description
-//             }
-//         }
-//     `).pipe(
-//         map(({ data, errors }) => {
-//             if (!data || !data.versionContexts) {
-//                 throw createAggregateError(errors)
-//             }
-//             return data.versionContexts
-//         })
-//     )
-// }
-
 export function fetchVersionContexts(): Observable<GQL.IVersionContext[]> {
     return queryGraphQL(gql`
         query versionContexts {
