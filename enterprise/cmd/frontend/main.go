@@ -8,7 +8,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
+
 	"log"
 	"os"
 	"strconv"
@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
