@@ -195,7 +195,7 @@
     "mz": "^2.7.0",
     "node-fetch": "^2.6.0",
     "node-sass": "^4.14.1",
-    "nyc": "^15.0.0",
+    "nyc": "^15.0.1",
     "open": "^7.0.3",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.2.0",
