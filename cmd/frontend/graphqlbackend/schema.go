@@ -1759,6 +1759,7 @@ type Repository implements Node & GenericSearchResultInterface {
     ): UserConnection!
 
     # The permissions information of the repository for the authenticated user.
+    # It is null when there is no permissions data stored for the repository.
     permissionsInfo: PermissionsInfo
 }
 
@@ -2886,6 +2887,7 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     # The permissions information of the user over repositories.
+    # It is null when there is no permissions data stored for the user.
     permissionsInfo: PermissionsInfo
 }
 
