@@ -20,7 +20,7 @@ import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: Pick<GQL.IUser, 'id' | 'viewerCanAdminister' | 'builtinAuth'>
-    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'>
+    authenticatedUser: Pick<GQL.IUser, 'id' | 'siteAdmin'> | null
 }
 
 export type UserSettingsSidebarItems = Record<
