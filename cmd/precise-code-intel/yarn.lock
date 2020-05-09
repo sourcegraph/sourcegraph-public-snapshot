@@ -523,10 +523,10 @@
     "@types/istanbul-lib-coverage" "*"
     "@types/istanbul-lib-report" "*"
 
-"@types/jaeger-client@3.15.3":
-  version "3.15.3"
-  resolved "https://registry.npmjs.org/@types/jaeger-client/-/jaeger-client-3.15.3.tgz#d9bee71dc7441c46b1e1e06826f657c6859de03d"
-  integrity sha512-Hby2o9/oj3KzeVwoSzP/A7fA2jGfpnxEsZISZvsk75ZckqIJJovx7rAwSoj22yGAyu3vGo43Ad0K/YImEO1dXw==
+"@types/jaeger-client@3.15.4":
+  version "3.15.4"
+  resolved "https://registry.npmjs.org/@types/jaeger-client/-/jaeger-client-3.15.4.tgz#7c7548c1bbdfbdb819df63afb230998ed2e298dc"
+  integrity sha512-DdA3jLT6VoAnn9/AI7DBOSXSFFM839f1dXvf/wTWcofs8ajcclEexGPEbELYfC3XuoEIWLPd7OmrqF/6mp4n/A==
   dependencies:
     opentracing "~0.14.3"
     prom-client "~11.3.0"
@@ -2776,13 +2776,13 @@ istanbul-reports@^3.0.0:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
 
-jaeger-client@^3.17.2:
-  version "3.17.2"
-  resolved "https://registry.npmjs.org/jaeger-client/-/jaeger-client-3.17.2.tgz#92cf26752c5c66f3e66adf595cdde2f548cc0804"
-  integrity sha512-19YloSidmKbrXHgecLWod8eXo7rm2ieUnsfg0ripTFGRCW5v2OWE96Gte4/tOQG/8N+T39VoLU2nMBdjbdMUJg==
+jaeger-client@^3.18.0:
+  version "3.18.0"
+  resolved "https://registry.npmjs.org/jaeger-client/-/jaeger-client-3.18.0.tgz#95c9183e06a9b14b957bce33b5e2ddaecb2ed51f"
+  integrity sha512-xZ9WvZDWLkZFq7SObpLwu1asMCKCgBRNcDxxGSvK+ZQ7OZyJC5xPlU+rJa4+s/P6autPBVwHpqMGbOERFxWuuA==
   dependencies:
     node-int64 "^0.4.0"
-    opentracing "^0.13.0"
+    opentracing "^0.14.4"
     thriftrw "^3.5.0"
     uuid "^3.2.1"
     xorshift "^0.2.0"
@@ -3871,11 +3871,6 @@ onetime@^5.1.0:
   integrity sha512-5NcSkPHhwTVFIQN+TUqXoS5+dlElHXdpAWu9I0HP20YOtIi+aZ0Ct82jdlILDxjLEAWwvm+qj1m6aEtsDVmm6Q==
   dependencies:
     mimic-fn "^2.1.0"
-
-opentracing@^0.13.0:
-  version "0.13.0"
-  resolved "https://registry.npmjs.org/opentracing/-/opentracing-0.13.0.tgz#6a341442f09d7d866bc11ed03de1e3828e3d6aab"
-  integrity sha1-ajQUQvCdfYZrwR7QPeHjgo49aqs=
 
 opentracing@^0.14.0, opentracing@^0.14.4, opentracing@~0.14.3:
   version "0.14.4"
