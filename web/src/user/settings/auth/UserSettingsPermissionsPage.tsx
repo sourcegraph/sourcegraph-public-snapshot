@@ -11,7 +11,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IU
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
 
     return (
-        <div className="user-settings-permissions-page w-100">
+        <div className="w-100">
             <PageTitle title="Permissions" />
             <h2>Permissions</h2>
             {user.siteAdmin ? (
