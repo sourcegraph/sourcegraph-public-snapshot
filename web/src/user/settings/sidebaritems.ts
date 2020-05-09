@@ -35,7 +35,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             exact: true,
             condition: ({ user, authenticatedUser }) =>
                 !!window.context.site['permissions.backgroundSync']?.enabled &&
-                (authenticatedUser?.siteAdmin || user.id !== authenticatedUser?.id),
+                (authenticatedUser.siteAdmin || user.id !== authenticatedUser.id),
         },
     ],
 }

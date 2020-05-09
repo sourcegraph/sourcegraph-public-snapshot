@@ -162,7 +162,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({
                             username,
-                            siteAdmin: this.props.authenticatedUser?.siteAdmin || false,
+                            siteAdmin: !!this.props.authenticatedUser?.siteAdmin,
                         }).pipe(
                             filter(isDefined),
                             catchError(error => [asError(error)]),

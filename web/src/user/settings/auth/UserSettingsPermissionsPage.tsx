@@ -16,11 +16,11 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IU
             <h2>Permissions</h2>
             {user.siteAdmin ? (
                 <div className="alert alert-info">
-                    Site admin can access all repositoires in the Sourcegraph instance.
+                    Site admin can access all repositories in the Sourcegraph instance.
                 </div>
             ) : !user.permissionsInfo ? (
                 <div className="alert alert-info">
-                    This user is queued to sync permissions, it can only access non-private repositoires until syncing
+                    This user is queued to sync permissions, it can only access non-private repositories until syncing
                     is finished.
                 </div>
             ) : (
