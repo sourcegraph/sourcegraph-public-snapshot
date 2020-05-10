@@ -151,5 +151,5 @@ func testReader(t *testing.T) Reader {
 	t.Cleanup(func() { _ = reader.Close() })
 
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(reader, &observation.TestContext, "test")
+	return NewObserved(reader, &observation.TestContext)
 }
