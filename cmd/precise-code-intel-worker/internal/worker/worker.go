@@ -90,7 +90,7 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 	return true, nil
 }
 
-// Processor converts a raw upload into dumps.
+// Processor converts raw uploads into dumps.
 type Processor interface {
 	Process(ctx context.Context, db db.DB, upload db.Upload, jobHandle db.JobHandle) error
 }
