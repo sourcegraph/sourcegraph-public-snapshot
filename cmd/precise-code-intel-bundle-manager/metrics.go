@@ -8,30 +8,35 @@ import (
 // MustRegisterCacheMonitor emits metrics for a ristretto cache.
 func MustRegisterCacheMonitor(r prometheus.Registerer, cacheName string, metrics *ristretto.Metrics) {
 	cacheCost := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_cache_cost",
+		Namespace:   "src",
+		Subsystem:   "cache",
+		Name:        "cost",
 		Help:        "Current cost of the cache.",
 		ConstLabels: prometheus.Labels{"cache": cacheName},
 	}, func() float64 {
 		return float64(metrics.CostAdded() - metrics.CostEvicted())
 	})
+	r.MustRegister(cacheCost)
 
 	cacheHits := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_cache_hits",
+		Namespace:   "src",
+		Subsystem:   "cache",
+		Name:        "hits_total",
 		Help:        "Total number of cache hits.",
 		ConstLabels: prometheus.Labels{"cache": cacheName},
 	}, func() float64 {
 		return float64(metrics.Hits())
 	})
+	r.MustRegister(cacheHits)
 
 	cacheMisses := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_cache_misses",
+		Namespace:   "src",
+		Subsystem:   "cache",
+		Name:        "misses_total",
 		Help:        "Total number of cache misses.",
 		ConstLabels: prometheus.Labels{"cache": cacheName},
 	}, func() float64 {
 		return float64(metrics.Misses())
 	})
-
-	r.MustRegister(cacheCost)
-	r.MustRegister(cacheHits)
 	r.MustRegister(cacheMisses)
 }
