@@ -16,6 +16,7 @@ type AuthzResolver interface {
 	UsersWithPendingPermissions(ctx context.Context) ([]string, error)
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
+	UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error)
 }
 
 var authzInEnterprise = errors.New("authorization mutations and queries are only available in enterprise")
@@ -41,6 +42,10 @@ func (defaultAuthzResolver) AuthorizedUsers(ctx context.Context, args *RepoAutho
 }
 
 func (defaultAuthzResolver) RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error) {
+	return nil, authzInEnterprise
+}
+
+func (defaultAuthzResolver) UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error) {
 	return nil, authzInEnterprise
 }
 
