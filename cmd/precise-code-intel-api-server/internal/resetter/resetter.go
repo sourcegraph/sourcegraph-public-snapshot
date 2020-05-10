@@ -29,7 +29,7 @@ func (ur *UploadResetter) Run() {
 			log15.Debug("Reset stalled upload", "uploadID", id)
 		}
 
-		ur.Metrics.StalledJobs.Add(float64(len(ids)))
+		ur.Metrics.Count.Add(float64(len(ids)))
 		time.Sleep(ur.ResetInterval)
 	}
 }

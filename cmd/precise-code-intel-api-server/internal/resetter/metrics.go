@@ -3,27 +3,29 @@ package resetter
 import "github.com/prometheus/client_golang/prometheus"
 
 type ResetterMetrics struct {
-	StalledJobs prometheus.Counter
-	Errors      prometheus.Counter
+	Count  prometheus.Counter
+	Errors prometheus.Counter
 }
 
 func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
-	stalledJobs := prometheus.NewCounter(prometheus.CounterOpts{
+	count := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_api_server",
-		Name:      "resetter_stalled_jobs",
-		Help:      "Total number of reset stalled jobs",
+		Subsystem: "upload_queue",
+		Name:      "resets_total",
+		Help:      "Total number of uploads put back into queued state",
 	})
+	r.MustRegister(count)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_api_server",
-		Name:      "resetter_errors",
-		Help:      "Total number of errors when running the janitor",
+		Subsystem: "upload_queue",
+		Name:      "reset_errors_total",
+		Help:      "Total number of errors when running the upload resetter",
 	})
+	r.MustRegister(errors)
 
 	return ResetterMetrics{
-		StalledJobs: stalledJobs,
-		Errors:      errors,
+		Count:  count,
+		Errors: errors,
 	}
 }
