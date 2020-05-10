@@ -170,6 +170,25 @@ type ChangesetSyncResponse struct {
 	Error string
 }
 
+// PermsSyncType is the type of permissions syncing request.
+type PermsSyncType int
+
+const (
+	PermsSyncRepo PermsSyncType = iota + 1
+	PermsSyncUser
+)
+
+// PermsSyncRequest is a request to sync permissions.
+type PermsSyncRequest struct {
+	Type PermsSyncType `json:"type"`
+	IDs  []int32       `json:"ids"`
+}
+
+// PermsSyncResponse is a response to sync permissions.
+type PermsSyncResponse struct {
+	Error string
+}
+
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or

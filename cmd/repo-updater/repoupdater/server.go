@@ -56,6 +56,14 @@ type Server struct {
 		// our internal rate limiter are kept in sync
 		SyncRateLimiters(ctx context.Context) error
 	}
+	PermsSyncer interface {
+		// ScheduleUsers schedules new permissions syncing requests for given users
+		// in desired priority.
+		ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32)
+		// ScheduleRepos schedules new permissions syncing requests for given repositories
+		// in desired priority.
+		ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID)
+	}
 
 	notClonedCountMu        sync.Mutex
 	notClonedCount          uint64
@@ -73,6 +81,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
+	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
 }
 
@@ -609,6 +618,41 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusInternalServerError, resp)
 		return
 	}
+	respond(w, http.StatusOK, nil)
+}
+
+func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
+	if s.PermsSyncer == nil {
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.PermsSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		return
+	}
+
+	switch req.Type {
+	case protocol.PermsSyncRepo:
+		repoIDs := make([]api.RepoID, len(req.IDs))
+		for i := range repoIDs {
+			repoIDs[i] = api.RepoID(req.IDs[i])
+		}
+		s.PermsSyncer.ScheduleRepos(r.Context(), repos.PriorityHigh, repoIDs...)
+
+	case protocol.PermsSyncUser:
+		s.PermsSyncer.ScheduleUsers(r.Context(), repos.PriorityHigh, req.IDs...)
+
+	default:
+		respond(w, http.StatusBadRequest, fmt.Errorf("unrecognized type %v", req.Type))
+		return
+	}
+
 	respond(w, http.StatusOK, nil)
 }
 

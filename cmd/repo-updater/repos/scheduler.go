@@ -401,6 +401,9 @@ type updateQueue struct {
 	notifyEnqueue chan struct{}
 }
 
+// Priority defines how urgent the syncing or update request is. Generally,
+// if the request is driven from a user action, then it should be PriorityHigh.
+// All other cases should be PriorityLow.
 type Priority int
 
 const (

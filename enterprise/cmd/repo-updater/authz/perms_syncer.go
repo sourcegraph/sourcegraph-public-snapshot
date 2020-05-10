@@ -67,7 +67,7 @@ func NewPermsSyncer(
 // ScheduleUsers schedules new permissions syncing requests for given users
 // in desired priority.
 //
-// This method implements the authz.PermsSyncer in the OSS namespace.
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32) {
 	users := make([]scheduledUser, len(userIDs))
 	for i := range userIDs {
@@ -105,7 +105,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 // ScheduleRepos schedules new permissions syncing requests for given repositories
 // in desired priority.
 //
-// This method implements the authz.PermsSyncer in the OSS namespace.
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID) {
 	repos := make([]scheduledRepo, len(repoIDs))
 	for i := range repoIDs {
