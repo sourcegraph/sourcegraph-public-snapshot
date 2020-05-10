@@ -1149,6 +1149,79 @@ func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) 
 	return g.listClonedResponse, nil
 }
 
+type fakePermsSyncer struct{}
+
+func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32) {
+}
+
+func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID) {
+}
+
+func TestServer_handleSchedulePermsSync(t *testing.T) {
+	tests := []struct {
+		name          string
+		permsSyncer   *fakePermsSyncer
+		body          string
+		expStatusCode int
+		expBody       string
+	}{
+		{
+			name:          "PermsSyncer not available",
+			expStatusCode: http.StatusForbidden,
+			expBody:       "null",
+		},
+		{
+			name:          "bad JSON",
+			permsSyncer:   &fakePermsSyncer{},
+			body:          "{",
+			expStatusCode: http.StatusBadRequest,
+			expBody:       "unexpected EOF",
+		},
+		{
+			name:          "missing ids",
+			permsSyncer:   &fakePermsSyncer{},
+			body:          "{}",
+			expStatusCode: http.StatusBadRequest,
+			expBody:       "no ids provided",
+		},
+		{
+			name:          "bad type",
+			permsSyncer:   &fakePermsSyncer{},
+			body:          `{"ids":[1]}`,
+			expStatusCode: http.StatusBadRequest,
+			expBody:       "unrecognized type 0",
+		},
+
+		{
+			name:          "successful call",
+			permsSyncer:   &fakePermsSyncer{},
+			body:          `{"type": 1, "ids":[1]}`,
+			expStatusCode: http.StatusOK,
+			expBody:       "null",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
+			w := httptest.NewRecorder()
+
+			s := &Server{}
+			// NOTE: An interface has nil value is not a nil interface,
+			// so should only assign to the interface when the value is not nil.
+			if test.permsSyncer != nil {
+				s.PermsSyncer = test.permsSyncer
+			}
+			s.handleSchedulePermsSync(w, r)
+
+			if w.Code != test.expStatusCode {
+				t.Fatalf("Code: want %v but got %v", test.expStatusCode, w.Code)
+			} else if diff := cmp.Diff(w.Body.String(), test.expBody); diff != "" {
+				t.Fatalf("Body: %v", diff)
+			}
+		})
+	}
+}
+
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, nil)
 	if err != nil {
