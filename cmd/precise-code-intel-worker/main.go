@@ -44,13 +44,13 @@ func main() {
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
 
-	worker := worker.Worker{
-		DB:                  db,
-		BundleManagerClient: bundles.New(bundleManagerURL),
-		GitserverClient:     gitserver.DefaultClient,
-		PollInterval:        pollInterval,
-		Metrics:             workerMetrics,
-	}
+	worker := worker.NewWorker(
+		db,
+		bundles.New(bundleManagerURL),
+		gitserver.DefaultClient,
+		pollInterval,
+		workerMetrics,
+	)
 	go worker.Start()
 
 	go debugserver.Start()
