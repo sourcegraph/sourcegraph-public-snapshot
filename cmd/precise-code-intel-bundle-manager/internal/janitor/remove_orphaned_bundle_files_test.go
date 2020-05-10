@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestRemoveOrphanedDumps(t *testing.T) {
+func TestRemoveOrphanedBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 	ids := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
@@ -44,8 +44,8 @@ func TestRemoveOrphanedDumps(t *testing.T) {
 		}, nil
 	}
 
-	if err := j.removeOrphanedDumps(statesFn); err != nil {
-		t.Fatalf("unexpected error removing dead dumps: %s", err)
+	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
+		t.Fatalf("unexpected error removing orphaned bundle files: %s", err)
 	}
 
 	names, err := getFilenames(filepath.Join(bundleDir, "dbs"))
@@ -64,7 +64,7 @@ func TestRemoveOrphanedDumps(t *testing.T) {
 	}
 }
 
-func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
+func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	bundleDir := testRoot(t)
 	var ids []int
 	for i := 1; i <= 225; i++ {
@@ -96,7 +96,7 @@ func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
 		return states, nil
 	}
 
-	if err := j.removeOrphanedDumps(statesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 
@@ -111,8 +111,8 @@ func TestRemoveOrphanedDumpsMaxRequestBatchSize(t *testing.T) {
 
 	var allArgs []int
 	for _, args := range idArgs {
-		if len(args) > DeadDumpBatchSize {
-			t.Errorf("unexpected large slice: want < %d have=%d", DeadDumpBatchSize, len(args))
+		if len(args) > OrphanedBundleBatchSize {
+			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(args))
 		}
 
 		allArgs = append(allArgs, args...)

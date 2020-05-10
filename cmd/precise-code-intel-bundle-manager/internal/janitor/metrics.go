@@ -3,45 +3,49 @@ package janitor
 import "github.com/prometheus/client_golang/prometheus"
 
 type JanitorMetrics struct {
-	OldUploads    prometheus.Counter
-	OrphanedDumps prometheus.Counter
-	EvictedDumps  prometheus.Counter
-	Errors        prometheus.Counter
+	UploadFilesRemoved          prometheus.Counter
+	OprphanedBundleFilesRemoved prometheus.Counter
+	EvictedBundleFilesRemoved   prometheus.Counter
+	Errors                      prometheus.Counter
 }
 
 func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
-	oldUploads := prometheus.NewCounter(prometheus.CounterOpts{
+	uploadFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_bundle_manager",
-		Name:      "janitor_old_uploads",
-		Help:      "Total number of old upload removed",
+		Subsystem: "bundle_manager_janitor",
+		Name:      "upload_files_removed_total",
+		Help:      "Total number of upload files removed (due to age)",
 	})
+	r.MustRegister(uploadFilesRemoved)
 
-	orphanedDumps := prometheus.NewCounter(prometheus.CounterOpts{
+	oprphanedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_bundle_manager",
-		Name:      "janitor_orphaned_dumps",
-		Help:      "Total number of orphaned dumps removed",
+		Subsystem: "bundle_manager_janitor",
+		Name:      "orphaned_bundle_files_removed_total",
+		Help:      "Total number of bundle files removed (with no corresponding database entry)",
 	})
+	r.MustRegister(oprphanedBundleFilesRemoved)
 
-	evictedDumps := prometheus.NewCounter(prometheus.CounterOpts{
+	evictedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_bundle_manager",
-		Name:      "janitor_old_dumps",
-		Help:      "Total number of dumps evicted from disk",
+		Subsystem: "bundle_manager_janitor",
+		Name:      "evicted_bundle_files_removed_total",
+		Help:      "Total number of bundles files removed (after evicting them from the database)",
 	})
+	r.MustRegister(evictedBundleFilesRemoved)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
-		Subsystem: "precise_code_intel_bundle_manager",
-		Name:      "janitor_errors",
+		Subsystem: "bundle_manager_janitor",
+		Name:      "errors_total",
 		Help:      "Total number of errors when running the janitor",
 	})
+	r.MustRegister(errors)
 
 	return JanitorMetrics{
-		OldUploads:    oldUploads,
-		OrphanedDumps: orphanedDumps,
-		EvictedDumps:  evictedDumps,
-		Errors:        errors,
+		UploadFilesRemoved:          uploadFilesRemoved,
+		OprphanedBundleFilesRemoved: oprphanedBundleFilesRemoved,
+		EvictedBundleFilesRemoved:   evictedBundleFilesRemoved,
+		Errors:                      errors,
 	}
 }

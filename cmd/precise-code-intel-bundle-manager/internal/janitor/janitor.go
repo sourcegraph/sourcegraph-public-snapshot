@@ -17,7 +17,7 @@ type Janitor struct {
 
 // step performs a best-effort cleanup. See the following methods for more specifics.
 // Run periodically performs a best-effort cleanup process. See the following methods
-// for more specifics: cleanOldUploads, removeOrphanedDumps, and freeSpace.
+// for more specifics: removeOldUploadFiles, removeOrphanedBundleFiles, and freeSpace.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
@@ -30,12 +30,14 @@ func (j *Janitor) Run() {
 }
 
 func (j *Janitor) run() error {
-	if err := j.cleanOldUploads(); err != nil {
-		return errors.Wrap(err, "janitor.cleanOldUploads")
+	// TODO(efritz) - should also remove orphaned upload files
+
+	if err := j.removeOldUploadFiles(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldUploadFiles")
 	}
 
-	if err := j.removeOrphanedDumps(defaultStatesFn); err != nil {
-		return errors.Wrap(err, "janitor.removeOrphanedDumps")
+	if err := j.removeOrphanedBundleFiles(defaultStatesFn); err != nil {
+		return errors.Wrap(err, "janitor.removeOrphanedBundleFiles")
 	}
 
 	if err := j.freeSpace(defaultPruneFn); err != nil {
