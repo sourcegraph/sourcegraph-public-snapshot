@@ -64,7 +64,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 
 	type enqueueCall struct {
 		repo     configuredRepo2
-		priority priority
+		priority Priority
 	}
 
 	tests := []struct {
@@ -77,12 +77,12 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue low priority",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityLow},
+				{repo: a, priority: PriorityLow},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityLow,
+					Priority: PriorityLow,
 					Seq:      1,
 				},
 			},
@@ -91,12 +91,12 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue high priority",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityHigh},
+				{repo: a, priority: PriorityHigh},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      1,
 				},
 			},
@@ -105,18 +105,18 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue low b then high a",
 			calls: []*enqueueCall{
-				{repo: b, priority: priorityLow},
-				{repo: a, priority: priorityHigh},
+				{repo: b, priority: PriorityLow},
+				{repo: a, priority: PriorityHigh},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      2,
 				},
 				{
 					Repo:     b,
-					Priority: priorityLow,
+					Priority: PriorityLow,
 					Seq:      1,
 				},
 			},
@@ -125,18 +125,18 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue high a then low b",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityHigh},
-				{repo: b, priority: priorityLow},
+				{repo: a, priority: PriorityHigh},
+				{repo: b, priority: PriorityLow},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      1,
 				},
 				{
 					Repo:     b,
-					Priority: priorityLow,
+					Priority: PriorityLow,
 					Seq:      2,
 				},
 			},
@@ -145,13 +145,13 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue low a then low a",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityLow},
-				{repo: a, priority: priorityLow},
+				{repo: a, priority: PriorityLow},
+				{repo: a, priority: PriorityLow},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityLow,
+					Priority: PriorityLow,
 					Seq:      1,
 				},
 			},
@@ -160,13 +160,13 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue high a then low a",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityHigh},
-				{repo: a, priority: priorityLow},
+				{repo: a, priority: PriorityHigh},
+				{repo: a, priority: PriorityLow},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      1,
 				},
 			},
@@ -175,13 +175,13 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "enqueue low a then high a",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityLow},
-				{repo: a, priority: priorityHigh},
+				{repo: a, priority: PriorityLow},
+				{repo: a, priority: PriorityHigh},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      2,
 				},
 			},
@@ -190,13 +190,13 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "repo is updated if not already updating",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityHigh},
-				{repo: a2, priority: priorityLow},
+				{repo: a, priority: PriorityHigh},
+				{repo: a2, priority: PriorityLow},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a2,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      1, // Priority remains high
 				},
 			},
@@ -205,14 +205,14 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "repo is NOT updated if already updating",
 			calls: []*enqueueCall{
-				{repo: a, priority: priorityHigh},
-				{repo: a2, priority: priorityLow},
+				{repo: a, priority: PriorityHigh},
+				{repo: a2, priority: PriorityLow},
 			},
 			acquire: 1,
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Updating: true,
 					Seq:      1,
 				},
@@ -222,42 +222,42 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		{
 			name: "heap is fixed when priority is bumped",
 			calls: []*enqueueCall{
-				{repo: c, priority: priorityLow},
-				{repo: d, priority: priorityLow},
-				{repo: a, priority: priorityLow},
-				{repo: e, priority: priorityLow},
-				{repo: b, priority: priorityLow},
+				{repo: c, priority: PriorityLow},
+				{repo: d, priority: PriorityLow},
+				{repo: a, priority: PriorityLow},
+				{repo: e, priority: PriorityLow},
+				{repo: b, priority: PriorityLow},
 
-				{repo: a, priority: priorityHigh},
-				{repo: b, priority: priorityHigh},
-				{repo: c, priority: priorityHigh},
-				{repo: d, priority: priorityHigh},
-				{repo: e, priority: priorityHigh},
+				{repo: a, priority: PriorityHigh},
+				{repo: b, priority: PriorityHigh},
+				{repo: c, priority: PriorityHigh},
+				{repo: d, priority: PriorityHigh},
+				{repo: e, priority: PriorityHigh},
 			},
 			expectedUpdates: []*repoUpdate{
 				{
 					Repo:     a,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      6,
 				},
 				{
 					Repo:     b,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      7,
 				},
 				{
 					Repo:     c,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      8,
 				},
 				{
 					Repo:     d,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      9,
 				},
 				{
 					Repo:     e,
-					Priority: priorityHigh,
+					Priority: PriorityHigh,
 					Seq:      10,
 				},
 			},
@@ -1164,7 +1164,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{Repo: a, Priority: priorityLow, Seq: 1},
+				{Repo: a, Priority: PriorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{11 * time.Second},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1182,7 +1182,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Interval: 11 * time.Minute, Due: defaultTime.Add(11 * time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{Repo: a, Priority: priorityLow, Seq: 1},
+				{Repo: a, Priority: PriorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1206,11 +1206,11 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(5 * time.Minute)},
 			},
 			finalQueue: []*repoUpdate{
-				{Repo: c, Priority: priorityLow, Seq: 1},
-				{Repo: d, Priority: priorityLow, Seq: 2},
-				{Repo: a, Priority: priorityLow, Seq: 3},
-				{Repo: e, Priority: priorityLow, Seq: 4},
-				{Repo: b, Priority: priorityLow, Seq: 5},
+				{Repo: c, Priority: PriorityLow, Seq: 1},
+				{Repo: d, Priority: PriorityLow, Seq: 2},
+				{Repo: a, Priority: PriorityLow, Seq: 3},
+				{Repo: e, Priority: PriorityLow, Seq: 4},
+				{Repo: b, Priority: PriorityLow, Seq: 5},
 			},
 			timeAfterFuncDelays: []time.Duration{1 * time.Minute},
 			expectedNotifications: func(s *updateScheduler) []chan struct{} {
@@ -1441,8 +1441,8 @@ func Test_updateQueue_Less(t *testing.T) {
 		{
 			name: "priority",
 			heap: []*repoUpdate{
-				{Priority: priorityHigh},
-				{Priority: priorityLow},
+				{Priority: PriorityHigh},
+				{Priority: PriorityLow},
 			},
 			expVal: true,
 		},

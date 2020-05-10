@@ -155,7 +155,7 @@ func (s *updateScheduler) runSchedule() {
 		}
 
 		schedAutoFetch.Inc()
-		s.updateQueue.enqueue(repoUpdate.Repo, priorityLow)
+		s.updateQueue.enqueue(repoUpdate.Repo, PriorityLow)
 		repoUpdate.Due = timeNow().Add(repoUpdate.Interval)
 		heap.Fix(s.schedule, 0)
 	}
@@ -265,7 +265,7 @@ func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	if !enqueue {
 		return
 	}
-	updated = s.updateQueue.enqueue(repo, priorityLow)
+	updated = s.updateQueue.enqueue(repo, PriorityLow)
 	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
 }
 
@@ -303,7 +303,7 @@ func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url strin
 		URL:  url,
 	}
 	schedManualFetch.Inc()
-	s.updateQueue.enqueue(repo, priorityHigh)
+	s.updateQueue.enqueue(repo, PriorityHigh)
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
@@ -401,17 +401,17 @@ type updateQueue struct {
 	notifyEnqueue chan struct{}
 }
 
-type priority int
+type Priority int
 
 const (
-	priorityLow priority = iota
-	priorityHigh
+	PriorityLow Priority = iota
+	PriorityHigh
 )
 
 // repoUpdate is a repository that has been queued for an update.
 type repoUpdate struct {
 	Repo     configuredRepo2
-	Priority priority
+	Priority Priority
 	Seq      uint64 // the sequence number of the update
 	Updating bool   // whether the repo has been acquired for update
 	Index    int    `json:"-"` // the index in the heap
@@ -434,7 +434,7 @@ func (q *updateQueue) reset() {
 //
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
-func (q *updateQueue) enqueue(repo configuredRepo2, p priority) (updated bool) {
+func (q *updateQueue) enqueue(repo configuredRepo2, p Priority) (updated bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
