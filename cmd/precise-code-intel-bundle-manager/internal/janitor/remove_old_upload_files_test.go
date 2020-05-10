@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestremoveOldUploadFiles(t *testing.T) {
+func TestRemoveOldUploadFiles(t *testing.T) {
 	bundleDir := testRoot(t)
 	mtimes := map[string]time.Time{
 		"u1": time.Now().Local().Add(-time.Minute * 3),  // older than 1m
