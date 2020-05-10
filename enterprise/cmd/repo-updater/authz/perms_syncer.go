@@ -68,7 +68,7 @@ func NewPermsSyncer(
 // in desired priority.
 //
 // This method implements the authz.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) {
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32) {
 	users := make([]scheduledUser, len(userIDs))
 	for i := range userIDs {
 		users[i] = scheduledUser{
@@ -106,7 +106,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 // in desired priority.
 //
 // This method implements the authz.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) {
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID) {
 	repos := make([]scheduledRepo, len(repoIDs))
 	for i := range repoIDs {
 		repos[i] = scheduledRepo{
@@ -398,7 +398,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 	users := make([]scheduledUser, len(ids))
 	for i, id := range ids {
 		users[i] = scheduledUser{
-			priority: PriorityLow,
+			priority: repos.PriorityLow,
 			userID:   id,
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
@@ -416,16 +416,16 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 	}
 	s.metrics.noPerms.WithLabelValues("repo").Set(float64(len(ids)))
 
-	repos := make([]scheduledRepo, len(ids))
+	rs := make([]scheduledRepo, len(ids))
 	for i, id := range ids {
-		repos[i] = scheduledRepo{
-			priority: PriorityLow,
+		rs[i] = scheduledRepo{
+			priority: repos.PriorityLow,
 			repoID:   id,
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
 		}
 	}
-	return repos, nil
+	return rs, nil
 }
 
 // scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
@@ -439,7 +439,7 @@ func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit in
 	users := make([]scheduledUser, 0, len(results))
 	for id, t := range results {
 		users = append(users, scheduledUser{
-			priority:   PriorityLow,
+			priority:   repos.PriorityLow,
 			userID:     id,
 			nextSyncAt: t,
 		})
@@ -455,15 +455,15 @@ func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit in
 		return nil, err
 	}
 
-	repos := make([]scheduledRepo, 0, len(results))
+	rs := make([]scheduledRepo, 0, len(results))
 	for id, t := range results {
-		repos = append(repos, scheduledRepo{
-			priority:   PriorityLow,
+		rs = append(rs, scheduledRepo{
+			priority:   repos.PriorityLow,
 			repoID:     id,
 			nextSyncAt: t,
 		})
 	}
-	return repos, nil
+	return rs, nil
 }
 
 // schedule contains information for scheduling users and repositories.
@@ -474,7 +474,7 @@ type schedule struct {
 
 // scheduledUser contains information for scheduling a user.
 type scheduledUser struct {
-	priority   Priority
+	priority   repos.Priority
 	userID     int32
 	nextSyncAt time.Time
 
@@ -485,7 +485,7 @@ type scheduledUser struct {
 
 // scheduledRepo contains for scheduling a repository.
 type scheduledRepo struct {
-	priority   Priority
+	priority   repos.Priority
 	repoID     api.RepoID
 	nextSyncAt time.Time
 

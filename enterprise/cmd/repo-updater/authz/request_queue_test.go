@@ -5,21 +5,22 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 )
 
 // The options to allow cmp to compare unexported fields.
 var cmpOpts = cmp.AllowUnexported(syncRequest{}, requestMeta{}, requestQueueKey{})
 
 func Test_requestQueue_enqueue(t *testing.T) {
-	lowRepo1 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 1}
-	highRepo1 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 1}
-	lowRepo2 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 2}
-	highRepo2 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 2}
-	lowRepo3 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 3}
-	highRepo3 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 3}
-	lowRepo4 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 3, NextSyncAt: time.Now()}
+	lowRepo1 := &requestMeta{Priority: repos.PriorityLow, Type: requestTypeRepo, ID: 1}
+	highRepo1 := &requestMeta{Priority: repos.PriorityHigh, Type: requestTypeRepo, ID: 1}
+	lowRepo2 := &requestMeta{Priority: repos.PriorityLow, Type: requestTypeRepo, ID: 2}
+	highRepo2 := &requestMeta{Priority: repos.PriorityHigh, Type: requestTypeRepo, ID: 2}
+	lowRepo3 := &requestMeta{Priority: repos.PriorityLow, Type: requestTypeRepo, ID: 3}
+	highRepo3 := &requestMeta{Priority: repos.PriorityHigh, Type: requestTypeRepo, ID: 3}
+	lowRepo4 := &requestMeta{Priority: repos.PriorityLow, Type: requestTypeRepo, ID: 3, NextSyncAt: time.Now()}
 
-	lowUser1 := &requestMeta{Priority: PriorityLow, Type: requestTypeUser, ID: 1}
+	lowUser1 := &requestMeta{Priority: repos.PriorityLow, Type: requestTypeUser, ID: 1}
 
 	tests := []struct {
 		name             string
@@ -535,16 +536,16 @@ func Test_requestQueue_Less(t *testing.T) {
 		{
 			name: "i has high priority",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{Priority: PriorityHigh}},
-				{requestMeta: &requestMeta{Priority: PriorityLow}},
+				{requestMeta: &requestMeta{Priority: repos.PriorityHigh}},
+				{requestMeta: &requestMeta{Priority: repos.PriorityLow}},
 			},
 			expVal: true,
 		},
 		{
 			name: "j has high priority",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{Priority: PriorityLow}},
-				{requestMeta: &requestMeta{Priority: PriorityHigh}},
+				{requestMeta: &requestMeta{Priority: repos.PriorityLow}},
+				{requestMeta: &requestMeta{Priority: repos.PriorityHigh}},
 			},
 			expVal: false,
 		},
