@@ -19,9 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel/api-server",
-	"precise-code-intel/bundle-manager",
-	"precise-code-intel/worker",
+	"precise-code-intel-api-server",
+	"precise-code-intel-bundle-manager",
+	"precise-code-intel-worker",
 
 	// Images under docker-images/
 	"grafana",
@@ -98,13 +98,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
-}
-
-// Tests the precise code intel system.
-func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
