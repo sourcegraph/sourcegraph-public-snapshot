@@ -38,10 +38,14 @@ type repositoryResolver struct {
 		LazyPrintf(format string, a ...interface{})
 	}
 
+	// these struct members represent the input of the repositoryResolver
+	// and must be filled prior to calling the resolveRepositories method
 	includePatterns []string
 	excludePatterns []string
 	maxRepoListSize int
 
+	// these struct members are intermediary variables used
+	// by the various methods called by the resolveRepositories method
 	includePatternRevs         []patternRevspec
 	versionContextRepositories []string
 	missingRepoRevisions       []*search.RepositoryRevisions
