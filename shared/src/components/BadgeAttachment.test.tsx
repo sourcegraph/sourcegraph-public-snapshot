@@ -22,7 +22,7 @@ export const newFormatBadge: BadgeAttachmentRenderOptions = {
 describe('BadgeAttachment', () => {
     afterAll(cleanup)
 
-    it('renders an img element with old format props', () => {
+    it('renders an img element with a base64 icon', () => {
         // any because ts will error with '"kind" is missing'
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { container } = render(<BadgeAttachment attachment={oldFormatBadge as any} isLightTheme={true} />)
@@ -32,7 +32,7 @@ describe('BadgeAttachment', () => {
         expect(item?.nodeName.toLowerCase()).toBe('img')
     })
 
-    it('renders an svg element with new format props', () => {
+    it('renders an svg element with a predefined icon', () => {
         const { container } = render(<BadgeAttachment attachment={newFormatBadge} isLightTheme={true} />)
         const item = container.querySelector('.badge-decoration-attachment__icon-svg')
         expect(item).toBeTruthy()
