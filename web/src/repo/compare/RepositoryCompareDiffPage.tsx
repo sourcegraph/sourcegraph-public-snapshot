@@ -45,6 +45,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
                                 }
                                 totalCount
                                 pageInfo {
+                                    endCursor
                                     hasNextPage
                                 }
                                 diffStat {
