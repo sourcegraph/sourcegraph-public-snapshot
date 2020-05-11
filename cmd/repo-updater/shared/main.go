@@ -202,7 +202,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	log15.Info("server listening", "addr", addr)
+	log15.Info("repo-updater: listening", "addr", addr)
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
