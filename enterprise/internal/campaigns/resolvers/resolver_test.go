@@ -1486,6 +1486,56 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 }
 
+func TestApplyPatch(t *testing.T) {
+	have := applyPatch(`1 some
+2
+3
+4
+5
+6
+7 super awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: 4, Body: []byte(` 4
+ 5
+ 6
+-7 super awesome
++7 super mega awesome
+ 8
+ 9
+ 10
+`)}}})
+	want := `1 some
+2
+3
+4
+5
+6
+7 super mega awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`
+	if have != want {
+		t.Fatalf("wrong patched file content %q, want=%q", have, want)
+	}
+}
+
 func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
 	t.Helper()
 
