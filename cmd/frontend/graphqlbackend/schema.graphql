@@ -1986,7 +1986,7 @@ type RepositoryComparison {
     fileDiffs(
         # Return the first n file diffs from the list.
         first: Int
-        # Return file diffs after the given file diff.
+        # Return file diffs after the given cursor.
         after: String
     ): FileDiffConnection!
 }
