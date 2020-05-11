@@ -260,7 +260,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 }
 
 func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
-	return reader.NewObserved(innerReader, s.ObservationContext, "precise_code_intel_bundle_manager")
+	return reader.NewObserved(innerReader, s.ObservationContext)
 }
 
 func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {

@@ -40,7 +40,7 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_worker")
+	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
 

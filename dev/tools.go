@@ -5,6 +5,7 @@ package main
 import (
 	// zoekt-* used in sourcegraph/server docker image build
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
+	_ "github.com/google/zoekt/cmd/zoekt-git-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
 	_ "github.com/google/zoekt/cmd/zoekt-webserver"
 

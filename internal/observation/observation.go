@@ -24,7 +24,6 @@
 //
 //     metrics := metrics.NewOperationMetrics(
 //         observationContext.Registerer,
-//         "some_service",
 //         "thing",
 //         metrics.WithLabels("op"),
 //     )

@@ -10,7 +10,7 @@ type WorkerMetrics struct {
 }
 
 func NewWorkerMetrics(r prometheus.Registerer) WorkerMetrics {
-	processor := metrics.NewOperationMetrics(r, "processor", metrics.WithSubsystem("upload_queue"))
+	processor := metrics.NewOperationMetrics(r, "upload_queue_processor")
 
 	return WorkerMetrics{
 		Processor: processor,

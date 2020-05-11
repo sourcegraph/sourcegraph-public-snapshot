@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestCleanOldUploads(t *testing.T) {
+func TestRemoveOldUploadFiles(t *testing.T) {
 	bundleDir := testRoot(t)
 	mtimes := map[string]time.Time{
 		"u1": time.Now().Local().Add(-time.Minute * 3),  // older than 1m
@@ -31,7 +31,7 @@ func TestCleanOldUploads(t *testing.T) {
 		Metrics:      NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.cleanOldUploads(); err != nil {
+	if err := j.removeOldUploadFiles(); err != nil {
 		t.Fatalf("unexpected error cleaning failed uploads: %s", err)
 	}
 

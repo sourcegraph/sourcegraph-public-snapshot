@@ -24,7 +24,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IR
                     is finished.
                 </div>
             ) : (
-                <table className="table repo-settings-permissions-page__stats">
+                <table className="table">
                     <tbody>
                         <tr>
                             <th>Last complete sync</th>

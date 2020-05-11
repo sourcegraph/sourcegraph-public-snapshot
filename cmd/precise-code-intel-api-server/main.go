@@ -44,7 +44,7 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_api_server")
+	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
