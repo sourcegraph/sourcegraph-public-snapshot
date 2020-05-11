@@ -53,7 +53,7 @@ func TestGetUploadByID(t *testing.T) {
 		RepositoryID:      123,
 		Indexer:           "lsif-go",
 		NumParts:          1,
-		UploadedParts:     nil,
+		UploadedParts:     []int{},
 		Rank:              nil,
 	}
 
@@ -199,13 +199,12 @@ func TestInsertUploadUploading(t *testing.T) {
 	db := testDB()
 
 	id, err := db.InsertUpload(context.Background(), &Upload{
-		Commit:        makeCommit(1),
-		Root:          "sub/",
-		State:         "uploading",
-		RepositoryID:  50,
-		Indexer:       "lsif-go",
-		NumParts:      3,
-		UploadedParts: nil,
+		Commit:       makeCommit(1),
+		Root:         "sub/",
+		State:        "uploading",
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+		NumParts:     3,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
@@ -226,7 +225,7 @@ func TestInsertUploadUploading(t *testing.T) {
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 		NumParts:          3,
-		UploadedParts:     nil,
+		UploadedParts:     []int{},
 	}
 
 	if upload, exists, err := db.GetUploadByID(context.Background(), id); err != nil {
