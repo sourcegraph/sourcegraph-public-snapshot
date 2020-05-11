@@ -576,15 +576,5 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
 		newContentLines = append(newContentLines, contentLines[currentLine-1:]...)
 	}
-	content := ""
-	first := true
-	for _, line := range newContentLines {
-		if !first {
-			content += "\n"
-		} else {
-			first = false
-		}
-		content += line
-	}
-	return content
+	return strings.Join(newContentLines, "\n")
 }

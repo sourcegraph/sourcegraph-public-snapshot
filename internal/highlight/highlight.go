@@ -202,13 +202,11 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			// user an error.
 			tr.LogFields(otlog.Bool(problem, true))
 			prometheusStatus = problem
-
 			table, err2 := generatePlainTable(code)
 			return table, false, err2
 		}
 		return "", false, err
 	}
-
 	// Note: resp.Data is properly HTML escaped by syntect_server
 	table, err := preSpansToTable(resp.Data)
 	if err != nil {

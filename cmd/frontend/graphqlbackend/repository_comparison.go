@@ -487,33 +487,7 @@ func (r *DiffHunk) Section() *string {
 
 func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
 
-type richHunk struct {
-	html string
-	kind string
-}
-
-func (r *richHunk) HTML() string {
-	return r.html
-}
-
-func (r *richHunk) Kind() string {
-	return r.kind
-}
-
-type highlightedHunkBody struct {
-	richHunks []*richHunk
-	aborted   bool
-}
-
-func (r *highlightedHunkBody) Aborted() bool {
-	return r.aborted
-}
-
-func (r *highlightedHunkBody) Lines() []*richHunk {
-	return r.richHunks
-}
-
-func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedHunkBody, error) {
+func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedDiffHunkBodyResolver, error) {
 	highlightedBase, highlightedHead, aborted, err := r.highlighter.Highlight(ctx, args)
 	if err != nil {
 		return nil, err
@@ -523,36 +497,62 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	if hunkLines[len(hunkLines)-1] == "" {
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
-	richHunks := make([]*richHunk, len(hunkLines))
+	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
 	// Array with content lines is 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
 	// Array with content lines is 0-indexed.
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
-		richHunk := richHunk{}
+		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
-			richHunk.kind = "UNCHANGED"
-			richHunk.html = highlightedBase[baseLine]
+			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
+			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
-			richHunk.kind = "ADDED"
-			richHunk.html = highlightedHead[headLine]
+			highlightedDiffHunkLineResolver.kind = "ADDED"
+			highlightedDiffHunkLineResolver.html = highlightedHead[headLine]
 			headLine++
 		} else if hunkLine[0] == '-' {
-			richHunk.kind = "DELETED"
-			richHunk.html = highlightedBase[baseLine]
+			highlightedDiffHunkLineResolver.kind = "DELETED"
+			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
 			baseLine++
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}
 
-		richHunks[i] = &richHunk
+		highlightedDiffHunkLineResolvers[i] = &highlightedDiffHunkLineResolver
 	}
-	return &highlightedHunkBody{
-		richHunks: richHunks,
-		aborted:   aborted,
+	return &highlightedDiffHunkBodyResolver{
+		highlightedDiffHunkLineResolvers: highlightedDiffHunkLineResolvers,
+		aborted:                          aborted,
 	}, nil
+}
+
+type highlightedDiffHunkBodyResolver struct {
+	highlightedDiffHunkLineResolvers []*highlightedDiffHunkLineResolver
+	aborted                          bool
+}
+
+func (r *highlightedDiffHunkBodyResolver) Aborted() bool {
+	return r.aborted
+}
+
+func (r *highlightedDiffHunkBodyResolver) Lines() []*highlightedDiffHunkLineResolver {
+	return r.highlightedDiffHunkLineResolvers
+}
+
+type highlightedDiffHunkLineResolver struct {
+	html string
+	kind string
+}
+
+func (r *highlightedDiffHunkLineResolver) HTML() string {
+	return r.html
+}
+
+func (r *highlightedDiffHunkLineResolver) Kind() string {
+	return r.kind
 }
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
