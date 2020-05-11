@@ -64,15 +64,15 @@ func NewPermsSyncer(
 	return s
 }
 
-// ScheduleUsers schedules new permissions syncing requests for given users
-// in desired priority.
+// ScheduleUsers schedules new permissions syncing requests for given users.
+// By design, all schedules triggered by user actions are in high priority.
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) {
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
 	users := make([]scheduledUser, len(userIDs))
 	for i := range userIDs {
 		users[i] = scheduledUser{
-			priority: priority,
+			priority: PriorityHigh,
 			userID:   userIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
@@ -102,15 +102,15 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 	}
 }
 
-// ScheduleRepos schedules new permissions syncing requests for given repositories
-// in desired priority.
+// ScheduleRepos schedules new permissions syncing requests for given repositories.
+// By design, all schedules triggered by user actions are in high priority.
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) {
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
 	repos := make([]scheduledRepo, len(repoIDs))
 	for i := range repoIDs {
 		repos[i] = scheduledRepo{
-			priority: priority,
+			priority: PriorityHigh,
 			repoID:   repoIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.

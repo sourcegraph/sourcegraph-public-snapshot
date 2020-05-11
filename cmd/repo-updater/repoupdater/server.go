@@ -57,12 +57,10 @@ type Server struct {
 		SyncRateLimiters(ctx context.Context) error
 	}
 	PermsSyncer interface {
-		// ScheduleUsers schedules new permissions syncing requests for given users
-		// in desired priority.
-		ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32)
-		// ScheduleRepos schedules new permissions syncing requests for given repositories
-		// in desired priority.
-		ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID)
+		// ScheduleUsers schedules new permissions syncing requests for given users.
+		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		// ScheduleRepos schedules new permissions syncing requests for given repositories.
+		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -637,8 +635,8 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.PermsSyncer.ScheduleUsers(r.Context(), repos.PriorityHigh, req.UserIDs...)
-	s.PermsSyncer.ScheduleRepos(r.Context(), repos.PriorityHigh, req.RepoIDs...)
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)
 }

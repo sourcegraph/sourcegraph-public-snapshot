@@ -20,7 +20,7 @@ import (
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleUsers(context.Background(), PriorityHigh, 1)
+	s.ScheduleUsers(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
@@ -36,7 +36,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleRepos(context.Background(), PriorityHigh, 1)
+	s.ScheduleRepos(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{

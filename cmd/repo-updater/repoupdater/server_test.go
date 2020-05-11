@@ -1151,10 +1151,10 @@ func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) 
 
 type fakePermsSyncer struct{}
 
-func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, priority repos.Priority, userIDs ...int32) {
+func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
 }
 
-func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, priority repos.Priority, repoIDs ...api.RepoID) {
+func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
 }
 
 func TestServer_handleSchedulePermsSync(t *testing.T) {
