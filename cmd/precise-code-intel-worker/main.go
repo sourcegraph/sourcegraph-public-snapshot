@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -23,6 +24,11 @@ import (
 )
 
 func main() {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -43,6 +49,12 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
+
+	server := server.Server{
+		Host: host,
+		Port: 3188,
+	}
+	go server.Start()
 
 	worker := worker.NewWorker(
 		db,
