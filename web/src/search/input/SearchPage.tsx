@@ -31,6 +31,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 
 interface Props
     extends SettingsCascadeProps,
@@ -103,6 +104,10 @@ export class SearchPage extends React.Component<Props, State> {
                             <>
                                 <Form className="search flex-grow-1" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container">
+                                        <VersionContextDropdown
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                        />
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}

@@ -38,6 +38,15 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
+/**
+ * Parses the pattern type out of the URL search params (the 'patternType' parameter). If the 'pattern' parameter
+ * is not present, or it is an invalid value, it returns undefined.
+ */
+export function parseSearchURLVersionContext(query: string): string | null | undefined {
+    const searchParams = new URLSearchParams(query)
+    return searchParams.get('c')
+}
+
 export function searchURLIsCaseSensitive(query: string): boolean {
     const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
     if (queryCaseSensitivity) {
@@ -60,7 +69,12 @@ export function searchURLIsCaseSensitive(query: string): boolean {
  */
 export function parseSearchURL(
     urlSearchQuery: string
-): { query: string | undefined; patternType: SearchPatternType | undefined; caseSensitive: boolean } {
+): {
+    query: string | undefined
+    patternType: SearchPatternType | undefined
+    caseSensitive: boolean
+    versionContext: string | null | undefined
+} {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
@@ -84,7 +98,12 @@ export function parseSearchURL(
         }
     }
 
-    return { query: finalQuery, patternType, caseSensitive }
+    return {
+        query: finalQuery,
+        patternType,
+        caseSensitive,
+        versionContext: parseSearchURLVersionContext(urlSearchQuery),
+    }
 }
 
 export function repoFilterForRepoRev(repoName: string, rev?: string): string {

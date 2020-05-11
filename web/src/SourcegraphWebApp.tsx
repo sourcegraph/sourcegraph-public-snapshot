@@ -146,6 +146,9 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     versionContext: string
 
+    /**
+     * Available version contexts defined in the site configuration.
+     */
     versionContexts?: VersionContext[]
 }
 
@@ -369,8 +372,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        console.log(this.state.versionContexts)
-
         const { authenticatedUser } = this.state
         if (authenticatedUser === undefined) {
             return null
@@ -460,6 +461,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private setVersionContext = (versionContext: string): void => {
+        if (this.state.versionContexts?.filter((v: VersionContext) => v.name === versionContext).length === 0) {
+            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
+            this.setState({ versionContext: '' })
+        }
+        localStorage.setItem(LAST_VERSION_CONTEXT_KEY, versionContext)
         this.setState({ versionContext })
     }
 }

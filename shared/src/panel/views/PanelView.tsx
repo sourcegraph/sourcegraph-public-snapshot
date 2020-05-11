@@ -17,6 +17,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    versionContext: string
 }
 
 interface State {}
@@ -46,6 +47,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         extensionsController={this.props.extensionsController}
                         settingsCascade={this.props.settingsCascade}
+                        versionContext={this.props.versionContext}
                     />
                 )}
                 {!this.props.panelView.content &&

@@ -65,6 +65,7 @@ export interface SearchResultsListProps
     didSave: boolean
 
     interactiveSearchMode: boolean
+    versionContext: string
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
@@ -425,6 +426,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                             proposedQuery.query,
                                                                             this.props.patternType,
                                                                             this.props.caseSensitive,
+                                                                            this.props.versionContext,
                                                                             this.props.filtersInQuery
                                                                         )
                                                                     }
@@ -518,6 +520,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
                         settingsCascade={this.props.settingsCascade}
+                        versionContext={this.props.versionContext}
                     />
                 )
         }

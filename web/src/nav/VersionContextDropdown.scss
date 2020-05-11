@@ -1,0 +1,23 @@
+@import '~@reach/listbox/styles.css';
+
+.version-context-dropdown {
+    width: fit-content;
+
+    &__info {
+        padding: 1rem 0.75rem;
+    }
+
+    &__popover {
+        max-width: 29.9375rem;
+        min-width: 29.9375rem;
+    }
+
+    &__option {
+        display: grid;
+        grid-template-columns: 1fr 4fr 5fr 1fr;
+    }
+
+    &__list {
+        padding-left: 0;
+    }
+}

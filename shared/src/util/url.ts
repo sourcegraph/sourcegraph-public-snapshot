@@ -629,7 +629,7 @@ export function buildSearchURLQuery(
         }
     }
 
-    if (versionContext !== VERSION_CONTEXT_DEFAULT_VALUE) {
+    if (versionContext && versionContext !== VERSION_CONTEXT_DEFAULT_VALUE) {
         searchParams.set('c', versionContext)
     }
 
@@ -691,3 +691,18 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
  */
 export const isExternalLink = (url: string): boolean =>
     !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+
+export const appendVersionContextQueryParam = (url: string, versionContext: string): string => {
+    if (!versionContext) {
+        return url
+    }
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('c', versionContext)
+    return newUrl.toString()
+}
+
+export const appendSubtreeQueryParam = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('subtree', 'true')
+    return newUrl.toString()
+}

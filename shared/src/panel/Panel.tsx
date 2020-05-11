@@ -29,6 +29,7 @@ interface Props
     history: H.History
     repoName?: string
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    versionContext: string
 }
 
 interface State {

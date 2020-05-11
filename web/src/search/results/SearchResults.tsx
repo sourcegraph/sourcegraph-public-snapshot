@@ -56,6 +56,7 @@ export interface SearchResultsProps
     isSourcegraphDotCom: boolean
     deployType: DeployType
     versionContext: string
+    setVersionContext: (versionContext: string) => void
 }
 
 interface SearchResultsState {
@@ -127,6 +128,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             query: string
                             patternType: GQL.SearchPatternType
                             caseSensitive: boolean
+                            versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {
@@ -145,7 +147,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive }) =>
+                    switchMap(({ query, patternType, caseSensitive, versionContext }) =>
                         concat(
                             // Reset view state
                             [
@@ -161,13 +163,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    this.props.versionContext,
+                                    versionContext || '',
                                     this.props
                                 )
                                 .pipe(
                                     // Log telemetry
                                     tap(
                                         results => {
+                                            console.log('versionContext', versionContext)
                                             this.props.telemetryService.log('SearchResultsFetched', {
                                                 code_search: {
                                                     // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -186,6 +189,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             }
                                             if (caseSensitive !== this.props.caseSensitive) {
                                                 this.props.setCaseSensitivity(caseSensitive)
+                                            }
+                                            if (versionContext !== this.props.versionContext) {
+                                                this.props.setVersionContext(versionContext)
                                             }
                                         },
                                         error => {
