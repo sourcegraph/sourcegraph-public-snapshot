@@ -30,6 +30,7 @@ import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
+import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -246,11 +247,12 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}:${String(
                                 this.props.isLightTheme
                             )}`}
-                            defaultFirst={25}
+                            defaultFirst={15}
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
                             history={this.props.history}
                             location={this.props.location}
+                            cursorPaging={true}
                         />
                     </>
                 )}
@@ -267,7 +269,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<GQL.IFileDiffConnection> =>
+    private queryDiffs = (args: FilteredConnectionQueryArgs): Observable<GQL.IFileDiffConnection> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

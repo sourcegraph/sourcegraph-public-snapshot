@@ -23,6 +23,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     base: string | null
     head: string | null
     first?: number
+    after?: string
     isLightTheme: boolean
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
@@ -32,12 +33,13 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $base: String
                 $head: String
                 $first: Int
+                $after: String
                 $isLightTheme: Boolean!
             ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first) {
+                            fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
                                 }
@@ -109,11 +111,12 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         lineNumbers: true,
                     }}
                     updateOnChange={String(this.props.isLightTheme)}
-                    defaultFirst={25}
+                    defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    cursorPaging={true}
                 />
             </div>
         )
