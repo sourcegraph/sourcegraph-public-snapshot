@@ -479,43 +479,43 @@ func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 	}
 
 	var (
-		next                = pre.FirstChild
-		line     int32      = 1
-		codeCell *html.Node = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		next                   = pre.FirstChild
+		line        int32      = 1
+		lineElement *html.Node = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
 	)
 
-	newRow := func() error {
+	newLine := func() error {
 		var buf bytes.Buffer
-		err = html.Render(&buf, codeCell)
+		err = html.Render(&buf, lineElement)
 		if err != nil {
 			return err
 		}
 		lines[line] = buf.String()
 		line++
-		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		lineElement = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
 		return nil
 	}
 	for next != nil {
 		nextSibling := next.NextSibling
 		switch {
 		case next.Type == html.ElementNode && next.DataAtom == atom.Span:
-			// Found a span, so add it to our current code cell td.
+			// Found a span, so add it to our current line.
 			next.Parent = nil
 			next.PrevSibling = nil
 			next.NextSibling = nil
-			codeCell.AppendChild(next)
+			lineElement.AppendChild(next)
 
 			// Scan the children for text nodes containing new lines so that we
-			// can create new table rows.
+			// can create new lines.
 			if next.FirstChild != nil {
 				nextChild := next.FirstChild
 				for nextChild != nil {
 					switch {
 					case nextChild.Type == html.TextNode:
-						// Text node, create a new table row for each newline.
+						// Text node, create a new line for each newline.
 						newlines := strings.Count(nextChild.Data, "\n")
 						for i := 0; i < newlines; i++ {
-							err = newRow()
+							err = newLine()
 							if err != nil {
 								return nil, err
 							}
@@ -527,10 +527,10 @@ func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 				}
 			}
 		case next.Type == html.TextNode:
-			// Text node, create a new table row for each newline.
+			// Text node, create a new line for each newline.
 			newlines := strings.Count(next.Data, "\n")
 			for i := 0; i < newlines; i++ {
-				err = newRow()
+				err = newLine()
 				if err != nil {
 					return nil, err
 				}
@@ -540,7 +540,7 @@ func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 		}
 		// If the last element in the tree was no text node, need to create one more line from the existing content.
 		if nextSibling == nil && next.Type != html.TextNode {
-			err = newRow()
+			err = newLine()
 			if err != nil {
 				return nil, err
 			}
