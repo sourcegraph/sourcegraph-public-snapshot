@@ -61,7 +61,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                         <strong>
                             <Link
                                 to={node.repository.url}
-                                className={classNames(node.__typename === 'Patch' && 'text-muted')}
+                                className="text-muted"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -120,12 +120,13 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                             lineNumbers: true,
                         }}
                         updateOnChange={node.repository.id}
-                        defaultFirst={25}
+                        defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         history={history}
                         location={location}
                         useURLQuery={false}
+                        cursorPaging={true}
                     />
                 </Collapsible>
             ) : (

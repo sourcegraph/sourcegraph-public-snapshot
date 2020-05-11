@@ -177,12 +177,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             lineNumbers: true,
                         }}
                         updateOnChange={node.repository.id}
-                        defaultFirst={25}
+                        defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         history={history}
                         location={location}
                         useURLQuery={false}
+                        cursorPaging={true}
                     />
                 </Collapsible>
             ) : (

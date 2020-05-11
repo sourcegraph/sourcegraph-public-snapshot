@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -143,27 +144,42 @@ func (r *RepositoryComparisonResolver) Commits(
 }
 
 func (r *RepositoryComparisonResolver) FileDiffs(
-	args *graphqlutil.ConnectionArgs,
+	args *FileDiffsConnectionArgs,
 ) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
 		cmp:   r,
 		first: args.First,
+		after: args.After,
 	}
 }
 
 type fileDiffConnectionResolver struct {
 	cmp   *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 	first *int32
+	after *string
 
 	// cache result because it is used by multiple fields
 	once        sync.Once
 	fileDiffs   []*diff.FileDiff
+	afterIdx    int32
 	hasNextPage bool
 	err         error
 }
 
-func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
-	do := func() ([]*diff.FileDiff, error) {
+func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, int32, error) {
+	do := func() ([]*diff.FileDiff, int32, error) {
+		var afterIdx int32
+		if r.after != nil {
+			parsedIdx, err := strconv.ParseInt(*r.after, 0, 32)
+			if err != nil {
+				return nil, 0, err
+			}
+			if parsedIdx < 0 {
+				parsedIdx = 0
+			}
+			afterIdx = int32(parsedIdx)
+		}
+
 		var rangeSpec string
 		hOid := r.cmp.head.OID()
 		if r.cmp.base == nil {
@@ -176,11 +192,11 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
 			// extra careful to avoid letting user input add additional `git diff` command-line
 			// flags or refer to a file.
-			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
+			return nil, 0, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
 			"diff",
@@ -193,7 +209,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			"--",
 		})
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		defer rdr.Close()
 
@@ -208,35 +224,37 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 				break
 			}
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			fileDiffs = append(fileDiffs, fileDiff)
-			if r.first != nil && len(fileDiffs) == int(*r.first) {
+			if r.first != nil && len(fileDiffs) == int(*r.first+afterIdx) {
 				// Check for hasNextPage.
 				_, err := dr.ReadFile()
 				if err != nil && err != io.EOF {
-					return nil, err
+					return nil, 0, err
 				}
 				r.hasNextPage = err != io.EOF
 				break
 			}
 		}
-		return fileDiffs, nil
+		return fileDiffs, afterIdx, nil
 	}
 
-	r.once.Do(func() { r.fileDiffs, r.err = do() })
-	return r.fileDiffs, r.err
+	r.once.Do(func() { r.fileDiffs, r.afterIdx, r.err = do() })
+	return r.fileDiffs, r.afterIdx, r.err
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffResolver, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, afterIdx, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	if r.first != nil && len(fileDiffs) > int(*r.first) {
-		// Don't return +1 results, which is used to determine if next page exists.
-		fileDiffs = fileDiffs[:*r.first]
+	if r.first != nil && int(*r.first+afterIdx) <= len(fileDiffs) {
+		fileDiffs = fileDiffs[afterIdx:(*r.first + afterIdx)]
+	} else if int(afterIdx) <= len(fileDiffs) {
+		fileDiffs = fileDiffs[afterIdx:]
+	} else {
+		fileDiffs = []*diff.FileDiff{}
 	}
 
 	resolvers := make([]*fileDiffResolver, len(fileDiffs))
@@ -250,7 +268,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffReso
 }
 
 func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -262,14 +280,22 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 }
 
 func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if _, err := r.compute(ctx); err != nil {
+	_, afterIdx, err := r.compute(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.hasNextPage), nil
+	if !r.hasNextPage {
+		return graphqlutil.HasNextPage(r.hasNextPage), nil
+	}
+	next := int32(afterIdx)
+	if r.first != nil {
+		next += *r.first
+	}
+	return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +309,7 @@ func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, e
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return "", err
 	}

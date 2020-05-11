@@ -1914,7 +1914,11 @@ type PreviewRepositoryComparison {
     baseRepository: Repository!
 
     # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
+    fileDiffs(
+        first: Int
+        # Return file diffs after the given file diff.
+        after: String
+    ): PreviewFileDiffConnection!
 }
 
 # A list of file diffs that might be applied.
@@ -1975,6 +1979,8 @@ type RepositoryComparison {
     fileDiffs(
         # Return the first n file diffs from the list.
         first: Int
+        # Return file diffs after the given file diff.
+        after: String
     ): FileDiffConnection!
 }
 
