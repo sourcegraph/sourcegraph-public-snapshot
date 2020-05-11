@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -778,6 +779,10 @@ index 6f8b5d9..17400bc 100644
 var wantFileDiffs = apitest.FileDiffs{
 	RawDiff:  testDiff,
 	DiffStat: apitest.DiffStat{Changed: 2},
+	PageInfo: struct {
+		HasNextPage bool
+		EndCursor   string
+	}{},
 	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",
@@ -1026,62 +1031,94 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var response struct{ Node apitest.PatchSet }
+	queryPatches := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
+		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
+		query {
+			node(id: %q) {
+				... on PatchSet {
+					id
+					diffStat {
+						added
+						deleted
+						changed
+					}
+					patches(first: %d) {
+						nodes {
+							repository {
+								name
+							}
+							diff {
+								fileDiffs(first: %d, after: %s) {
+									rawDiff
+									diffStat {
+										added
+										deleted
+										changed
+									}
+									pageInfo {
+										endCursor
+										hasNextPage
+									}
+									nodes {
+										oldPath
+										newPath
+										hunks {
+											body
+											section
+											newRange { startLine, lines }
+											oldRange { startLine, lines }
+											oldNoNewlineAt
+										}
+										stat {
+											added
+											deleted
+											changed
+										}
+										oldFile {
+											name
+											externalURLs {
+												serviceType
+												url
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		`, marshalPatchSetID(patchSet.ID), len(patches), first, after))
+	}
 
-	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
-      query {
-        node(id: %q) {
-          ... on PatchSet {
-            id
-            diffStat {
-              added
-              deleted
-              changed
-            }
-            patches(first: %d) {
-              nodes {
-                repository {
-                  name
-                }
-                diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
-                        added
-                        deleted
-                        changed
-                      }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-	`, marshalPatchSetID(patchSet.ID), len(patches)))
+	for page := 0; page < 3; page++ {
+		var response struct{ Node apitest.PatchSet }
+		queryPatches(1, "\""+strconv.Itoa(page)+"\"", &response)
+
+		expectedLength := 1
+		if page == 2 {
+			expectedLength = 0
+		}
+		if have, want := len(response.Node.Patches.Nodes[0].Diff.FileDiffs.Nodes), expectedLength; have != want {
+			t.Fatalf("have %d patches, want %d", have, want)
+		}
+
+		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.HasNextPage, page == 0; have != want {
+			t.Fatalf("have %t hasNextPage, want %t", have, want)
+		}
+
+		expectedCursor := "1"
+		if page != 0 {
+			expectedCursor = ""
+		}
+		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.EndCursor, expectedCursor; have != want {
+			t.Fatalf("have %q endCursor, want %q", have, want)
+		}
+	}
+
+	var response struct{ Node apitest.PatchSet }
+	queryPatches(10000, "null", &response)
 
 	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
