@@ -24,7 +24,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeUser,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -40,7 +40,7 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeRepo,
 			ID:       1,
 		}, acquired: false, index: 0},
