@@ -65,6 +65,7 @@ popd >/dev/null || exit 1
 INSTALL_GO_PKGS=(
   "github.com/mattn/goreman"
   "github.com/google/zoekt/cmd/zoekt-archive-index"
+  "github.com/google/zoekt/cmd/zoekt-git-index"
   "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
   "github.com/google/zoekt/cmd/zoekt-webserver"
 )
