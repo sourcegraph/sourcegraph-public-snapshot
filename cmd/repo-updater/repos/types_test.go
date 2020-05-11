@@ -1,6 +1,8 @@
 package repos
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -470,11 +472,55 @@ func formatJSON(t testing.TB, s string) string {
 }
 
 func TestRateLimiterRegistry(t *testing.T) {
-	r := &RateLimiterRegistry{
-		rateLimiters: make(map[int64]*rate.Limiter),
+	now := time.Now()
+	ctx := context.Background()
+
+	baseURL := "http://gitlab.com/"
+	makeConfig := func(u string, perHour int) string {
+		return fmt.Sprintf(
+			`
+{
+  "url": "%s",
+  "rateLimit": {
+    "enabled": true,
+    "requestsPerHour": %d,
+  }
+}
+`, u, perHour)
 	}
 
-	l := r.GetRateLimiter(1)
+	// Two services for the same code host
+	mockLister := &MockExternalServicesLister{
+		listExternalServices: func(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+			return []*ExternalService{
+				{
+					ID:          1,
+					Kind:        "GitLab",
+					DisplayName: "GitLab",
+					Config:      makeConfig(baseURL, 3600),
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					DeletedAt:   time.Time{},
+				},
+				{
+					ID:          2,
+					Kind:        "GitLab",
+					DisplayName: "GitLab",
+					Config:      makeConfig(baseURL, 7200),
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					DeletedAt:   time.Time{},
+				},
+			}, nil
+		},
+	}
+
+	r := &RateLimiterRegistry{
+		serviceLister: mockLister,
+		rateLimiters:  make(map[string]*rate.Limiter),
+	}
+
+	l := r.GetRateLimiter(baseURL)
 	if l == nil {
 		t.Fatalf("Expected a limiter")
 	}
@@ -483,47 +529,13 @@ func TestRateLimiterRegistry(t *testing.T) {
 		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
 	}
 
-	now := time.Now()
-	s := api.ExternalService{
-		ID:          1,
-		Kind:        "GitLab",
-		DisplayName: "GitLab",
-		Config:      "",
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		DeletedAt:   nil,
-	}
-	err := r.HandleExternalServiceSync(s)
+	err := r.SyncRateLimiters(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// We should have default limit
-	l = r.GetRateLimiter(1)
-	if l == nil {
-		t.Fatalf("Expected a limiter")
-	}
-	expectedLimit = rate.Limit(10)
-	if l.Limit() != expectedLimit {
-		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
-	}
-
-	// Add config
-	s.Config = `
-{
-  "RateLimit": {
-    "Enabled": true,
-    "RequestsPerHour": 3600,
-  }
-}
-`
-	err = r.HandleExternalServiceSync(s)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// We should have new limit
-	l = r.GetRateLimiter(1)
+	l = r.GetRateLimiter(baseURL)
 	if l == nil {
 		t.Fatalf("Expected a limiter")
 	}
@@ -531,4 +543,27 @@ func TestRateLimiterRegistry(t *testing.T) {
 	if l.Limit() != expectedLimit {
 		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
 	}
+
+	err = r.SyncRateLimiters(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should have new limit
+	l = r.GetRateLimiter(baseURL)
+	if l == nil {
+		t.Fatalf("Expected a limiter")
+	}
+	expectedLimit = rate.Limit(1)
+	if l.Limit() != expectedLimit {
+		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
+	}
+}
+
+type MockExternalServicesLister struct {
+	listExternalServices func(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+}
+
+func (m MockExternalServicesLister) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+	return m.listExternalServices(ctx, args)
 }

@@ -22,14 +22,21 @@ type ObservedDatabase struct {
 
 var _ Database = &ObservedDatabase{}
 
+// singletonMetrics ensures that the operation metrics required by ObservedDatabase are
+// constructed only once as there may be many databases instantiated by a single replica
+// of precise-code-intel-bundle-manager.
+var singletonMetrics = &metrics.SingletonOperationMetrics{}
+
 // NewObservedDatabase wraps the given Database with error logging, Prometheus metrics, and tracing.
 func NewObserved(database Database, observationContext *observation.Context) Database {
-	metrics := metrics.NewOperationMetrics(
-		"precise_code_intel_bundle_manager",
-		"database",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of bundle results returned"),
-	)
+	metrics := singletonMetrics.Get(func() *metrics.OperationMetrics {
+		return metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"bundle_database",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of results returned"),
+		)
+	})
 
 	return &ObservedDatabase{
 		database: database,
@@ -80,27 +87,20 @@ func (db *ObservedDatabase) Close() error {
 func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, err error) {
 	ctx, endObservation := db.existsOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.database.Exists(ctx, path)
 }
 
 // Definitions calls into the inner Database and registers the observed results.
 func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []Location, err error) {
 	ctx, endObservation := db.definitionsOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(definitions)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(definitions)), observation.Args{}) }()
 	return db.database.Definitions(ctx, path, line, character)
 }
 
 // References calls into the inner Database and registers the observed results.
 func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []Location, err error) {
 	ctx, endObservation := db.referencesOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(references)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(references)), observation.Args{}) }()
 	return db.database.References(ctx, path, line, character)
 }
 
@@ -108,7 +108,6 @@ func (db *ObservedDatabase) References(ctx context.Context, path string, line, c
 func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ Range, _ bool, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.database.Hover(ctx, path, line, character)
 }
 
@@ -130,10 +129,7 @@ func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string,
 // MonikerResults calls into the inner Database and registers the observed results.
 func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
 	ctx, endObservation := db.monikerResultsOperation.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(float64(len(locations)), observation.Args{})
-	}()
-
+	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
 	return db.database.MonikerResults(ctx, tableName, scheme, identifier, skip, take)
 }
 
@@ -141,6 +137,5 @@ func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, schem
 func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (_ types.PackageInformationData, _ bool, err error) {
 	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
 	return db.database.PackageInformation(ctx, path, packageInformationID)
 }

@@ -8,16 +8,6 @@ FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
-
-RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
-RUN npm install -g yarn@1.17.3
-
-COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
-RUN yarn --cwd /precise-code-intel
-COPY precise-code-intel/src /precise-code-intel/src
-RUN yarn --cwd /precise-code-intel run build
-
 # TODO: Make this image use our sourcegraph/alpine:3.10 base image
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
@@ -57,7 +47,6 @@ COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e41
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:ff37f90@sha256:aa93514b7bc3aaf7a4e9c92e5ff52ee5052db6fb101255a69f054e5b8cdb46ff /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /bin/prometheus /usr/local/bin

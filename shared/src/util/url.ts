@@ -676,3 +676,12 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
  */
 export const isExternalLink = (url: string): boolean =>
     !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+
+/**
+ * Appends the query parameter subtree=true to URLs.
+ */
+export const appendSubtreeQueryParam = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('subtree', 'true')
+    return newUrl.pathname + newUrl.search + newUrl.hash
+}

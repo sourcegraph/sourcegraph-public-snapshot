@@ -26,7 +26,6 @@ func scanDump(scanner scanner) (dump Dump, err error) {
 		&dump.FailureStacktrace,
 		&dump.StartedAt,
 		&dump.FinishedAt,
-		&dump.TracingContext,
 		&dump.RepositoryID,
 		&dump.Indexer,
 	)
@@ -79,7 +78,6 @@ func scanUpload(scanner scanner) (upload Upload, err error) {
 		&upload.FailureStacktrace,
 		&upload.StartedAt,
 		&upload.FinishedAt,
-		&upload.TracingContext,
 		&upload.RepositoryID,
 		&upload.Indexer,
 		&upload.NumParts,

@@ -71,10 +71,6 @@ export class LsifUpload {
     @Column('text', { name: 'failure_stacktrace', nullable: true })
     public failureStacktrace!: string | null
 
-    /** The opentracing headers from the upload request. */
-    @Column('text', { name: 'tracing_context' })
-    public tracingContext!: string
-
     /** Whether or not this commit is visible at the tip of the default branch. */
     @Column('boolean', { name: 'visible_at_tip' })
     public visibleAtTip!: boolean

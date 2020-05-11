@@ -6,6 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -13,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -29,16 +34,25 @@ func main() {
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 	)
 
-	db := mustInitializeDatabase()
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 
-	workerImpl := worker.New(worker.WorkerOpts{
-		DB:                  db,
-		BundleManagerClient: bundles.New(bundleManagerURL),
-		GitserverClient:     gitserver.DefaultClient,
-		PollInterval:        pollInterval,
-	})
+	db := db.NewObserved(mustInitializeDatabase(), observationContext)
+	MustRegisterQueueMonitor(observationContext.Registerer, db)
+	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
 
-	go func() { _ = workerImpl.Start() }()
+	worker := worker.NewWorker(
+		db,
+		bundles.New(bundleManagerURL),
+		gitserver.DefaultClient,
+		pollInterval,
+		workerMetrics,
+	)
+	go worker.Start()
+
 	go debugserver.Start()
 	waitForSignal()
 }
@@ -47,7 +61,7 @@ func mustInitializeDatabase() db.DB {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 

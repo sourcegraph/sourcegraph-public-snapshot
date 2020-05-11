@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
-func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
+func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	bundleDir := testRoot(t)
 	sizes := map[int]int{
 		1:  20,
@@ -38,12 +39,12 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(),
+		BundleDir: bundleDir,
+		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.cleanOldDumps(pruneFn, 100); err != nil {
-		t.Fatalf("unexpected error cleaning old dumps: %s", err)
+	if err := j.evictBundles(pruneFn, 100); err != nil {
+		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
 	names, err := getFilenames(filepath.Join(bundleDir, "dbs"))
@@ -57,7 +58,7 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 }
 
-func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
+func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	bundleDir := testRoot(t)
 	sizes := map[int]int{
 		1:  10,
@@ -91,12 +92,12 @@ func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
 	}
 
 	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(),
+		BundleDir: bundleDir,
+		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.cleanOldDumps(pruneFn, 100); err != nil {
-		t.Fatalf("unexpected error cleaning old dumps: %s", err)
+	if err := j.evictBundles(pruneFn, 100); err != nil {
+		t.Fatalf("unexpected error evicting bundles: %s", err)
 	}
 
 	names, err := getFilenames(filepath.Join(bundleDir, "dbs"))

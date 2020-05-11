@@ -181,8 +181,9 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
 		AuthPublic:                 c.AuthPublic,
+		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
+		PermissionsBackgroundSync:  c.PermissionsBackgroundSync,
 		UpdateChannel:              updateChannel,
 	}
 }

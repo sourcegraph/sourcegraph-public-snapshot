@@ -13,6 +13,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk update && apk add --no-cache \
     tini
 
+USER sourcegraph
 COPY ./precise-code-intel-api-server /usr/local/bin/precise-code-intel-api-server
 
 EXPOSE 3186

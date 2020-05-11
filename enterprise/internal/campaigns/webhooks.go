@@ -94,11 +94,15 @@ func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
 	return extsvc.NormalizeBaseURL(u).String(), nil
 }
 
+type keyer interface {
+	Key() string
+}
+
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
 	externalServiceID string,
 	pr PR,
-	ev interface{ Key() string },
+	ev keyer,
 ) (err error) {
 	var tx *Store
 	if tx, err = h.Store.Transact(ctx); err != nil {
@@ -295,7 +299,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 	return e, extSvc, nil
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours interface{ Key() string }) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -332,7 +336,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 				ours = h.renamedTitleEvent(e)
 			}
 		case "closed":
-			ours = h.closedEvent(e)
+			ours = h.closedOrMergeEvent(e)
 		case "reopened":
 			ours = h.reopenedEvent(e)
 		case "labeled", "unlabeled":
@@ -641,27 +645,42 @@ func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedT
 	return event
 }
 
-func (*GitHubWebhook) closedEvent(e *gh.PullRequestEvent) *github.ClosedEvent {
-	event := &github.ClosedEvent{}
+// closed events from github have a 'merged flag which identifies them as
+// merge events instead.
+func (*GitHubWebhook) closedOrMergeEvent(e *gh.PullRequestEvent) keyer {
+	closeEvent := &github.ClosedEvent{}
 
 	if s := e.GetSender(); s != nil {
-		event.Actor.AvatarURL = s.GetAvatarURL()
-		event.Actor.Login = s.GetLogin()
-		event.Actor.URL = s.GetURL()
+		closeEvent.Actor.AvatarURL = s.GetAvatarURL()
+		closeEvent.Actor.Login = s.GetLogin()
+		closeEvent.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		closeEvent.CreatedAt = pr.GetUpdatedAt()
 
 		// This is different from the URL returned by GraphQL because the precise
 		// event URL isn't available in this webhook payload. This means if we expose
 		// this URL in the UI, and users click it, they'll just go to the PR page, rather
 		// than the precise location of the "close" event, until the background syncing
 		// runs and updates this URL to the exact one.
-		event.URL = pr.GetURL()
+		closeEvent.URL = pr.GetURL()
+
+		// We actually have a merged event
+		if pr.GetMerged() {
+			mergedEvent := &github.MergedEvent{
+				Actor:     closeEvent.Actor,
+				URL:       closeEvent.URL,
+				CreatedAt: closeEvent.CreatedAt,
+			}
+			if base := pr.GetBase(); base != nil {
+				mergedEvent.MergeRefName = base.GetRef()
+			}
+			return mergedEvent
+		}
 	}
 
-	return event
+	return closeEvent
 }
 
 func (*GitHubWebhook) reopenedEvent(e *gh.PullRequestEvent) *github.ReopenedEvent {
@@ -947,7 +966,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 	return e, extSvc, nil
 }
 
-func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours interface{ Key() string }) {
+func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours keyer) {
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
