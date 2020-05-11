@@ -67,7 +67,7 @@ func NewObserved(database Database, observationContext *observation.Context) Dat
 		}),
 		monikerResultsOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.MonikerResults",
-			MetricLabels: []string{"monike_results"},
+			MetricLabels: []string{"moniker_results"},
 			Metrics:      metrics,
 		}),
 		packageInformationOperation: observationContext.Operation(observation.Op{
