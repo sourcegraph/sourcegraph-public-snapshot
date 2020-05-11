@@ -9,18 +9,14 @@ type ResetterMetrics struct {
 
 func NewResetterMetrics(r prometheus.Registerer) ResetterMetrics {
 	count := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "upload_queue",
-		Name:      "resets_total",
-		Help:      "Total number of uploads put back into queued state",
+		Name: "src_upload_queue_resets_total",
+		Help: "Total number of uploads put back into queued state",
 	})
 	r.MustRegister(count)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "upload_queue",
-		Name:      "reset_errors_total",
-		Help:      "Total number of errors when running the upload resetter",
+		Name: "src_upload_queue_reset_errors_total",
+		Help: "Total number of errors when running the upload resetter",
 	})
 	r.MustRegister(errors)
 
