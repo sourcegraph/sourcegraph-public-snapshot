@@ -4,8 +4,16 @@ import (
 	"container/heap"
 	"sync"
 	"time"
+)
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+// Priority defines how urgent the permissions syncing request is.
+// Generally, if the request is driven from a user action (e.g. sign up, log in)
+// then it should be PriorityHigh. All other cases should be PriorityLow.
+type Priority int
+
+const (
+	PriorityLow Priority = iota
+	PriorityHigh
 )
 
 // requestType is the type of the permissions syncing request. It defines the
@@ -28,7 +36,7 @@ func (t1 requestType) higherPriorityThan(t2 requestType) bool {
 
 // requestMeta contains metadata of a permissions syncing request.
 type requestMeta struct {
-	Priority   repos.Priority
+	Priority   Priority
 	Type       requestType
 	ID         int32
 	NextSyncAt time.Time
