@@ -120,6 +120,20 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
+// UserUsageArchive contains data that is exported in the user usage admin panel button "Download user usage archive".
+type UserUsageArchive struct {
+	UsersUsageCounts []struct {
+		Date time.Time
+		UserID int32
+		SearchCount int32
+		CodeIntelCount int32
+	}
+	UsersCreatedDates []struct {
+		UserID int32
+		Date time.Time
+	}
+}
+
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
