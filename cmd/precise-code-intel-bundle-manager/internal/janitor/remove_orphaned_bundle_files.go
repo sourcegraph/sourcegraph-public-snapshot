@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
 
-// DeadDumpBatchSize is the maximum number of dump ids to request at once from
-// the precise-code-intel-api-server.
-const DeadDumpBatchSize = 100
+// OrphanedBundleBatchSize is the maximum number of bundle ids to request at
+// once from the precise-code-intel-api-server.
+const OrphanedBundleBatchSize = 100
 
 type StatesFn func(ctx context.Context, ids []int) (map[int]string, error)
 
@@ -29,10 +29,10 @@ func defaultStatesFn(ctx context.Context, ids []int) (map[int]string, error) {
 	return states, nil
 }
 
-// removeOrphanedDumps calls the precise-code-intel-api-server to get the current
-// state of the dumps known by this bundle manager. Any dump on disk that is
-// in an errored state or is unknown by the API is removed.
-func (j *Janitor) removeOrphanedDumps(statesFn StatesFn) error {
+// removeOrphanedBundleFiles calls the precise-code-intel-api-server to get the
+// current state of the bundle known by this bundle manager. Any bundle on disk
+// that is in an errored state or is unknown by the API is removed.
+func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (j *Janitor) removeOrphanedDumps(statesFn StatesFn) error {
 	}
 
 	allStates := map[int]string{}
-	for _, batch := range batchIntSlice(ids, DeadDumpBatchSize) {
+	for _, batch := range batchIntSlice(ids, OrphanedBundleBatchSize) {
 		states, err := statesFn(context.Background(), batch)
 		if err != nil {
 			return err
@@ -55,23 +55,21 @@ func (j *Janitor) removeOrphanedDumps(statesFn StatesFn) error {
 		}
 	}
 
-	count := 0
 	for id, path := range pathsByID {
 		if state, exists := allStates[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
 				return err
 			}
 
-			count++
-			log15.Debug("Removed dead dump", "id", id)
+			log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
+			j.Metrics.OprphanedBundleFilesRemoved.Add(1)
 		}
 	}
 
-	j.Metrics.OrphanedDumps.Add(float64(count))
 	return nil
 }
 
-// databasePathsByID returns map of dump ids to their path on disk.
+// databasePathsByID returns map of bundle ids to their path on disk.
 func (j *Janitor) databasePathsByID() (map[int]string, error) {
 	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.BundleDir))
 	if err != nil {
