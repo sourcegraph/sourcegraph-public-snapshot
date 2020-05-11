@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"html"
 	"io"
 	"strconv"
 	"strings"
@@ -416,19 +415,16 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 					DisableTimeout     bool
 					IsLightTheme       bool
 					HighlightLongLines bool
-					PlainResult        bool
 				}{
 					DisableTimeout:     args.DisableTimeout,
 					HighlightLongLines: args.HighlightLongLines,
 					IsLightTheme:       args.IsLightTheme,
-					PlainResult:        true,
 				})
 				if r.highlightErr != nil {
 					return
 				}
 				if highlightedBase.Aborted() {
 					r.highlightAborted = true
-					return
 				}
 				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
 				if r.highlightErr != nil {
@@ -448,19 +444,16 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 					DisableTimeout     bool
 					IsLightTheme       bool
 					HighlightLongLines bool
-					PlainResult        bool
 				}{
 					DisableTimeout:     args.DisableTimeout,
 					HighlightLongLines: args.HighlightLongLines,
 					IsLightTheme:       args.IsLightTheme,
-					PlainResult:        true,
 				})
 				if r.highlightErr != nil {
 					return
 				}
 				if highlightedHead.Aborted() {
 					r.highlightAborted = true
-					return
 				}
 				r.highlightedHead, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedHead.HTML())
 				if r.highlightErr != nil {
@@ -539,30 +532,16 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		richHunk := richHunk{}
 		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
 			richHunk.kind = "UNCHANGED"
-			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
-				if len(hunkLine) != 0 {
-					richHunk.html = html.EscapeString(hunkLine[1:])
-				}
-			} else {
-				richHunk.html = highlightedBase[baseLine]
-			}
+			richHunk.html = highlightedBase[baseLine]
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
 			richHunk.kind = "ADDED"
-			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
-				richHunk.html = html.EscapeString(hunkLine[1:])
-			} else {
-				richHunk.html = highlightedHead[headLine]
-			}
+			richHunk.html = highlightedHead[headLine]
 			headLine++
 		} else if hunkLine[0] == '-' {
 			richHunk.kind = "DELETED"
-			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
-				richHunk.html = html.EscapeString(hunkLine[1:])
-			} else {
-				richHunk.html = highlightedBase[baseLine]
-			}
+			richHunk.html = highlightedBase[baseLine]
 			baseLine++
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])

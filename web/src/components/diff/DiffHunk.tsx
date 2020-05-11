@@ -128,7 +128,7 @@ export const DiffHunk: React.FunctionComponent<
                         {/* Needed for decorations */}
                         {/* eslint-disable-next-line react/forbid-dom-props */}
                         <td className="diff-hunk__content" style={lineStyle}>
-                            <span dangerouslySetInnerHTML={{ __html: line.html }} />
+                            <div dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (

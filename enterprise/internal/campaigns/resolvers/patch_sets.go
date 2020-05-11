@@ -446,12 +446,10 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 					DisableTimeout     bool
 					IsLightTheme       bool
 					HighlightLongLines bool
-					PlainResult        bool
 				}{
 					DisableTimeout:     args.DisableTimeout,
 					HighlightLongLines: args.HighlightLongLines,
 					IsLightTheme:       args.IsLightTheme,
-					PlainResult:        true,
 				})
 				if err != nil {
 					r.highlightErr = err
@@ -459,7 +457,6 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				}
 				if highlightedBase.Aborted() {
 					r.highlightAborted = true
-					return
 				}
 				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
 				if r.highlightErr != nil {
@@ -492,7 +489,6 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				DisableTimeout:     args.DisableTimeout,
 				HighlightLongLines: args.HighlightLongLines,
 				IsLightTheme:       args.IsLightTheme,
-				PlainResult:        true,
 			})
 			if err != nil {
 				r.highlightErr = err
@@ -500,7 +496,6 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 			}
 			if aborted {
 				r.highlightAborted = true
-				return
 			}
 			r.highlightedHead, err = highlight.ParseLinesFromHighlight(string(highlightedHead))
 			if err != nil {

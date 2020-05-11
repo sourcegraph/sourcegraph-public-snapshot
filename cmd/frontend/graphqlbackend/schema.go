@@ -1916,7 +1916,7 @@ type PreviewRepositoryComparison {
     # The preview of the file diffs for each file in the diff.
     fileDiffs(
         first: Int
-        # Return file diffs after the given file diff.
+        # Return file diffs after the given cursor.
         after: String
     ): PreviewFileDiffConnection!
 }
@@ -1979,7 +1979,7 @@ type RepositoryComparison {
     fileDiffs(
         # Return the first n file diffs from the list.
         first: Int
-        # Return file diffs after the given file diff.
+        # Return file diffs after the given cursor.
         after: String
     ): FileDiffConnection!
 }

@@ -96,7 +96,6 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout     bool
 	IsLightTheme       bool
 	HighlightLongLines bool
-	PlainResult        bool
 }) (*highlightedFileResolver, error) {
 	// Timeout for reading file via Git.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -129,7 +128,6 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 			RepoName: string(r.commit.repo.repo.Name),
 			Revision: string(r.commit.oid),
 		},
-		PlainResult: args.PlainResult,
 	})
 	if err != nil {
 		return nil, err

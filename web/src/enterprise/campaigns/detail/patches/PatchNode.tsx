@@ -11,7 +11,6 @@ import { publishChangeset as _publishChangeset, queryPatchFileDiffs } from '../b
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import classNames from 'classnames'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observer } from 'rxjs'

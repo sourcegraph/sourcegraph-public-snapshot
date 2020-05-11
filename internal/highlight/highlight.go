@@ -72,8 +72,6 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
-
-	PlainResult bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -175,9 +173,6 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		tr.LogFields(otlog.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
-		if p.PlainResult {
-			return template.HTML(code), true, nil
-		}
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
@@ -207,17 +202,13 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			// user an error.
 			tr.LogFields(otlog.Bool(problem, true))
 			prometheusStatus = problem
-			if p.PlainResult {
-				return template.HTML(code), true, nil
-			}
+
 			table, err2 := generatePlainTable(code)
 			return table, false, err2
 		}
 		return "", false, err
 	}
-	if p.PlainResult {
-		return template.HTML(resp.Data), false, nil
-	}
+
 	// Note: resp.Data is properly HTML escaped by syntect_server
 	table, err := preSpansToTable(resp.Data)
 	if err != nil {
@@ -461,91 +452,33 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	return buf.String(), nil
 }
 
-// ParseLinesFromHighlight takes the highlighted html and returns the per-line content.
+// ParseLinesFromHighlight takes the highlighted html table and returns the per-line content.
 func ParseLinesFromHighlight(input string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(input))
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		lines = make([]string, 0)
-		body  = doc.FirstChild.LastChild // html->body
-		pre   = body.FirstChild
-	)
+	var lines = make([]string, 0)
 
-	if pre == nil || pre.Type != html.ElementNode || pre.DataAtom != atom.Pre {
-		return nil, fmt.Errorf("expected html->body->pre, found %+v", pre)
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return nil, fmt.Errorf("expected html->body->table, found %+v", table)
 	}
 
-	var (
-		next                   = pre.FirstChild
-		line        int32      = 0
-		lineElement *html.Node = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
-	)
-
-	newLine := func() error {
-		var buf bytes.Buffer
-		err = html.Render(&buf, lineElement)
+	// Iterate over each table row and extract content
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // tr > td > div
+		err = html.Render(&buf, div)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		lines = append(lines, buf.String())
-		line++
-		lineElement = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
-		return nil
+		buf.Reset()
+		tr = tr.NextSibling
 	}
-	for next != nil {
-		nextSibling := next.NextSibling
-		switch {
-		case next.Type == html.ElementNode && next.DataAtom == atom.Span:
-			// Found a span, so add it to our current line.
-			next.Parent = nil
-			next.PrevSibling = nil
-			next.NextSibling = nil
-			lineElement.AppendChild(next)
 
-			// Scan the children for text nodes containing new lines so that we
-			// can create new lines.
-			if next.FirstChild != nil {
-				nextChild := next.FirstChild
-				for nextChild != nil {
-					switch {
-					case nextChild.Type == html.TextNode:
-						// Text node, create a new line for each newline.
-						newlines := strings.Count(nextChild.Data, "\n")
-						for i := 0; i < newlines; i++ {
-							err = newLine()
-							if err != nil {
-								return nil, err
-							}
-						}
-					default:
-						return nil, fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
-					}
-					nextChild = nextChild.NextSibling
-				}
-			}
-		case next.Type == html.TextNode:
-			// Text node, create a new line for each newline.
-			newlines := strings.Count(next.Data, "\n")
-			for i := 0; i < newlines; i++ {
-				err = newLine()
-				if err != nil {
-					return nil, err
-				}
-			}
-		default:
-			return nil, fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
-		}
-		// If the last element in the tree was no text node, need to create one more line from the existing content.
-		if nextSibling == nil && next.Type != html.TextNode {
-			err = newLine()
-			if err != nil {
-				return nil, err
-			}
-		}
-		next = nextSibling
-	}
 	return lines, nil
 }
