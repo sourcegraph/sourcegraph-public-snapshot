@@ -48,6 +48,8 @@
 // 1528395672_empty.up.sql (159B)
 // 1528395673_remove_unused_campaign_jobs_index.down.sql (90B)
 // 1528395673_remove_unused_campaign_jobs_index.up.sql (70B)
+// 1528395674_add_creation_method_columns_to_changesets.down.sql (147B)
+// 1528395674_add_creation_method_columns_to_changesets.up.sql (445B)
 
 package migrations
 
@@ -1076,6 +1078,46 @@ func _1528395673_remove_unused_campaign_jobs_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395674_add_creation_method_columns_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2e\x4a\x4d\x2c\x49\x4d\x89\x4f\xaa\x8c\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\xb3\x26\xcd\x84\xc4\x94\x94\xd4\x94\xf8\x92\x7c\x24\xfd\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x3f\x41\x08\x78\x93\x00\x00\x00")
+
+func _1528395674_add_creation_method_columns_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395674_add_creation_method_columns_to_changesetsDownSql,
+		"1528395674_add_creation_method_columns_to_changesets.down.sql",
+	)
+}
+
+func _1528395674_add_creation_method_columns_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395674_add_creation_method_columns_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395674_add_creation_method_columns_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc2, 0xd4, 0xae, 0xc4, 0x6, 0x7b, 0xa, 0xb, 0xfc, 0x7f, 0xe9, 0xd9, 0xf, 0x12, 0x1b, 0xdb, 0x48, 0x7a, 0x54, 0x9d, 0xcf, 0xcf, 0xce, 0x7e, 0xde, 0xd4, 0x88, 0x98, 0xba, 0x1c, 0xaf, 0xce}}
+	return a, nil
+}
+
+var __1528395674_add_creation_method_columns_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xd0\xb1\x4e\xc3\x30\x10\xc6\xf1\xdd\x4f\xf1\x8d\xb0\x20\x31\x47\x1d\x9c\xe4\x80\x48\x17\x1b\x35\x17\xc1\x66\xb9\xb6\x5b\x82\x68\x83\x62\x33\xf0\xf6\x48\x30\x54\x95\x2a\xd1\xa1\xeb\xe9\xf4\xbb\xbf\xae\xa6\xc7\xce\x54\x4a\x69\x16\x5a\x43\x74\xcd\x84\xf0\xe6\x0f\xbb\x94\x53\xc9\xd0\x6d\x8b\xc6\xf2\xd8\x1b\x84\x25\xf9\x92\xa2\xdb\x7c\xbb\xe0\xf7\x9f\x7e\xda\x1d\x50\x5b\xcb\xa4\x0d\x8c\x15\x98\x91\x19\x2d\x3d\xe8\x91\x05\x5b\xff\x91\x53\x75\x81\xea\x63\x4c\xd1\x95\xf9\x72\x53\x8d\xcf\xad\x96\x13\xcf\x67\x84\xac\x06\x92\x33\xdc\x0a\x65\xf9\x4a\xea\xe5\x89\xd6\xf4\x6b\xd2\x6b\x37\xc8\x80\x9b\x81\x98\x1a\xc1\x3d\xb6\xcb\xbc\x3f\x6a\xee\x7d\xde\x64\xfc\xad\x1f\x87\x53\xc4\x0a\x21\xdf\x4d\xf1\xf6\x9f\x82\x73\x6f\x3a\x69\xb8\xc2\xfd\xc6\xf6\x7d\x27\x95\xfa\x09\x00\x00\xff\xff\xb5\x2b\x43\x98\xbd\x01\x00\x00")
+
+func _1528395674_add_creation_method_columns_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395674_add_creation_method_columns_to_changesetsUpSql,
+		"1528395674_add_creation_method_columns_to_changesets.up.sql",
+	)
+}
+
+func _1528395674_add_creation_method_columns_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395674_add_creation_method_columns_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395674_add_creation_method_columns_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3b, 0xac, 0x6d, 0xa6, 0x75, 0x5b, 0x7b, 0x63, 0x7c, 0x82, 0xcc, 0x86, 0xff, 0xe2, 0xbc, 0x32, 0x72, 0xf4, 0xd2, 0x8b, 0x52, 0xd0, 0xd5, 0x4a, 0x9b, 0xe, 0x2c, 0x8f, 0x5d, 0xaa, 0xf4, 0xfe}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1215,6 +1257,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395672_empty.up.sql":                                                 _1528395672_emptyUpSql,
 	"1528395673_remove_unused_campaign_jobs_index.down.sql":                   _1528395673_remove_unused_campaign_jobs_indexDownSql,
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     _1528395673_remove_unused_campaign_jobs_indexUpSql,
+	"1528395674_add_creation_method_columns_to_changesets.down.sql":           _1528395674_add_creation_method_columns_to_changesetsDownSql,
+	"1528395674_add_creation_method_columns_to_changesets.up.sql":             _1528395674_add_creation_method_columns_to_changesetsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1306,6 +1350,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395672_empty.up.sql":                                                 {_1528395672_emptyUpSql, map[string]*bintree{}},
 	"1528395673_remove_unused_campaign_jobs_index.down.sql":                   {_1528395673_remove_unused_campaign_jobs_indexDownSql, map[string]*bintree{}},
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     {_1528395673_remove_unused_campaign_jobs_indexUpSql, map[string]*bintree{}},
+	"1528395674_add_creation_method_columns_to_changesets.down.sql":           {_1528395674_add_creation_method_columns_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395674_add_creation_method_columns_to_changesets.up.sql":             {_1528395674_add_creation_method_columns_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
