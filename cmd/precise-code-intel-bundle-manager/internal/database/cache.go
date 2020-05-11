@@ -35,20 +35,21 @@ func (entry *databaseCacheEntry) close() {
 }
 
 // NewDatabaseCache creates a Database instance cache with the given maximum size.
-func NewDatabaseCache(size int64) (*DatabaseCache, error) {
+func NewDatabaseCache(size int64) (*DatabaseCache, *ristretto.Metrics, error) {
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: size * 10,
 		MaxCost:     size,
 		BufferItems: 64,
+		Metrics:     true,
 		OnEvict: func(_, _ uint64, value interface{}, _ int64) {
 			value.(*databaseCacheEntry).close()
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &DatabaseCache{cache: cache}, nil
+	return &DatabaseCache{cache: cache}, cache.Metrics, nil
 }
 
 // WithDatabase invokes the given handler function with a Database instance either
@@ -87,17 +88,18 @@ type DocumentDataCache struct {
 
 // NewDocumentDataCache creates a DocumentData instance cache with the given maximum size.
 // The size of the cache is determined by the number of field in each DocumentData value.
-func NewDocumentDataCache(size int64) (*DocumentDataCache, error) {
+func NewDocumentDataCache(size int64) (*DocumentDataCache, *ristretto.Metrics, error) {
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: size * 10,
 		MaxCost:     size,
 		BufferItems: 64,
+		Metrics:     true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &DocumentDataCache{cache: cache}, nil
+	return &DocumentDataCache{cache: cache}, cache.Metrics, nil
 }
 
 // GetOrCreate returns the document data cached at the given key or calls the given factory
@@ -123,17 +125,18 @@ type ResultChunkDataCache struct {
 
 // ResultChunkDataCache creates a ResultChunkData instance cache with the given maximum size.
 // The size of the cache is determined by the number of field in each ResultChunkData value.
-func NewResultChunkDataCache(size int64) (*ResultChunkDataCache, error) {
+func NewResultChunkDataCache(size int64) (*ResultChunkDataCache, *ristretto.Metrics, error) {
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: size * 10,
 		MaxCost:     size,
 		BufferItems: 64,
+		Metrics:     true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &ResultChunkDataCache{cache: cache}, nil
+	return &ResultChunkDataCache{cache: cache}, cache.Metrics, nil
 }
 
 // GetOrCreate returns the result chunk data cached at the given key or calls the given factory

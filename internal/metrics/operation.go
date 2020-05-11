@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -26,22 +27,21 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 	}
 }
 
-// MustRegister registers all metrics in OperationMetrics in the given
-// prometheus.Registerer. It panics in case of failure.
-func (m *OperationMetrics) MustRegister(r prometheus.Registerer) {
-	r.MustRegister(m.Duration)
-	r.MustRegister(m.Count)
-	r.MustRegister(m.Errors)
-}
-
 type operationMetricOptions struct {
+	subsystem    string
 	durationHelp string
 	countHelp    string
 	errorsHelp   string
+	labels       []string
 }
 
 // OperationMetricsOption alter the default behavior of NewOperationMetrics.
 type OperationMetricsOption func(o *operationMetricOptions)
+
+// WithSubsystem overrides the default subsystem for all metrics.
+func WithSubsystem(subsystem string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.subsystem = subsystem }
+}
 
 // WithDurationHelp overrides the default help text for duration metrics.
 func WithDurationHelp(text string) OperationMetricsOption {
@@ -58,37 +58,79 @@ func WithErrorsHelp(text string) OperationMetricsOption {
 	return func(o *operationMetricOptions) { o.errorsHelp = text }
 }
 
-// NewOperationMetrics creates an OperationMetrics value. The supplied operationName should
-// be underscore_cased as it is used in the metric name.
-func NewOperationMetrics(subsystem, metricPrefix, operationName string, fns ...OperationMetricsOption) *OperationMetrics {
+// WithLabels overrides the default labels for all metrics.
+func WithLabels(labels ...string) OperationMetricsOption {
+	return func(o *operationMetricOptions) { o.labels = labels }
+}
+
+// NewOperationMetrics creates an OperationMetrics value. The metrics will be
+// immediately registered to the given registerer. This method panics on registration
+// error. The supplied metricPrefix should be underscore_cased as it is used in the
+// metric name.
+func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
 	options := &operationMetricOptions{
-		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", operationName),
-		countHelp:    fmt.Sprintf("Total number of %s operations", operationName),
-		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", operationName),
+		subsystem:    "",
+		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", metricPrefix),
+		countHelp:    fmt.Sprintf("Total number of %s operations", metricPrefix),
+		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", metricPrefix),
+		labels:       nil,
 	}
 
 	for _, fn := range fns {
 		fn(options)
 	}
 
-	return &OperationMetrics{
-		Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	duration := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
 			Namespace: "src",
-			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_duration_seconds", metricPrefix, operationName),
+			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
+			Subsystem: options.subsystem,
 			Help:      options.durationHelp,
-		}, []string{}),
-		Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+		},
+		options.labels,
+	)
+	r.MustRegister(duration)
+
+	count := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
 			Namespace: "src",
-			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_total", metricPrefix, operationName),
+			Name:      fmt.Sprintf("%s_total", metricPrefix),
+			Subsystem: options.subsystem,
 			Help:      options.countHelp,
-		}, []string{}),
-		Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+		},
+		options.labels,
+	)
+	r.MustRegister(count)
+
+	errors := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
 			Namespace: "src",
-			Subsystem: subsystem,
-			Name:      fmt.Sprintf("%s_%s_errors_total", metricPrefix, operationName),
+			Name:      fmt.Sprintf("%s_errors_total", metricPrefix),
+			Subsystem: options.subsystem,
 			Help:      options.errorsHelp,
-		}, []string{}),
+		},
+		options.labels,
+	)
+	r.MustRegister(errors)
+
+	return &OperationMetrics{
+		Duration: duration,
+		Count:    count,
+		Errors:   errors,
 	}
+}
+
+type SingletonOperationMetrics struct {
+	sync.Once
+	metrics *OperationMetrics
+}
+
+// SingletonOperationMetrics returns an operation metrics instance. If no instance has been
+// created yet, one is constructed with the given create function. This method is safe to
+// access concurrently.
+func (m *SingletonOperationMetrics) Get(create func() *OperationMetrics) *OperationMetrics {
+	m.Do(func() {
+		m.metrics = create()
+	})
+	return m.metrics
 }

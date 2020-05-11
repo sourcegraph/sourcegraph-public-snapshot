@@ -26,7 +26,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	})
 
-	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -48,7 +48,7 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 	mockGitserverClient := gitservermocks.NewMockClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
-	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
 	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
 		t.Fatalf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
 	}
@@ -70,7 +70,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	}, 3)
 
-	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -105,7 +105,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
 	}, 15)
 
-	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
+	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
 	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)

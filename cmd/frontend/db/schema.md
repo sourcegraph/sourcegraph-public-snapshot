@@ -391,9 +391,10 @@ Foreign-key constraints:
  failure_stacktrace | text                     | 
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
- tracing_context    | text                     | not null
  repository_id      | integer                  | not null
  indexer            | text                     | not null
+ num_parts          | integer                  | not null
+ uploaded_parts     | integer[]                | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
@@ -547,7 +548,6 @@ Referenced by:
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (patch_set_id)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:

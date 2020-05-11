@@ -29,10 +29,6 @@ for i; do
     cmd/symbols/.ctags.d/*)
       generate_ctags_image=true
       ;;
-    cmd/precise-code-intel/*)
-      # noop (uses tsc-watch).
-      exit
-      ;;
     cmd/*)
       cmd=${i#cmd/}
       cmd=${cmd%%/*}

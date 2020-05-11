@@ -21,44 +21,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
-type WorkerOpts struct {
-	DB                  db.DB
-	BundleManagerClient bundles.BundleManagerClient
-	GitserverClient     gitserver.Client
-	PollInterval        time.Duration
-}
-
 type Worker struct {
-	db                  db.DB
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserver.Client
-	pollInterval        time.Duration
+	db           db.DB
+	processor    Processor
+	pollInterval time.Duration
+	metrics      WorkerMetrics
 }
 
-func New(opts WorkerOpts) *Worker {
+func NewWorker(
+	db db.DB,
+	bundleManagerClient bundles.BundleManagerClient,
+	gitserverClient gitserver.Client,
+	pollInterval time.Duration,
+	metrics WorkerMetrics,
+) *Worker {
+	processor := &processor{
+		bundleManagerClient: bundleManagerClient,
+		gitserverClient:     gitserverClient,
+	}
+
 	return &Worker{
-		db:                  opts.DB,
-		bundleManagerClient: opts.BundleManagerClient,
-		gitserverClient:     opts.GitserverClient,
-		pollInterval:        opts.PollInterval,
+		db:           db,
+		processor:    processor,
+		pollInterval: pollInterval,
+		metrics:      metrics,
 	}
 }
 
-func (w *Worker) Start() error {
+func (w *Worker) Start() {
 	for {
-		if ok, err := w.dequeueAndProcess(context.Background()); err != nil {
-			return err
-		} else if !ok {
+		if ok, _ := w.dequeueAndProcess(context.Background()); !ok {
 			time.Sleep(w.pollInterval)
 		}
 	}
 }
 
-// dequeueAndProcess pulls a job from the queue and processes it. If there was no job ready
-// to process, this method returns a false-valued flag. Only critical errors are returned.
-// Processing errors are only written to the upload record and are not expected to be handled
-// by the calling function.
+// dequeueAndProcess pulls a job from the queue and processes it. If there
+// were no jobs ready to process, this method returns a false-valued flag.
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
+	start := time.Now()
+
 	upload, jobHandle, ok, err := w.db.Dequeue(ctx)
 	if err != nil || !ok {
 		return false, errors.Wrap(err, "db.Dequeue")
@@ -67,25 +69,41 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		if closeErr := jobHandle.Done(err); closeErr != nil {
 			err = multierror.Append(err, closeErr)
 		}
+
+		// TODO(efritz) - set error if correlation failed
+		w.metrics.Processor.Observe(time.Since(start).Seconds(), 1, &err)
 	}()
 
-	if err = process(ctx, jobHandle.DB(), w.bundleManagerClient, w.gitserverClient, upload, jobHandle); err != nil {
-		log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
+	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
-		if markErr := jobHandle.MarkErrored(ctx, err.Error(), ""); markErr != nil {
-			return false, errors.Wrap(markErr, "jobHandle.MarkErrored")
+	if processErr := w.processor.Process(ctx, jobHandle.DB(), upload, jobHandle); processErr == nil {
+		log15.Info("Processed upload", "id", upload.ID)
+	} else {
+		// TODO(efritz) - distinguish between correlation and system errors
+		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)
+
+		if markErr := jobHandle.MarkErrored(ctx, processErr.Error(), ""); markErr != nil {
+			return true, errors.Wrap(markErr, "jobHandle.MarkErrored")
 		}
 	}
 
 	return true, nil
 }
 
+// Processor converts raw uploads into dumps.
+type Processor interface {
+	Process(ctx context.Context, db db.DB, upload db.Upload, jobHandle db.JobHandle) error
+}
+
+type processor struct {
+	bundleManagerClient bundles.BundleManagerClient
+	gitserverClient     gitserver.Client
+}
+
 // process converts a raw upload into a dump within the given job handle context.
-func process(
+func (p *processor) Process(
 	ctx context.Context,
 	db db.DB,
-	bundleManagerClient bundles.BundleManagerClient,
-	gitserverClient gitserver.Client,
 	upload db.Upload,
 	jobHandle db.JobHandle,
 ) (err error) {
@@ -101,7 +119,7 @@ func process(
 	}()
 
 	// Pull raw uploaded data from bundle manager
-	filename, err := bundleManagerClient.GetUpload(ctx, upload.ID, name)
+	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, name)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -122,7 +140,7 @@ func process(
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
-			directoryChildren, err := gitserverClient.DirectoryChildren(db, upload.RepositoryID, upload.Commit, dirnames)
+			directoryChildren, err := p.gitserverClient.DirectoryChildren(db, upload.RepositoryID, upload.Commit, dirnames)
 			if err != nil {
 				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 			}
@@ -174,7 +192,7 @@ func process(
 
 	// Discover commits around the current tip commit and the commit of this upload. Upsert these
 	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
-	if err := updateCommitsAndVisibility(ctx, db, gitserverClient, upload.RepositoryID, upload.Commit); err != nil {
+	if err := p.updateCommitsAndVisibility(ctx, db, upload.RepositoryID, upload.Commit); err != nil {
 		return errors.Wrap(err, "updateCommitsAndVisibility")
 	}
 
@@ -185,7 +203,7 @@ func process(
 	defer f.Close()
 
 	// Send converted database file to bundle manager
-	if err := bundleManagerClient.SendDB(ctx, upload.ID, f); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, f); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
@@ -194,12 +212,12 @@ func process(
 
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
-func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, repositoryID int, commit string) error {
-	tipCommit, err := gitserverClient.Head(db, repositoryID)
+func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, repositoryID int, commit string) error {
+	tipCommit, err := p.gitserverClient.Head(db, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
-	newCommits, err := gitserverClient.CommitsNear(db, repositoryID, tipCommit)
+	newCommits, err := p.gitserverClient.CommitsNear(db, repositoryID, tipCommit)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitsNear")
 	}
@@ -209,7 +227,7 @@ func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient g
 		// commit and the tip so that we can accurately determine what is visible from the tip. If we
 		// do not do this before the updateDumpsVisibleFromTip call below, no dumps will be reachable
 		// from the tip and all dumps will be invisible.
-		additionalCommits, err := gitserverClient.CommitsNear(db, repositoryID, commit)
+		additionalCommits, err := p.gitserverClient.CommitsNear(db, repositoryID, commit)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsNear")
 		}

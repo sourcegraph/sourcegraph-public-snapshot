@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -14,7 +13,7 @@ func TestJobHandleUnmarkedClose(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -35,7 +34,7 @@ func TestJobHandleRollbackNoSavepoint(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -51,12 +50,12 @@ func TestJobHandleRollbackNoSavepoint(t *testing.T) {
 	}
 }
 
-func TestJobHandleSavepointRollback(t *testing.T) {
+func TestJobHandleRollbackUndoesMark(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)
@@ -82,12 +81,12 @@ func TestJobHandleSavepointRollback(t *testing.T) {
 	}
 }
 
-func TestJobHandlePartialSavepointRollback(t *testing.T) {
+func TestJobHandleRollbackDoesNotUndoMark(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := rawTestDB()
 
 	ctx := context.Background()
 	tx, _, err := db.transact(ctx)

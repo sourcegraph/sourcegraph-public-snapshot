@@ -6,16 +6,30 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dgraph-io/ristretto"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 func main() {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -36,34 +50,75 @@ func main() {
 		log.Fatalf("failed to prepare directories: %s", err)
 	}
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	serverInst, err := server.New(server.ServerOpts{
-		Host:                     host,
-		Port:                     3187,
-		BundleDir:                bundleDir,
-		DatabaseCacheSize:        int64(databaseCacheSize),
-		DocumentDataCacheSize:    int64(documentDataCacheSize),
-		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	metrics.MustRegisterDiskMonitor(bundleDir)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	databaseCache, documentDataCache, resultChunkDataCache := prepCaches(
+		observationContext.Registerer,
+		databaseCacheSize,
+		documentDataCacheSize,
+		resultChunkDataCacheSize,
+	)
 
-	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
+	server := server.Server{
+		Host:                 host,
+		Port:                 3187,
+		BundleDir:            bundleDir,
+		DatabaseCache:        databaseCache,
+		DocumentDataCache:    documentDataCache,
+		ResultChunkDataCache: resultChunkDataCache,
+		ObservationContext:   observationContext,
+	}
+	go server.Start()
+
+	janitor := janitor.Janitor{
 		BundleDir:          bundleDir,
 		DesiredPercentFree: desiredPercentFree,
 		JanitorInterval:    janitorInterval,
 		MaxUploadAge:       maxUploadAge,
-	})
+		Metrics:            janitorMetrics,
+	}
+	go janitor.Run()
 
-	go serverInst.Start()
-	go janitorInst.Run()
 	go debugserver.Start()
 	waitForSignal()
+}
+
+func prepCaches(r prometheus.Registerer, databaseCacheSize, documentDataCacheSize, resultChunkDataCacheSize int) (
+	*database.DatabaseCache,
+	*database.DocumentDataCache,
+	*database.ResultChunkDataCache,
+) {
+	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
+	}
+
+	documentDataCache, documentDataCacheMetrics, err := database.NewDocumentDataCache(int64(documentDataCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize document cache"))
+	}
+
+	resultChunkDataCache, resultChunkDataCacheMetrics, err := database.NewResultChunkDataCache(int64(resultChunkDataCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
+	}
+
+	cacheMetrics := map[string]*ristretto.Metrics{
+		"precise-code-intel-database":          databaseCacheMetrics,
+		"precise-code-intel-document-data":     documentDataCacheMetrics,
+		"precise-code-intel-result-chunk-data": resultChunkDataCacheMetrics,
+	}
+	for cacheName, metrics := range cacheMetrics {
+		MustRegisterCacheMonitor(r, cacheName, metrics)
+	}
+
+	return databaseCache, documentDataCache, resultChunkDataCache
 }
 
 func waitForSignal() {

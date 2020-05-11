@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -40,6 +41,9 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 		if upload.Indexer == "" {
 			upload.Indexer = "lsif-go"
 		}
+		if upload.UploadedParts == nil {
+			upload.UploadedParts = []int{}
+		}
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_uploads (
@@ -53,10 +57,11 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				failure_stacktrace,
 				started_at,
 				finished_at,
-				tracing_context,
 				repository_id,
-				indexer
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				indexer,
+				num_parts,
+				uploaded_parts
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -68,9 +73,10 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.FailureStacktrace,
 			upload.StartedAt,
 			upload.FinishedAt,
-			upload.TracingContext,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -80,7 +86,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 }
 
 // insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t *testing.T, db *dbImpl, packageReferences []types.PackageReference) {
+func insertPackageReferences(t *testing.T, db DB, packageReferences []types.PackageReference) {
 	if err := db.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}

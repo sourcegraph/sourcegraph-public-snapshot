@@ -137,6 +137,105 @@ func TestClient_WithToken(t *testing.T) {
 	}
 }
 
+// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// for GITHUB_TOKEN, which can be found in 1Password.
+func TestClient_ListAffiliatedRepositories(t *testing.T) {
+	tests := []struct {
+		name       string
+		visibility Visibility
+		wantRepos  []*Repository
+	}{
+		{
+			name:       "list all repositories",
+			visibility: VisibilityAll,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+		{
+			name:       "list public repositories",
+			visibility: VisibilityPublic,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+		{
+			name:       "list private repositories",
+			visibility: VisibilityPrivate,
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client, save := newClient(t, "ListAffiliatedRepositories_"+test.name)
+			defer save()
+
+			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+				t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestClient_LoadPullRequests(t *testing.T) {
 	cli, save := newClient(t, "LoadPullRequests")
 	defer save()

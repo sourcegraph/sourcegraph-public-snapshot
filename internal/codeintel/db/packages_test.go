@@ -16,7 +16,7 @@ func TestGetPackage(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Package does not exist initially
 	if _, exists, err := db.GetPackage(context.Background(), "gomod", "leftpad", "0.1.0"); err != nil {
@@ -39,7 +39,6 @@ func TestGetPackage(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         &startedAt,
 		FinishedAt:        &finishedAt,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 	}
@@ -55,7 +54,6 @@ func TestGetPackage(t *testing.T) {
 		FailureStacktrace: expected.FailureStacktrace,
 		StartedAt:         expected.StartedAt,
 		FinishedAt:        expected.FinishedAt,
-		TracingContext:    expected.TracingContext,
 		RepositoryID:      expected.RepositoryID,
 		Indexer:           expected.Indexer,
 	})
@@ -80,7 +78,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})
@@ -114,7 +112,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if err := db.UpdatePackages(context.Background(), nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
@@ -134,7 +132,7 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// for foreign key relation
 	insertUploads(t, dbconn.Global, Upload{ID: 42})

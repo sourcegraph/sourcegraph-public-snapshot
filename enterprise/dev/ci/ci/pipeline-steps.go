@@ -19,9 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel/api-server",
-	"precise-code-intel/bundle-manager",
-	"precise-code-intel/worker",
+	"precise-code-intel-api-server",
+	"precise-code-intel-bundle-manager",
+	"precise-code-intel-worker",
 
 	// Images under docker-images/
 	"grafana",
@@ -98,13 +98,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
-}
-
-// Tests the precise code intel system.
-func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -198,10 +191,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests for renovate and release branches
+	// Run e2e tests for release branches
 	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",

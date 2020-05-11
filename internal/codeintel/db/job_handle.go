@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +44,7 @@ type JobHandle interface {
 }
 
 type jobHandleImpl struct {
-	db              *dbImpl
+	db              DB
 	id              int
 	savepoints      []string
 	marked          bool
@@ -83,8 +82,7 @@ func (h *jobHandleImpl) Savepoint(ctx context.Context) error {
 
 	savepointID := fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_"))
 	h.savepoints = append(h.savepoints, savepointID)
-	// Unfortunately, it's a syntax error to supply this as a param
-	return h.db.exec(ctx, sqlf.Sprintf("SAVEPOINT "+savepointID))
+	return h.db.Savepoint(ctx, savepointID)
 }
 
 // ErrNoSavepoint occurs when there is no savepont to rollback to.
@@ -109,30 +107,19 @@ func (h *jobHandleImpl) RollbackToLastSavepoint(ctx context.Context) error {
 		h.markedSavepoint = ""
 	}
 
-	// Perform rollback
-	return h.db.exec(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
+	return h.db.RollbackToSavepoint(ctx, savepointID)
 }
 
 // MarkComplete updates the state of the upload to complete.
 func (h *jobHandleImpl) MarkComplete(ctx context.Context) (err error) {
 	h.mark()
-
-	return h.db.exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'completed', finished_at = now()
-		WHERE id = %s
-	`, h.id))
+	return h.db.MarkComplete(ctx, h.id)
 }
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
 func (h *jobHandleImpl) MarkErrored(ctx context.Context, failureSummary, failureStacktrace string) (err error) {
 	h.mark()
-
-	return h.db.exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_uploads
-		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
-		WHERE id = %s
-	`, failureSummary, failureStacktrace, h.id))
+	return h.db.MarkErrored(ctx, h.id, failureSummary, failureStacktrace)
 }
 
 func (h *jobHandleImpl) mark() {
