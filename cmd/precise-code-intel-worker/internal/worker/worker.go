@@ -57,7 +57,7 @@ func (w *Worker) Start() {
 }
 
 // dequeueAndProcess pulls a job from the queue and processes it. If there
-// were no job ready to process, this method returns a false-valued flag.
+// were no jobs ready to process, this method returns a false-valued flag.
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 	start := time.Now()
 
