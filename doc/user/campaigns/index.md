@@ -15,7 +15,7 @@ You provide the code to make the change and Campaigns provide the plumbing to tu
       src="https://www.youtube.com/embed/aqcCrqRB17w"
       frameborder="0"
       allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-      allowfullcreen="true"
+      allowfullscreen="true"
   ></iframe>
 </div>
 
