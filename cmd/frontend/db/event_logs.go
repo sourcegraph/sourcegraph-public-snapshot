@@ -555,3 +555,99 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 	}
 	return users, nil
 }
+
+// UserUsageCounts captures a user's usage of Sourcegraph in a day starting on a given date.
+type UserUsageCounts struct {
+	Date time.Time
+	UserID uint32
+	SearchCount int32
+	CodeIntelCount int32
+}
+
+
+// UserUsageCounts returns a list of UserUsageCounts for all active users that produced certain events in
+// the event_logs table.
+func (l *eventLogs) UserUsageCounts(ctx context.Context) (counts []UserUsageCounts, err error) {
+	rows, err := dbconn.Global.QueryContext(ctx, userUsageCountsQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c UserUsageCounts
+
+		err := rows.Scan(
+			&c.Date,
+			&c.UserID,
+			&dbutil.NullInt32{N: &c.SearchCount},
+			&dbutil.NullInt32{N: &c.CodeIntelCount},
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		counts = append(counts, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return counts, nil
+}
+
+const userUsageCountsQuery = `
+-- source: cmd/frontend/db/event_logs.go:UserUsageCounts
+WITH searches AS (
+  SELECT
+    event_logs.user_id,
+    DATE(event_logs.timestamp) AS timestamp,
+    COUNT(*) AS search_count
+  FROM
+    event_logs
+  WHERE
+    event_logs.name = 'SearchResultsQueried'
+  GROUP BY
+    1,
+    2
+),
+code_intel_events AS (
+  SELECT
+    event_logs.user_id,
+    DATE(event_logs.timestamp) AS timestamp,
+    COUNT(*) AS codeintel_count
+  FROM
+    event_logs
+  WHERE
+    event_logs.name LIKE '%codeintel%'
+  GROUP BY
+    1,
+    2
+)
+SELECT
+  DATE(event_logs.timestamp),
+  event_logs.user_id,
+  search_count,
+  codeintel_count
+FROM
+  event_logs
+FULL OUTER JOIN
+  searches
+ON
+  event_logs.user_id = searches.user_id
+  AND DATE(event_logs.timestamp) = DATE(searches.timestamp)
+FULL OUTER JOIN
+  code_intel_events
+ON
+  event_logs.user_id = code_intel_events.user_id
+  AND DATE(event_logs.timestamp) = DATE(code_intel_events.timestamp)
+GROUP BY
+  2,
+  1,
+  3,
+  4
+ORDER BY
+  1 DESC
+`
