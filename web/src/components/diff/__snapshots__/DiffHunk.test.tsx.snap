@@ -47,7 +47,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -77,7 +77,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -107,7 +107,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -133,7 +133,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -159,7 +159,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -189,7 +189,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -219,7 +219,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -249,7 +249,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
@@ -313,7 +313,7 @@ Array [
         }
       }
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -355,7 +355,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -385,7 +385,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -416,7 +416,7 @@ Array [
         }
       }
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -454,7 +454,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -484,7 +484,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -514,7 +514,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -544,7 +544,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
@@ -607,7 +607,7 @@ Array [
         }
       }
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const subscriptions = new Subscription()",
@@ -649,7 +649,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
@@ -679,7 +679,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        const connection = await createConnection()",
@@ -709,7 +709,7 @@ Array [
         }
       }
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
@@ -747,7 +747,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
@@ -777,7 +777,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "        subscriptions.add(",
@@ -807,7 +807,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
@@ -837,7 +837,7 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      <span
+      <div
         dangerouslySetInnerHTML={
           Object {
             "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
