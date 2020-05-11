@@ -1159,45 +1159,45 @@ func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, priority repos.Priori
 
 func TestServer_handleSchedulePermsSync(t *testing.T) {
 	tests := []struct {
-		name          string
-		permsSyncer   *fakePermsSyncer
-		body          string
-		expStatusCode int
-		expBody       string
+		name           string
+		permsSyncer    *fakePermsSyncer
+		body           string
+		wantStatusCode int
+		wantBody       string
 	}{
 		{
-			name:          "PermsSyncer not available",
-			expStatusCode: http.StatusForbidden,
-			expBody:       "null",
+			name:           "PermsSyncer not available",
+			wantStatusCode: http.StatusForbidden,
+			wantBody:       "null",
 		},
 		{
-			name:          "bad JSON",
-			permsSyncer:   &fakePermsSyncer{},
-			body:          "{",
-			expStatusCode: http.StatusBadRequest,
-			expBody:       "unexpected EOF",
+			name:           "bad JSON",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "unexpected EOF",
 		},
 		{
-			name:          "missing ids",
-			permsSyncer:   &fakePermsSyncer{},
-			body:          "{}",
-			expStatusCode: http.StatusBadRequest,
-			expBody:       "no ids provided",
+			name:           "missing ids",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{}",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "no ids provided",
 		},
 		{
-			name:          "bad type",
-			permsSyncer:   &fakePermsSyncer{},
-			body:          `{"ids":[1]}`,
-			expStatusCode: http.StatusBadRequest,
-			expBody:       "unrecognized type 0",
+			name:           "bad type",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"ids":[1]}`,
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "unrecognized type 0",
 		},
 
 		{
-			name:          "successful call",
-			permsSyncer:   &fakePermsSyncer{},
-			body:          `{"type": 1, "ids":[1]}`,
-			expStatusCode: http.StatusOK,
-			expBody:       "null",
+			name:           "successful call",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"type": 1, "ids":[1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
 		},
 	}
 	for _, test := range tests {
@@ -1213,9 +1213,9 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 			}
 			s.handleSchedulePermsSync(w, r)
 
-			if w.Code != test.expStatusCode {
-				t.Fatalf("Code: want %v but got %v", test.expStatusCode, w.Code)
-			} else if diff := cmp.Diff(test.expBody, w.Body.String()); diff != "" {
+			if w.Code != test.wantStatusCode {
+				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
+			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
 				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
 			}
 		})
