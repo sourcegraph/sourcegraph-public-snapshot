@@ -15,6 +15,18 @@ var (
 	timeNow = time.Now
 )
 
+func GetUsersUsageArchiveData(ctx context.Context) (*types.UsersUsageArchiveData, error) {
+	counts, err := db.EventLogs.UsersUsageCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := db.Users.List(ctx, &db.UsersListOptions{})
+	if err != nil {
+		return nil, err
+	}
+}
+
 var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)
 
 // GetByUserID returns a single user's UserUsageStatistics.

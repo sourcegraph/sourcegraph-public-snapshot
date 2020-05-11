@@ -120,8 +120,8 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
-// UserUsageArchive contains data that is exported in the user usage admin panel button "Download user usage archive".
-type UserUsageArchive struct {
+// UsersUsageArchiveData contains data that is exported in the user usage admin panel button "Download user usage archive".
+type UsersUsageArchiveData struct {
 	UsersUsageCounts []struct {
 		Date time.Time
 		UserID int32
