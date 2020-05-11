@@ -227,7 +227,7 @@
     "utc-version": "^2.0.1",
     "web-ext": "^4.1.0",
     "webpack": "^4.43.0",
-    "webpack-dev-server": "^3.10.3",
+    "webpack-dev-server": "^3.11.0",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^2.0.0"
   },
