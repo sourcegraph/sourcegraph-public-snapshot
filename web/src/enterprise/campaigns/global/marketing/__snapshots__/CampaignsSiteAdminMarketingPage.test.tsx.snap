@@ -41,17 +41,16 @@ Array [
     </h2>
     <ol>
       <li>
-        Go through our
-         
+        See 
         <a
           href="https://docs.sourcegraph.com/user/campaigns/getting_started"
         >
           Getting started
         </a>
-         guide to enable campaigns on your Sourcegraph instance.
+         to enable campaigns on your Sourcegraph instance.
       </li>
       <li>
-        Follow our walkthrough to
+        Now,
          
         <a
           href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"

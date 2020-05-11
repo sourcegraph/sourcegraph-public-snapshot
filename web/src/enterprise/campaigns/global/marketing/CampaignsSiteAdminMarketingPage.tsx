@@ -10,12 +10,11 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                 <h2>Get started</h2>
                 <ol>
                     <li>
-                        Go through our{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns/getting_started">Getting started</a> guide
-                        to enable campaigns on your Sourcegraph instance.
+                        See <a href="https://docs.sourcegraph.com/user/campaigns/getting_started">Getting started</a> to
+                        enable campaigns on your Sourcegraph instance.
                     </li>
                     <li>
-                        Follow our walkthrough to{' '}
+                        Now,{' '}
                         <a href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches">
                             create your first campaign
                         </a>
