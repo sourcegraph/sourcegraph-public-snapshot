@@ -2026,29 +2026,30 @@ type FileDiff {
 }
 
 # The type of content in a hunk line.
-enum HunkLineType {
+enum DiffHunkLineType {
     # Added line.
-    ADDITION
+    ADDED
     # Unchanged line.
     UNCHANGED
     # Deleted line.
-    DELETION
+    DELETED
 }
 
 # A single highlighted line, including the kind of line.
-type HighlightedHunkLine {
-    # The html.
+type HighlightedDiffHunkLine {
+    # The HTML containing the syntax-highlighted line of code.
     html: String!
-    # The kind of this line, in patches it is prefixed with '+', '-', ' '.
-    kind: HunkLineType!
+    # The operation that happened on this line, in patches it is prefixed with '+', '-', ' '.
+    # Can be either add, delete, or no change.
+    kind: DiffHunkLineType!
 }
 
 # A highlighted hunk, consisting of all it's lines.
-type HighlightedHunkBody {
-    # Whether or not it was aborted.
+type HighlightedDiffHunkBody {
+    # Whether highlighting was aborted.
     aborted: Boolean!
     # The highlighted lines.
-    lines: [HighlightedHunkLine!]!
+    lines: [HighlightedDiffHunkLine!]!
 }
 
 # A changed region ("hunk") in a file diff.
@@ -2072,7 +2073,7 @@ type FileDiffHunk {
         # which some browsers (such as Chrome, but not Firefox) may have trouble
         # rendering efficiently.
         highlightLongLines: Boolean = false
-    ): HighlightedHunkBody!
+    ): HighlightedDiffHunkBody!
 }
 
 # A hunk range in one side (old/new) of a diff.

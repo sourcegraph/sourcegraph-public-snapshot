@@ -65,19 +65,19 @@ export const DiffHunk: React.FunctionComponent<
                 lineNumbers={lineNumbers}
             />
             {hunk.highlight.lines.map((line, i) => {
-                if (line.kind !== GQL.HunkLineType.ADDITION) {
+                if (line.kind !== GQL.DiffHunkLineType.ADDED) {
                     oldLine++
                 }
-                if (line.kind !== GQL.HunkLineType.DELETION) {
+                if (line.kind !== GQL.DiffHunkLineType.DELETED) {
                     newLine++
                 }
                 const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                 const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                 const decorationsForLine = [
                     // If the line was deleted, look for decorations in the base rev
-                    ...((line.kind === GQL.HunkLineType.DELETION && decorations.base.get(oldLine - 1)) || []),
+                    ...((line.kind === GQL.DiffHunkLineType.DELETED && decorations.base.get(oldLine - 1)) || []),
                     // If the line wasn't deleted, look for decorations in the head rev
-                    ...((line.kind !== GQL.HunkLineType.DELETION && decorations.head.get(newLine - 1)) || []),
+                    ...((line.kind !== GQL.DiffHunkLineType.DELETED && decorations.head.get(newLine - 1)) || []),
                 ]
                 const lineStyle = decorationsForLine
                     .filter(decoration => decoration.isWholeLine)
@@ -87,19 +87,19 @@ export const DiffHunk: React.FunctionComponent<
                     <tr
                         key={i}
                         className={`diff-hunk__line ${
-                            line.kind === GQL.HunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
-                        } ${line.kind === GQL.HunkLineType.DELETION ? 'diff-hunk__line--deletion' : ''} ${
-                            line.kind === GQL.HunkLineType.ADDITION ? 'diff-hunk__line--addition' : ''
+                            line.kind === GQL.DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
+                        } ${line.kind === GQL.DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
+                            line.kind === GQL.DiffHunkLineType.ADDED ? 'diff-hunk__line--addition' : ''
                         } ${
-                            (line.kind !== GQL.HunkLineType.ADDITION && location.hash === '#' + oldAnchor) ||
-                            (line.kind !== GQL.HunkLineType.DELETION && location.hash === '#' + newAnchor)
+                            (line.kind !== GQL.DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
+                            (line.kind !== GQL.DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)
                                 ? 'diff-hunk__line--active'
                                 : ''
                         }`}
                     >
                         {lineNumbers && (
                             <>
-                                {line.kind !== GQL.HunkLineType.ADDITION ? (
+                                {line.kind !== GQL.DiffHunkLineType.ADDED ? (
                                     <td
                                         className="diff-hunk__num"
                                         data-line={oldLine - 1}
@@ -111,7 +111,7 @@ export const DiffHunk: React.FunctionComponent<
                                     <td className="diff-hunk__num diff-hunk__num--empty" />
                                 )}
 
-                                {line.kind !== GQL.HunkLineType.DELETION ? (
+                                {line.kind !== GQL.DiffHunkLineType.DELETED ? (
                                     <td
                                         className="diff-hunk__num"
                                         data-line={newLine - 1}

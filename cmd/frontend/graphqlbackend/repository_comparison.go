@@ -548,7 +548,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			}
 		} else if hunkLine[0] == '+' {
 			headLine++
-			richHunk.kind = "ADDITION"
+			richHunk.kind = "ADDED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
@@ -556,7 +556,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			}
 		} else if hunkLine[0] == '-' {
 			baseLine++
-			richHunk.kind = "DELETION"
+			richHunk.kind = "DELETED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
