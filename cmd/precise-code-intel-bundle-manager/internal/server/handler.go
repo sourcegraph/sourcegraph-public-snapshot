@@ -68,7 +68,7 @@ func (s *Server) handlePostUploadPart(w http.ResponseWriter, r *http.Request) {
 
 // POST /uploads/{id:[0-9]+}/stitch
 func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) {
-	if err := stitchMultipart(s.bundleDir, idFromRequest(r)); err != nil {
+	if err := stitchMultipart(s.BundleDir, idFromRequest(r)); err != nil {
 		log15.Error("Failed to stitch multipart upload", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -199,7 +199,7 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) {
-	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
+	targetFile, err := os.OpenFile(makeFilename(s.BundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
 		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)

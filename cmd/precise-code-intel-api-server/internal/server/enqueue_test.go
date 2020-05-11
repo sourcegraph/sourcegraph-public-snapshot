@@ -47,8 +47,8 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
@@ -132,8 +132,8 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
@@ -187,8 +187,8 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
@@ -252,8 +252,8 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
@@ -323,8 +323,8 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
@@ -376,8 +376,8 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 
 	s := &Server{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
+		DB:                  mockDB,
+		BundleManagerClient: mockBundleManagerClient,
 	}
 	s.handleEnqueue(w, r)
 
