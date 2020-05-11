@@ -348,3 +348,40 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		}
 	}
 }
+
+func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+
+	upload := db.Upload{
+		ID:            42,
+		NumParts:      5,
+		UploadedParts: []int{0, 1, 3, 4},
+	}
+	mockDB.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+
+	testURL, err := url.Parse("http://test.com/upload")
+	if err != nil {
+		t.Fatalf("unexpected error constructing url: %s", err)
+	}
+	testURL.RawQuery = (url.Values{
+		"uploadId": []string{"42"},
+		"done":     []string{"true"},
+	}).Encode()
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("POST", testURL.String(), nil)
+	if err != nil {
+		t.Fatalf("unexpected error constructing request: %s", err)
+	}
+
+	s := &Server{
+		db:                  mockDB,
+		bundleManagerClient: mockBundleManagerClient,
+	}
+	s.handleEnqueue(w, r)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("unexpected status code. want=%d have=%d", http.StatusBadRequest, w.Code)
+	}
+}
