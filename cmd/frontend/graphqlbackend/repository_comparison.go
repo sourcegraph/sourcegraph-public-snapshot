@@ -384,7 +384,7 @@ func NewDiffHunk(hunk *diff.Hunk, highlighter DiffHighlighter) *DiffHunk {
 }
 
 type DiffHighlighter interface {
-	Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, bool, error)
+	Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error)
 }
 
 type HighlightArgs struct {
@@ -395,14 +395,14 @@ type HighlightArgs struct {
 
 type fileDiffHighlighter struct {
 	fileDiffResolver *fileDiffResolver
-	highlightedBase  map[int32]string
-	highlightedHead  map[int32]string
+	highlightedBase  []string
+	highlightedHead  []string
 	highlightOnce    sync.Once
 	highlightErr     error
 	highlightAborted bool
 }
 
-func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) (map[int32]string, map[int32]string, bool, error) {
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error) {
 	r.highlightOnce.Do(func() {
 		if oldFile := r.fileDiffResolver.OldFile(); oldFile != nil {
 			var binary bool
@@ -531,13 +531,13 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
 	richHunks := make([]*richHunk, len(hunkLines))
+	// Array with content lines is 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
+	// Array with content lines is 0-indexed.
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		richHunk := richHunk{}
 		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
-			baseLine++
-			headLine++
 			richHunk.kind = "UNCHANGED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				if len(hunkLine) != 0 {
@@ -546,22 +546,24 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			} else {
 				richHunk.html = highlightedBase[baseLine]
 			}
-		} else if hunkLine[0] == '+' {
+			baseLine++
 			headLine++
+		} else if hunkLine[0] == '+' {
 			richHunk.kind = "ADDED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
 				richHunk.html = highlightedHead[headLine]
 			}
+			headLine++
 		} else if hunkLine[0] == '-' {
-			baseLine++
 			richHunk.kind = "DELETED"
 			if aborted || !args.HighlightLongLines && len(hunkLine) > 2000 {
 				richHunk.html = html.EscapeString(hunkLine[1:])
 			} else {
 				richHunk.html = highlightedBase[baseLine]
 			}
+			baseLine++
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}

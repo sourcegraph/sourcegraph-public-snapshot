@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -427,14 +426,14 @@ func (r *previewFileDiffResolver) NewPath() *string { return diffPathOrNull(r.fi
 
 type previewFileDiffHighlighter struct {
 	previewFileDiffResolver *previewFileDiffResolver
-	highlightedBase         map[int32]string
-	highlightedHead         map[int32]string
+	highlightedBase         []string
+	highlightedHead         []string
 	highlightOnce           sync.Once
 	highlightErr            error
 	highlightAborted        bool
 }
 
-func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (map[int32]string, map[int32]string, bool, error) {
+func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) ([]string, []string, bool, error) {
 	r.highlightOnce.Do(func() {
 		if oldFile := r.previewFileDiffResolver.OldFile(); oldFile != nil {
 			binary, err := oldFile.Binary(ctx)
@@ -548,20 +547,17 @@ func diffPathOrNull(path string) *string {
 }
 
 func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
-	contentLines := make(map[int32]string)
-	newContentLines := make(map[int32]string)
-	lines := strings.Split(fileContent, "\n")
-	for i, line := range lines {
-		contentLines[int32(i+1)] = line
-	}
-	var lastLine, currentLine int32
-	// Assumes the hunks are sorted by ascending lines
+	contentLines := strings.Split(fileContent, "\n")
+	newContentLines := make([]string, 0)
+	var lastLine int32 = 1
+	var currentLine int32 = 1
+	// Assumes the hunks are sorted by ascending lines.
 	for _, hunk := range fileDiff.Hunks {
 		currentLine = hunk.NewStartLine
 		// Detect holes.
-		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine+1 {
+		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
 			for ; lastLine < hunk.OrigStartLine; lastLine++ {
-				newContentLines[lastLine] = contentLines[lastLine]
+				newContentLines = append(newContentLines, contentLines[lastLine-1])
 			}
 		}
 		hunkLines := strings.Split(string(hunk.Body), "\n")
@@ -571,41 +567,32 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 			}
 			if !strings.HasPrefix(line, "+") {
 				if !strings.HasPrefix(line, "-") {
-					newContentLines[currentLine] = contentLines[lastLine]
+					newContentLines = append(newContentLines, contentLines[lastLine-1])
 					currentLine++
 				}
 				lastLine++
 				continue
 			}
-			newContentLines[currentLine] = line[1:]
+			newContentLines = append(newContentLines, line[1:])
 			currentLine++
 		}
 	}
 	// Append remaining lines from original file.
-	if origLines := int32(len(contentLines)); origLines > 0 && origLines-1 != lastLine {
+	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
 		for i := lastLine; i < origLines; i++ {
-			newContentLines[i] = contentLines[currentLine]
+			newContentLines = append(newContentLines, contentLines[currentLine-1])
 			currentLine++
 		}
 	}
 	content := ""
-	keys := make([]int, 0, len(newContentLines))
-	for key := range newContentLines {
-		keys = append(keys, int(key))
-	}
-	sort.Ints(keys)
 	first := true
-	for _, key := range keys {
-		// The 0 key is initialized, but can never contain code, so skip it.
-		if key == 0 {
-			continue
-		}
+	for _, line := range newContentLines {
 		if !first {
 			content += "\n"
 		} else {
 			first = false
 		}
-		content += newContentLines[int32(key)]
+		content += line
 	}
 	return content
 }

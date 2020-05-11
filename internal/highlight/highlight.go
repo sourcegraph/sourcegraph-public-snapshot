@@ -462,14 +462,14 @@ func unhighlightLongLines(h string, n int) (string, error) {
 }
 
 // ParseLinesFromHighlight takes the highlighted html and returns the per-line content.
-func ParseLinesFromHighlight(input string) (map[int32]string, error) {
+func ParseLinesFromHighlight(input string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(input))
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		lines = make(map[int32]string)
+		lines = make([]string, 0)
 		body  = doc.FirstChild.LastChild // html->body
 		pre   = body.FirstChild
 	)
@@ -480,7 +480,7 @@ func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 
 	var (
 		next                   = pre.FirstChild
-		line        int32      = 1
+		line        int32      = 0
 		lineElement *html.Node = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
 	)
 
@@ -490,7 +490,7 @@ func ParseLinesFromHighlight(input string) (map[int32]string, error) {
 		if err != nil {
 			return err
 		}
-		lines[line] = buf.String()
+		lines = append(lines, buf.String())
 		line++
 		lineElement = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
 		return nil
