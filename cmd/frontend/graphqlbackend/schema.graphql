@@ -1923,7 +1923,7 @@ type PreviewRepositoryComparison {
     # The preview of the file diffs for each file in the diff.
     fileDiffs(
         first: Int
-        # Return file diffs after the given file diff.
+        # Return file diffs after the given cursor.
         after: String
     ): PreviewFileDiffConnection!
 }
