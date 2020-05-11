@@ -44,7 +44,6 @@ type repositoryResolver struct {
 
 	includePatternRevs         []patternRevspec
 	versionContextRepositories []string
-	defaultRepos               []*types.Repo
 	missingRepoRevisions       []*search.RepositoryRevisions
 	repoRevisions              []*search.RepositoryRevisions
 }
@@ -90,16 +89,6 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	r.includePatternRevs, err = findPatternRevs(r.includePatterns)
 	if err != nil {
 		return nil, nil, false, err
-	}
-
-	if envvar.SourcegraphDotComMode() && len(r.includePatterns) == 0 {
-		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
-		}
-		r.defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
-		if err != nil {
-			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
-		}
 	}
 
 	// If a version context is specified, gather the list of repository names
@@ -195,31 +184,40 @@ func (r *repositoryResolver) getVersionContext() (*schema.VersionContext, error)
 func (r *repositoryResolver) getRepos(ctx context.Context) ([]*types.Repo, error) {
 	var err error
 	var repos []*types.Repo
-	if len(r.defaultRepos) > 0 {
-		repos = r.defaultRepos
+
+	if envvar.SourcegraphDotComMode() && len(r.includePatterns) == 0 {
+		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
+		}
+		repos, err := defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting list of default repos")
+		}
 		if len(repos) > r.maxRepoListSize {
 			repos = repos[:r.maxRepoListSize]
 		}
-	} else {
-		r.tracer.LazyPrintf("Repos.List - start")
-		repos, err = db.Repos.List(ctx, db.ReposListOptions{
-			OnlyRepoIDs:     true,
-			IncludePatterns: r.includePatterns,
-			Names:           r.versionContextRepositories,
-			ExcludePattern:  unionRegExps(r.excludePatterns),
-			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
-			NoForks:      r.noForks,
-			OnlyForks:    r.onlyForks,
-			NoArchived:   r.noArchived,
-			OnlyArchived: r.onlyArchived,
-			NoPrivate:    r.onlyPublic,
-			OnlyPrivate:  r.onlyPrivate,
-		})
-		r.tracer.LazyPrintf("Repos.List - done")
-		if err != nil {
-			return nil, err
-		}
+
+		return repos, nil
+	}
+
+	r.tracer.LazyPrintf("Repos.List - start")
+	repos, err = db.Repos.List(ctx, db.ReposListOptions{
+		OnlyRepoIDs:     true,
+		IncludePatterns: r.includePatterns,
+		Names:           r.versionContextRepositories,
+		ExcludePattern:  unionRegExps(r.excludePatterns),
+		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+		LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
+		NoForks:      r.noForks,
+		OnlyForks:    r.onlyForks,
+		NoArchived:   r.noArchived,
+		OnlyArchived: r.onlyArchived,
+		NoPrivate:    r.onlyPublic,
+		OnlyPrivate:  r.onlyPrivate,
+	})
+	r.tracer.LazyPrintf("Repos.List - done")
+	if err != nil {
+		return nil, err
 	}
 
 	return repos, nil
