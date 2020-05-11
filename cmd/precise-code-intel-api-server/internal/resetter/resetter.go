@@ -9,23 +9,9 @@ import (
 )
 
 type UploadResetter struct {
-	db            db.DB
-	resetInterval time.Duration
-	metrics       ResetterMetrics
-}
-
-type UploadResetterOpts struct {
 	DB            db.DB
 	ResetInterval time.Duration
 	Metrics       ResetterMetrics
-}
-
-func NewUploadResetter(opts UploadResetterOpts) *UploadResetter {
-	return &UploadResetter{
-		db:            opts.DB,
-		resetInterval: opts.ResetInterval,
-		metrics:       opts.Metrics,
-	}
 }
 
 // Run periodically moves all uploads that have been in the PROCESSING state for a
@@ -34,14 +20,16 @@ func NewUploadResetter(opts UploadResetterOpts) *UploadResetter {
 // it has died.
 func (ur *UploadResetter) Run() {
 	for {
-		ids, err := ur.db.ResetStalled(context.Background(), time.Now())
+		ids, err := ur.DB.ResetStalled(context.Background(), time.Now())
 		if err != nil {
+			ur.Metrics.Errors.Inc()
 			log15.Error("Failed to reset stalled uploads", "error", err)
 		}
 		for _, id := range ids {
 			log15.Debug("Reset stalled upload", "uploadID", id)
 		}
 
-		time.Sleep(ur.resetInterval)
+		ur.Metrics.StalledJobs.Add(float64(len(ids)))
+		time.Sleep(ur.ResetInterval)
 	}
 }

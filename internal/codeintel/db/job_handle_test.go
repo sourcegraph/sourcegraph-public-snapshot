@@ -50,7 +50,7 @@ func TestJobHandleRollbackNoSavepoint(t *testing.T) {
 	}
 }
 
-func TestJobHandleSavepointRollback(t *testing.T) {
+func TestJobHandleRollbackUndoesMark(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -81,7 +81,7 @@ func TestJobHandleSavepointRollback(t *testing.T) {
 	}
 }
 
-func TestJobHandlePartialSavepointRollback(t *testing.T) {
+func TestJobHandleRollbackDoesNotUndoMark(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

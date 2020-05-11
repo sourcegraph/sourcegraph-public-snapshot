@@ -49,7 +49,6 @@ func TestGetUploadByID(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         &startedAt,
 		FinishedAt:        nil,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      123,
 		Indexer:           "lsif-go",
 		NumParts:          1,
@@ -191,6 +190,35 @@ func TestGetUploadsByRepo(t *testing.T) {
 	}
 }
 
+func TestQueueSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, State: "queued"},
+		Upload{ID: 2, State: "errored"},
+		Upload{ID: 3, State: "processing"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "queued"},
+		Upload{ID: 7, State: "processing"},
+		Upload{ID: 8, State: "completed"},
+		Upload{ID: 9, State: "processing"},
+		Upload{ID: 10, State: "queued"},
+	)
+
+	count, err := db.QueueSize(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting queue size: %s", err)
+	}
+	if count != 3 {
+		t.Errorf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
 func TestInsertUploadUploading(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -221,7 +249,6 @@ func TestInsertUploadUploading(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         nil,
 		FinishedAt:        nil,
-		TracingContext:    "{}",
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 		NumParts:          3,
@@ -274,7 +301,6 @@ func TestInsertUploadQueued(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         nil,
 		FinishedAt:        nil,
-		TracingContext:    "{}",
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 		NumParts:          1,
@@ -341,6 +367,50 @@ func TestAddUploadPart(t *testing.T) {
 		if diff := cmp.Diff([]int{1, 2, 3, 5, 6}, upload.UploadedParts); diff != "" {
 			t.Errorf("unexpected upload parts (-want +got):\n%s", diff)
 		}
+	}
+}
+
+func TestMarkComplete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
+
+	if err := db.MarkComplete(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "completed" {
+		t.Errorf("unexpected state. want=%q have=%q", "completed", upload.State)
+	}
+}
+
+func TestMarkErrored(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
+
+	if err := db.MarkErrored(context.Background(), 1, "oops", ""); err != nil {
+		t.Fatalf("unexpected error marking upload as errored: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "errored" {
+		t.Errorf("unexpected state. want=%q have=%q", "errored", upload.State)
 	}
 }
 
@@ -466,7 +536,9 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	}
 
 	// alter record in the underlying transacted db
-	if err := jobHandle.(*jobHandleImpl).db.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
+	// TODO(efritz) - find a way to do this without casting
+	underlyingDB := jobHandle.DB().(*ObservedDB).db.(*dbImpl)
+	if err := underlyingDB.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)
 	}
 

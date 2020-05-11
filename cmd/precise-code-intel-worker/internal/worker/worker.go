@@ -21,45 +21,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
-type WorkerOpts struct {
+type Worker struct {
 	DB                  db.DB
 	BundleManagerClient bundles.BundleManagerClient
 	GitserverClient     gitserver.Client
 	PollInterval        time.Duration
+	Metrics             WorkerMetrics
 }
 
-type Worker struct {
-	db                  db.DB
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserver.Client
-	pollInterval        time.Duration
-}
-
-func New(opts WorkerOpts) *Worker {
-	return &Worker{
-		db:                  opts.DB,
-		bundleManagerClient: opts.BundleManagerClient,
-		gitserverClient:     opts.GitserverClient,
-		pollInterval:        opts.PollInterval,
-	}
-}
-
-func (w *Worker) Start() error {
+func (w *Worker) Start() {
 	for {
-		if ok, err := w.dequeueAndProcess(context.Background()); err != nil {
-			return err
-		} else if !ok {
-			time.Sleep(w.pollInterval)
+		if ok, _ := w.dequeueAndProcess(context.Background()); !ok {
+			time.Sleep(w.PollInterval)
 		}
 	}
 }
 
 // dequeueAndProcess pulls a job from the queue and processes it. If there was no job ready
-// to process, this method returns a false-valued flag. Only critical errors are returned.
-// Processing errors are only written to the upload record and are not expected to be handled
-// by the calling function.
+// to process, this method returns a false-valued flag.
 func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
-	upload, jobHandle, ok, err := w.db.Dequeue(ctx)
+	start := time.Now()
+
+	upload, jobHandle, ok, err := w.DB.Dequeue(ctx)
 	if err != nil || !ok {
 		return false, errors.Wrap(err, "db.Dequeue")
 	}
@@ -67,14 +50,25 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		if closeErr := jobHandle.Done(err); closeErr != nil {
 			err = multierror.Append(err, closeErr)
 		}
+
+		if err == nil {
+			log15.Info("Processed upload", "id", upload.ID)
+		} else {
+			// TODO(efritz) - distinguish between correlation and system errors
+			log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
+		}
+
+		w.Metrics.Jobs.Observe(time.Since(start).Seconds(), 1, &err)
 	}()
 
-	if err = process(ctx, jobHandle.DB(), w.bundleManagerClient, w.gitserverClient, upload, jobHandle); err != nil {
-		log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
+	log15.Info("Dequeued upload for processing", "id", upload.ID)
 
+	if err = process(ctx, jobHandle.DB(), w.BundleManagerClient, w.GitserverClient, upload, jobHandle); err != nil {
 		if markErr := jobHandle.MarkErrored(ctx, err.Error(), ""); markErr != nil {
-			return false, errors.Wrap(markErr, "jobHandle.MarkErrored")
+			err = errors.Wrap(markErr, "jobHandle.MarkErrored")
 		}
+
+		return false, err
 	}
 
 	return true, nil

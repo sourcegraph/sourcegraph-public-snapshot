@@ -10,7 +10,7 @@ Follow these steps to get started with campaigns on your Sourcegraph instance:
 
     Since campaigns create changesets on code hosts, the code host configuration in Sourcegraph and the account associated with it need the correct access rights.
 
-1. **Setup the `src` CLI on your machine**: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation).
+1. **Set up the `src` CLI on your machine**: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation).
 
 Now you're ready to [create a campaign from patches](./creating_campaign_from_patches.md) or to [create a manual campaign](./creating_manual_campaign.md). Make sure to also take a look at the [**example campaigns**](./examples/index.md).
 

@@ -279,3 +279,39 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		updatedAt: p.UpdatedAt,
 	}, nil
 }
+
+func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can query user permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(id)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the user ID is valid and not soft-deleted.
+	if _, err = db.Users.GetByID(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	p := &authz.UserPermissions{
+		UserID: userID,
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+		Type:   authz.PermRepos,
+	}
+	err = r.store.LoadUserPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return nil, err
+	}
+
+	if err == authz.ErrPermsNotFound {
+		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	}
+
+	return &permissionsInfoResolver{
+		perms:     p.Perm,
+		syncedAt:  p.SyncedAt,
+		updatedAt: p.UpdatedAt,
+	}, nil
+}

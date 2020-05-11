@@ -57,4 +57,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         ),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
+    {
+        path: '/permissions',
+        exact: true,
+        render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
+        condition: ({ authenticatedUser }) =>
+            !!window.context.site['permissions.backgroundSync']?.enabled && authenticatedUser.siteAdmin,
+    },
 ]

@@ -25,9 +25,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 RUN apk --no-cache add pcre-dev
 
 USER sourcegraph
-
 COPY ./precise-code-intel-worker /usr/local/bin/precise-code-intel-worker
 
-EXPOSE 3188
 ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-worker"]
