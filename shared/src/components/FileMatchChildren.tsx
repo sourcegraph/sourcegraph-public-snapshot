@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { ThemeProps } from '../theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
-import { toPositionOrRangeHash } from '../util/url'
+import { toPositionOrRangeHash, appendSubtreeQueryParam } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
@@ -124,7 +124,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
                         <Link
-                            to={`${props.result.file.url}?subtree=true${toPositionOrRangeHash({ position })}`}
+                            to={appendSubtreeQueryParam(
+                                `${props.result.file.url}${toPositionOrRangeHash({ position })}`
+                            )}
                             className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
                             onClick={props.onSelect}
                         >

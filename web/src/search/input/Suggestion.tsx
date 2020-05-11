@@ -10,6 +10,7 @@ import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/
 import { escapeRegExp } from 'lodash'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
+import { appendSubtreeQueryParam } from '../../../../shared/src/util/url'
 
 export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
     r: FilterType.repo,
@@ -97,7 +98,7 @@ export function createSuggestion(item: SearchSuggestion): Suggestion | undefined
                     type: NonFilterSuggestionType.dir,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
-                    url: `${item.url}?subtree=true`,
+                    url: appendSubtreeQueryParam(item.url),
                     label: 'go to dir',
                 }
             }
@@ -106,7 +107,7 @@ export function createSuggestion(item: SearchSuggestion): Suggestion | undefined
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?subtree=true`,
+                url: appendSubtreeQueryParam(item.url),
                 label: 'go to file',
             }
         }
