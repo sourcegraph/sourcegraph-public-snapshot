@@ -11,34 +11,26 @@ type JanitorMetrics struct {
 
 func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 	uploadFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "bundle_manager_janitor",
-		Name:      "upload_files_removed_total",
-		Help:      "Total number of upload files removed (due to age)",
+		Name: "src_bundle_manager_janitor_upload_files_removed_total",
+		Help: "Total number of upload files removed (due to age)",
 	})
 	r.MustRegister(uploadFilesRemoved)
 
 	oprphanedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "bundle_manager_janitor",
-		Name:      "orphaned_bundle_files_removed_total",
-		Help:      "Total number of bundle files removed (with no corresponding database entry)",
+		Name: "src_bundle_manager_janitor_orphaned_bundle_files_removed_total",
+		Help: "Total number of bundle files removed (with no corresponding database entry)",
 	})
 	r.MustRegister(oprphanedBundleFilesRemoved)
 
 	evictedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "bundle_manager_janitor",
-		Name:      "evicted_bundle_files_removed_total",
-		Help:      "Total number of bundles files removed (after evicting them from the database)",
+		Name: "src_bundle_manager_janitor_evicted_bundle_files_removed_total",
+		Help: "Total number of bundles files removed (after evicting them from the database)",
 	})
 	r.MustRegister(evictedBundleFilesRemoved)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "bundle_manager_janitor",
-		Name:      "errors_total",
-		Help:      "Total number of errors when running the janitor",
+		Name: "src_bundle_manager_janitor_errors_total",
+		Help: "Total number of errors when running the janitor",
 	})
 	r.MustRegister(errors)
 
