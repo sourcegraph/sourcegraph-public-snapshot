@@ -3,7 +3,7 @@ package lsif
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 )
@@ -15,10 +15,16 @@ type DocumentData struct {
 
 func UnmarshalDocumentData(element Element, projectRoot string) (payload DocumentData, err error) {
 	err = json.Unmarshal(element.Raw, &payload)
-	if !strings.HasPrefix(payload.URI, projectRoot) {
-		return DocumentData{}, fmt.Errorf("document URI %s is not relative to project root %s", payload.URI, projectRoot)
+	if err != nil {
+		return DocumentData{}, err
 	}
-	payload.URI = payload.URI[len(projectRoot):]
+
+	relativeURI, err := filepath.Rel(projectRoot, payload.URI)
+	if err != nil {
+		return DocumentData{}, fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload.URI, projectRoot, err)
+	}
+
+	payload.URI = relativeURI
 	payload.Contains = datastructures.IDSet{}
 	return payload, err
 }
