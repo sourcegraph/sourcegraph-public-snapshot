@@ -43,11 +43,10 @@ type ObservedDB struct {
 var _ DB = &ObservedDB{}
 
 // NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
-func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
+func NewObserved(db DB, observationContext *observation.Context) DB {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		subsystem,
-		"db",
+		"codeintel_db",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
