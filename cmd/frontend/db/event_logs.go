@@ -565,10 +565,10 @@ type UserUsageCounts struct {
 }
 
 
-// UserUsageCounts returns a list of UserUsageCounts for all active users that produced certain events in
-// the event_logs table.
-func (l *eventLogs) UserUsageCounts(ctx context.Context) (counts []UserUsageCounts, err error) {
-	rows, err := dbconn.Global.QueryContext(ctx, userUsageCountsQuery)
+// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
+// '%codeintel%' events in the event_logs table.
+func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []UserUsageCounts, err error) {
+	rows, err := dbconn.Global.QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -598,8 +598,8 @@ func (l *eventLogs) UserUsageCounts(ctx context.Context) (counts []UserUsageCoun
 	return counts, nil
 }
 
-const userUsageCountsQuery = `
--- source: cmd/frontend/db/event_logs.go:UserUsageCounts
+const usersUsageCountsQuery = `
+-- source: cmd/frontend/db/event_logs.go:UsersUsageCounts
 WITH searches AS (
   SELECT
     event_logs.user_id,

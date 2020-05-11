@@ -197,7 +197,7 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 	assertPercentileValue(t, values[2], startDate, []float64{30, 42})
 }
 
-func TestEventLogs_UserUsageCounts(t *testing.T) {
+func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -234,7 +234,7 @@ func TestEventLogs_UserUsageCounts(t *testing.T) {
 		}
 	}
 
-	have, err := EventLogs.UserUsageCounts(ctx)
+	have, err := EventLogs.UsersUsageCounts(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
