@@ -556,9 +556,9 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 		currentLine = hunk.NewStartLine
 		// Detect holes.
 		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
-			for ; lastLine < hunk.OrigStartLine; lastLine++ {
-				newContentLines = append(newContentLines, contentLines[lastLine-1])
-			}
+			originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
+			newContentLines = append(newContentLines, originalLines...)
+			lastLine += int32(len(originalLines))
 		}
 		hunkLines := strings.Split(string(hunk.Body), "\n")
 		for _, line := range hunkLines {
@@ -579,10 +579,7 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 	}
 	// Append remaining lines from original file.
 	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
-		for i := lastLine; i < origLines; i++ {
-			newContentLines = append(newContentLines, contentLines[currentLine-1])
-			currentLine++
-		}
+		newContentLines = append(newContentLines, contentLines[currentLine-1:]...)
 	}
 	content := ""
 	first := true
