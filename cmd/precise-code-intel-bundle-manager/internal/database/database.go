@@ -204,7 +204,7 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 				Filename: db.filename,
 				Name:     "hoverResult",
 				Key:      string(r.HoverResultID),
-				// TODO - add document context
+				// TODO(efritz) - add document context
 			}
 		}
 
@@ -234,7 +234,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 					Filename: db.filename,
 					Name:     "moniker",
 					Key:      string(monikerID),
-					// TODO - add document context
+					// TODO(efritz) - add document context
 				}
 			}
 
@@ -250,7 +250,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
 func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
-	// TODO - gross
+	// TODO(efritz) - gross
 	var rows []types.DefinitionReferenceRow
 	var totalCount int
 	var err error
@@ -324,7 +324,7 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 	})
 
 	if err != nil {
-		// TODO - should change cache interface instead
+		// TODO(efritz) - should change cache interface instead
 		if err == ErrUnknownDocument {
 			return types.DocumentData{}, false, nil
 		}
@@ -371,7 +371,7 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]docum
 			Filename: db.filename,
 			Name:     "result",
 			Key:      string(id),
-			// TODO - add result chunk context
+			// TODO(efritz) - add result chunk context
 		}
 	}
 
@@ -383,7 +383,7 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]docum
 				Filename: db.filename,
 				Name:     "documentPath",
 				Key:      string(documentIDRangeID.DocumentID),
-				// TODO - add result chunk context
+				// TODO(efritz) - add result chunk context
 			}
 		}
 
@@ -426,7 +426,7 @@ func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.I
 	})
 
 	if err != nil {
-		// TODO - should change cache interface instead
+		// TODO(efritz) - should change cache interface instead
 		if err == ErrUnknownResultChunk {
 			return types.ResultChunkData{}, false, nil
 		}
@@ -476,7 +476,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 					Filename: db.filename,
 					Name:     "range",
 					Key:      string(rangeID),
-					// TODO - add document context
+					// TODO(efritz) - add document context
 				}
 			}
 
