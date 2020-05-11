@@ -123,6 +123,14 @@ func (p *processor) Process(
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
+	defer func() {
+		if err != nil {
+			// Remove upload file on error instead of waiting for it to expire
+			if deleteErr := p.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
+				log15.Warn("Failed to delete upload file", "err", err)
+			}
+		}
+	}()
 
 	// Create target file for converted database
 	uuid, err := uuid.NewRandom()
