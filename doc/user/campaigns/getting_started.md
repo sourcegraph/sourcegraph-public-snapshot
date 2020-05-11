@@ -6,7 +6,7 @@ Follow these steps to get started with campaigns on your Sourcegraph instance:
 
     Since campaigns are currently in beta, they're behind a feature flag and need to be enabled by a site admin.
 
-1. **Optional**: Make campaigns accessible to non-site-admins. "[Read-access for non-site-admins](./configuration.md#read-access-for-non-site-admins)".
+1. _Optional_: Make campaigns accessible to non-site-admins. "[Read-access for non-site-admins](./configuration.md#read-access-for-non-site-admins)".
 
 1. **Check your code host configuration**: "[Code host configuration](./configuration.md#code-host-configuration)".
 
