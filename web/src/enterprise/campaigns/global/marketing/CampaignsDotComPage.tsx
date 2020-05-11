@@ -9,8 +9,8 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
             <section className="my-3">
                 <h2>Get started</h2>
                 <p>
-                    <b>Campaigns are not available on Sourcegraph.com</b>. Instead, use a private Sourcegraph instance
-                    to try them on your code.
+                    <strong>Campaigns are not available on Sourcegraph.com</strong>. Instead, use a private Sourcegraph
+                    instance to try them on your code.
                 </p>
                 <ol>
                     <li>

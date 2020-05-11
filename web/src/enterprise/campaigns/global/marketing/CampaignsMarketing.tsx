@@ -19,8 +19,8 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
                     src="https://www.youtube.com/embed/aqcCrqRB17w"
                     frameBorder="0"
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                ></iframe>
+                    allowFullScreen={true}
+                />
             </div>
         </section>
 

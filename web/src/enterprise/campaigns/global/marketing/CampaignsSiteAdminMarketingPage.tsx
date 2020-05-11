@@ -11,7 +11,8 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                 <ol>
                     <li>
                         Go through our{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns/getting_started">Getting started</a> guide.
+                        <a href="https://docs.sourcegraph.com/user/campaigns/getting_started">Getting started</a> guide
+                        to enable campaigns on your Sourcegraph instance.
                     </li>
                     <li>
                         Follow our walkthrough to{' '}

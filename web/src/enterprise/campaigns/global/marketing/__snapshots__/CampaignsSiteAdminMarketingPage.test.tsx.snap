@@ -15,50 +15,21 @@ Array [
         Beta
       </span>
     </h1>
-    <p
-      className="lead"
-    >
-      <em>
-        Campaigns are currently in beta. During the beta period, campaigns are free to use. After the beta period, campaigns will be available as a paid add-on. Please
-         
-        <a
-          href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!"
-        >
-          contact us
-        </a>
-         for more information.
-      </em>
-    </p>
     <h2
-      className="mb-6"
+      className="mb-5"
     >
       Make and track large-scale changes across all code
     </h2>
-    <p
-      className="mt-3"
-    >
-      <a
-        href="https://about.sourcegraph.com/product/code-change-management"
-        rel="noopener"
-      >
-        Learn how to run campaigns
-      </a>
-       
-      to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below performing 
-      <code>
-        gofmt
-      </code>
-       over all Go repositories:
-    </p>
     <div
-      className="position-relative campaign-marketing--video-wrapper"
+      className="text-center"
     >
       <iframe
-        allow="autoplay; fullscreen"
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
-        className="w-100 h-100 position-absolute campaign-marketing--video-frame"
         frameBorder="0"
-        src="https://player.vimeo.com/video/398878670?autoplay=0&title=0&byline=0&portrait=0"
+        height="315"
+        src="https://www.youtube.com/embed/aqcCrqRB17w"
+        width="560"
       />
     </div>
   </section>,
@@ -68,82 +39,50 @@ Array [
     <h2>
       Get started
     </h2>
-    <p>
-      Creating and managing campaigns is only available to Sourcegraph admins at this time.
-    </p>
     <ol>
       <li>
-        <a
-          href="https://docs.sourcegraph.com/user/campaigns"
-        >
-          Update your site configuration settings
-        </a>
+        Go through our
          
-        to enable campaigns for site admins.
-        <div
-          className="alert alert-info mt-3"
-        >
-          <p>
-            <strong>
-              By enabling this feature, you agree to test out functionality that is currently in beta, and acknowledge the following:
-            </strong>
-          </p>
-          <ul
-            className="mb-3"
-          >
-            <li>
-              During the beta period, campaigns are free to use. After the beta period ends, campaigns will be available as a paid add-on.
-            </li>
-            <li>
-              Campaigns are not included as part of the Enterprise tiers (Enterprise, Enterprise Starter, Enterprise Plus, etc.) license tiers.
-            </li>
-          </ul>
-          Please 
-          <a
-            href="mailto:sales@sourcegraph.com"
-          >
-            contact us
-          </a>
-           for more information.
-        </div>
-      </li>
-      <li>
-        Optional: enable read-only access for all users.
-        <div
-          className="alert alert-warning mt-3"
-        >
-          <strong>
-            WARNING:
-          </strong>
-           Repository permissions are NOT enforced if you enable read-only views on campaigns. Any authenticated user will be able to see all code changes associated with a campaign. Therefore, read-only access is recommended for instances without repository permissions configured.
-        </div>
-      </li>
-      <li>
         <a
-          href="https://docs.sourcegraph.com/user/campaigns"
+          href="https://docs.sourcegraph.com/user/campaigns/getting_started"
         >
-          Create your first campaign
+          Getting started
         </a>
+         guide to enable campaigns on your Sourcegraph instance.
+      </li>
+      <li>
+        Follow our walkthrough to
+         
+        <a
+          href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
+        >
+          create your first campaign
+        </a>
+        .
       </li>
     </ol>
-    <div>
-      <a
-        className="btn btn-primary mr-2"
-        href="/site-admin/configuration"
+    <div
+      className="alert alert-info mt-3"
+    >
+      <p>
+        <strong>
+          By enabling this feature, you agree to test out functionality that is currently in beta, and acknowledge the following:
+        </strong>
+      </p>
+      <ul
+        className="mb-3"
       >
-        Go to my site configuration
-      </a>
-      <a
-        className="btn btn-primary"
-        href="https://docs.sourcegraph.com/user/campaigns"
-        rel="noopener"
-      >
-        Learn how to run campaigns
-      </a>
+        <li>
+          During the beta period, campaigns are free to use. After the beta period ends, campaigns will be available as a paid add-on.
+        </li>
+        <li>
+          Campaigns are not included as part of the Enterprise tiers (Enterprise, Enterprise Starter, Enterprise Plus, etc.) license tiers.
+        </li>
+      </ul>
     </div>
   </section>,
   <section
-    className="py-5"
+    className="my-3"
   >
     <h2>
       Ask questions and share feedback
