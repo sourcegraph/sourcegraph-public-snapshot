@@ -40,6 +40,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 }
 
 const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
+const ALL_VALUES_ALLOWED = [/.*/]
 
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
@@ -50,7 +51,10 @@ const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
  */
 export const renderMarkdown = (
     markdown: string,
-    options:
+    options: {
+        /** Whether to render line breaks as HTML `<br>`s */
+        breaks?: boolean
+    } & (
         | {
               /** Strip off any HTML and return a plain text string, useful for previews */
               plainText: true
@@ -61,11 +65,12 @@ export const renderMarkdown = (
 
               /** Allow links to data: URIs and that download files. */
               allowDataUriLinksAndDownloads?: boolean
-          } = {}
+          }
+    ) = {}
 ): string => {
     const rendered = marked(markdown, {
         gfm: true,
-        breaks: false,
+        breaks: options.breaks,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
@@ -79,18 +84,20 @@ export const renderMarkdown = (
             // Ensure <object> must have type attribute set
             exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
 
-            // Allow highligh.js styles, e.g.
-            // <span class="hljs-keyword">
-            // <code class="language-javascript">
             allowedTags: [
                 ...without(sanitize.defaults.allowedTags, 'iframe'),
                 'h1',
                 'h2',
                 'span',
                 'img',
+                'picture',
+                'source',
                 'object',
                 'svg',
                 'rect',
+                'defs',
+                'pattern',
+                'mask',
                 'circle',
                 'path',
                 'title',
@@ -102,19 +109,39 @@ export const renderMarkdown = (
                     'title',
                     'data-tooltip', // TODO support fancy tooltips through native titles
                 ],
+                img: [...sanitize.defaults.allowedAttributes.img, 'alt'],
+                // Support different images depending on media queries (e.g. color theme, reduced motion)
+                source: ['srcset', 'media'],
+                // Support SVGs for code insights.
                 object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
-                svg: ['width', 'height', 'viewbox', 'version'],
-                rect: ['x', 'y', 'width', 'height', ...svgPresentationAttributes],
+                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
+                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],
                 circle: ['cx', 'cy', ...svgPresentationAttributes],
+                pattern: ['id', 'width', 'height', 'patternunits', 'patterntransform'],
+                mask: ['id'],
+                // Allow highligh.js styles, e.g.
+                // <span class="hljs-keyword">
+                // <code class="language-javascript">
                 span: ['class'],
                 code: ['class'],
+                // Support deep-linking
                 h1: ['id'],
                 h2: ['id'],
                 h3: ['id'],
                 h4: ['id'],
                 h5: ['id'],
                 h6: ['id'],
+            },
+            allowedStyles: {
+                // SVGs are usually for charts in code insights.
+                // Allow them to be responsive.
+                svg: {
+                    flex: ALL_VALUES_ALLOWED,
+                    'flex-grow': ALL_VALUES_ALLOWED,
+                    'flex-shrink': ALL_VALUES_ALLOWED,
+                    'flex-basis': ALL_VALUES_ALLOWED,
+                },
             },
         }
         if (options.allowDataUriLinksAndDownloads) {
