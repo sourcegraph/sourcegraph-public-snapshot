@@ -199,8 +199,6 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) {
-	defer r.Body.Close()
-
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
