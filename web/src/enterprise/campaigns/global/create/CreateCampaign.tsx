@@ -41,7 +41,7 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                         <div>
                             <h3>Track existing changesets</h3>
                             <p className="mb-0">
-                                Track a collection of already created changesets by collecting them to a campaign. The
+                                Track a collection of already created changesets by collecting them in a campaign. The
                                 burndown chart provides an overview of progress, and filters help surface which
                                 changesets need action.
                             </p>

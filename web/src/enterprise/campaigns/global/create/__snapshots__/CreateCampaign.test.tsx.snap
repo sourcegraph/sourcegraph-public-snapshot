@@ -79,7 +79,7 @@ exports[`CreateCampaign renders 1`] = `
             <p
               className="mb-0"
             >
-              Track a collection of already created changesets by collecting them to a campaign. The burndown chart provides an overview of progress, and filters help surface which changesets need action.
+              Track a collection of already created changesets by collecting them in a campaign. The burndown chart provides an overview of progress, and filters help surface which changesets need action.
             </p>
           </div>
         </div>
