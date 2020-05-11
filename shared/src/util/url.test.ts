@@ -8,6 +8,7 @@ import {
     withWorkspaceRootInputRevision,
     isExternalLink,
     toAbsoluteBlobURL,
+    appendSubtreeQueryParam,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
 
@@ -484,5 +485,18 @@ describe('isExternalLink', () => {
     it('returns true for a different site', () => {
         jsdom.reconfigure({ url: 'https://github.com/here' })
         expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
+    })
+})
+
+describe('appendSubtreeQueryParam', () => {
+    it('appends subtree=true to urls', () => {
+        expect(appendSubtreeQueryParam('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes#L2:24')).toBe(
+            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?subtree=true#L2:24'
+        )
+    })
+    it('appends subtree=true to urls with other query params', () => {
+        expect(
+            appendSubtreeQueryParam('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test#L2:24')
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&subtree=true#L2:24')
     })
 })
