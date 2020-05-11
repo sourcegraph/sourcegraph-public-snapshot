@@ -29,3 +29,25 @@ func TestUnmarshalDocumentData(t *testing.T) {
 		t.Errorf("unexpected document (-want +got):\n%s", diff)
 	}
 }
+
+func TestUnmarshalDocumentDataComplexPaths(t *testing.T) {
+	element := Element{
+		ID:    "02",
+		Type:  "vertex",
+		Label: "document",
+		Raw:   json.RawMessage(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///__w/sourcegraph/sourcegraph/node_modules/@types/history/index.d.ts"}`),
+	}
+
+	document, err := UnmarshalDocumentData(element, "file:///__w/sourcegraph/sourcegraph/shared/")
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling document data: %s", err)
+	}
+
+	expectedDocument := DocumentData{
+		URI:      "../node_modules/@types/history/index.d.ts",
+		Contains: datastructures.IDSet{},
+	}
+	if diff := cmp.Diff(expectedDocument, document); diff != "" {
+		t.Errorf("unexpected document (-want +got):\n%s", diff)
+	}
+}
