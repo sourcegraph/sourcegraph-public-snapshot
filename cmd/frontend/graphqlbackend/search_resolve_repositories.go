@@ -34,7 +34,10 @@ type resolveRepoOp struct {
 type repositoryResolver struct {
 	resolveRepoOp
 
-	tr              *trace.Trace
+	tracer interface {
+		LazyPrintf(format string, a ...interface{})
+	}
+
 	includePatterns []string
 	excludePatterns []string
 	maxRepoListSize int
@@ -55,7 +58,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	r := repositoryResolver{
 		resolveRepoOp:   op,
-		tr:              tr,
+		tracer:          tr,
 		includePatterns: op.repoFilters,
 		excludePatterns: op.minusRepoFilters,
 		maxRepoListSize: maxReposToSearch(),
@@ -114,7 +117,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 	overLimit := len(repos) >= r.maxRepoListSize
 
 	r.repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-	r.tr.LazyPrintf("Associate/validate revs - start")
+	r.tracer.LazyPrintf("Associate/validate revs - start")
 
 	if versionContext != nil {
 		r.validateAndAssociateWithVersionContext(ctx, repos, versionContext)
@@ -122,7 +125,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 		r.validateAndAssociate(ctx, repos)
 	}
 
-	r.tr.LazyPrintf("Associate/validate revs - done")
+	r.tracer.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
 		r.repoRevisions, err = filterRepoHasCommitAfter(ctx, r.repoRevisions, op.commitAfter)
@@ -198,7 +201,7 @@ func (r *repositoryResolver) getRepos(ctx context.Context) ([]*types.Repo, error
 			repos = repos[:r.maxRepoListSize]
 		}
 	} else {
-		r.tr.LazyPrintf("Repos.List - start")
+		r.tracer.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
 			IncludePatterns: r.includePatterns,
@@ -213,7 +216,7 @@ func (r *repositoryResolver) getRepos(ctx context.Context) ([]*types.Repo, error
 			NoPrivate:    r.onlyPublic,
 			OnlyPrivate:  r.onlyPrivate,
 		})
-		r.tr.LazyPrintf("Repos.List - done")
+		r.tracer.LazyPrintf("Repos.List - done")
 		if err != nil {
 			return nil, err
 		}
