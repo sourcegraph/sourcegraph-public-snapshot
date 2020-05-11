@@ -170,18 +170,10 @@ type ChangesetSyncResponse struct {
 	Error string
 }
 
-// PermsSyncType is the type of permissions syncing request.
-type PermsSyncType int
-
-const (
-	PermsSyncRepo PermsSyncType = iota + 1
-	PermsSyncUser
-)
-
 // PermsSyncRequest is a request to sync permissions.
 type PermsSyncRequest struct {
-	Type PermsSyncType `json:"type"`
-	IDs  []int32       `json:"ids"`
+	UserIDs []int32      `json:"user_ids"`
+	RepoIDs []api.RepoID `json:"repo_ids"`
 }
 
 // PermsSyncResponse is a response to sync permissions.

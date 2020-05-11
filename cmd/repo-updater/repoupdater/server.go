@@ -632,26 +632,13 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		respond(w, http.StatusBadRequest, err)
 		return
 	}
-	if len(req.IDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
 		return
 	}
 
-	switch req.Type {
-	case protocol.PermsSyncRepo:
-		repoIDs := make([]api.RepoID, len(req.IDs))
-		for i := range repoIDs {
-			repoIDs[i] = api.RepoID(req.IDs[i])
-		}
-		s.PermsSyncer.ScheduleRepos(r.Context(), repos.PriorityHigh, repoIDs...)
-
-	case protocol.PermsSyncUser:
-		s.PermsSyncer.ScheduleUsers(r.Context(), repos.PriorityHigh, req.IDs...)
-
-	default:
-		respond(w, http.StatusBadRequest, fmt.Errorf("unrecognized type %v", req.Type))
-		return
-	}
+	s.PermsSyncer.ScheduleUsers(r.Context(), repos.PriorityHigh, req.UserIDs...)
+	s.PermsSyncer.ScheduleRepos(r.Context(), repos.PriorityHigh, req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)
 }
