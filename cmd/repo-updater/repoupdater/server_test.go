@@ -1215,8 +1215,8 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 
 			if w.Code != test.expStatusCode {
 				t.Fatalf("Code: want %v but got %v", test.expStatusCode, w.Code)
-			} else if diff := cmp.Diff(w.Body.String(), test.expBody); diff != "" {
-				t.Fatalf("Body: %v", diff)
+			} else if diff := cmp.Diff(test.expBody, w.Body.String()); diff != "" {
+				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
