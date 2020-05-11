@@ -27,4 +27,4 @@ RUN apk --no-cache add pcre-dev
 USER sourcegraph
 EXPOSE 3188
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-worker"]
-COPY precise-code-intel-worker /usr/local/bin
+COPY precise-code-intel-worker /usr/local/bin/

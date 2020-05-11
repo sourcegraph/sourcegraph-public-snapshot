@@ -16,4 +16,4 @@ RUN apk update && apk add --no-cache \
 USER sourcegraph
 EXPOSE 3186
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-api-server"]
-COPY precise-code-intel-api-server /usr/local/bin
+COPY precise-code-intel-api-server /usr/local/bin/
