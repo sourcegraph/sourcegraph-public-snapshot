@@ -1,7 +1,11 @@
 package server
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/inconshreveable/log15"
@@ -124,6 +128,34 @@ func (s *Server) handleEnqueueErr(w http.ResponseWriter, r *http.Request) (inter
 // handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
 // with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
 func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadArgs) (_ interface{}, err error) {
+	// Newer versions of src-cli will do this same check before uploading the file. However,
+	// older versions of src-cli will not guarantee that the index name query parameter is
+	// sent. Requiring it now will break valid workflows. We only need ot maintain backwards
+	// compatibility on single-payload uploads, as everything else is as new as the version
+	// of src-cli that always sends the indexer name.
+	if uploadArgs.Indexer == "" {
+		// Tee all reads from the body into a buffer so that we don't destructively consume
+		// any data from the body payload.
+		var buf bytes.Buffer
+		teeReader := io.TeeReader(r.Body, &buf)
+
+		gzipReader, err := gzip.NewReader(teeReader)
+		if err != nil {
+			return nil, err
+		}
+
+		name, err := readIndexerName(gzipReader)
+		if err != nil {
+			return nil, err
+		}
+		uploadArgs.Indexer = name
+
+		// Replace the body of the request with a reader that will produce all of the same
+		// content: all of the data that was already read from r.Body, plus the remaining
+		// content from r.Body.
+		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
+	}
+
 	tx, err := s.db.Transact(r.Context())
 	if err != nil {
 		return nil, err

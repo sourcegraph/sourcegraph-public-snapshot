@@ -2,10 +2,13 @@ package server
 
 import (
 	"bytes"
+	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -72,6 +75,70 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		if call.Arg1.Indexer != "lsif-go" {
 			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Indexer)
 		}
+	}
+
+	if len(mockBundleManagerClient.SendUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of SendUploadFunc calls. want=%d have=%d", 1, len(mockBundleManagerClient.SendUploadFunc.History()))
+	} else {
+		call := mockBundleManagerClient.SendUploadFunc.History()[0]
+		if call.Arg1 != 42 {
+			t.Errorf("unexpected bundle id. want=%d have=%d", 42, call.Arg1)
+		}
+
+		contents, err := ioutil.ReadAll(call.Arg2)
+		if err != nil {
+			t.Fatalf("unexpected error reading payload: %s", err)
+		}
+
+		if diff := cmp.Diff(expectedContents, contents); diff != "" {
+			t.Errorf("unexpected file contents (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+
+	mockDB.TransactFunc.SetDefaultReturn(mockDB, nil)
+	mockDB.InsertUploadFunc.SetDefaultReturn(42, nil)
+
+	testURL, err := url.Parse("http://test.com/upload")
+	if err != nil {
+		t.Fatalf("unexpected error constructing url: %s", err)
+	}
+	testURL.RawQuery = (url.Values{
+		"commit":       []string{"deadbeef"},
+		"root":         []string{"proj/"},
+		"repositoryId": []string{"50"},
+	}).Encode()
+
+	var lines []string
+	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "lsif-go"}}`)
+	for i := 0; i < 20000; i++ {
+		lines = append(lines, `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`)
+	}
+
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	_, _ = io.Copy(gzipWriter, bytes.NewReader([]byte(strings.Join(lines, "\n"))))
+	gzipWriter.Close()
+	expectedContents := buf.Bytes()
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+	if err != nil {
+		t.Fatalf("unexpected error constructing request: %s", err)
+	}
+
+	s := &Server{
+		db:                  mockDB,
+		bundleManagerClient: mockBundleManagerClient,
+	}
+	s.handleEnqueue(w, r)
+
+	if w.Code != http.StatusAccepted {
+		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
 	}
 
 	if len(mockBundleManagerClient.SendUploadFunc.History()) != 1 {
