@@ -9,8 +9,8 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
             <section className="my-3">
                 <h2>Get started</h2>
                 <p>
-                    Campaigns are not available on Sourcegraph.com. Instead, use a private Sourcegraph instance to try
-                    them on your code.
+                    <strong>Campaigns are not available on Sourcegraph.com</strong>. Instead, use a private Sourcegraph
+                    instance to try them on your code.
                 </p>
                 <ol>
                     <li>
@@ -24,19 +24,21 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                         to Sourcegraph.
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
-                            Update the site configuration settings
+                        Follow the{' '}
+                        <a href="https://docs.sourcegraph.com/user/campaigns/getting_started" rel="noopener">
+                            Getting started with campaigns
                         </a>{' '}
-                        to enable campaigns.
+                        guide to enable campaigns on your instance and start using them.
                     </li>
                 </ol>
 
-                <a href="https://docs.sourcegraph.com/admin/install" rel="noopener" className="btn btn-primary">
-                    Get started now
-                </a>
-                <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary ml-2">
-                    Read more about campaigns
-                </a>
+                <p>
+                    Learn more about campaigns{' '}
+                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
+                        in the documentation
+                    </a>
+                    .
+                </p>
             </section>
         }
     />
