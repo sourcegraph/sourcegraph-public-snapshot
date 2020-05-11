@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
 func TestCleanOldUploads(t *testing.T) {
@@ -25,9 +26,9 @@ func TestCleanOldUploads(t *testing.T) {
 	}
 
 	j := &Janitor{
-		bundleDir:    bundleDir,
-		maxUploadAge: time.Minute,
-		metrics:      NewJanitorMetrics(),
+		BundleDir:    bundleDir,
+		MaxUploadAge: time.Minute,
+		Metrics:      NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	if err := j.cleanOldUploads(); err != nil {

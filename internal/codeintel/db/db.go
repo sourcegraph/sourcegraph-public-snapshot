@@ -24,6 +24,14 @@ type DB interface {
 	// to a TxBeginner.
 	Transact(ctx context.Context) (DB, error)
 
+	// Savepoint creates a named position in the transaction from which all additional work can
+	// be discarded.
+	Savepoint(ctx context.Context, name string) error
+
+	// RollbackToSavepoint throws away all the work on the underlying transaction since the
+	// savepoint with the given name was created.
+	RollbackToSavepoint(ctx context.Context, name string) error
+
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
 	// is added to the resulting error value. If the Database does not wrap a transaction the
@@ -36,8 +44,17 @@ type DB interface {
 	// GetUploadsByRepo returns a list of uploads for a particular repo and the total count of records matching the given conditions.
 	GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) ([]Upload, int, error)
 
+	// QueueSize returns the number of uploads in the queued state.
+	QueueSize(ctx context.Context) (int, error)
+
 	// Enqueue inserts a new upload with a "queued" state and returns its identifier.
 	Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (int, error)
+
+	// MarkComplete updates the state of the upload to complete.
+	MarkComplete(ctx context.Context, id int) error
+
+	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
+	MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) error
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
 	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.

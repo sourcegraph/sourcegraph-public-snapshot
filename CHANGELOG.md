@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Added [Smarty](#2885), [Ethereum / Solidity / Vyper)](#2440), [Cuda](#5907), [COBOL](#10154), [vb.NET](#4901), and [ASP.NET](#4262) syntax highlighting.
   - Fixed OCaml syntax highlighting #3545
   - Bazel/Starlark support improved (.star, BUILD, and many more extensions now properly highlighted). #8123
+- New permissions page in both user and repository settings when background permissions syncing is enabled (`"permissions.backgroundSync": {"enabled": true}`). #10473
 
 ### Changed
 

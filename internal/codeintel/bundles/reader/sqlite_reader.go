@@ -83,20 +83,23 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 }
 
 func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	query := `
-		SELECT ` + strings.Join(definitionReferenceColumns, ", ") + `
-		FROM definitions
-		WHERE scheme = %s AND identifier = %s
-		LIMIT %d OFFSET %d
-	`
+	var query *sqlf.Query
+	if take == 0 && skip == 0 {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM definitions
+			WHERE scheme = %s AND identifier = %s
+		`, scheme, identifier)
+	} else {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM definitions
+			WHERE scheme = %s AND identifier = %s
+			LIMIT %d OFFSET %d
+		`, scheme, identifier, take, skip)
+	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, sqlf.Sprintf(
-		query,
-		scheme,
-		identifier,
-		take,
-		skip,
-	)))
+	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -115,20 +118,23 @@ func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier s
 }
 
 func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	query := `
-		SELECT ` + strings.Join(definitionReferenceColumns, ", ") + `
-		FROM "references"
-		WHERE scheme = %s AND identifier = %s
-		LIMIT %d OFFSET %d
-	`
+	var query *sqlf.Query
+	if take == 0 && skip == 0 {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM "references"
+			WHERE scheme = %s AND identifier = %s
+		`, scheme, identifier)
+	} else {
+		query = sqlf.Sprintf(`
+			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
+			FROM "references"
+			WHERE scheme = %s AND identifier = %s
+			LIMIT %s OFFSET %d
+		`, scheme, identifier, take, skip)
+	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, sqlf.Sprintf(
-		query,
-		scheme,
-		identifier,
-		take,
-		skip,
-	)))
+	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}

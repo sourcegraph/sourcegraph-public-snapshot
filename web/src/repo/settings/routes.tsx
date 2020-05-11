@@ -25,5 +25,6 @@ export const repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
         path: '/permissions',
         exact: true,
         render: props => <RepoSettingsPermissionsPage {...props} />,
+        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
     },
 ]

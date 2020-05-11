@@ -8,29 +8,11 @@ import (
 )
 
 type Janitor struct {
-	bundleDir          string
-	desiredPercentFree int
-	janitorInterval    time.Duration
-	maxUploadAge       time.Duration
-	metrics            JanitorMetrics
-}
-
-type JanitorOpts struct {
 	BundleDir          string
 	DesiredPercentFree int
 	JanitorInterval    time.Duration
 	MaxUploadAge       time.Duration
 	Metrics            JanitorMetrics
-}
-
-func NewJanitor(opts JanitorOpts) *Janitor {
-	return &Janitor{
-		bundleDir:          opts.BundleDir,
-		desiredPercentFree: opts.DesiredPercentFree,
-		janitorInterval:    opts.JanitorInterval,
-		maxUploadAge:       opts.MaxUploadAge,
-		metrics:            opts.Metrics,
-	}
 }
 
 // step performs a best-effort cleanup. See the following methods for more specifics.
@@ -39,11 +21,11 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
-			j.metrics.Errors.Inc()
+			j.Metrics.Errors.Inc()
 			log15.Error("Failed to run janitor process", "err", err)
 		}
 
-		time.Sleep(j.janitorInterval)
+		time.Sleep(j.JanitorInterval)
 	}
 }
 
