@@ -14,8 +14,6 @@ RUN apk update && apk add --no-cache \
     tini
 
 USER sourcegraph
-COPY ./precise-code-intel-api-server /usr/local/bin/precise-code-intel-api-server
-
 EXPOSE 3186
-ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-api-server"]
+COPY precise-code-intel-api-server /usr/local/bin/

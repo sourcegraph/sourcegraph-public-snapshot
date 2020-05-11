@@ -548,7 +548,6 @@ Referenced by:
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (patch_set_id)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:
