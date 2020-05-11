@@ -10,15 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 )
 
-// cleanOldUploads removes all upload files that are older than the configured
+// removeOldUploadFiles removes all upload files that are older than the configured
 // max unconverted upload age.
-func (j *Janitor) cleanOldUploads() error {
+func (j *Janitor) removeOldUploadFiles() error {
 	fileInfos, err := ioutil.ReadDir(paths.UploadsDir(j.BundleDir))
 	if err != nil {
 		return err
 	}
 
-	count := 0
 	for _, fileInfo := range fileInfos {
 		age := time.Since(fileInfo.ModTime())
 		if age < j.MaxUploadAge {
@@ -30,10 +29,9 @@ func (j *Janitor) cleanOldUploads() error {
 			return err
 		}
 
-		count++
-		log15.Debug("Removed old upload", "path", fileInfo.Name(), "age", age)
+		log15.Debug("Removed old upload file", "path", path, "age", age)
+		j.Metrics.UploadFilesRemoved.Add(1)
 	}
 
-	j.Metrics.OldUploads.Add(float64(count))
 	return nil
 }

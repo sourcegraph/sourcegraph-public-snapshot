@@ -42,6 +42,7 @@ export function registerHighlightContributions(): void {
     registerLanguage('markdown', require('highlight.js/lib/languages/markdown'))
     registerLanguage('diff', require('highlight.js/lib/languages/diff'))
     registerLanguage('json', require('highlight.js/lib/languages/json'))
+    registerLanguage('jsonc', require('highlight.js/lib/languages/json'))
     registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
     registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))

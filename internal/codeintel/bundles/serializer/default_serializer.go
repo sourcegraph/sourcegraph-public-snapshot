@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
-	_ "strconv"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
@@ -162,15 +162,15 @@ func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChun
 func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeData, error) {
 	m := map[types.ID]types.RangeData{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value struct {
 			StartLine          int             `json:"startLine"`
 			StartCharacter     int             `json:"startCharacter"`
 			EndLine            int             `json:"endLine"`
 			EndCharacter       int             `json:"endCharacter"`
-			DefinitionResultID types.ID        `json:"definitionResultId"`
-			ReferenceResultID  types.ID        `json:"referenceResultId"`
-			HoverResultID      types.ID        `json:"hoverResultId"`
+			DefinitionResultID ID              `json:"definitionResultId"`
+			ReferenceResultID  ID              `json:"referenceResultId"`
+			HoverResultID      ID              `json:"hoverResultId"`
 			MonikerIDs         wrappedSetValue `json:"monikerIds"`
 		}
 
@@ -181,22 +181,22 @@ func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeDa
 
 		var monikerIDs []types.ID
 		for _, value := range value.MonikerIDs.Value {
-			var id types.ID
+			var id ID
 			if err := json.Unmarshal([]byte(value), &id); err != nil {
 				return nil, err
 			}
 
-			monikerIDs = append(monikerIDs, id)
+			monikerIDs = append(monikerIDs, types.ID(id))
 		}
 
-		m[id] = types.RangeData{
+		m[types.ID(id)] = types.RangeData{
 			StartLine:          value.StartLine,
 			StartCharacter:     value.StartCharacter,
 			EndLine:            value.EndLine,
 			EndCharacter:       value.EndCharacter,
-			DefinitionResultID: value.DefinitionResultID,
-			ReferenceResultID:  value.ReferenceResultID,
-			HoverResultID:      value.HoverResultID,
+			DefinitionResultID: types.ID(value.DefinitionResultID),
+			ReferenceResultID:  types.ID(value.ReferenceResultID),
+			HoverResultID:      types.ID(value.HoverResultID),
 			MonikerIDs:         monikerIDs,
 		}
 	}
@@ -207,7 +207,7 @@ func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeDa
 func unmarshalWrappedHoverResults(pairs []json.RawMessage) (map[types.ID]string, error) {
 	m := map[types.ID]string{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value string
 
 		target := []interface{}{&id, &value}
@@ -215,7 +215,7 @@ func unmarshalWrappedHoverResults(pairs []json.RawMessage) (map[types.ID]string,
 			return nil, err
 		}
 
-		m[id] = value
+		m[types.ID(id)] = value
 	}
 
 	return m, nil
@@ -224,12 +224,12 @@ func unmarshalWrappedHoverResults(pairs []json.RawMessage) (map[types.ID]string,
 func unmarshalWrappedMonikers(pairs []json.RawMessage) (map[types.ID]types.MonikerData, error) {
 	m := map[types.ID]types.MonikerData{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value struct {
-			Kind                 string   `json:"kind"`
-			Scheme               string   `json:"scheme"`
-			Identifier           string   `json:"identifier"`
-			PackageInformationID types.ID `json:"packageInformationId"`
+			Kind                 string `json:"kind"`
+			Scheme               string `json:"scheme"`
+			Identifier           string `json:"identifier"`
+			PackageInformationID ID     `json:"packageInformationId"`
 		}
 
 		target := []interface{}{&id, &value}
@@ -237,11 +237,11 @@ func unmarshalWrappedMonikers(pairs []json.RawMessage) (map[types.ID]types.Monik
 			return nil, err
 		}
 
-		m[id] = types.MonikerData{
+		m[types.ID(id)] = types.MonikerData{
 			Kind:                 value.Kind,
 			Scheme:               value.Scheme,
 			Identifier:           value.Identifier,
-			PackageInformationID: value.PackageInformationID,
+			PackageInformationID: types.ID(value.PackageInformationID),
 		}
 	}
 
@@ -251,7 +251,7 @@ func unmarshalWrappedMonikers(pairs []json.RawMessage) (map[types.ID]types.Monik
 func unmarshalWrappedPackageInformation(pairs []json.RawMessage) (map[types.ID]types.PackageInformationData, error) {
 	m := map[types.ID]types.PackageInformationData{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value struct {
 			Name    string `json:"name"`
 			Version string `json:"version"`
@@ -262,7 +262,7 @@ func unmarshalWrappedPackageInformation(pairs []json.RawMessage) (map[types.ID]t
 			return nil, err
 		}
 
-		m[id] = types.PackageInformationData{
+		m[types.ID(id)] = types.PackageInformationData{
 			Name:    value.Name,
 			Version: value.Version,
 		}
@@ -274,7 +274,7 @@ func unmarshalWrappedPackageInformation(pairs []json.RawMessage) (map[types.ID]t
 func unmarshalWrappedDocumentPaths(pairs []json.RawMessage) (map[types.ID]string, error) {
 	m := map[types.ID]string{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value string
 
 		target := []interface{}{&id, &value}
@@ -282,7 +282,7 @@ func unmarshalWrappedDocumentPaths(pairs []json.RawMessage) (map[types.ID]string
 			return nil, err
 		}
 
-		m[id] = value
+		m[types.ID(id)] = value
 	}
 
 	return m, nil
@@ -291,10 +291,10 @@ func unmarshalWrappedDocumentPaths(pairs []json.RawMessage) (map[types.ID]string
 func unmarshalWrappedDocumentIdRangeIDs(pairs []json.RawMessage) (map[types.ID][]types.DocumentIDRangeID, error) {
 	m := map[types.ID][]types.DocumentIDRangeID{}
 	for _, pair := range pairs {
-		var id types.ID
+		var id ID
 		var value []struct {
-			DocumentID types.ID `json:"documentId"`
-			RangeID    types.ID `json:"rangeId"`
+			DocumentID ID `json:"documentId"`
+			RangeID    ID `json:"rangeId"`
 		}
 
 		target := []interface{}{&id, &value}
@@ -305,12 +305,12 @@ func unmarshalWrappedDocumentIdRangeIDs(pairs []json.RawMessage) (map[types.ID][
 		var documentIDRangeIDs []types.DocumentIDRangeID
 		for _, v := range value {
 			documentIDRangeIDs = append(documentIDRangeIDs, types.DocumentIDRangeID{
-				DocumentID: v.DocumentID,
-				RangeID:    v.RangeID,
+				DocumentID: types.ID(v.DocumentID),
+				RangeID:    types.ID(v.RangeID),
 			})
 		}
 
-		m[id] = documentIDRangeIDs
+		m[types.ID(id)] = documentIDRangeIDs
 	}
 
 	return m, nil
@@ -368,4 +368,30 @@ type wrappedMapValue struct {
 //     }
 type wrappedSetValue struct {
 	Value []json.RawMessage `json:"value"`
+}
+
+//
+//
+//
+
+type ID string
+
+func (id *ID) UnmarshalJSON(raw []byte) error {
+	if raw[0] == '"' {
+		var v string
+		if err := json.Unmarshal(raw, &v); err != nil {
+			return err
+		}
+
+		*id = ID(v)
+		return nil
+	}
+
+	var v int64
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err
+	}
+
+	*id = ID(strconv.FormatInt(v, 10))
+	return nil
 }

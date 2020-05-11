@@ -268,9 +268,9 @@ func (s *Server) handlePrune(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !prunable {
-		writeJSON(w, nil)
-	} else {
+	if prunable {
 		writeJSON(w, map[string]interface{}{"id": id})
+	} else {
+		writeJSON(w, map[string]interface{}{"id": nil})
 	}
 }

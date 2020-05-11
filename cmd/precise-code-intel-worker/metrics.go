@@ -11,7 +11,7 @@ import (
 // MustRegisterQueueMonitor emits a metric for the current queue size.
 func MustRegisterQueueMonitor(r prometheus.Registerer, db db.DB) {
 	queueSize := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_precise_code_intel_worker_queue_size",
+		Name: "src_upload_queue_uploads_total",
 		Help: "Total number of queued in the queued state.",
 	}, func() float64 {
 		count, err := db.QueueSize(context.Background())
@@ -21,6 +21,5 @@ func MustRegisterQueueMonitor(r prometheus.Registerer, db db.DB) {
 
 		return float64(count)
 	})
-
 	r.MustRegister(queueSize)
 }

@@ -45,11 +45,10 @@ type ObservedDB struct {
 var _ DB = &ObservedDB{}
 
 // NewObservedDB wraps the given DB with error logging, Prometheus metrics, and tracing.
-func NewObserved(db DB, observationContext *observation.Context, subsystem string) DB {
+func NewObserved(db DB, observationContext *observation.Context) DB {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		subsystem,
-		"db",
+		"codeintel_db",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
@@ -259,10 +258,17 @@ func (db *ObservedDB) RollbackToSavepoint(ctx context.Context, name string) (err
 }
 
 // Done calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Done(e error) (err error) {
-	_, endObservation := db.doneOperation.With(context.Background(), &err, observation.Args{})
+func (db *ObservedDB) Done(e error) error {
+	var observedErr error = nil
+	_, endObservation := db.doneOperation.With(context.Background(), &observedErr, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.Done(e)
+
+	err := db.db.Done(e)
+	if err != e {
+		// Only observe the error if it's a commit/rollback failure
+		observedErr = err
+	}
+	return err
 }
 
 // GetUploadByID calls into the inner DB and registers the observed results.

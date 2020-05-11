@@ -14,24 +14,23 @@ func MustRegisterCacheMonitor(r prometheus.Registerer, cacheName string, metrics
 	}, func() float64 {
 		return float64(metrics.CostAdded() - metrics.CostEvicted())
 	})
+	r.MustRegister(cacheCost)
 
 	cacheHits := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_cache_hits",
+		Name:        "src_cache_hits_total",
 		Help:        "Total number of cache hits.",
 		ConstLabels: prometheus.Labels{"cache": cacheName},
 	}, func() float64 {
 		return float64(metrics.Hits())
 	})
+	r.MustRegister(cacheHits)
 
 	cacheMisses := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        "src_cache_misses",
+		Name:        "src_cache_misses_total",
 		Help:        "Total number of cache misses.",
 		ConstLabels: prometheus.Labels{"cache": cacheName},
 	}, func() float64 {
 		return float64(metrics.Misses())
 	})
-
-	r.MustRegister(cacheCost)
-	r.MustRegister(cacheHits)
 	r.MustRegister(cacheMisses)
 }

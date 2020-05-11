@@ -56,6 +56,12 @@ type Server struct {
 		// our internal rate limiter are kept in sync
 		SyncRateLimiters(ctx context.Context) error
 	}
+	PermsSyncer interface {
+		// ScheduleUsers schedules new permissions syncing requests for given users.
+		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		// ScheduleRepos schedules new permissions syncing requests for given repositories.
+		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+	}
 
 	notClonedCountMu        sync.Mutex
 	notClonedCount          uint64
@@ -73,6 +79,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
+	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
 }
 
@@ -609,6 +616,28 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusInternalServerError, resp)
 		return
 	}
+	respond(w, http.StatusOK, nil)
+}
+
+func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
+	if s.PermsSyncer == nil {
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.PermsSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
+		return
+	}
+
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
+
 	respond(w, http.StatusOK, nil)
 }
 
