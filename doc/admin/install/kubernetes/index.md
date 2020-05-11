@@ -8,8 +8,6 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-## Requirements
-
 - [Kubernetes](https://kubernetes.io/) v1.9 or later with an SSD storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.9.7 or later
@@ -79,4 +77,6 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Updating
 
-See the [Upgrading docs](../../updates/kubernetes.md).
+See the [Upgrading Howto](update.md) on how to upgrade.
+See the [Upgrading docs](../../updates/kubernetes.md) for details on what changed in a version and if manual migration steps
+are necessary.
