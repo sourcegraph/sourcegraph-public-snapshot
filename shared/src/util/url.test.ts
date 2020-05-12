@@ -349,6 +349,10 @@ describe('buildSearchURLQuery', () => {
         expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo+&patternType=literal'
         ))
+    it('builds url query with a version context', () =>
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, '3.15')).toBe(
+            'q=foo+&patternType=literal&c=3.15'
+        ))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {
