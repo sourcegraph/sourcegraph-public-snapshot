@@ -110,7 +110,7 @@ export interface LayoutProps
         query: QueryState['query'],
         version: string,
         patternType: GQL.SearchPatternType,
-        versionContext: string,
+        versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     availableVersionContexts: VersionContext[] | undefined
