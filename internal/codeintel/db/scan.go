@@ -280,8 +280,8 @@ func scanVisibilities(rows *sql.Rows, err error) (map[int]bool, error) {
 	return visibilities, nil
 }
 
-// scanCommit populates a pair of strings from teh given scanner.
-func scanCommit(scanner scanner) (commit, parentCommit string, err error) {
+// scanCommit populates a pair of strings from the given scanner.
+func scanCommit(scanner scanner) (commit string, parentCommit *string, err error) {
 	err = scanner.Scan(&commit, &parentCommit)
 	return commit, parentCommit, err
 }
@@ -302,7 +302,13 @@ func scanCommits(rows *sql.Rows, err error) (map[string][]string, error) {
 			return nil, err
 		}
 
-		commits[commit] = append(commits[commit], parentCommit)
+		if _, ok := commits[commit]; !ok {
+			commits[commit] = nil
+		}
+
+		if parentCommit != nil {
+			commits[commit] = append(commits[commit], *parentCommit)
+		}
 	}
 
 	return commits, nil

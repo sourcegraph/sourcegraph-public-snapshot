@@ -57,6 +57,10 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 		}
 	}
 
+	if len(unknownCommits) == 0 {
+		return nil
+	}
+  
 	// Make the order in which we construct the values for insertion determinstic.
 	// We want this to happen because many workers/api-servers can be inserting
 	// commits for the same repository. Having them inserted in random order may
