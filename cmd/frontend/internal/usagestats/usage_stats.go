@@ -21,10 +21,17 @@ func GetUsersUsageArchiveData(ctx context.Context) (*types.UsersUsageArchiveData
 		return nil, err
 	}
 
-	users, err := db.Users.List(ctx, &db.UsersListOptions{})
+	dates, err := db.Users.ListDates(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	data := &types.UsersUsageArchiveData{
+		UsersUsageCounts: counts,
+		UsersDates: dates,
+	}
+
+	return data, nil
 }
 
 var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)

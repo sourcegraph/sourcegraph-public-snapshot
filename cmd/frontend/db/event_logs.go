@@ -556,18 +556,9 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 	return users, nil
 }
 
-// UserUsageCounts captures a user's usage of Sourcegraph in a day starting on a given date.
-type UserUsageCounts struct {
-	Date time.Time
-	UserID uint32
-	SearchCount int32
-	CodeIntelCount int32
-}
-
-
 // UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
 // '%codeintel%' events in the event_logs table.
-func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []UserUsageCounts, err error) {
+func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
 	rows, err := dbconn.Global.QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
@@ -575,7 +566,7 @@ func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []UserUsageCou
 	defer rows.Close()
 
 	for rows.Next() {
-		var c UserUsageCounts
+		var c types.UserUsageCounts
 
 		err := rows.Scan(
 			&c.Date,

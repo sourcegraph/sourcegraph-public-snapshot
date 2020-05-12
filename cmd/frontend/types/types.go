@@ -120,18 +120,25 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
+// UserUsageCounts captures the usage numbers of a user in a single day.
+type UserUsageCounts struct {
+	Date time.Time
+	UserID uint32
+	SearchCount int32
+	CodeIntelCount int32
+}
+
+// UserDates captures the created and deleted dates of a single user.
+type UserDates struct {
+	UserID int32
+	CreatedAt time.Time
+	DeletedAt time.Time
+}
+
 // UsersUsageArchiveData contains data that is exported in the user usage admin panel button "Download user usage archive".
 type UsersUsageArchiveData struct {
-	UsersUsageCounts []struct {
-		Date time.Time
-		UserID int32
-		SearchCount int32
-		CodeIntelCount int32
-	}
-	UsersCreatedDates []struct {
-		UserID int32
-		Date time.Time
-	}
+	UsersUsageCounts []UserUsageCounts
+	UsersDates []UserDates
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

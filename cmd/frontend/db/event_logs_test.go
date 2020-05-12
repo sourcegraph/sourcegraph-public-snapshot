@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -239,7 +240,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []UserUsageCounts{
+	want := []types.UserUsageCounts{
 		{Date: days[2], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
 		{Date: days[2], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
 		{Date: days[1], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
