@@ -1,6 +1,8 @@
 package graphqlbackend
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -32,4 +34,15 @@ func fromVCSHighlights(vcsHighlights []git.Highlight) []*highlightedRange {
 		}
 	}
 	return highlights
+}
+
+// A highlighting implementation for diff nodes. Returns the highlighted lines for both base and head, aborted status and an optional error.
+type DiffHighlighter interface {
+	Highlight(ctx context.Context, args *HighlightArgs) (highlightedBase []string, highlightedHead []string, aborted bool, err error)
+}
+
+type HighlightArgs struct {
+	DisableTimeout     bool
+	IsLightTheme       bool
+	HighlightLongLines bool
 }

@@ -2074,7 +2074,7 @@ type HighlightedDiffHunkLine {
     kind: DiffHunkLineType!
 }
 
-# A highlighted hunk, consisting of all it's lines.
+# A highlighted hunk, consisting of all its lines.
 type HighlightedDiffHunkBody {
     # Whether highlighting was aborted.
     aborted: Boolean!

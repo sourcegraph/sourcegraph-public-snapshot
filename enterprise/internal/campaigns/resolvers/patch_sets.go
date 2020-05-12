@@ -442,11 +442,7 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 				return
 			}
 			if !binary {
-				highlightedBase, err := oldFile.Highlight(ctx, &struct {
-					DisableTimeout     bool
-					IsLightTheme       bool
-					HighlightLongLines bool
-				}{
+				highlightedBaseTable, err := oldFile.Highlight(ctx, &graphqlbackend.HighlightArgs{
 					DisableTimeout:     args.DisableTimeout,
 					HighlightLongLines: args.HighlightLongLines,
 					IsLightTheme:       args.IsLightTheme,
@@ -455,10 +451,10 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 					r.highlightErr = err
 					return
 				}
-				if highlightedBase.Aborted() {
+				if highlightedBaseTable.Aborted() {
 					r.highlightAborted = true
 				}
-				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
+				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBaseTable.HTML())
 				if r.highlightErr != nil {
 					return
 				}
@@ -474,12 +470,20 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 					r.highlightErr = err
 					return
 				}
+				binary, err := oldFile.Binary(ctx)
+				if err != nil {
+					r.highlightErr = err
+					return
+				}
+				if binary {
+					return
+				}
 			}
 			newContent := applyPatch(content, r.previewFileDiffResolver.fileDiff)
 			if highlight.IsBinary([]byte(newContent)) {
 				return
 			}
-			highlightedHead, aborted, err := highlight.Code(ctx, highlight.Params{
+			highlightedHeadTable, aborted, err := highlight.Code(ctx, highlight.Params{
 				Content:  []byte(newContent),
 				Filepath: *newPath,
 				Metadata: highlight.Metadata{
@@ -497,11 +501,7 @@ func (r *previewFileDiffHighlighter) Highlight(ctx context.Context, args *graphq
 			if aborted {
 				r.highlightAborted = true
 			}
-			r.highlightedHead, err = highlight.ParseLinesFromHighlight(string(highlightedHead))
-			if err != nil {
-				r.highlightErr = err
-				return
-			}
+			r.highlightedHead, r.highlightErr = highlight.ParseLinesFromHighlight(string(highlightedHeadTable))
 		}
 	})
 	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr

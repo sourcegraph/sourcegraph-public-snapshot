@@ -165,13 +165,14 @@ type fileDiffConnectionResolver struct {
 	err         error
 }
 
+// compute returns the computed FileDiffs, the index from which to return entries (`after` param) and an optional error.
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, int32, error) {
 	do := func() ([]*diff.FileDiff, int32, error) {
 		var afterIdx int32
 		if r.after != nil {
 			parsedIdx, err := strconv.ParseInt(*r.after, 0, 32)
 			if err != nil {
-				return nil, 0, err
+				return nil, afterIdx, err
 			}
 			if parsedIdx < 0 {
 				parsedIdx = 0
@@ -191,11 +192,11 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
 			// extra careful to avoid letting user input add additional `git diff` command-line
 			// flags or refer to a file.
-			return nil, 0, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
+			return nil, afterIdx, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
 		if err != nil {
-			return nil, 0, err
+			return nil, afterIdx, err
 		}
 		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
 			"diff",
@@ -208,7 +209,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			"--",
 		})
 		if err != nil {
-			return nil, 0, err
+			return nil, afterIdx, err
 		}
 		defer rdr.Close()
 
@@ -223,14 +224,14 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 				break
 			}
 			if err != nil {
-				return nil, 0, err
+				return nil, afterIdx, err
 			}
 			fileDiffs = append(fileDiffs, fileDiff)
 			if r.first != nil && len(fileDiffs) == int(*r.first+afterIdx) {
 				// Check for hasNextPage.
 				_, err := dr.ReadFile()
 				if err != nil && err != io.EOF {
-					return nil, 0, err
+					return nil, afterIdx, err
 				}
 				r.hasNextPage = err != io.EOF
 				break
@@ -249,10 +250,13 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffReso
 		return nil, err
 	}
 	if r.first != nil && int(*r.first+afterIdx) <= len(fileDiffs) {
+		// If first is set, we have an upper bound. If the requested amount of diffs exist, return a slice of `first` entries from afterIdx.
 		fileDiffs = fileDiffs[afterIdx:(*r.first + afterIdx)]
 	} else if int(afterIdx) <= len(fileDiffs) {
+		// If no upper boundary is given, return from the lower boundary.
 		fileDiffs = fileDiffs[afterIdx:]
 	} else {
+		// If the lower boundary is out of bounds, return an empty result.
 		fileDiffs = []*diff.FileDiff{}
 	}
 
@@ -382,16 +386,6 @@ func NewDiffHunk(hunk *diff.Hunk, highlighter DiffHighlighter) *DiffHunk {
 	return &DiffHunk{hunk: hunk, highlighter: highlighter}
 }
 
-type DiffHighlighter interface {
-	Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error)
-}
-
-type HighlightArgs struct {
-	DisableTimeout     bool
-	IsLightTheme       bool
-	HighlightLongLines bool
-}
-
 type fileDiffHighlighter struct {
 	fileDiffResolver *fileDiffResolver
 	highlightedBase  []string
@@ -414,11 +408,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			if binary {
 				return nil, nil
 			}
-			highlightedFile, err := file.Highlight(ctx, &struct {
-				DisableTimeout     bool
-				IsLightTheme       bool
-				HighlightLongLines bool
-			}{
+			highlightedFile, err := file.Highlight(ctx, &HighlightArgs{
 				DisableTimeout:     args.DisableTimeout,
 				HighlightLongLines: args.HighlightLongLines,
 				IsLightTheme:       args.IsLightTheme,
@@ -432,6 +422,9 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			return highlight.ParseLinesFromHighlight(highlightedFile.HTML())
 		}
 		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.OldFile())
+		if r.highlightErr != nil {
+			return
+		}
 		r.highlightedHead, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.NewFile())
 	})
 	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
@@ -470,9 +463,8 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
-	// Array with content lines is 0-indexed.
+	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
-	// Array with content lines is 0-indexed.
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
