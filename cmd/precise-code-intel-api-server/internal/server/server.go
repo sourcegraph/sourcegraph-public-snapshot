@@ -19,9 +19,9 @@ import (
 const Port = 3186
 
 type Server struct {
-	DB                  db.DB                       // TODO - unexport
-	BundleManagerClient bundles.BundleManagerClient // TODO - unexport
-	CodeIntelAPI        api.CodeIntelAPI            // TODO - unexport
+	db                  db.DB
+	bundleManagerClient bundles.BundleManagerClient
+	codeIntelAPI        api.CodeIntelAPI
 	server              *http.Server
 	once                sync.Once
 }
@@ -37,9 +37,9 @@ func New(
 	}
 
 	s := &Server{
-		DB:                  db,
-		BundleManagerClient: bundleManagerClient,
-		CodeIntelAPI:        codeIntelAPI,
+		db:                  db,
+		bundleManagerClient: bundleManagerClient,
+		codeIntelAPI:        codeIntelAPI,
 	}
 
 	s.server = &http.Server{

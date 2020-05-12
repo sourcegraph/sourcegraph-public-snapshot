@@ -43,7 +43,7 @@ func main() {
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-	server := server.New(db, bundleManagerClient,codeIntelAPI)
+	server := server.New(db, bundleManagerClient, codeIntelAPI)
 
 	uploadResetter := resetter.UploadResetter{
 		DB:            db,

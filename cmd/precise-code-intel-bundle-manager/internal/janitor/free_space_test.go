@@ -39,8 +39,8 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	j := &Janitor{
-		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	if err := j.evictBundles(pruneFn, 100); err != nil {
@@ -92,8 +92,8 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	}
 
 	j := &Janitor{
-		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	if err := j.evictBundles(pruneFn, 100); err != nil {

@@ -44,7 +44,7 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
-	server:=server.New()
+	server := server.New()
 
 	worker := worker.NewWorker(
 		db,
