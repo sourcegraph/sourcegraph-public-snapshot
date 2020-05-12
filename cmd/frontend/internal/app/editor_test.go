@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -82,5 +83,82 @@ func TestEditorRev(t *testing.T) {
 		if got != c.expEditorRev {
 			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}
+	}
+}
+
+func TestEditorRedirect(t *testing.T) {
+	cases := []struct {
+		name            string
+		q               url.Values
+		wantRedirectURL string
+		wantUserErr     error
+		wantInternalErr error
+	}{
+		{
+			name: "open file",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file no selection",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+			},
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
+		},
+		{
+			name: "search",
+			q: url.Values{
+				"editor":  []string{"Atom"},
+				"version": []string{"v1.2.1"},
+				"search":  []string{"foobar"},
+			},
+			wantRedirectURL: "/search?q=%22foobar%22&utm_source=Atom-v1.2.1",
+		},
+		{
+			// BUG!
+			name:            "empty request",
+			q:               url.Values{},
+			wantRedirectURL: "/-/blob?utm_source=-#L1:1",
+		},
+		{
+			// BUG!
+			name: "unknown request",
+			q: url.Values{
+				"editor":  []string{"Atom"},
+				"version": []string{"v1.2.1"},
+			},
+			wantRedirectURL: "/-/blob?utm_source=Atom-v1.2.1#L1:1",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			redirectURL, userErr, internalErr := editorRedirect(context.Background(), c.q)
+			if redirectURL != c.wantRedirectURL {
+				t.Fatalf("got redirectURL %q want %q", redirectURL, c.wantRedirectURL)
+			}
+			if userErr != c.wantUserErr {
+				t.Fatalf("got userErr %q want %q", userErr, c.wantUserErr)
+			}
+			if internalErr != c.wantInternalErr {
+				t.Fatalf("got internalErr %q want %q", internalErr, c.wantInternalErr)
+			}
+		})
 	}
 }
