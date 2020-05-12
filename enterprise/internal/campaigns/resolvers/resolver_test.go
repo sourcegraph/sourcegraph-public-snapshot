@@ -1101,7 +1101,7 @@ func TestPatchSetResolver(t *testing.T) {
 			expectedLength = 0
 		}
 		if have, want := len(response.Node.Patches.Nodes[0].Diff.FileDiffs.Nodes), expectedLength; have != want {
-			t.Fatalf("have %d patches, want %d", have, want)
+			t.Fatalf("have %d file diffs, want %d", have, want)
 		}
 
 		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.HasNextPage, page == 0; have != want {
