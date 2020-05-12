@@ -172,7 +172,7 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 			}
 
 			if e.Type() == campaigns.ChangesetEventKindBitbucketServerDismissed {
-				// A BitbucketServer Dismissed event can only follow a previous Review requesting changes by
+				// A BitbucketServer Dismissed event can only follow a previous "Changes Requested" review by
 				// the same author.
 				lastReview, ok := lastReviewByAuthor[author]
 				if !ok || lastReview != campaigns.ChangesetReviewStateChangesRequested {
