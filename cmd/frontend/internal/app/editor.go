@@ -48,9 +48,10 @@ func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplici
 	return "@" + rev, nil
 }
 
-func serveEditor(w http.ResponseWriter, r *http.Request) error {
+// editorRedirect calculates where to redirect a user who has an editor URL
+// from a Sourcegraph editor extension.
+func editorRedirect(ctx context.Context, q url.Values) (redirectURL string, userErr, internalErr error) {
 	// Required query parameters:
-	q := r.URL.Query()
 	editor := q.Get("editor")   // Editor name: "Atom", "Sublime", etc.
 	version := q.Get("version") // Editor extension version.
 
@@ -92,8 +93,8 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 			q.Add("utm_product_version", utmProductVersion)
 		}
 		u.RawQuery = q.Encode()
-		http.Redirect(w, r, u.String(), http.StatusSeeOther)
-		return nil
+		redirectURL = u.String()
+		return
 	}
 
 	// Open-file request.
@@ -108,25 +109,26 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	var hostnameToPattern map[string]string
 	if hostnameToPatternStr := q.Get("hostname_patterns"); hostnameToPatternStr != "" {
 		if err := json.Unmarshal([]byte(hostnameToPatternStr), &hostnameToPattern); err != nil {
-			return err
+			internalErr = err
+			return
 		}
 	}
 	repoName := guessRepoNameFromRemoteURL(remoteURL, hostnameToPattern)
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Git remote URL %q not supported", remoteURL)
-		return nil
+		userErr = fmt.Errorf("Git remote URL %q not supported", remoteURL)
+		return
 	}
 
 	inputRev, beExplicit := revision, true
 	if inputRev == "" {
 		inputRev, beExplicit = branch, false
 	}
-	rev, err := editorRev(r.Context(), repoName, inputRev, beExplicit)
+	rev, err := editorRev(ctx, repoName, inputRev, beExplicit)
 	if err != nil {
-		return err
+		internalErr = err
+		return
 	}
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", file)}
@@ -144,7 +146,21 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	} else {
 		u.Fragment = fmt.Sprintf("L%d:%d-%d:%d", startRow+1, startCol+1, endRow+1, endCol+1)
 	}
-	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+	redirectURL = u.String()
+	return
+}
+
+func serveEditor(w http.ResponseWriter, r *http.Request) error {
+	q := r.URL.Query()
+	redirectURL, userErr, internalErr := editorRedirect(r.Context(), q)
+	if internalErr != nil {
+		return internalErr
+	}
+	if userErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "%s", userErr.Error())
+	}
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 	return nil
 }
 
