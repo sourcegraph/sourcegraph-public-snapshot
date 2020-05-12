@@ -20,8 +20,6 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
 
-type MaybeLoadingTruncatableResult<T extends object> = MaybeLoadingResult<T> & { isTruncated: boolean }
-
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
     location: H.Location
     /**
@@ -54,7 +52,9 @@ interface State {
      * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
      * to load.
      */
-    locationsOrError: MaybeLoadingTruncatableResult<Location[] | ErrorLike>
+    locationsOrError:
+        | MaybeLoadingResult<{ locations: Location[]; isTruncated: boolean }>
+        | MaybeLoadingResult<ErrorLike>
 
     selectedGroups?: string[]
 }
@@ -63,7 +63,7 @@ interface State {
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
 export class HierarchicalLocationsView extends React.PureComponent<HierarchicalLocationsViewProps, State> {
-    public state: State = { locationsOrError: { isLoading: true, result: [], isTruncated: false } }
+    public state: State = { locationsOrError: { isLoading: true, result: { locations: [], isTruncated: false } } }
 
     private componentUpdates = new Subject<HierarchicalLocationsViewProps>()
     private subscriptions = new Subscription()
@@ -79,20 +79,35 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 .pipe(
                     switchMap(locationProviderResults =>
                         locationProviderResults.pipe(
-                            catchError((error): [MaybeLoadingResult<Location[] | ErrorLike>] => [
+                            // Truncate the result set if it is too large,
+                            // to avoid crashing the UI. A banner will be displayed to the user
+                            // when this is the case.
+                            map(({ isLoading, result: locations }) => {
+                                const isTruncated = locations.length > MAXIMUM_LOCATION_RESULTS
+                                return {
+                                    isLoading,
+                                    result: {
+                                        locations: isTruncated
+                                            ? locations.slice(0, MAXIMUM_LOCATION_RESULTS)
+                                            : locations,
+                                        isTruncated,
+                                    },
+                                }
+                            }),
+                            catchError((error): [State['locationsOrError']] => [
                                 { isLoading: false, result: asError(error) },
                             ]),
-                            startWith<{ result: Location[] | ErrorLike; isLoading: boolean }>({
-                                result: [],
+                            startWith({
+                                result: { locations: [], isTruncated: false },
                                 isLoading: true,
                             }),
                             tap(({ result }) => {
-                                const hasResults = !isErrorLike(result) && result.length > 0
+                                const hasResults = !isErrorLike(result) && result.locations.length > 0
                                 this.props.extensionsController.services.context.updateContext({
                                     'panel.locations.hasResults': hasResults,
                                 })
                             }),
-                            endWith<{ result?: Location[] | ErrorLike; isLoading: boolean }>({ isLoading: false })
+                            endWith({ isLoading: false })
                         )
                     )
                 )
@@ -101,14 +116,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         locationsOrError: {
                             ...previous.locationsOrError,
                             ...locationsOrError,
-                            ...(locationsOrError.result &&
-                            !isErrorLike(locationsOrError?.result) &&
-                            (locationsOrError.result.length || 0) > MAXIMUM_LOCATION_RESULTS
-                                ? {
-                                      result: locationsOrError.result.slice(0, MAXIMUM_LOCATION_RESULTS),
-                                      isTruncated: true,
-                                  }
-                                : {}),
                         },
                     }))
                 )
@@ -131,10 +138,10 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         if (isErrorLike(this.state.locationsOrError.result)) {
             return <FileLocationsError error={this.state.locationsOrError.result} />
         }
-        if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.length === 0) {
+        if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.locations.length === 0) {
             return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
         }
-        if (this.state.locationsOrError.result.length === 0) {
+        if (this.state.locationsOrError.result.locations.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -162,7 +169,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError.result,
+            this.state.locationsOrError.result.locations,
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
             { uri: this.props.defaultGroup }
@@ -203,7 +210,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
 
         return (
             <div className="hierarchical-locations-wrapper">
-                {this.state.locationsOrError.isTruncated && (
+                {this.state.locationsOrError.result.isTruncated && (
                     <div className="alert alert-warning py-1 px-3 m-2 text-nowrap text-center">
                         <small>
                             <strong>Large result set</strong> - only showing the first {MAXIMUM_LOCATION_RESULTS}{' '}
