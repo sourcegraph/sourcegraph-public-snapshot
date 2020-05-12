@@ -272,7 +272,8 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		}
 
 		// Check to see if the database exists after opening it. If it doesn't, then
-		// SQLite has created a new, empty database that is not yet written to disk.
+		// the DB file was deleted between the exists check and opening the database
+		// and SQLite has created a new, empty database that is not yet written to disk.
 		if _, err := os.Stat(filename); err != nil {
 			if os.IsNotExist(err) {
 				sqliteReader.Close()
