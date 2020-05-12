@@ -91,8 +91,8 @@ func TestEditorRedirect(t *testing.T) {
 		name            string
 		q               url.Values
 		wantRedirectURL string
-		wantUserErr     error
-		wantInternalErr error
+		wantParseErr    string
+		wantRedirectErr string
 	}{
 		{
 			name: "open file",
@@ -132,32 +132,38 @@ func TestEditorRedirect(t *testing.T) {
 			wantRedirectURL: "/search?q=%22foobar%22&utm_source=Atom-v1.2.1",
 		},
 		{
-			// BUG!
-			name:            "empty request",
-			q:               url.Values{},
-			wantRedirectURL: "/-/blob?utm_source=-#L1:1",
+			name:         "empty request",
+			wantParseErr: "expected URL parameter missing: editor=$EDITOR_NAME",
 		},
 		{
-			// BUG!
 			name: "unknown request",
 			q: url.Values{
 				"editor":  []string{"Atom"},
 				"version": []string{"v1.2.1"},
 			},
-			wantRedirectURL: "/-/blob?utm_source=Atom-v1.2.1#L1:1",
+			wantRedirectErr: "could not determine request type, missing ?search or ?remote_url",
 		},
+	}
+	errStr := func(e error) string {
+		if e == nil {
+			return ""
+		}
+		return e.Error()
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			redirectURL, userErr, internalErr := editorRedirect(context.Background(), c.q)
-			if redirectURL != c.wantRedirectURL {
-				t.Fatalf("got redirectURL %q want %q", redirectURL, c.wantRedirectURL)
+			editorRequest, parseErr := parseEditorRequest(c.q)
+			if errStr(parseErr) != c.wantParseErr {
+				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
 			}
-			if userErr != c.wantUserErr {
-				t.Fatalf("got userErr %q want %q", userErr, c.wantUserErr)
-			}
-			if internalErr != c.wantInternalErr {
-				t.Fatalf("got internalErr %q want %q", internalErr, c.wantInternalErr)
+			if parseErr == nil {
+				redirectURL, redirectErr := editorRequest.redirectURL(context.TODO())
+				if errStr(redirectErr) != c.wantRedirectErr {
+					t.Fatalf("got redirectErr %q want %q", redirectErr, c.wantRedirectErr)
+				}
+				if redirectURL != c.wantRedirectURL {
+					t.Fatalf("got redirectURL %q want %q", redirectURL, c.wantRedirectURL)
+				}
 			}
 		})
 	}
