@@ -255,7 +255,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}

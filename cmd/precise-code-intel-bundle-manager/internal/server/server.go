@@ -18,20 +18,20 @@ import (
 const Port = 3187
 
 type Server struct {
-	bundleDir            string
-	databaseCache        *database.DatabaseCache
-	documentDataCache    *database.DocumentDataCache
-	resultChunkDataCache *database.ResultChunkDataCache
-	observationContext   *observation.Context
-	server               *http.Server
-	once                 sync.Once
+	bundleDir          string
+	databaseCache      *database.DatabaseCache
+	documentCache      *database.DocumentCache
+	resultChunkCache   *database.ResultChunkCache
+	observationContext *observation.Context
+	server             *http.Server
+	once               sync.Once
 }
 
 func New(
 	bundleDir string,
 	databaseCache *database.DatabaseCache,
-	documentDataCache *database.DocumentDataCache,
-	resultChunkDataCache *database.ResultChunkDataCache,
+	documentCache *database.DocumentCache,
+	resultChunkCache *database.ResultChunkCache,
 	observationContext *observation.Context,
 ) *Server {
 	host := ""
@@ -40,11 +40,11 @@ func New(
 	}
 
 	s := &Server{
-		bundleDir:            bundleDir,
-		databaseCache:        databaseCache,
-		documentDataCache:    documentDataCache,
-		resultChunkDataCache: resultChunkDataCache,
-		observationContext:   observationContext,
+		bundleDir:          bundleDir,
+		databaseCache:      databaseCache,
+		documentCache:      documentCache,
+		resultChunkCache:   resultChunkCache,
+		observationContext: observationContext,
 	}
 
 	s.server = &http.Server{

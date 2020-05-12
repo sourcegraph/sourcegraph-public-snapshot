@@ -45,11 +45,11 @@ type Database interface {
 }
 
 type databaseImpl struct {
-	filename             string
-	reader               reader.Reader         // database file reader
-	documentDataCache    *DocumentDataCache    // shared cache
-	resultChunkDataCache *ResultChunkDataCache // shared cache
-	numResultChunks      int                   // numResultChunks value from meta row
+	filename         string
+	reader           reader.Reader     // database file reader
+	documentCache    *DocumentCache    // shared cache
+	resultChunkCache *ResultChunkCache // shared cache
+	numResultChunks  int               // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -103,18 +103,18 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
+func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
 	_, _, numResultChunks, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
 	}
 
 	return &databaseImpl{
-		filename:             filename,
-		documentDataCache:    documentDataCache,
-		resultChunkDataCache: resultChunkDataCache,
-		reader:               reader,
-		numResultChunks:      numResultChunks,
+		filename:         filename,
+		documentCache:    documentCache,
+		resultChunkCache: resultChunkCache,
+		reader:           reader,
+		numResultChunks:  numResultChunks,
 	}, nil
 }
 
@@ -310,7 +310,7 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 		span.Finish()
 	}()
 
-	documentData, err := db.documentDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
+	documentData, err := db.documentCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
 		cached = false
 
 		data, ok, err := db.reader.ReadDocument(ctx, path)
@@ -412,7 +412,7 @@ func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.I
 		span.Finish()
 	}()
 
-	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
+	resultChunkData, err := db.resultChunkCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
 		cached = false
 
 		data, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))

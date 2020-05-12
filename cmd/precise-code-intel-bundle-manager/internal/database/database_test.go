@@ -250,17 +250,17 @@ func openTestDatabase(t *testing.T) Database {
 		t.Fatalf("unexpected error creating reader: %s", err)
 	}
 
-	documentDataCache, _, err := NewDocumentDataCache(1)
+	documentCache, _, err := NewDocumentCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	resultChunkDataCache, _, err := NewResultChunkDataCache(1)
+	resultChunkCache, _, err := NewResultChunkCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), filename, reader, documentDataCache, resultChunkDataCache)
+	db, err := OpenDatabase(context.Background(), filename, reader, documentCache, resultChunkCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
