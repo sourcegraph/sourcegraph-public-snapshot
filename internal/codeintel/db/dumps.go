@@ -54,7 +54,7 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 		defer func() { err = tx.Done(err) }()
 	}
 
-	ids, err := scanInts(tx.query(
+	ids, err := scanInts(tx.querys(
 		ctx,
 		withBidirectionalLineage(`
 			SELECT d.dump_id FROM lineage_with_dumps d
