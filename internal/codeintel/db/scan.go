@@ -286,9 +286,9 @@ func scanCommit(scanner scanner) (commit, parentCommit string, err error) {
 	return commit, parentCommit, err
 }
 
-// scanCommits reads the given set of `(commit, parent_commit)` row sand returns
+// scanCommits reads the given set of `(commit, parent_commit)` rows and returns
 // a map from commits to its parents. This method should be called directly from
-// the return value of` *db.query`.
+// the return value of `*db.query`.
 func scanCommits(rows *sql.Rows, err error) (map[string][]string, error) {
 	if err != nil {
 		return nil, err
