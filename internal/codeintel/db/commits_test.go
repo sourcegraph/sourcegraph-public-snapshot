@@ -105,7 +105,7 @@ func TestUpdateCommits(t *testing.T) {
 	}
 }
 
-func TestUpdateCommitsWithConflicts(t *testing.T) {
+func TestUpdateCommitsWithOverlap(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
