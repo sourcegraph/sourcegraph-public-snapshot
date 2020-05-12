@@ -318,35 +318,35 @@ describe('withWorkspaceRootInputRevision', () => {
 
 describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, 'default')).toBe('q=foo&patternType=regexp'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, 'default')).toBe(
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, undefined)).toBe(
             'q=foo&patternType=literal'
         ))
     it('handles an empty query', () =>
-        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, 'default')).toBe('q=&patternType=regexp'))
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, 'default')).toBe(
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toBe(
             'q=foo+bar%25baz&patternType=regexp'
         ))
     it('preserves / and : for readability', () =>
-        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, 'default')).toBe(
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toBe(
             'q=repo:foo/bar&patternType=regexp'
         ))
     it('overrides the patternType parameter if a patternType field exists in the query', () =>
-        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, 'default')).toBe(
+        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)).toBe(
             'q=foo+&patternType=literal'
         ))
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, 'default')).toBe(
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo&patternType=literal&case=yes'
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
-        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, 'default')).toBe(
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
             'q=foo+&patternType=literal&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, 'default')).toBe(
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo+&patternType=literal'
         ))
 })
