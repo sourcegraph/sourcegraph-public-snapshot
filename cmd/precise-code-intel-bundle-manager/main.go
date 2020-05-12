@@ -51,7 +51,7 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	databaseCache, documentCache, resultChunKcache := prepCaches(
+	databaseCache, documentCache, resultChunkCache := prepCaches(
 		observationContext.Registerer,
 		databaseCacheSize,
 		documentCacheSize,
@@ -60,7 +60,7 @@ func main() {
 
 	metrics.MustRegisterDiskMonitor(bundleDir)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	server := server.New(bundleDir, databaseCache, documentCache, resultChunKcache, observationContext)
+	server := server.New(bundleDir, databaseCache, documentCache, resultChunkCache, observationContext)
 	janitor := janitor.New(bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, janitorMetrics)
 
 	go server.Start()
