@@ -81,7 +81,7 @@ type editorOpenFileRequest struct {
 
 // editorSearchRequest represents parameters for "search on Sourcegraph" editor requests.
 type editorSearchRequest struct {
-	query string
+	query string // The literal search query
 }
 
 // searchRedirect returns the redirect URL for the pre-validated search request.
@@ -91,10 +91,8 @@ func (r *editorRequest) searchRedirect() string {
 	// repo is not actually very useful, since they can usually do that better in their editor.
 	u := &url.URL{Path: "/search"}
 	q := u.Query()
-	// Escape double quotes in search query.
-	query := strings.Replace(r.searchRequest.query, `"`, `\"`, -1)
-	// Search as a string literal
-	q.Add("q", `"`+query+`"`)
+	q.Add("q", r.searchRequest.query)
+	q.Add("patternType", "literal")
 	q.Add("utm_source", r.editor+"-"+r.version)
 	if r.utmProductName != "" {
 		q.Add("utm_product_name", r.utmProductName)

@@ -129,7 +129,7 @@ func TestEditorRedirect(t *testing.T) {
 				"version": []string{"v1.2.1"},
 				"search":  []string{"foobar"},
 			},
-			wantRedirectURL: "/search?q=%22foobar%22&utm_source=Atom-v1.2.1",
+			wantRedirectURL: "/search?patternType=literal&q=foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name:         "empty request",
