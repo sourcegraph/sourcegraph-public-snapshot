@@ -403,64 +403,36 @@ type fileDiffHighlighter struct {
 
 func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error) {
 	r.highlightOnce.Do(func() {
-		if oldFile := r.fileDiffResolver.OldFile(); oldFile != nil {
-			var binary bool
-			binary, r.highlightErr = oldFile.Binary(ctx)
-			if r.highlightErr != nil {
+		highlightFile := func(ctx context.Context, file *GitTreeEntryResolver) ([]string, error) {
+			if file == nil {
+				return nil, nil
+			}
+			binary, err := file.Binary(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if binary {
+				return nil, nil
+			}
+			highlightedFile, err := file.Highlight(ctx, &struct {
+				DisableTimeout     bool
+				IsLightTheme       bool
+				HighlightLongLines bool
+			}{
+				DisableTimeout:     args.DisableTimeout,
+				HighlightLongLines: args.HighlightLongLines,
+				IsLightTheme:       args.IsLightTheme,
+			})
+			if err != nil {
 				return
 			}
-			if !binary {
-				var highlightedBase *highlightedFileResolver
-				highlightedBase, r.highlightErr = oldFile.Highlight(ctx, &struct {
-					DisableTimeout     bool
-					IsLightTheme       bool
-					HighlightLongLines bool
-				}{
-					DisableTimeout:     args.DisableTimeout,
-					HighlightLongLines: args.HighlightLongLines,
-					IsLightTheme:       args.IsLightTheme,
-				})
-				if r.highlightErr != nil {
-					return
-				}
-				if highlightedBase.Aborted() {
-					r.highlightAborted = true
-				}
-				r.highlightedBase, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedBase.HTML())
-				if r.highlightErr != nil {
-					return
-				}
+			if highlightedFile.Aborted() {
+				r.highlightAborted = true
 			}
+			return highlight.ParseLinesFromHighlight(highlightedFile.HTML())
 		}
-		if newFile := r.fileDiffResolver.NewFile(); newFile != nil {
-			var binary bool
-			binary, r.highlightErr = newFile.Binary(ctx)
-			if r.highlightErr != nil {
-				return
-			}
-			if !binary {
-				var highlightedHead *highlightedFileResolver
-				highlightedHead, r.highlightErr = newFile.Highlight(ctx, &struct {
-					DisableTimeout     bool
-					IsLightTheme       bool
-					HighlightLongLines bool
-				}{
-					DisableTimeout:     args.DisableTimeout,
-					HighlightLongLines: args.HighlightLongLines,
-					IsLightTheme:       args.IsLightTheme,
-				})
-				if r.highlightErr != nil {
-					return
-				}
-				if highlightedHead.Aborted() {
-					r.highlightAborted = true
-				}
-				r.highlightedHead, r.highlightErr = highlight.ParseLinesFromHighlight(highlightedHead.HTML())
-				if r.highlightErr != nil {
-					return
-				}
-			}
-		}
+		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.OldFile())
+		r.highlightedHead, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.NewFile())
 	})
 	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
