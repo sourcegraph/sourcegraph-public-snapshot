@@ -18,7 +18,6 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
         props.setVersionContext(newValue)
     }
 
-    // const sortVersionContexts = (versionContexts: [])
     if (!versionContexts || (!isErrorLike(versionContexts) && versionContexts.length === 0)) {
         return null
     }

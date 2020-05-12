@@ -54,6 +54,7 @@ describe('ResultContainer', () => {
         onSelect,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         isLightTheme: true,
+        versionContext: undefined,
     }
 
     // Props that represent a FileMatch with multiple results, totaling more than subsetMatch.

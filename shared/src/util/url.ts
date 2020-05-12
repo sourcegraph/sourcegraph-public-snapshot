@@ -684,7 +684,7 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
 export const isExternalLink = (url: string): boolean =>
     !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
 
-export const appendVersionContextQueryParam = (url: string, versionContext: string): string => {
+export const appendVersionContextQueryParam = (url: string, versionContext: string | undefined): string => {
     if (!versionContext) {
         return url
     }

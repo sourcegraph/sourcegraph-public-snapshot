@@ -10,6 +10,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
+    verifyVersionContext,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -163,7 +164,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    versionContext && versionContext !== 'default' ? versionContext : '',
+                                    versionContext === 'default' ? '' : verifyVersionContext(versionContext) || '',
                                     this.props
                                 )
                                 .pipe(

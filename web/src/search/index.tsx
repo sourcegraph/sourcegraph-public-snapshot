@@ -154,3 +154,24 @@ export function parseURLVersionContext(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
     return searchParams.get('c') || undefined
 }
+
+export function verifyVersionContext(versionContext: string | undefined): string | undefined {
+    if (!versionContext) {
+        return undefined
+    }
+
+    const availableVersionContexts = window.context.experimentalFeatures.versionContexts
+
+    if (!availableVersionContexts) {
+        // We have a resolved version context from the URL or localStorage, but not available version contexts.
+        // In this case, we hide version contexts, so set to undefined.
+        return undefined
+    }
+
+    if (!availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext)) {
+        // The resolved version context doesn't actually exist in the settings, so set to default.
+        return 'default'
+    }
+
+    return versionContext
+}
