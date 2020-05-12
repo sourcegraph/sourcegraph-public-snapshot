@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Subscription, Observable } from 'rxjs'
+import { Subscription } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'

@@ -112,7 +112,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         </ListboxGroupLabel>
 
                                         {props.availableVersionContexts
-                                            .filter(versionContext => versionContext.name === props.versionContext)
+                                            ?.filter(versionContext => versionContext.name === props.versionContext)
                                             .map(versionContext => (
                                                 <ListboxOption
                                                     key={versionContext.name}
@@ -129,7 +129,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                                 </ListboxOption>
                                             ))}
                                         {props.availableVersionContexts
-                                            .filter(versionContext => versionContext.name !== props.versionContext)
+                                            ?.filter(versionContext => versionContext.name !== props.versionContext)
                                             .sort((a, b) => (a.name > b.name ? 1 : -1))
                                             .map(versionContext => (
                                                 <ListboxOption

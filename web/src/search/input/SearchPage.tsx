@@ -33,7 +33,6 @@ import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import { Observable } from 'rxjs'
 import { VersionContext } from '../../schema/site.schema'
 
 interface Props
@@ -54,7 +53,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    availableVersionContexts: VersionContext[]
+    availableVersionContexts: VersionContext[] | undefined
 
     // For NavLinks
     authRequired?: boolean
