@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -69,10 +70,10 @@ type editorRequest struct {
 // editorSearchRequest represents parameters for "open file on Sourcegraph" editor requests.
 type editorOpenFileRequest struct {
 	remoteURL         string            // Git repository remote URL.
+	hostnameToPattern map[string]string // Map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
 	branch            string            // Git branch name.
 	revision          string            // Git revision.
-	file              string            // File relative to repository root.
-	hostnameToPattern map[string]string // map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
+	file              string            // Unix filepath relative to repository root.
 
 	// Zero-based cursor selection parameters. Required.
 	startRow, endRow int
@@ -82,17 +83,23 @@ type editorOpenFileRequest struct {
 // editorSearchRequest represents parameters for "search on Sourcegraph" editor requests.
 type editorSearchRequest struct {
 	query string // The literal search query
+
+	// Optional git repository remote URL. When present, the search will be performed just
+	// in the repository (not globally).
+	remoteURL         string
+	hostnameToPattern map[string]string // Map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
+
+	// Optional git repository branch name and revision. When one is present and remoteURL
+	// is present, the search will be performed just at this branch/revision.
+	branch, revision string
+
+	// Optional unix filepath relative to the repository root. When present, the search
+	// will be performed with a file: search filter.
+	file string
 }
 
-// searchRedirect returns the redirect URL for the pre-validated search request.
-func (r *editorRequest) searchRedirect() string {
-	// Search request. The search is intentionally not scoped to a repository, because it's assumed the
-	// user prefers to perform the search in their last-used search scope. Searching in their current
-	// repo is not actually very useful, since they can usually do that better in their editor.
-	u := &url.URL{Path: "/search"}
-	q := u.Query()
-	q.Add("q", r.searchRequest.query)
-	q.Add("patternType", "literal")
+// addTracking adds the tracking ?utm_... parameters to the given query values.
+func (r *editorRequest) addTracking(q url.Values) {
 	q.Add("utm_source", r.editor+"-"+r.version)
 	if r.utmProductName != "" {
 		q.Add("utm_product_name", r.utmProductName)
@@ -100,20 +107,65 @@ func (r *editorRequest) searchRedirect() string {
 	if r.utmProductVersion != "" {
 		q.Add("utm_product_version", r.utmProductVersion)
 	}
+}
+
+// searchRedirect returns the redirect URL for the pre-validated search request.
+func (r *editorRequest) searchRedirect() (string, error) {
+	s := r.searchRequest
+
+	// Handle searches scoped to a specific repository.
+	var repoFilter string
+	if s.remoteURL != "" {
+		// Search in this repository.
+		repoName := guessRepoNameFromRemoteURL(s.remoteURL, s.hostnameToPattern)
+		if repoName == "" {
+			// Any error here is a problem with the user's configured git remote
+			// URL. We want them to actually read this error message.
+			return "", fmt.Errorf("Git remote URL %q not supported", s.remoteURL)
+		}
+		// Note: we do not use ^ at the front of the repo filter because repoName may
+		// produce imprecise results and a suffix match seems better than no match.
+		repoFilter = "repo:" + regexp.QuoteMeta(string(repoName)) + "$"
+	}
+
+	// Handle searches scoped to a specific revision/branch.
+	if repoFilter != "" && s.revision != "" {
+		// Search in just this revision.
+		repoFilter += "@" + s.revision
+	} else if repoFilter != "" && s.branch != "" {
+		// Search in just this branch.
+		repoFilter += "@" + s.branch
+	}
+
+	// Handle searches scoped to a specific file.
+	var fileFilter string
+	if s.file != "" {
+		fileFilter = "file:^" + regexp.QuoteMeta(s.file) + "$"
+	}
+
+	// Compose the final search query.
+	parts := make([]string, 0, 3)
+	for _, part := range []string{repoFilter, fileFilter, r.searchRequest.query} {
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+	searchQuery := strings.Join(parts, " ")
+
+	// Build the redirect URL.
+	u := &url.URL{Path: "/search"}
+	q := u.Query()
+	q.Add("q", searchQuery)
+	q.Add("patternType", "literal")
+	r.addTracking(q)
 	u.RawQuery = q.Encode()
-	return u.String()
+	return u.String(), nil
 }
 
 // openFile returns the redirect URL for the pre-validated open-file request.
 func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	of := r.openFileRequest
 	// Determine the repo name and branch.
-	//
-	// TODO(sqs): This used to hit gitserver, which would be more accurate in case of nonstandard
-	// clone URLs.  It now generates the guessed repo name statically, which means in some cases it
-	// won't work, but it is worth the increase in simplicity (plus there is an error message for
-	// users). In the future we can let users specify a custom mapping to the Sourcegraph repo in
-	// their local Git repo (instead of having them pass it here).
 	repoName := guessRepoNameFromRemoteURL(of.remoteURL, of.hostnameToPattern)
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
@@ -132,13 +184,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
-	q.Add("utm_source", r.editor+"-"+r.version)
-	if r.utmProductName != "" {
-		q.Add("utm_product_name", r.utmProductName)
-	}
-	if r.utmProductVersion != "" {
-		q.Add("utm_product_version", r.utmProductVersion)
-	}
+	r.addTracking(q)
 	u.RawQuery = q.Encode()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
 		u.Fragment = fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1)
@@ -151,7 +197,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 // openFile returns the redirect URL for the pre-validated request.
 func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
 	if r.searchRequest != nil {
-		return r.searchRedirect(), nil
+		return r.searchRedirect()
 	} else if r.openFileRequest != nil {
 		return r.openFileRedirect(ctx)
 	}
@@ -176,7 +222,16 @@ func parseEditorRequest(q url.Values) (*editorRequest, error) {
 	if search := q.Get("search"); search != "" {
 		// Search request parsing
 		v.searchRequest = &editorSearchRequest{
-			query: q.Get("search"),
+			query:     q.Get("search"),
+			remoteURL: q.Get("remote_url"),
+			branch:    q.Get("branch"),
+			revision:  q.Get("revision"),
+			file:      q.Get("file"),
+		}
+		if hostnameToPatternStr := q.Get("hostname_patterns"); hostnameToPatternStr != "" {
+			if err := json.Unmarshal([]byte(hostnameToPatternStr), &v.searchRequest.hostnameToPattern); err != nil {
+				return nil, err
+			}
 		}
 	} else if remoteURL := q.Get("remote_url"); remoteURL != "" {
 		// Open-file request parsing
