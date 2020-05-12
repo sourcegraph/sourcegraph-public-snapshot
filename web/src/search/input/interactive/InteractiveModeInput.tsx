@@ -220,13 +220,13 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
                         }`}
                     >
-                        <VersionContextDropdown
-                            versionContext={this.props.versionContext}
-                            setVersionContext={this.props.setVersionContext}
-                        />
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <VersionContextDropdown
+                                    versionContext={this.props.versionContext}
+                                    setVersionContext={this.props.setVersionContext}
+                                />
                                 <QueryInput
                                     {...this.props}
                                     location={this.props.location}

@@ -3,21 +3,79 @@
 .version-context-dropdown {
     width: fit-content;
 
+    &__title {
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
+
     &__info {
-        padding: 1rem 0.75rem;
+        padding: 0.5rem 0.5rem;
+        font-size: 0.75rem;
+        border: none;
+
+        &-dismiss {
+            width: fit-content;
+            float: right;
+            align-self: flex-end;
+        }
     }
 
     &__popover {
-        max-width: 29.9375rem;
-        min-width: 29.9375rem;
+        padding: 0.5rem;
+        color: var(--link-color);
+        min-width: 30rem;
+        max-width: 30rem;
+        min-height: fit-content;
+        max-height: 20rem;
+        overflow-y: scroll;
     }
 
     &__option {
+        font-size: 0.75rem;
         display: grid;
-        grid-template-columns: 1fr 4fr 5fr 1fr;
+        grid-template-columns: 0.5fr 4fr 5fr 0.5fr;
+        cursor: pointer;
+
+        &-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        &-description {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     &__list {
         padding-left: 0;
+
+        [data-reach-listbox-option][data-current] {
+            /* styles for the option matching the current value of the input */
+            font-weight: normal;
+            background-color: $color-bg-4;
+        }
+    }
+}
+
+.theme-light {
+    .version-context-dropdown {
+        &__info {
+            background-color: $color-light-bg-2;
+        }
+
+        &__list {
+            [data-reach-listbox-option][data-current] {
+                /* styles for the option matching the current value of the input */
+                font-weight: normal;
+                background-color: $color-light-bg-4;
+            }
+            [data-reach-listbox-option][aria-selected='true'] {
+                /* styles for the option matching the user's navigation selection */
+                color: inherit;
+                background-color: $color-light-bg-2;
+            }
+        }
     }
 }

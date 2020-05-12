@@ -105,17 +105,16 @@ export class SearchPage extends React.Component<Props, State> {
                             <>
                                 <Form className="search flex-grow-1" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container">
-                                        <VersionContextDropdown
-                                            versionContext={this.props.versionContext}
-                                            setVersionContext={this.props.setVersionContext}
-                                        />
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
-
+                                        <VersionContextDropdown
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                        />
                                         {this.props.smartSearchField ? (
                                             <LazyMonacoQueryInput
                                                 {...this.props}

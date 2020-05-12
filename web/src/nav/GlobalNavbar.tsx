@@ -205,16 +205,16 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logoLink}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                        <VersionContextDropdown
-                                            versionContext={this.props.versionContext}
-                                            setVersionContext={this.props.setVersionContext}
-                                        />
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
+                                        <VersionContextDropdown
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                        />
                                         <SearchNavbarItem
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
