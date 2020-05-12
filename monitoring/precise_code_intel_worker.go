@@ -20,12 +20,12 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "upload_processed",
-							Description:       "total uploads processed every 5m",
-							Query:             `sum(increase(src_upload_queue_processor_total[5m]))`,
+							Name:              "upload_queue_growth_rate",
+							Description:       "upload queue growth rate every 5m",
+							Query:             `sum(increase(src_upload_queue_uploads_total[5m])) / sum(increase(src_upload_queue_processor_total[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1e6}, // TODO(efritz) - determine alerts
-							PanelOptions:      PanelOptions().LegendFormat("uploads processed"),
+							Warning:           Alert{GreaterOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("upload queue growth rate"),
 							PossibleSolutions: "none",
 						},
 						{
