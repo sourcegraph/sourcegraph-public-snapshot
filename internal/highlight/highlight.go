@@ -457,7 +457,7 @@ func ParseLinesFromHighlight(input string) ([]string, error) {
 		return nil, err
 	}
 
-	var lines = make([]string, 0)
+	lines := make([]string, 0)
 
 	table := doc.FirstChild.LastChild.FirstChild // html > body > table
 	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
