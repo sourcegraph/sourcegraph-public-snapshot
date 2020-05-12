@@ -40,7 +40,6 @@ type repositoryResolver struct {
 
 	// these struct members represent the input of the repositoryResolver
 	// and must be filled prior to calling the resolveRepositories method
-	excludePatterns []string
 	maxRepoListSize int
 
 	// these struct members are intermediary variables used
@@ -62,7 +61,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	r := repositoryResolver{
 		resolveRepoOp:   op,
 		tracer:          tr,
-		excludePatterns: op.minusRepoFilters,
 		maxRepoListSize: maxReposToSearch(),
 	}
 
@@ -203,7 +201,7 @@ func (r *repositoryResolver) getRepos(ctx context.Context) ([]*types.Repo, error
 		OnlyRepoIDs:     true,
 		IncludePatterns: r.includePatterns,
 		Names:           r.versionContextRepositories,
-		ExcludePattern:  unionRegExps(r.excludePatterns),
+		ExcludePattern:  unionRegExps(r.minusRepoFilters),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &db.LimitOffset{Limit: r.maxRepoListSize + 1},
 		NoForks:      r.noForks,
