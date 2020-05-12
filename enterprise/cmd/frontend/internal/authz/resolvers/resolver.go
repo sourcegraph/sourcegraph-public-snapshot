@@ -25,12 +25,16 @@ import (
 )
 
 type Resolver struct {
-	store *edb.PermsStore
+	store             *edb.PermsStore
+	repoupdaterClient interface {
+		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	}
 }
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(db, clock),
+		store:             edb.NewPermsStore(db, clock),
+		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
@@ -134,7 +138,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		RepoIDs: []api.RepoID{repoID},
 	})
 	if err != nil {
@@ -154,7 +158,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
 	})
 	if err != nil {
