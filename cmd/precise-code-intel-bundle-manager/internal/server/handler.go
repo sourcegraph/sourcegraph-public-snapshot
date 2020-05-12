@@ -257,20 +257,27 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	openDatabase := func() (database.Database, error) {
 		cached = false
 
+		// Ensure database exists prior to opening
+		if _, err := os.Stat(filename); err != nil {
+			if os.IsNotExist(err) {
+				return nil, ErrUnknownDatabase
+			}
+
+			return nil, err
+		}
+
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
-		// Check to see if the database exists after openign it. If it doesn't, then
-		// the SQLite driver has created a new, empty database. In this case, we want
-		// return an unknown error, but need to ensure that we don't also create an
-		// empty db file on disk to be opened successfully in the next request to the
-		// same dump.
+		// Check to see if the database exists after opening it. If it doesn't, then
+		// the DB file was deleted between the exists check and opening the database
+		// and SQLite has created a new, empty database that is not yet written to disk.
 		if _, err := os.Stat(filename); err != nil {
 			if os.IsNotExist(err) {
 				sqliteReader.Close()
-				os.Remove(filename)
+				os.Remove(filename) // Possibly created on close
 				return nil, ErrUnknownDatabase
 			}
 
