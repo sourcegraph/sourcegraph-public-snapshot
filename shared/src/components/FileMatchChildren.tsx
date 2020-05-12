@@ -13,15 +13,15 @@ import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
+import { VersionContextProps } from '../search/util'
 
-interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
+interface FileMatchProps extends SettingsCascadeProps, ThemeProps, Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     items: IMatchItem[]
     result: IFileMatch
     allMatches: boolean
     subsetMatches: number
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
-    versionContext: string
     /**
      * Called when the file's search result is selected.
      */

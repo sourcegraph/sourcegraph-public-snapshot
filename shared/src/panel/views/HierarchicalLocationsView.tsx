@@ -16,8 +16,12 @@ import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { VersionContextProps } from '../../search/util'
 
-export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
+export interface HierarchicalLocationsViewProps
+    extends ExtensionsControllerProps<'services'>,
+        SettingsCascadeProps,
+        Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -42,8 +46,6 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
     isLightTheme: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
-
-    versionContext: string
 }
 
 interface State {

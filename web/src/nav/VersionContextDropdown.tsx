@@ -7,12 +7,9 @@ import { of } from 'rxjs'
 import { ErrorLike, asError, isErrorLike } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import classNames from 'classnames'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
-interface Props {
-    versionContext: string
-    setVersionContext: (versionContext: string) => void
-}
-export const VersionContextDropdown: React.FunctionComponent<Props> = (props: Props) => {
+export const VersionContextDropdown: React.FunctionComponent<VersionContextProps> = (props: VersionContextProps) => {
     const versionContexts: GQL.IVersionContext[] | ErrorLike | undefined = useObservable(
         useMemo(() => fetchVersionContexts().pipe(catchError(err => of<ErrorLike>(asError(err)))), [])
     )

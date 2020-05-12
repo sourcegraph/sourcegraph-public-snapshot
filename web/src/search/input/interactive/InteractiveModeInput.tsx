@@ -25,6 +25,7 @@ import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -37,15 +38,14 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
     /** Whether to hide the selected filters and add filter rows. */
     lowProfile: boolean
-    versionContext: string
-    setVersionContext: (versionContext: string) => void
 
     // For NavLinks
     authRequired?: boolean

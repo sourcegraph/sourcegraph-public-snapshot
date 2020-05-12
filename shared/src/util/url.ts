@@ -124,13 +124,6 @@ export interface RenderModeSpec {
     renderMode: RenderMode
 }
 
-export interface VersionContextSpec {
-    /**
-     * The version context.
-     */
-    versionContext: string
-}
-
 /**
  * Properties of a RepoURI (like git://github.com/gorilla/mux#mux.go) or a URL (like https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go)
  */
@@ -141,8 +134,7 @@ export interface ParsedRepoURI
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
         Partial<UIPositionSpec>,
-        Partial<UIRangeSpec>,
-        Partial<VersionContextSpec> {}
+        Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -564,13 +556,13 @@ export function withWorkspaceRootInputRevision(
     return uri // unchanged
 }
 
-export const VERSION_CONTEXT_DEFAULT_VALUE = ''
-
 /**
  * Builds a URL query for the given query (without leading `?`).
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
+ * @param versionContext (optional): the version context to search in. If undefined, we interpret
+ * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  * @param filtersInQuery filters in an interactive mode query. For callers of
  * this function requiring correct behavior in interactive mode, this param
@@ -581,7 +573,7 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    versionContext: string,
+    versionContext?: string,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     const searchParams = new URLSearchParams()
@@ -629,7 +621,7 @@ export function buildSearchURLQuery(
         }
     }
 
-    if (versionContext && versionContext !== VERSION_CONTEXT_DEFAULT_VALUE) {
+    if (versionContext) {
         searchParams.set('c', versionContext)
     }
 

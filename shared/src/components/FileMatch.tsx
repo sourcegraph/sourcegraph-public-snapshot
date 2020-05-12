@@ -10,6 +10,7 @@ import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 import { appendVersionContextQueryParam } from '../util/url'
+import { VersionContextProps } from '../search/util'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -33,7 +34,7 @@ export interface IMatchItem {
     badge?: BadgeAttachmentRenderOptions
 }
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     /**
      * The file match search result.
@@ -71,8 +72,6 @@ interface Props extends SettingsCascadeProps {
     allExpanded?: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
-
-    versionContext: string
 }
 
 export class FileMatch extends React.PureComponent<Props> {

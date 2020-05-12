@@ -10,15 +10,16 @@ import { FilterType } from '../../../shared/src/search/interactive/util'
 import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 interface SubmitSearchParams
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'> {
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<VersionContextProps, 'versionContext'> {
     history: H.History
     query: string
-    versionContext: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
 }
 

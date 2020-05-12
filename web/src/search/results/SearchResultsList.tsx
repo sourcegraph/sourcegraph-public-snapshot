@@ -30,6 +30,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const isSearchResults = (val: unknown): val is GQL.ISearchResults =>
     typeof val === 'object' && val !== null && hasProperty('__typename')(val) && val.__typename === 'SearchResults'
@@ -42,7 +43,8 @@ export interface SearchResultsListProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -65,7 +67,6 @@ export interface SearchResultsListProps
     didSave: boolean
 
     interactiveSearchMode: boolean
-    versionContext: string
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }

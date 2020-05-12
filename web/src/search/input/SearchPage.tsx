@@ -32,6 +32,7 @@ import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends SettingsCascadeProps,
@@ -45,13 +46,13 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    versionContext: string
-    setVersionContext: (versionContext: string) => void
+
     // For NavLinks
     authRequired?: boolean
     showCampaigns: boolean

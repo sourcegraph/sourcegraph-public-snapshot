@@ -11,16 +11,17 @@ import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
 
 export interface TogglesProps
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        Pick<VersionContextProps, 'versionContext'> {
     navbarSearchQuery: string
     history: H.History
     location: H.Location
-    versionContext: string
     hasGlobalQueryBehavior?: boolean
     className?: string
 }

@@ -39,7 +39,7 @@ export function search(
     query: string,
     version: string,
     patternType: GQL.SearchPatternType,
-    versionContext: string,
+    versionContext: string = '',
     { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
@@ -49,7 +49,7 @@ export function search(
         switchMap(query =>
             queryGraphQL(
                 gql`
-                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!, $versionContext: String!) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!, $versionContext: String) {
                         search(query: $query, version: $version, patternType: $patternType, versionContext: $versionContext) {
                             results {
                                 __typename

@@ -17,6 +17,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 import { ThemeProps } from '../theme'
+import { VersionContextProps } from '../search/util'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -24,12 +25,12 @@ interface Props
         SettingsCascadeProps,
         ActivationProps,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     history: H.History
     repoName?: string
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
-    versionContext: string
 }
 
 interface State {

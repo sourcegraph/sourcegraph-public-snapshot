@@ -30,6 +30,7 @@ import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -39,7 +40,8 @@ export interface SearchResultsProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -55,8 +57,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    versionContext: string
-    setVersionContext: (versionContext: string) => void
 }
 
 interface SearchResultsState {
@@ -163,14 +163,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    versionContext || '',
+                                    versionContext && versionContext !== 'default' ? versionContext : '',
                                     this.props
                                 )
                                 .pipe(
                                     // Log telemetry
                                     tap(
                                         results => {
-                                            console.log('versionContext', versionContext)
                                             this.props.telemetryService.log('SearchResultsFetched', {
                                                 code_search: {
                                                     // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -191,7 +190,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
                                             if (versionContext !== this.props.versionContext) {
-                                                this.props.setVersionContext(versionContext)
+                                                this.props.setVersionContext(versionContext || '')
                                             }
                                         },
                                         error => {

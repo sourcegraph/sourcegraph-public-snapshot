@@ -24,6 +24,7 @@ import { useObservable } from '../../../shared/src/util/useObservable'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -43,10 +44,10 @@ interface Props
     extends RouteComponentProps<{ id: GQL.ID }>,
         SettingsCascadeProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        Pick<VersionContextProps, 'versionContext'> {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
-    versionContext: string
     history: H.History
 }
 

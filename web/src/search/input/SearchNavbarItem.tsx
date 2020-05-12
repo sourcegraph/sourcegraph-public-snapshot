@@ -9,6 +9,7 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends ActivationProps,
@@ -16,11 +17,11 @@ interface Props
         CaseSensitivityProps,
         SmartSearchFieldProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
-    versionContext: string
     onChange: (newValue: QueryState) => void
 }
 

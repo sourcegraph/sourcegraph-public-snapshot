@@ -36,12 +36,14 @@ import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        Pick<VersionContextProps, 'versionContext'> {
     location: H.Location
     history: H.History
 
@@ -50,9 +52,6 @@ interface Props
 
     /** Called when the value changes */
     onChange: (newValue: QueryState) => void
-
-    /** The version context currently enabled */
-    versionContext: string
 
     /**
      * A string that is appended to the query input's query before

@@ -28,6 +28,7 @@ import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 import { VersionContextDropdown } from './VersionContextDropdown'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 interface Props
     extends SettingsCascadeProps,
@@ -41,7 +42,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -69,9 +71,6 @@ interface Props
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
-
-    versionContext: string
-    setVersionContext: (versionContext: string) => void
 }
 
 interface State {

@@ -142,14 +142,15 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     smartSearchField: boolean
 
     /**
-     * The version context the instance is in. Defaults to "default" if no version context is selected.
+     * The version context the instance is in. If undefined, it means no version contexts have been defined.
+     * If no specific version context is selected, will be 'default'.
      */
-    versionContext: string
+    versionContext?: string
 
     /**
      * Available version contexts defined in the site configuration.
      */
-    versionContexts?: VersionContext[]
+    availableVersionContexts?: VersionContext[]
 }
 
 const notificationClassNames = {
@@ -211,8 +212,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
         const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
+        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const lastVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-        const resolvedVersionContext = parseURLVersionContext(window.location.search) || lastVersionContext || ''
+        const resolvedVersionContext = availableVersionContexts
+            ? parseURLVersionContext(window.location.search) || lastVersionContext || 'default'
+            : undefined
 
         this.state = {
             themePreference: readStoredThemePreference(),
@@ -227,7 +231,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             smartSearchField: false,
             versionContext: resolvedVersionContext,
-            versionContexts: window.context.experimentalFeatures.versionContexts,
+            availableVersionContexts,
         }
     }
 
@@ -461,9 +465,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private setVersionContext = (versionContext: string): void => {
-        if (this.state.versionContexts?.filter((v: VersionContext) => v.name === versionContext).length === 0) {
+        if (
+            this.state.availableVersionContexts?.filter((v: VersionContext) => v.name === versionContext).length === 0
+        ) {
             localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
-            this.setState({ versionContext: '' })
+            this.setState({ versionContext: undefined })
         }
         localStorage.setItem(LAST_VERSION_CONTEXT_KEY, versionContext)
         this.setState({ versionContext })
