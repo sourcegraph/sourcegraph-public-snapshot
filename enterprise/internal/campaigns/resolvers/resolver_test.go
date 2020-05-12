@@ -1094,7 +1094,7 @@ func TestPatchSetResolver(t *testing.T) {
 
 	for page := 0; page < 3; page++ {
 		var response struct{ Node apitest.PatchSet }
-		queryPatches(1, "\""+strconv.Itoa(page)+"\"", &response)
+		queryPatches(1, fmt.Sprintf(`"%d"`, page), &response)
 
 		expectedLength := 1
 		if page == 2 {
