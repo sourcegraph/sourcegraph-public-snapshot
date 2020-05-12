@@ -484,19 +484,3 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
         map(data => (data.repositories.nodes || []).length > manyReposWarningLimit)
     )
 }
-
-export function fetchVersionContexts(): Observable<GQL.IVersionContext[]> {
-    return queryGraphQL(gql`
-        query versionContexts {
-            versionContexts {
-                id
-                name
-                description
-            }
-        }
-    `).pipe(
-        map(dataOrThrowErrors),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        map(data => data.versionContexts as GQL.IVersionContext[])
-    )
-}

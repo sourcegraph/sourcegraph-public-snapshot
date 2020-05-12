@@ -26,6 +26,7 @@ import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContext } from '../../../schema/site.schema'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -52,6 +53,8 @@ interface InteractiveModeProps
     authenticatedUser: GQL.IUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+
+    availableVersionContexts: VersionContext[]
 }
 
 interface InteractiveModeState {
@@ -226,6 +229,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                 <VersionContextDropdown
                                     versionContext={this.props.versionContext}
                                     setVersionContext={this.props.setVersionContext}
+                                    availableVersionContexts={this.props.availableVersionContexts}
                                 />
                                 <QueryInput
                                     {...this.props}

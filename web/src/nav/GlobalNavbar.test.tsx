@@ -39,6 +39,7 @@ const PROPS: GlobalNavbar['props'] = {
     isSearchRelatedPage: true,
     versionContext: undefined,
     setVersionContext: () => undefined,
+    availableVersionContexts: [],
 }
 
 describe('GlobalNavbar', () => {

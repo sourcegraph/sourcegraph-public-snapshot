@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import {
     ListboxOption,
     ListboxInput,
@@ -7,26 +7,23 @@ import {
     ListboxList,
     ListboxGroupLabel,
 } from '@reach/listbox'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { fetchVersionContexts } from '../search/backend'
-import { catchError } from 'rxjs/operators'
-import { of } from 'rxjs'
-import { ErrorLike, asError, isErrorLike } from '../../../shared/src/util/errors'
-import * as GQL from '../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import { VersionContext } from '../schema/site.schema'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
-export const VersionContextDropdown: React.FunctionComponent<VersionContextProps> = (props: VersionContextProps) => {
-    const versionContexts: GQL.IVersionContext[] | ErrorLike | undefined = useObservable(
-        useMemo(() => fetchVersionContexts().pipe(catchError(err => of<ErrorLike>(asError(err)))), [])
-    )
+interface VersionContextDropdownProps extends VersionContextProps {
+    availableVersionContexts: VersionContext[] | undefined
+}
 
+export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = (
+    props: VersionContextDropdownProps
+) => {
     const [hasDismissedInfo, setHasDismissedInfo] = useState<boolean>(
         !!localStorage.getItem(HAS_DISMISSED_INFO_KEY) && localStorage.getItem(HAS_DISMISSED_INFO_KEY) === 'true'
     )
@@ -39,7 +36,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
         props.setVersionContext('')
     }
 
-    if (!versionContexts || (!isErrorLike(versionContexts) && versionContexts.length === 0)) {
+    if (!props.availableVersionContexts || props.availableVersionContexts.length === 0) {
         return null
     }
 
@@ -57,7 +54,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
 
     return (
         <>
-            {versionContexts && !isErrorLike(versionContexts) && versionContexts.length > 0 ? (
+            {props.availableVersionContexts ? (
                 <div className="version-context-dropdown">
                     <ListboxInput value={props.versionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
@@ -113,49 +110,42 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                                 onDisableValue={disableValue}
                                             />
                                         </ListboxGroupLabel>
-                                        {!isErrorLike(versionContexts) && (
-                                            <>
-                                                {versionContexts
-                                                    .filter(
-                                                        versionContext => versionContext.name === props.versionContext
-                                                    )
-                                                    .map(versionContext => (
-                                                        <ListboxOption
-                                                            key={versionContext.name}
-                                                            value={versionContext.name}
-                                                            label={versionContext.name}
-                                                            className="version-context-dropdown__option"
-                                                        >
-                                                            <VersionContextInfoRow
-                                                                name={versionContext.name}
-                                                                description={versionContext.description}
-                                                                isActive={props.versionContext === versionContext.name}
-                                                                onDisableValue={disableValue}
-                                                            />
-                                                        </ListboxOption>
-                                                    ))}
-                                                {versionContexts
-                                                    .filter(
-                                                        versionContext => versionContext.name !== props.versionContext
-                                                    )
-                                                    .sort((a, b) => (a.name > b.name ? 1 : -1))
-                                                    .map(versionContext => (
-                                                        <ListboxOption
-                                                            key={versionContext.name}
-                                                            value={versionContext.name}
-                                                            label={versionContext.name}
-                                                            className="version-context-dropdown__option"
-                                                        >
-                                                            <VersionContextInfoRow
-                                                                name={versionContext.name}
-                                                                description={versionContext.description}
-                                                                isActive={props.versionContext === versionContext.name}
-                                                                onDisableValue={disableValue}
-                                                            />
-                                                        </ListboxOption>
-                                                    ))}
-                                            </>
-                                        )}
+
+                                        {props.availableVersionContexts
+                                            .filter(versionContext => versionContext.name === props.versionContext)
+                                            .map(versionContext => (
+                                                <ListboxOption
+                                                    key={versionContext.name}
+                                                    value={versionContext.name}
+                                                    label={versionContext.name}
+                                                    className="version-context-dropdown__option"
+                                                >
+                                                    <VersionContextInfoRow
+                                                        name={versionContext.name}
+                                                        description={versionContext.description || ''}
+                                                        isActive={props.versionContext === versionContext.name}
+                                                        onDisableValue={disableValue}
+                                                    />
+                                                </ListboxOption>
+                                            ))}
+                                        {props.availableVersionContexts
+                                            .filter(versionContext => versionContext.name !== props.versionContext)
+                                            .sort((a, b) => (a.name > b.name ? 1 : -1))
+                                            .map(versionContext => (
+                                                <ListboxOption
+                                                    key={versionContext.name}
+                                                    value={versionContext.name}
+                                                    label={versionContext.name}
+                                                    className="version-context-dropdown__option"
+                                                >
+                                                    <VersionContextInfoRow
+                                                        name={versionContext.name}
+                                                        description={versionContext.description || ''}
+                                                        isActive={props.versionContext === versionContext.name}
+                                                        onDisableValue={disableValue}
+                                                    />
+                                                </ListboxOption>
+                                            ))}
                                     </ListboxList>
                                 </ListboxPopover>
                             </>

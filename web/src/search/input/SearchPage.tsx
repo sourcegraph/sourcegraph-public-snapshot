@@ -33,6 +33,8 @@ import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { Observable } from 'rxjs'
+import { VersionContext } from '../../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -52,6 +54,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    availableVersionContexts: VersionContext[]
 
     // For NavLinks
     authRequired?: boolean
@@ -114,6 +117,7 @@ export class SearchPage extends React.Component<Props, State> {
                                         <VersionContextDropdown
                                             versionContext={this.props.versionContext}
                                             setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
                                         />
                                         {this.props.smartSearchField ? (
                                             <LazyMonacoQueryInput
@@ -151,6 +155,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             authenticatedUser={this.props.authenticatedUser}
                                             settingsCascade={this.props.settingsCascade}
                                             patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />

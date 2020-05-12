@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Subscription } from 'rxjs'
+import { Subscription, Observable } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -29,6 +29,7 @@ import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
 import { VersionContextDropdown } from './VersionContextDropdown'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContext } from '../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -68,6 +69,7 @@ interface Props
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
@@ -214,6 +216,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                         <VersionContextDropdown
                                             versionContext={this.props.versionContext}
                                             setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
                                         />
                                         <SearchNavbarItem
                                             {...this.props}

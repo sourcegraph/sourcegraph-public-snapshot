@@ -166,10 +166,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    verifyVersionContext(
-                                        versionContext,
-                                        window.context.experimentalFeatures.versionContexts
-                                    ),
+                                    verifyVersionContext(versionContext, this.props.availableVersionContexts),
                                     this.props
                                 )
                                 .pipe(
