@@ -88,7 +88,7 @@ interface Props extends ThemeProps {
     /** Whether to add a border to the Monaco editor. Default: true. */
     border?: boolean
 
-    /** Keyboard shortcut to focus the query input. */
+    /** Keyboard shortcut to focus the Monaco editor. */
     keyboardShortcutForFocus?: KeyboardShortcut
 }
 
