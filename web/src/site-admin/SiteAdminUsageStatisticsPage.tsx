@@ -239,7 +239,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
                 )}
 
-                <a href="/.api/usage-stats.download" className="btn btn-secondary" data-tooltip="Download usage stats archive" download="usage_stats.zip">
+                <a href="/site-admin/usage-statistics/archive" className="btn btn-secondary" data-tooltip="Download usage stats archive" download>
                     <FileDownloadIcon className="icon-inline" /> Download usage stats archive
                 </a>
 

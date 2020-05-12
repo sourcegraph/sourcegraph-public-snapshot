@@ -1,4 +1,4 @@
-package httpapi
+package app
 
 import (
 	"archive/zip"
@@ -6,15 +6,28 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 )
 
 
-func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
+func usageStatsArchiveHandler(w http.ResponseWriter, r *http.Request) {
+	// 🚨SECURITY: Only site admins may get this archive.
+	if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	data, err := usagestats.GetUsersUsageArchiveData(r.Context())
 	if err != nil {
-		return err
+		log15.Error("usagestats.GetUsersUsageArchiveData", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
+
+	log15.Info("Got data")
 
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"SourcegraphUsersUsageArchive.zip\"")
@@ -23,7 +36,9 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 
 	countsFile, err := zw.Create("UsersUsageCounts.csv")
 	if err != nil {
-		return err
+		log15.Error("Failed to create UsersUsageCounts.csv", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	counts := csv.NewWriter(countsFile)
@@ -36,7 +51,9 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err := counts.Write(record); err != nil {
-		return err
+		log15.Error("Failed to write to UsersUsageCounts.csv", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	for _, c := range data.UsersUsageCounts {
@@ -46,7 +63,9 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 		record[3] = strconv.FormatInt(int64(c.CodeIntelCount), 10)
 
 		if err := counts.Write(record); err != nil {
-			return err
+			log15.Error("Failed to write to UsersUsageCounts.csv", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -54,7 +73,9 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 
 	datesFile, err := zw.Create("UsersDates.csv")
 	if err != nil {
-		return err
+		log15.Error("Failed to create UsersDates.csv", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	dates := csv.NewWriter(datesFile)
@@ -65,7 +86,9 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 	record[2] = "deleted_at"
 
 	if err := dates.Write(record); err != nil {
-		return err
+		log15.Error("Failed to write to UsersDates.csv", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	for _, d := range data.UsersDates {
@@ -74,11 +97,15 @@ func usageStatsDownloadServe(w http.ResponseWriter, r *http.Request) error {
 		record[2] = d.DeletedAt.UTC().String()
 
 		if err := dates.Write(record); err != nil {
-			return err
+			log15.Error("Failed to write to UsersDates.csv", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
 
 	dates.Flush()
 
-	return nil
+	if err := zw.Close(); err != nil {
+		log15.Error("Failed to close ZIP archive", "error", err)
+	}
 }
