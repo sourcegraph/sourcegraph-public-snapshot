@@ -47,12 +47,14 @@ type baseClient interface {
 
 var requestMeter = metrics.NewRequestMeter("precise_code_intel_bundle_manager", "Total number of requests sent to precise code intel bundle manager.")
 
+const MaxIdleConnectionsPerHost = 500
+
 // defaultTransport is the default transport used in the default client and the
 // default reverse proxy. ot.Transport will propagate opentracing spans.
 var defaultTransport = &ot.Transport{
 	RoundTripper: requestMeter.Transport(&http.Transport{
 		// Default is 2, but we can send many concurrent requests
-		MaxIdleConnsPerHost: 500,
+		MaxIdleConnsPerHost: MaxIdleConnectionsPerHost,
 	}, func(u *url.URL) string {
 		// Extract the operation from a path like `/dbs/{id}/{operation}`
 		if segments := strings.Split(u.Path, "/"); len(segments) == 4 {
