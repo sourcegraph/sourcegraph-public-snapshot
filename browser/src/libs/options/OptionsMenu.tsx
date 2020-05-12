@@ -74,16 +74,22 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
             !currentTabStatus.hasPermissions &&
             !PERMISSIONS_PROTOCOL_BLACKLIST.includes(currentTabStatus.protocol) && (
                 <div className="options-menu__section">
-                    <div className="alert alert-danger">
-                        Sourcegraph is not enabled on <strong>{currentTabStatus.host}</strong>.{' '}
-                        <a
-                            href=""
-                            onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
-                            className="request-permissions__test"
-                        >
-                            Grant permissions
-                        </a>{' '}
-                        to enable Sourcegraph.
+                    <div className="alert alert-info">
+                        <p>
+                            The Sourcegraph browser extension adds hover tooltips to code views on code hosts such as
+                            GitHub, GitLab, Bitbucket Server and Phabricator.
+                        </p>
+                        <p>
+                            To enable Sourcegraph on <strong>{currentTabStatus.host}</strong>, you must{' '}
+                            <a
+                                href=""
+                                onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
+                                className="request-permissions__test"
+                            >
+                                grant permissions
+                            </a>
+                            .
+                        </p>
                     </div>
                 </div>
             )}

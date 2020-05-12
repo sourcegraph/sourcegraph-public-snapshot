@@ -466,23 +466,27 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
     className="options-menu__section"
   >
     <div
-      className="alert alert-danger"
+      className="alert alert-info"
     >
-      Sourcegraph is not enabled on 
-      <strong>
-        gitlab.com
-      </strong>
-      .
-       
-      <a
-        className="request-permissions__test"
-        href=""
-        onClick={[Function]}
-      >
-        Grant permissions
-      </a>
-       
-      to enable Sourcegraph.
+      <p>
+        The Sourcegraph browser extension adds hover tooltips to code views on code hosts such as GitHub, GitLab, Bitbucket Server and Phabricator.
+      </p>
+      <p>
+        To enable Sourcegraph on 
+        <strong>
+          gitlab.com
+        </strong>
+        , you must
+         
+        <a
+          className="request-permissions__test"
+          href=""
+          onClick={[Function]}
+        >
+          grant permissions
+        </a>
+        .
+      </p>
     </div>
   </div>
 </div>
