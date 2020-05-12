@@ -23,7 +23,7 @@ import {
     PieLabelRenderProps,
 } from 'recharts'
 import { createLinkClickHandler } from '../../../shared/src/components/linkClickHandler'
-import { niceTicks } from './niceTicks'
+import niceTicks from 'nice-ticks'
 
 /** Wraps the children in a link if an href is passed. */
 const MaybeLink: React.FunctionComponent<React.AnchorHTMLAttributes<unknown>> = ({ children, ...props }) =>

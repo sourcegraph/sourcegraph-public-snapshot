@@ -267,6 +267,7 @@
     "mdi-react": "^6.7.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.18.1",
+    "nice-ticks": "sourcegraph/nice-ticks#f96fc9edcca9b8d604aa9b9a607a39219e8ee198",
     "open-color": "^1.7.0",
     "pretty-bytes": "^5.3.0",
     "react": "^16.13.1",
