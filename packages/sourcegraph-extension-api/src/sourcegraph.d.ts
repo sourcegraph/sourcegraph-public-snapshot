@@ -954,6 +954,11 @@ declare module 'sourcegraph' {
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URL
+
+        /**
+         * The version context of the workspace.
+         */
+        versionContext?: string
     }
 
     /**

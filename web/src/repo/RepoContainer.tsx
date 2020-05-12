@@ -207,6 +207,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                               rev: resolvedRevOrError.commitID,
                                           }),
                                           inputRevision: this.state.rev || '',
+                                          versionContext: this.props.versionContext,
                                       },
                                   ]
                                 : []
