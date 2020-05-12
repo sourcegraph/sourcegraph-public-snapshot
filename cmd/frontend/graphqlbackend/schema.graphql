@@ -414,6 +414,10 @@ type Mutation {
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
+    # Schedule a permissions sync for given repository.
+    scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
+    # Schedule a permissions sync for given user.
+    scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created

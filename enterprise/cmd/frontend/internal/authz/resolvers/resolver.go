@@ -16,9 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 type Resolver struct {
@@ -117,6 +120,36 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
 
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repoID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
