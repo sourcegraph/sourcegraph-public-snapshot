@@ -407,7 +407,7 @@ func TestCalcCounts(t *testing.T) {
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, reviewed, unapproved",
+			name:      "single changeset open, changes-requested, unapproved",
 			changesets: []*campaigns.Changeset{
 				bbsChangeset(1, daysAgo(3)),
 			},
