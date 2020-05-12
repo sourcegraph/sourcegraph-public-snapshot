@@ -283,3 +283,37 @@ func scanVisibilities(rows *sql.Rows, err error) (map[int]bool, error) {
 
 	return visibilities, nil
 }
+
+// scanCommit populates a pair of strings from the given scanner.
+func scanCommit(scanner scanner) (commit string, parentCommit *string, err error) {
+	err = scanner.Scan(&commit, &parentCommit)
+	return commit, parentCommit, err
+}
+
+// scanCommits reads the given set of `(commit, parent_commit)` rows and returns
+// a map from commits to its parents. This method should be called directly from
+// the return value of `*db.query`.
+func scanCommits(rows *sql.Rows, err error) (map[string][]string, error) {
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	commits := map[string][]string{}
+	for rows.Next() {
+		commit, parentCommit, err := scanCommit(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := commits[commit]; !ok {
+			commits[commit] = nil
+		}
+
+		if parentCommit != nil {
+			commits[commit] = append(commits[commit], *parentCommit)
+		}
+	}
+
+	return commits, nil
+}

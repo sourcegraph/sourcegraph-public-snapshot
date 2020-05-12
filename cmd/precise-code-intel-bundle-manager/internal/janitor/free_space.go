@@ -26,13 +26,13 @@ func defaultPruneFn(ctx context.Context) (int64, bool, error) {
 // then calls cleanOldBundles to free enough space to get back below the disk usage threshold.
 func (j *Janitor) freeSpace(pruneFn PruneFn) error {
 	var fs syscall.Statfs_t
-	if err := syscall.Statfs(j.BundleDir, &fs); err != nil {
+	if err := syscall.Statfs(j.bundleDir, &fs); err != nil {
 		return err
 	}
 
 	diskSizeBytes := fs.Blocks * uint64(fs.Bsize)
 	freeBytes := fs.Bavail * uint64(fs.Bsize)
-	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.DesiredPercentFree) / 100.0)
+	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.desiredPercentFree) / 100.0)
 
 	if freeBytes < desiredFreeBytes {
 		return j.evictBundles(pruneFn, uint64(desiredFreeBytes-freeBytes))
@@ -73,7 +73,7 @@ func (j *Janitor) evictBundle(pruneFn func(ctx context.Context) (int64, bool, er
 		return 0, false, err
 	}
 
-	path := paths.DBFilename(j.BundleDir, id)
+	path := paths.DBFilename(j.bundleDir, id)
 
 	fileInfo, err := os.Stat(path)
 	if err != nil {
@@ -85,6 +85,6 @@ func (j *Janitor) evictBundle(pruneFn func(ctx context.Context) (int64, bool, er
 	}
 
 	log15.Debug("Removed evicted bundle file", "id", id, "path", path)
-	j.Metrics.EvictedBundleFilesRemoved.Add(1)
+	j.metrics.EvictedBundleFilesRemoved.Add(1)
 	return uint64(fileInfo.Size()), true, nil
 }

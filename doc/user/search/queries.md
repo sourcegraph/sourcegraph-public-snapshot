@@ -149,7 +149,6 @@ The `repo:` filter accepts a repository pattern followed by `@revs`, like `githu
 - `@1735d48` - a commit hash
 - `@3.15` - a tag
 - `@feature-branch:1735d48:3.15` - multiple colon-separated revisions of the above forms
-- `@*bar` - revisions that match the glob pattern `bar/*` (as interpreted by [gitlog --glob](https://git-scm.com/docs/git-log#Documentation/git-log.txt---globltglob-patterngt))
 
 ### Repository names
 

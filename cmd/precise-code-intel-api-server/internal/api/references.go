@@ -69,6 +69,7 @@ func (s *ReferencePageResolver) resolvePage(ctx context.Context, cursor Cursor) 
 func (s *ReferencePageResolver) dispatchCursorHandler(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
 	fns := map[string]func(context.Context, Cursor) ([]ResolvedLocation, Cursor, bool, error){
 		"same-dump":           s.handleSameDumpCursor,
+		"same-dump-monikers":  s.handleSameDumpMonikersCursor,
 		"definition-monikers": s.handleDefinitionMonikersCursor,
 		"same-repo":           s.handleSameRepoCursor,
 		"remote-repo":         s.handleRemoteRepoCursor,
@@ -101,42 +102,84 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
 	}
 
-	hashLocation := func(location bundles.Location) string {
-		return fmt.Sprintf(
-			"%s:%d:%d:%d:%d",
-			location.Path,
-			location.Range.Start.Line,
-			location.Range.Start.Character,
-			location.Range.End.Line,
-			location.Range.End.Character,
-		)
+	resolvedLocations := resolveLocationsWithDump(dump, sliceLocations(locations, cursor.SkipResults, cursor.SkipResults+s.limit))
+
+	if newOffset := cursor.SkipResults + s.limit; newOffset <= len(locations) {
+		newCursor := Cursor{
+			Phase:       cursor.Phase,
+			DumpID:      cursor.DumpID,
+			Path:        cursor.Path,
+			Line:        cursor.Line,
+			Character:   cursor.Character,
+			Monikers:    cursor.Monikers,
+			SkipResults: newOffset,
+		}
+		return resolvedLocations, newCursor, true, nil
 	}
 
-	dumpIDs := map[string]struct{}{}
-	for _, location := range locations {
-		dumpIDs[hashLocation(location)] = struct{}{}
+	newCursor := Cursor{
+		Phase:       "same-dump-monikers",
+		DumpID:      cursor.DumpID,
+		Path:        cursor.Path,
+		Line:        cursor.Line,
+		Character:   cursor.Character,
+		Monikers:    cursor.Monikers,
+		SkipResults: 0,
 	}
+	return resolvedLocations, newCursor, true, nil
+}
+
+func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+	dump, exists, err := s.db.GetDumpByID(ctx, cursor.DumpID)
+	if err != nil {
+		return nil, Cursor{}, false, pkgerrors.Wrap(err, "db.GetDumpByID")
+	}
+	if !exists {
+		return nil, Cursor{}, false, ErrMissingDump
+	}
+	bundleClient := s.bundleManagerClient.BundleClient(dump.ID)
+
+	// Get the references that we've seen from the graph-encoded portion of the bundle. We
+	// need to know what we've returned previously so that we can filter out duplicate locations
+	// that are also encoded as monikers.
+	previousLocations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
+	if err != nil {
+		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
+	}
+
+	hashes := map[string]struct{}{}
+	for _, location := range previousLocations {
+		hashes[hashLocation(location)] = struct{}{}
+	}
+
+	var totalCount int
+	var locations []bundles.Location
 
 	// Search the references table of the current dump. This search is necessary because
 	// we want a 'Find References' operation on a reference to also return references to
 	// the governing definition, and those may not be fully linked in the LSIF data. This
 	// method returns a cursor if there are reference rows remaining for a subsequent page.
 	for _, moniker := range cursor.Monikers {
-		results, _, err := bundleClient.MonikerResults(ctx, "reference", moniker.Scheme, moniker.Identifier, 0, 0)
+		results, count, err := bundleClient.MonikerResults(ctx, "reference", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
 		if err != nil {
 			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.MonikerResults")
 		}
 
-		for _, location := range results {
-			if _, ok := dumpIDs[hashLocation(location)]; !ok {
-				locations = append(locations, location)
+		if count > 0 {
+			for _, location := range results {
+				if _, ok := hashes[hashLocation(location)]; !ok {
+					locations = append(locations, location)
+				}
 			}
+
+			totalCount = count
+			break
 		}
 	}
 
-	resolvedLocations := resolveLocationsWithDump(dump, sliceLocations(locations, cursor.SkipResults, cursor.SkipResults+s.limit))
+	resolvedLocations := resolveLocationsWithDump(dump, locations)
 
-	if newOffset := cursor.SkipResults + s.limit; newOffset <= len(locations) {
+	if newOffset := cursor.SkipResults + s.limit; newOffset <= totalCount {
 		newCursor := Cursor{
 			Phase:       cursor.Phase,
 			DumpID:      cursor.DumpID,
@@ -357,6 +400,17 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 	}
 
 	return nil, Cursor{}, false, nil
+}
+
+func hashLocation(location bundles.Location) string {
+	return fmt.Sprintf(
+		"%s:%d:%d:%d:%d",
+		location.Path,
+		location.Range.Start.Line,
+		location.Range.Start.Character,
+		location.Range.End.Line,
+		location.Range.End.Character,
+	)
 }
 
 func applyBloomFilter(packageReferences []types.PackageReference, identifier string, limit int) ([]types.PackageReference, int) {

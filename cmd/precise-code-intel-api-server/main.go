@@ -24,11 +24,6 @@ import (
 )
 
 func main() {
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -48,25 +43,30 @@ func main() {
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
-
-	server := server.Server{
-		Host:                host,
-		Port:                3186,
-		DB:                  db,
-		BundleManagerClient: bundleManagerClient,
-		CodeIntelAPI:        codeIntelAPI,
-	}
-	go server.Start()
+	server := server.New(db, bundleManagerClient, codeIntelAPI)
 
 	uploadResetter := resetter.UploadResetter{
 		DB:            db,
 		ResetInterval: resetInterval,
 		Metrics:       resetterMetrics,
 	}
-	go uploadResetter.Run()
 
+	go server.Start()
+	go uploadResetter.Run()
 	go debugserver.Start()
-	waitForSignal()
+
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
+
+	go func() {
+		// Insta-shutdown on a second signal
+		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
@@ -83,15 +83,4 @@ func mustInitializeDatabase() db.DB {
 	}
 
 	return db
-}
-
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-
-	for i := 0; i < 2; i++ {
-		<-signals
-	}
-
-	os.Exit(0)
 }

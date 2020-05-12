@@ -24,8 +24,8 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 	}
 
 	j := &Janitor{
-		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	var idArgs [][]int
@@ -79,8 +79,8 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	j := &Janitor{
-		BundleDir: bundleDir,
-		Metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
 	var idArgs [][]int

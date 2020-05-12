@@ -244,28 +244,28 @@ func TestDatabasePackageInformation(t *testing.T) {
 func openTestDatabase(t *testing.T) Database {
 	filename := "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db"
 
-	// TODO - rewrite test not to require actual reader
+	// TODO(efritz) - rewrite test not to require actual reader
 	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 	if err != nil {
 		t.Fatalf("unexpected error creating reader: %s", err)
 	}
 
-	documentDataCache, _, err := NewDocumentDataCache(1)
+	documentCache, _, err := NewDocumentCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	resultChunkDataCache, _, err := NewResultChunkDataCache(1)
+	resultChunkCache, _, err := NewResultChunkCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), filename, reader, documentDataCache, resultChunkDataCache)
+	db, err := OpenDatabase(context.Background(), filename, reader, documentCache, resultChunkCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 	t.Cleanup(func() { _ = db.Close })
 
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(db, &observation.TestContext)
+	return NewObserved(db, filename, &observation.TestContext)
 }
