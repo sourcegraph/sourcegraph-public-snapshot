@@ -156,23 +156,29 @@ export function parseURLVersionContext(query: string): string | undefined {
     return searchParams.get('c') || undefined
 }
 
+/**
+ * Verifies whether a version context exists on an instance.
+ *
+ * For URLs that have a `c=$X` parameter, we must check that
+ * the version $X actually exists before trying to search with it.
+ *
+ * If the version context doesn't exist or there are no available version contexts, return undefined to
+ * use the default context.
+ *
+ * @param versionContext The version context to verify.
+ * @param availableVersionContexts A list of all version contexts defined in site configuration.
+ */
 export function verifyVersionContext(
     versionContext: string | undefined,
     availableVersionContexts: VersionContext[] | undefined
 ): string | undefined {
-    if (!versionContext) {
+    if (
+        !versionContext ||
+        !availableVersionContexts ||
+        !availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext) ||
+        versionContext === 'default'
+    ) {
         return undefined
-    }
-
-    if (!availableVersionContexts) {
-        // We have a resolved version context from the URL or localStorage, but not available version contexts.
-        // In this case, we hide version contexts, so set to undefined.
-        return undefined
-    }
-
-    if (!availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext)) {
-        // The resolved version context doesn't actually exist in the settings, so set to default.
-        return 'default'
     }
 
     return versionContext

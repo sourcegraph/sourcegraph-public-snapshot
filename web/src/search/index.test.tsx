@@ -54,7 +54,7 @@ describe('search/index', () => {
             verifyVersionContext('3.15', [
                 { name: '3.16', description: '3.16', revisions: [{ ref: '3.16', repo: 'github.com/example/example' }] },
             ])
-        ).toBe('default')
+        ).toBe(undefined)
         expect(verifyVersionContext('3.15', undefined)).toBe(undefined)
     })
 })

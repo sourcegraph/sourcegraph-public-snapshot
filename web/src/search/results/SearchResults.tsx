@@ -54,7 +54,7 @@ export interface SearchResultsProps
         query: string,
         version: string,
         patternType: GQL.SearchPatternType,
-        versionContext: string,
+        versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
@@ -166,10 +166,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    versionContext === 'default'
-                                        ? ''
-                                        : verifyVersionContext(versionContext, this.props.availableVersionContexts) ||
-                                              '',
+                                    verifyVersionContext(
+                                        versionContext,
+                                        window.context.experimentalFeatures.versionContexts
+                                    ),
                                     this.props
                                 )
                                 .pipe(

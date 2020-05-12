@@ -49,7 +49,12 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { parseSearchURLPatternType, searchURLIsCaseSensitive, parseURLVersionContext } from './search'
+import {
+    parseSearchURLPatternType,
+    searchURLIsCaseSensitive,
+    parseURLVersionContext,
+    verifyVersionContext,
+} from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -142,8 +147,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     smartSearchField: boolean
 
     /**
-     * The version context the instance is in. If undefined, it means no version contexts have been defined.
-     * If no specific version context is selected, will be 'default'.
+     * The version context the instance is in. If undefined, it means no version context is selected.
      */
     versionContext?: string
 
@@ -215,7 +219,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const lastVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? parseURLVersionContext(window.location.search) || lastVersionContext || 'default'
+            ? parseURLVersionContext(window.location.search) || lastVersionContext || undefined
             : undefined
 
         this.state = {
@@ -466,9 +470,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private setVersionContext = (versionContext: string): void => {
-        if (
-            this.state.availableVersionContexts?.filter((v: VersionContext) => v.name === versionContext).length === 0
-        ) {
+        const resolvedVersionContext = verifyVersionContext(versionContext, this.state.availableVersionContexts)
+        if (!resolvedVersionContext) {
             localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
             this.setState({ versionContext: undefined })
         }
