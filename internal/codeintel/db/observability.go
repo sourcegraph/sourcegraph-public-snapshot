@@ -46,7 +46,7 @@ var _ DB = &ObservedDB{}
 func NewObserved(db DB, observationContext *observation.Context) DB {
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"codeintel_db",
+		"code_intel_db",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of results returned"),
 	)
