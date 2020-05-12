@@ -298,9 +298,10 @@ export const insertSuggestionInQuery = (
 
 /**
  * Returns true if word being typed is not a filter value.
+ *
  * E.g: where "|" is cursor
- *     "QueryInput lang:|" => false
- *     "archived:Yes QueryInp|" => true
+ * - "QueryInput lang:|" => false
+ * - "archived:Yes QueryInp|" => true
  */
 export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
