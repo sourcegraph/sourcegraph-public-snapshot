@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1033,62 +1032,62 @@ func TestPatchSetResolver(t *testing.T) {
 
 	queryPatches := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
 		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
-		query {
-			node(id: %q) {
-				... on PatchSet {
-					id
-					diffStat {
-						added
-						deleted
-						changed
-					}
-					patches(first: %d) {
-						nodes {
-							repository {
-								name
-							}
-							diff {
-								fileDiffs(first: %d, after: %s) {
-									rawDiff
-									diffStat {
-										added
-										deleted
-										changed
-									}
-									pageInfo {
-										endCursor
-										hasNextPage
-									}
-									nodes {
-										oldPath
-										newPath
-										hunks {
-											body
-											section
-											newRange { startLine, lines }
-											oldRange { startLine, lines }
-											oldNoNewlineAt
-										}
-										stat {
-											added
-											deleted
-											changed
-										}
-										oldFile {
-											name
-											externalURLs {
-												serviceType
-												url
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+        query {
+          node(id: %q) {
+            ... on PatchSet {
+              id
+              diffStat {
+                added
+                deleted
+                changed
+              }
+              patches(first: %d) {
+                nodes {
+                  repository {
+                    name
+                  }
+                  diff {
+                    fileDiffs(first: %d, after: %s) {
+                      rawDiff
+                      diffStat {
+                        added
+                        deleted
+                        changed
+                      }
+                      pageInfo {
+                        endCursor
+                        hasNextPage
+                      }
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
 		`, marshalPatchSetID(patchSet.ID), len(patches), first, after))
 	}
 
@@ -1487,7 +1486,13 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 }
 
 func TestApplyPatch(t *testing.T) {
-	have := applyPatch(`1 some
+	tests := []struct {
+		file     string
+		patch    string
+		wantFile string
+	}{
+		{
+			file: `1 some
 2
 3
 4
@@ -1504,7 +1509,8 @@ func TestApplyPatch(t *testing.T) {
 15
 16
 17
-18 oh yes`, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: 4, Body: []byte(` 4
+18 oh yes`,
+			patch: ` 4
  5
  6
 -7 super awesome
@@ -1512,8 +1518,8 @@ func TestApplyPatch(t *testing.T) {
  8
  9
  10
-`)}}})
-	want := `1 some
+`,
+			wantFile: `1 some
 2
 3
 4
@@ -1530,9 +1536,15 @@ func TestApplyPatch(t *testing.T) {
 15
 16
 17
-18 oh yes`
-	if have != want {
-		t.Fatalf("wrong patched file content %q, want=%q", have, want)
+18 oh yes`,
+		},
+	}
+
+	for _, tc := range tests {
+		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: 4, Body: []byte(tc.patch)}}})
+		if have != tc.wantFile {
+			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
+		}
 	}
 }
 
