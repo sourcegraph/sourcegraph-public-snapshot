@@ -105,11 +105,13 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 		}
 	}
 
-	sym := &zoektquery.Symbol{Expr: query}
-	repo := &zoektquery.RepoSet{Set: map[string]bool{
-		string(commit.repo.repo.Name): true,
-	}}
-	ands := []zoektquery.Q{repo, sym}
+	// (and (repo NAME) (symbol QUERY))
+	ands := []zoektquery.Q{
+		&zoektquery.RepoSet{Set: map[string]bool{
+			string(commit.repo.repo.Name): true,
+		}},
+		&zoektquery.Symbol{Expr: query},
+	}
 	for _, p := range *includePatterns {
 		q, err := fileRe(p, true)
 		if err != nil {
