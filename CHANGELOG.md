@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Fixed OCaml syntax highlighting #3545
   - Bazel/Starlark support improved (.star, BUILD, and many more extensions now properly highlighted). #8123
 - New permissions page in both user and repository settings when background permissions syncing is enabled (`"permissions.backgroundSync": {"enabled": true}`). #10473
+- Diff views now feature syntax highlighting and can be properly copy-pasted. [#10437](https://github.com/sourcegraph/sourcegraph/pull/10437)
 
 ### Changed
 
