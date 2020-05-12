@@ -184,6 +184,13 @@ func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[str
 	for id, documentRanges := range data {
 		resultChunk := resultChunks[types.HashKey(types.ID(id), len(resultChunks))]
 
+		if len(documentRanges) == 0 {
+			// We may have pruned all document/ranges from a definition or reference result,
+			// but we add a dummy set here so that we don't hit an unknown key during queries.
+			// TODO(efritz) - remove these as part of the prune pass instead
+			resultChunk.DocumentIDRangeIDs[types.ID(id)] = nil
+		}
+
 		for documentID, rangeIDs := range documentRanges {
 			doc := state.DocumentData[documentID]
 			resultChunk.DocumentPaths[types.ID(documentID)] = doc.URI
