@@ -188,13 +188,11 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  * - This scrapes the file path from the permalink on GitHub blob pages:
  *
- *     <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
+ * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
  *
- * - We can't get the file path from the URL because the branch name can contain
- *   slashes which make the boundary between the branch name and file path
- *   ambiguous. For example:
+ * - We can't get the file path from the URL because the branch name can contain slashes which make the boundary between the branch name and file path ambiguous. For example:
  *
- *     https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
+ * https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
  *
  * TODO ideally, this should only scrape the code view itself.
  */

@@ -5,12 +5,14 @@ import * as React from 'react'
  *
  * Usage:
  *
- *     <RepoHeaderContributionPortal
- *         position="nav"
- *         element={
- *             <RepoHeaderBreadcrumbNavItem key="foo">Foo</RepoHeaderBreadcrumbNavItem>
- *         }
- *     />
+ * ```
+ * <RepoHeaderContributionPortal
+ *   position="nav"
+ *   element={
+ *     <RepoHeaderBreadcrumbNavItem key="foo">Foo</RepoHeaderBreadcrumbNavItem>
+ *   }
+ * />
+ * ```
  */
 export const RepoHeaderBreadcrumbNavItem: React.FunctionComponent<{ children: React.ReactFragment }> = ({
     children,

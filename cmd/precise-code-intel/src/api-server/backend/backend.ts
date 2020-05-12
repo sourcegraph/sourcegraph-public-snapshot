@@ -269,10 +269,13 @@ export class Backend {
      * Using the current state of the pagination cursor, determine what we need to query next. The
      * four major phases of a reference request are:
      *
-     *   (1) 'same-dump': query the original dump's LSIF reference results and references table
-     *   (2) 'definition-monikers': query the monikers in the dump that defines them
-     *   (3) 'same-repo': open additional dumps that belong to the same repository
-     *   (4) 'remote-repo': open additional dumps that belong to a different repository
+     * (1) 'same-dump': query the original dump's LSIF reference results and references table
+     *
+     * (2) 'definition-monikers': query the monikers in the dump that defines them
+     *
+     * (3) 'same-repo': open additional dumps that belong to the same repository
+     *
+     * (4) 'remote-repo': open additional dumps that belong to a different repository
      *
      * This method will return any locations found in this page of results as well as a cursor
      * indicating how to execute the next page of results. If the cursor is undefined there are no

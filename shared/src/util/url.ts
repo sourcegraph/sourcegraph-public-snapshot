@@ -138,12 +138,12 @@ export interface ParsedRepoURI
 
 /**
  * RepoURI is a URI identifing a repository resource, like
- *   - the repository itself: `git://github.com/gorilla/mux`
- *   - the repository at a particular revision: `git://github.com/gorilla/mux?rev`
- *   - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
- *   - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
- *   - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
- *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
+ * - the repository itself: `git://github.com/gorilla/mux`
+ * - the repository at a particular revision: `git://github.com/gorilla/mux?rev`
+ * - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
+ * - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
+ * - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
+ * - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
  */
 type RepoURI = string
 
@@ -346,8 +346,7 @@ export function isLegacyFragment(hash: string): boolean {
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
  *
- * @template V The type that describes the view state (typically a union of string constants). There is no runtime
- *             check that the return value satisfies V.
+ * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
     if (hash.startsWith('#')) {
