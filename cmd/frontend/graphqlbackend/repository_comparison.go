@@ -169,6 +169,8 @@ type fileDiffConnectionResolver struct {
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, int32, error) {
 	do := func() ([]*diff.FileDiff, int32, error) {
 		var afterIdx int32
+		// Todo: It's possible that the rangeSpec changes in between two executions, then the cursor would be invalid and the
+		// whole pagination should not be continued.
 		if r.after != nil {
 			parsedIdx, err := strconv.ParseInt(*r.after, 0, 32)
 			if err != nil {

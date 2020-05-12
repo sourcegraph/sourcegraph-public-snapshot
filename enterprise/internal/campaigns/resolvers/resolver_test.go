@@ -1487,9 +1487,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 func TestApplyPatch(t *testing.T) {
 	tests := []struct {
-		file     string
-		patch    string
-		wantFile string
+		file          string
+		patch         string
+		origStartLine int32
+		wantFile      string
 	}{
 		{
 			file: `1 some
@@ -1519,6 +1520,7 @@ func TestApplyPatch(t *testing.T) {
  9
  10
 `,
+			origStartLine: 4,
 			wantFile: `1 some
 2
 3
@@ -1541,7 +1543,7 @@ func TestApplyPatch(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: 4, Body: []byte(tc.patch)}}})
+		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: tc.origStartLine, Body: []byte(tc.patch)}}})
 		if have != tc.wantFile {
 			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
 		}
