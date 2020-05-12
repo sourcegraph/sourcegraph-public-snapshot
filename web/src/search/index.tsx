@@ -40,8 +40,8 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
 }
 
 /**
- * Parses the pattern type out of the URL search params (the 'patternType' parameter). If the 'pattern' parameter
- * is not present, or it is an invalid value, it returns undefined.
+ * Parses the version context out of the URL search params (the 'c' parameter). If the version context
+ * is not present, return undefined.
  */
 export function parseSearchURLVersionContext(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
@@ -150,11 +150,6 @@ export interface InteractiveSearchProps {
 
 export interface SmartSearchFieldProps {
     smartSearchField: boolean
-}
-
-export function parseURLVersionContext(query: string): string | undefined {
-    const searchParams = new URLSearchParams(query)
-    return searchParams.get('c') || undefined
 }
 
 /**

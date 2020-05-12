@@ -52,7 +52,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import {
     parseSearchURLPatternType,
     searchURLIsCaseSensitive,
-    parseURLVersionContext,
+    parseSearchURLVersionContext,
     verifyVersionContext,
 } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
@@ -219,7 +219,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const lastVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? parseURLVersionContext(window.location.search) || lastVersionContext || undefined
+            ? parseSearchURLVersionContext(window.location.search) || lastVersionContext || undefined
             : undefined
 
         this.state = {
