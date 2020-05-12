@@ -2045,6 +2045,11 @@
   version "0.0.0"
   uid ""
 
+"@sourcegraph/nice-ticks@^1.0.0-fork.1":
+  version "1.0.0-fork.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/nice-ticks/-/nice-ticks-1.0.0-fork.1.tgz#7027dbd2c0e3b66bb718b619b58af2a09b3cd006"
+  integrity sha512-0AL/YWwHF4UOG78752691uml1wSIdAPg43UB7zV56mUj+9BSXyFlULBZIqEX/clhW5RvpFimiqCVKdRZX7fsLA==
+
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
   resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.3.tgz#51bfa9b2588fe35121593fa877143e6373028289"
