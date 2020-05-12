@@ -66,7 +66,7 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Install without RBAC](#install-without-rbac)
 - [Use non-default namespace](#use-non-default-namespace)
 - [Pulling images locally](#pulling-images-locally)
-- [Using NetworkPolicy](#using-network-policy)
+- [Using NetworkPolicy](#using-networkpolicy)
 
 ### Working with overlays
 
@@ -564,16 +564,12 @@ You can then use the `namespaceSelector` to allow traffic between the Sourcegrap
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
 
 ```yaml
-{
-  "apiVersion": "v1",
-  "kind": "Namespace",
-  "metadata": {
-    "name": "ns-sourcegraph",
-    "labels": {
-      "name": "ns-sourcegraph"
-    }
-  }
-}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-sourcegraph
+  labels:
+    name: ns-sourcegraph
 ```
 
 If the namespace already exists you can still label it like so
