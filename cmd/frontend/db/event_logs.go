@@ -600,54 +600,12 @@ func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []UserUsageCou
 
 const usersUsageCountsQuery = `
 -- source: cmd/frontend/db/event_logs.go:UsersUsageCounts
-WITH searches AS (
-  SELECT
-    event_logs.user_id,
-    DATE(event_logs.timestamp) AS timestamp,
-    COUNT(*) AS search_count
-  FROM
-    event_logs
-  WHERE
-    event_logs.name = 'SearchResultsQueried'
-  GROUP BY
-    1,
-    2
-),
-code_intel_events AS (
-  SELECT
-    event_logs.user_id,
-    DATE(event_logs.timestamp) AS timestamp,
-    COUNT(*) AS codeintel_count
-  FROM
-    event_logs
-  WHERE
-    event_logs.name LIKE '%codeintel%'
-  GROUP BY
-    1,
-    2
-)
 SELECT
-  DATE(event_logs.timestamp),
-  event_logs.user_id,
-  search_count,
-  codeintel_count
-FROM
-  event_logs
-FULL OUTER JOIN
-  searches
-ON
-  event_logs.user_id = searches.user_id
-  AND DATE(event_logs.timestamp) = DATE(searches.timestamp)
-FULL OUTER JOIN
-  code_intel_events
-ON
-  event_logs.user_id = code_intel_events.user_id
-  AND DATE(event_logs.timestamp) = DATE(code_intel_events.timestamp)
-GROUP BY
-  2,
-  1,
-  3,
-  4
-ORDER BY
-  1 DESC
+  DATE(timestamp),
+  user_id,
+  COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
+  COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
+FROM event_logs
+GROUP BY 1, 2
+ORDER BY 1 DESC, 2 ASC;
 `
