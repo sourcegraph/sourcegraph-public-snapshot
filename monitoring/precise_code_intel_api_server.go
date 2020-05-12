@@ -73,7 +73,7 @@ func PreciseCodeIntelAPIServer() *Container {
 					},
 					{
 						{
-							Name:              "99th_percentile_bundle_manager_duration",
+							Name:              "99th_percentile_bundle_manager_query_duration",
 							Description:       "99th percentile successful bundle manager query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-api-server",category!="transfer"}[5m])))`,
 							DataMayNotExist:   true,
@@ -82,7 +82,7 @@ func PreciseCodeIntelAPIServer() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "99th_percentile_bundle_manager_duration",
+							Name:              "99th_percentile_bundle_manager_transfer_duration",
 							Description:       "99th percentile successful bundle manager data transfer duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-api-server",category="transfer"}[5m])))`,
 							DataMayNotExist:   true,
