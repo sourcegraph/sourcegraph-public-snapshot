@@ -159,8 +159,8 @@ export class UploadManager {
      *
      * @param id The upload identifier.
      * @param updateVisibility A function that updates the dumps visible at the tip for
-     *     the given repository. This is called if the deleted dump was visible at tip,
-     *     as a previously non-visible dump may become visible after deletion.
+     * the given repository. This is called if the deleted dump was visible at tip,
+     * as a previously non-visible dump may become visible after deletion.
      */
     public async deleteUpload(
         id: number,

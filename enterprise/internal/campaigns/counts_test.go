@@ -407,14 +407,14 @@ func TestCalcCounts(t *testing.T) {
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, reviewed, unapproved",
+			name:      "single changeset open, changes-requested, unapproved",
 			changesets: []*campaigns.Changeset{
 				bbsChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
 			events: []*campaigns.ChangesetEvent{
 				bbsActivity(1, daysAgo(2), "user1", campaigns.ChangesetEventKindBitbucketServerReviewed),
-				bbsParticipantEvent(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerParticipationStatusUnapproved),
+				bbsParticipantEvent(1, daysAgo(1), "user1", campaigns.ChangesetEventKindBitbucketServerDismissed),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},

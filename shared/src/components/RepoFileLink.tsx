@@ -3,7 +3,7 @@ import { Link } from './Link'
 import { appendSubtreeQueryParam } from '../util/url'
 
 /**
- *  Returns the friendly display form of the repository name (e.g., removing "github.com/").
+ * Returns the friendly display form of the repository name (e.g., removing "github.com/").
  */
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')

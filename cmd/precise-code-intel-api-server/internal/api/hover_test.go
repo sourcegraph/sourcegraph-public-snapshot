@@ -65,7 +65,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	setMockBundleClientMonikersByPosition(t, mockBundleClient1, "main.go", 10, 50, [][]bundles.MonikerData{{testMoniker1}})
 	setMockBundleClientPackageInformation(t, mockBundleClient1, "main.go", "1234", testPackageInformation)
 	setMockDBGetPackage(t, mockDB, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 0, 0, []bundles.Location{
+	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 0, 100, []bundles.Location{
 		{DumpID: 50, Path: "foo.go", Range: testRange1},
 		{DumpID: 50, Path: "bar.go", Range: testRange2},
 		{DumpID: 50, Path: "baz.go", Range: testRange3},

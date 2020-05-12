@@ -11,7 +11,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { NavLinks } from '../../../nav/NavLinks'
 import { showDotComMarketing } from '../../../util/features'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
@@ -235,6 +235,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
+                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                                 />
                                 <SearchButton noHelp={true} />
                             </div>

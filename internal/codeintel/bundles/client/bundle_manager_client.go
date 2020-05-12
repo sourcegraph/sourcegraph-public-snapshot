@@ -148,7 +148,7 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	return json.NewDecoder(body).Decode(&target)
 }
 
-// TODO - trace
+// TODO(efritz) - trace
 func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
 	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {

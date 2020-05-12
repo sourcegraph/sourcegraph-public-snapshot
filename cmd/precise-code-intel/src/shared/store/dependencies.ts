@@ -279,8 +279,7 @@ export class DependencyManager {
      *
      * @param dumpId The identifier of the newly inserted dump.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
-     * @param symbolReferences The list of packages that this repository depends on (scheme, name, and version)
-     *     and the symbols that the package references.
+     * @param symbolReferences The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      * @param ctx The tracing context.
      * @param entityManager The EntityManager to use as part of a transaction.
      */
