@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -28,7 +29,7 @@ import (
 )
 
 // recorder records operational metrics for methods.
-var recorder = metrics.NewOperationMetrics("updatecheck", "updatecheck", metrics.WithLabels("method"))
+var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck", metrics.WithLabels("method"))
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
