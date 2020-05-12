@@ -115,7 +115,6 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                         </ListboxGroupLabel>
                                         {!isErrorLike(versionContexts) && (
                                             <>
-
                                                 {versionContexts
                                                     .filter(
                                                         versionContext => versionContext.name === props.versionContext

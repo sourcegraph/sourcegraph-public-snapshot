@@ -8,7 +8,7 @@
         border-left: 1px solid $gray-17 !important;
 
         &-text {
-            font-size: 0.625rem;
+            font-size: 10px;
         }
     }
 
@@ -20,7 +20,7 @@
 
     &__info {
         padding: 0.5rem 0.5rem;
-        font-size: 0.75rem;
+        font-size: 12px;
         border: none;
 
         &-dismiss {
@@ -41,7 +41,7 @@
     }
 
     &__option {
-        font-size: 0.75rem;
+        font-size: 12px;
         display: grid;
         grid-template-columns: 0.5fr 4fr 5fr 0.5fr;
         cursor: pointer;
