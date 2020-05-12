@@ -217,11 +217,19 @@ func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
 
 type dbQueryHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
 
+// ErrUnknownDatabase occurs when a request for an unknown database is made.
+var ErrUnknownDatabase = errors.New("unknown database")
+
 // dbQuery invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
 func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
 	if err := s.dbQueryErr(w, r, handler); err != nil {
+		if err == ErrUnknownDatabase {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -249,10 +257,24 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	openDatabase := func() (database.Database, error) {
 		cached = false
 
-		// TODO(efritz) - What is the behavior if the db is missing? Should we stat first or clean up after?
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
+		}
+
+		// Check to see if the database exists after openign it. If it doesn't, then
+		// the SQLite driver has created a new, empty database. In this case, we want
+		// return an unknown error, but need to ensure that we don't also create an
+		// empty db file on disk to be opened successfully in the next request to the
+		// same dump.
+		if _, err := os.Stat(filename); err != nil {
+			if os.IsNotExist(err) {
+				sqliteReader.Close()
+				os.Remove(filename)
+				return nil, ErrUnknownDatabase
+			}
+
+			return nil, err
 		}
 
 		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
