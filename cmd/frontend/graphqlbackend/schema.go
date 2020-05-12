@@ -1941,7 +1941,11 @@ type PreviewRepositoryComparison {
     baseRepository: Repository!
 
     # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
+    fileDiffs(
+        first: Int
+        # Return file diffs after the given cursor.
+        after: String
+    ): PreviewFileDiffConnection!
 }
 
 # A list of file diffs that might be applied.
@@ -2002,6 +2006,8 @@ type RepositoryComparison {
     fileDiffs(
         # Return the first n file diffs from the list.
         first: Int
+        # Return file diffs after the given cursor.
+        after: String
     ): FileDiffConnection!
 }
 
@@ -2046,6 +2052,33 @@ type FileDiff {
     internalID: String!
 }
 
+# The type of content in a hunk line.
+enum DiffHunkLineType {
+    # Added line.
+    ADDED
+    # Unchanged line.
+    UNCHANGED
+    # Deleted line.
+    DELETED
+}
+
+# A single highlighted line, including the kind of line.
+type HighlightedDiffHunkLine {
+    # The HTML containing the syntax-highlighted line of code.
+    html: String!
+    # The operation that happened on this line, in patches it is prefixed with '+', '-', ' '.
+    # Can be either add, delete, or no change.
+    kind: DiffHunkLineType!
+}
+
+# A highlighted hunk, consisting of all its lines.
+type HighlightedDiffHunkBody {
+    # Whether highlighting was aborted.
+    aborted: Boolean!
+    # The highlighted lines.
+    lines: [HighlightedDiffHunkLine!]!
+}
+
 # A changed region ("hunk") in a file diff.
 type FileDiffHunk {
     # The range of the old file that the hunk applies to.
@@ -2058,6 +2091,16 @@ type FileDiffHunk {
     section: String
     # The hunk body, with lines prefixed with '-', '+', or ' '.
     body: String!
+    # Highlight the hunk.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedDiffHunkBody!
 }
 
 # A hunk range in one side (old/new) of a diff.

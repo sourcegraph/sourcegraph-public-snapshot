@@ -76,7 +76,7 @@ export const DiffStat: React.FunctionComponent<{
                     <span className="diff-stat__text-deleted mr-1">&minus;{numberWithCommas(deleted)}</span>
                 </span>
             ) : (
-                <small className="diff-stat__total">{numberWithCommas(total)}</small>
+                <small className="diff-stat__total">{numberWithCommas(total + changed)}</small>
             )}
             {squares.map((verb, i) => (
                 <div key={i} className={`diff-stat__square diff-stat__${verb}`} />

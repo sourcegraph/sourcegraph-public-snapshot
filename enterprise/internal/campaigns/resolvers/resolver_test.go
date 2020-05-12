@@ -778,6 +778,10 @@ index 6f8b5d9..17400bc 100644
 var wantFileDiffs = apitest.FileDiffs{
 	RawDiff:  testDiff,
 	DiffStat: apitest.DiffStat{Changed: 2},
+	PageInfo: struct {
+		HasNextPage bool
+		EndCursor   string
+	}{},
 	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",
@@ -1026,51 +1030,55 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var response struct{ Node apitest.PatchSet }
-
-	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
-      query {
-        node(id: %q) {
-          ... on PatchSet {
-            id
-            diffStat {
-              added
-              deleted
-              changed
-            }
-            patches(first: %d) {
-              nodes {
-                repository {
-                  name
-                }
-                diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
+	queryPatches := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
+		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
+        query {
+          node(id: %q) {
+            ... on PatchSet {
+              id
+              diffStat {
+                added
+                deleted
+                changed
+              }
+              patches(first: %d) {
+                nodes {
+                  repository {
+                    name
+                  }
+                  diff {
+                    fileDiffs(first: %d, after: %s) {
+                      rawDiff
+                      diffStat {
                         added
                         deleted
                         changed
                       }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
+                      pageInfo {
+                        endCursor
+                        hasNextPage
+                      }
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
                         }
                       }
                     }
@@ -1080,8 +1088,36 @@ func TestPatchSetResolver(t *testing.T) {
             }
           }
         }
-      }
-	`, marshalPatchSetID(patchSet.ID), len(patches)))
+		`, marshalPatchSetID(patchSet.ID), len(patches), first, after))
+	}
+
+	for page := 0; page < 3; page++ {
+		var response struct{ Node apitest.PatchSet }
+		queryPatches(1, fmt.Sprintf(`"%d"`, page), &response)
+
+		expectedLength := 1
+		if page >= 2 {
+			expectedLength = 0
+		}
+		if have, want := len(response.Node.Patches.Nodes[0].Diff.FileDiffs.Nodes), expectedLength; have != want {
+			t.Fatalf("have %d file diffs, want %d", have, want)
+		}
+
+		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.HasNextPage, page == 0; have != want {
+			t.Fatalf("have %t hasNextPage, want %t", have, want)
+		}
+
+		expectedCursor := "1"
+		if page != 0 {
+			expectedCursor = ""
+		}
+		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.EndCursor, expectedCursor; have != want {
+			t.Fatalf("have %q endCursor, want %q", have, want)
+		}
+	}
+
+	var response struct{ Node apitest.PatchSet }
+	queryPatches(10000, "null", &response)
 
 	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
@@ -1446,6 +1482,71 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	changeset := campaign.Changesets.Nodes[0]
 	if have, want := campaign.DiffStat, changeset.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
+	}
+}
+
+func TestApplyPatch(t *testing.T) {
+	tests := []struct {
+		file          string
+		patch         string
+		origStartLine int32
+		wantFile      string
+	}{
+		{
+			file: `1 some
+2
+3
+4
+5
+6
+7 super awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`,
+			patch: ` 4
+ 5
+ 6
+-7 super awesome
++7 super mega awesome
+ 8
+ 9
+ 10
+`,
+			origStartLine: 4,
+			wantFile: `1 some
+2
+3
+4
+5
+6
+7 super mega awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes`,
+		},
+	}
+
+	for _, tc := range tests {
+		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: tc.origStartLine, Body: []byte(tc.patch)}}})
+		if have != tc.wantFile {
+			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
+		}
 	}
 }
 

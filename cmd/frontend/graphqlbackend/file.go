@@ -92,11 +92,7 @@ type highlightedFileResolver struct {
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
 func (h *highlightedFileResolver) HTML() string  { return h.html }
 
-func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
-	DisableTimeout     bool
-	IsLightTheme       bool
-	HighlightLongLines bool
-}) (*highlightedFileResolver, error) {
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
 	// Timeout for reading file via Git.
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
