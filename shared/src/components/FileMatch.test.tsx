@@ -27,7 +27,7 @@ describe('FileMatch', () => {
         isLightTheme: true,
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
-        versionContext: 'default',
+        versionContext: undefined,
     }
 
     it('renders one result container', () => {
