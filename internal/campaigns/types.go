@@ -1295,8 +1295,8 @@ const (
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
 
-	// BitbucketServer calls this an "Unapprove" event but we've called it Dismissed to more
-	// clearly convey that it only occurs when a request for changes has been removed.
+	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
+	// clearly convey that it only occurs when a request for changes has been dismissed.
 	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 )
 
