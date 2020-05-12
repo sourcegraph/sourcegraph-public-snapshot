@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"sort"
 
 	"github.com/keegancsmith/sqlf"
 )
@@ -60,13 +61,26 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 		return nil
 	}
 
+	// Make the order in which we construct the values for insertion determinstic.
+	// We want this to happen because many workers/api-servers can be inserting
+	// commits for the same repository. Having them inserted in random order may
+	// cause a dealock to occur where two threads are writing the same tuples in
+	// different orders: e.g. A writes t1 then t2, and B writes t2 then t1. If we
+	// always write in the same order, then such a deadlock is impossible.
+	var keys []string
+	for commit, parentCommits := range unknownCommits {
+		keys = append(keys, commit)
+		sort.Strings(parentCommits)
+	}
+	sort.Strings(keys)
+
 	var rows []*sqlf.Query
-	for commit, parents := range unknownCommits {
-		for _, parent := range parents {
+	for _, commit := range keys {
+		for _, parent := range unknownCommits[commit] {
 			rows = append(rows, sqlf.Sprintf("(%d, %s, %s)", repositoryID, commit, parent))
 		}
 
-		if len(parents) == 0 {
+		if len(unknownCommits[commit]) == 0 {
 			// Insert a commit even if its parent is not known
 			rows = append(rows, sqlf.Sprintf("(%d, %s, NULL)", repositoryID, commit))
 		}
