@@ -16,6 +16,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
+import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
@@ -29,12 +31,11 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
     )
 
     const updateValue = (newValue: string): void => {
-        if (newValue === props.versionContext) {
-            // Reset to default if active element is clicked again.
-            props.setVersionContext('')
-        } else {
-            props.setVersionContext(newValue)
-        }
+        props.setVersionContext(newValue)
+    }
+
+    const unsetValue = (): void => {
+        props.setVersionContext('')
     }
 
     if (!versionContexts || (!isErrorLike(versionContexts) && versionContexts.length === 0)) {
@@ -60,8 +61,13 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                     <ListboxInput value={props.versionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
-                                <ListboxButton className="form-control">
-                                    <span>{props.versionContext || 'Select context'}</span>
+                                <ListboxButton className="version-context-dropdown__button btn btn-secondary form-control">
+                                    <FlagVariantIcon className="icon-inline small mr-2" />
+                                    <span className="version-context-dropdown__button-text">
+                                        {!props.versionContext || props.versionContext === 'default'
+                                            ? 'Select context'
+                                            : props.versionContext}
+                                    </span>
                                 </ListboxButton>
                                 <ListboxPopover
                                     className={classNames('version-context-dropdown__popover dropdown-menu', {
@@ -98,7 +104,12 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                             value="title"
                                             className="version-context-dropdown__option version-context-dropdown__title"
                                         >
-                                            <VersionContextInfoRow name="Name" description="Description" />
+                                            <VersionContextInfoRow
+                                                name="Name"
+                                                description="Description"
+                                                isActive={false}
+                                                unsetValue={unsetValue}
+                                            />
                                         </ListboxGroupLabel>
                                         {!isErrorLike(versionContexts) &&
                                             versionContexts
@@ -113,6 +124,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                                         <VersionContextInfoRow
                                                             name={versionContext.name}
                                                             description={versionContext.description}
+                                                            isActive={props.versionContext === versionContext.name}
+                                                            unsetValue={unsetValue}
                                                         />
                                                     </ListboxOption>
                                                 ))}
@@ -127,12 +140,20 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
     )
 }
 
-const VersionContextInfoRow: React.FunctionComponent<{ name: string; description: string }> = ({
-    name,
-    description,
-}) => (
+const VersionContextInfoRow: React.FunctionComponent<{
+    name: string
+    description: string
+    isActive: boolean
+    unsetValue: () => void
+}> = ({ name, description, isActive, unsetValue }) => (
     <>
-        <span />
+        <span>
+            {isActive && (
+                <button type="button" className="btn btn-icon" onClick={unsetValue}>
+                    <CloseIcon className="icon-inline small" />
+                </button>
+            )}
+        </span>
         <span className="version-context-dropdown__option-name">{name}</span>
         <span className="version-context-dropdown__option-description">{description}</span>
         <span />

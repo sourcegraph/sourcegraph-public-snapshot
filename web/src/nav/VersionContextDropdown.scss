@@ -2,6 +2,14 @@
 
 .version-context-dropdown {
     width: fit-content;
+    &__button {
+        border-radius: 0;
+        border-left: 1px solid $color-border !important;
+
+        &-text {
+            font-size: 0.625rem;
+        }
+    }
 
     &__title {
         font-weight: bold;
@@ -63,6 +71,10 @@
     .version-context-dropdown {
         &__info {
             background-color: $color-light-bg-2;
+        }
+
+        &__button {
+            border-left: 1px solid $gray-07 !important;
         }
 
         &__list {
