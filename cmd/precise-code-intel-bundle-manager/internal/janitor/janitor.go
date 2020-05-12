@@ -1,6 +1,7 @@
 package janitor
 
 import (
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -8,11 +9,30 @@ import (
 )
 
 type Janitor struct {
-	BundleDir          string
-	DesiredPercentFree int
-	JanitorInterval    time.Duration
-	MaxUploadAge       time.Duration
-	Metrics            JanitorMetrics
+	bundleDir          string
+	desiredPercentFree int
+	janitorInterval    time.Duration
+	maxUploadAge       time.Duration
+	metrics            JanitorMetrics
+	done               chan struct{}
+	once               sync.Once
+}
+
+func New(
+	bundleDir string,
+	desiredPercentFree int,
+	janitorInterval time.Duration,
+	maxUploadAge time.Duration,
+	metrics JanitorMetrics,
+) *Janitor {
+	return &Janitor{
+		bundleDir:          bundleDir,
+		desiredPercentFree: desiredPercentFree,
+		janitorInterval:    janitorInterval,
+		maxUploadAge:       maxUploadAge,
+		metrics:            metrics,
+		done:               make(chan struct{}),
+	}
 }
 
 // step performs a best-effort cleanup. See the following methods for more specifics.
@@ -21,15 +41,26 @@ type Janitor struct {
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
-			j.Metrics.Errors.Inc()
+			j.metrics.Errors.Inc()
 			log15.Error("Failed to run janitor process", "err", err)
 		}
 
-		time.Sleep(j.JanitorInterval)
+		select {
+		case <-time.After(j.janitorInterval):
+		case <-j.done:
+			return
+		}
 	}
 }
 
+func (j *Janitor) Stop() {
+	j.once.Do(func() {
+		close(j.done)
+	})
+}
+
 func (j *Janitor) run() error {
+	// TODO(efritz) - use cancellable context for API calls
 	// TODO(efritz) - should also remove orphaned upload files
 
 	if err := j.removeOldUploadFiles(); err != nil {

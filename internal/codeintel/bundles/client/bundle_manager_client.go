@@ -22,11 +22,15 @@ type BundleManagerClient interface {
 	// SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk.
 	SendUpload(ctx context.Context, bundleID int, r io.Reader) error
 
+	// DeleteUpload removes the upload file with the given identifier from disk.
+	DeleteUpload(ctx context.Context, bundleID int) error
+
 	// GetUploads retrieves a raw LSIF upload from disk. The file is written to a file in the
 	// given directory with a random filename. The generated filename is returned on success.
 	GetUpload(ctx context.Context, bundleID int, dir string) (string, error)
 
-	// SendDB transfers a converted databse to the bundle manager to be stored on disk.
+	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
+	// will also remove the original upload file with the same identifier from disk.
 	SendDB(ctx context.Context, bundleID int, r io.Reader) error
 }
 
@@ -61,6 +65,21 @@ func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, 
 	}
 
 	body, err := c.do(ctx, "POST", url, r)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// DeleteUpload removes the upload file with the given identifier from disk.
+func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int) error {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "DELETE", url, nil)
 	if err != nil {
 		return err
 	}

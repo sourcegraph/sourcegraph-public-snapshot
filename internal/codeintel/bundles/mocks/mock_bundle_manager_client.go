@@ -17,6 +17,9 @@ type MockBundleManagerClient struct {
 	// BundleClientFunc is an instance of a mock function object controlling
 	// the behavior of the method BundleClient.
 	BundleClientFunc *BundleManagerClientBundleClientFunc
+	// DeleteUploadFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteUpload.
+	DeleteUploadFunc *BundleManagerClientDeleteUploadFunc
 	// GetUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUpload.
 	GetUploadFunc *BundleManagerClientGetUploadFunc
@@ -35,6 +38,11 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 	return &MockBundleManagerClient{
 		BundleClientFunc: &BundleManagerClientBundleClientFunc{
 			defaultHook: func(int) client.BundleClient {
+				return nil
+			},
+		},
+		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
+			defaultHook: func(context.Context, int) error {
 				return nil
 			},
 		},
@@ -63,6 +71,9 @@ func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleMan
 	return &MockBundleManagerClient{
 		BundleClientFunc: &BundleManagerClientBundleClientFunc{
 			defaultHook: i.BundleClient,
+		},
+		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
+			defaultHook: i.DeleteUpload,
 		},
 		GetUploadFunc: &BundleManagerClientGetUploadFunc{
 			defaultHook: i.GetUpload,
@@ -179,6 +190,115 @@ func (c BundleManagerClientBundleClientFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BundleManagerClientBundleClientFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BundleManagerClientDeleteUploadFunc describes the behavior when the
+// DeleteUpload method of the parent MockBundleManagerClient instance is
+// invoked.
+type BundleManagerClientDeleteUploadFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []BundleManagerClientDeleteUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteUpload delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockBundleManagerClient) DeleteUpload(v0 context.Context, v1 int) error {
+	r0 := m.DeleteUploadFunc.nextHook()(v0, v1)
+	m.DeleteUploadFunc.appendCall(BundleManagerClientDeleteUploadFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteUpload method
+// of the parent MockBundleManagerClient instance is invoked and the hook
+// queue is empty.
+func (f *BundleManagerClientDeleteUploadFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteUpload method of the parent MockBundleManagerClient instance
+// inovkes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BundleManagerClientDeleteUploadFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientDeleteUploadFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientDeleteUploadFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *BundleManagerClientDeleteUploadFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientDeleteUploadFunc) appendCall(r0 BundleManagerClientDeleteUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientDeleteUploadFuncCall
+// objects describing the invocations of this function.
+func (f *BundleManagerClientDeleteUploadFunc) History() []BundleManagerClientDeleteUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientDeleteUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientDeleteUploadFuncCall is an object that describes an
+// invocation of method DeleteUpload on an instance of
+// MockBundleManagerClient.
+type BundleManagerClientDeleteUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientDeleteUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientDeleteUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

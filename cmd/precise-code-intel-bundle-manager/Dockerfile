@@ -33,9 +33,7 @@ USER root
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 
 USER sourcegraph
-COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundle-manager
-
 EXPOSE 3187
 VOLUME ["/lsif-storage"]
-ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
+COPY precise-code-intel-bundle-manager /usr/local/bin/

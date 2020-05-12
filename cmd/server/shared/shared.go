@@ -89,7 +89,7 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		SetDefaultEnv("LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif-storage"))
+		SetDefaultEnv("PRECISE_CODE_INTEL_BUNDLE_DIR", filepath.Join(DataDir, "lsif-storage"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
@@ -136,9 +136,9 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`precise-code-intel-api-server: node /precise-code-intel/out/api-server/api.js`,
-		`precise-code-intel-bundle-manager: node /precise-code-intel/out/bundle-manager/manager.js`,
-		`precise-code-intel-worker: node /precise-code-intel/out/worker/worker.js`,
+		`precise-code-intel-api-server: precise-code-intel-api-server`,
+		`precise-code-intel-bundle-manager: precise-code-intel-bundle-manager`,
+		`precise-code-intel-worker: precise-code-intel-worker`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

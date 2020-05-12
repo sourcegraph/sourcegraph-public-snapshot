@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +27,8 @@ type Worker struct {
 	processor    Processor
 	pollInterval time.Duration
 	metrics      WorkerMetrics
+	done         chan struct{}
+	once         sync.Once
 }
 
 func NewWorker(
@@ -45,16 +48,35 @@ func NewWorker(
 		processor:    processor,
 		pollInterval: pollInterval,
 		metrics:      metrics,
+		done:         make(chan struct{}),
 	}
 }
 
 func (w *Worker) Start() {
 	for {
 		if ok, _ := w.dequeueAndProcess(context.Background()); !ok {
-			time.Sleep(w.pollInterval)
+			select {
+			case <-time.After(w.pollInterval):
+			case <-w.done:
+				return
+			}
+		} else {
+			select {
+			case <-w.done:
+				return
+			default:
+			}
 		}
 	}
 }
+
+func (w *Worker) Stop() {
+	w.once.Do(func() {
+		close(w.done)
+	})
+}
+
+// TODO(efritz) - use cancellable context
 
 // dequeueAndProcess pulls a job from the queue and processes it. If there
 // were no jobs ready to process, this method returns a false-valued flag.
@@ -123,6 +145,14 @@ func (p *processor) Process(
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
+	defer func() {
+		if err != nil {
+			// Remove upload file on error instead of waiting for it to expire
+			if deleteErr := p.bundleManagerClient.DeleteUpload(ctx, upload.ID); deleteErr != nil {
+				log15.Warn("Failed to delete upload file", "err", err)
+			}
+		}
+	}()
 
 	// Create target file for converted database
 	uuid, err := uuid.NewRandom()

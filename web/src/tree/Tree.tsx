@@ -48,10 +48,10 @@ export interface TreeNode {
 }
 
 /**
- *  Gets the next child in the file tree given a node and index.
- *  index represents the number of children of node that we have already traversed.
- *  If node does not have any children or any more children or to traverse, we call
- *  nextChild recursively, passing in node's parent to get any siblings of the current node.
+ * Gets the next child in the file tree given a node and index.
+ * index represents the number of children of node that we have already traversed.
+ * If node does not have any children or any more children or to traverse, we call
+ * nextChild recursively, passing in node's parent to get any siblings of the current node.
  */
 const nextChild = (node: TreeNode, index: number): TreeNode => {
     const nextChildNode = node.childNodes[index]
@@ -66,10 +66,10 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
 }
 
 /**
- *  Helper for prevChild, this gets the deepest available descendant of a given node.
- *  For a given node, a sibling node can have an arbitrary number of expanded directories.
- *  In order to get the previous item in the tree, we need the absolute last
- *  available descendent of a the previous sibling node.
+ * Helper for prevChild, this gets the deepest available descendant of a given node.
+ * For a given node, a sibling node can have an arbitrary number of expanded directories.
+ * In order to get the previous item in the tree, we need the absolute last
+ * available descendent of a the previous sibling node.
  */
 const getDeepestDescendant = (node: TreeNode): TreeNode => {
     while (node && node.childNodes.length > 0) {
@@ -79,9 +79,9 @@ const getDeepestDescendant = (node: TreeNode): TreeNode => {
 }
 
 /**
- *  Gets the previous child in the file tree given a node and index.
- *  To get the previous child, we check node's parent's child nodes, and get the
- *  child node at index - 1. If we are at index 0, return the parent.
+ * Gets the previous child in the file tree given a node and index.
+ * To get the previous child, we check node's parent's child nodes, and get the
+ * child node at index - 1. If we are at index 0, return the parent.
  */
 const prevChild = (node: TreeNode, index: number): TreeNode => {
     // Only occurs on initial load of Tree, when there is no selected or active node.

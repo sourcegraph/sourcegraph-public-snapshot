@@ -1331,8 +1331,7 @@ declare module 'sourcegraph' {
          * {@link commands.executeCommand}).
          *
          * @param command A unique identifier for the command.
-         * @param callback A command function. If it returns a {@link Promise}, execution waits until it is
-         *                 resolved.
+         * @param callback A command function. If it returns a {@link Promise}, execution waits until it is resolved.
          * @returns Unsubscribable to unregister this command.
          * @throws Registering a command with an existing command identifier throws an error.
          */

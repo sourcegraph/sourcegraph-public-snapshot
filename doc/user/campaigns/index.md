@@ -4,22 +4,20 @@
 
 ## What are Campaigns?
 
-<div style="max-width: 300px;" class="float-none float-xl-right ml-xl-3 mx-auto">
-  <figure class="figure">
-    <div class="figure-img">
-      <a href="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png">
-        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png" width="500px"/>
-      </a>
-    </div>
-    <figcaption class="figure-caption text-center">Campaign to run <code>go mod tidy</code> in all Go projects.</figcaption>
-  </figure>
-</div>
-
 Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
 
 You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
 
-<div class="clearfix"></div>
+<div class="text-center">
+  <iframe
+      width="560"
+      height="315"
+      src="https://www.youtube.com/embed/aqcCrqRB17w"
+      frameborder="0"
+      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen="true"
+  ></iframe>
+</div>
 
 ## Are you a first time user of Campaigns?
 

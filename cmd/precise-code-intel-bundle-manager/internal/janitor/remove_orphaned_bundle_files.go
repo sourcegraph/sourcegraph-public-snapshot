@@ -62,7 +62,7 @@ func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
 			}
 
 			log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
-			j.Metrics.OprphanedBundleFilesRemoved.Add(1)
+			j.metrics.OprphanedBundleFilesRemoved.Add(1)
 		}
 	}
 
@@ -71,7 +71,7 @@ func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
 
 // databasePathsByID returns map of bundle ids to their path on disk.
 func (j *Janitor) databasePathsByID() (map[int]string, error) {
-	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.BundleDir))
+	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.bundleDir))
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (j *Janitor) databasePathsByID() (map[int]string, error) {
 	pathsByID := map[int]string{}
 	for _, fileInfo := range fileInfos {
 		if id, err := strconv.Atoi(strings.Split(fileInfo.Name(), ".")[0]); err == nil {
-			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.BundleDir), fileInfo.Name())
+			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
 		}
 	}
 

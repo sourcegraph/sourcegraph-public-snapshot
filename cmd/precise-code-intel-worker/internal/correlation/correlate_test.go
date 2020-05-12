@@ -25,8 +25,8 @@ func TestCorrelate(t *testing.T) {
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root",
 		DocumentData: map[string]lsif.DocumentData{
-			"02": {URI: "/foo.go", Contains: datastructures.IDSet{"04": {}, "05": {}, "06": {}}},
-			"03": {URI: "/bar.go", Contains: datastructures.IDSet{"07": {}, "08": {}, "09": {}}},
+			"02": {URI: "foo.go", Contains: datastructures.IDSet{"04": {}, "05": {}, "06": {}}},
+			"03": {URI: "bar.go", Contains: datastructures.IDSet{"07": {}, "08": {}, "09": {}}},
 		},
 		RangeData: map[string]lsif.RangeData{
 			"04": {

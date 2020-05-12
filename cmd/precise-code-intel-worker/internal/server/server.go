@@ -9,38 +9,24 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-const Port = 3186
+const Port = 3188
 
 type Server struct {
-	db                  db.DB
-	bundleManagerClient bundles.BundleManagerClient
-	codeIntelAPI        api.CodeIntelAPI
-	server              *http.Server
-	once                sync.Once
+	server *http.Server
+	once   sync.Once
 }
 
-func New(
-	db db.DB,
-	bundleManagerClient bundles.BundleManagerClient,
-	codeIntelAPI api.CodeIntelAPI,
-) *Server {
+func New() *Server {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 
-	s := &Server{
-		db:                  db,
-		bundleManagerClient: bundleManagerClient,
-		codeIntelAPI:        codeIntelAPI,
-	}
+	s := &Server{}
 
 	s.server = &http.Server{
 		Addr:    net.JoinHostPort(host, strconv.FormatInt(int64(Port), 10)),

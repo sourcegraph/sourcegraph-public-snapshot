@@ -82,10 +82,8 @@ export function createPlatformContext(
         /**
          * The active settings cascade.
          *
-         * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally
-         *   in the browser extension.
-         * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify
-         *   the UX).
+         * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally in the browser extension).
+         * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify the UX).
          */
         settings: combineLatest([updatedViewerSettings, storageSettingsCascade]).pipe(
             map(([gqlCascade, storageCascade]) =>
