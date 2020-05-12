@@ -15,11 +15,6 @@ interface Props extends KeyboardShortcutsProps {
  */
 const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     {
-        id: 'focusSearch',
-        title: 'Focus search bar',
-        keybindings: [{ ordered: ['/'] }],
-    },
-    {
         id: 'canonicalURL',
         title: 'Expand URL to its canonical form (on file or tree page)',
         keybindings: [{ ordered: ['y'] }],
