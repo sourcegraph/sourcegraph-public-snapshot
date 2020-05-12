@@ -67,30 +67,21 @@ func PreciseCodeIntelBundleManager() *Container {
 					},
 					{
 						{
-							Name:              "cache_cost",
-							Description:       "cache cost",
-							Query:             `src_cache_cost`,
+							Name:              "cache_utilization",
+							Description:       "cache utilization",
+							Query:             `(src_cache_cost / src_cache_capacity) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1e6}, // TODO(efritz) - calculate ratio capacity so we can have a sensible alert
-							PanelOptions:      PanelOptions().LegendFormat("{{cache}}"),
+							Warning:           Alert{GreaterOrEqual: 110},
+							PanelOptions:      PanelOptions().LegendFormat("{{cache}}").Unit(Percentage),
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "cache_hits",
-							Description:       "cache hits every 5m",
-							Query:             `increase(src_cache_hits_total[5m])`,
+							Name:              "cache_miss_percentage",
+							Description:       "percentage of cache misses over all cache activity every 5m",
+							Query:             `(increase(src_cache_misses_total[5m]) / (increase(src_cache_hits_total[5m]) + increase(src_cache_misses_total[5m]))) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1e6}, // TODO(efritz) - determine alerts
-							PanelOptions:      PanelOptions().LegendFormat("{{cache}}"),
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "cache_misses",
-							Description:       "cache misses every 5m",
-							Query:             `increase(src_cache_misses_total[5m])`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 1e6}, // TODO(efritz) - determine alerts
-							PanelOptions:      PanelOptions().LegendFormat("{{cache}}"),
+							Warning:           Alert{GreaterOrEqual: 80},
+							PanelOptions:      PanelOptions().LegendFormat("{{cache}}").Unit(Percentage),
 							PossibleSolutions: "none",
 						},
 					},
