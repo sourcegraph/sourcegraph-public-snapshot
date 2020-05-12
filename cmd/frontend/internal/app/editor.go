@@ -68,11 +68,11 @@ type editorRequest struct {
 
 // editorSearchRequest represents parameters for "open file on Sourcegraph" editor requests.
 type editorOpenFileRequest struct {
-	remoteURL         string // Git repository remote URL.
-	branch            string // Git branch name.
-	revision          string // Git revision.
-	file              string // File relative to repository root.
-	hostnameToPattern map[string]string
+	remoteURL         string            // Git repository remote URL.
+	branch            string            // Git branch name.
+	revision          string            // Git revision.
+	file              string            // File relative to repository root.
+	hostnameToPattern map[string]string // map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
 
 	// Zero-based cursor selection parameters. Required.
 	startRow, endRow int
