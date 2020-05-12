@@ -257,21 +257,24 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	openDatabase := func() (database.Database, error) {
 		cached = false
 
-		// Best effort check to see if the database already exists. There may be a
-		// race here between statting the file, it being evicted by the janitor, and
-		// sqlite creating a new one. I think that there is a sufficiently small
-		// enough chance that we don't need to engineer much around this condition.
+		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
+		}
+
+		// Check to see if the database exists after openign it. If it doesn't, then
+		// the SQLite driver has created a new, empty database. In this case, we want
+		// return an unknown error, but need to ensure that we don't also create an
+		// empty db file on disk to be opened successfully in the next request to the
+		// same dump.
 		if _, err := os.Stat(filename); err != nil {
 			if os.IsNotExist(err) {
+				sqliteReader.Close()
+				os.Remove(filename)
 				return nil, ErrUnknownDatabase
 			}
 
 			return nil, err
-		}
-
-		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
-		if err != nil {
-			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
 		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
@@ -279,7 +282,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		return s.wrapDatabase(database), nil
+		return s.wrapDatabase(database, filename), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -299,6 +302,6 @@ func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
 	return reader.NewObserved(innerReader, s.observationContext)
 }
 
-func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
+func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {
 	return database.NewObserved(innerDatabase, s.observationContext)
 }
