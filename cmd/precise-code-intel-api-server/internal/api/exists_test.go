@@ -76,13 +76,13 @@ func TestFindClosestDatabase(t *testing.T) {
 		expectedCommits[makeCommit(i)] = []string{makeCommit(i + 1)}
 	}
 	if len(mockDB.UpdateCommitsFunc.History()) != 1 {
-		t.Errorf("unexpected number of update UpdateCommitsFunc calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
+		t.Errorf("unexpected number of update UpdateCommits calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
 	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected update UpdateCommitsFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.UpdateDumpsVisibleFromTipFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateDumpsVisibleFromTipFunc calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
+		t.Errorf("unexpected number of UpdateDumpsVisibleFromTip calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
 	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1 != 42 {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 42, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1)
 	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != makeCommit(30) {

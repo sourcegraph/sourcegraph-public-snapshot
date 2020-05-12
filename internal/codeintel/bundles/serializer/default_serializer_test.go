@@ -1,6 +1,7 @@
 package serializer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -9,23 +10,6 @@ import (
 )
 
 func TestDefaultSerializerDocumentData(t *testing.T) {
-	serializer := &defaultSerializer{}
-
-	contents, err := ioutil.ReadFile("../testdata/documentdata.json")
-	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
-	}
-
-	compressed, err := compress(contents)
-	if err != nil {
-		t.Fatalf("unexpected error compressing file contents: %s", err)
-	}
-
-	actual, err := serializer.UnmarshalDocumentData(compressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling document data: %s", err)
-	}
-
 	expected := types.DocumentData{
 		Ranges: map[types.ID]types.RangeData{
 			types.ID("7864"): {
@@ -75,43 +59,48 @@ func TestDefaultSerializerDocumentData(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
-	}
+	for _, file := range []string{"../testdata/documentdata-strings.json", "../testdata/documentdata-ints.json"} {
+		name := fmt.Sprintf("file=%s", file)
 
-	recompressed, err := serializer.MarshalDocumentData(expected)
-	if err != nil {
-		t.Fatalf("unexpected error marshalling document data: %s", err)
-	}
+		t.Run(name, func(t *testing.T) {
+			contents, err := ioutil.ReadFile(file)
+			if err != nil {
+				t.Fatalf("unexpected error reading test file: %s", err)
+			}
 
-	roundtripActual, err := serializer.UnmarshalDocumentData(recompressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling document data: %s", err)
-	}
+			compressed, err := compress(contents)
+			if err != nil {
+				t.Fatalf("unexpected error compressing file contents: %s", err)
+			}
 
-	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
+			serializer := &defaultSerializer{}
+			actual, err := serializer.UnmarshalDocumentData(compressed)
+			if err != nil {
+				t.Fatalf("unexpected error unmarshalling document data: %s", err)
+			}
+
+			if diff := cmp.Diff(expected, actual); diff != "" {
+				t.Errorf("unexpected document data (-want +got):\n%s", diff)
+			}
+
+			recompressed, err := serializer.MarshalDocumentData(expected)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling document data: %s", err)
+			}
+
+			roundtripActual, err := serializer.UnmarshalDocumentData(recompressed)
+			if err != nil {
+				t.Fatalf("unexpected error unmarshalling document data: %s", err)
+			}
+
+			if diff := cmp.Diff(expected, roundtripActual); diff != "" {
+				t.Errorf("unexpected document data (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
 func TestDefaultSerializerResultChunkData(t *testing.T) {
-	serializer := &defaultSerializer{}
-
-	contents, err := ioutil.ReadFile("../testdata/resultchunkdata.json")
-	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
-	}
-
-	compressed, err := compress(contents)
-	if err != nil {
-		t.Fatalf("unexpected error compressing file contents: %s", err)
-	}
-
-	actual, err := serializer.UnmarshalResultChunkData(compressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)
-	}
-
 	expected := types.ResultChunkData{
 		DocumentPaths: map[types.ID]string{
 			types.ID("4"):   "internal/gomod/module.go",
@@ -134,21 +123,43 @@ func TestDefaultSerializerResultChunkData(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
-	}
+	for _, file := range []string{"../testdata/resultchunkdata-strings.json", "../testdata/resultchunkdata-ints.json"} {
+		name := fmt.Sprintf("file=%s", file)
 
-	recompressed, err := serializer.MarshalResultChunkData(expected)
-	if err != nil {
-		t.Fatalf("unexpected error marshalling result chunk data: %s", err)
-	}
+		t.Run(name, func(t *testing.T) {
+			contents, err := ioutil.ReadFile(file)
+			if err != nil {
+				t.Fatalf("unexpected error reading test file: %s", err)
+			}
 
-	roundtripActual, err := serializer.UnmarshalResultChunkData(recompressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)
-	}
+			compressed, err := compress(contents)
+			if err != nil {
+				t.Fatalf("unexpected error compressing file contents: %s", err)
+			}
 
-	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
+			serializer := &defaultSerializer{}
+			actual, err := serializer.UnmarshalResultChunkData(compressed)
+			if err != nil {
+				t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)
+			}
+
+			if diff := cmp.Diff(expected, actual); diff != "" {
+				t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
+			}
+
+			recompressed, err := serializer.MarshalResultChunkData(expected)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling result chunk data: %s", err)
+			}
+
+			roundtripActual, err := serializer.UnmarshalResultChunkData(recompressed)
+			if err != nil {
+				t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)
+			}
+
+			if diff := cmp.Diff(expected, roundtripActual); diff != "" {
+				t.Errorf("unexpected document data (-want +got):\n%s", diff)
+			}
+		})
 	}
 }

@@ -13,15 +13,17 @@ func (c *Client) Prune(ctx context.Context) (int64, bool, error) {
 		path:   "/prune",
 	}
 
-	var id *int64
-	if _, err := c.do(ctx, req, &id); err != nil {
+	var payload struct {
+		ID *int64 `json:"id"`
+	}
+	if _, err := c.do(ctx, req, &payload); err != nil {
 		return 0, false, err
 	}
 
-	if id == nil {
+	if payload.ID == nil {
 		return 0, false, nil
 	}
-	return *id, true, nil
+	return *payload.ID, true, nil
 }
 
 func (c *Client) States(ctx context.Context, ids []int) (map[int]string, error) {

@@ -127,7 +127,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         <Link
                             to={appendVersionContextQueryParam(
                                 appendSubtreeQueryParam(
-                                    `${props.result.file.url}?${toPositionOrRangeHash({ position })}`
+                                    `${props.result.file.url}${toPositionOrRangeHash({ position })}`
                                 ),
                                 props.versionContext
                             )}

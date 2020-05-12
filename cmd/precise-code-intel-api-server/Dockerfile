@@ -13,8 +13,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk update && apk add --no-cache \
     tini
 
-COPY ./precise-code-intel-api-server /usr/local/bin/precise-code-intel-api-server
-
+USER sourcegraph
 EXPOSE 3186
-ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-api-server"]
+COPY precise-code-intel-api-server /usr/local/bin/

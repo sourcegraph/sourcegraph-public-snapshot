@@ -33,49 +33,47 @@ func main() {
 		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db := db.NewObserved(mustInitializeDatabase(), observationContext, "precise_code_intel_api_server")
+	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
+	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
+	server := server.New(db, bundleManagerClient, codeIntelAPI)
 
-	serverInst := server.New(server.ServerOpts{
-		Host:                host,
-		Port:                3186,
-		DB:                  db,
-		BundleManagerClient: bundleManagerClient,
-		CodeIntelAPI:        codeIntelAPI,
-	})
-
-	resetterMetrics := resetter.NewResetterMetrics()
-	resetterMetrics.MustRegister(prometheus.DefaultRegisterer)
-
-	uploadResetterInst := resetter.NewUploadResetter(resetter.UploadResetterOpts{
+	uploadResetter := resetter.UploadResetter{
 		DB:            db,
 		ResetInterval: resetInterval,
 		Metrics:       resetterMetrics,
-	})
+	}
 
-	go serverInst.Start()
-	go uploadResetterInst.Run()
+	go server.Start()
+	go uploadResetter.Run()
 	go debugserver.Start()
-	waitForSignal()
+
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
+
+	go func() {
+		// Insta-shutdown on a second signal
+		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
 	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
@@ -85,15 +83,4 @@ func mustInitializeDatabase() db.DB {
 	}
 
 	return db
-}
-
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-
-	for i := 0; i < 2; i++ {
-		<-signals
-	}
-
-	os.Exit(0)
 }

@@ -410,7 +410,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, page)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
 		if err != nil {
 			return repoIDs, err
 		}

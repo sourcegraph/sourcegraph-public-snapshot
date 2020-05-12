@@ -51,6 +51,37 @@ func TestSendUploadBadResponse(t *testing.T) {
 	}
 }
 
+func TestDeleteUpload(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
+		}
+		if r.URL.Path != "/uploads/42" {
+			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42", r.URL.Path)
+		}
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	err := client.DeleteUpload(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("unexpected error sending upload: %s", err)
+	}
+}
+
+func TestDeleteUploadBadResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	err := client.DeleteUpload(context.Background(), 42)
+	if err == nil {
+		t.Fatalf("unexpected nil error sending upload")
+	}
+}
+
 func TestGetUpload(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {

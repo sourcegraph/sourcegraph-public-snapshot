@@ -3,6 +3,7 @@ package worker
 import (
 	"compress/gzip"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -12,18 +13,186 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
 func init() {
 	sqliteutil.SetLocalLibpath()
 	sqliteutil.MustRegisterSqlite3WithPcre()
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
+}
+
+func TestDequeueAndProcessNoUpload(t *testing.T) {
+	mockDB := dbmocks.NewMockDB()
+	mockProcessor := NewMockProcessor()
+	mockDB.DequeueFunc.SetDefaultReturn(db.Upload{}, nil, false, nil)
+
+	worker := &Worker{
+		db:        mockDB,
+		processor: mockProcessor,
+		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+	}
+
+	dequeued, err := worker.dequeueAndProcess(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing and processing upload: %s", err)
+	}
+	if dequeued {
+		t.Errorf("unexpected upload dequeued")
+	}
+}
+
+func TestDequeueAndProcessSuccess(t *testing.T) {
+	upload := db.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       makeCommit(1),
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+	}
+
+	mockDB := dbmocks.NewMockDB()
+	jobHandle := dbmocks.NewMockJobHandle()
+	mockProcessor := NewMockProcessor()
+	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+
+	worker := &Worker{
+		db:        mockDB,
+		processor: mockProcessor,
+		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+	}
+
+	dequeued, err := worker.dequeueAndProcess(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing and processing upload: %s", err)
+	}
+	if !dequeued {
+		t.Errorf("expected upload dequeue")
+	}
+	if len(jobHandle.MarkErroredFunc.History()) != 0 {
+		t.Errorf("unexpected call to MarkErrored")
+	}
+	if len(jobHandle.DoneFunc.History()) != 1 {
+		t.Errorf("expected call to Done")
+	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil {
+		t.Errorf("unexpected error to Done: %s", doneErr)
+	}
+}
+
+func TestDequeueAndProcessProcessFailure(t *testing.T) {
+	upload := db.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       makeCommit(1),
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+	}
+
+	mockDB := dbmocks.NewMockDB()
+	jobHandle := dbmocks.NewMockJobHandle()
+	mockProcessor := NewMockProcessor()
+	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("process failure"))
+
+	worker := &Worker{
+		db:        mockDB,
+		processor: mockProcessor,
+		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+	}
+
+	dequeued, err := worker.dequeueAndProcess(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing and processing upload: %s", err)
+	}
+	if !dequeued {
+		t.Errorf("expected upload dequeue")
+	}
+	if len(jobHandle.MarkErroredFunc.History()) != 1 {
+		t.Errorf("expected call to MarkErrored")
+	} else if errText := jobHandle.MarkErroredFunc.History()[0].Arg1; errText != "process failure" {
+		t.Errorf("unexpected failure text. want=%q have=%q", "process failure", errText)
+	}
+	if len(jobHandle.DoneFunc.History()) != 1 {
+		t.Errorf("expected call to Done")
+	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil {
+		t.Errorf("unexpected error to Done: %s", doneErr)
+	}
+}
+
+func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
+	upload := db.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       makeCommit(1),
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+	}
+
+	mockDB := dbmocks.NewMockDB()
+	jobHandle := dbmocks.NewMockJobHandle()
+	mockProcessor := NewMockProcessor()
+	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+	jobHandle.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("db failure"))
+	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
+
+	worker := &Worker{
+		db:        mockDB,
+		processor: mockProcessor,
+		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+	}
+
+	_, err := worker.dequeueAndProcess(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "db failure") {
+		t.Errorf("unexpected error to Done. want=%q have=%q", "db failure", err)
+	}
+	if len(jobHandle.DoneFunc.History()) != 1 {
+		t.Errorf("expected call to Done")
+	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil && !strings.Contains(doneErr.Error(), "db failure") {
+		t.Errorf("unexpected error to Done. want=%q have=%q", "db failure", doneErr)
+	}
+}
+
+func TestDequeueAndProcessDoneFailure(t *testing.T) {
+	upload := db.Upload{
+		ID:           42,
+		Root:         "root/",
+		Commit:       makeCommit(1),
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+	}
+
+	mockDB := dbmocks.NewMockDB()
+	jobHandle := dbmocks.NewMockJobHandle()
+	mockProcessor := NewMockProcessor()
+	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+	jobHandle.DoneFunc.SetDefaultReturn(fmt.Errorf("db failure"))
+	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
+
+	worker := &Worker{
+		db:        mockDB,
+		processor: mockProcessor,
+		metrics:   NewWorkerMetrics(metrics.TestRegisterer),
+	}
+
+	_, err := worker.dequeueAndProcess(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "db failure") {
+		t.Errorf("unexpected error to Done. want=%q have=%q", "db failure", err)
+	}
 }
 
 func TestProcess(t *testing.T) {
@@ -66,7 +235,12 @@ func TestProcess(t *testing.T) {
 		return commits, nil
 	})
 
-	err := process(context.Background(), mockDB, bundleManagerClient, gitserverClient, upload, jobHandle)
+	processor := &processor{
+		bundleManagerClient: bundleManagerClient,
+		gitserverClient:     gitserverClient,
+	}
+
+	err := processor.Process(context.Background(), mockDB, upload, jobHandle)
 	if err != nil {
 		t.Fatalf("unexpected error processing upload: %s", err)
 	}
@@ -79,7 +253,7 @@ func TestProcess(t *testing.T) {
 		},
 	}
 	if len(mockDB.UpdatePackagesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackagesFunc calls. want=%d have=%d", 1, len(mockDB.UpdatePackagesFunc.History()))
+		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDB.UpdatePackagesFunc.History()))
 	} else if diff := cmp.Diff(expectedPackages, mockDB.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFuncargs (-want +got):\n%s", diff)
 	}
@@ -97,13 +271,13 @@ func TestProcess(t *testing.T) {
 		},
 	}
 	if len(mockDB.UpdatePackageReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackageReferencesFunc calls. want=%d have=%d", 1, len(mockDB.UpdatePackageReferencesFunc.History()))
+		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDB.UpdatePackageReferencesFunc.History()))
 	} else if diff := cmp.Diff(expectedPackageReferences, mockDB.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.DeleteOverlappingDumpsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingDumpsFunc calls. want=%d have=%d", 1, len(mockDB.DeleteOverlappingDumpsFunc.History()))
+		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDB.DeleteOverlappingDumpsFunc.History()))
 	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg1)
 	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg2 != makeCommit(1) {
@@ -122,13 +296,13 @@ func TestProcess(t *testing.T) {
 		}
 	}
 	if len(mockDB.UpdateCommitsFunc.History()) != 1 {
-		t.Errorf("unexpected number of update UpdateCommitsFunc calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
+		t.Errorf("unexpected number of update UpdateCommits calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
 	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected update UpdateCommitsFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.UpdateDumpsVisibleFromTipFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateDumpsVisibleFromTipFunc calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
+		t.Errorf("unexpected number of UpdateDumpsVisibleFromTip calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
 	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1 != 50 {
 		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1)
 	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != makeCommit(30) {
@@ -136,7 +310,7 @@ func TestProcess(t *testing.T) {
 	}
 
 	if len(bundleManagerClient.SendDBFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendDBFunc calls. want=%d have=%d", 1, len(bundleManagerClient.SendDBFunc.History()))
+		t.Errorf("unexpected number of SendDB calls. want=%d have=%d", 1, len(bundleManagerClient.SendDBFunc.History()))
 	} else if bundleManagerClient.SendDBFunc.History()[0].Arg1 != 42 {
 		t.Errorf("unexpected SendDBFunc args. want=%d have=%d", 42, bundleManagerClient.SendDBFunc.History()[0].Arg1)
 	}
@@ -162,7 +336,12 @@ func TestProcessError(t *testing.T) {
 	// Set a different tip commit
 	gitserverClient.HeadFunc.SetDefaultReturn("", fmt.Errorf("uh-oh!"))
 
-	err := process(context.Background(), mockDB, bundleManagerClient, gitserverClient, upload, jobHandle)
+	processor := &processor{
+		bundleManagerClient: bundleManagerClient,
+		gitserverClient:     gitserverClient,
+	}
+
+	err := processor.Process(context.Background(), mockDB, upload, jobHandle)
 	if err == nil {
 		t.Fatalf("unexpected nil error processing upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -170,8 +349,13 @@ func TestProcessError(t *testing.T) {
 	}
 
 	if len(jobHandle.RollbackToLastSavepointFunc.History()) != 1 {
-		t.Errorf("unexpected number of RollbackToLastSavepointFunc calls. want=%d have=%d", 1, len(jobHandle.RollbackToLastSavepointFunc.History()))
+		t.Errorf("unexpected number of RollbackToLastSavepoint calls. want=%d have=%d", 1, len(jobHandle.RollbackToLastSavepointFunc.History()))
 	}
+
+	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(jobHandle.RollbackToLastSavepointFunc.History()))
+	}
+
 }
 
 //

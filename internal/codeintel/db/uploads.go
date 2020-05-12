@@ -22,7 +22,6 @@ type Upload struct {
 	FailureStacktrace *string    `json:"failureStacktrace"`
 	StartedAt         *time.Time `json:"startedAt"`
 	FinishedAt        *time.Time `json:"finishedAt"`
-	TracingContext    string     `json:"tracingContext"`
 	RepositoryID      int        `json:"repositoryId"`
 	Indexer           string     `json:"indexer"`
 	NumParts          int        `json:"numParts"`
@@ -44,7 +43,6 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 			u.failure_stacktrace,
 			u.started_at,
 			u.finished_at,
-			u.tracing_context,
 			u.repository_id,
 			u.indexer,
 			u.num_parts,
@@ -106,7 +104,6 @@ func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state,
 				u.failure_stacktrace,
 				u.started_at,
 				u.finished_at,
-				u.tracing_context,
 				u.repository_id,
 				u.indexer,
 				u.num_parts,
@@ -147,20 +144,44 @@ func makeSearchCondition(term string) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
+// QueueSize returns the number of uploads in the queued state.
+func (db *dbImpl) QueueSize(ctx context.Context) (int, error) {
+	count, _, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads WHERE state = 'queued'`)))
+	return count, err
+}
+
 // Enqueue inserts a new upload with a "queued" state and returns its identifier.
-func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, error) {
+func (db *dbImpl) Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (int, error) {
 	id, _, err := scanFirstInt(db.query(
 		ctx,
 		sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (commit, root, tracing_context, repository_id, indexer, num_parts, uploaded_parts)
-			VALUES (%s, %s, %s, %s, %s, %s, %s)
+			INSERT INTO lsif_uploads (commit, root, repository_id, indexer, num_parts, uploaded_parts)
+			VALUES (%s, %s, %s, %s, %s, %s)
 			RETURNING id
-		`, commit, root, tracingContext, repositoryID, indexerName, 1, pq.Array([]int{0})),
+		`, commit, root, repositoryID, indexerName, 1, pq.Array([]int{0})),
 	))
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
+}
+
+// MarkComplete updates the state of the upload to complete.
+func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET state = 'completed', finished_at = now()
+		WHERE id = %s
+	`, id))
+}
+
+// MarkErrored updates the state of the upload to errored and updates the failure summary data.
+func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
+		WHERE id = %s
+	`, failureSummary, failureStacktrace, id))
 }
 
 // ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.
@@ -236,7 +257,6 @@ func (db *dbImpl) dequeue(ctx context.Context, id int) (_ Upload, _ JobHandle, _
 				u.failure_stacktrace,
 				u.started_at,
 				u.finished_at,
-				u.tracing_context,
 				u.repository_id,
 				u.indexer,
 				u.num_parts,

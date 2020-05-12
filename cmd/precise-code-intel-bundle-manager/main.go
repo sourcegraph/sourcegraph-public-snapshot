@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dgraph-io/ristretto"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -31,42 +32,17 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir                = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		databaseCacheSize        = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
-		documentDataCacheSize    = mustParseInt(rawDocumentDataCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
-		resultChunkDataCacheSize = mustParseInt(rawResultChunkDataCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
-		desiredPercentFree       = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval          = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge             = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		bundleDir            = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		databaseCacheSize    = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
+		documentCacheSize    = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
+		resultChunkCacheSize = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
+		desiredPercentFree   = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval      = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge         = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
 	)
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
 		log.Fatalf("failed to prepare directories: %s", err)
-	}
-
-	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
-	}
-
-	documentDataCache, documentDataCacheMetrics, err := database.NewDocumentDataCache(int64(documentDataCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize document cache"))
-	}
-
-	resultChunkDataCache, resultChunkDataCacheMetrics, err := database.NewResultChunkDataCache(int64(resultChunkDataCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
-	}
-
-	metrics.MustRegisterDiskMonitor(bundleDir)
-	MustRegisterRistrettoMonitor("precise-code-intel-database", databaseCacheMetrics)
-	MustRegisterRistrettoMonitor("precise-code-intel-document-data", documentDataCacheMetrics)
-	MustRegisterRistrettoMonitor("precise-code-intel-result-chunk-data", resultChunkDataCacheMetrics)
-
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
 	}
 
 	observationContext := &observation.Context{
@@ -75,40 +51,65 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	serverInst := server.New(server.ServerOpts{
-		Host:                 host,
-		Port:                 3187,
-		BundleDir:            bundleDir,
-		DatabaseCache:        databaseCache,
-		DocumentDataCache:    documentDataCache,
-		ResultChunkDataCache: resultChunkDataCache,
-		ObservationContext:   observationContext,
-	})
+	databaseCache, documentCache, resultChunkCache := prepCaches(
+		observationContext.Registerer,
+		databaseCacheSize,
+		documentCacheSize,
+		resultChunkCacheSize,
+	)
 
-	janitorMetrics := janitor.NewJanitorMetrics()
-	janitorMetrics.MustRegister(prometheus.DefaultRegisterer)
+	metrics.MustRegisterDiskMonitor(bundleDir)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	server := server.New(bundleDir, databaseCache, documentCache, resultChunkCache, observationContext)
+	janitor := janitor.New(bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, janitorMetrics)
 
-	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
-		BundleDir:          bundleDir,
-		DesiredPercentFree: desiredPercentFree,
-		JanitorInterval:    janitorInterval,
-		MaxUploadAge:       maxUploadAge,
-		Metrics:            janitorMetrics,
-	})
-
-	go serverInst.Start()
-	go janitorInst.Run()
+	go server.Start()
+	go janitor.Run()
 	go debugserver.Start()
-	waitForSignal()
-}
 
-func waitForSignal() {
+	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
 
-	for i := 0; i < 2; i++ {
+	go func() {
+		// Insta-shutdown on a second signal
 		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
+	janitor.Stop()
+}
+
+func prepCaches(r prometheus.Registerer, databaseCacheSize, documentCacheSize, resultChunkCacheSize int) (
+	*database.DatabaseCache,
+	*database.DocumentCache,
+	*database.ResultChunkCache,
+) {
+	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
 	}
 
-	os.Exit(0)
+	documentCache, documentCacheMetrics, err := database.NewDocumentCache(int64(documentCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize document cache"))
+	}
+
+	resultChunkCache, resultChunkCacheMetrics, err := database.NewResultChunkCache(int64(resultChunkCacheSize))
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
+	}
+
+	cacheMetrics := map[string]*ristretto.Metrics{
+		"precise-code-intel-database":     databaseCacheMetrics,
+		"precise-code-intel-document":     documentCacheMetrics,
+		"precise-code-intel-result-chunk": resultChunkCacheMetrics,
+	}
+	for cacheName, metrics := range cacheMetrics {
+		MustRegisterCacheMonitor(r, cacheName, metrics)
+	}
+
+	return databaseCache, documentCache, resultChunkCache
 }

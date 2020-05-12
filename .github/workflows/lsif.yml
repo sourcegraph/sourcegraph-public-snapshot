@@ -20,7 +20,9 @@ jobs:
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
-        run: yarn
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: yarn gulp generate
       - name: Generate LSIF data
         working-directory: web/
         run: lsif-tsc -p .
@@ -37,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
-        run: yarn
+        run: yarn --ignore-engines --ignore-scripts
       - name: Generate LSIF data
         run: lsif-tsc -p .
       - name: Upload LSIF data
@@ -51,7 +53,9 @@ jobs:
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
-        run: yarn
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: yarn gulp generate
       - name: Generate LSIF data
         working-directory: shared/
         run: lsif-tsc -p .
@@ -67,7 +71,9 @@ jobs:
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
-        run: yarn
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: yarn gulp generate
       - name: Generate LSIF data
         working-directory: browser/
         run: lsif-tsc -p .

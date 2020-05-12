@@ -1,6 +1,5 @@
 import * as pgModels from '../models/pg'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
 import { Logger } from 'winston'
@@ -160,8 +159,8 @@ export class UploadManager {
      *
      * @param id The upload identifier.
      * @param updateVisibility A function that updates the dumps visible at the tip for
-     *     the given repository. This is called if the deleted dump was visible at tip,
-     *     as a previously non-visible dump may become visible after deletion.
+     * the given repository. This is called if the deleted dump was visible at tip,
+     * as a previously non-visible dump may become visible after deletion.
      */
     public async deleteUpload(
         id: number,
@@ -258,15 +257,8 @@ export class UploadManager {
             /** The indexer binary name that produced this dump as specified by the metadata. */
             indexer: string
         },
-        entityManager: EntityManager = this.connection.createEntityManager(),
-        tracer?: Tracer,
-        span?: Span
+        entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<number> {
-        const tracing = {}
-        if (tracer && span) {
-            tracer.inject(span, FORMAT_TEXT_MAP, tracing)
-        }
-
         const { identifiers } = await instrumentQuery(() =>
             entityManager
                 .createQueryBuilder()
@@ -277,7 +269,6 @@ export class UploadManager {
                     commit,
                     root,
                     indexer,
-                    tracingContext: JSON.stringify(tracing),
                     numParts: 1,
                     uploadedParts: [0],
                 })

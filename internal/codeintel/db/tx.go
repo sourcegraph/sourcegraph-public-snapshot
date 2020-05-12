@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
@@ -48,6 +49,31 @@ func (db *dbImpl) transact(ctx context.Context) (*dbImpl, bool, error) {
 	}
 
 	return &dbImpl{db: tx}, true, nil
+}
+
+// ErrNoTransaction occurs when Savepoint or RollbackToSavepoint is called outside of a transaction.
+var ErrNoTransaction = errors.New("db: not in a transaction")
+
+// Savepoint creates a named position in the transaction from which all additional work can
+// be discarded.
+func (db *dbImpl) Savepoint(ctx context.Context, name string) error {
+	if _, ok := db.db.(dbutil.Tx); !ok {
+		return ErrNoTransaction
+	}
+
+	// Unfortunately, it's a syntax error to supply this as a param
+	return db.exec(ctx, sqlf.Sprintf("SAVEPOINT "+name))
+}
+
+// RollbackToSavepoint throws away all the work on the underlying transaction since the
+// savepoint with the given name was created.
+func (db *dbImpl) RollbackToSavepoint(ctx context.Context, name string) error {
+	if _, ok := db.db.(dbutil.Tx); !ok {
+		return ErrNoTransaction
+	}
+
+	// Unfortunately, it's a syntax error to supply this as a param
+	return db.exec(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+name))
 }
 
 // Done commits underlying the transaction on a nil error value and performs a rollback

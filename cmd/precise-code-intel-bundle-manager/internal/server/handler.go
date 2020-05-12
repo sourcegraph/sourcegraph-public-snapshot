@@ -26,6 +26,7 @@ func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
 	mux.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUpload)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUpload)
+	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
 	mux.Path("/dbs/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabase)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
 	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
@@ -54,12 +55,20 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 
 // POST /uploads/{id:[0-9]+}
 func (s *Server) handlePostUpload(w http.ResponseWriter, r *http.Request) {
-	s.doUpload(w, r, paths.UploadFilename)
+	_ = s.doUpload(w, r, paths.UploadFilename)
+}
+
+// DELETE /uploads/{id:[0-9]+}
+func (s *Server) handleDeleteUpload(w http.ResponseWriter, r *http.Request) {
+	s.deleteUpload(w, r)
 }
 
 // POST /dbs/{id:[0-9]+}
 func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
-	s.doUpload(w, r, paths.DBFilename)
+	if s.doUpload(w, r, paths.DBFilename) {
+		// Once we have a database, we no longer need the upload file
+		s.deleteUpload(w, r)
+	}
 }
 
 // GET /dbs/{id:[0-9]+}/exists
@@ -139,8 +148,8 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			return nil, errors.New("illegal skip supplied")
 		}
 
-		take := getQueryIntDefault(r, "take", DefaultMonikerResultPageSize)
-		if take <= 0 {
+		take := getQueryInt(r, "take")
+		if take < 0 {
 			return nil, errors.New("illegal take supplied")
 		}
 
@@ -181,20 +190,28 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
-func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) {
+func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
 	defer r.Body.Close()
 
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
 		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
-		return
+		return false
 	}
 
 	if _, err := io.Copy(targetFile, r.Body); err != nil {
 		log15.Error("Failed to write payload", "err", err)
 		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
-		return
+		return false
+	}
+
+	return true
+}
+
+func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
+	if err := os.Remove(paths.UploadFilename(s.bundleDir, idFromRequest(r))); err != nil {
+		log15.Warn("Failed to delete upload file", "err", err)
 	}
 }
 
@@ -238,7 +255,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
@@ -260,7 +277,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 }
 
 func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
-	return reader.NewObserved(innerReader, s.observationContext, "precise_code_intel_bundle_manager")
+	return reader.NewObserved(innerReader, s.observationContext)
 }
 
 func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
