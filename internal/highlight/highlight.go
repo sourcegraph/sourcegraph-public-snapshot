@@ -450,7 +450,7 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	return buf.String(), nil
 }
 
-// ParseLinesFromHighlight takes the highlighted html table and returns the per-line content.
+// ParseLinesFromHighlight takes the highlighted html table and returns a slice of highlighted strings, where each string corresponds a single line in the original, highlighed file.
 func ParseLinesFromHighlight(input string) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(input))
 	if err != nil {
