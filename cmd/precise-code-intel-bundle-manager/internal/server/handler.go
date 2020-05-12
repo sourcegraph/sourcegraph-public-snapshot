@@ -217,11 +217,19 @@ func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
 
 type dbQueryHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
 
+// ErrUnknownDatabase occurs when a request for an unknown database is made.
+var ErrUnknownDatabase = errors.New("unknown database")
+
 // dbQuery invokes the given handler with the database instance chosen from the
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
 func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
 	if err := s.dbQueryErr(w, r, handler); err != nil {
+		if err == ErrUnknownDatabase {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -249,7 +257,18 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	openDatabase := func() (database.Database, error) {
 		cached = false
 
-		// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
+		// Best effort check to see if the database already exists. There may be a
+		// race here between statting the file, it being evicted by the janitor, and
+		// sqlite creating a new one. I think that there is a sufficiently small
+		// enough chance that we don't need to engineer much around this condition.
+		if _, err := os.Stat(filename); err != nil {
+			if os.IsNotExist(err) {
+				return nil, ErrUnknownDatabase
+			}
+
+			return nil, err
+		}
+
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
