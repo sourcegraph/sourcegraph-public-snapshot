@@ -56,6 +56,10 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 		}
 	}
 
+	if len(unknownCommits) == 0 {
+		return nil
+	}
+
 	var rows []*sqlf.Query
 	for commit, parents := range unknownCommits {
 		for _, parent := range parents {
