@@ -1097,7 +1097,7 @@ func TestPatchSetResolver(t *testing.T) {
 		queryPatches(1, fmt.Sprintf(`"%d"`, page), &response)
 
 		expectedLength := 1
-		if page == 2 {
+		if page >= 2 {
 			expectedLength = 0
 		}
 		if have, want := len(response.Node.Patches.Nodes[0].Diff.FileDiffs.Nodes), expectedLength; have != want {
