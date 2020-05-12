@@ -424,7 +424,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 				IsLightTheme:       args.IsLightTheme,
 			})
 			if err != nil {
-				return
+				return nil, err
 			}
 			if highlightedFile.Aborted() {
 				r.highlightAborted = true
