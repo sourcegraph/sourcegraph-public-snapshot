@@ -43,7 +43,7 @@ func (s *Server) handler() http.Handler {
 
 // GET /uploads/{id:[0-9]+}
 func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
-	file, err := os.Open(paths.UploadFilename(s.BundleDir, idFromRequest(r)))
+	file, err := os.Open(paths.UploadFilename(s.bundleDir, idFromRequest(r)))
 	if err != nil {
 		http.Error(w, "Upload not found.", http.StatusNotFound)
 		return
@@ -193,7 +193,7 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
 	defer r.Body.Close()
 
-	targetFile, err := os.OpenFile(makeFilename(s.BundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
+	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
 		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
@@ -210,7 +210,7 @@ func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename f
 }
 
 func (s *Server) deleteUpload(w http.ResponseWriter, r *http.Request) {
-	if err := os.Remove(paths.UploadFilename(s.BundleDir, idFromRequest(r))); err != nil {
+	if err := os.Remove(paths.UploadFilename(s.bundleDir, idFromRequest(r))); err != nil {
 		log15.Warn("Failed to delete upload file", "err", err)
 	}
 }
@@ -232,7 +232,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 // error occurs it will be returned.
 func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
 	ctx := r.Context()
-	filename := paths.DBFilename(s.BundleDir, idFromRequest(r))
+	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
 	cached := true
 
 	span, ctx := ot.StartSpanFromContext(ctx, "dbQuery")
@@ -255,7 +255,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.DocumentDataCache, s.ResultChunkDataCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
@@ -273,13 +273,13 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		return nil
 	}
 
-	return s.DatabaseCache.WithDatabase(filename, openDatabase, cacheHandler)
+	return s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler)
 }
 
 func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
-	return reader.NewObserved(innerReader, s.ObservationContext)
+	return reader.NewObserved(innerReader, s.observationContext)
 }
 
 func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
-	return database.NewObserved(innerDatabase, s.ObservationContext)
+	return database.NewObserved(innerDatabase, s.observationContext)
 }

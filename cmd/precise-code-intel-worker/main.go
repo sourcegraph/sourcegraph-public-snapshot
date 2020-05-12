@@ -24,11 +24,6 @@ import (
 )
 
 func main() {
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -49,12 +44,7 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
-
-	server := server.Server{
-		Host: host,
-		Port: 3188,
-	}
-	go server.Start()
+	server := server.New()
 
 	worker := worker.NewWorker(
 		db,
@@ -63,10 +53,24 @@ func main() {
 		pollInterval,
 		workerMetrics,
 	)
-	go worker.Start()
 
+	go server.Start()
+	go worker.Start()
 	go debugserver.Start()
-	waitForSignal()
+
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
+
+	go func() {
+		// Insta-shutdown on a second signal
+		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
+	worker.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
@@ -83,15 +87,4 @@ func mustInitializeDatabase() db.DB {
 	}
 
 	return db
-}
-
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-
-	for i := 0; i < 2; i++ {
-		<-signals
-	}
-
-	os.Exit(0)
 }
