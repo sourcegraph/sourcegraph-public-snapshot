@@ -26,6 +26,8 @@ func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
 	mux.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUpload)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUpload)
+	mux.Path("/uploads/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUploadPart)
+	mux.Path("/uploads/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostUploadStitch)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
 	mux.Path("/dbs/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabase)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
@@ -61,6 +63,21 @@ func (s *Server) handlePostUpload(w http.ResponseWriter, r *http.Request) {
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUpload(w http.ResponseWriter, r *http.Request) {
 	s.deleteUpload(w, r)
+}
+
+// POST /uploads/{id:[0-9]+}/{index:[0-9]+}
+func (s *Server) handlePostUploadPart(w http.ResponseWriter, r *http.Request) {
+	_ = s.doUpload(w, r, func(bundleDir string, id int64) string {
+		return paths.UploadPartFilename(bundleDir, id, indexFromRequest(r))
+	})
+}
+
+// POST /uploads/{id:[0-9]+}/stitch
+func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) {
+	if err := stitchMultipart(s.bundleDir, idFromRequest(r)); err != nil {
+		log15.Error("Failed to stitch multipart upload", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // POST /dbs/{id:[0-9]+}
@@ -191,14 +208,13 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	defer r.Body.Close()
-
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
 		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
 		return false
 	}
+	defer targetFile.Close()
 
 	if _, err := io.Copy(targetFile, r.Body); err != nil {
 		log15.Error("Failed to write payload", "err", err)
@@ -230,6 +246,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 			return
 		}
 
+		log15.Error("Failed to handle query", "err", err)
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}

@@ -3,10 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -103,57 +100,6 @@ func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) 
 	}
 
 	writeJSON(w, map[string]interface{}{"uploads": uploads, "totalCount": totalCount})
-}
-
-// POST /upload
-func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
-	f, err := ioutil.TempFile("", "upload-")
-	if err != nil {
-		log15.Error("Failed to open target file", "error", err)
-		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	defer os.Remove(f.Name())
-	defer f.Close()
-
-	if _, err := io.Copy(f, r.Body); err != nil {
-		log15.Error("Failed to write payload", "error", err)
-		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	indexerName := getQuery(r, "indexerName")
-	if indexerName == "" {
-		if indexerName, err = readIndexerNameFromFile(f); err != nil {
-			log15.Error("Failed to read indexer name from upload", "error", err)
-			http.Error(w, fmt.Sprintf("failed to read indexer name from upload: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	tx, err := s.db.Transact(r.Context())
-	if err != nil {
-		log15.Error("Failed to start transaction", "error", err)
-		http.Error(w, fmt.Sprintf("failed to start transaction: %s", err.Error()), http.StatusInternalServerError)
-	}
-	id, err := tx.Enqueue(
-		r.Context(),
-		getQuery(r, "commit"),
-		sanitizeRoot(getQuery(r, "root")),
-		getQueryInt(r, "repositoryId"),
-		indexerName,
-	)
-	if err == nil {
-		err = tx.Done(s.bundleManagerClient.SendUpload(r.Context(), id, f))
-	}
-	if err != nil {
-		log15.Error("Failed to enqueue payload", "error", err)
-		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-	writeJSON(w, map[string]interface{}{"id": fmt.Sprintf("%d", id)})
 }
 
 // GET /exists

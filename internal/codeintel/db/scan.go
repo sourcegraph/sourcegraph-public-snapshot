@@ -66,7 +66,7 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 
 // scanUpload populates an Upload value from the given scanner.
 func scanUpload(scanner scanner) (upload Upload, err error) {
-	var uploadedParts []sql.NullInt32
+	var rawUploadedParts []sql.NullInt32
 	err = scanner.Scan(
 		&upload.ID,
 		&upload.Commit,
@@ -81,12 +81,16 @@ func scanUpload(scanner scanner) (upload Upload, err error) {
 		&upload.RepositoryID,
 		&upload.Indexer,
 		&upload.NumParts,
-		pq.Array(&uploadedParts),
+		pq.Array(&rawUploadedParts),
 		&upload.Rank,
 	)
-	for _, uploadedPart := range uploadedParts {
-		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+
+	var uploadedParts = []int{}
+	for _, uploadedPart := range rawUploadedParts {
+		uploadedParts = append(uploadedParts, int(uploadedPart.Int32))
 	}
+	upload.UploadedParts = uploadedParts
+
 	return upload, err
 }
 

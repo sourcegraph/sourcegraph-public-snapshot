@@ -29,6 +29,12 @@ type BundleManagerClient interface {
 	// SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk.
 	SendUpload(ctx context.Context, bundleID int, r io.Reader) error
 
+	// SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
+	SendUploadPart(ctx context.Context, bundleID, partIndex int, r io.Reader) error
+
+	// StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
+	StitchParts(ctx context.Context, bundleID int) error
+
 	// DeleteUpload removes the upload file with the given identifier from disk.
 	DeleteUpload(ctx context.Context, bundleID int) error
 
@@ -103,6 +109,36 @@ func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, 
 	}
 
 	body, err := c.do(ctx, "POST", url, r)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
+func (c *bundleManagerClientImpl) SendUploadPart(ctx context.Context, bundleID, partIndex int, r io.Reader) error {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d/%d", bundleID, partIndex), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, r)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
+func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int) error {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d/stitch", bundleID), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, nil)
 	if err != nil {
 		return err
 	}
