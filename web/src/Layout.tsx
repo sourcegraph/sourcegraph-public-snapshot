@@ -54,6 +54,7 @@ import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 import { VersionContextProps } from '../../shared/src/search/util'
+import { VersionContext } from './schema/site.schema'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -112,6 +113,7 @@ export interface LayoutProps
         versionContext: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+    availableVersionContexts: VersionContext[] | undefined
 
     isSourcegraphDotCom: boolean
     showCampaigns: boolean

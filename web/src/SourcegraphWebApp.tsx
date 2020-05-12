@@ -424,6 +424,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     smartSearchField={this.state.smartSearchField}
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
+                                    availableVersionContexts={this.state.availableVersionContexts}
                                 />
                             )}
                         />

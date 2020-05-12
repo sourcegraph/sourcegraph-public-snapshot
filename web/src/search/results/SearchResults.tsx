@@ -32,6 +32,7 @@ import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContext } from '../../schema/site.schema'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -58,6 +59,7 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 interface SearchResultsState {
@@ -164,7 +166,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    versionContext === 'default' ? '' : verifyVersionContext(versionContext) || '',
+                                    versionContext === 'default'
+                                        ? ''
+                                        : verifyVersionContext(versionContext, this.props.availableVersionContexts) ||
+                                              '',
                                     this.props
                                 )
                                 .pipe(

@@ -1,4 +1,4 @@
-import { parseSearchURL } from '.'
+import { parseSearchURL, verifyVersionContext } from '.'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 
 describe('search/index', () => {
@@ -42,5 +42,19 @@ describe('search/index', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
         })
+    })
+
+    test('verifyVersionContext', () => {
+        expect(
+            verifyVersionContext('3.16', [
+                { name: '3.16', description: '3.16', revisions: [{ ref: '3.16', repo: 'github.com/example/example' }] },
+            ])
+        ).toBe('3.16')
+        expect(
+            verifyVersionContext('3.15', [
+                { name: '3.16', description: '3.16', revisions: [{ ref: '3.16', repo: 'github.com/example/example' }] },
+            ])
+        ).toBe('default')
+        expect(verifyVersionContext('3.15', undefined)).toBe(undefined)
     })
 })
