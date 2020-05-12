@@ -18,6 +18,7 @@ import { VersionContextProps } from '../../../shared/src/search/util'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
@@ -34,7 +35,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
         props.setVersionContext(newValue)
     }
 
-    const unsetValue = (): void => {
+    const disableValue = (): void => {
         props.setVersionContext('')
     }
 
@@ -61,13 +62,14 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                     <ListboxInput value={props.versionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
-                                <ListboxButton className="version-context-dropdown__button btn btn-secondary form-control">
-                                    <FlagVariantIcon className="icon-inline small mr-2" />
-                                    <span className="version-context-dropdown__button-text">
+                                <ListboxButton className="version-context-dropdown__button btn btn-secondary">
+                                    <FlagVariantIcon className="icon-inline small" />
+                                    <span className="version-context-dropdown__button-text ml-2 mr-1">
                                         {!props.versionContext || props.versionContext === 'default'
                                             ? 'Select context'
                                             : props.versionContext}
                                     </span>
+                                    <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
                                 <ListboxPopover
                                     className={classNames('version-context-dropdown__popover dropdown-menu', {
@@ -108,7 +110,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                                 name="Name"
                                                 description="Description"
                                                 isActive={false}
-                                                unsetValue={unsetValue}
+                                                onDisableValue={disableValue}
                                             />
                                         </ListboxGroupLabel>
                                         {!isErrorLike(versionContexts) &&
@@ -125,7 +127,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextProps
                                                             name={versionContext.name}
                                                             description={versionContext.description}
                                                             isActive={props.versionContext === versionContext.name}
-                                                            unsetValue={unsetValue}
+                                                            onDisableValue={disableValue}
                                                         />
                                                     </ListboxOption>
                                                 ))}
@@ -144,18 +146,22 @@ const VersionContextInfoRow: React.FunctionComponent<{
     name: string
     description: string
     isActive: boolean
-    unsetValue: () => void
-}> = ({ name, description, isActive, unsetValue }) => (
+    onDisableValue: () => void
+}> = ({ name, description, isActive, onDisableValue }) => (
     <>
-        <span>
+        <div>
             {isActive && (
-                <button type="button" className="btn btn-icon" onClick={unsetValue}>
+                <button
+                    type="button"
+                    className="btn btn-icon"
+                    onClick={onDisableValue}
+                    aria-label="Disable version context"
+                >
                     <CloseIcon className="icon-inline small" />
                 </button>
             )}
-        </span>
+        </div>
         <span className="version-context-dropdown__option-name">{name}</span>
         <span className="version-context-dropdown__option-description">{description}</span>
-        <span />
     </>
 )
