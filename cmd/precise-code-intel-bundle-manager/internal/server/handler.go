@@ -148,8 +148,8 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			return nil, errors.New("illegal skip supplied")
 		}
 
-		take := getQueryInt(r, "take")
-		if take < 0 {
+		take := getQueryIntDefault(r, "take", DefaultMonikerResultPageSize)
+		if take <= 0 {
 			return nil, errors.New("illegal take supplied")
 		}
 
@@ -249,7 +249,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	openDatabase := func() (database.Database, error) {
 		cached = false
 
-		// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
+		// TODO(efritz) - What is the behavior if the db is missing? Should we stat first or clean up after?
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
