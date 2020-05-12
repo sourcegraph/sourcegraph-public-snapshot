@@ -260,7 +260,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		return s.wrapDatabase(database), nil
+		return s.wrapDatabase(database, filename), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -280,6 +280,6 @@ func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
 	return reader.NewObserved(innerReader, s.observationContext)
 }
 
-func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
-	return database.NewObserved(innerDatabase, s.observationContext)
+func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {
+	return database.NewObserved(innerDatabase, filename, s.observationContext)
 }
