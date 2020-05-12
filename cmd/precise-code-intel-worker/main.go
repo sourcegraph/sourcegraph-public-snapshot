@@ -58,11 +58,13 @@ func main() {
 	go worker.Start()
 	go debugserver.Start()
 
+	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
 	<-signals
 
 	go func() {
+		// Insta-shutdown on a second signal
 		<-signals
 		os.Exit(0)
 	}()
