@@ -561,10 +561,31 @@ Network policy is a Kubernetes resource that defines how pods are allowed to com
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
 then we recommend running Sourcegraph in a namespace (as described below in the [namespaced overlay](#namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
+When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
+
+```yaml
+{
+  "apiVersion": "v1",
+  "kind": "Namespace",
+  "metadata": {
+    "name": "ns-sourcegraph",
+    "labels": {
+      "name": "ns-sourcegraph"
+    }
+  }
+}
+```
+
+If the namespace already exists you can still label it like so
+
+```shell script
+kubectl label namespace ns-sourcegraph name=ns-sourcegraph 
+```
 
 > Note: You will need to augment this example NetworkPolicy to allow traffic to external services 
 > you plan to use (like github.com) and ingress traffic from
-> the outside to the frontend for the users of the Sourcegraph installation. 
+> the outside to the frontend for the users of the Sourcegraph installation.
+> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started. 
 
 ```yaml
 kind: NetworkPolicy
