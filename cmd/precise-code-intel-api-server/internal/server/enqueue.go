@@ -102,7 +102,7 @@ func (s *Server) handleEnqueueErr(w http.ResponseWriter, r *http.Request) (inter
 		return nil, clientError("no uploadId supplied")
 	}
 
-	upload, exists, err := s.DB.GetUploadByID(r.Context(), getQueryInt(r, "uploadId"))
+	upload, exists, err := s.db.GetUploadByID(r.Context(), getQueryInt(r, "uploadId"))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
-	tx, err := s.DB.Transact(r.Context())
+	tx, err := s.db.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 	if err != nil {
 		return nil, err
 	}
-	if err := s.BundleManagerClient.SendUpload(r.Context(), id, r.Body); err != nil {
+	if err := s.bundleManagerClient.SendUpload(r.Context(), id, r.Body); err != nil {
 		return nil, err
 	}
 
@@ -188,7 +188,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
 func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
-	id, err := s.DB.InsertUpload(r.Context(), &db.Upload{
+	id, err := s.db.InsertUpload(r.Context(), &db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -208,7 +208,7 @@ func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadA
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
 func (s *Server) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload, partIndex int) (_ interface{}, err error) {
-	tx, err := s.DB.Transact(r.Context())
+	tx, err := s.db.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (s *Server) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload,
 	if err := tx.AddUploadPart(r.Context(), upload.ID, partIndex); err != nil {
 		return nil, err
 	}
-	if err := s.BundleManagerClient.SendUploadPart(r.Context(), upload.ID, partIndex, r.Body); err != nil {
+	if err := s.bundleManagerClient.SendUploadPart(r.Context(), upload.ID, partIndex, r.Body); err != nil {
 		return nil, err
 	}
 
@@ -234,7 +234,7 @@ func (s *Server) handleEnqueueMultipartFinalize(r *http.Request, upload db.Uploa
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}
 
-	tx, err := s.DB.Transact(r.Context())
+	tx, err := s.db.Transact(r.Context())
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (s *Server) handleEnqueueMultipartFinalize(r *http.Request, upload db.Uploa
 	if err := tx.MarkQueued(r.Context(), upload.ID); err != nil {
 		return nil, err
 	}
-	if err := s.BundleManagerClient.StitchParts(r.Context(), upload.ID); err != nil {
+	if err := s.bundleManagerClient.StitchParts(r.Context(), upload.ID); err != nil {
 		return nil, err
 	}
 
