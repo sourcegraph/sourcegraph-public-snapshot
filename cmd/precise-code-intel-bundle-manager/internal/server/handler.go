@@ -271,7 +271,6 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
 
-		// Check for race conditions:
 		// Check to see if the database exists after opening it. If it doesn't, then
 		// SQLite has created a new, empty database that is not yet written to disk.
 		if _, err := os.Stat(filename); err != nil {
