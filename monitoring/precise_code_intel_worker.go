@@ -39,8 +39,6 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 					},
-					// TODO(efritz) - add bundle manager request meter
-					// TODO(efritz) - add gitserver request meter
 					{
 						{
 							Name:        "99th_percentile_db_duration",
@@ -59,6 +57,46 @@ func PreciseCodeIntelWorker() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{op}}"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "99th_percentile_bundle_manager_transfer_duration",
+							Description:       "99th percentile successful bundle manager data transfer duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-worker",category="transfer"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 300},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "bundle_manager_error_responses",
+							Description:       "bundle manager error responses every 5m",
+							Query:             `sum by (category)(increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "99th_percentile_gitserver_duration",
+							Description:       "99th percentile successful gitserver query duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "gitserver_error_responses",
+							Description:       "gitserver error responses every 5m",
+							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="precise-code-intel-worker",code!~"2.."}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 5},
+							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
 							PossibleSolutions: "none",
 						},
 					},

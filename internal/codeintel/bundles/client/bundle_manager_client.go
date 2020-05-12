@@ -9,9 +9,16 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/neelance/parallel"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
@@ -38,15 +45,46 @@ type baseClient interface {
 	QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error
 }
 
+var requestMeter = metrics.NewRequestMeter("precise_code_intel_bundle_manager", "Total number of requests sent to precise code intel bundle manager.")
+
+const MaxIdleConnectionsPerHost = 500
+
+// defaultTransport is the default transport used in the default client and the
+// default reverse proxy. ot.Transport will propagate opentracing spans.
+var defaultTransport = &ot.Transport{
+	RoundTripper: requestMeter.Transport(&http.Transport{
+		// Default is 2, but we can send many concurrent requests
+		MaxIdleConnsPerHost: MaxIdleConnectionsPerHost,
+	}, func(u *url.URL) string {
+		// Extract the operation from a path like `/dbs/{id}/{operation}`
+		if segments := strings.Split(u.Path, "/"); len(segments) == 4 {
+			return segments[3]
+		}
+
+		// All other methods are uploading/downloading upload or bundle files.
+		// These can all go into a single bucket which  are meant not necessarily
+		// meant to have low latency.
+		return "transfer"
+	}),
+}
+
 type bundleManagerClientImpl struct {
+	httpClient       *http.Client
+	httpLimiter      *parallel.Run
 	bundleManagerURL string
+	UserAgent        string
 }
 
 var _ BundleManagerClient = &bundleManagerClientImpl{}
 var _ baseClient = &bundleManagerClientImpl{}
 
 func New(bundleManagerURL string) BundleManagerClient {
-	return &bundleManagerClientImpl{bundleManagerURL: bundleManagerURL}
+	return &bundleManagerClientImpl{
+		httpClient:       &http.Client{Transport: defaultTransport},
+		httpLimiter:      parallel.NewRun(500),
+		bundleManagerURL: bundleManagerURL,
+		UserAgent:        filepath.Base(os.Args[0]),
+	}
 }
 
 // BundleClient creates a client that can answer intelligence queries for a single dump.
@@ -118,7 +156,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 	return f.Name(), nil
 }
 
-// SendDB transfers a converted databse to the bundle manager to be stored on disk.
+// SendDB transfers a converted database to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io.Reader) error {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d", bundleID), nil)
 	if err != nil {
@@ -148,17 +186,41 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	return json.NewDecoder(body).Decode(&target)
 }
 
-// TODO(efritz) - trace
 func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "BundleManagerClient.do")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.UserAgent)
 	req = req.WithContext(ctx)
 
-	resp, err := http.DefaultClient.Do(req)
+	if c.httpLimiter != nil {
+		span.LogKV("event", "Waiting on HTTP limiter")
+		c.httpLimiter.Acquire()
+		defer c.httpLimiter.Release()
+		span.LogKV("event", "Acquired HTTP limiter")
+	}
+
+	req, ht := nethttp.TraceRequest(
+		span.Tracer(),
+		req,
+		nethttp.OperationName("Precise Code Intel Bundle Manager Client"),
+		nethttp.ClientTrace(false),
+	)
+	defer ht.Finish()
+
+	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {
 		return nil, err
 	}
