@@ -14,8 +14,8 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 /**
- * @returns Observable that emits if the repo exists on the instance. Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
- *
+ * @returns Observable that emits if the repo exists on the instance.
+ * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
  * Errors with a `RepoNotFoundError` if the repo is not found.
  */
 export const resolveRepo = memoizeObservable(

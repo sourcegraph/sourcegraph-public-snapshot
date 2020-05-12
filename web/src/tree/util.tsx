@@ -51,7 +51,7 @@ export const maxEntries = 2500
  * the backend responds with all entries that need to be rendered, not just the entry for that level. It is in
  * a flat list, so this function converts it to a structure like the following (assume we have a/b/c.txt):
  *
- * ```
+ * ```ts
  * { name: "a", ...TreeEntryInfo, children: [
  *     { name: "b", ...TreeEntryInfo, children: [
  *          {name: "c.txt", ...TreeEntryInfo, children: []}
