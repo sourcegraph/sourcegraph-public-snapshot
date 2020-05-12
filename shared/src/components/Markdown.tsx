@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useMemo } from 'react'
 import * as H from 'history'
 import { createLinkClickHandler } from './linkClickHandler'
 
@@ -21,7 +21,7 @@ export const Markdown: React.FunctionComponent<Props> = ({
 }: Props) => {
     // Links in markdown cannot use react-router's <Link>.
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const onClick = useCallback(createLinkClickHandler(history), [history])
+    const onClick = useMemo(() => createLinkClickHandler(history), [history])
     return (
         <RootComponent
             onClick={onClick}

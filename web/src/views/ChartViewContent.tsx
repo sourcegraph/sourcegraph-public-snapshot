@@ -51,7 +51,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
     content: LineChartContent<any, string> | BarChartContent<any, string>
     history: H.History
 }> = ({ content, history }) => {
-    const linkHandler = useCallback(createLinkClickHandler(history), [history])
+    const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
 
     // Unwrap union type
     const series: typeof content.series[number][] = content.series
@@ -171,7 +171,7 @@ export const PieChartViewContent: React.FunctionComponent<{ content: PieChartCon
     content,
     history,
 }) => {
-    const linkHandler = useCallback(createLinkClickHandler(history), [history])
+    const linkHandler = useMemo(() => createLinkClickHandler(history), [history])
 
     // Track hovered element to wrap it with a link
     const [activeIndex, setActiveIndex] = useState<number>()
