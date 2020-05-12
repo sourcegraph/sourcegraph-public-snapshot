@@ -529,21 +529,25 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 // findPatternRevs mutates the given list of include patterns to
 // be a raw list of the repository name patterns we want, separating
 // out their revision specs, if any.
-func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevspec, err error) {
+func findPatternRevs(includePatterns []string) (repoPatterns []string, includePatternRevs []patternRevspec, err error) {
+	if len(includePatterns) == 0 {
+		return
+	}
+	repoPatterns = make([]string, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 	for i, includePattern := range includePatterns {
 		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(string(repoPattern)); err != nil {
-			return nil, &badRequestError{err}
+			return nil, nil, &badRequestError{err}
 		}
 		repoPattern = api.RepoName(optimizeRepoPatternWithHeuristics(string(repoPattern)))
-		includePatterns[i] = string(repoPattern)
+		repoPatterns[i] = string(repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
+			p, err := regexp.Compile("(?i:" + repoPatterns[i] + ")")
 			if err != nil {
-				return nil, &badRequestError{err}
+				return nil, nil, &badRequestError{err}
 			}
 			patternRev := patternRevspec{includePattern: p, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)

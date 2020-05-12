@@ -40,13 +40,13 @@ type repositoryResolver struct {
 
 	// these struct members represent the input of the repositoryResolver
 	// and must be filled prior to calling the resolveRepositories method
-	includePatterns []string
 	excludePatterns []string
 	maxRepoListSize int
 
 	// these struct members are intermediary variables used
 	// by the various methods called by the resolveRepositories method
 	includePatternRevs         []patternRevspec
+	includePatterns            []string
 	versionContextRepositories []string
 	missingRepoRevisions       []*search.RepositoryRevisions
 	repoRevisions              []*search.RepositoryRevisions
@@ -62,20 +62,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	r := repositoryResolver{
 		resolveRepoOp:   op,
 		tracer:          tr,
-		includePatterns: op.repoFilters,
 		excludePatterns: op.minusRepoFilters,
 		maxRepoListSize: maxReposToSearch(),
 	}
 
-	if r.includePatterns != nil {
-		// Copy to avoid race condition.
-		r.includePatterns = append([]string{}, r.includePatterns...)
-	}
-
-	return r.resolveRepositories(ctx, op)
+	return r.resolveRepositories(ctx)
 }
 
-func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolveRepoOp) ([]*search.RepositoryRevisions, []*search.RepositoryRevisions, bool, error) {
+func (r *repositoryResolver) resolveRepositories(ctx context.Context) ([]*search.RepositoryRevisions, []*search.RepositoryRevisions, bool, error) {
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
@@ -90,7 +84,7 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
-	r.includePatternRevs, err = findPatternRevs(r.includePatterns)
+	r.includePatterns, r.includePatternRevs, err = findPatternRevs(r.repoFilters)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -120,8 +114,8 @@ func (r *repositoryResolver) resolveRepositories(ctx context.Context, op resolve
 
 	r.tracer.LazyPrintf("Associate/validate revs - done")
 
-	if op.commitAfter != "" {
-		r.repoRevisions, err = filterRepoHasCommitAfter(ctx, r.repoRevisions, op.commitAfter)
+	if r.commitAfter != "" {
+		r.repoRevisions, err = filterRepoHasCommitAfter(ctx, r.repoRevisions, r.commitAfter)
 	}
 
 	return r.repoRevisions, r.missingRepoRevisions, overLimit, err
@@ -142,7 +136,7 @@ func (r *repositoryResolver) mergeRepoWithRepoGroups(ctx context.Context, groupN
 		}
 	}
 
-	r.includePatterns = append(r.includePatterns, unionRegExps(patterns))
+	r.repoFilters = append(r.repoFilters, unionRegExps(patterns))
 
 	// Ensure we don't omit any repos explicitly included via a repo group.
 	if len(patterns) > r.maxRepoListSize {

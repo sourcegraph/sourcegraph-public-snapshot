@@ -119,8 +119,8 @@ func TestSearchResults(t *testing.T) {
 				NoForks:     true,
 			}
 
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
+			if diff := cmp.Diff(op, want); diff != "" {
+				t.Fatalf(diff)
 			}
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
@@ -814,7 +814,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			pats, err := findPatternRevs(test.specs)
+			_, pats, err := findPatternRevs(test.specs)
 			if err != nil {
 				if test.err == nil {
 					t.Errorf("unexpected error: '%s'", err)
