@@ -127,4 +127,4 @@ Your Kubernetes cluster is now all set up and running!
 
 Luckily, deploying Sourcegraph on your cluster is much easier and quicker than the above steps. :)
 
-Follow our [installation documentation](install.md) to continue.
+Follow our [installation documentation](index.md) to continue.
