@@ -9,6 +9,7 @@ import { CaseSensitivityProps, PatternTypeProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { hasProperty } from '../../../shared/src/util/types'
 import { isObject } from 'lodash'
+import { ChartViewContent } from './ChartViewContent'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
@@ -26,13 +27,15 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewCon
     <>
         {viewContent.map((content, i) =>
             isMarkupContent(content) ? (
-                <section key={i} className="mt-3">
+                <section key={i}>
                     {content.kind === MarkupKind.Markdown || !content.kind ? (
                         <Markdown dangerousInnerHTML={renderMarkdown(content.value)} history={props.history} />
                     ) : (
                         content.value
                     )}
                 </section>
+            ) : 'chart' in content ? (
+                <ChartViewContent key={i} content={content} history={props.history} />
             ) : content.component === 'QueryInput' ? (
                 <QueryInputInViewContent
                     {...props}
