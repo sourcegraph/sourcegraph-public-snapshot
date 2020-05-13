@@ -150,6 +150,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
                               dataKey={series.dataKey as string}
                               fill={series.fill}
                               label={false}
+                              stackId={series.stackId}
                               // eslint-disable-next-line react/jsx-no-bind
                               shape={({ key, ...props }: any) => (
                                   // Add links to bars
