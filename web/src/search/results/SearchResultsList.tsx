@@ -521,7 +521,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
                         settingsCascade={this.props.settingsCascade}
-                        versionContext={this.props.versionContext}
                     />
                 )
         }
