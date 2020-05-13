@@ -25,11 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Fixed OCaml syntax highlighting #3545
   - Bazel/Starlark support improved (.star, BUILD, and many more extensions now properly highlighted). #8123
 - New permissions page in both user and repository settings when background permissions syncing is enabled (`"permissions.backgroundSync": {"enabled": true}`). #10473
-- More campaign usage statistics were added to pings
-  - Total count of changesets created by campaigns
-  - Total count of changesets created by campaigns that have been merged
-  - Total count of changesets manually added to a campaign
-  - Total count of changesets manually added to a campaign that have been merged
+- Campaign changeset usage counts including changesets created, added and merged will be sent back in pings. [#10591](https://github.com/sourcegraph/sourcegraph/pull/10591)
 
 ### Changed
 
