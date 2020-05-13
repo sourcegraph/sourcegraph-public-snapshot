@@ -49,12 +49,12 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
 
 interface State {
     /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
-     * to load.
+     * Locations (inside files identified by LSP-style git:// URIs) to display,
+     * loading, or an error if they failed to load.
+     *
+     * Locations may be truncated if the result set is too large.
      */
-    locationsOrError:
-        | MaybeLoadingResult<{ locations: Location[]; isTruncated: boolean }>
-        | MaybeLoadingResult<ErrorLike>
+    locationsOrError: MaybeLoadingResult<{ locations: Location[]; isTruncated: boolean } | ErrorLike>
 
     selectedGroups?: string[]
 }
