@@ -282,6 +282,7 @@ Referenced by:
  timestamp         | timestamp with time zone | not null
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
+    "event_logs_anonymous_user_id" btree (anonymous_user_id)
     "event_logs_name" btree (name)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
