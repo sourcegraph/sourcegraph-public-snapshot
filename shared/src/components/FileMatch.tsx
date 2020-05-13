@@ -9,8 +9,6 @@ import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { BadgeAttachmentRenderOptions } from 'sourcegraph'
-import { appendVersionContextQueryParam } from '../util/url'
-import { VersionContextProps } from '../search/util'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -34,7 +32,7 @@ export interface IMatchItem {
     badge?: BadgeAttachmentRenderOptions
 }
 
-interface Props extends SettingsCascadeProps, Pick<VersionContextProps, 'versionContext'> {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     /**
      * The file match search result.
@@ -108,9 +106,9 @@ export class FileMatch extends React.PureComponent<Props> {
         const title = (
             <RepoFileLink
                 repoName={result.repository.name}
-                repoURL={appendVersionContextQueryParam(repoAtRevURL, this.props.versionContext)}
+                repoURL={repoAtRevURL}
                 filePath={result.file.path}
-                fileURL={appendVersionContextQueryParam(result.file.url, this.props.versionContext)}
+                fileURL={result.file.url}
                 repoDisplayName={
                     this.props.repoDisplayName
                         ? `${this.props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`

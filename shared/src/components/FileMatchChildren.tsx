@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { ThemeProps } from '../theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
-import { toPositionOrRangeHash, appendSubtreeQueryParam, appendVersionContextQueryParam } from '../util/url'
+import { toPositionOrRangeHash, appendSubtreeQueryParam } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
@@ -13,9 +13,8 @@ import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
-import { VersionContextProps } from '../search/util'
 
-interface FileMatchProps extends SettingsCascadeProps, ThemeProps, Pick<VersionContextProps, 'versionContext'> {
+interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     items: IMatchItem[]
     result: IFileMatch
@@ -125,11 +124,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
                         <Link
-                            to={appendVersionContextQueryParam(
-                                appendSubtreeQueryParam(
-                                    `${props.result.file.url}${toPositionOrRangeHash({ position })}`
-                                ),
-                                props.versionContext
+                            to={appendSubtreeQueryParam(
+                                `${props.result.file.url}${toPositionOrRangeHash({ position })}`
                             )}
                             className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
                             onClick={props.onSelect}
