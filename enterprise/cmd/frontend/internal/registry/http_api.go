@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -118,11 +120,40 @@ func newExtension(v *dbExtension, manifest *string, publishedAt time.Time) *regi
 	}
 }
 
+type responseRecorder struct {
+	http.ResponseWriter
+	code int
+}
+
+func (r *responseRecorder) WriteHeader(code int) {
+	r.code = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
 // handleRegistry serves the external HTTP API for the extension registry.
 func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
+	recorder := &responseRecorder{ResponseWriter: w, code: http.StatusOK}
+	w = recorder
+
+	var operation string
+	defer func(began time.Time) {
+		seconds := time.Since(began).Seconds()
+
+		var success string
+		if err != nil || recorder.code >= 400 {
+			success = "false"
+			registryRequestsErrorCounter.Inc()
+		} else {
+			success = "true"
+			registryRequestsSuccessCounter.Inc()
+		}
+
+		registryRequestsDuration.WithLabelValues(operation, success).Observe(seconds)
+	}(time.Now())
+
 	if conf.Extensions() == nil {
 		w.WriteHeader(http.StatusNotFound)
-		return
+		return nil
 	}
 
 	// Identify this response as coming from the registry API.
@@ -148,6 +179,8 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	var result interface{}
 	switch {
 	case urlPath == extensionsPath:
+		operation = "list"
+
 		query := r.URL.Query().Get("q")
 		var opt dbExtensionsListOptions
 		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
@@ -165,8 +198,10 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		)
 		switch {
 		case strings.HasPrefix(spec, "uuid/"):
+			operation = "get-by-uuid"
 			x, err = registryGetByUUID(r.Context(), strings.TrimPrefix(spec, "uuid/"))
 		case strings.HasPrefix(spec, "extension-id/"):
+			operation = "get-by-extension-id"
 			x, err = registryGetByExtensionID(r.Context(), strings.TrimPrefix(spec, "extension-id/"))
 		default:
 			w.WriteHeader(http.StatusNotFound)
@@ -188,29 +223,25 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	w.Header().Set("Cache-Control", "max-age=30, private")
-	data, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-	_, _ = w.Write(data)
-	return nil
+	return json.NewEncoder(w).Encode(result)
 }
 
 var (
-	registryRequestsSuccessCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	registryRequestsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_registry_requests_duration_seconds",
+		Help: "Seconds spent handling a request to the HTTP registry API",
+	}, []string{"operation", "success"})
+
+	registryRequestsSuccessCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_registry_requests_success",
 		Help: "Number of successful requests (HTTP 200) to the HTTP registry API",
 	})
-	registryRequestsErrorCounter = prometheus.NewCounter(prometheus.CounterOpts{
+
+	registryRequestsErrorCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_registry_requests_error",
 		Help: "Number of failed (non-HTTP 200) requests to the HTTP registry API",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(registryRequestsSuccessCounter)
-	prometheus.MustRegister(registryRequestsErrorCounter)
-}
 
 func init() {
 	// Allow providing fake registry data for local dev (intended for use in local dev only).
