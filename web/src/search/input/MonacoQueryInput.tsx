@@ -281,6 +281,10 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             throw new Error('Cannot unbind default Monaco keybindings')
         }
         for (const action of Object.keys(editor._actions)) {
+            // Keep ctrl+space to show all available completions
+            if (action === 'editor.action.triggerSuggest') {
+                continue
+            }
             // Prefixing action ids with `-` to unbind the default actions.
             editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
         }
