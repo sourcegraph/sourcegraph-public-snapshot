@@ -312,6 +312,15 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
             return { edits: [edit], selectText: comment }
         },
     },
+    {
+        id: 'addWebhooks',
+        label: 'Add webhook',
+        run: config => {
+            const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
+            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<your_org_on_GitHub>' }
+        },
+    },
 ]
 
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
