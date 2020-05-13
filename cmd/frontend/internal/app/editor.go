@@ -57,7 +57,7 @@ type editorRequest struct {
 	version string // editor extension version
 
 	// Fields that are optional in all requests.
-	utmProductName    string // Editor product name. Only present in JetBrains today (e.g. "IntelliJ", "Gogland")
+	utmProductName    string // Editor product name. Only present in JetBrains today (e.g. "IntelliJ", "GoLand")
 	utmProductVersion string // Editor product version. Only present in JetBrains today.
 
 	// openFileRequest is non-nil if this is an "open file on Sourcegraph" request.
