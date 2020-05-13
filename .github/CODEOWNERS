@@ -100,10 +100,10 @@
 /internal/eventlogger @dadlerj
 
 # Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
-/enterprise/internal/campaigns @sourcegraph/campaigns-core
-/internal/campaigns @sourcegraph/campaigns-core
-/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
@@ -118,7 +118,6 @@
 /internal/actor/ @beyang @unknwon
 
 # Core Services
-*git*/* @sourcegraph/core-services
 /cmd/frontend/authz/ @sourcegraph/core-services
 /cmd/frontend/db/ @sourcegraph/core-services
 /cmd/frontend/globals/ @sourcegraph/core-services @slimsag
@@ -170,6 +169,8 @@
 /cmd/frontend/types/saved_searches.go @attfarhan
 
 # Distribution
+/dev/ci @sourcegraph/distribution
+/enterprise/dev/ci @sourcegraph/distribution
 ## Deployment
 Dockerfile @sourcegraph/distribution
 /monitoring @slimsag @sourcegraph/distribution
@@ -194,8 +195,7 @@ Dockerfile @sourcegraph/distribution
 /README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/dev/typescript/ @felixfbecker @sourcegraph/web
-/doc/dev/web_app.md @felixfbecker @sourcegraph/web
+/doc/dev/web/ @felixfbecker @sourcegraph/web
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -212,11 +212,11 @@ Dockerfile @sourcegraph/distribution
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
+/internal/logging @keegancsmith @slimsag
+/internal/observation @keegancsmith @slimsag
 
 # Code discussions
 **/*discussion* @slimsag
-/web/src/discussions @slimsag
-/web/src/repo/blob/discussions @slimsag
 /cmd/frontend/types/discussions.go @slimsag
 /cmd/frontend/internal/pkg/discussions @slimsag
 /cmd/frontend/graphqlbackend/discussion* @slimsag
@@ -224,10 +224,13 @@ Dockerfile @sourcegraph/distribution
 
 # Precise code intel
 /cmd/precise-code-intel/ @sourcegraph/code-intel
+/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
+/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
@@ -241,6 +244,8 @@ Dockerfile @sourcegraph/distribution
 /babel.config.js @felixfbecker
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
+/dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
+/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services

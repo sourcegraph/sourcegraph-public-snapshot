@@ -11,7 +11,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
 import {
-    animationFrameScheduler,
+    asyncScheduler,
     combineLatest,
     EMPTY,
     from,
@@ -42,7 +42,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
-import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/viewerService'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,
@@ -370,7 +370,12 @@ function initCodeIntelligence({
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
-        registerHoverContributions({ extensionsController, platformContext, history: H.createBrowserHistory() })
+        registerHoverContributions({
+            extensionsController,
+            platformContext,
+            history: H.createBrowserHistory(),
+            locationAssign: location.assign.bind(location),
+        })
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
@@ -502,14 +507,10 @@ function initCodeIntelligence({
  * Related issue: https://gitlab.com/gitlab-org/gitlab/issues/193433
  *
  * Example use case on GitLab:
- * 1. User visits https://gitlab.com/gitlab-org/gitaly/-/merge_requests/1575. div.tab-pane.diffs doesn't exist yet (it'll be lazy-loaded)
- *      -> Mount the  hover overlay is to document.body.
- * 2. User visits the 'Changes' tab
- *      -> Unmount from document.body, mount to div.tab-pane.diffs
- * 3. User visits the 'Overview' tab again
- *      -> div.tab-pane.diffs is hidden, and as a result so is the hover overlay.
- * 4. User navigates away from the merge request (soft-reload), div.tab-pane.diffs is removed
- *      -> Mount to document.body again
+ * 1. User visits https://gitlab.com/gitlab-org/gitaly/-/merge_requests/1575. `div.tab-pane.diffs` doesn't exist yet (it'll be lazy-loaded) -> Mount the  hover overlay is to `document.body`.
+ * 2. User visits the 'Changes' tab -> Unmount from `document.body`, mount to `div.tab-pane.diffs`.
+ * 3. User visits the 'Overview' tab again -> `div.tab-pane.diffs` is hidden, and as a result so is the hover overlay.
+ * 4. User navigates away from the merge request (soft-reload), `div.tab-pane.diffs` is removed -> Mount to `document.body` again.
  */
 export function observeHoverOverlayMountLocation(
     getMountLocationSelector: NonNullable<CodeHost['getHoverOverlayMountLocation']>,
@@ -781,7 +782,7 @@ export function handleCodeHost({
                 })
             )
         ),
-        observeOn(animationFrameScheduler)
+        observeOn(asyncScheduler)
     )
 
     /** Map from workspace URI to number of editors referencing it */
@@ -844,7 +845,7 @@ export function handleCodeHost({
                 selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                 isActive: true,
             }
-            const editorId = extensionsController.services.editor.addEditor(editorData)
+            const editorId = extensionsController.services.viewer.addViewer(editorData)
             const scope: CodeEditorWithPartialModel = {
                 ...editorData,
                 ...editorId,
@@ -854,7 +855,7 @@ export function handleCodeHost({
             addRootRef(rootURI, fileInfo.rev)
             codeViewEvent.subscriptions.add(() => {
                 deleteRootRef(rootURI)
-                extensionsController.services.editor.removeEditor(editorId)
+                extensionsController.services.viewer.removeViewer(editorId)
             })
 
             if (codeViewEvent.observeSelections) {
@@ -862,7 +863,7 @@ export function handleCodeHost({
                     // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
                     // eslint-disable-next-line rxjs/no-nested-subscribe
                     codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
-                        extensionsController.services.editor.setSelections(editorId, selections)
+                        extensionsController.services.viewer.setSelections(editorId, selections)
                     })
                 )
             }
@@ -883,7 +884,7 @@ export function handleCodeHost({
                         text: fileInfo.baseContent,
                     })
                 }
-                const editor = extensionsController.services.editor.addEditor({
+                const editor = extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     // There is no notion of a selection on diff views yet, so this is empty.
@@ -897,7 +898,7 @@ export function handleCodeHost({
                 addRootRef(baseRootURI, fileInfo.baseRev)
                 codeViewEvent.subscriptions.add(() => {
                     deleteRootRef(baseRootURI)
-                    extensionsController.services.editor.removeEditor(editor)
+                    extensionsController.services.viewer.removeViewer(editor)
                 })
             }
 

@@ -162,6 +162,69 @@ const SiteSchemaJSON = `{
               }
             ]
           ]
+        },
+        "versionContexts": {
+          "description": "JSON array of version context configuration",
+          "type": "array",
+          "items": {
+            "title": "VersionContext",
+            "description": "Configuration of the version context",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "revisions"],
+            "properties": {
+              "name": {
+                "description": "Name of the version context, it must be unique.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 14
+              },
+              "revisions": {
+                "description": "List of repositories of the version context",
+                "type": "array",
+                "items": {
+                  "title": "VersionContextRevision",
+                  "description": "Description of the chosen repository and revision",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repo", "ref"],
+                  "properties": {
+                    "repo": {
+                      "description": "Repository name",
+                      "type": "string"
+                    },
+                    "ref": {
+                      "description": "Branch, tag, or commit hash",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "description": {
+                "description": "Description of the version context",
+                "type": "string"
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Release foo",
+              "revisions": [
+                {
+                  "repo": "github.com/sourcegraph/sourcegraph",
+                  "ref": "3.15"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib1",
+                  "ref": "23edr233r"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib2",
+                  "ref": "2.4"
+                }
+              ]
+            }
+          ]
         }
       },
       "examples": [
@@ -569,7 +632,7 @@ const SiteSchemaJSON = `{
       "group": "Misc."
     },
     "externalURL": {
-      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
+      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },

@@ -11,16 +11,14 @@ function assertDeepStrictEqual(actual: unknown, expected: unknown): void {
     expect(actual).toEqual(expected)
 }
 
-const ctx = {
-    repoName: 'github.com/gorilla/mux',
-    rev: '',
-    commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
-    filePath: 'mux.go',
-}
-
 describe('toTreeURL', () => {
     test('formats url', () => {
-        expect(toTreeURL(ctx)).toBe('/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/tree/mux.go')
+        const target = {
+            repoName: 'github.com/gorilla/mux',
+            rev: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            filePath: 'mux.go',
+        }
+        expect(toTreeURL(target)).toBe('/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/tree/mux.go')
     })
 
     // other cases are gratuitous given tests for other URL functions

@@ -161,6 +161,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                         className="tree__row tree__row-alert"
                         prefix="Error loading tree"
                         error={treeOrError}
+                        history={this.props.history}
                     />
                 ) : (
                     <table className="tree-layer" tabIndex={0}>

@@ -4,11 +4,9 @@
 
 > Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
-> For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
-
 ## Getting started
 
-Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or using [GitHub Action](adding_lsif_to_workflows.md#lsif-on-github).
+First check if we've created any [language-specific guides](languages/index.md) that fit your needs. Otherwise, follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can follow our [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate that process for new commits.
 
 LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 

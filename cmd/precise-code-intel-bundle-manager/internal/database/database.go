@@ -1,24 +1,58 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
 	"sort"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
+	"github.com/opentracing/opentracing-go/ext"
+	pkgerrors "github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// Database wraps access to a single processed SQLite bundle.
-type Database struct {
-	db                   *sqlx.DB              // the SQLite handle
-	filename             string                // the SQLite filename
-	documentDataCache    *DocumentDataCache    // shared cache
-	resultChunkDataCache *ResultChunkDataCache // shared cache
-	numResultChunks      int                   // numResultChunks value from meta row
+// Database wraps access to a single processed bundle.
+type Database interface {
+	// Close closes the underlying reader.
+	Close() error
+
+	// Exists determines if the path exists in the database.
+	Exists(ctx context.Context, path string) (bool, error)
+
+	// Definitions returns the set of locations defining the symbol at the given position.
+	Definitions(ctx context.Context, path string, line, character int) ([]Location, error)
+
+	// References returns the set of locations referencing the symbol at the given position.
+	References(ctx context.Context, path string, line, character int) ([]Location, error)
+
+	// Hover returns the hover text of the symbol at the given position.
+	Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error)
+
+	// MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
+	// ranges contain the position, then this method will return multiple sets of monikers. Each slice
+	// of monikers are attached to a single range. The order of the output slice is "outside-in", so that
+	// the range attached to earlier monikers enclose the range attached to later monikers.
+	MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error)
+
+	// MonikerResults returns the locations that define or reference the given moniker. This method
+	// also returns the size of the complete result set to aid in pagination (along with skip and take).
+	MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error)
+
+	// PackageInformation looks up package information data by identifier.
+	PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
 }
+
+type databaseImpl struct {
+	filename         string
+	reader           reader.Reader     // database file reader
+	documentCache    *DocumentCache    // shared cache
+	resultChunkCache *ResultChunkCache // shared cache
+	numResultChunks  int               // numResultChunks value from meta row
+}
+
+var _ Database = &databaseImpl{}
 
 type Location struct {
 	Path  string `json:"path"`
@@ -48,15 +82,18 @@ func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
 	}
 }
 
-// documentPathRangeID denotes a range qualfied by its containing document.
+// documentPathRangeID denotes a range qualified by its containing document.
 type documentPathRangeID struct {
 	Path    string
 	RangeID types.ID
 }
 
+var ErrUnknownDocument = errors.New("unknown document")
+var ErrUnknownResultChunk = errors.New("unknown result chunk")
+
 // ErrMalformedBundle is returned when a bundle is missing an expected map key.
 type ErrMalformedBundle struct {
-	Filename string // the filename of the malformed SQLite
+	Filename string // the filename of the malformed bundle
 	Name     string // the type of value key should contain
 	Key      string // the missing key
 }
@@ -65,78 +102,38 @@ func (e ErrMalformedBundle) Error() string {
 	return fmt.Sprintf("malformed bundle: unknown %s %s", e.Name, e.Key)
 }
 
-// BundleMeta represents the values in the meta row.
-type BundleMeta struct {
-	// LSIFVersion is the version of the original index.
-	LSIFVersion string
-	// SourcegraphVersion is the version of the worker that processed the bundle.
-	SourcegraphVersion string
-	// NumResultChunks is the number of rows in the resultChunks table.
-	NumResultChunks int
-}
-
-// ReadMeta reads the first row from the meta table of the given database.
-func ReadMeta(db *sqlx.DB) (BundleMeta, error) {
-	var rows []struct {
-		ID                 int    `db:"id"`
-		LSIFVersion        string `db:"lsifVersion"`
-		SourcegraphVersion string `db:"sourcegraphVersion"`
-		NumResultChunks    int    `db:"numResultChunks"`
+// OpenDatabase opens a handle to the bundle file at the given path.
+func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
+	_, _, numResultChunks, err := reader.ReadMeta(ctx)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
 	}
 
-	if err := db.Select(&rows, "SELECT * FROM meta LIMIT 1"); err != nil {
-		return BundleMeta{}, err
-	}
-
-	if len(rows) == 0 {
-		return BundleMeta{}, errors.New("no rows in meta table")
-	}
-
-	return BundleMeta{
-		LSIFVersion:        rows[0].LSIFVersion,
-		SourcegraphVersion: rows[0].SourcegraphVersion,
-		NumResultChunks:    rows[0].NumResultChunks,
+	return &databaseImpl{
+		filename:         filename,
+		documentCache:    documentCache,
+		resultChunkCache: resultChunkCache,
+		reader:           reader,
+		numResultChunks:  numResultChunks,
 	}, nil
 }
 
-// OpenDatabase opens a handle to the SQLite file at the given path.
-func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (*Database, error) {
-	// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
-	db, err := sqlx.Open("sqlite3_with_pcre", filename)
-	if err != nil {
-		return nil, err
-	}
-
-	meta, err := ReadMeta(db)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Database{
-		db:                   db,
-		filename:             filename,
-		documentDataCache:    documentDataCache,
-		resultChunkDataCache: resultChunkDataCache,
-		numResultChunks:      meta.NumResultChunks,
-	}, nil
-}
-
-// Close closes the underlying SQLite handle.
-func (db *Database) Close() error {
-	return db.db.Close()
+// Close closes the underlying reader.
+func (db *databaseImpl) Close() error {
+	return db.reader.Close()
 }
 
 // Exists determines if the path exists in the database.
-func (db *Database) Exists(path string) (bool, error) {
-	_, exists, err := db.getDocumentData(path)
-	return exists, err
+func (db *databaseImpl) Exists(ctx context.Context, path string) (bool, error) {
+	_, exists, err := db.getDocumentData(ctx, path)
+	return exists, pkgerrors.Wrap(err, "db.getDocumentData")
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (db *Database) Definitions(path string, line, character int) ([]Location, error) {
-	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) Definitions(ctx context.Context, path string, line, character int) ([]Location, error) {
+	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
 	for _, r := range ranges {
@@ -144,22 +141,27 @@ func (db *Database) Definitions(path string, line, character int) ([]Location, e
 			continue
 		}
 
-		definitionResults, err := db.getResultByID(r.DefinitionResultID)
+		definitionResults, err := db.getResultByID(ctx, r.DefinitionResultID)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "db.getResultByID")
 		}
 
-		return db.convertRangesToLocations(definitionResults)
+		locations, err := db.convertRangesToLocations(ctx, definitionResults)
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.convertRangesToLocations")
+		}
+
+		return locations, nil
 	}
 
 	return []Location{}, nil
 }
 
 // References returns the set of locations referencing the symbol at the given position.
-func (db *Database) References(path string, line, character int) ([]Location, error) {
-	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) References(ctx context.Context, path string, line, character int) ([]Location, error) {
+	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
 	var allLocations []Location
@@ -168,14 +170,14 @@ func (db *Database) References(path string, line, character int) ([]Location, er
 			continue
 		}
 
-		referenceResults, err := db.getResultByID(r.ReferenceResultID)
+		referenceResults, err := db.getResultByID(ctx, r.ReferenceResultID)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "db.getResultByID")
 		}
 
-		locations, err := db.convertRangesToLocations(referenceResults)
+		locations, err := db.convertRangesToLocations(ctx, referenceResults)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "db.convertRangesToLocations")
 		}
 
 		allLocations = append(allLocations, locations...)
@@ -185,10 +187,10 @@ func (db *Database) References(path string, line, character int) ([]Location, er
 }
 
 // Hover returns the hover text of the symbol at the given position.
-func (db *Database) Hover(path string, line, character int) (string, Range, bool, error) {
-	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error) {
+	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
-		return "", Range{}, false, err
+		return "", Range{}, false, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
 	for _, r := range ranges {
@@ -216,10 +218,10 @@ func (db *Database) Hover(path string, line, character int) (string, Range, bool
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (db *Database) MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error) {
-	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error) {
+	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
 	var monikerData [][]types.MonikerData
@@ -247,47 +249,41 @@ func (db *Database) MonikersByPosition(path string, line, character int) ([][]ty
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (db *Database) MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
-	query := sqlf.Sprintf("SELECT * FROM '"+tableName+"' WHERE scheme = %s AND identifier = %s LIMIT %s OFFSET %s", scheme, identifier, take, skip)
-
-	var rows []struct {
-		ID             int    `db:"id"`
-		Scheme         string `db:"scheme"`
-		Identifier     string `db:"identifier"`
-		DocumentPath   string `db:"documentPath"`
-		StartLine      int    `db:"startLine"`
-		EndLine        int    `db:"endLine"`
-		StartCharacter int    `db:"startCharacter"`
-		EndCharacter   int    `db:"endCharacter"`
+func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
+	// TODO - gross
+	var rows []types.DefinitionReferenceRow
+	var totalCount int
+	var err error
+	if tableName == "definitions" {
+		if rows, totalCount, err = db.reader.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "reader.ReadDefinitions")
+		}
+	} else if tableName == "references" {
+		if rows, totalCount, err = db.reader.ReadReferences(ctx, scheme, identifier, skip, take); err != nil {
+			err = pkgerrors.Wrap(err, "reader.ReadReferences")
+		}
 	}
 
-	if err := db.db.Select(&rows, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
+	if err != nil {
 		return nil, 0, err
 	}
 
 	var locations []Location
 	for _, row := range rows {
 		locations = append(locations, Location{
-			Path:  row.DocumentPath,
+			Path:  row.URI,
 			Range: newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 		})
-	}
-
-	countQuery := sqlf.Sprintf("SELECT COUNT(*) FROM '"+tableName+"' WHERE scheme = %s AND identifier = %s", scheme, identifier)
-
-	var totalCount int
-	if err := db.db.Get(&totalCount, countQuery.Query(sqlf.SimpleBindVar), countQuery.Args()...); err != nil {
-		return nil, 0, err
 	}
 
 	return locations, totalCount, nil
 }
 
 // PackageInformation looks up package information data by identifier.
-func (db *Database) PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
-	documentData, exists, err := db.getDocumentData(path)
+func (db *databaseImpl) PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
+	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
-		return types.PackageInformationData{}, false, err
+		return types.PackageInformationData{}, false, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
 
 	if !exists {
@@ -300,35 +296,50 @@ func (db *Database) PackageInformation(path string, packageInformationID types.I
 
 // getDocumentData fetches and unmarshals the document data or the given path. This method caches
 // document data by a unique key prefixed by the database filename.
-func (db *Database) getDocumentData(path string) (types.DocumentData, bool, error) {
-	documentData, err := db.documentDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
-		query := sqlf.Sprintf("SELECT data FROM documents WHERE path = %s", path)
-
-		var data string
-		if err := db.db.Get(&data, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
-			return types.DocumentData{}, err
+func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
+	cached := true
+	span, ctx := ot.StartSpanFromContext(ctx, "getDocumentData")
+	span.SetTag("filename", db.filename)
+	span.SetTag("path", path)
+	defer func() {
+		span.SetTag("cached", cached)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
+		span.Finish()
+	}()
 
-		return types.UnmarshalDocumentData([]byte(data))
+	documentData, err := db.documentCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
+		cached = false
+
+		data, ok, err := db.reader.ReadDocument(ctx, path)
+		if err != nil {
+			return types.DocumentData{}, pkgerrors.Wrap(err, "reader.ReadDocument")
+		}
+		if !ok {
+			return types.DocumentData{}, ErrUnknownDocument
+		}
+		return data, nil
 	})
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		// TODO - should change cache interface instead
+		if err == ErrUnknownDocument {
 			return types.DocumentData{}, false, nil
 		}
-
 		return types.DocumentData{}, false, err
 	}
 
-	return documentData, true, err
+	return documentData, true, nil
 }
 
 // getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
 // so that earlier ranges properly enclose later ranges.
-func (db *Database) getRangeByPosition(path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
-	documentData, exists, err := db.getDocumentData(path)
+func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
+	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
-		return types.DocumentData{}, nil, false, err
+		return types.DocumentData{}, nil, false, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
 
 	if !exists {
@@ -340,10 +351,10 @@ func (db *Database) getRangeByPosition(path string, line, character int) (types.
 
 // getResultByID fetches and unmarshals a definition or reference result by identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
-	resultChunkData, exists, err := db.getResultChunkByResultID(id)
+func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]documentPathRangeID, error) {
+	resultChunkData, exists, err := db.getResultChunkByResultID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "db.getResultChunkByResultID")
 	}
 
 	if !exists {
@@ -387,32 +398,47 @@ func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
 
 // getResultChunkByResultID fetches and unmarshals the result chunk data with the given identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *Database) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
-	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
-		query := sqlf.Sprintf("SELECT data FROM resultChunks WHERE id = %s", hashKey(id, db.numResultChunks))
-
-		var data string
-		if err := db.db.Get(&data, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
-			return types.ResultChunkData{}, err
+func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.ID) (_ types.ResultChunkData, _ bool, err error) {
+	cached := true
+	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
+	span.SetTag("filename", db.filename)
+	span.SetTag("id", id)
+	defer func() {
+		span.SetTag("cached", cached)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
+		span.Finish()
+	}()
 
-		return types.UnmarshalResultChunkData([]byte(data))
+	resultChunkData, err := db.resultChunkCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
+		cached = false
+
+		data, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))
+		if err != nil {
+			return types.ResultChunkData{}, pkgerrors.Wrap(err, "reader.ReadResultChunk")
+		}
+		if !ok {
+			return types.ResultChunkData{}, ErrUnknownResultChunk
+		}
+		return data, nil
 	})
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		// TODO - should change cache interface instead
+		if err == ErrUnknownResultChunk {
 			return types.ResultChunkData{}, false, nil
 		}
-
 		return types.ResultChunkData{}, false, err
 	}
 
-	return resultChunkData, true, err
+	return resultChunkData, true, nil
 }
 
 // convertRangesToLocations converts pairs of document paths and range identifiers
 // to a list of locations.
-func (db *Database) convertRangesToLocations(resultData []documentPathRangeID) ([]Location, error) {
+func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData []documentPathRangeID) ([]Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.
@@ -430,9 +456,9 @@ func (db *Database) convertRangesToLocations(resultData []documentPathRangeID) (
 
 	var locations []Location
 	for _, path := range paths {
-		documentData, exists, err := db.getDocumentData(path)
+		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
-			return nil, err
+			return nil, pkgerrors.Wrap(err, "db.getDocumentData")
 		}
 
 		if !exists {

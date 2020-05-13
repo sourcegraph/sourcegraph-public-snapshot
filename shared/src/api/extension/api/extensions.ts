@@ -1,4 +1,4 @@
-import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'

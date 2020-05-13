@@ -79,8 +79,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addSharedTests,
 			wait,
-			addCodeCov,
 			addBrowserExtensionReleaseSteps,
+		}
+
+	case c.isBextNightly:
+		// If this is a browser extension nightly build, run the browser-extension tests and
+		// e2e tests.
+		pipelineOperations = []func(*bk.Pipeline){
+			addLint,
+			addBrowserExt,
+			addSharedTests,
+			wait,
+			addBrowserExtensionE2ESteps,
 		}
 
 	case c.isQuick:
@@ -90,13 +100,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
-			addPreciseCodeIntelSystem,
 			addSharedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
-			wait,
-			addCodeCov,
 		}
 
 	default:
@@ -108,19 +115,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c, env),
-			addLint,                   // ~3.5m
-			addWebApp,                 // ~3m
-			addSharedTests,            // ~3m
-			addBrowserExt,             // ~2m
-			addGoTests,                // ~1.5m
-			addPreciseCodeIntelSystem, // ~1.5m
-			addCheck,                  // ~1m
-			addGoBuild,                // ~0.5m
-			addPostgresBackcompat,     // ~0.25m
-			addDockerfileLint,         // ~0.2m
+			addLint,               // ~3.5m
+			addWebApp,             // ~3m
+			addSharedTests,        // ~3m
+			addBrowserExt,         // ~2m
+			addGoTests,            // ~1.5m
+			addCheck,              // ~1m
+			addGoBuild,            // ~0.5m
+			addPostgresBackcompat, // ~0.25m
+			addDockerfileLint,     // ~0.2m
 			addDockerImages(c, false),
 			wait,
-			addCodeCov,
 			addDockerImages(c, true),
 		}
 	}

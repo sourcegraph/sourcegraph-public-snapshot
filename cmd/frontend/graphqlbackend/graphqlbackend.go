@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -26,19 +27,15 @@ import (
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "field_seconds",
-	Help:      "GraphQL field resolver latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_field_seconds",
+	Help:    "GraphQL field resolver latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error", "source", "request_name"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "code_intel_search_seconds",
-	Help:      "Code intel search latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_code_intel_search_seconds",
+	Help:    "Code intel search latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"exact", "error"})
 
 func init() {
@@ -56,6 +53,8 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	if ot.ShouldTrace(ctx) {
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
+
+	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -77,7 +76,7 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 	requestSource := sgtrace.RequestSource(ctx)
 	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
-	if requestName == "unknown" {
+	if !disableLog && requestName == "unknown" {
 		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
@@ -215,7 +214,6 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Mutation", "logUserEvent"}:                {},
 	{"Query", "clientConfiguration"}:            {},
 	{"Query", "currentUser"}:                    {},
-	{"Query", "discussionThreads"}:              {},
 	{"Query", "dotcom"}:                         {},
 	{"Query", "extensionRegistry"}:              {},
 	{"Query", "highlightCode"}:                  {},
@@ -404,16 +402,6 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.Node.(*discussionCommentResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.Node.(*discussionThreadResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.Node.(ProductLicense)
 	return n, ok
@@ -486,6 +474,11 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
+	n, ok := r.Node.(*versionContextResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -533,10 +526,6 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetByID(ctx, id)
 	case "Patch":
 		return r.PatchByID(ctx, id)
-	case "DiscussionComment":
-		return discussionCommentByID(ctx, id)
-	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

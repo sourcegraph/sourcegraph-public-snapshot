@@ -112,11 +112,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/discussions',
-        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
-        exact: true,
-    },
-    {
         path: '/search/scope/:id',
         render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
         exact: true,
@@ -151,6 +146,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
+    },
+    {
+        path: '/views',
+        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
     },
     {
         path: '/:repoRevAndRest+',

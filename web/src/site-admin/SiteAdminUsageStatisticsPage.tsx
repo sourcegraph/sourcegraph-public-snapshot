@@ -234,7 +234,9 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
                 <h2>Usage statistics</h2>
-                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                )}
                 {this.state.stats && (
                     <>
                         <RadioButtons

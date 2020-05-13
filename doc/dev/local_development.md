@@ -1,33 +1,59 @@
+<!-- omit in toc -->
 # Getting started with developing Sourcegraph
 
 Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph).
 
+<!-- omit in toc -->
 ## Outline
 
 - [Environment](#environment)
 - [Step 1: Install dependencies](#step-1-install-dependencies)
+  - [macOS](#macos)
+  - [Ubuntu](#ubuntu)
+  - [(optional) asdf](#optional-asdf)
 - [Step 2: Initialize your database](#step-2-initialize-your-database)
+  - [More info](#more-info)
 - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
 - [Step 4: Get the code](#step-4-get-the-code)
 - [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+  - [Prerequisites](#prerequisites)
+    - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
+    - [Initialize Caddy 2](#initialize-caddy-2)
 - [Step 6: Start the server](#step-6-start-the-server)
 - [Troubleshooting](#troubleshooting)
+    - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
+    - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
+    - [Database migration failures](#database-migration-failures)
+    - [Internal Server Error](#internal-server-error)
+    - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
+    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+    - [Running out of disk space](#running-out-of-disk-space)
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
+  - [Debug TypeScript code](#debug-typescript-code)
+  - [Debug Go code](#debug-go-code)
 - [Go dependency management](#go-dependency-management)
 - [Codegen](#codegen)
 - [Windows support](#windows-support)
 - [Other nice things](#other-nice-things)
+  - [Offline development](#offline-development)
 
 ## Environment
 
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
+<!-- omit in toc -->
+### For Sourcegraph employees
+
+[dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+
 ## Step 1: Install dependencies
 
-Sourcegraph has the following dependencies:
 
+> NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
+
+Sourcegraph has the following dependencies:
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.14 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
@@ -55,10 +81,10 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
@@ -139,16 +165,18 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq
 
-    # install golang-migrate (you must move the extracted binary into your $PATH)
+    # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
 
-    # install comby (you must move the extracted binary into your $PATH)
+    # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
     # nvm (to manage Node.js)
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
+    NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
+    curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
+    sh install-nvm.sh
 
     # in repo dir: install current recommendend version of Node JS
     nvm install
@@ -182,12 +210,15 @@ The following are two recommendations for installing these dependencies:
 
 We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
 
+<!-- omit in toc -->
 #### Install
 
+<!-- omit in toc -->
 ##### asdf binary
 
 See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
 
+<!-- omit in toc -->
 ##### Plugins
 
 sourcegraph/sourcegraph uses the following plugins:
@@ -217,6 +248,7 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
+<!-- omit in toc -->
 #### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
@@ -282,10 +314,12 @@ Migrations are applied automatically.
 
 ## Step 3: (macOS) Start Docker
 
+<!-- omit in toc -->
 #### Option A: Docker for Mac
 
 This is the easy way - just launch Docker.app and wait for it to finish loading.
 
+<!-- omit in toc -->
 #### Option B: docker-machine
 
 The Docker daemon should be running in the background, which you can test by
@@ -435,13 +469,29 @@ If you ever need to wipe your local database and Redis, run the following comman
 ./dev/drop-entire-local-database-and-redis.sh
 ```
 
-### Caddy 2 certificate problems
+#### Caddy 2 certificate problems
 
 We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
 
 1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `caddy reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
+
+#### Running out of disk space
+
+If you see errors similar to this:
+
+```
+gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
+```
+
+You are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
+You can override that by setting this env variable:
+
+```bash
+# means 5%. You may want to put that into .bashrc for convinience
+SRC_REPOS_DESIRED_PERCENT_FREE=5
+```
 
 ## How to Run Tests
 

@@ -3,7 +3,7 @@ package database
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 // findRanges filters the given ranges and returns those that contain the position constructed

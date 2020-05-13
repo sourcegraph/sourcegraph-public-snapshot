@@ -18,9 +18,9 @@ zoekt-webserver-1: ./dev/zoekt/wrapper webserver 1
 keycloak: ./dev/auth-provider/keycloak.sh
 jaeger: ./dev/jaeger.sh
 docsite: ./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
-precise-code-intel-api-server: yarn --cwd cmd/precise-code-intel run run:api-server
-precise-code-intel-bundle-manager: yarn --cwd cmd/precise-code-intel run run:bundle-manager
-precise-code-intel-worker: yarn --cwd cmd/precise-code-intel run run:worker
+precise-code-intel-api-server: precise-code-intel-api-server
+precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
+precise-code-intel-worker: precise-code-intel-worker
 prometheus: ./dev/prometheus.sh
 grafana: ./dev/grafana.sh
 postgres_exporter: ./dev/postgres_exporter.sh

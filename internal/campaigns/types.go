@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -436,6 +435,19 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Metadata = c
 					events = append(events, &ev)
 				}
+
+			case *github.ReviewRequestedEvent:
+				// If the reviewer of a ReviewRequestedEvent has been deleted,
+				// the fields are blank and we cannot match the event to an
+				// entry in the database and/or reliably use it, so we drop it.
+				if e.ReviewerDeleted() {
+					continue
+				}
+				ev.Key = e.Key()
+				ev.Kind = ChangesetEventKindFor(e)
+				ev.Metadata = e
+				events = append(events, &ev)
+
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
@@ -613,6 +625,14 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 			return "", errors.New("activity user is blank")
 		}
 		return username, nil
+
+	case *bitbucketserver.ParticipantStatusEvent:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -644,7 +664,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		return s, nil
 
 	case ChangesetEventKindGitHubReviewDismissed,
-		ChangesetEventKindBitbucketServerUnapproved:
+		ChangesetEventKindBitbucketServerUnapproved,
+		ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -701,6 +722,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *github.CheckRun:
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
+		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.ParticipantStatusEvent:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
@@ -1006,6 +1029,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Commit = o.Commit
 		}
 
+	case *bitbucketserver.ParticipantStatusEvent:
+		o := o.Metadata.(*bitbucketserver.ParticipantStatusEvent)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
 	case *bitbucketserver.CommitStatus:
 		o := o.Metadata.(*bitbucketserver.CommitStatus)
 		// We always get the full event, so safe to replace it
@@ -1154,6 +1192,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.ParticipantStatusEvent:
+		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
 	default:
@@ -1169,6 +1209,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:
 			return new(bitbucketserver.CommitStatus), nil
+		case ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
+			return new(bitbucketserver.ParticipantStatusEvent), nil
 		default:
 			return new(bitbucketserver.Activity), nil
 		}
@@ -1252,6 +1294,8 @@ const (
 	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
+
+	ChangesetEventKindBitbucketServerParticipationStatusUnapproved ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset

@@ -42,7 +42,7 @@ http {
     ...
     server {
         listen 7080;
-        return 301 https://$host:7433$request_uri;
+        return 301 https://$host:7443$request_uri;
     }
 
     server {

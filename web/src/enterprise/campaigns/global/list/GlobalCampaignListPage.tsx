@@ -5,7 +5,7 @@ import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode, CampaignNodeCampaign } from '../../list/CampaignNode'
+import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 import { Observable } from 'rxjs'
 
@@ -79,9 +79,10 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
             </div>
 
             {typeof totalCount === 'number' && totalCount > 0 && (
-                <FilteredConnection<CampaignNodeCampaign>
+                <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
                     {...props}
                     nodeComponent={CampaignNode}
+                    nodeComponentProps={{ history: props.history }}
                     queryConnection={queryCampaigns}
                     hideSearch={true}
                     filters={FILTERS}

@@ -80,7 +80,7 @@ export function createLsifRouter(
     }
 
     interface UploadResponse {
-        id: number
+        id: string
     }
 
     router.post(
@@ -111,9 +111,7 @@ export function createLsifRouter(
                         // Add upload record
                         const uploadId = await uploadManager.enqueue(
                             { repositoryId, commit, root, indexer },
-                            entityManager,
-                            tracer,
-                            ctx.span
+                            entityManager
                         )
 
                         // Upload the payload file where it can be found by the worker
@@ -132,7 +130,7 @@ export function createLsifRouter(
                     // Upload conversion will complete asynchronously, send an accepted response
                     // with the upload id so that the client can continue to track the progress
                     // asynchronously.
-                    res.status(202).send({ id })
+                    res.status(202).send({ id: `${id}` })
                 } finally {
                     // Remove local file
                     await fs.unlink(filename)

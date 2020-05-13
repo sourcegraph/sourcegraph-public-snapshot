@@ -2,11 +2,10 @@ package proxy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -32,14 +31,17 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
 		commit := q.Get("commit")
-		root := q.Get("root")
-		indexerName := q.Get("indexerName")
 		ctx := r.Context()
 
 		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
 		if !ok {
 			return
 		}
+
+		// translate repository id to something that the precise-code-intel-api-server
+		// can reconcile in the database
+		q.Del("repository")
+		q.Set("repositoryId", fmt.Sprintf("%d", repo.ID))
 
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
@@ -52,39 +54,27 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			}
 		}
 
-		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
-			RepoID      api.RepoID
-			Commit      api.CommitID
-			Root        string
-			IndexerName string
-			Body        io.ReadCloser
-		}{
-			RepoID:      repo.ID,
-			Commit:      api.CommitID(commit),
-			Root:        root,
-			IndexerName: indexerName,
-			Body:        r.Body,
-		})
-
+		host, err := client.SelectRandomHost()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Return id as a string to maintain backwards compatibility with src-cli
-		payload, err := json.Marshal(map[string]string{"id": strconv.FormatInt(uploadID, 10)})
+		proxyReq, err := makeUploadRequest(host, q, r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if queued {
-			w.WriteHeader(http.StatusAccepted)
-		} else {
-			w.WriteHeader(http.StatusOK)
+		proxyResp, err := client.DefaultClient.RawRequest(ctx, proxyReq)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		defer proxyResp.Body.Close()
 
-		_, _ = w.Write(payload)
+		w.WriteHeader(proxyResp.StatusCode)
+		_, _ = io.Copy(w, proxyResp.Body)
 	}
 }
 
@@ -145,4 +135,14 @@ func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, re
 
 	http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
 	return false
+}
+
+func makeUploadRequest(host string, q url.Values, body io.Reader) (*http.Request, error) {
+	url, err := url.Parse(fmt.Sprintf("%s/upload", host))
+	if err != nil {
+		return nil, err
+	}
+	url.RawQuery = q.Encode()
+
+	return http.NewRequest("POST", url.String(), body)
 }

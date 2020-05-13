@@ -177,8 +177,10 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
 
-                {isErrorLike(this.state.userOrError) && <ErrorAlert error={this.state.userOrError.message} />}
-                {this.state.error && <ErrorAlert error={this.state.error.message} />}
+                {isErrorLike(this.state.userOrError) && (
+                    <ErrorAlert error={this.state.userOrError.message} history={this.props.history} />
+                )}
+                {this.state.error && <ErrorAlert error={this.state.error.message} history={this.props.history} />}
                 {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
                     <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                         <div className="form-group">

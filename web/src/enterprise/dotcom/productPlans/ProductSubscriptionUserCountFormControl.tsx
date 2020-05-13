@@ -12,6 +12,16 @@ interface Props {
 }
 
 /**
+ * The minimum user count.
+ */
+export const MIN_USER_COUNT = 25
+
+/**
+ * The step size by which to increment/decrement user count.
+ */
+const USER_COUNT_STEP = 25
+
+/**
  * Displays a form control for inputting the user count for a product subscription.
  */
 export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Props> = ({
@@ -38,12 +48,12 @@ export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Pr
                     id="product-subscription-user-count-control__userCount"
                     type="number"
                     className="form-control w-auto"
-                    min={1}
-                    step={1}
+                    min={MIN_USER_COUNT}
+                    step={USER_COUNT_STEP}
                     max={50000}
                     required={true}
                     disabled={disabled}
-                    value={value === null ? '' : value}
+                    value={value || ''}
                     onChange={onUserCountChange}
                 />
             </div>

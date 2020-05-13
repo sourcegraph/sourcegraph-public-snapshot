@@ -172,6 +172,18 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
+func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+	state := campaigns.ChangesetStateOpen
+	return &changesetsConnectionResolver{
+		store: r.store,
+		opts: ee.ListChangesetsOpts{
+			CampaignID:    r.Campaign.ID,
+			ExternalState: &state,
+			Limit:         -1,
+		},
+	}, nil
+}
+
 func (r *campaignResolver) Patches(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
@@ -236,12 +248,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		return resolvers, err
 	}
 
-	events := make([]ee.Event, len(es))
-	for i, e := range es {
-		events[i] = e
-	}
-
-	counts, err := ee.CalcCounts(start, end, cs, events...)
+	counts, err := ee.CalcCounts(start, end, cs, es...)
 	if err != nil {
 		return resolvers, err
 	}
@@ -278,6 +285,51 @@ func (r *campaignResolver) RepositoryDiffs(
 		},
 	}
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
+}
+
+func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	changesetsConnection := &changesetsConnectionResolver{
+		store: r.store,
+		opts: ee.ListChangesetsOpts{
+			CampaignID: r.Campaign.ID,
+			Limit:      -1, // Get all changesets
+		},
+	}
+
+	changesetDiffs := &changesetDiffsConnectionResolver{changesetsConnection}
+	repoComparisons, err := changesetDiffs.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	totalStat := &graphqlbackend.DiffStat{}
+
+	for _, repoComp := range repoComparisons {
+		fileDiffs := repoComp.FileDiffs(&graphqlutil.ConnectionArgs{})
+		s, err := fileDiffs.DiffStat(ctx)
+		if err != nil {
+			return nil, err
+		}
+		totalStat.AddDiffStat(s)
+	}
+
+	// We don't have a patch set, so we don't have patches and can return
+	if r.Campaign.PatchSetID == 0 {
+		return totalStat, nil
+	}
+
+	patchSetStat, err := patchSetDiffStat(ctx, r.store, ee.ListPatchesOpts{
+		PatchSetID:                r.Campaign.PatchSetID,
+		Limit:                     -1, // Fetch all patches in a patch set
+		OnlyWithDiff:              true,
+		OnlyUnpublishedInCampaign: r.Campaign.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	totalStat.AddDiffStat(patchSetStat)
+
+	return totalStat, nil
 }
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {

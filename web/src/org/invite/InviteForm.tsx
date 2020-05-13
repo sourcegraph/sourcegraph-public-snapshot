@@ -15,6 +15,7 @@ import { DismissibleAlert } from '../../components/DismissibleAlert'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 function inviteUserToOrganization(
     username: string,
@@ -103,6 +104,7 @@ interface Props {
     onDidUpdateOrganizationMembers: () => void
 
     onOrganizationUpdate: () => void
+    history: H.History
 }
 
 interface SubmittedInvite extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'invitationURL'> {
@@ -331,7 +333,9 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         />
                         /* eslint-enable react/jsx-no-bind */
                     ))}
-                {this.state.error && <ErrorAlert className="invite-form__alert" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="invite-form__alert" error={this.state.error} history={this.props.history} />
+                )}
             </div>
         )
     }

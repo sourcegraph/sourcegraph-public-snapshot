@@ -7,13 +7,15 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { toArray, map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { hasProperty } from '../../../../shared/src/util/types'
+import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -26,6 +28,7 @@ export interface MonacoQueryInputProps
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -53,9 +56,7 @@ function addSouregraphSearchCodeIntelligence(
     monaco.languages.register({ id: SOURCEGRAPH_SEARCH })
 
     // Register providers
-    const providers = getProviders(searchQueries, patternTypes, (query: string) =>
-        fetchSuggestions(query).pipe(toArray())
-    )
+    const providers = getProviders(searchQueries, patternTypes, fetchSuggestions)
     subscriptions.add(toUnsubscribable(monaco.languages.setTokensProvider(SOURCEGRAPH_SEARCH, providers.tokens)))
     subscriptions.add(toUnsubscribable(monaco.languages.registerHoverProvider(SOURCEGRAPH_SEARCH, providers.hover)))
     subscriptions.add(
@@ -171,26 +172,29 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             cursorWidth: 1,
         }
         return (
-            <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
-                <div className="flex-1">
-                    <MonacoEditor
-                        id="monaco-query-input"
-                        language={SOURCEGRAPH_SEARCH}
-                        value={this.props.queryState.query}
-                        height={16}
-                        isLightTheme={this.props.isLightTheme}
-                        editorWillMount={this.editorWillMount}
-                        onEditorCreated={this.onEditorCreated}
-                        options={options}
-                        border={false}
+            <>
+                <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
+                    <div className="flex-1">
+                        <MonacoEditor
+                            id="monaco-query-input"
+                            language={SOURCEGRAPH_SEARCH}
+                            value={this.props.queryState.query}
+                            height={16}
+                            isLightTheme={this.props.isLightTheme}
+                            editorWillMount={this.editorWillMount}
+                            onEditorCreated={this.onEditorCreated}
+                            options={options}
+                            border={false}
+                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                        />
+                    </div>
+                    <Toggles
+                        {...this.props}
+                        navbarSearchQuery={this.props.queryState.query}
+                        className="monaco-query-input-container__toggle-container"
                     />
                 </div>
-                <Toggles
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__toggle-container"
-                />
-            </div>
+            </>
         )
     }
 

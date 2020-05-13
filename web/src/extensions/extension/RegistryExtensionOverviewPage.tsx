@@ -14,9 +14,11 @@ import { EventLogger } from '../../tracking/eventLogger'
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionREADME } from './RegistryExtensionREADME'
+import * as H from 'history'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {
     eventLogger: Pick<EventLogger, 'logViewEvent'>
+    history: H.History
 }
 
 /** A page that displays overview information about a registry extension. */
@@ -57,7 +59,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
             <div className="registry-extension-overview-page d-flex flex-wrap">
                 <PageTitle title={this.props.extension.id} />
                 <div className="registry-extension-overview-page__readme mr-3">
-                    <ExtensionREADME extension={this.props.extension} />
+                    <ExtensionREADME extension={this.props.extension} history={this.props.history} />
                 </div>
                 <aside className="registry-extension-overview-page__sidebar">
                     {categories && (

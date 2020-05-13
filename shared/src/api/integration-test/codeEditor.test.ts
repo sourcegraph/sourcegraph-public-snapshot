@@ -1,25 +1,25 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
-import { distinctUntilChanged, first, switchMap, take, toArray } from 'rxjs/operators'
+import { distinctUntilChanged, first, switchMap, take, toArray, filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { isDefined } from '../../util/types'
+import { isDefined, isTaggedUnionMember } from '../../util/types'
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
     describe('selection', () => {
         test('observe changes', async () => {
             const {
-                services: { editor: editorService },
+                services: { viewer: viewerService },
                 extensionAPI,
             } = await integrationTestContext()
-            const editor = editorService.editors.get('editor#0')!
-            editorService.setSelections(editor, [new Selection(1, 2, 3, 4)])
-            editorService.setSelections(editor, [])
+            const editor = viewerService.viewers.get('viewer#0')!
+            viewerService.setSelections(editor, [new Selection(1, 2, 3, 4)])
+            viewerService.setSelections(editor, [])
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(
-                    switchMap(c => (c ? c.selectionsChanges : [])),
+                    switchMap(c => (c && c.type === 'CodeEditor' ? c.selectionsChanges : [])),
                     distinctUntilChanged(),
                     take(3),
                     toArray()
@@ -193,7 +193,9 @@ async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sou
         .pipe(
             first(isDefined),
             switchMap(win => win.activeViewComponentChanges),
-            first(isDefined)
+            filter(isDefined),
+            filter(isTaggedUnionMember('type', 'CodeEditor' as const)),
+            take(1)
         )
         .toPromise()
 }

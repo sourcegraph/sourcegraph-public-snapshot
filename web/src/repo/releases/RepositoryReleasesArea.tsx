@@ -10,6 +10,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 import { ErrorMessage } from '../../components/alerts'
+import * as H from 'history'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -23,6 +24,7 @@ interface Props
     extends RouteComponentProps<{}>,
         Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'> {
     repo: GQL.IRepository
+    history: H.History
 }
 
 interface State {
@@ -54,7 +56,11 @@ export class RepositoryReleasesArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         if (this.state.error) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
+                />
             )
         }
 

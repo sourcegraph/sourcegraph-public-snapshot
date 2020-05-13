@@ -11,10 +11,12 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
     authenticatedUser: GQL.IUser
+    history: H.History
 }
 
 interface State {
@@ -97,7 +99,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     </div>
                 ) : (
                     <>
-                        {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                        {this.state.error && (
+                            <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                        )}
                         {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
                         <Form onSubmit={this.handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}

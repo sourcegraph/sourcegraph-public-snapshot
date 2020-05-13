@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -23,6 +23,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
      * authenticated user and this page is accessed at /subscriptions/new.
      */
     user: GQL.IUser | null
+    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -83,9 +84,10 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                 onSubmit={nextCreation}
                 submissionState={creation}
                 primaryButtonText="Buy subscription"
+                primaryButtonTextNoPaymentRequired="Create subscription"
                 afterPrimaryButton={
                     <small className="form-text text-muted">
-                        Your license key will be available immediately after payment.
+                        Your license key will be available immediately.
                         <br />
                         <br />
                         <Link to="/terms" target="_blank">
@@ -97,6 +99,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                         </Link>
                     </small>
                 }
+                history={history}
             />
         </div>
     )
@@ -142,7 +145,7 @@ function createPaidProductSubscription(
             mutation CreatePaidProductSubscription(
                 $accountID: ID!
                 $productSubscription: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     createPaidProductSubscription(

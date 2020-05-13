@@ -37,6 +37,7 @@ import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
+import * as H from 'history'
 
 /** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
@@ -91,6 +92,7 @@ interface RepoRevContainerProps
 
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
+    history: H.History
 }
 
 interface RepoRevContainerState {}
@@ -206,7 +208,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.props.resolvedRevOrError} />}
+                    subtitle={<ErrorMessage error={this.props.resolvedRevOrError} history={this.props.history} />}
                 />
             )
         }

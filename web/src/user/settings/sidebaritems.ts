@@ -29,5 +29,12 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/tokens',
             condition: () => window.context.accessTokensAllow !== 'none',
         },
+        {
+            label: 'Permissions',
+            to: '/permissions',
+            exact: true,
+            condition: ({ authenticatedUser }) =>
+                !!(window.context.site['permissions.backgroundSync']?.enabled && authenticatedUser.siteAdmin),
+        },
     ],
 }

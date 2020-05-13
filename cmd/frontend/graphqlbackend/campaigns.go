@@ -211,6 +211,7 @@ type CampaignResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
+	OpenChangesets(ctx context.Context) (ExternalChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	PatchSet(ctx context.Context) (PatchSetResolver, error)
@@ -218,6 +219,7 @@ type CampaignResolver interface {
 	ClosedAt() *DateTime
 	PublishedAt(ctx context.Context) (*DateTime, error)
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type CampaignsConnectionResolver interface {
@@ -312,6 +314,7 @@ type PatchSetResolver interface {
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
 
 	PreviewURL() string
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type PreviewFileDiff interface {

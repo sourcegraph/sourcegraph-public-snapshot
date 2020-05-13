@@ -8,8 +8,6 @@ import {
     distinctUntilChanged,
     switchMap,
     map,
-    filter,
-    toArray,
     catchError,
     debounceTime,
     takeUntil,
@@ -190,22 +188,27 @@ export class FilterInput extends React.Component<Props, State> {
 
                         fullQuery = formatInteractiveQueryForFuzzySearch(fullQuery, filterType, inputValue)
                         const suggestions = fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
-                            filter(isDefined),
-                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => {
-                                // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
-                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                        case FilterType.repohasfile:
-                                            return suggestion.type === FilterType.file
-                                        default:
-                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
-                                    }
-                                }
-                                return true
-                            }),
-                            toArray(),
+                            map((suggestions): Suggestion[] =>
+                                suggestions
+                                    .map(createSuggestion)
+                                    .filter(isDefined)
+                                    .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
+                                    .filter(suggestion => {
+                                        // Only show fuzzy-suggestions that are relevant to the typed filter
+                                        if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                            switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                                case FilterType.repohasfile:
+                                                    return suggestion.type === FilterType.file
+                                                default:
+                                                    return (
+                                                        suggestion.type ===
+                                                        filterAndValueBeforeCursor.resolvedFilterType
+                                                    )
+                                            }
+                                        }
+                                        return true
+                                    })
+                            ),
                             map(suggestions => ({
                                 suggestions: {
                                     values: suggestions,

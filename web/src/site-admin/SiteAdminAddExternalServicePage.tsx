@@ -113,7 +113,10 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         </div>
                         <div className="alert alert-warning">
                             <h4>Warning</h4>
-                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                            <Markdown
+                                dangerousInnerHTML={renderMarkdown(createdExternalService.warning)}
+                                history={this.props.history}
+                            />
                         </div>
                     </div>
                 ) : (

@@ -68,7 +68,7 @@ exports[`CampaignCLIHelp renders 1`] = `
 $ <span class=\\"hljs-built_in\\">export</span> SRC_ENDPOINT=http://localhost
 
 <span class=\\"hljs-comment\\"># Download the src binary for macOS:</span>
-$ curl -L <span class=\\"hljs-variable\\">$SRC_ENDPOINT</span>/.api/src-cli/src_dawin_amd64 -o /usr/<span class=\\"hljs-built_in\\">local</span>/bin/src
+$ curl -L <span class=\\"hljs-variable\\">$SRC_ENDPOINT</span>/.api/src-cli/src_darwin_amd64 -o /usr/<span class=\\"hljs-built_in\\">local</span>/bin/src
 <span class=\\"hljs-comment\\"># Download the src binary for Linux:</span>
 $ curl -L <span class=\\"hljs-variable\\">$SRC_ENDPOINT</span>/.api/src-cli/src_linux_amd64 -o /usr/<span class=\\"hljs-built_in\\">local</span>/bin/src
 

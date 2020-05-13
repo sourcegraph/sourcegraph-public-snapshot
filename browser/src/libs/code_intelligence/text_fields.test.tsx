@@ -2,7 +2,7 @@ import { uniqueId, noop } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
-import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditor } from '../../../../shared/src/api/client/services/viewerService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -40,7 +40,7 @@ describe('text_fields', () => {
         }
 
         test('detects addition and removal of text fields', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
             const textFieldElement = createTestElement()
             textFieldElement.id = 'text-field'
             textFieldElement.value = 'abc'
@@ -62,10 +62,10 @@ describe('text_fields', () => {
 
             // Add text field.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect([...services.editor.editors.values()]).toEqual([
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect([...services.viewer.viewers.values()]).toEqual([
                 {
-                    editorId: 'editor#0',
+                    viewerId: 'viewer#0',
                     isActive: true,
                     resource: 'comment://0',
                     selections: [
@@ -84,8 +84,8 @@ describe('text_fields', () => {
             // Remove text field.
             textFieldElement.remove()
             mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
-            await from(services.editor.editorUpdates).pipe(first()).toPromise()
-            expect(services.editor.editors.size).toEqual(0)
+            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            expect(services.viewer.viewers.size).toEqual(0)
         })
     })
 })

@@ -26,7 +26,8 @@ indexserver)
         -index "$index" \
         -hostname "localhost:$webport" \
         -interval 1m \
-        -listen ":$indexport"
+        -listen ":$indexport" \
+        -cpu_fraction 0.25
     ;;
 
 webserver)

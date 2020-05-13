@@ -28,7 +28,8 @@ export function getDiffFileName(container: HTMLElement): { headFilePath: string;
         }
         // On commit code views, or code views on a PR's files tab,
         // find the link contained in the .file-info element.
-        const link = fileInfoElement.querySelector<HTMLElement>('a')
+        // It is located right of the diffstat (makes sure to not match the code owner link on PRs left of the diffstat).
+        const link = fileInfoElement.querySelector<HTMLAnchorElement>('.diffstat + a')
         if (link) {
             return getPathNamesFromElement(link)
         }
@@ -185,15 +186,14 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  * Implementation details:
  *
- * - This scrapes the file path from the permalink on GitHub blob pages:
+ * This scrapes the file path from the permalink on GitHub blob pages:
+ * ```html
+ * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
+ * ```
  *
- *     <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
- *
- * - We can't get the file path from the URL because the branch name can contain
- *   slashes which make the boundary between the branch name and file path
- *   ambiguous. For example:
- *
- *     https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
+ * We can't get the file path from the URL because the branch name can contain
+ * slashes which make the boundary between the branch name and file path
+ * ambiguous. For example: https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
  *
  * TODO ideally, this should only scrape the code view itself.
  */

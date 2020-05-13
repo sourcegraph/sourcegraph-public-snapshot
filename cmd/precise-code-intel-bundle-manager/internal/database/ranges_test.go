@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 func TestFindRanges(t *testing.T) {

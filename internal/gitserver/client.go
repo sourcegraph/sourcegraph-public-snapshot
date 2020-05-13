@@ -274,10 +274,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 }
 
 var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "client_deadline_exceeded",
-	Help:      "Times that Client.sendExec() returned context.DeadlineExceeded",
+	Name: "src_gitserver_client_deadline_exceeded",
+	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
 func init() {

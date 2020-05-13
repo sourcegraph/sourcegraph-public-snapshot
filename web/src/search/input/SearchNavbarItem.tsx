@@ -9,6 +9,7 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 
 interface Props
     extends ActivationProps,
@@ -55,6 +56,7 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
                         {...this.props}
                         value={this.props.navbarSearchState}
                         autoFocus={this.props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
+                        keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                         hasGlobalQueryBehavior={true}
                     />
                 )}

@@ -19,9 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel/api-server",
-	"precise-code-intel/bundle-manager",
-	"precise-code-intel/worker",
+	"precise-code-intel-api-server",
+	"precise-code-intel-bundle-manager",
+	"precise-code-intel-worker",
 
 	// Images under docker-images/
 	"grafana",
@@ -65,7 +65,7 @@ func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -85,7 +85,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
 		bk.Cmd("dev/ci/yarn-test.sh web"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
 // Builds and tests the browser extension.
@@ -97,14 +97,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
-		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
-}
-
-// Tests the precise code intel system.
-func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.ArtifactPaths("cmd/precise-code-intel/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -112,7 +105,7 @@ func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 
 	// Storybook
 	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
@@ -128,7 +121,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.ArtifactPaths("coverage.txt"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -144,16 +137,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
-// Code coverage.
-func addCodeCov(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -F unit"))
-}
-
-// Release the browser extension.
-func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
@@ -165,10 +149,15 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
+			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts ./src/e2e/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
+}
+
+// Release the browser extension.
+func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
+	addBrowserExtensionE2ESteps(pipeline)
 
 	pipeline.AddWait()
 
@@ -202,10 +191,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests for renovate and release branches
+	// Run e2e tests for release branches
 	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",

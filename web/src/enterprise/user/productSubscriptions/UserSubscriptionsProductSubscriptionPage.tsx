@@ -19,12 +19,14 @@ import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
     user: Pick<GQL.IUser, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
+    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -38,6 +40,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
         params: { subscriptionUUID },
     },
     _queryProductSubscription = queryProductSubscription,
+    history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
@@ -74,7 +77,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
             {productSubscription === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+                <ErrorAlert className="my-2" error={productSubscription} history={history} />
             ) : (
                 <>
                     <h2>Subscription {productSubscription.name}</h2>

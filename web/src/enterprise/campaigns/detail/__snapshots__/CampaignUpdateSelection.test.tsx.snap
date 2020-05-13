@@ -64,6 +64,36 @@ exports[`CampaignUpdateSelection renders with URL param 1`] = `
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {
+        "history": Object {
+          "action": "POP",
+          "block": [Function],
+          "canGo": [Function],
+          "createHref": [Function],
+          "entries": Array [
+            Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/campaigns/update",
+              "search": "?patchSet=123",
+              "state": undefined,
+            },
+          ],
+          "go": [Function],
+          "goBack": [Function],
+          "goForward": [Function],
+          "index": 0,
+          "length": 1,
+          "listen": [Function],
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/campaigns/update",
+            "search": "?patchSet=123",
+            "state": undefined,
+          },
+          "push": [Function],
+          "replace": [Function],
+        },
         "selection": Object {
           "buttonLabel": "Preview",
           "enabled": true,

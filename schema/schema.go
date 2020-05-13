@@ -405,6 +405,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// VersionContexts description: JSON array of version context configuration
+	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -901,8 +903,6 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
-	// SearchUpperCase description: When active, any upper case characters in the pattern will make the entire query case-sensitive.
-	SearchUpperCase *bool `json:"search.UpperCase,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
@@ -917,10 +917,14 @@ type Settings struct {
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
+	// SearchUppercase description: When active, any uppercase characters in the pattern will make the entire query case-sensitive.
+	SearchUppercase *bool `json:"search.uppercase,omitempty"`
 }
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// CodeInsights description: Enables code insights on directory pages.
+	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
@@ -993,7 +997,7 @@ type SiteConfiguration struct {
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
-	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`.
+	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
@@ -1059,6 +1063,24 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VersionContext description: Configuration of the version context
+type VersionContext struct {
+	// Description description: Description of the version context
+	Description string `json:"description,omitempty"`
+	// Name description: Name of the version context, it must be unique.
+	Name string `json:"name"`
+	// Revisions description: List of repositories of the version context
+	Revisions []*VersionContextRevision `json:"revisions"`
+}
+
+// VersionContextRevision description: Description of the chosen repository and revision
+type VersionContextRevision struct {
+	// Ref description: Branch, tag, or commit hash
+	Ref string `json:"ref"`
+	// Repo description: Repository name
+	Repo string `json:"repo"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"

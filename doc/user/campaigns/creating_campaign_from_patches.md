@@ -80,7 +80,7 @@ This command is going to:
 
 (See "[Actions](./actions.md)" for more information about how actions are executed.)
 
-The output, a set of patches, can either be saved into a file by redirecting it:
+The output, a set of patches, can be saved into a file by redirecting it:
 
 ```
 src actions exec -f action.json > patches.json

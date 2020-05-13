@@ -18,12 +18,13 @@ const zeroUpload: pgModels.LsifUpload = {
     root: '',
     indexer: '',
     state: 'queued',
+    numParts: 1,
+    uploadedParts: [0],
     uploadedAt: new Date(),
     startedAt: null,
     finishedAt: null,
     failureSummary: null,
     failureStacktrace: null,
-    tracingContext: '',
     visibleAtTip: false,
 }
 

@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'

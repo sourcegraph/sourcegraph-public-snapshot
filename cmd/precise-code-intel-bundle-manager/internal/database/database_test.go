@@ -1,10 +1,14 @@
 package database
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
@@ -23,9 +27,9 @@ func TestDatabaseExists(t *testing.T) {
 		{"missing.go", false},
 	}
 
-	db := testOpenTestDatabase(t)
+	db := openTestDatabase(t)
 	for _, testCase := range testCases {
-		if exists, err := db.Exists(testCase.path); err != nil {
+		if exists, err := db.Exists(context.Background(), testCase.path); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if exists != testCase.expected {
 			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
@@ -37,8 +41,8 @@ func TestDatabaseDefinitions(t *testing.T) {
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
 
-	db := testOpenTestDatabase(t)
-	if actual, err := db.Definitions("cmd/lsif-go/main.go", 110, 22); err != nil {
+	db := openTestDatabase(t)
+	if actual, err := db.Definitions(context.Background(), "cmd/lsif-go/main.go", 110, 22); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -64,8 +68,8 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
 	//                              ^^^^^^^^^
 
-	db := testOpenTestDatabase(t)
-	if actual, err := db.References("protocol/writer.go", 85, 20); err != nil {
+	db := openTestDatabase(t)
+	if actual, err := db.References(context.Background(), "protocol/writer.go", 85, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -92,8 +96,8 @@ func TestDatabaseHover(t *testing.T) {
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`
 	//                     ^^^^^^^^^^^^
 
-	db := testOpenTestDatabase(t)
-	if actualText, actualRange, exists, err := db.Hover("internal/index/indexer.go", 628, 20); err != nil {
+	db := openTestDatabase(t)
+	if actualText, actualRange, exists, err := db.Hover(context.Background(), "internal/index/indexer.go", 628, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no hover found")
@@ -117,8 +121,8 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
 
-	db := testOpenTestDatabase(t)
-	if actual, err := db.MonikersByPosition("protocol/protocol.go", 92, 10); err != nil {
+	db := openTestDatabase(t)
+	if actual, err := db.MonikersByPosition(context.Background(), "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := [][]types.MonikerData{
@@ -203,9 +207,9 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		{"references", "gomod", "github.com/slimsag/godocmd:ToMarkdown", 0, 100, markdownLocations, 1},
 	}
 
-	db := testOpenTestDatabase(t)
+	db := openTestDatabase(t)
 	for i, testCase := range testCases {
-		if actual, totalCount, err := db.MonikerResults(testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
+		if actual, totalCount, err := db.MonikerResults(context.Background(), testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
 			t.Fatalf("unexpected error for test case #%d: %s", i, err)
 		} else {
 			if totalCount != testCase.expectedTotalCount {
@@ -220,8 +224,8 @@ func TestDatabaseMonikerResults(t *testing.T) {
 }
 
 func TestDatabasePackageInformation(t *testing.T) {
-	db := testOpenTestDatabase(t)
-	if actual, exists, err := db.PackageInformation("protocol/protocol.go", types.ID("213")); err != nil {
+	db := openTestDatabase(t)
+	if actual, exists, err := db.PackageInformation(context.Background(), "protocol/protocol.go", types.ID("213")); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
@@ -237,26 +241,31 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func testOpenTestDatabase(t *testing.T) *Database {
-	db, err := openTestDatabase()
+func openTestDatabase(t *testing.T) Database {
+	filename := "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db"
+
+	// TODO - rewrite test not to require actual reader
+	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
+	if err != nil {
+		t.Fatalf("unexpected error creating reader: %s", err)
+	}
+
+	documentCache, _, err := NewDocumentCache(1)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
+	resultChunkCache, _, err := NewResultChunkCache(1)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
+	db, err := OpenDatabase(context.Background(), filename, reader, documentCache, resultChunkCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 	t.Cleanup(func() { _ = db.Close })
 
-	return db
-}
-
-func openTestDatabase() (*Database, error) {
-	documentDataCache, err := NewDocumentDataCache(1)
-	if err != nil {
-		return nil, err
-	}
-
-	resultChunkDataCache, err := NewResultChunkDataCache(1)
-	if err != nil {
-		return nil, err
-	}
-
-	return OpenDatabase("../../testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
+	// Wrap in observed, as that's how it's used in production
+	return NewObserved(db, &observation.TestContext)
 }

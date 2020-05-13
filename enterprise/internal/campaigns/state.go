@@ -21,17 +21,24 @@ func SetDerivedState(c *cmpgn.Changeset, es []*cmpgn.ChangesetEvent) {
 	copy(events, es)
 	sort.Sort(events)
 
-	if state, err := ComputeChangesetState(c, events); err != nil {
+	c.ExternalCheckState = ComputeCheckState(c, events)
+
+	history, err := computeHistory(c, events)
+	if err != nil {
+		log15.Warn("Computing changeset history", "err", err)
+		return
+	}
+
+	if state, err := ComputeChangesetState(c, history); err != nil {
 		log15.Warn("Computing changeset state", "err", err)
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := ComputeReviewState(c, events); err != nil {
+	if state, err := ComputeReviewState(c, history); err != nil {
 		log15.Warn("Computing changeset review state", "err", err)
 	} else {
 		c.ExternalReviewState = state
 	}
-	c.ExternalCheckState = ComputeCheckState(c, events)
 }
 
 // ComputeCheckState computes the overall check state based on the current synced check state
@@ -50,37 +57,38 @@ func ComputeCheckState(c *cmpgn.Changeset, events ChangesetEvents) cmpgn.Changes
 
 // ComputeChangesetState computes the overall state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeChangesetState(c *cmpgn.Changeset, events ChangesetEvents) (cmpgn.ChangesetState, error) {
-	if len(events) == 0 {
+func ComputeChangesetState(c *cmpgn.Changeset, history []changesetStatesAtTime) (cmpgn.ChangesetState, error) {
+	if len(history) == 0 {
 		return computeSingleChangesetState(c)
 	}
-	newestEvent := events[len(events)-1]
-	if c.UpdatedAt.After(newestEvent.Timestamp()) {
+	newestDataPoint := history[len(history)-1]
+	if c.UpdatedAt.After(newestDataPoint.t) {
 		return computeSingleChangesetState(c)
 	}
-	return events.State(), nil
+	return newestDataPoint.state, nil
 }
 
 // ComputeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
-func ComputeReviewState(c *cmpgn.Changeset, events ChangesetEvents) (cmpgn.ChangesetReviewState, error) {
-	if len(events) == 0 {
+func ComputeReviewState(c *cmpgn.Changeset, history []changesetStatesAtTime) (cmpgn.ChangesetReviewState, error) {
+	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
 	}
+
+	newestDataPoint := history[len(history)-1]
 
 	// GitHub only stores the ReviewState in events, we can't look at the
 	// Changeset.
 	if c.ExternalServiceType == github.ServiceType {
-		return events.reviewState()
+		return newestDataPoint.reviewState, nil
 	}
 
 	// For other codehosts we check whether the Changeset is newer or the
 	// events and use the newest entity to get the reviewstate.
-	newestEvent := events[len(events)-1]
-	if c.UpdatedAt.After(newestEvent.Timestamp()) {
+	if c.UpdatedAt.After(newestDataPoint.t) {
 		return computeSingleChangesetReviewState(c)
 	}
-	return events.reviewState()
+	return newestDataPoint.reviewState, nil
 }
 
 func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*cmpgn.ChangesetEvent) cmpgn.ChangesetCheckState {

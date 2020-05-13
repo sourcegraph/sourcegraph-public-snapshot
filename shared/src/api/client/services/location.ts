@@ -1,12 +1,13 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import { from, Observable, of, concat } from 'rxjs'
+import { Observable, of, concat } from 'rxjs'
 import { catchError, map, switchMap, defaultIfEmpty } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
-import { CodeEditorWithPartialModel } from './editorService'
+import { CodeEditorWithPartialModel } from './viewerService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
+import { finallyReleaseProxy } from '../api/common'
 
 /**
  * Function signature for retrieving related locations given a location (e.g., definition, implementation, and type
@@ -134,14 +135,18 @@ export function getLocationsFromProviders<
         switchMap(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
-                    concat([LOADING], from(provider(params))).pipe(
-                        defaultIfEmpty<typeof LOADING | L[] | null>([]),
-                        catchError(err => {
-                            if (logErrors) {
-                                console.error('Location provider errored:', err)
-                            }
-                            return [null]
-                        })
+                    concat(
+                        [LOADING],
+                        provider(params).pipe(
+                            finallyReleaseProxy(),
+                            defaultIfEmpty<typeof LOADING | L[] | null>([]),
+                            catchError(err => {
+                                if (logErrors) {
+                                    console.error('Location provider errored:', err)
+                                }
+                                return [null]
+                            })
+                        )
                     )
                 )
             ).pipe(

@@ -39,7 +39,7 @@ export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
-export LSIF_STORAGE_ROOT=$HOME/.sourcegraph/lsif-storage
+export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
@@ -139,7 +139,7 @@ build_ts_pid="$!"
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
 
-if ! [ "$(id -u)" = 0 ] && hash authbind; then
+if ! [ "$(id -u)" = 0 ] && command -v authbind; then
   # ignoring because $GOREMAN is used in other handle-change.sh
   # shellcheck disable=SC2086
   # Support using authbind to bind to port 443 as non-root

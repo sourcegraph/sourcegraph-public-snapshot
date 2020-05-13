@@ -2,6 +2,7 @@ package conf
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -47,6 +48,17 @@ func validateCustom(cfg Unified) (problems Problems) {
 		}
 		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
 			invalid(NewSiteProblem(`must set email.smtp username and password for email.smtp authentication`))
+		}
+	}
+
+	// Prevent usage of non-root externalURLs until we add their support:
+	// https://github.com/sourcegraph/sourcegraph/issues/7884
+	if cfg.ExternalURL != "" {
+		eURL, err := url.Parse(cfg.ExternalURL)
+		if err != nil {
+			invalid(NewSiteProblem(`externalURL must be a valid URL`))
+		} else if eURL.Path != "/" && eURL.Path != "" {
+			invalid(NewSiteProblem(`externalURL must not be a non-root URL`))
 		}
 	}
 

@@ -21,10 +21,8 @@ import (
 )
 
 var authzFilterDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "frontend",
-	Name:      "authz_filter_duration_seconds",
-	Help:      "Time spent on performing authorization",
+	Name: "src_frontend_authz_filter_duration_seconds",
+	Help: "Time spent on performing authorization",
 }, []string{"success"})
 
 var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)

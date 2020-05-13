@@ -31,7 +31,6 @@ describe('UserNavItem', () => {
                             location={history.location}
                             authenticatedUser={USER}
                             showDotComMarketing={true}
-                            showDiscussions={true}
                         />
                     </MemoryRouter>
                 )

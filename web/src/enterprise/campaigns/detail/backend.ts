@@ -16,10 +16,8 @@ import {
     IPatchesOnCampaignArguments,
     IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-
-export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -42,35 +40,14 @@ const campaignFragment = gql`
         publishedAt
         closedAt
         viewerCanAdminister
-        changesets(first: 10000) {
+        changesets {
             totalCount
-            nodes {
-                __typename
-                id
-                state
-                diff {
-                    fileDiffs {
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
         }
-        patches(first: 10000) {
+        openChangesets {
             totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
+        }
+        patches {
+            totalCount
         }
         patchSet {
             id
@@ -85,6 +62,9 @@ const campaignFragment = gql`
             openPending
             total
         }
+        diffStat {
+            ...DiffStatFields
+        }
     }
 
     ${DiffStatFields}
@@ -94,20 +74,11 @@ const patchSetFragment = gql`
     fragment PatchSetFields on PatchSet {
         __typename
         id
-        patches(first: 10000) {
+        diffStat {
+            ...DiffStatFields
+        }
+        patches {
             totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -498,8 +469,6 @@ export const queryExternalChangesetFileDiffs = (
 
             ${FileDiffFields}
 
-            ${FileDiffHunkRangeFields}
-
             ${DiffStatFields}
         `,
         { externalChangeset, first }
@@ -548,8 +517,6 @@ export const queryPatchFileDiffs = (
             }
 
             ${PreviewFileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,

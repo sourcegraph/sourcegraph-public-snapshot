@@ -20,11 +20,11 @@ import (
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleUsers(context.Background(), PriorityHigh, 1)
+	s.ScheduleUsers(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeUser,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -36,11 +36,11 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleRepos(context.Background(), PriorityHigh, 1)
+	s.ScheduleRepos(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeRepo,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -108,14 +108,6 @@ func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
 
 func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, error) {
 	return nil, nil
-}
-
-type mockPermsStore struct {
-	listExternalAccounts func(context.Context, int32) ([]*extsvc.Account, error)
-}
-
-func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.Account, error) {
-	return s.listExternalAccounts(ctx, userID)
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
