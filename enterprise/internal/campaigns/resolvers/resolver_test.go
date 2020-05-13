@@ -1049,6 +1049,8 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	queryPatchSet := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
+		t.Helper()
+
 		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
         query {
           node(id: %q) {
@@ -1164,26 +1166,6 @@ func TestPatchSetResolver(t *testing.T) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))
 		}
 	}
-
-	t.Run("UncachedDiffStat", func(t *testing.T) {
-		for _, p := range patches {
-			p.DiffStatAdded = nil
-			p.DiffStatDeleted = nil
-			p.DiffStatChanged = nil
-
-			if err := store.UpdatePatch(ctx, p); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		var response struct{ Node apitest.PatchSet }
-		queryPatchSet(10000, "null", &response)
-
-		if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
-			t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
-		}
-	})
-
 }
 
 func TestCreateCampaignWithPatchSet(t *testing.T) {

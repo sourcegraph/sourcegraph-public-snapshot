@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -79,37 +78,19 @@ func (r *patchSetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesOpts) (*graphqlbackend.DiffStat, error) {
-	patchesConnection := &patchesConnectionResolver{store: store, opts: opts}
-
-	patchResolvers, err := patchesConnection.Nodes(ctx)
+	patches, _, err := store.ListPatches(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	total := &graphqlbackend.DiffStat{}
-	for _, p := range patchResolvers {
-		p, ok := p.(*patchResolver)
+	for _, p := range patches {
+		s, ok := p.DiffStat()
 		if !ok {
-			return nil, errors.New("patch resolver is of unknown type")
+			return nil, fmt.Errorf("patch %d has no diff stat", p.ID)
 		}
 
-		if s, ok := p.patch.DiffStat(); ok {
-			// Values are cached, so we don't need to fetch the diff.
-			total.AddStat(s)
-			continue
-		}
-
-		fileDiffs, err := p.FileDiffs(ctx, &graphqlbackend.FileDiffsConnectionArgs{})
-		if err != nil {
-			return nil, err
-		}
-
-		s, err := fileDiffs.DiffStat(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		total.AddDiffStat(s)
+		total.AddStat(s)
 	}
 
 	return total, nil
