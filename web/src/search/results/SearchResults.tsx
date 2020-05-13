@@ -100,7 +100,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             const newLoc =
                 '/search?' +
                 buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
-            window.location.replace(newLoc)
+            this.props.history.replace(newLoc)
         }
 
         this.props.telemetryService.logViewEvent('SearchResults')

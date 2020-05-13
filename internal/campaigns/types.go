@@ -281,6 +281,8 @@ type Changeset struct {
 	ExternalState       ChangesetState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
+	CreatedByCampaign   bool
+	AddedToCampaign     bool
 }
 
 // Clone returns a clone of a Changeset.
