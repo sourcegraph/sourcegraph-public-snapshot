@@ -122,7 +122,10 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                             </span>
                         </MenuButton>
                         <MenuPopover
-                            className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
+                            className={classNames('activation-dropdown', 'dropdown-menu', {
+                                show: isExpanded || this.props.alwaysShow,
+                            })}
+                            hidden={!(isExpanded || this.props.alwaysShow)}
                             portal={this.props.portal}
                         >
                             <div className="dropdown-item-text activation-dropdown-header">

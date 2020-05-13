@@ -10,5 +10,6 @@ module.exports = {
     'shared/jest.config.js',
     'web/jest.config.js',
     'cmd/precise-code-intel/jest.config.js',
+    '.storybook/jest.config.js',
   ],
 }
