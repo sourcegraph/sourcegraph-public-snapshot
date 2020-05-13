@@ -185,7 +185,32 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 {externalService?.webhookURL && (
                     <div className="alert alert-info">
                         <h3>Webhooks</h3>
-                        <p>Point webhooks for this external service at the following URL:</p>
+                        {externalService.kind === GQL.ExternalServiceKind.BITBUCKETSERVER ? (
+                            <p>
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Webhooks
+                                </a>{' '}
+                                will be created automatically on the configured Bitbucket Server instance.
+                                <br />
+                                To set up another webhook manually, use the following URL:
+                            </p>
+                        ) : (
+                            <p>
+                                Point{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/github#webhooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    webhooks
+                                </a>{' '}
+                                for this code host connection at the following URL:
+                            </p>
+                        )}
                         <CopyableText text={externalService.webhookURL} size={externalService.webhookURL.length} />
                     </div>
                 )}
