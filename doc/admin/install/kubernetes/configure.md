@@ -610,6 +610,8 @@ spec:
           name: ns-sourcegraph
 ```
 
+## Overlays
+
 ### Overlay basic principles
 
 An overlay specifies customizations for a base directory of Kubernetes manifests. The base has no knowledge of the overlay.
