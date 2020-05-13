@@ -135,12 +135,6 @@ type UserDates struct {
 	DeletedAt time.Time
 }
 
-// UsersUsageArchiveData contains data that is exported in the user usage admin panel button "Download user usage archive".
-type UsersUsageArchiveData struct {
-	UsersUsageCounts []UserUsageCounts
-	UsersDates []UserDates
-}
-
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
