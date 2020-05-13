@@ -91,7 +91,8 @@ type editorSearchRequest struct {
 
 	// Optional git repository branch name and revision. When one is present and remoteURL
 	// is present, the search will be performed just at this branch/revision.
-	branch, revision string
+	branch   string
+	revision string
 
 	// Optional unix filepath relative to the repository root. When present, the search
 	// will be performed with a file: search filter.
