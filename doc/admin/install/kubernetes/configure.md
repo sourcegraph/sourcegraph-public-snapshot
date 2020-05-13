@@ -587,7 +587,8 @@ kubectl label namespace ns-sourcegraph name=ns-sourcegraph
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: sourcegraph-namespace-allowance
+  name: np-sourcegraph
+  namespace: ns-sourcegraph
 spec:
   # For all pods with the label "deploy: sourcegraph"
   podSelector:
