@@ -1615,6 +1615,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 		t.Run("Patches", func(t *testing.T) {
 			patches := make([]*cmpgn.Patch, 0, 3)
 
+			var (
+				added   int32 = 77
+				deleted int32 = 88
+				changed int32 = 99
+			)
+
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(patches); i++ {
 					p := &cmpgn.Patch{
@@ -1623,6 +1629,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Rev:        api.CommitID("deadbeef"),
 						BaseRef:    "master",
 						Diff:       "+ foobar - barfoo",
+					}
+
+					// Only set the diff stats on a subset to make sure that
+					// we handle nil pointers correctly
+					if i != cap(patches)-1 {
+						p.DiffStatAdded = &added
+						p.DiffStatChanged = &changed
+						p.DiffStatDeleted = &deleted
 					}
 
 					want := p.Clone()
@@ -1910,9 +1924,19 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("Update", func(t *testing.T) {
+				var (
+					newAdded   int32 = 333
+					newDeleted int32 = 444
+					newChanged int32 = 555
+				)
+
 				for _, p := range patches {
 					now = now.Add(time.Second)
 					p.Diff += "-updated"
+
+					p.DiffStatAdded = &newAdded
+					p.DiffStatDeleted = &newDeleted
+					p.DiffStatChanged = &newChanged
 
 					want := p
 					want.UpdatedAt = now

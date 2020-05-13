@@ -1864,10 +1864,13 @@ INSERT INTO patches (
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   patch_set_id,
@@ -1875,6 +1878,9 @@ RETURNING
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 `
@@ -1895,6 +1901,9 @@ func (s *Store) createPatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.DiffStatAdded,
+		c.DiffStatDeleted,
+		c.DiffStatChanged,
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1922,8 +1931,11 @@ SET (
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   updated_at
-) = (%s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1932,6 +1944,9 @@ RETURNING
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 `
@@ -1946,6 +1961,9 @@ func (s *Store) updatePatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.DiffStatAdded,
+		c.DiffStatDeleted,
+		c.DiffStatChanged,
 		c.UpdatedAt,
 		c.ID,
 	), nil
@@ -2046,6 +2064,9 @@ SELECT
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 FROM patches
@@ -2111,6 +2132,9 @@ SELECT
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 FROM patches
@@ -2757,6 +2781,9 @@ func scanPatch(c *campaigns.Patch, s scanner) error {
 		&c.Rev,
 		&c.BaseRef,
 		&c.Diff,
+		&c.DiffStatAdded,
+		&c.DiffStatDeleted,
+		&c.DiffStatChanged,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

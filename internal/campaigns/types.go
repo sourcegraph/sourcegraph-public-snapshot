@@ -58,6 +58,10 @@ type Patch struct {
 
 	Diff string
 
+	DiffStatAdded   *int32
+	DiffStatChanged *int32
+	DiffStatDeleted *int32
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
