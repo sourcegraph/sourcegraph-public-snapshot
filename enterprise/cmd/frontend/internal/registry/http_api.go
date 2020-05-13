@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -138,17 +139,11 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	var operation string
 	defer func(began time.Time) {
 		seconds := time.Since(began).Seconds()
-
-		var success string
-		if err != nil || recorder.code >= 400 {
-			success = "false"
-			registryRequestsErrorCounter.Inc()
-		} else {
-			success = "true"
-			registryRequestsSuccessCounter.Inc()
+		if err != nil && recorder.code == http.StatusOK {
+			recorder.code = http.StatusInternalServerError
 		}
-
-		registryRequestsDuration.WithLabelValues(operation, success).Observe(seconds)
+		code := strconv.Itoa(recorder.code)
+		registryRequestsDuration.WithLabelValues(operation, code).Observe(seconds)
 	}(time.Now())
 
 	if conf.Extensions() == nil {
@@ -230,17 +225,7 @@ var (
 	registryRequestsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_registry_requests_duration_seconds",
 		Help: "Seconds spent handling a request to the HTTP registry API",
-	}, []string{"operation", "success"})
-
-	registryRequestsSuccessCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_registry_requests_success",
-		Help: "Number of successful requests (HTTP 200) to the HTTP registry API",
-	})
-
-	registryRequestsErrorCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_registry_requests_error",
-		Help: "Number of failed (non-HTTP 200) requests to the HTTP registry API",
-	})
+	}, []string{"operation", "code"})
 )
 
 func init() {
