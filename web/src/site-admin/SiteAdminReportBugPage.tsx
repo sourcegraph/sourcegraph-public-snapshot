@@ -89,16 +89,19 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
             <PageTitle title="Report a bug - Admin" />
             <h2>Report a bug</h2>
             <p>
-                Create an issue on the{' '}
-                <a target="_blank" rel="noopener noreferrer" href="https://github.com/sourcegraph/sourcegraph/issues">
-                    public issue tracker
+                <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                >
+                    Create an issue on the public issue tracker
                 </a>
                 , and include a description of the bug along with the info below (with secrets redacted). If the report
                 contains sensitive information that should not be public, email the report to{' '}
                 <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
                     support@sourcegraph.com
-                </a>
-                , instead.
+                </a>{' '}
+                instead.
             </p>
             <div className="card-header alert alert-warning">
                 <div>
