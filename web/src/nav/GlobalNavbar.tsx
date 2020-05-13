@@ -200,7 +200,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                             <>
                                 {logoLink}
                                 {!this.state.authRequired && (
-                                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row flex-shrink-past-contents">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
