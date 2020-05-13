@@ -85,7 +85,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                         </p>
                         <button
                             type="button"
-                            className="btn btn-outline-info request-permissions__test"
+                            className="btn btn-light request-permissions__test"
                             onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
                         >
                             Grant permissions
