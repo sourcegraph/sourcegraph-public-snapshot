@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 )
@@ -23,7 +22,6 @@ func MigratePatchesWithoutDiffStats(ctx context.Context, s *Store) (err error) {
 	patches, _, err := s.ListPatches(ctx, opts)
 
 	for _, p := range patches {
-		fmt.Printf("migrating patch!\n")
 		err = p.ComputeDiffStat()
 		if err != nil {
 			return errors.Wrapf(err, "failed to compute diff stat for patch %d", p.ID)
@@ -33,7 +31,6 @@ func MigratePatchesWithoutDiffStats(ctx context.Context, s *Store) (err error) {
 		if err != nil {
 			return errors.Wrapf(err, "failed to update patch %d", p.ID)
 		}
-		fmt.Printf("patch migrated!\n")
 	}
 
 	return nil
