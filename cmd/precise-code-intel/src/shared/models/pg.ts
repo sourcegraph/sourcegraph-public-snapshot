@@ -27,7 +27,7 @@ export class LsifUpload {
     @Column('text', { name: 'repository_id' })
     public repositoryId!: number
 
-    /**  The source commit. */
+    /** The source commit. */
     @Column('text')
     public commit!: string
 

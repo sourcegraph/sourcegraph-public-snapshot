@@ -667,7 +667,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 
 	case ChangesetEventKindGitHubReviewDismissed,
 		ChangesetEventKindBitbucketServerUnapproved,
-		ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
+		ChangesetEventKindBitbucketServerDismissed:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -1211,7 +1211,7 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:
 			return new(bitbucketserver.CommitStatus), nil
-		case ChangesetEventKindBitbucketServerParticipationStatusUnapproved:
+		case ChangesetEventKindBitbucketServerDismissed:
 			return new(bitbucketserver.ParticipantStatusEvent), nil
 		default:
 			return new(bitbucketserver.Activity), nil
@@ -1297,7 +1297,9 @@ const (
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
 
-	ChangesetEventKindBitbucketServerParticipationStatusUnapproved ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
+	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
+	// clearly convey that it only occurs when a request for changes has been dismissed.
+	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset

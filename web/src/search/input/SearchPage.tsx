@@ -25,7 +25,7 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
@@ -128,6 +128,7 @@ export class SearchPage extends React.Component<Props, State> {
                                                 patternType={this.props.patternType}
                                                 setPatternType={this.props.setPatternType}
                                                 withSearchModeToggle={this.props.splitSearchModes}
+                                                keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                                             />
                                         )}
                                         <SearchButton />

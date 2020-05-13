@@ -32,6 +32,10 @@ func UploadFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.lsif.gz", id))
 }
 
+func UploadPartFilename(bundleDir string, id, index int64) string {
+	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.%d.lsif.gz", id, index))
+}
+
 // DBFilename returns the path fo the database with the given identifier.
 func DBFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))

@@ -13,8 +13,8 @@ import { dirnameWithoutDot } from './paths'
  * This class caches results to efficiently query gitserver for the contents of directories
  * so that it neither has to:
  *
- *   - request all files recursively at once (bad for large repos and mono repos), nor
- *   - make a request for every unique path in the index.
+ * - request all files recursively at once (bad for large repos and mono repos), nor
+ * - make a request for every unique path in the index.
  */
 export class PathExistenceChecker {
     private repositoryId: number
@@ -44,7 +44,7 @@ export class PathExistenceChecker {
         commit: string
         /** The root of all files in the dump. */
         root: string
-        /**  The url of the frontend internal API. */
+        /** The url of the frontend internal API. */
         frontendUrl?: string
         /** The tracing context. */
         ctx?: TracingContext

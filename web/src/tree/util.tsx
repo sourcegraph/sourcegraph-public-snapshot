@@ -17,7 +17,6 @@ export interface SingleChildGitTree extends TreeEntryInfo {
 }
 
 export function scrollIntoView(el: Element, scrollRoot: Element): void {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     if (!scrollRoot.getBoundingClientRect) {
         return el.scrollIntoView()
     }
@@ -47,16 +46,18 @@ export const maxEntries = 2500
 
 // Utility functions to handle single-child directories:
 
-/** This function converts nested entries into a proper tree-like object. When we have single-child directories,
+/**
+ * This function converts nested entries into a proper tree-like object. When we have single-child directories,
  * the backend responds with all entries that need to be rendered, not just the entry for that level. It is in
  * a flat list, so this function converts it to a structure like the following (assume we have a/b/c.txt):
  *
- *
+ * ```ts
  * { name: "a", ...TreeEntryInfo, children: [
  *     { name: "b", ...TreeEntryInfo, children: [
  *          {name: "c.txt", ...TreeEntryInfo, children: []}
  *     ]}
  * ]}
+ * ```
  *
  * It uses the number of '/' separators to determine depth, and recursively adds entries to the `children` field.
  */

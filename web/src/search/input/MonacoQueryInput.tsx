@@ -14,6 +14,8 @@ import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { hasProperty } from '../../../../shared/src/util/types'
+import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -26,6 +28,7 @@ export interface MonacoQueryInputProps
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     autoFocus?: boolean
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -169,26 +172,29 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             cursorWidth: 1,
         }
         return (
-            <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
-                <div className="flex-1">
-                    <MonacoEditor
-                        id="monaco-query-input"
-                        language={SOURCEGRAPH_SEARCH}
-                        value={this.props.queryState.query}
-                        height={16}
-                        isLightTheme={this.props.isLightTheme}
-                        editorWillMount={this.editorWillMount}
-                        onEditorCreated={this.onEditorCreated}
-                        options={options}
-                        border={false}
+            <>
+                <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
+                    <div className="flex-1">
+                        <MonacoEditor
+                            id="monaco-query-input"
+                            language={SOURCEGRAPH_SEARCH}
+                            value={this.props.queryState.query}
+                            height={16}
+                            isLightTheme={this.props.isLightTheme}
+                            editorWillMount={this.editorWillMount}
+                            onEditorCreated={this.onEditorCreated}
+                            options={options}
+                            border={false}
+                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                        />
+                    </div>
+                    <Toggles
+                        {...this.props}
+                        navbarSearchQuery={this.props.queryState.query}
+                        className="monaco-query-input-container__toggle-container"
                     />
                 </div>
-                <Toggles
-                    {...this.props}
-                    navbarSearchQuery={this.props.queryState.query}
-                    className="monaco-query-input-container__toggle-container"
-                />
-            </div>
+            </>
         )
     }
 
