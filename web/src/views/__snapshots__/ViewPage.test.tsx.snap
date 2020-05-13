@@ -5,9 +5,7 @@ exports[`ViewPage renders view 1`] = `
   <h1>
     t
   </h1>
-  <section
-    className="mt-3"
-  >
+  <section>
     <div
       className="markdown"
       dangerouslySetInnerHTML={
@@ -19,14 +17,10 @@ exports[`ViewPage renders view 1`] = `
       onClick={[Function]}
     />
   </section>
-  <section
-    className="mt-3"
-  >
+  <section>
     *b*
   </section>
-  <section
-    className="mt-3"
-  >
+  <section>
     <div
       className="markdown"
       dangerouslySetInnerHTML={

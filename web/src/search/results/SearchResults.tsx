@@ -113,7 +113,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     this.props.versionContext,
                     filtersInQuery
                 )
-            window.location.replace(newLoc)
+            this.props.history.replace(newLoc)
         }
 
         this.props.telemetryService.logViewEvent('SearchResults')

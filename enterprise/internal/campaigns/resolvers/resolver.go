@@ -184,6 +184,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	for _, c := range changesets {
 		delete(set, c.ID)
 		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
+		c.AddedToCampaign = true
 	}
 
 	if len(set) > 0 {
