@@ -227,6 +227,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
                                 <VersionContextDropdown
+                                    history={this.props.history}
+                                    navbarSearchQuery={this.props.navbarSearchState.query}
+                                    caseSensitive={this.props.caseSensitive}
+                                    patternType={this.props.patternType}
                                     versionContext={this.props.versionContext}
                                     setVersionContext={this.props.setVersionContext}
                                     availableVersionContexts={this.props.availableVersionContexts}

@@ -1,3 +1,4 @@
+import * as H from 'history'
 import React, { useState } from 'react'
 import {
     ListboxOption,
@@ -14,11 +15,20 @@ import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { VersionContext } from '../schema/site.schema'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../search'
+import { submitSearch } from '../search/helpers'
+import { isEmpty } from 'lodash'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
-interface VersionContextDropdownProps extends VersionContextProps {
+export interface VersionContextDropdownProps
+    extends Pick<PatternTypeProps, 'patternType'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        VersionContextProps {
     availableVersionContexts: VersionContext[] | undefined
+    history: H.History
+    navbarSearchQuery: string
 }
 
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = (
@@ -28,8 +38,28 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
         !!localStorage.getItem(HAS_DISMISSED_INFO_KEY) && localStorage.getItem(HAS_DISMISSED_INFO_KEY) === 'true'
     )
 
+    const submitOnToggle = (versionContext: string): void => {
+        const { history, navbarSearchQuery, filtersInQuery, caseSensitive, patternType } = props
+        const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
+        const activation = undefined
+        const source = 'filter'
+        if (searchQueryNotEmpty) {
+            submitSearch({
+                history,
+                query: navbarSearchQuery,
+                source,
+                patternType,
+                caseSensitive,
+                versionContext,
+                activation,
+                filtersInQuery,
+            })
+        }
+    }
+
     const updateValue = (newValue: string): void => {
         props.setVersionContext(newValue)
+        submitOnToggle(newValue)
     }
 
     const disableValue = (): void => {

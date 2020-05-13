@@ -214,6 +214,10 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                             />
                                         )}
                                         <VersionContextDropdown
+                                            history={this.props.history}
+                                            navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
                                             versionContext={this.props.versionContext}
                                             setVersionContext={this.props.setVersionContext}
                                             availableVersionContexts={this.props.availableVersionContexts}

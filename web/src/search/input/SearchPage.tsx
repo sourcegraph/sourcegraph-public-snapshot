@@ -114,6 +114,10 @@ export class SearchPage extends React.Component<Props, State> {
                                             />
                                         )}
                                         <VersionContextDropdown
+                                            history={this.props.history}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            navbarSearchQuery={this.state.userQueryState.query}
                                             versionContext={this.props.versionContext}
                                             setVersionContext={this.props.setVersionContext}
                                             availableVersionContexts={this.props.availableVersionContexts}
