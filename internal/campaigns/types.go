@@ -8,6 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -70,6 +71,23 @@ type Patch struct {
 func (c *Patch) Clone() *Patch {
 	cc := *c
 	return &cc
+}
+
+// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged,
+// DiffStatDeleted are set. The second return value indicates whether these
+// fields are set and a diff.Stat has been returned.
+func (p *Patch) DiffStat() (diff.Stat, bool) {
+	s := diff.Stat{}
+
+	if p.DiffStatAdded == nil || p.DiffStatDeleted == nil || p.DiffStatChanged == nil {
+		return s, false
+	}
+
+	s.Added = *p.DiffStatAdded
+	s.Deleted = *p.DiffStatDeleted
+	s.Changed = *p.DiffStatChanged
+
+	return s, true
 }
 
 // A Campaign of changesets over multiple Repos over time.

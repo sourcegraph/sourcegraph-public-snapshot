@@ -557,16 +557,22 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			return nil, err
 		}
 
-		// Ensure patch is a valid unified diff.
+		// Ensure patch is a valid unified diff and compute diff stats.
+		stats := diff.Stat{}
 		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(patch.Patch))
 		for {
-			_, err := diffReader.ReadFile()
+			diff, err := diffReader.ReadFile()
 			if err == io.EOF {
 				break
 			}
 			if err != nil {
 				return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
 			}
+
+			stat := diff.Stat()
+			stats.Added += stat.Added
+			stats.Deleted += stat.Deleted
+			stats.Changed += stat.Changed
 		}
 
 		patches[i] = &campaigns.Patch{
@@ -574,6 +580,10 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			Rev:     patch.BaseRevision,
 			BaseRef: patch.BaseRef,
 			Diff:    patch.Patch,
+
+			DiffStatAdded:   &stats.Added,
+			DiffStatDeleted: &stats.Deleted,
+			DiffStatChanged: &stats.Changed,
 		}
 	}
 
