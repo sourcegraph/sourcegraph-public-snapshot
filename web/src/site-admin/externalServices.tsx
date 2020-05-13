@@ -862,6 +862,15 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 return { edits, selectText: value }
             },
         },
+        {
+            id: 'enableWebhooks',
+            label: 'Enable webhooks',
+            run: config => {
+                const value = { webhooks: { secret: '<any_secret_string>' } }
+                const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
+                return { edits, selectText: '<any_secret_string>' }
+            },
+        },
     ],
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
