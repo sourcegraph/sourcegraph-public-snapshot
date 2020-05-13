@@ -16,6 +16,7 @@ import { ErrorAlert } from '../components/alerts'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { hasProperty } from '../../../shared/src/util/types'
 import * as H from 'history'
+import { CopyableText } from '../components/CopyableText'
 
 type ExternalService = Pick<GQL.IExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
 
@@ -185,7 +186,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     <div className="alert alert-info">
                         <h3>Webhooks</h3>
                         <p>Point webhooks for this external service at the following URL:</p>
-                        <p>{externalService.webhookURL}</p>
+                        <CopyableText text={externalService.webhookURL} size={externalService.webhookURL.length} />
                     </div>
                 )}
             </div>
