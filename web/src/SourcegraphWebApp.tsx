@@ -280,7 +280,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
+                    const { splitSearchModes = true, smartSearchField = true } = experimentalFeatures
                     this.setState({ splitSearchModes, smartSearchField })
                 }
             })
