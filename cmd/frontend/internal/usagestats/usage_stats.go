@@ -54,7 +54,7 @@ func GetArchive(ctx context.Context) ([]byte, error) {
 	}
 
 	for _, c := range counts {
-		record[0] = c.Date.UTC().String()
+		record[0] = c.Date.UTC().Format(time.RFC3339)
 		record[1] = strconv.FormatUint(uint64(c.UserID), 10)
 		record[2] = strconv.FormatInt(int64(c.SearchCount), 10)
 		record[3] = strconv.FormatInt(int64(c.CodeIntelCount), 10)

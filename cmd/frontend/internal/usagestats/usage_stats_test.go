@@ -23,8 +23,8 @@ func TestGetArchive(t *testing.T) {
 	ctx := context.Background()
 
 	user, err := db.Users.Create(ctx, db.NewUser{
-		Email: "foo@bar.com",
-		Username: "admin",
+		Email:           "foo@bar.com",
+		Username:        "admin",
 		EmailIsVerified: true,
 	})
 	if err != nil {
@@ -61,7 +61,7 @@ func TestGetArchive(t *testing.T) {
 
 	want := map[string]string{
 		"UsersUsageCounts.csv": fmt.Sprintf("date,user_id,search_count,code_intel_count\n%s,%d,%d,%d\n",
-			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
 			event.UserID,
 			1,
 			0,

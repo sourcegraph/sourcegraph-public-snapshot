@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 )
 
-
 func usageStatsArchiveHandler(w http.ResponseWriter, r *http.Request) {
 	// 🚨SECURITY: Only site admins may get this archive.
 	if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {

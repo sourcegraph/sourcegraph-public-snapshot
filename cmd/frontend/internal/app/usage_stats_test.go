@@ -40,15 +40,15 @@ func Test_usageStatsArchiveHandler(t *testing.T) {
 
 		contentType := rec.Header().Get("Content-Type")
 		if have, want := contentType, "application/zip"; have != want {
-			t.Errorf("Content-Type: have %q, want %q", have ,want)
+			t.Errorf("Content-Type: have %q, want %q", have, want)
 		}
 
 		contentDisposition := rec.Header().Get("Content-Disposition")
 		if have, want := contentDisposition, "attachment; filename=\"SourcegraphUsersUsageArchive.zip\""; have != want {
-			t.Errorf("Content-Disposition: have %q, want %q", have ,want)
+			t.Errorf("Content-Disposition: have %q, want %q", have, want)
 		}
 
-		zr, err  := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
+		zr, err := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
 		if err != nil {
 			t.Errorf("Body: Failed to open ZIP: %s", err)
 		}
