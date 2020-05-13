@@ -243,7 +243,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     href="/site-admin/usage-statistics/archive"
                     className="btn btn-secondary"
                     data-tooltip="Download usage stats archive"
-                    download
+                    download="true"
                 >
                     <FileDownloadIcon className="icon-inline" /> Download usage stats archive
                 </a>
