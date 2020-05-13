@@ -35,7 +35,7 @@ const isFullPage = (): boolean => !new URLSearchParams(window.location.search).g
 const buildRequestPermissionsHandler = (
     { protocol, host }: NonNullable<OptionsMenuProps['currentTabStatus']>,
     requestPermissions: OptionsMenuProps['requestPermissions']
-) => (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+) => (event: React.MouseEvent) => {
     event.preventDefault()
     requestPermissions(`${protocol}//${host}`)
 }
@@ -80,19 +80,35 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
                             GitHub, GitLab, Bitbucket Server and Phabricator.
                         </p>
                         <p>
-                            To enable Sourcegraph on <strong>{currentTabStatus.host}</strong>, you must{' '}
-                            <a
-                                href=""
-                                onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
-                                className="request-permissions__test"
-                            >
-                                grant permissions
-                            </a>
+                            You must grant permissions to enable Sourcegraph on <strong>{currentTabStatus.host}</strong>
                             .
                         </p>
+                        <button
+                            type="button"
+                            className="btn btn-outline-info request-permissions__test"
+                            onClick={buildRequestPermissionsHandler(currentTabStatus, requestPermissions)}
+                        >
+                            Grant permissions
+                        </button>
                     </div>
                 </div>
             )}
+        <div className="options-menu__section">
+            <p>
+                Learn more about privacy concerns, troubleshooting and extension features{' '}
+                <a href="https://docs.sourcegraph.com/integration/browser_extension" target="blank">
+                    here
+                </a>
+                .
+            </p>
+            <p>
+                Search open source software at{' '}
+                <a href="https://sourcegraph.com/search" target="blank">
+                    sourcegraph.com/search
+                </a>
+                .
+            </p>
+        </div>
         {isSettingsOpen && featureFlags && (
             <div className="options-menu__section">
                 <label>Configuration</label>
