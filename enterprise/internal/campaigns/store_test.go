@@ -1797,6 +1797,33 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 			})
 
+			t.Run("Listing OnlyWithoutDiffStats", func(t *testing.T) {
+				listOpts := ListPatchesOpts{OnlyWithoutDiffStats: true}
+				have, _, err := s.ListPatches(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := []*cmpgn.Patch{}
+				for _, p := range patches {
+					_, ok := p.DiffStat()
+					if !ok {
+						want = append(want, p)
+					}
+				}
+
+				if len(want) == 0 {
+					t.Fatalf("test needs patches without diff stats")
+				}
+				if len(have) != len(want) {
+					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+			})
+
 			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
 				listOpts := ListPatchesOpts{OnlyWithDiff: true}
 				countOpts := CountPatchesOpts{OnlyWithDiff: true}

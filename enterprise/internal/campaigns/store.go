@@ -2099,6 +2099,10 @@ type ListPatchesOpts struct {
 	// are _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
+
+	// If this is set only the Patches where diff_stat_added OR
+	// diff_stat_changed OR diff_stat_deleted are NULL.
+	OnlyWithoutDiffStats bool
 }
 
 // ListPatches lists Patches with the given filters.
@@ -2167,6 +2171,10 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	}
+
+	if opts.OnlyWithoutDiffStats {
+		preds = append(preds, sqlf.Sprintf("(diff_stat_added IS NULL OR diff_stat_deleted IS NULL OR diff_stat_changed IS NULL)"))
 	}
 
 	return sqlf.Sprintf(

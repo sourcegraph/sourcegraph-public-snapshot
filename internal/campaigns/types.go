@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -71,6 +72,35 @@ type Patch struct {
 func (c *Patch) Clone() *Patch {
 	cc := *c
 	return &cc
+}
+
+// ComputeDiffStat parses the Diff of the Patch and sets the diff stat fields
+// that can be retrieved with DiffStat().
+// If the Diff is invalid or parsing failed, an error is returned.
+func (p *Patch) ComputeDiffStat() error {
+	stats := diff.Stat{}
+
+	diffReader := diff.NewMultiFileDiffReader(strings.NewReader(p.Diff))
+	for {
+		diff, err := diffReader.ReadFile()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		stat := diff.Stat()
+		stats.Added += stat.Added
+		stats.Deleted += stat.Deleted
+		stats.Changed += stat.Changed
+	}
+
+	p.DiffStatAdded = &stats.Added
+	p.DiffStatDeleted = &stats.Deleted
+	p.DiffStatChanged = &stats.Changed
+
+	return nil
 }
 
 // DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged,
