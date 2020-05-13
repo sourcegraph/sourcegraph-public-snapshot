@@ -84,8 +84,12 @@ func GetArchive(ctx context.Context) ([]byte, error) {
 
 	for _, d := range dates {
 		record[0] = strconv.FormatUint(uint64(d.UserID), 10)
-		record[1] = d.CreatedAt.UTC().String()
-		record[2] = d.DeletedAt.UTC().String()
+		record[1] = d.CreatedAt.UTC().Format(time.RFC3339)
+		if d.DeletedAt.IsZero() {
+			record[2] = "NULL"
+		} else {
+			record[2] = d.DeletedAt.UTC().Format(time.RFC3339)
+		}
 
 		if err := datesWriter.Write(record); err != nil {
 			return nil, err

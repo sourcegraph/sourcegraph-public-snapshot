@@ -68,8 +68,8 @@ func TestGetArchive(t *testing.T) {
 		),
 		"UsersDates.csv": fmt.Sprintf("user_id,created_at,deleted_at\n%d,%s,%s\n",
 			dates[0].UserID,
-			dates[0].CreatedAt,
-			dates[0].DeletedAt,
+			dates[0].CreatedAt.Format(time.RFC3339),
+			"NULL",
 		),
 	}
 
