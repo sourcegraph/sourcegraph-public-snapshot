@@ -217,7 +217,7 @@ func parseEditorRequest(q url.Values) (*editorRequest, error) {
 		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")
 	}
 	if v.version == "" {
-		return nil, fmt.Errorf("expected URL parameter missing: version=$EDITOR_EXTENSION_VERSION")
+		return nil, errors.New("expected URL parameter missing: version=$EDITOR_EXTENSION_VERSION")
 	}
 
 	if search := q.Get("search"); search != "" {
@@ -264,11 +264,13 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "%s", err.Error())
+		return nil
 	}
 	redirectURL, err := editorRequest.redirectURL(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "%s", err.Error())
+		return nil
 	}
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 	return nil
