@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - New permissions page in both user and repository settings when background permissions syncing is enabled (`"permissions.backgroundSync": {"enabled": true}`). #10473
 - Campaign changeset usage counts including changesets created, added and merged will be sent back in pings. [#10591](https://github.com/sourcegraph/sourcegraph/pull/10591)
 - Diff views now feature syntax highlighting and can be properly copy-pasted. [#10437](https://github.com/sourcegraph/sourcegraph/pull/10437)
+- The smart search field, providing syntax highlighting, hover tooltips, and diagnostics on filters in search queries, is now activated by default. It can be disabled by setting `{ "experimentalFeatures": { "smartSearchField": true } }` in global settings.
 
 ### Changed
 
