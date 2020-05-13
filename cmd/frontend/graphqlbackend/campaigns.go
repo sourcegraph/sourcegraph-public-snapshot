@@ -91,6 +91,11 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type FileDiffsConnectionArgs struct {
+	First *int32
+	After *string
+}
+
 type CampaignsResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -272,7 +277,7 @@ type PatchResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() PatchResolver
-	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (PreviewFileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 

@@ -107,28 +107,32 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             )}
                         </div>
                     </div>
-                    {this.state.expanded && (
-                        <FileDiffHunks
-                            {...this.props}
-                            className="file-diff-node__hunks"
-                            fileDiffAnchor={anchor}
-                            extensionInfo={
-                                this.props.extensionInfo && {
-                                    ...this.props.extensionInfo,
-                                    base: {
-                                        ...this.props.extensionInfo.base,
-                                        filePath: node.oldPath,
-                                    },
-                                    head: {
-                                        ...this.props.extensionInfo.head,
-                                        filePath: node.newPath,
-                                    },
+                    {this.state.expanded &&
+                        ((node.oldFile && node.oldFile.binary) ||
+                        (node.__typename === 'FileDiff' && node.newFile && node.newFile.binary) ? (
+                            <div className="text-muted m-2">Binary files can't be rendered.</div>
+                        ) : (
+                            <FileDiffHunks
+                                {...this.props}
+                                className="file-diff-node__hunks"
+                                fileDiffAnchor={anchor}
+                                extensionInfo={
+                                    this.props.extensionInfo && {
+                                        ...this.props.extensionInfo,
+                                        base: {
+                                            ...this.props.extensionInfo.base,
+                                            filePath: node.oldPath,
+                                        },
+                                        head: {
+                                            ...this.props.extensionInfo.head,
+                                            filePath: node.newPath,
+                                        },
+                                    }
                                 }
-                            }
-                            hunks={node.hunks}
-                            lineNumbers={this.props.lineNumbers}
-                        />
-                    )}
+                                hunks={node.hunks}
+                                lineNumbers={this.props.lineNumbers}
+                            />
+                        ))}
                 </div>
             </>
         )
