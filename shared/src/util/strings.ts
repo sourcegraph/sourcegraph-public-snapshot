@@ -53,9 +53,8 @@ export function isQuoted(value: string): boolean {
  * Replaces a substring within a string.
  *
  * @param s Original string
- * @param start starting index of the substring to be replaced
- * @param end starting index of the substring to be replaced
- * @param an optional replacement string
+ * @param range The range in of the substring to be replaced
+ * @param replacement an optional replacement string
  */
 export function replaceRange(s: string, { start, end }: { start: number; end: number }, replacement = ''): string {
     return s.slice(0, start) + replacement + s.slice(end)

@@ -576,12 +576,13 @@ export function buildSearchURLQuery(
     let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
     }
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
+        const { start, end } = patternTypeInQuery.range
+        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
     } else {
@@ -626,10 +627,9 @@ export function buildSearchURLQuery(
  * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
 export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
-    const fieldKeys = Object.keys(filtersInQuery)
-    return fieldKeys
-        .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+    return Object.values(filtersInQuery)
+        .filter(filter => filter.value.trim().length > 0)
+        .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
         .join(' ')
 }
 
