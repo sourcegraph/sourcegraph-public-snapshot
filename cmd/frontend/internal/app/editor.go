@@ -213,7 +213,7 @@ func parseEditorRequest(q url.Values) (*editorRequest, error) {
 		utmProductVersion: q.Get("utm_product_name"),
 	}
 	if v.editor == "" {
-		return nil, fmt.Errorf("expected URL parameter missing: editor=$EDITOR_NAME")
+		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")
 	}
 	if v.version == "" {
 		return nil, fmt.Errorf("expected URL parameter missing: version=$EDITOR_EXTENSION_VERSION")
