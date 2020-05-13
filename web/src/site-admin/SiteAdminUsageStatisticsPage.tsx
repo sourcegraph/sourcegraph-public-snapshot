@@ -11,7 +11,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 import { ErrorAlert } from '../components/alerts'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon';
+import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 interface ChartData {
     label: string
@@ -239,7 +239,12 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
                 )}
 
-                <a href="/site-admin/usage-statistics/archive" className="btn btn-secondary" data-tooltip="Download usage stats archive" download>
+                <a
+                    href="/site-admin/usage-statistics/archive"
+                    className="btn btn-secondary"
+                    data-tooltip="Download usage stats archive"
+                    download
+                >
                     <FileDownloadIcon className="icon-inline" /> Download usage stats archive
                 </a>
 
