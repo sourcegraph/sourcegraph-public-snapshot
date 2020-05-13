@@ -4,14 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -557,24 +554,19 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			return nil, err
 		}
 
-		// Ensure patch is a valid unified diff.
-		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(patch.Patch))
-		for {
-			_, err := diffReader.ReadFile()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
-			}
-		}
-
-		patches[i] = &campaigns.Patch{
+		p := &campaigns.Patch{
 			RepoID:  repo,
 			Rev:     patch.BaseRevision,
 			BaseRef: patch.BaseRef,
 			Diff:    patch.Patch,
 		}
+		// Ensure patch is a valid unified diff by computing diff stats.
+		err = p.ComputeDiffStat()
+		if err != nil {
+			return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
+		}
+
+		patches[i] = p
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
