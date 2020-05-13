@@ -762,11 +762,11 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 	}
 
 	// Remove excluded repos
-	if excludePatterns != nil {
+	if len(excludePatterns) > 0 {
 		patterns := `(?i)` + unionRegExps(excludePatterns)
 		filteredRepos := defaultRepos[:0]
 		for _, repo := range defaultRepos {
-			if matched, _ := regexp.Match(patterns, []byte(strings.ToLower(string(repo.Name)))); false == matched {
+			if matched, _ := regexp.MatchString(patterns, string(repo.Name)); false == matched {
 				filteredRepos = append(filteredRepos, repo)
 			}
 		}
