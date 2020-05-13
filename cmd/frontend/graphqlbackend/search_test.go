@@ -259,7 +259,7 @@ func Test_defaultRepositories(t *testing.T) {
 		defaultsInDb     []string
 		indexedRepoNames map[string]bool
 		want             []string
-		excludePatterns []string
+		excludePatterns  []string
 	}{
 		{
 			name:             "none in db => none returned",
