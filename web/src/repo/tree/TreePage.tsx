@@ -143,7 +143,7 @@ interface Props
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string

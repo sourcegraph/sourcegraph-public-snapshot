@@ -6,7 +6,7 @@ import { QueryBuilder } from './QueryBuilder'
 import { PageTitle } from '../../components/PageTitle'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props extends Pick<PatternTypeProps, 'patternType'>, Pick<VersionContextProps, 'versionContext'> {}
+interface Props extends Pick<PatternTypeProps, 'patternType'>, VersionContextProps {}
 
 /**
  * A page with a search query builder form to make it easy to construct search queries.

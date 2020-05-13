@@ -55,7 +55,7 @@ export interface RepoRevContainerContext
         >,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
@@ -78,7 +78,7 @@ interface RepoRevContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     routes: readonly RepoRevContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]

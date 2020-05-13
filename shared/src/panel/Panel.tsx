@@ -26,7 +26,7 @@ interface Props
         ActivationProps,
         TelemetryProps,
         ThemeProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     history: H.History
     repoName?: string

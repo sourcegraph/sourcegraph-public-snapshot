@@ -44,7 +44,7 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null

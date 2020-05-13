@@ -11,7 +11,7 @@ import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 import { VersionContextProps } from '../../search/util'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Pick<VersionContextProps, 'versionContext'> {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
     panelView: PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History

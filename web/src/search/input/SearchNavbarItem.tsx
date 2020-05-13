@@ -19,7 +19,7 @@ interface Props
         SmartSearchFieldProps,
         SettingsCascadeProps,
         ThemeProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState

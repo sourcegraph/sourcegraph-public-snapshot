@@ -21,7 +21,7 @@ import { VersionContextProps } from '../../search/util'
 export interface HierarchicalLocationsViewProps
     extends ExtensionsControllerProps<'services'>,
         SettingsCascadeProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.

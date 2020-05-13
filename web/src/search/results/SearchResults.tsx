@@ -59,6 +59,7 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    setVersionContext: (versionContext: string) => void
     availableVersionContexts: VersionContext[] | undefined
 }
 

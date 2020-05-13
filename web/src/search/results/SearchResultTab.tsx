@@ -13,7 +13,7 @@ interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         Pick<InteractiveSearchProps, 'filtersInQuery'>,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     type: SearchType
     query: string

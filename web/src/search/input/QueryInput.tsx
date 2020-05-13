@@ -45,7 +45,7 @@ interface Props
         CaseSensitivityProps,
         SettingsCascadeProps,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     location: H.Location
     history: H.History
 

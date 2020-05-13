@@ -8,11 +8,7 @@ import { QueryState, submitSearch } from '../search/helpers'
 import H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
-interface Props
-    extends SettingsCascadeProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+interface Props extends SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps, VersionContextProps {
     implicitQueryPrefix: string
 
     location: H.Location

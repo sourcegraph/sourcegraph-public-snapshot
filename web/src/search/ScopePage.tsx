@@ -45,7 +45,7 @@ interface Props
         SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History

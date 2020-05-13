@@ -54,7 +54,7 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -85,7 +85,7 @@ interface RepoContainerProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]

@@ -10,10 +10,7 @@ import { submitSearch, toggleSearchFilter } from '../helpers'
 import { PatternTypeProps } from '..'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props
-    extends SettingsCascadeProps,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<VersionContextProps, 'versionContext'> {
+interface Props extends SettingsCascadeProps, Pick<PatternTypeProps, 'patternType'>, VersionContextProps {
     history: H.History
     authenticatedUser: Pick<GQL.IUser, never> | null
 

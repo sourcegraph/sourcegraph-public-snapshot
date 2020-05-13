@@ -18,7 +18,7 @@ export interface ViewContentProps
     extends SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     viewContent: View['content']
     location: H.Location
     history: H.History

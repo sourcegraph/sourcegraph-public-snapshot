@@ -12,7 +12,7 @@ interface Props
         SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<VersionContextProps, 'versionContext'> {}
+        VersionContextProps {}
 
 /**
  * The area that handles /views routes, displaying the requested view (contributed by an extension)

@@ -17,7 +17,7 @@ interface SubmitSearchParams
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     history: H.History
     query: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'

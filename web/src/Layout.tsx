@@ -113,6 +113,7 @@ export interface LayoutProps
         versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+    setVersionContext: (versionContext: string) => void
     availableVersionContexts: VersionContext[] | undefined
 
     isSourcegraphDotCom: boolean

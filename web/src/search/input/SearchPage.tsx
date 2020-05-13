@@ -53,6 +53,7 @@ interface Props
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string) => void
     availableVersionContexts: VersionContext[] | undefined
 
     // For NavLinks

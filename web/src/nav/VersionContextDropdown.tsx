@@ -26,6 +26,7 @@ export interface VersionContextDropdownProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
+    setVersionContext: (versionContext: string) => void
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
     navbarSearchQuery: string

@@ -18,7 +18,7 @@ export interface TogglesProps
         CaseSensitivityProps,
         SettingsCascadeProps,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
-        Pick<VersionContextProps, 'versionContext'> {
+        VersionContextProps {
     navbarSearchQuery: string
     history: H.History
     location: H.Location

@@ -29,7 +29,7 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps, Pick<VersionContextProps, 'versionContext'> {
+interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.
