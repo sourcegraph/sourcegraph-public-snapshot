@@ -44,7 +44,11 @@ type FileDiff struct {
 type FileDiffs struct {
 	RawDiff  string
 	DiffStat DiffStat
-	Nodes    []FileDiff
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   string
+	}
+	Nodes []FileDiff
 }
 
 type PatchConnection struct {

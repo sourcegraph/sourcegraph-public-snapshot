@@ -244,7 +244,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 func openTestDatabase(t *testing.T) Database {
 	filename := "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db"
 
-	// TODO - rewrite test not to require actual reader
+	// TODO(efritz) - rewrite test not to require actual reader
 	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 	if err != nil {
 		t.Fatalf("unexpected error creating reader: %s", err)
@@ -267,5 +267,5 @@ func openTestDatabase(t *testing.T) Database {
 	t.Cleanup(func() { _ = db.Close })
 
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(db, &observation.TestContext)
+	return NewObserved(db, filename, &observation.TestContext)
 }

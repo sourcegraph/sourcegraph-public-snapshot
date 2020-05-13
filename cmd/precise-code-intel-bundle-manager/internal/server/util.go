@@ -37,6 +37,11 @@ func idFromRequest(r *http.Request) int64 {
 	return id
 }
 
+func indexFromRequest(r *http.Request) int64 {
+	id, _ := strconv.ParseInt(mux.Vars(r)["index"], 10, 64)
+	return id
+}
+
 // copyAll writes the contents of r to w and logs on write failure.
 func copyAll(w http.ResponseWriter, r io.Reader) {
 	if _, err := io.Copy(w, r); err != nil {

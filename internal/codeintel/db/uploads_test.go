@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -51,7 +52,7 @@ func TestGetUploadByID(t *testing.T) {
 		RepositoryID:      123,
 		Indexer:           "lsif-go",
 		NumParts:          1,
-		UploadedParts:     nil,
+		UploadedParts:     []int{},
 		Rank:              nil,
 	}
 
@@ -218,14 +219,72 @@ func TestQueueSize(t *testing.T) {
 	}
 }
 
-func TestEnqueue(t *testing.T) {
+func TestInsertUploadUploading(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	id, err := db.Enqueue(context.Background(), makeCommit(1), "sub/", 50, "lsif-go")
+	id, err := db.InsertUpload(context.Background(), &Upload{
+		Commit:       makeCommit(1),
+		Root:         "sub/",
+		State:        "uploading",
+		RepositoryID: 50,
+		Indexer:      "lsif-go",
+		NumParts:     3,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error enqueueing upload: %s", err)
+	}
+
+	expected := Upload{
+		ID:                id,
+		Commit:            makeCommit(1),
+		Root:              "sub/",
+		VisibleAtTip:      false,
+		UploadedAt:        time.Time{},
+		State:             "uploading",
+		FailureSummary:    nil,
+		FailureStacktrace: nil,
+		StartedAt:         nil,
+		FinishedAt:        nil,
+		RepositoryID:      50,
+		Indexer:           "lsif-go",
+		NumParts:          3,
+		UploadedParts:     []int{},
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), id); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else {
+		// Update auto-generated timestamp
+		expected.UploadedAt = upload.UploadedAt
+
+		if diff := cmp.Diff(expected, upload); diff != "" {
+			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestInsertUploadQueued(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	id, err := db.InsertUpload(context.Background(), &Upload{
+		Commit:        makeCommit(1),
+		Root:          "sub/",
+		State:         "queued",
+		RepositoryID:  50,
+		Indexer:       "lsif-go",
+		NumParts:      1,
+		UploadedParts: []int{0},
+	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
 	}
@@ -259,6 +318,54 @@ func TestEnqueue(t *testing.T) {
 
 		if diff := cmp.Diff(expected, upload); diff != "" {
 			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		}
+	}
+}
+
+func TestMarkQueued(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
+
+	if err := db.MarkQueued(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error marking upload as queued: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "queued" {
+		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
+	}
+}
+
+func TestAddUploadPart(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
+
+	for _, part := range []int{1, 5, 2, 3, 2, 2, 1, 6} {
+		if err := db.AddUploadPart(context.Background(), 1, part); err != nil {
+			t.Fatalf("unexpected error adding upload part: %s", err)
+		}
+	}
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else {
+		sort.Ints(upload.UploadedParts)
+		if diff := cmp.Diff([]int{1, 2, 3, 5, 6}, upload.UploadedParts); diff != "" {
+			t.Errorf("unexpected upload parts (-want +got):\n%s", diff)
 		}
 	}
 }

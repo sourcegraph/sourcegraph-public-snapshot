@@ -9,6 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
+// DefintionMonikersLimit is the maximum number of definition moniker results we'll ask
+// for from the bundle manager. Precise definition results should be a very small set so
+// we don't have a way to page the results. This limit exists only to stop us from having
+// to support a limitless query path in the bundle manager API.
+const DefintionMonikersLimit = 100
+
 // Definitions returns the list of source locations that define the symbol at the given position.
 // This may include remote definitions if the remote repository is also indexed.
 func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
@@ -42,7 +48,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 	for _, monikers := range rangeMonikers {
 		for _, moniker := range monikers {
 			if moniker.Kind == "import" {
-				locations, _, err := lookupMoniker(api.db, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, 0)
+				locations, _, err := lookupMoniker(api.db, api.bundleManagerClient, dump.ID, pathInBundle, "definition", moniker, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, err
 				}
@@ -54,7 +60,7 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 				// table of our own database in case there was a definition that wasn't properly
 				// attached to a result set but did have the correct monikers attached.
 
-				locations, _, err := bundleClient.MonikerResults(context.Background(), "definition", moniker.Scheme, moniker.Identifier, 0, 0)
+				locations, _, err := bundleClient.MonikerResults(context.Background(), "definition", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
 				if err != nil {
 					return nil, errors.Wrap(err, "bundleClient.MonikerResults")
 				}

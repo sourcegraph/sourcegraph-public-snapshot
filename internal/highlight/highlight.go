@@ -449,3 +449,34 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	}
 	return buf.String(), nil
 }
+
+// ParseLinesFromHighlight takes the highlighted html table and returns a slice of highlighted strings, where each string corresponds a single line in the original, highlighed file.
+func ParseLinesFromHighlight(input string) ([]string, error) {
+	doc, err := html.Parse(strings.NewReader(input))
+	if err != nil {
+		return nil, err
+	}
+
+	lines := make([]string, 0)
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return nil, fmt.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and extract content
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // tr > td > div
+		err = html.Render(&buf, div)
+		if err != nil {
+			return nil, err
+		}
+		lines = append(lines, buf.String())
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	return lines, nil
+}

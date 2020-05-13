@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -200,6 +201,102 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			gqltesting.RunTests(t, test.gqlTests)
 		})
 	}
+}
+
+func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	t.Cleanup(func() {
+		db.Mocks.Users = db.MockUsers{}
+	})
+
+	r := &Resolver{
+		repoupdaterClient: &fakeRepoupdaterClient{
+			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+				if len(args.RepoIDs) != 1 {
+					return fmt.Errorf("RepoIDs: want 1 id but got %d", len(args.RepoIDs))
+				}
+				return nil
+			},
+		},
+	}
+	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
+		Repository: graphqlbackend.MarshalRepositoryID(1),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{}, nil
+		}
+		t.Cleanup(func() {
+			db.Mocks.Users = db.MockUsers{}
+		})
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserIDArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	t.Cleanup(func() {
+		db.Mocks.Users = db.MockUsers{}
+	})
+
+	r := &Resolver{
+		repoupdaterClient: &fakeRepoupdaterClient{
+			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+				if len(args.UserIDs) != 1 {
+					return fmt.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
+				}
+				return nil
+			},
+		},
+	}
+	_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserIDArgs{
+		User: graphqlbackend.MarshalUserID(1),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+type fakeRepoupdaterClient struct {
+	mockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
+}
+
+func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	return c.mockSchedulePermsSync(ctx, args)
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
