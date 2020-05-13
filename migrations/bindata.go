@@ -50,6 +50,8 @@
 // 1528395673_remove_unused_campaign_jobs_index.up.sql (70B)
 // 1528395674_add_creation_method_columns_to_changesets.down.sql (147B)
 // 1528395674_add_creation_method_columns_to_changesets.up.sql (519B)
+// 1528395675_add_index_event_logs_anonymous_user_id.down.sql (68B)
+// 1528395675_add_index_event_logs_anonymous_user_id.up.sql (120B)
 
 package migrations
 
@@ -1118,6 +1120,46 @@ func _1528395674_add_creation_method_columns_to_changesetsUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395675_add_index_event_logs_anonymous_user_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x4f\xcc\xcb\xcf\xab\xcc\xcd\x2f\x2d\x8e\x2f\x2d\x4e\x2d\x8a\xcf\x4c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x21\x2f\x6b\x31\x44\x00\x00\x00")
+
+func _1528395675_add_index_event_logs_anonymous_user_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395675_add_index_event_logs_anonymous_user_idDownSql,
+		"1528395675_add_index_event_logs_anonymous_user_id.down.sql",
+	)
+}
+
+func _1528395675_add_index_event_logs_anonymous_user_idDownSql() (*asset, error) {
+	bytes, err := _1528395675_add_index_event_logs_anonymous_user_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395675_add_index_event_logs_anonymous_user_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x95, 0x10, 0x6c, 0xbc, 0x9d, 0xe5, 0x80, 0xa3, 0xf3, 0x36, 0xa0, 0xbb, 0xb6, 0x9d, 0xd, 0x80, 0x4e, 0x43, 0xb3, 0x79, 0xcf, 0x71, 0x9, 0xfc, 0xff, 0x51, 0x44, 0x1c, 0x98, 0x9b, 0xbd, 0x4f}}
+	return a, nil
+}
+
+var __1528395675_add_index_event_logs_anonymous_user_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x4f\xcc\xcb\xcf\xab\xcc\xcd\x2f\x2d\x8e\x2f\x2d\x4e\x2d\x8a\xcf\x4c\x51\xf0\xf7\x43\x92\x57\x08\x0d\xf6\xf4\x73\x57\x70\x0a\x09\x72\x75\x55\xd0\xc0\x50\xac\x09\xb2\xc7\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x39\xe3\xae\xff\x78\x00\x00\x00")
+
+func _1528395675_add_index_event_logs_anonymous_user_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395675_add_index_event_logs_anonymous_user_idUpSql,
+		"1528395675_add_index_event_logs_anonymous_user_id.up.sql",
+	)
+}
+
+func _1528395675_add_index_event_logs_anonymous_user_idUpSql() (*asset, error) {
+	bytes, err := _1528395675_add_index_event_logs_anonymous_user_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395675_add_index_event_logs_anonymous_user_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0x88, 0xd1, 0xc7, 0x2, 0xd0, 0x66, 0xe, 0x1b, 0xaa, 0x26, 0x38, 0x66, 0x70, 0x2d, 0xb7, 0xc4, 0xb3, 0xaa, 0x39, 0x45, 0x98, 0xee, 0xb5, 0xc1, 0xec, 0xf6, 0x8e, 0x9c, 0x3e, 0xc3, 0x7b}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1259,6 +1301,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     _1528395673_remove_unused_campaign_jobs_indexUpSql,
 	"1528395674_add_creation_method_columns_to_changesets.down.sql":           _1528395674_add_creation_method_columns_to_changesetsDownSql,
 	"1528395674_add_creation_method_columns_to_changesets.up.sql":             _1528395674_add_creation_method_columns_to_changesetsUpSql,
+	"1528395675_add_index_event_logs_anonymous_user_id.down.sql":              _1528395675_add_index_event_logs_anonymous_user_idDownSql,
+	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                _1528395675_add_index_event_logs_anonymous_user_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1352,6 +1396,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     {_1528395673_remove_unused_campaign_jobs_indexUpSql, map[string]*bintree{}},
 	"1528395674_add_creation_method_columns_to_changesets.down.sql":           {_1528395674_add_creation_method_columns_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395674_add_creation_method_columns_to_changesets.up.sql":             {_1528395674_add_creation_method_columns_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395675_add_index_event_logs_anonymous_user_id.down.sql":              {_1528395675_add_index_event_logs_anonymous_user_idDownSql, map[string]*bintree{}},
+	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                {_1528395675_add_index_event_logs_anonymous_user_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
