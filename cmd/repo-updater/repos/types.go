@@ -983,10 +983,9 @@ func (r *RateLimiterRegistry) GetRateLimiter(baseURL string) *rate.Limiter {
 	return l
 }
 
-// SyncRateLimiters syncs all rate limiters with current config.
-// We need to sync all as we need to pick the most restrictive configured limit per code host
+// SyncRateLimiters syncs all rate limiters using current config.
+// We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
-// TODO: Test this. Especially that we should only fall back to default if nothing else
 func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
 	services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
@@ -1005,21 +1004,23 @@ func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
 		return errors.Wrap(err, "getting rate limits from config")
 	}
 
-	byURL := make(map[string]rate.Limit)
+	byURL := make(map[string]extsvc.RateLimitConfig)
 	for _, rlc := range limits {
 		current, ok := byURL[rlc.BaseURL]
-		if !ok {
-			byURL[rlc.BaseURL] = rlc.Limit
+		if !ok || (ok && current.IsDefault) {
+			byURL[rlc.BaseURL] = rlc
 			continue
 		}
-		if rlc.Limit < current {
-			byURL[rlc.BaseURL] = rlc.Limit
+		// Use the lower limit, but a default value should not override
+		// a limit that has been configured
+		if rlc.Limit < current.Limit && !rlc.IsDefault {
+			byURL[rlc.BaseURL] = rlc
 		}
 	}
 
 	for u, rl := range byURL {
 		l := r.GetRateLimiter(u)
-		l.SetLimit(rl)
+		l.SetLimit(rl.Limit)
 	}
 
 	return nil
