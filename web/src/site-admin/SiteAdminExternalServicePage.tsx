@@ -184,7 +184,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 )}
                 {externalService?.webhookURL && (
                     <div className="alert alert-info">
-                        <h3>Campaigns webhooks</h3>
+                        <h3>Webhooks</h3>
                         {externalService.kind === GQL.ExternalServiceKind.BITBUCKETSERVER ? (
                             <p>
                                 <a
