@@ -136,7 +136,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             if (externalService.kind === GQL.ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
                 externalServiceCategory = codeHostExternalServices.ghe
             }
-            // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-histed, so we need to guess based on the URL.
+            // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
             if (externalService.kind === GQL.ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
                 externalServiceCategory = codeHostExternalServices.gitlab
             }
