@@ -6,6 +6,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 )
@@ -29,6 +30,8 @@ const (
 	ResetPasswordCode = "reset-password.code"
 
 	RegistryExtensionBundle = "registry.extension.bundle"
+
+	UsageStatsDownload = "usage-stats.download"
 
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -82,6 +85,8 @@ func newRouter() *mux.Router {
 
 	addOldTreeRedirectRoute(base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
+
+	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
 
 	if envvar.SourcegraphDotComMode() {
 		base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)

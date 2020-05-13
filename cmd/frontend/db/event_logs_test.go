@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -193,6 +196,62 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 	assertPercentileValue(t, values[0], startDate.Add(time.Hour*24*2), []float64{50, 62})
 	assertPercentileValue(t, values[1], startDate.Add(time.Hour*24), []float64{40, 52})
 	assertPercentileValue(t, values[2], startDate, []float64{30, 42})
+}
+
+func TestEventLogs_UsersUsageCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	now := time.Now()
+
+	startDate, _ := calcStartDate(now, Daily, 3)
+	secondDay := startDate.Add(time.Hour * 24)
+	thirdDay := startDate.Add(time.Hour * 24 * 2)
+
+	days := []time.Time{startDate, secondDay, thirdDay}
+	names := []string{"SearchResultsQueried", "codeintel"}
+	users := []uint32{1, 2}
+
+	for _, day := range days {
+		for _, user := range users {
+			for _, name := range names {
+				for i := 0; i < 25; i++ {
+					e := &Event{
+						UserID:    user,
+						Name:      name,
+						URL:       "test",
+						Source:    "test",
+						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
+					}
+
+					if err := EventLogs.Insert(ctx, e); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+		}
+	}
+
+	have, err := EventLogs.UsersUsageCounts(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []types.UserUsageCounts{
+		{Date: days[2], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[2], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[1], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[1], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[0], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[0], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Error(diff)
+	}
 }
 
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
