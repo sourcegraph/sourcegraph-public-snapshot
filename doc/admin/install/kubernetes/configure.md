@@ -66,6 +66,7 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Install without RBAC](#install-without-rbac)
 - [Use non-default namespace](#use-non-default-namespace)
 - [Pulling images locally](#pulling-images-locally)
+- [Using NetworkPolicy](#using-networkpolicy)
 
 ### Working with overlays
 
@@ -505,6 +506,8 @@ env:
 
 To enable this, you must first purchase Lightstep and create a project corresponding to the Sourcegraph instance. Then, add the above environment to each deployment.
 
+> Note: Sourcegraph comes with built-in Jaeger tracing. Read the details [here](../../observability/tracing.md)
+
 ## Configure custom Redis
 
 Sourcegraph supports specifying a custom Redis server for:
@@ -551,6 +554,63 @@ for all images under `base/`:
 ```bash
 for IMAGE in $(grep --include '*.yaml' -FR 'image:' base | awk '{ print $(NF) }'); do docker pull "$IMAGE"; done;
 ```
+
+## Using NetworkPolicy
+
+Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
+other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
+then we recommend running Sourcegraph in a namespace (as described below in the [namespaced overlay](#namespaced-overlay)).
+You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
+When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-sourcegraph
+  labels:
+    name: ns-sourcegraph
+```
+
+If the namespace already exists you can still label it like so
+
+```shell script
+kubectl label namespace ns-sourcegraph name=ns-sourcegraph 
+```
+
+> Note: You will need to augment this example NetworkPolicy to allow traffic to external services 
+> you plan to use (like github.com) and ingress traffic from
+> the outside to the frontend for the users of the Sourcegraph installation.
+> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started. 
+
+```yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: np-sourcegraph
+  namespace: ns-sourcegraph
+spec:
+  # For all pods with the label "deploy: sourcegraph"
+  podSelector:
+    matchLabels:
+      deploy: sourcegraph
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow all traffic inside the ns-sourcegraph namespace
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+```
+
+## Overlays
 
 ### Overlay basic principles
 
