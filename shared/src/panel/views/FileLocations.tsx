@@ -149,7 +149,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             isLightTheme={this.props.isLightTheme}
                             fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                             settingsCascade={this.props.settingsCascade}
-                            versionContext={this.props.versionContext}
                         />
                     ))}
                 />
