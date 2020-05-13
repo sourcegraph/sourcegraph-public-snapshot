@@ -11,7 +11,7 @@ These steps assume that you followed the [forking instructions in docs/configure
 
 1. Merge the new version of Sourcegraph into your release branch.
 
-   ```bash
+   ```
    cd $DEPLOY_SOURCEGRAPH_FORK
    git fetch
    git checkout release
@@ -22,13 +22,13 @@ These steps assume that you followed the [forking instructions in docs/configure
 
 1. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
 
-   ```bash
+   ```
    ./kubectl-apply-all.sh
    ```
 
 1. Monitor the status of the deployment.
 
-   ```bash
+   ```
    watch kubectl get pods -o wide
    ```
 
