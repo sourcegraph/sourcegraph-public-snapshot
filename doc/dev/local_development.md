@@ -331,7 +331,7 @@ You may also want to run Postgres within a docker container instead of as a syst
 
 3. Ensure you can connect to the database `pgsql -U sourcegraph` and enter password `sourcegraph`
 
-4. Configure database settings in your environment
+4. Configure database settings in your environment:
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
