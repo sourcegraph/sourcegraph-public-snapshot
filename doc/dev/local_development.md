@@ -352,7 +352,6 @@ You may also want to run Postgres within a docker container instead of as a syst
 
 5. On restarting docker, you may need to start the container again. Find the image with `docker ps --all` and then `docker run <$containerID>` to start again.
 
-
 ### More info
 
 For more information about data storage, [read our full PostgreSQL Guide
