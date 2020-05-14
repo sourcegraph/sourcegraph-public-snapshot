@@ -117,40 +117,21 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) (strin
 	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID), nil
 }
 
-// Common describes basic fields expected to exist on an external service
-// TODO: This is a hack needed because we have ExternalService defined in three places
-// cmd/repo-updater/repos
-// cmd/frontend/types
-// internal/api
-// Until we simplify this, RateLimits below will ask for just the fields it needs
-type Common struct {
-	Config      string
-	Kind        string
-	DisplayName string
-}
-
-// RateLimits returns rate limit config for the supplied external services
-func RateLimits(services []Common) ([]RateLimitConfig, error) {
-	var configs []RateLimitConfig
-
-	for _, svc := range services {
-		config, err := ParseConfig(svc.Kind, svc.Config)
-		if err != nil {
-			return nil, errors.Wrap(err, "loading service configuration")
-		}
-
-		rlc, err := getLimitFromConfig(svc.Kind, config)
-		if err != nil {
-			if _, ok := err.(ErrRateLimitUnsupported); ok {
-				continue
-			}
-			return nil, errors.Wrap(err, "getting rate limit config")
-		}
-		rlc.DisplayName = svc.DisplayName
-		configs = append(configs, rlc)
+// ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not
+// supported the error returned will be an ErrRateLimitUnsupported.
+func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, error) {
+	parsed, err := ParseConfig(kind, config)
+	if err != nil {
+		return RateLimitConfig{}, errors.Wrap(err, "loading service configuration")
 	}
 
-	return configs, nil
+	rlc, err := getLimitFromConfig(kind, parsed)
+	if err != nil {
+		return RateLimitConfig{}, err
+	}
+	rlc.DisplayName = displayName
+
+	return rlc, nil
 }
 
 // RateLimitConfig represents the internal rate limit configured for an external service

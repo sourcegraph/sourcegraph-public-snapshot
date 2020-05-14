@@ -992,16 +992,16 @@ func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
 		return errors.Wrap(err, "listing external services")
 	}
 
-	common := make([]extsvc.Common, len(services))
-	for i := range services {
-		common[i].Config = services[i].Config
-		common[i].Kind = services[i].Kind
-		common[i].DisplayName = services[i].DisplayName
-	}
-
-	limits, err := extsvc.RateLimits(common)
-	if err != nil {
-		return errors.Wrap(err, "getting rate limits from config")
+	var limits []extsvc.RateLimitConfig
+	for _, svc := range services {
+		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+		if err != nil {
+			if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+				continue
+			}
+			return errors.Wrap(err, "getting rate limit configuration")
+		}
+		limits = append(limits, rlc)
 	}
 
 	byURL := make(map[string]extsvc.RateLimitConfig)

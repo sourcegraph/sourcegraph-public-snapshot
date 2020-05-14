@@ -71,17 +71,17 @@ func checkDuplicateRateLimits() (problems conf.Problems) {
 		return problems
 	}
 
-	common := make([]extsvc.Common, len(externalServices))
-	for i := range externalServices {
-		common[i].Config = externalServices[i].Config
-		common[i].Kind = externalServices[i].Kind
-		common[i].DisplayName = externalServices[i].DisplayName
-	}
-
-	rateLimits, err := extsvc.RateLimits(common)
-	if err != nil {
-		problems = append(problems, conf.NewExternalServiceProblem(fmt.Sprintf("Could not get rate limit config: %v", err)))
-		return problems
+	var rateLimits []extsvc.RateLimitConfig
+	for _, svc := range externalServices {
+		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+		if err != nil {
+			if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+				continue
+			}
+			problems = append(problems, conf.NewExternalServiceProblem(fmt.Sprintf("Could not get rate limit config: %v", err)))
+			return problems
+		}
+		rateLimits = append(rateLimits, rlc)
 	}
 
 	// BaseURL -> DisplayName
