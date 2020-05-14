@@ -307,7 +307,7 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
-## Step 2 (alternative): Using Docker to run Postgres
+### With Docker
 
 You may also want to run Postgres within a docker container instead of as system service:
 
