@@ -141,9 +141,15 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         {props.availableVersionContexts
                                             // Render the current version context at the top, then other available version
                                             // contexts in alphabetical order.
-                                            ?.sort((a, b) =>
-                                                b.name === props.versionContext || a.name > b.name ? 1 : -1
-                                            )
+                                            ?.sort((a, b) => {
+                                                if (a.name === props.versionContext) {
+                                                    return -1
+                                                }
+                                                if (b.name === props.versionContext) {
+                                                    return 1
+                                                }
+                                                return a.name > b.name ? 1 : -1
+                                            })
                                             .map(versionContext => (
                                                 <ListboxOption
                                                     key={versionContext.name}
