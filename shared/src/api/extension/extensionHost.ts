@@ -200,7 +200,7 @@ function createExtensionAPI(
             onDidChangeRoots: workspace.rootsChanges,
             rootChanges: workspace.rootsChanges,
             get versionContext(): string | undefined {
-                return workspace.getVersionContext()
+                return workspace.versionContextChanges.value
             },
             versionContextChanges: workspace.versionContextChanges,
         },
