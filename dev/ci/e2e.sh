@@ -36,7 +36,7 @@ done
 EOF
 
 set +e
-if ! timeout 60s bash -c "$retryPingCommand"; then
+if ! timeout 120s bash -c "$retryPingCommand"; then
   echo "^^^ +++"
   echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
   docker inspect "$CONTAINER"
