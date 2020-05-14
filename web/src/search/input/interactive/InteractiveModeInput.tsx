@@ -19,7 +19,13 @@ import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
+import {
+    parseSearchURLQuery,
+    InteractiveSearchProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+} from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
@@ -39,6 +45,7 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        CopyQueryButtonProps,
         Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
         VersionContextProps {
     location: H.Location

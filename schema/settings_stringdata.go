@@ -46,6 +46,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }
+        },
+        "copyQueryButton": {
+          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

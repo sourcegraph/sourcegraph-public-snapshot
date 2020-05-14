@@ -26,6 +26,7 @@ describe('PlainQueryInput', () => {
                         onSubmit={noop}
                         isLightTheme={false}
                         settingsCascade={{ subjects: [], final: {} }}
+                        copyQueryButton={false}
                         versionContext={undefined}
                     />
                 )
@@ -51,6 +52,7 @@ describe('PlainQueryInput', () => {
                         onSubmit={noop}
                         isLightTheme={false}
                         settingsCascade={{ subjects: [], final: {} }}
+                        copyQueryButton={false}
                         versionContext={undefined}
                     />
                 )

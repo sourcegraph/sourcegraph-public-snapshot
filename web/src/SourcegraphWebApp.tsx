@@ -147,6 +147,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     smartSearchField: boolean
 
     /**
+     * Whether to display the copy query button.
+     */
+    copyQueryButton: boolean
+
+    /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
     versionContext?: string
@@ -235,6 +240,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             filtersInQuery: {},
             splitSearchModes: true,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
+            copyQueryButton: false,
             smartSearchField: true,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
@@ -304,8 +310,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = true } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField })
+                    const {
+                        splitSearchModes = true,
+                        smartSearchField = true,
+                        copyQueryButton = false,
+                    } = experimentalFeatures
+                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton })
                 }
             })
         )
@@ -431,6 +441,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
+                                    copyQueryButton={this.state.copyQueryButton}
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}

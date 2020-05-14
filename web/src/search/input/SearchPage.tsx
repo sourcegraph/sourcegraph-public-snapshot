@@ -6,6 +6,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -48,6 +49,7 @@ interface Props
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
         SmartSearchFieldProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
