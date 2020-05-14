@@ -954,11 +954,6 @@ declare module 'sourcegraph' {
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URL
-
-        /**
-         * The version context of the workspace.
-         */
-        versionContext?: string
     }
 
     /**
@@ -1005,6 +1000,16 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace root is added or removed from the workspace.
          */
         export const rootChanges: Subscribable<void>
+
+        /**
+         * The current version context of the workspace, if any.
+         */
+        export const versionContext: string | undefined
+
+        /**
+         * An event that is fired when a workspace root's version context changes.
+         */
+        export const versionContextChanges: Subscribable<string | undefined>
     }
 
     /**

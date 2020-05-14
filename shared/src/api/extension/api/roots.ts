@@ -1,32 +1,44 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Subject } from 'rxjs'
+import { Subject, BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 /** @internal */
-export interface ExtRootsAPI extends ProxyMarked {
+export interface ExtWorkspaceAPI extends ProxyMarked {
     $acceptRoots(roots: readonly clientType.WorkspaceRoot[]): void
+    $acceptVersionContext(versionContext: string | undefined): void
 }
 
 /** @internal */
-export class ExtRoots implements ExtRootsAPI, ProxyMarked {
+export class ExtWorkspace implements ExtWorkspaceAPI, ProxyMarked {
     public readonly [proxyMarker] = true
 
     private roots: readonly sourcegraph.WorkspaceRoot[] = []
+    private versionContext: string | undefined = undefined
 
     /**
      * Returns all workspace roots.
      *
      * @internal
      */
-    public getAll(): readonly sourcegraph.WorkspaceRoot[] {
+    public getAllRoots(): readonly sourcegraph.WorkspaceRoot[] {
         return this.roots
     }
 
-    public readonly changes = new Subject<void>()
+    public getVersionContext(): string | undefined {
+        return this.versionContext
+    }
+
+    public readonly rootsChanges = new Subject<void>()
+    public readonly versionContextChanges = new BehaviorSubject<string | undefined>(undefined)
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
         this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
-        this.changes.next()
+        this.rootsChanges.next()
+    }
+
+    public $acceptVersionContext(versionContext: string | undefined): void {
+        this.versionContext = versionContext
+        this.versionContextChanges.next(versionContext)
     }
 }
