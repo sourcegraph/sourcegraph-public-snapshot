@@ -141,29 +141,12 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                                 onDisableValue={disableValue}
                                             />
                                         </ListboxGroupLabel>
-
                                         {props.availableVersionContexts
-                                            ?.filter(versionContext => versionContext.name === props.versionContext)
-                                            .map(versionContext => (
-                                                <ListboxOption
-                                                    key={versionContext.name}
-                                                    value={versionContext.name}
-                                                    label={versionContext.name}
-                                                    className="version-context-dropdown__option"
-                                                >
-                                                    <VersionContextInfoRow
-                                                        name={versionContext.name}
-                                                        description={versionContext.description || ''}
-                                                        isActive={props.versionContext === versionContext.name}
-                                                        onDisableValue={disableValue}
-                                                    />
-                                                </ListboxOption>
-                                            ))}
-                                        {props.availableVersionContexts
-                                            ?.filter(versionContext => versionContext.name !== props.versionContext)
                                             // Render the current version context at the top, then other available version
                                             // contexts in alphabetical order.
-                                            .sort((a, b) => (b.name === props.versionContext || a.name > b.name ? 1 : -1))
+                                            ?.sort((a, b) =>
+                                                b.name === props.versionContext || a.name > b.name ? 1 : -1
+                                            )
                                             .map(versionContext => (
                                                 <ListboxOption
                                                     key={versionContext.name}
