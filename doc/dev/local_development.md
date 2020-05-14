@@ -345,8 +345,7 @@ You may also want to run Postgres within a docker container instead of as a syst
     export PGSSLMODE=disable
     ```
 
-    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to
-    source these env vars on demand when you start the server.
+    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to source these env vars on demand when you start the server.
 
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
