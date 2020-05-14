@@ -1733,16 +1733,15 @@
   dependencies:
     prop-types "^15.6.1"
 
-"@reach/accordion@^0.9.1":
-  version "0.9.1"
-  resolved "https://registry.npmjs.org/@reach/accordion/-/accordion-0.9.1.tgz#c2a33a4eaabddd7216481e88d38b5be6b8a03bf1"
-  integrity sha512-zXSyTF7LJutWgnAPIb01w5bFdDObr0UlPtCErvo1pxUhY20NZAtzJAjsML5taCbNFkyJM97gIb84Yfr+BDajrg==
+"@reach/accordion@^0.10.2":
+  version "0.10.2"
+  resolved "https://registry.npmjs.org/@reach/accordion/-/accordion-0.10.2.tgz#1e97bee6227bc48651ecfffce5529d026ab74c97"
+  integrity sha512-fDGzhrM2OZmKVaAF5a0YwuQlKxfUXSgjSKt2SuO3t3kt+o0TU/AJKWa0EOzdS03bsxZtjvFis43cCXGxanVZWQ==
   dependencies:
-    "@reach/auto-id" "^0.9.0"
-    "@reach/descendants" "^0.9.1"
-    "@reach/utils" "^0.9.0"
-    tslib "^1.10.0"
-    warning "^4.0.3"
+    "@reach/auto-id" "^0.10.2"
+    "@reach/descendants" "^0.10.2"
+    "@reach/utils" "^0.10.2"
+    tslib "^1.11.2"
 
 "@reach/auto-id@^0.10.1", "@reach/auto-id@^0.10.2":
   version "0.10.2"
@@ -1752,14 +1751,6 @@
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
 
-"@reach/auto-id@^0.9.0":
-  version "0.9.0"
-  resolved "https://registry.npmjs.org/@reach/auto-id/-/auto-id-0.9.0.tgz#73b5d34bcf432f3e73b235b9dcaa89ea05a0d4db"
-  integrity sha512-9/aXl+dT0pOenvpkB2kkmQnpMDlmSk8ZkBYmYFzFz3eA4PZFNuXcHVzQevFRhc0HVlskPjxwPNf92EkI9rdFOw==
-  dependencies:
-    "@reach/utils" "^0.9.0"
-    tslib "^1.10.0"
-
 "@reach/descendants@^0.10.1", "@reach/descendants@^0.10.2":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/descendants/-/descendants-0.10.2.tgz#551c9f767a16bcad6d1abc41449bb46a12cd3ee3"
@@ -1767,14 +1758,6 @@
   dependencies:
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
-
-"@reach/descendants@^0.9.1":
-  version "0.9.1"
-  resolved "https://registry.npmjs.org/@reach/descendants/-/descendants-0.9.1.tgz#f17eec0a245d3b6a7cccd020b8edf5b7d1115fc2"
-  integrity sha512-SIlCSzxmL7OVZVG6/9vICtawGZbpSOcEjxuUfZiVLs62QOSLINEUPgSnFKCOtGxIEQOEgNxQ/DMkpNkWEva2Tw==
-  dependencies:
-    "@reach/utils" "^0.9.0"
-    tslib "^1.10.0"
 
 "@reach/listbox@^0.10.1":
   version "0.10.1"
@@ -1861,14 +1844,6 @@
   dependencies:
     "@types/warning" "^3.0.0"
     tslib "^1.11.2"
-    warning "^4.0.3"
-
-"@reach/utils@^0.9.0":
-  version "0.9.0"
-  resolved "https://registry.npmjs.org/@reach/utils/-/utils-0.9.0.tgz#ee47c25c79eb2f98e6c0e728a2672075cc9991d5"
-  integrity sha512-cmiykRaxuCysVTsSY3PgrLjySnEIt1PLiSYKh5rAH8nYyEmaOCtw0vaNItFAiqQIjfrxkixmcUE8dyD8kqVuJA==
-  dependencies:
-    tslib "^1.10.0"
     warning "^4.0.3"
 
 "@sentry/browser@^5.15.5":
@@ -2063,8 +2038,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -18829,8 +18803,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.2.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -20148,7 +20121,7 @@ ts-pnp@^1.1.2:
   resolved "https://registry.npmjs.org/ts-pnp/-/ts-pnp-1.1.4.tgz#ae27126960ebaefb874c6d7fa4729729ab200d90"
   integrity sha512-1J/vefLC+BWSo+qe8OnJQfWTYRS6ingxjwqmHMqaMxXMj7kFtKLgAaYW3JeX3mktjgUL+etlU8/B4VUAUI9QGw==
 
-tslib@^1, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
+tslib@^1, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   version "1.11.2"
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.11.2.tgz#9c79d83272c9a7aaf166f73915c9667ecdde3cc9"
   integrity sha512-tTSkux6IGPnUGUd1XAZHcpu85MOkIl5zX49pO+jfsie3eP0B6pyhOlLXm3cAC6T7s+euSDDUUV+Acop5WmtkVg==
