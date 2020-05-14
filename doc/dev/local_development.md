@@ -309,7 +309,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 ## Step 2 (alternative): Using Docker to run Postgres
 
-You may also want to run Postgres within a docker container instead of as a system service
+You may also want to run Postgres within a docker container instead of as system service:
 
 1. Create a directory to store and mount the database from for persistence:
 
