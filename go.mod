@@ -7,6 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/google/go-cmp v0.4.0
 	github.com/gosuri/uilive v0.0.4
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
