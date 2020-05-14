@@ -496,7 +496,7 @@ const SiteSchemaJSON = `{
     },
     "email.imap": {
       "title": "IMAPServerConfig",
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
+      "description": "DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port"],

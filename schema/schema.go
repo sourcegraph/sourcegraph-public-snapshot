@@ -630,7 +630,7 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 
-// IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
+// IMAPServerConfig description: DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.
 type IMAPServerConfig struct {
 	// Host description: The IMAP server host.
 	Host string `json:"host"`
@@ -977,7 +977,7 @@ type SiteConfiguration struct {
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailImap description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
+	// EmailImap description: DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.
 	EmailImap *IMAPServerConfig `json:"email.imap,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
