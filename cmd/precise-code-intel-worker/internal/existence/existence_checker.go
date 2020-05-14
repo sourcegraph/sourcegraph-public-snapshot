@@ -23,7 +23,9 @@ func NewExistenceChecker(root string, paths []string, getChildren GetChildrenFun
 
 // Exists determines if the given path exists in the git clone at the target commit.
 func (ec *ExistenceChecker) Exists(path string) bool {
-	if children, ok := ec.directoryContents[dirWithoutDot(filepath.Join(ec.root, path))]; ok {
+	path = filepath.Join(ec.root, path)
+
+	if children, ok := ec.directoryContents[dirWithoutDot(path)]; ok {
 		if _, ok := children[path]; ok {
 			return true
 		}

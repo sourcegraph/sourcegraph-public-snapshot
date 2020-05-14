@@ -16,18 +16,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 type Resolver struct {
-	store *edb.PermsStore
+	store             *edb.PermsStore
+	repoupdaterClient interface {
+		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	}
 }
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(db, clock),
+		store:             edb.NewPermsStore(db, clock),
+		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
@@ -117,6 +124,46 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
 
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repoID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 

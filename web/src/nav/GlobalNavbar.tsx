@@ -28,6 +28,9 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
+import { VersionContextDropdown } from './VersionContextDropdown'
+import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContext } from '../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -42,7 +45,8 @@ interface Props
         CaseSensitivityProps,
         InteractiveSearchProps,
         SmartSearchFieldProps,
-        CopyQueryButtonProps {
+        CopyQueryButtonProps,
+        VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -67,6 +71,8 @@ interface Props
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
@@ -196,6 +202,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
                                     lowProfile={!this.props.isSearchRelatedPage}
+                                    versionContext={this.props.versionContext}
                                 />
                             )
                         ) : (
@@ -209,6 +216,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
+                                        <VersionContextDropdown
+                                            history={this.props.history}
+                                            navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
+                                        />
                                         <SearchNavbarItem
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}

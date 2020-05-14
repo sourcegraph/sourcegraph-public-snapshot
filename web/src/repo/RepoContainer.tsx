@@ -40,6 +40,7 @@ import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -54,7 +55,8 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps {
+        CopyQueryButtonProps,
+        VersionContextProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -85,7 +87,8 @@ interface RepoContainerProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        CopyQueryButtonProps {
+        CopyQueryButtonProps,
+        VersionContextProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -316,6 +319,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
             copyQueryButton: this.props.copyQueryButton,
+            versionContext: this.props.versionContext,
         }
 
         return (

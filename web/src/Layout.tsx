@@ -54,6 +54,8 @@ import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardS
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { VersionContextProps } from '../../shared/src/search/util'
+import { VersionContext } from './schema/site.schema'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -69,7 +71,8 @@ export interface LayoutProps
         CaseSensitivityProps,
         InteractiveSearchProps,
         SmartSearchFieldProps,
-        CopyQueryButtonProps {
+        CopyQueryButtonProps,
+        VersionContextProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -109,8 +112,11 @@ export interface LayoutProps
         query: QueryState['query'],
         version: string,
         patternType: GQL.SearchPatternType,
+        versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     isSourcegraphDotCom: boolean
     showCampaigns: boolean

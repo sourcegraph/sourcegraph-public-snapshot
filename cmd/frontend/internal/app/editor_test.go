@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -82,5 +83,149 @@ func TestEditorRev(t *testing.T) {
 		if got != c.expEditorRev {
 			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}
+	}
+}
+
+func TestEditorRedirect(t *testing.T) {
+	cases := []struct {
+		name            string
+		q               url.Values
+		wantRedirectURL string
+		wantParseErr    string
+		wantRedirectErr string
+	}{
+		{
+			name: "open file",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file no selection",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+			},
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
+		},
+		{
+			name: "search",
+			q: url.Values{
+				"editor":  []string{"Atom"},
+				"version": []string{"v1.2.1"},
+				"search":  []string{"foobar"},
+
+				// Editor extensions specify these when trying to perform a global search,
+				// so we cannot treat these as "search in repo/branch/file". When these are
+				// present, a global search must be performed:
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"file":       []string{"mux.go"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository branch",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_branch":     []string{"dev"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%40dev+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository revision",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_branch":     []string{"dev"},
+				"search_revision":   []string{"0ad12f"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%400ad12f+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository file",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_file":       []string{"baz"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+file%3A%5Ebaz%24+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in file",
+			q: url.Values{
+				"editor":      []string{"Atom"},
+				"version":     []string{"v1.2.1"},
+				"search":      []string{"foobar"},
+				"search_file": []string{"baz"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=file%3A%5Ebaz%24+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name:         "empty request",
+			wantParseErr: "expected URL parameter missing: editor=$EDITOR_NAME",
+		},
+		{
+			name: "unknown request",
+			q: url.Values{
+				"editor":  []string{"Atom"},
+				"version": []string{"v1.2.1"},
+			},
+			wantRedirectErr: "could not determine request type, missing ?search or ?remote_url",
+		},
+	}
+	errStr := func(e error) string {
+		if e == nil {
+			return ""
+		}
+		return e.Error()
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			editorRequest, parseErr := parseEditorRequest(c.q)
+			if errStr(parseErr) != c.wantParseErr {
+				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
+			}
+			if parseErr == nil {
+				redirectURL, redirectErr := editorRequest.redirectURL(context.TODO())
+				if errStr(redirectErr) != c.wantRedirectErr {
+					t.Fatalf("got redirectErr %q want %q", redirectErr, c.wantRedirectErr)
+				}
+				if redirectURL != c.wantRedirectURL {
+					t.Fatalf("got redirectURL %q want %q", redirectURL, c.wantRedirectURL)
+				}
+			}
+		})
 	}
 }

@@ -90,11 +90,7 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 			r.webhookErr = errors.Wrap(err, "parsing external service config")
 			return
 		}
-		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, conf.ExternalURL())
-		if err != nil {
-			r.webhookErr = errors.Wrap(err, "creating webhook url")
-			return
-		}
+		u := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, conf.ExternalURL())
 		switch c := parsed.(type) {
 		case *schema.BitbucketServerConnection:
 			if c.Webhooks != nil {

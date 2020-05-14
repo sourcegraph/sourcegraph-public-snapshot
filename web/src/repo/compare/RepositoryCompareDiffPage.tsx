@@ -23,19 +23,29 @@ export function queryRepositoryComparisonFileDiffs(args: {
     base: string | null
     head: string | null
     first?: number
+    after?: string
+    isLightTheme: boolean
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $isLightTheme: Boolean!
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first) {
+                            fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
                                 }
                                 totalCount
                                 pageInfo {
+                                    endCursor
                                     hasNextPage
                                 }
                                 diffStat {
@@ -101,11 +111,13 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         },
                         lineNumbers: true,
                     }}
-                    defaultFirst={25}
+                    updateOnChange={String(this.props.isLightTheme)}
+                    defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    cursorPaging={true}
                 />
             </div>
         )
@@ -117,5 +129,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            isLightTheme: this.props.isLightTheme,
         })
 }

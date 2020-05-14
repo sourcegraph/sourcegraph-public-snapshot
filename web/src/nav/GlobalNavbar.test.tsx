@@ -38,6 +38,9 @@ const PROPS: GlobalNavbar['props'] = {
     smartSearchField: false,
     isSearchRelatedPage: true,
     copyQueryButton: false,
+    versionContext: undefined,
+    setVersionContext: () => undefined,
+    availableVersionContexts: [],
 }
 
 describe('GlobalNavbar', () => {

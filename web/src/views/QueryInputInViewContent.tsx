@@ -6,8 +6,14 @@ import { SearchButton } from '../search/input/SearchButton'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { QueryState, submitSearch } from '../search/helpers'
 import H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
-interface Props extends SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps {
+interface Props
+    extends SettingsCascadeProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     implicitQueryPrefix: string
 
     location: H.Location

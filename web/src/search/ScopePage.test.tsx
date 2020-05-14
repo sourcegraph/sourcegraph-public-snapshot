@@ -35,7 +35,11 @@ describe('ScopePage', () => {
                             setPatternType={() => undefined}
                             history={history}
                             location={location}
+<<<<<<< HEAD
                             copyQueryButton={false}
+=======
+                            versionContext={undefined}
+>>>>>>> master
                         />
                     </MemoryRouter>
                 )

@@ -4,6 +4,7 @@ import { ViewPage } from './ViewPage'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -11,7 +12,8 @@ interface Props
         SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps {}
+        CopyQueryButtonProps,
+        VersionContextProps {}
 
 /**
  * The area that handles /views routes, displaying the requested view (contributed by an extension)

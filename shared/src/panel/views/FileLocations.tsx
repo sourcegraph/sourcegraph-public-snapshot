@@ -15,6 +15,7 @@ import { SettingsCascadeProps } from '../../settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { property, isDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL, toRepoURL } from '../../util/url'
+import { VersionContextProps } from '../../search/util'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
@@ -28,7 +29,7 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.

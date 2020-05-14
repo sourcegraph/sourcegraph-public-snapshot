@@ -133,8 +133,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
 
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryExternalChangesetFileDiffs(node.id, args),
-        [node.id]
+        (args: FilteredConnectionQueryArgs) => queryExternalChangesetFileDiffs(node.id, { ...args, isLightTheme }),
+        [node.id, isLightTheme]
     )
 
     return (
@@ -177,12 +177,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             lineNumbers: true,
                         }}
                         updateOnChange={node.repository.id}
-                        defaultFirst={25}
+                        defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         history={history}
                         location={location}
                         useURLQuery={false}
+                        cursorPaging={true}
                     />
                 </Collapsible>
             ) : (

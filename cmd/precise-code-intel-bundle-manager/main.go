@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dgraph-io/ristretto"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -102,14 +101,9 @@ func prepCaches(r prometheus.Registerer, databaseCacheSize, documentCacheSize, r
 		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
 	}
 
-	cacheMetrics := map[string]*ristretto.Metrics{
-		"precise-code-intel-database":     databaseCacheMetrics,
-		"precise-code-intel-document":     documentCacheMetrics,
-		"precise-code-intel-result-chunk": resultChunkCacheMetrics,
-	}
-	for cacheName, metrics := range cacheMetrics {
-		MustRegisterCacheMonitor(r, cacheName, metrics)
-	}
+	MustRegisterCacheMonitor(r, "precise-code-intel-database", databaseCacheSize, databaseCacheMetrics)
+	MustRegisterCacheMonitor(r, "precise-code-intel-document", documentCacheSize, documentCacheMetrics)
+	MustRegisterCacheMonitor(r, "precise-code-intel-result-chunk", resultChunkCacheSize, resultChunkCacheMetrics)
 
 	return databaseCache, documentCache, resultChunkCache
 }

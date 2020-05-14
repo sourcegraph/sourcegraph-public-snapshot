@@ -7,15 +7,16 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
-import { hasProperty } from '../../../../shared/src/util/types'
+import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
+import { observeResize } from '../../util/dom'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -128,8 +129,28 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         publishReplay(1),
         refCount()
     )
-    private containerRef: HTMLElement | null = null
+    private containerRefs = new Subject<HTMLElement | null>()
+    private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
     private subscriptions = new Subscription()
+
+    constructor(props: MonacoQueryInputProps) {
+        super(props)
+        // Trigger a layout of the Monaco editor when its container gets resized.
+        // The Monaco editor doesn't auto-resize with its container:
+        // https://github.com/microsoft/monaco-editor/issues/28
+        this.subscriptions.add(
+            this.containerRefs
+                .pipe(
+                    switchMap(container => (container ? observeResize(container) : [])),
+                    withLatestFrom(this.editorRefs),
+                    map(([, editor]) => editor),
+                    filter(isDefined)
+                )
+                .subscribe(editor => {
+                    editor.layout()
+                })
+        )
+    }
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
@@ -174,8 +195,8 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         }
         return (
             <>
-                <div ref={this.setContainerRef} className="monaco-query-input-container flex-1">
-                    <div className="flex-1">
+                <div ref={this.containerRefs.next.bind(this.containerRefs)} className="monaco-query-input-container">
+                    <div className="flex-grow-1 flex-shrink-past-contents">
                         <MonacoEditor
                             id="monaco-query-input"
                             language={SOURCEGRAPH_SEARCH}
@@ -199,10 +220,6 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         )
     }
 
-    private setContainerRef = (ref: HTMLElement | null): void => {
-        this.containerRef = ref
-    }
-
     private onChange = (query: string): void => {
         // Cursor position is irrelevant for the Monaco query input.
         this.props.onChange({ query, cursorPosition: 0, fromUserInput: true })
@@ -218,6 +235,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
+        this.editorRefs.next(editor)
         // Accessibility: allow tab usage to move focus to
         // next previous focusable element (and not to insert the tab character).
         // - Cannot be set through IEditorOptions
@@ -282,22 +300,15 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             throw new Error('Cannot unbind default Monaco keybindings')
         }
         for (const action of Object.keys(editor._actions)) {
+            // Keep ctrl+space to show all available completions
+            if (action === 'editor.action.triggerSuggest') {
+                continue
+            }
             // Prefixing action ids with `-` to unbind the default actions.
             editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
         }
         // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
         // not exposed on editor._actions.
         editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
-
-        // Trigger a layout of the Monaco editor when its container gets resized.
-        // The Monaco editor doesn't auto-resize with its container:
-        // https://github.com/microsoft/monaco-editor/issues/28
-        if (this.containerRef) {
-            const resizeObserver = new ResizeObserver(() => {
-                editor.layout()
-            })
-            resizeObserver.observe(this.containerRef)
-            this.subscriptions.add(() => resizeObserver.disconnect())
-        }
     }
 }

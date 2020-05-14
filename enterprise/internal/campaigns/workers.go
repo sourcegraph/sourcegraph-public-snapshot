@@ -255,8 +255,9 @@ func ExecChangesetJob(
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
 		Changeset: &campaigns.Changeset{
-			RepoID:      repo.ID,
-			CampaignIDs: []int64{job.CampaignID},
+			RepoID:            repo.ID,
+			CampaignIDs:       []int64{job.CampaignID},
+			CreatedByCampaign: true,
 		},
 	}
 
@@ -310,6 +311,7 @@ func ExecChangesetJob(
 		SetDerivedState(clone, events)
 
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
+		clone.CreatedByCampaign = true
 
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err

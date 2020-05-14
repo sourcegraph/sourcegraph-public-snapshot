@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -141,27 +143,45 @@ func (r *RepositoryComparisonResolver) Commits(
 }
 
 func (r *RepositoryComparisonResolver) FileDiffs(
-	args *graphqlutil.ConnectionArgs,
+	args *FileDiffsConnectionArgs,
 ) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
 		cmp:   r,
 		first: args.First,
+		after: args.After,
 	}
 }
 
 type fileDiffConnectionResolver struct {
 	cmp   *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 	first *int32
+	after *string
 
 	// cache result because it is used by multiple fields
 	once        sync.Once
 	fileDiffs   []*diff.FileDiff
+	afterIdx    int32
 	hasNextPage bool
 	err         error
 }
 
-func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
-	do := func() ([]*diff.FileDiff, error) {
+// compute returns the computed FileDiffs, the index from which to return entries (`after` param) and an optional error.
+func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, int32, error) {
+	do := func() ([]*diff.FileDiff, int32, error) {
+		var afterIdx int32
+		// Todo: It's possible that the rangeSpec changes in between two executions, then the cursor would be invalid and the
+		// whole pagination should not be continued.
+		if r.after != nil {
+			parsedIdx, err := strconv.ParseInt(*r.after, 0, 32)
+			if err != nil {
+				return nil, afterIdx, err
+			}
+			if parsedIdx < 0 {
+				parsedIdx = 0
+			}
+			afterIdx = int32(parsedIdx)
+		}
+
 		var rangeSpec string
 		hOid := r.cmp.head.OID()
 		if r.cmp.base == nil {
@@ -174,11 +194,11 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
 			// extra careful to avoid letting user input add additional `git diff` command-line
 			// flags or refer to a file.
-			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
+			return nil, afterIdx, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
 		if err != nil {
-			return nil, err
+			return nil, afterIdx, err
 		}
 		rdr, err := git.ExecReader(ctx, *cachedRepo, []string{
 			"diff",
@@ -191,7 +211,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			"--",
 		})
 		if err != nil {
-			return nil, err
+			return nil, afterIdx, err
 		}
 		defer rdr.Close()
 
@@ -206,35 +226,40 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 				break
 			}
 			if err != nil {
-				return nil, err
+				return nil, afterIdx, err
 			}
 			fileDiffs = append(fileDiffs, fileDiff)
-			if r.first != nil && len(fileDiffs) == int(*r.first) {
+			if r.first != nil && len(fileDiffs) == int(*r.first+afterIdx) {
 				// Check for hasNextPage.
 				_, err := dr.ReadFile()
 				if err != nil && err != io.EOF {
-					return nil, err
+					return nil, afterIdx, err
 				}
 				r.hasNextPage = err != io.EOF
 				break
 			}
 		}
-		return fileDiffs, nil
+		return fileDiffs, afterIdx, nil
 	}
 
-	r.once.Do(func() { r.fileDiffs, r.err = do() })
-	return r.fileDiffs, r.err
+	r.once.Do(func() { r.fileDiffs, r.afterIdx, r.err = do() })
+	return r.fileDiffs, r.afterIdx, r.err
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffResolver, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, afterIdx, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	if r.first != nil && len(fileDiffs) > int(*r.first) {
-		// Don't return +1 results, which is used to determine if next page exists.
-		fileDiffs = fileDiffs[:*r.first]
+	if r.first != nil && int(*r.first+afterIdx) <= len(fileDiffs) {
+		// If first is set, we have an upper bound. If the requested amount of diffs exist, return a slice of `first` entries from afterIdx.
+		fileDiffs = fileDiffs[afterIdx:(*r.first + afterIdx)]
+	} else if int(afterIdx) <= len(fileDiffs) {
+		// If no upper boundary is given, return from the lower boundary.
+		fileDiffs = fileDiffs[afterIdx:]
+	} else {
+		// If the lower boundary is out of bounds, return an empty result.
+		fileDiffs = []*diff.FileDiff{}
 	}
 
 	resolvers := make([]*fileDiffResolver, len(fileDiffs))
@@ -248,7 +273,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffReso
 }
 
 func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -260,14 +285,22 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 }
 
 func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if _, err := r.compute(ctx); err != nil {
+	_, afterIdx, err := r.compute(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.hasNextPage), nil
+	if !r.hasNextPage {
+		return graphqlutil.HasNextPage(r.hasNextPage), nil
+	}
+	next := int32(afterIdx)
+	if r.first != nil {
+		next += *r.first
+	}
+	return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +314,7 @@ func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, e
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, err := r.compute(ctx)
+	fileDiffs, _, err := r.compute(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -298,8 +331,11 @@ func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
 func (r *fileDiffResolver) Hunks() []*DiffHunk {
 	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
+	highlighter := &fileDiffHighlighter{
+		fileDiffResolver: r,
+	}
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = NewDiffHunk(hunk)
+		hunks[i] = NewDiffHunk(hunk, highlighter)
 	}
 	return hunks
 }
@@ -348,12 +384,57 @@ func diffPathOrNull(path string) *string {
 	return &path
 }
 
-func NewDiffHunk(hunk *diff.Hunk) *DiffHunk {
-	return &DiffHunk{hunk: hunk}
+func NewDiffHunk(hunk *diff.Hunk, highlighter DiffHighlighter) *DiffHunk {
+	return &DiffHunk{hunk: hunk, highlighter: highlighter}
+}
+
+type fileDiffHighlighter struct {
+	fileDiffResolver *fileDiffResolver
+	highlightedBase  []string
+	highlightedHead  []string
+	highlightOnce    sync.Once
+	highlightErr     error
+	highlightAborted bool
+}
+
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error) {
+	r.highlightOnce.Do(func() {
+		highlightFile := func(ctx context.Context, file *GitTreeEntryResolver) ([]string, error) {
+			if file == nil {
+				return nil, nil
+			}
+			binary, err := file.Binary(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if binary {
+				return nil, nil
+			}
+			highlightedFile, err := file.Highlight(ctx, &HighlightArgs{
+				DisableTimeout:     args.DisableTimeout,
+				HighlightLongLines: args.HighlightLongLines,
+				IsLightTheme:       args.IsLightTheme,
+			})
+			if err != nil {
+				return nil, err
+			}
+			if highlightedFile.Aborted() {
+				r.highlightAborted = true
+			}
+			return highlight.ParseLinesFromHighlight(highlightedFile.HTML())
+		}
+		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.OldFile())
+		if r.highlightErr != nil {
+			return
+		}
+		r.highlightedHead, r.highlightErr = highlightFile(ctx, r.fileDiffResolver.NewFile())
+	})
+	return r.highlightedBase, r.highlightedHead, r.highlightAborted, r.highlightErr
 }
 
 type DiffHunk struct {
-	hunk *diff.Hunk
+	hunk        *diff.Hunk
+	highlighter DiffHighlighter
 }
 
 func (r *DiffHunk) OldRange() *DiffHunkRange {
@@ -372,6 +453,73 @@ func (r *DiffHunk) Section() *string {
 }
 
 func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
+
+func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedDiffHunkBodyResolver, error) {
+	highlightedBase, highlightedHead, aborted, err := r.highlighter.Highlight(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	hunkLines := strings.Split(string(r.hunk.Body), "\n")
+	// Remove final empty line on files that end with a newline, as most code hosts do.
+	if hunkLines[len(hunkLines)-1] == "" {
+		hunkLines = hunkLines[:len(hunkLines)-1]
+	}
+	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
+	// Lines in highlightedBase and highlightedHead are 0-indexed.
+	baseLine := r.hunk.OrigStartLine - 1
+	headLine := r.hunk.NewStartLine - 1
+	for i, hunkLine := range hunkLines {
+		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
+		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
+			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
+			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
+			baseLine++
+			headLine++
+		} else if hunkLine[0] == '+' {
+			highlightedDiffHunkLineResolver.kind = "ADDED"
+			highlightedDiffHunkLineResolver.html = highlightedHead[headLine]
+			headLine++
+		} else if hunkLine[0] == '-' {
+			highlightedDiffHunkLineResolver.kind = "DELETED"
+			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
+			baseLine++
+		} else {
+			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
+		}
+
+		highlightedDiffHunkLineResolvers[i] = &highlightedDiffHunkLineResolver
+	}
+	return &highlightedDiffHunkBodyResolver{
+		highlightedDiffHunkLineResolvers: highlightedDiffHunkLineResolvers,
+		aborted:                          aborted,
+	}, nil
+}
+
+type highlightedDiffHunkBodyResolver struct {
+	highlightedDiffHunkLineResolvers []*highlightedDiffHunkLineResolver
+	aborted                          bool
+}
+
+func (r *highlightedDiffHunkBodyResolver) Aborted() bool {
+	return r.aborted
+}
+
+func (r *highlightedDiffHunkBodyResolver) Lines() []*highlightedDiffHunkLineResolver {
+	return r.highlightedDiffHunkLineResolvers
+}
+
+type highlightedDiffHunkLineResolver struct {
+	html string
+	kind string
+}
+
+func (r *highlightedDiffHunkLineResolver) HTML() string {
+	return r.html
+}
+
+func (r *highlightedDiffHunkLineResolver) Kind() string {
+	return r.kind
+}
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
 	return &DiffHunkRange{startLine: startLine, lines: lines}

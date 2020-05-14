@@ -614,17 +614,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if cloneInProgress {
-		status = "clone-in-progress"
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
-		return
-	}
 	if !repoCloned(dir) {
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
 		if req.URL == "" {
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)

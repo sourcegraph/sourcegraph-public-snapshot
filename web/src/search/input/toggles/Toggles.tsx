@@ -13,13 +13,15 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 import { CopyQueryButton } from './CopyQueryButton'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
 
 export interface TogglesProps
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
         CopyQueryButtonProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        VersionContextProps {
     navbarSearchQuery: string
     history: H.History
     location: H.Location
@@ -37,7 +39,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         window.context.experimentalFeatures.structuralSearch === 'disabled'
 
     const submitOnToggle = (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
-        const { history, navbarSearchQuery, filtersInQuery } = props
+        const { history, navbarSearchQuery, filtersInQuery, versionContext } = props
         const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
         const shouldSubmitSearch = props.hasGlobalQueryBehavior && searchQueryNotEmpty
         const activation = undefined
@@ -54,6 +56,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 source,
                 patternType,
                 caseSensitive,
+                versionContext,
                 activation,
                 filtersInQuery,
             })

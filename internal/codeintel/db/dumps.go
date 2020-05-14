@@ -24,6 +24,11 @@ type Dump struct {
 	Indexer           string     `json:"indexer"`
 }
 
+// GetDumpIDs returns all dump ids in chronological order.
+func (db *dbImpl) GetDumpIDs(ctx context.Context) ([]int, error) {
+	return scanInts(db.query(ctx, sqlf.Sprintf(`SELECT d.id FROM lsif_dumps d ORDER BY uploaded_at`)))
+}
+
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 	return scanFirstDump(db.query(ctx, sqlf.Sprintf(`

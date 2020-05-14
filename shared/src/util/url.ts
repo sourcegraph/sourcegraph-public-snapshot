@@ -560,6 +560,8 @@ export function withWorkspaceRootInputRevision(
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
+ * @param versionContext (optional): the version context to search in. If undefined, we interpret
+ * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  * @param filtersInQuery filters in an interactive mode query. For callers of
  * this function requiring correct behavior in interactive mode, this param
@@ -570,18 +572,20 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+    versionContext?: string,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     const searchParams = new URLSearchParams()
     let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
     }
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
+        const { start, end } = patternTypeInQuery.range
+        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
     } else {
@@ -617,6 +621,10 @@ export function buildSearchURLQuery(
         }
     }
 
+    if (versionContext) {
+        searchParams.set('c', versionContext)
+    }
+
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
@@ -626,10 +634,9 @@ export function buildSearchURLQuery(
  * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
 export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
-    const fieldKeys = Object.keys(filtersInQuery)
-    return fieldKeys
-        .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+    return Object.values(filtersInQuery)
+        .filter(filter => filter.value.trim().length > 0)
+        .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
         .join(' ')
 }
 

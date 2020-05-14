@@ -99,12 +99,21 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                     <li>
                         Aggregate daily, weekly, and monthly counts of:
                         <ul>
-                            <li>Code intelligence events (e.g., hover tooltips) </li>
+                            <li>Code intelligence events (e.g., hover tooltips)</li>
                             <li>Searches using each search mode (interactive search, plain-text search)</li>
                             <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                         </ul>
                     </li>
-                    <li>Total count of code campaigns created</li>
+                    <li>
+                        Campaign usage data
+                        <ul>
+                            <li>Total count of created campaigns</li>
+                            <li>Total count of changesets created by campaigns</li>
+                            <li>Total count of changesets created by campaigns that have been merged</li>
+                            <li>Total count of changesets manually added to a campaign</li>
+                            <li>Total count of changesets manually added to a campaign that have been merged</li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled ? (
                     <p>All telemetry is disabled.</p>

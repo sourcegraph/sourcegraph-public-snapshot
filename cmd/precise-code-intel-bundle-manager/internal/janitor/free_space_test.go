@@ -110,3 +110,25 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 	}
 }
+
+func TestEvictBundlesNoBundleFile(t *testing.T) {
+	bundleDir := testRoot(t)
+
+	called := false
+	pruneFn := func(ctx context.Context) (int64, bool, error) {
+		if !called {
+			called = true
+			return 42, true, nil
+		}
+		return 0, false, nil
+	}
+
+	j := &Janitor{
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+	}
+
+	if err := j.evictBundles(pruneFn, 100); err != nil {
+		t.Fatalf("unexpected error evicting bundles: %s", err)
+	}
+}

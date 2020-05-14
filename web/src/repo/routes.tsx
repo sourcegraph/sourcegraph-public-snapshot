@@ -98,6 +98,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
             caseSensitive,
             setCaseSensitivity,
             copyQueryButton,
+            versionContext,
             ...context
         }: RepoRevContainerContext &
             RouteComponentProps<{
@@ -140,6 +141,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 caseSensitive,
                 setCaseSensitivity,
                 copyQueryButton,
+                versionContext,
             }
 
             return (

@@ -9,6 +9,7 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 
 interface Props
@@ -18,7 +19,8 @@ interface Props
         SmartSearchFieldProps,
         SettingsCascadeProps,
         ThemeProps,
-        CopyQueryButtonProps {
+        CopyQueryButtonProps,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -41,7 +43,7 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
     public render(): React.ReactNode {
         return (
             <Form
-                className="search search--navbar-item d-flex align-items-flex-start flex-grow-1"
+                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
                 onSubmit={this.onFormSubmit}
             >
                 {this.props.smartSearchField ? (

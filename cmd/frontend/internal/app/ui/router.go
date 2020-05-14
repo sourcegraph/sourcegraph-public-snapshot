@@ -47,7 +47,6 @@ const (
 	routeOrganizations  = "org"
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
-	routeDiscussions    = "discussions"
 	routeAPIConsole     = "api-console"
 	routeSearchScope    = "scope"
 	routeUser           = "user"
@@ -115,7 +114,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
-	r.Path("/discussions").Methods("GET").Name(routeDiscussions)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
 	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
@@ -193,7 +191,6 @@ func initRouter() {
 	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings")))
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin")))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password")))
-	router.Get(routeDiscussions).Handler(handler(serveBrandedPageString("Discussions")))
 	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console")))
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings")))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit")))
