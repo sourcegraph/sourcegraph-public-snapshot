@@ -56,7 +56,7 @@ func PreciseCodeIntelAPIServer() *Container {
 				},
 			},
 			{
-				Title:  "Janitor - cleans up upload records in Postgres",
+				Title:  "Janitor - cleans up upload records in PostgreSQL",
 				Hidden: true,
 				Rows: []Row{
 					{
