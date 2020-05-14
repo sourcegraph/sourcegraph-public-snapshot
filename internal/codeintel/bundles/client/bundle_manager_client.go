@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
+
+// ErrNotFound occurs when the requested upload or bundle was evicted from disk.
+var ErrNotFound = errors.New("data does not exist")
 
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
 type BundleManagerClient interface {
@@ -259,6 +263,11 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, ErrNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK {
