@@ -329,7 +329,7 @@ You may also want to run Postgres within a docker container instead of as a syst
    -v $PGDATA_DIR:/var/lib/postgresql/data postgres
    ```
 
-3. Ensure you can connect to the database `pgsql -U sourcegraph` and enter password `sourcegraph`
+3. Ensure you can connect to the database using `pgsql -U sourcegraph` and enter password `sourcegraph`.
 
 4. Configure database settings in your environment:
 
