@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -30,6 +31,7 @@ func main() {
 
 	var (
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		janitorInterval  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
 		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
@@ -44,6 +46,8 @@ func main() {
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New(db, bundleManagerClient, codeIntelAPI)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	janitor := janitor.New(db, bundleManagerClient, janitorInterval, janitorMetrics)
 
 	uploadResetter := resetter.UploadResetter{
 		DB:            db,
@@ -52,6 +56,7 @@ func main() {
 	}
 
 	go server.Start()
+	go janitor.Run()
 	go uploadResetter.Run()
 	go debugserver.Start()
 
