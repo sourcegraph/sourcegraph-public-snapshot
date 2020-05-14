@@ -1000,6 +1000,19 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace root is added or removed from the workspace.
          */
         export const rootChanges: Subscribable<void>
+
+        /**
+         * The current version context of the workspace, if any.
+         *
+         * A version context is a set of repositories and revisions on a Sourcegraph instance.
+         * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         */
+        export const versionContext: string | undefined
+
+        /**
+         * An event that is fired when a workspace's version context changes.
+         */
+        export const versionContextChanges: Subscribable<string | undefined>
     }
 
     /**
