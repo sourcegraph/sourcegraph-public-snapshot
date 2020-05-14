@@ -100,7 +100,7 @@ Version contexts allow creating sets of many repositories at specific revisions.
 
 Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
 
-```
+```json
 "experimentalFeatures": {
   "versionContexts": [
     {
