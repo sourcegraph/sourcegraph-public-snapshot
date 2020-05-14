@@ -2100,6 +2100,163 @@ func testPatches(db *sql.DB) func(t *testing.T) {
 	}
 }
 
+func testPatchSetsDeleteExpired(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+		tests := []struct {
+			createdAt                      time.Time
+			hasCampaign                    bool
+			patchesAttachedToOtherCampaign bool
+			patches                        []*cmpgn.Patch
+			wantDeleted                    bool
+			want                           *cmpgn.BackgroundProcessStatus
+		}{
+			{
+				hasCampaign: false,
+				createdAt:   now,
+				wantDeleted: false,
+			},
+			{
+				hasCampaign: false,
+				createdAt:   now.Add(-500 * time.Minute),
+				wantDeleted: true,
+			},
+			{
+				hasCampaign: true,
+				createdAt:   now,
+				wantDeleted: false,
+			},
+			{
+				hasCampaign: true,
+				createdAt:   now.Add(-500 * time.Minute),
+				wantDeleted: false,
+			},
+			{
+				hasCampaign: false,
+				createdAt:   now.Add(-500 * time.Minute),
+
+				patchesAttachedToOtherCampaign: true,
+				patches: []*cmpgn.Patch{
+					{Diff: "foobar", Rev: "f00b4r", BaseRef: "refs/heads/master"},
+					{Diff: "barfoo", Rev: "b4rf00", BaseRef: "refs/heads/master"},
+				},
+
+				wantDeleted: false,
+			},
+		}
+
+		for _, tc := range tests {
+			patchSet := &cmpgn.PatchSet{CreatedAt: tc.createdAt}
+
+			err := s.CreatePatchSet(ctx, patchSet)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for _, p := range tc.patches {
+				p.PatchSetID = patchSet.ID
+				err := s.CreatePatch(ctx, p)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if tc.hasCampaign {
+				err = s.CreateCampaign(ctx, &cmpgn.Campaign{
+					PatchSetID:      patchSet.ID,
+					Name:            "Test",
+					AuthorID:        4567,
+					NamespaceUserID: 4567,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if tc.patchesAttachedToOtherCampaign {
+				otherPatchSet := &cmpgn.PatchSet{}
+				err = s.CreatePatchSet(ctx, otherPatchSet)
+				if err != nil {
+					t.Fatal(err)
+				}
+				otherCampaign := &cmpgn.Campaign{
+					PatchSetID:      otherPatchSet.ID,
+					AuthorID:        4567,
+					Name:            "Other campaign",
+					NamespaceUserID: 4567,
+				}
+
+				err = s.CreateCampaign(ctx, otherCampaign)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for i, p := range tc.patches {
+					changeset := &cmpgn.Changeset{
+						RepoID:              api.RepoID(99 + i),
+						CreatedAt:           now,
+						UpdatedAt:           now,
+						Metadata:            &github.PullRequest{},
+						CampaignIDs:         []int64{otherCampaign.ID},
+						ExternalID:          fmt.Sprintf("foobar-%d", i),
+						ExternalServiceType: "github",
+						ExternalBranch:      "campaigns/test",
+						ExternalUpdatedAt:   now,
+						ExternalState:       cmpgn.ChangesetStateOpen,
+						ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+						ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+					}
+					err = s.CreateChangesets(ctx, changeset)
+					if err != nil {
+						t.Fatal(err)
+					}
+					job := &cmpgn.ChangesetJob{
+						CampaignID:  otherCampaign.ID,
+						PatchID:     p.ID,
+						ChangesetID: changeset.ID,
+					}
+					err = s.CreateChangesetJob(ctx, job)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer func() {
+						err = s.DeleteChangesetJob(ctx, job.ID)
+						if err != nil {
+							t.Fatal(err)
+						}
+					}()
+				}
+			}
+
+			err = s.DeleteExpiredPatchSets(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			havePatchSet, err := s.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID})
+			if err != nil && err != ErrNoResults {
+				t.Fatal(err)
+			}
+
+			if tc.wantDeleted && err == nil {
+				t.Fatalf("tc=%+v\n\t want patch set to be deleted. got: %v", tc, havePatchSet)
+			}
+
+			if !tc.wantDeleted && err == ErrNoResults {
+				t.Fatalf("want patch set not to be deleted, but got deleted")
+			}
+		}
+	}
+}
+
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
@@ -2112,155 +2269,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 		s := NewStoreWithClock(tx, clock)
 
 		ctx := context.Background()
-
-		t.Run("Patches", func(t *testing.T) {
-		})
-
-		t.Run("PatchSet DeleteExpired", func(t *testing.T) {
-			tests := []struct {
-				createdAt                      time.Time
-				hasCampaign                    bool
-				patchesAttachedToOtherCampaign bool
-				patches                        []*cmpgn.Patch
-				wantDeleted                    bool
-				want                           *cmpgn.BackgroundProcessStatus
-			}{
-				{
-					hasCampaign: false,
-					createdAt:   now,
-					wantDeleted: false,
-				},
-				{
-					hasCampaign: false,
-					createdAt:   now.Add(-500 * time.Minute),
-					wantDeleted: true,
-				},
-				{
-					hasCampaign: true,
-					createdAt:   now,
-					wantDeleted: false,
-				},
-				{
-					hasCampaign: true,
-					createdAt:   now.Add(-500 * time.Minute),
-					wantDeleted: false,
-				},
-				{
-					hasCampaign: false,
-					createdAt:   now.Add(-500 * time.Minute),
-
-					patchesAttachedToOtherCampaign: true,
-					patches: []*cmpgn.Patch{
-						{Diff: "foobar", Rev: "f00b4r", BaseRef: "refs/heads/master"},
-						{Diff: "barfoo", Rev: "b4rf00", BaseRef: "refs/heads/master"},
-					},
-
-					wantDeleted: false,
-				},
-			}
-
-			for _, tc := range tests {
-				patchSet := &cmpgn.PatchSet{CreatedAt: tc.createdAt}
-
-				err := s.CreatePatchSet(ctx, patchSet)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for _, p := range tc.patches {
-					p.PatchSetID = patchSet.ID
-					err := s.CreatePatch(ctx, p)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				if tc.hasCampaign {
-					err = s.CreateCampaign(ctx, &cmpgn.Campaign{
-						PatchSetID:      patchSet.ID,
-						Name:            "Test",
-						AuthorID:        4567,
-						NamespaceUserID: 4567,
-					})
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				if tc.patchesAttachedToOtherCampaign {
-					otherPatchSet := &cmpgn.PatchSet{}
-					err = s.CreatePatchSet(ctx, otherPatchSet)
-					if err != nil {
-						t.Fatal(err)
-					}
-					otherCampaign := &cmpgn.Campaign{
-						PatchSetID:      otherPatchSet.ID,
-						AuthorID:        4567,
-						Name:            "Other campaign",
-						NamespaceUserID: 4567,
-					}
-
-					err = s.CreateCampaign(ctx, otherCampaign)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					for i, p := range tc.patches {
-						changeset := &cmpgn.Changeset{
-							RepoID:              api.RepoID(99 + i),
-							CreatedAt:           now,
-							UpdatedAt:           now,
-							Metadata:            &github.PullRequest{},
-							CampaignIDs:         []int64{otherCampaign.ID},
-							ExternalID:          fmt.Sprintf("foobar-%d", i),
-							ExternalServiceType: "github",
-							ExternalBranch:      "campaigns/test",
-							ExternalUpdatedAt:   now,
-							ExternalState:       cmpgn.ChangesetStateOpen,
-							ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-							ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-						}
-						err = s.CreateChangesets(ctx, changeset)
-						if err != nil {
-							t.Fatal(err)
-						}
-						job := &cmpgn.ChangesetJob{
-							CampaignID:  otherCampaign.ID,
-							PatchID:     p.ID,
-							ChangesetID: changeset.ID,
-						}
-						err = s.CreateChangesetJob(ctx, job)
-						if err != nil {
-							t.Fatal(err)
-						}
-						defer func() {
-							err = s.DeleteChangesetJob(ctx, job.ID)
-							if err != nil {
-								t.Fatal(err)
-							}
-						}()
-					}
-				}
-
-				err = s.DeleteExpiredPatchSets(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				havePatchSet, err := s.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID})
-				if err != nil && err != ErrNoResults {
-					t.Fatal(err)
-				}
-
-				if tc.wantDeleted && err == nil {
-					t.Fatalf("tc=%+v\n\t want patch set to be deleted. got: %v", tc, havePatchSet)
-				}
-
-				if !tc.wantDeleted && err == ErrNoResults {
-					t.Fatalf("want patch set not to be deleted, but got deleted")
-				}
-			}
-		})
 
 		t.Run("ChangesetJobs", func(t *testing.T) {
 			changesetJobs := make([]*cmpgn.ChangesetJob, 0, 3)
