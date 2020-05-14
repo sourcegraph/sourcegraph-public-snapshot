@@ -152,6 +152,7 @@ func RateLimits(services []Common) ([]RateLimitConfig, error) {
 	return configs, nil
 }
 
+// RateLimitConfig represents the internal rate limit configured for an external service
 type RateLimitConfig struct {
 	BaseURL     string
 	DisplayName string
