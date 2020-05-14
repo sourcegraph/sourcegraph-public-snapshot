@@ -129,12 +129,6 @@ func TestEditorRedirect(t *testing.T) {
 				"version": []string{"v1.2.1"},
 				"search":  []string{"foobar"},
 
-				// TODO(slimsag): this is broken!
-				//
-				// I introduced this regression in https://github.com/sourcegraph/sourcegraph/pull/10586 by adding
-				// these tests with an incorrect misunderstanding of how the editors were using this API and caused
-				// all editor "search" actions to regress to "search in JUST this specific repo + file]"
-				//
 				// Editor extensions specify these when trying to perform a global search,
 				// so we cannot treat these as "search in repo/branch/file". When these are
 				// present, a global search must be performed:
@@ -147,54 +141,54 @@ func TestEditorRedirect(t *testing.T) {
 		{
 			name: "search in repository",
 			q: url.Values{
-				"editor":     []string{"Atom"},
-				"version":    []string{"v1.2.1"},
-				"search":     []string{"foobar"},
-				"remote_url": []string{"git@github.com:a/b"},
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in repository branch",
 			q: url.Values{
-				"editor":     []string{"Atom"},
-				"version":    []string{"v1.2.1"},
-				"search":     []string{"foobar"},
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_branch":     []string{"dev"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%40dev+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in repository revision",
 			q: url.Values{
-				"editor":     []string{"Atom"},
-				"version":    []string{"v1.2.1"},
-				"search":     []string{"foobar"},
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_branch":     []string{"dev"},
+				"search_revision":   []string{"0ad12f"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%400ad12f+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in repository file",
 			q: url.Values{
-				"editor":     []string{"Atom"},
-				"version":    []string{"v1.2.1"},
-				"search":     []string{"foobar"},
-				"remote_url": []string{"git@github.com:a/b"},
-				"file":       []string{"baz"},
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@github.com:a/b"},
+				"search_file":       []string{"baz"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+file%3A%5Ebaz%24+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in file",
 			q: url.Values{
-				"editor":  []string{"Atom"},
-				"version": []string{"v1.2.1"},
-				"search":  []string{"foobar"},
-				"file":    []string{"baz"},
+				"editor":      []string{"Atom"},
+				"version":     []string{"v1.2.1"},
+				"search":      []string{"foobar"},
+				"search_file": []string{"baz"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=file%3A%5Ebaz%24+foobar&utm_source=Atom-v1.2.1",
 		},
