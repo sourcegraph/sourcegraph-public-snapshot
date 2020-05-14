@@ -185,18 +185,6 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 {externalService?.webhookURL && (
                     <div className="alert alert-info">
                         <h3>Campaign webhooks</h3>
-                        <p>
-                            Note that this only supports Sourcegraph’s Campaigns product currently. To enable webhooks
-                            to trigger repository updates on Sourcegraph,{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/admin/repo/webhooks"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                see the docs on how to use them
-                            </a>
-                            .
-                        </p>
                         {externalService.kind === GQL.ExternalServiceKind.BITBUCKETSERVER ? (
                             <p>
                                 <a
@@ -233,6 +221,18 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                             </p>
                         )}
                         <CopyableText text={externalService.webhookURL} size={externalService.webhookURL.length} />
+                        <p>
+                            Note that this only supports Sourcegraph’s Campaigns product currently. To enable webhooks
+                            to trigger repository updates on Sourcegraph,{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/admin/repo/webhooks"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                see the docs on how to use them
+                            </a>
+                            .
+                        </p>
                     </div>
                 )}
             </div>
