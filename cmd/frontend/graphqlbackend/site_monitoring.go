@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	prometheusAPI "github.com/prometheus/client_golang/api"
@@ -28,22 +29,29 @@ func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &siteMonitoringStatisticsResolver{ctx: ctx, prom: prometheus.NewAPI(c), days: *Days}, nil
+	return &siteMonitoringStatisticsResolver{
+		ctx:      ctx,
+		prom:     prometheus.NewAPI(c),
+		timespan: time.Duration(*args.Days) * 24 * time.Hour,
+	}, nil
 }
 
 type siteMonitoringStatisticsResolver struct {
-	ctx  context.Context
-	prom prometheus.API
-	days int32
+	ctx      context.Context
+	prom     prometheus.API
+	timespan time.Duration
 }
 
-func (r *siteMonitoringStatisticsResolver) Alerts() {
-	results, warn, err := r.prom.Query(r.ctx, "sum by (service_name,name)(alert_count{name!=\"\"})", time.Now().Sub(r.days * 24 * time.Hour))
+func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) {
+	results, warn, err := r.prom.Query(r.ctx, "sum by (service_name,name)(alert_count{name!=\"\"})", time.Now().Add(r.timespan))
 	if err != nil {
-		return
+		fmt.Printf("ROBERT %+v\n", err)
+		return nil, err
 	}
-	if warn != nil {
-		return
+	if len(warn) > 0 {
+		fmt.Printf("ROBERT %+v\n", warn)
+		return nil, err
 	}
 	fmt.Printf("ROBERT %+v\n", results)
+	return nil, err
 }

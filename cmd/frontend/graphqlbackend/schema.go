@@ -3638,7 +3638,7 @@ type DeploymentConfiguration {
 # Monitoring overview.
 type MonitoringStatistics {
     # Alerts fired in this time span.
-    alerts: [MonitoringAlert!]
+    alerts: [MonitoringAlert!]!
 }
 
 # An alert fired by monitored metrics.
