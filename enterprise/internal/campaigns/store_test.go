@@ -33,6 +33,8 @@ func (c *testClock) add(d time.Duration) time.Time { c.t = c.t.Add(d); return c.
 
 type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, clock)
 
+// storeTest converts a storeTestFunc into a func(*testing.T) in which all
+// dependencies are set up and injected into the storeTestFunc.
 func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		c := &testClock{t: time.Now().UTC().Truncate(time.Microsecond)}
@@ -50,7 +52,9 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 	}
 }
 
-func testCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+// The following tests are executed in integration_test.go.
+
+func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	campaigns := make([]*cmpgn.Campaign, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -397,7 +401,7 @@ func testCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, c
 	})
 }
 
-func testChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1002,7 +1006,7 @@ func testChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repo
 	})
 }
 
-func testChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{
@@ -1239,7 +1243,7 @@ func testChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.St
 	})
 }
 
-func testListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1461,7 +1465,7 @@ func testListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, repo
 	})
 }
 
-func testPatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	patchSets := make([]*cmpgn.PatchSet, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -1641,7 +1645,7 @@ func testPatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Store, c
 	})
 }
 
-func testPatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	patches := make([]*cmpgn.Patch, 0, 3)
 
 	var (
@@ -2057,7 +2061,7 @@ func testPatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clo
 	})
 }
 
-func testPatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	tests := []struct {
 		createdAt                      time.Time
 		hasCampaign                    bool
@@ -2203,7 +2207,7 @@ func testPatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store, _ r
 	}
 }
 
-func testChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
 	changesetJobs := make([]*cmpgn.ChangesetJob, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
