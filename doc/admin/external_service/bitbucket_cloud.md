@@ -22,6 +22,14 @@ In addition, there is one more field for configuring which repositories are mirr
 
 Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the [`username`](bitbucket_cloud.md#configuration) and [`appPassword`](bitbucket_cloud.md#configuration) required fields you provide in the configuration.
 
+## Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Cloud. 
+
+By default it is enabled at a rate of 7200 per hour (2 per second) but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising campaign changesets.
+
 ## Configuration
 
 Bitbucket Cloud connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.

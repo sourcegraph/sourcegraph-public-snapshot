@@ -86,6 +86,14 @@ Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S
 
 Sourcegraph will mark repositories as archived if they have the `archived` label on Bitbucket Server. You can exclude these repositories in search with `archived:no` [search syntax](../../user/search/queries.md).
 
+## Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Server. 
+
+By default it is enabled at a rate of 28,800 per hour (8 per second) but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising campaign changesets.
+
 ## Configuration
 
 Bitbucket Server connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.

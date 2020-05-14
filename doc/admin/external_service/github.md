@@ -42,6 +42,14 @@ No token scopes are required if you only want to sync public repositories and do
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
+### Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
+
+By default it is enabled at a rate of 5000 per hour but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising campaign changesets.
+
 ## Repository permissions
 
 By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use

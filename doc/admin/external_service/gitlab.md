@@ -43,6 +43,14 @@ permissions](../repo/permissions.md#gitlab)".
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
+## Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab. 
+
+By default it is enabled at a rate of 36,000 per hour (10 per second) but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising campaign changesets.
+
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/gitlab.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/gitlab) to see rendered content.</div>
