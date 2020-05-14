@@ -1006,6 +1006,8 @@ declare module 'sourcegraph' {
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
          * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         *
+         * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          */
         export const versionContext: string | undefined
 
