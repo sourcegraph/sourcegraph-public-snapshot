@@ -164,7 +164,7 @@ export interface SmartSearchFieldProps {
  * @param versionContext The version context to verify.
  * @param availableVersionContexts A list of all version contexts defined in site configuration.
  */
-export function verifyVersionContext(
+export function resolveVersionContext(
     versionContext: string | undefined,
     availableVersionContexts: VersionContext[] | undefined
 ): string | undefined {

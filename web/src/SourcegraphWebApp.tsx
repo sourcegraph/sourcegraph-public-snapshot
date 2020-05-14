@@ -53,7 +53,7 @@ import {
     parseSearchURLPatternType,
     searchURLIsCaseSensitive,
     parseSearchURLVersionContext,
-    verifyVersionContext,
+    resolveVersionContext,
 } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
@@ -470,7 +470,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private setVersionContext = (versionContext: string): void => {
-        const resolvedVersionContext = verifyVersionContext(versionContext, this.state.availableVersionContexts)
+        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
         if (!resolvedVersionContext) {
             localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
             this.setState({ versionContext: undefined })
