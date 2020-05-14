@@ -101,7 +101,7 @@ export class SearchPage extends React.Component<Props, State> {
                         ) : (
                             <>
                                 <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={this.onFormSubmit}>
-                                    <div className="search-page__input-container flex-shrink-past-contents">
+                                    <div className="search-page__input-container">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
