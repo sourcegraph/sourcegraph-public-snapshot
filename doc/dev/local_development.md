@@ -257,6 +257,7 @@ You can install the all the versions specified in [.tool-versions](https://githu
 
 
 ## Step 2: Initialize your database
+See [Running Postgres in Docker](#Step-2-Using-Docker-to-run-Postgres) for an alternative approach
 
 You need a fresh Postgres database and a database user that has full ownership of that database.
 
@@ -304,6 +305,54 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
+
+## Step 2: Using Docker to run Postgres
+
+You may also want to run Postgres within a docker container instead of as a system service
+
+1. Create a directory to store and mount the database from for persistence
+
+    ```shell
+    # Create a seperate dir to store the database
+    mkdir PGDATA_DIR
+
+   # Also add this to your '~/.bashrc'
+    export PGDATA_DIR=/path/to/PGDATA_DIR/
+    ```
+
+2. Run the container
+
+  ```shell
+   docker run -d  -p 5432:5432 -e POSTGRES_PASSWORD=sourcegraph \
+   -e POSTGRES_USER=sourcegraph -e POSTGRES_INITDB_ARGS=" --encoding=UTF8 " \
+   -v $PGDATA_DIR:/var/lib/postgresql/data postgres
+   ```
+
+3. Ensure you can connect to the database `pgsql -U sourcegraph` and enter password `sourcegraph`
+
+4. Configure database settings in your environment
+
+    The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
+
+    Add these, for example, in your `~/.bashrc`:
+
+    ```shell
+    export PGPORT=5432
+    export PGHOST=localhost
+    export PGUSER=sourcegraph
+    export PGPASSWORD=sourcegraph
+    export PGDATABASE=sourcegraph
+    export PGSSLMODE=disable
+    ```
+
+    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to
+    source these env vars on demand when you start the server.
+
+    [envdir]: https://cr.yp.to/daemontools/envdir.html
+    [dotenv]: https://github.com/joho/godotenv
+
+5. On restarting docker, you may need to start the container again. Find the image with `docker ps --all` and then `docker run <$containerID>` to start again.
+
 
 ### More info
 
