@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { Subscription } from 'rxjs'
-import { ExtWorkspaceAPI } from '../../extension/api/roots'
+import { ExtWorkspaceAPI } from '../../extension/api/workspace'
 import { WorkspaceService } from '../services/workspaceService'
 
 /** @internal */

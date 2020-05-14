@@ -3,7 +3,7 @@ import { InitData } from '../extensionHost'
 import { ExtConfigurationAPI } from './configuration'
 import { ExtDocumentsAPI } from './documents'
 import { ExtExtensionsAPI } from './extensions'
-import { ExtWorkspaceAPI } from './roots'
+import { ExtWorkspaceAPI } from './workspace'
 import { ExtWindowsAPI } from './windows'
 
 export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
