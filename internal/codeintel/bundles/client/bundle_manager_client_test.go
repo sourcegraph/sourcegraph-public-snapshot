@@ -193,6 +193,19 @@ func TestGetUpload(t *testing.T) {
 	}
 }
 
+func TestGetUploadNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	_, err := client.GetUpload(context.Background(), 42, "")
+	if err != ErrNotFound {
+		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
+	}
+}
+
 func TestGetUploadBadResponse(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

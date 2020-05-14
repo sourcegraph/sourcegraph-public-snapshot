@@ -64,7 +64,7 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 	// Make the order in which we construct the values for insertion determinstic.
 	// We want this to happen because many workers/api-servers can be inserting
 	// commits for the same repository. Having them inserted in random order may
-	// cause a dealock to occur where two threads are writing the same tuples in
+	// cause a deadlock to occur where two threads are writing the same tuples in
 	// different orders: e.g. A writes t1 then t2, and B writes t2 then t1. If we
 	// always write in the same order, then such a deadlock is impossible.
 	var keys []string

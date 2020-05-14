@@ -55,7 +55,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:            "disk_space_remaining",
 							Description:     "disk space remaining by instance",
-							Query:           `(src_disk_space_available_bytes / src_disk_space_total_bytes) * 100`,
+							Query:           `(src_disk_space_available_bytes{job="precise-code-intel-bundle-manager"} / src_disk_space_total_bytes{job="precise-code-intel-bundle-manager"}) * 100`,
 							DataMayNotExist: true,
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
@@ -78,9 +78,9 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "cache_miss_percentage",
 							Description:       "percentage of cache misses over all cache activity every 5m",
-							Query:             `(increase(src_cache_misses_total[5m]) / (increase(src_cache_hits_total[5m]) + increase(src_cache_misses_total[5m]))) * 100`,
+							Query:             `(increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]) / (increase(src_cache_hits_total{job="precise-code-intel-bundle-manager"}[5m]) + increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]))) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 80},
+							Warning:           Alert{GreaterOrEqual: 100},
 							PanelOptions:      PanelOptions().LegendFormat("{{cache}}").Unit(Percentage),
 							PossibleSolutions: "none",
 						},
