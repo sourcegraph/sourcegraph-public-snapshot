@@ -66,6 +66,7 @@ func PreciseCodeIntelWorker() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_code_intel_db_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{op}}").Unit(Seconds),
 							PossibleSolutions: "none",
@@ -86,6 +87,7 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "99th percentile successful bundle manager data transfer duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="precise-code-intel-worker",category="transfer"}[5m])))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							PossibleSolutions: "none",
@@ -106,6 +108,7 @@ func PreciseCodeIntelWorker() *Container {
 							Description:       "99th percentile successful gitserver query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							PossibleSolutions: "none",

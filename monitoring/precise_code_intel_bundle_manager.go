@@ -16,6 +16,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_bundle_database_duration_seconds_bucket[5m])))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{op}}").Unit(Seconds),
 							PossibleSolutions: "none",
@@ -37,6 +38,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							// TODO(efritz) - ensure these exclude error durations
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_bundle_reader_duration_seconds_bucket[5m])))`,
 							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("{{op}}").Unit(Seconds),
 							PossibleSolutions: "none",
@@ -80,7 +82,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							Description:       "percentage of cache misses over all cache activity every 5m",
 							Query:             `(increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]) / (increase(src_cache_hits_total{job="precise-code-intel-bundle-manager"}[5m]) + increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]))) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 100},
+							Warning:           Alert{GreaterOrEqual: 110},
 							PanelOptions:      PanelOptions().LegendFormat("{{cache}}").Unit(Percentage),
 							PossibleSolutions: "none",
 						},
