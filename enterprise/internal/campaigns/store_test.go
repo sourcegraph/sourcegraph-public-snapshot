@@ -1481,6 +1481,625 @@ func testListChangesetSyncData(db *sql.DB) func(t *testing.T) {
 	}
 }
 
+func testPatchSets(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+
+		patchSets := make([]*cmpgn.PatchSet, 0, 3)
+
+		t.Run("Create", func(t *testing.T) {
+			for i := 0; i < cap(patchSets); i++ {
+				c := &cmpgn.PatchSet{UserID: 999}
+
+				want := c.Clone()
+				have := c
+
+				err := s.CreatePatchSet(ctx, have)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have.ID == 0 {
+					t.Fatal("ID should not be zero")
+				}
+
+				want.ID = have.ID
+				want.CreatedAt = now
+				want.UpdatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				patchSets = append(patchSets, c)
+			}
+		})
+
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountPatchSets(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(patchSets)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("List", func(t *testing.T) {
+			opts := ListPatchSetsOpts{}
+
+			ts, next, err := s.ListPatchSets(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := next, int64(0); have != want {
+				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			}
+
+			have, want := ts, patchSets
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patchSets, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+
+			for i := 1; i <= len(patchSets); i++ {
+				cs, next, err := s.ListPatchSets(ctx, ListPatchSetsOpts{Limit: i})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(patchSets) {
+						want = patchSets[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := cs, patchSets[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d patchSets, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(patchSets); i++ {
+					opts := ListPatchSetsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListPatchSets(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := patchSets[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
+				}
+			}
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			for _, c := range patchSets {
+				c.UserID += 1234
+
+				now = now.Add(time.Second)
+				want := c
+				want.UpdatedAt = now
+
+				have := c.Clone()
+				if err := s.UpdatePatchSet(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				if len(patchSets) == 0 {
+					t.Fatalf("patchSets is empty")
+				}
+				want := patchSets[0]
+				opts := GetPatchSetOpts{ID: want.ID}
+
+				have, err := s.GetPatchSet(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetPatchSetOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetPatchSet(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
+		})
+
+		t.Run("Delete", func(t *testing.T) {
+			for i := range patchSets {
+				err := s.DeletePatchSet(ctx, patchSets[i].ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountPatchSets(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(patchSets)-(i+1)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
+	}
+}
+
+func testPatches(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+
+		patches := make([]*cmpgn.Patch, 0, 3)
+
+		var (
+			added   int32 = 77
+			deleted int32 = 88
+			changed int32 = 99
+		)
+
+		t.Run("Create", func(t *testing.T) {
+			for i := 0; i < cap(patches); i++ {
+				p := &cmpgn.Patch{
+					PatchSetID: int64(i + 1),
+					RepoID:     1,
+					Rev:        api.CommitID("deadbeef"),
+					BaseRef:    "master",
+					Diff:       "+ foobar - barfoo",
+				}
+
+				// Only set the diff stats on a subset to make sure that
+				// we handle nil pointers correctly
+				if i != cap(patches)-1 {
+					p.DiffStatAdded = &added
+					p.DiffStatChanged = &changed
+					p.DiffStatDeleted = &deleted
+				}
+
+				want := p.Clone()
+				have := p
+
+				err := s.CreatePatch(ctx, have)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have.ID == 0 {
+					t.Fatal("ID should not be zero")
+				}
+
+				want.ID = have.ID
+				want.CreatedAt = now
+				want.UpdatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				patches = append(patches, p)
+			}
+		})
+
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountPatches(ctx, CountPatchesOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(patches)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			count, err = s.CountPatches(ctx, CountPatchesOpts{PatchSetID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("List", func(t *testing.T) {
+			t.Run("WithPatchSetID", func(t *testing.T) {
+				for i := 1; i <= len(patches); i++ {
+					opts := ListPatchesOpts{PatchSetID: int64(i)}
+
+					ts, next, err := s.ListPatches(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					have, want := ts, patches[i-1:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+				}
+			})
+
+			t.Run("WithPositiveLimit", func(t *testing.T) {
+				for i := 1; i <= len(patches); i++ {
+					cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: i})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := next, int64(0)
+						if i < len(patches) {
+							want = patches[i].ID
+						}
+
+						if have != want {
+							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						}
+					}
+
+					{
+						have, want := cs, patches[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				}
+			})
+
+			t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
+				cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: -1})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("have next %v, want %v", have, want)
+				}
+
+				have, want := cs, patches
+				if len(have) != len(want) {
+					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("EmptyResultListingAll", func(t *testing.T) {
+				opts := ListPatchesOpts{PatchSetID: 99999, Limit: -1}
+
+				js, next, err := s.ListPatches(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				if len(js) != 0 {
+					t.Fatalf("listed %d jobs, want: %d", len(js), 0)
+				}
+			})
+
+			t.Run("WithCursor", func(t *testing.T) {
+				{
+					var cursor int64
+					for i := 1; i <= len(patches); i++ {
+						opts := ListPatchesOpts{Cursor: cursor, Limit: 1}
+						have, next, err := s.ListPatches(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						want := patches[i-1 : i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+
+						cursor = next
+					}
+				}
+			})
+		})
+
+		t.Run("Listing OnlyWithoutDiffStats", func(t *testing.T) {
+			listOpts := ListPatchesOpts{OnlyWithoutDiffStats: true}
+			have, _, err := s.ListPatches(ctx, listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := []*cmpgn.Patch{}
+			for _, p := range patches {
+				_, ok := p.DiffStat()
+				if !ok {
+					want = append(want, p)
+				}
+			}
+
+			if len(want) == 0 {
+				t.Fatalf("test needs patches without diff stats")
+			}
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+			}
+		})
+
+		t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
+			listOpts := ListPatchesOpts{OnlyWithDiff: true}
+			countOpts := CountPatchesOpts{OnlyWithDiff: true}
+
+			have, _, err := s.ListPatches(ctx, listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := have, patches
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+			}
+
+			count, err := s.CountPatches(ctx, countOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if int(count) != len(want) {
+				t.Errorf("jobs counted: %d", count)
+			}
+
+			for _, p := range patches {
+				p.Diff = ""
+
+				err := s.UpdatePatch(ctx, p)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			have, _, err = s.ListPatches(ctx, listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 0 {
+				t.Errorf("jobs returned: %d", len(have))
+			}
+
+			count, err = s.CountPatches(ctx, countOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if count != 0 {
+				t.Errorf("jobs counted: %d", count)
+			}
+		})
+
+		t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
+			campaignID := int64(999)
+			changesetJob := &cmpgn.ChangesetJob{
+				PatchID:     patches[0].ID,
+				CampaignID:  campaignID,
+				ChangesetID: 789,
+				StartedAt:   now,
+				FinishedAt:  now,
+			}
+			err := s.CreateChangesetJob(ctx, changesetJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			listOpts := ListPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
+			countOpts := CountPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
+
+			have, _, err := s.ListPatches(ctx, listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := have, patches[1:] // Except patches[0]
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+			}
+
+			count, err := s.CountPatches(ctx, countOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if int(count) != len(want) {
+				t.Errorf("jobs counted: %d", count)
+			}
+
+			// Update ChangesetJob so condition does not apply
+			changesetJob.ChangesetID = 0
+			err = s.UpdateChangesetJob(ctx, changesetJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, _, err = s.ListPatches(ctx, listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want = patches // All Patches
+			if len(have) != len(want) {
+				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+			}
+
+			count, err = s.CountPatches(ctx, countOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if int(count) != len(want) {
+				t.Errorf("jobs counted: %d", count)
+			}
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			var (
+				newAdded   int32 = 333
+				newDeleted int32 = 444
+				newChanged int32 = 555
+			)
+
+			for _, p := range patches {
+				now = now.Add(time.Second)
+				p.Diff += "-updated"
+
+				p.DiffStatAdded = &newAdded
+				p.DiffStatDeleted = &newDeleted
+				p.DiffStatChanged = &newChanged
+
+				want := p
+				want.UpdatedAt = now
+
+				have := p.Clone()
+				if err := s.UpdatePatch(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				if len(patches) == 0 {
+					t.Fatal("patches is empty")
+				}
+				want := patches[0]
+				opts := GetPatchOpts{ID: want.ID}
+
+				have, err := s.GetPatch(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetPatchOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetPatch(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
+		})
+
+		t.Run("Delete", func(t *testing.T) {
+			for i := range patches {
+				err := s.DeletePatch(ctx, patches[i].ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountPatches(ctx, CountPatchesOpts{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(patches)-(i+1)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
+	}
+}
+
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
@@ -1494,599 +2113,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
-		t.Run("PatchSets", func(t *testing.T) {
-			patchSets := make([]*cmpgn.PatchSet, 0, 3)
-
-			t.Run("Create", func(t *testing.T) {
-				for i := 0; i < cap(patchSets); i++ {
-					c := &cmpgn.PatchSet{UserID: 999}
-
-					want := c.Clone()
-					have := c
-
-					err := s.CreatePatchSet(ctx, have)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have.ID == 0 {
-						t.Fatal("ID should not be zero")
-					}
-
-					want.ID = have.ID
-					want.CreatedAt = now
-					want.UpdatedAt = now
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-
-					patchSets = append(patchSets, c)
-				}
-			})
-
-			t.Run("Count", func(t *testing.T) {
-				count, err := s.CountPatchSets(ctx)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(len(patchSets)); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-			})
-
-			t.Run("List", func(t *testing.T) {
-				opts := ListPatchSetsOpts{}
-
-				ts, next, err := s.ListPatchSets(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-				}
-
-				have, want := ts, patchSets
-				if len(have) != len(want) {
-					t.Fatalf("listed %d patchSets, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
-				}
-
-				for i := 1; i <= len(patchSets); i++ {
-					cs, next, err := s.ListPatchSets(ctx, ListPatchSetsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					{
-						have, want := next, int64(0)
-						if i < len(patchSets) {
-							want = patchSets[i].ID
-						}
-
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
-
-					{
-						have, want := cs, patchSets[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d patchSets, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
-						}
-					}
-				}
-
-				{
-					var cursor int64
-					for i := 1; i <= len(patchSets); i++ {
-						opts := ListPatchSetsOpts{Cursor: cursor, Limit: 1}
-						have, next, err := s.ListPatchSets(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						want := patchSets[i-1 : i]
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-
-						cursor = next
-					}
-				}
-			})
-
-			t.Run("Update", func(t *testing.T) {
-				for _, c := range patchSets {
-					c.UserID += 1234
-
-					now = now.Add(time.Second)
-					want := c
-					want.UpdatedAt = now
-
-					have := c.Clone()
-					if err := s.UpdatePatchSet(ctx, have); err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			})
-
-			t.Run("Get", func(t *testing.T) {
-				t.Run("ByID", func(t *testing.T) {
-					if len(patchSets) == 0 {
-						t.Fatalf("patchSets is empty")
-					}
-					want := patchSets[0]
-					opts := GetPatchSetOpts{ID: want.ID}
-
-					have, err := s.GetPatchSet(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("NoResults", func(t *testing.T) {
-					opts := GetPatchSetOpts{ID: 0xdeadbeef}
-
-					_, have := s.GetPatchSet(ctx, opts)
-					want := ErrNoResults
-
-					if have != want {
-						t.Fatalf("have err %v, want %v", have, want)
-					}
-				})
-			})
-
-			t.Run("Delete", func(t *testing.T) {
-				for i := range patchSets {
-					err := s.DeletePatchSet(ctx, patchSets[i].ID)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					count, err := s.CountPatchSets(ctx)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := count, int64(len(patchSets)-(i+1)); have != want {
-						t.Fatalf("have count: %d, want: %d", have, want)
-					}
-				}
-			})
-		})
-
 		t.Run("Patches", func(t *testing.T) {
-			patches := make([]*cmpgn.Patch, 0, 3)
-
-			var (
-				added   int32 = 77
-				deleted int32 = 88
-				changed int32 = 99
-			)
-
-			t.Run("Create", func(t *testing.T) {
-				for i := 0; i < cap(patches); i++ {
-					p := &cmpgn.Patch{
-						PatchSetID: int64(i + 1),
-						RepoID:     1,
-						Rev:        api.CommitID("deadbeef"),
-						BaseRef:    "master",
-						Diff:       "+ foobar - barfoo",
-					}
-
-					// Only set the diff stats on a subset to make sure that
-					// we handle nil pointers correctly
-					if i != cap(patches)-1 {
-						p.DiffStatAdded = &added
-						p.DiffStatChanged = &changed
-						p.DiffStatDeleted = &deleted
-					}
-
-					want := p.Clone()
-					have := p
-
-					err := s.CreatePatch(ctx, have)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have.ID == 0 {
-						t.Fatal("ID should not be zero")
-					}
-
-					want.ID = have.ID
-					want.CreatedAt = now
-					want.UpdatedAt = now
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-
-					patches = append(patches, p)
-				}
-			})
-
-			t.Run("Count", func(t *testing.T) {
-				count, err := s.CountPatches(ctx, CountPatchesOpts{})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(len(patches)); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-
-				count, err = s.CountPatches(ctx, CountPatchesOpts{PatchSetID: 1})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(1); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-			})
-
-			t.Run("List", func(t *testing.T) {
-				t.Run("WithPatchSetID", func(t *testing.T) {
-					for i := 1; i <= len(patches); i++ {
-						opts := ListPatchesOpts{PatchSetID: int64(i)}
-
-						ts, next, err := s.ListPatches(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						if have, want := next, int64(0); have != want {
-							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-						}
-
-						have, want := ts, patches[i-1:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-					}
-				})
-
-				t.Run("WithPositiveLimit", func(t *testing.T) {
-					for i := 1; i <= len(patches); i++ {
-						cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: i})
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						{
-							have, want := next, int64(0)
-							if i < len(patches) {
-								want = patches[i].ID
-							}
-
-							if have != want {
-								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-							}
-						}
-
-						{
-							have, want := cs, patches[:i]
-							if len(have) != len(want) {
-								t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-							}
-
-							if diff := cmp.Diff(have, want); diff != "" {
-								t.Fatal(diff)
-							}
-						}
-					}
-				})
-
-				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
-					cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: -1})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("have next %v, want %v", have, want)
-					}
-
-					have, want := cs, patches
-					if len(have) != len(want) {
-						t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("EmptyResultListingAll", func(t *testing.T) {
-					opts := ListPatchesOpts{PatchSetID: 99999, Limit: -1}
-
-					js, next, err := s.ListPatches(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					if len(js) != 0 {
-						t.Fatalf("listed %d jobs, want: %d", len(js), 0)
-					}
-				})
-
-				t.Run("WithCursor", func(t *testing.T) {
-					{
-						var cursor int64
-						for i := 1; i <= len(patches); i++ {
-							opts := ListPatchesOpts{Cursor: cursor, Limit: 1}
-							have, next, err := s.ListPatches(ctx, opts)
-							if err != nil {
-								t.Fatal(err)
-							}
-
-							want := patches[i-1 : i]
-							if diff := cmp.Diff(have, want); diff != "" {
-								t.Fatalf("opts: %+v, diff: %s", opts, diff)
-							}
-
-							cursor = next
-						}
-					}
-				})
-			})
-
-			t.Run("Listing OnlyWithoutDiffStats", func(t *testing.T) {
-				listOpts := ListPatchesOpts{OnlyWithoutDiffStats: true}
-				have, _, err := s.ListPatches(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				want := []*cmpgn.Patch{}
-				for _, p := range patches {
-					_, ok := p.DiffStat()
-					if !ok {
-						want = append(want, p)
-					}
-				}
-
-				if len(want) == 0 {
-					t.Fatalf("test needs patches without diff stats")
-				}
-				if len(have) != len(want) {
-					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-				}
-			})
-
-			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
-				listOpts := ListPatchesOpts{OnlyWithDiff: true}
-				countOpts := CountPatchesOpts{OnlyWithDiff: true}
-
-				have, _, err := s.ListPatches(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				have, want := have, patches
-				if len(have) != len(want) {
-					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-				}
-
-				count, err := s.CountPatches(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if int(count) != len(want) {
-					t.Errorf("jobs counted: %d", count)
-				}
-
-				for _, p := range patches {
-					p.Diff = ""
-
-					err := s.UpdatePatch(ctx, p)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				have, _, err = s.ListPatches(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if len(have) != 0 {
-					t.Errorf("jobs returned: %d", len(have))
-				}
-
-				count, err = s.CountPatches(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if count != 0 {
-					t.Errorf("jobs counted: %d", count)
-				}
-			})
-
-			t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
-				campaignID := int64(999)
-				changesetJob := &cmpgn.ChangesetJob{
-					PatchID:     patches[0].ID,
-					CampaignID:  campaignID,
-					ChangesetID: 789,
-					StartedAt:   now,
-					FinishedAt:  now,
-				}
-				err := s.CreateChangesetJob(ctx, changesetJob)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				listOpts := ListPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
-				countOpts := CountPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
-
-				have, _, err := s.ListPatches(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				have, want := have, patches[1:] // Except patches[0]
-				if len(have) != len(want) {
-					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-				}
-
-				count, err := s.CountPatches(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if int(count) != len(want) {
-					t.Errorf("jobs counted: %d", count)
-				}
-
-				// Update ChangesetJob so condition does not apply
-				changesetJob.ChangesetID = 0
-				err = s.UpdateChangesetJob(ctx, changesetJob)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				have, _, err = s.ListPatches(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				want = patches // All Patches
-				if len(have) != len(want) {
-					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-				}
-
-				count, err = s.CountPatches(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if int(count) != len(want) {
-					t.Errorf("jobs counted: %d", count)
-				}
-			})
-
-			t.Run("Update", func(t *testing.T) {
-				var (
-					newAdded   int32 = 333
-					newDeleted int32 = 444
-					newChanged int32 = 555
-				)
-
-				for _, p := range patches {
-					now = now.Add(time.Second)
-					p.Diff += "-updated"
-
-					p.DiffStatAdded = &newAdded
-					p.DiffStatDeleted = &newDeleted
-					p.DiffStatChanged = &newChanged
-
-					want := p
-					want.UpdatedAt = now
-
-					have := p.Clone()
-					if err := s.UpdatePatch(ctx, have); err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			})
-
-			t.Run("Get", func(t *testing.T) {
-				t.Run("ByID", func(t *testing.T) {
-					if len(patches) == 0 {
-						t.Fatal("patches is empty")
-					}
-					want := patches[0]
-					opts := GetPatchOpts{ID: want.ID}
-
-					have, err := s.GetPatch(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("NoResults", func(t *testing.T) {
-					opts := GetPatchOpts{ID: 0xdeadbeef}
-
-					_, have := s.GetPatch(ctx, opts)
-					want := ErrNoResults
-
-					if have != want {
-						t.Fatalf("have err %v, want %v", have, want)
-					}
-				})
-			})
-
-			t.Run("Delete", func(t *testing.T) {
-				for i := range patches {
-					err := s.DeletePatch(ctx, patches[i].ID)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					count, err := s.CountPatches(ctx, CountPatchesOpts{})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := count, int64(len(patches)-(i+1)); have != want {
-						t.Fatalf("have count: %d, want: %d", have, want)
-					}
-				}
-			})
 		})
 
 		t.Run("PatchSet DeleteExpired", func(t *testing.T) {
