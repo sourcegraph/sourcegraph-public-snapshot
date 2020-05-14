@@ -220,10 +220,21 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                                 for this code host connection at the following URL:
                             </p>
                         )}
-                        <CopyableText text={externalService.webhookURL} size={externalService.webhookURL.length} />
-                        <p>
-                            Note that this only supports Sourcegraph’s Campaigns product currently. To enable webhooks
-                            to trigger repository updates on Sourcegraph,{' '}
+                        <CopyableText
+                            className="mb-2"
+                            text={externalService.webhookURL}
+                            size={externalService.webhookURL.length}
+                        />
+                        <p className="mb-0">
+                            Note that only{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/user/campaigns"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Campaigns
+                            </a>{' '}
+                            make use of this webhook. To enable webhooks to trigger repository updates on Sourcegraph,{' '}
                             <a
                                 href="https://docs.sourcegraph.com/admin/repo/webhooks"
                                 target="_blank"
