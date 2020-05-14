@@ -20,12 +20,13 @@
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate",
-    "test": "jest --testPathIgnorePatterns e2e regression integration",
+    "test": "jest --testPathIgnorePatterns e2e regression integration storybook",
     "test-e2e": "TS_NODE_PROJECT=web/src/e2e/tsconfig.json mocha ./web/src/e2e/e2e.test.ts",
     "cover-e2e": "nyc --hook-require=false yarn test-e2e",
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "storybook:build": "build-storybook -c .storybook",
-    "storybook:smoke-test": "yarn run storybook --smoke-test",
+    "build-storybook": "build-storybook -c .storybook",
+    "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
+    "percy-storybook": "PERCY_TOKEN=${PERCY_STORYBOOK_TOKEN} percy-storybook --widths=768",
     "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
@@ -37,13 +38,14 @@
     "not IE > 0"
   ],
   "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
     "extension": [
       ".tsx",
       ".ts"
     ],
     "include": [
-      "@(web|shared)/src/**/*.ts?(x)"
+      "@(web|shared|browser)/src/**/*.ts?(x)"
     ],
     "exclude": [
       "node_modules",
@@ -72,8 +74,10 @@
     "@babel/runtime": "^7.9.6",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
+    "@percy/storybook": "^3.3.0",
     "@slack/web-api": "^5.8.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.17.2",
@@ -87,6 +91,7 @@
     "@storybook/addon-links": "^5.3.18",
     "@storybook/addon-options": "^5.3.18",
     "@storybook/addon-storyshots": "^5.3.18",
+    "@storybook/addon-storyshots-puppeteer": "^5.3.18",
     "@storybook/addons": "^5.3.18",
     "@storybook/components": "^5.3.18",
     "@storybook/core": "^5.3.18",
