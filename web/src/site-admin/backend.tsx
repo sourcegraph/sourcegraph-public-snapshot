@@ -225,6 +225,23 @@ export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }):
     )
 }
 
+export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleUserPermissionsSync($user: ID!) {
+                scheduleUserPermissionsSync(user: $user) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
+    )
+}
+
 /**
  * Fetches usage statistics for all users.
  *
