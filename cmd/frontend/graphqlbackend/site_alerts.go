@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -94,6 +94,9 @@ func checkDuplicateRateLimits() (problems conf.Problems) {
 	}
 
 	for _, duplicates := range byURL {
+		if len(duplicates) < 2 {
+			continue
+		}
 		msg := fmt.Sprintf("Multiple rate limiters configured for the same code host: %s", strings.Join(duplicates, ", "))
 		problems = append(problems, conf.NewExternalServiceProblem(msg))
 	}
