@@ -50,6 +50,8 @@ func main() {
 	go janitor.Run()
 	go debugserver.Start()
 
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
 	<-signals
 
