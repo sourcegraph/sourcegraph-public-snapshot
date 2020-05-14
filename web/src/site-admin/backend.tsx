@@ -238,7 +238,7 @@ export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<
     ).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
+        mapTo(undefined)
     )
 }
 
