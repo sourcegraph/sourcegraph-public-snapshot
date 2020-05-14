@@ -471,7 +471,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         })
     }
 
-    private setVersionContext = (versionContext: string): void => {
+    private setVersionContext = (versionContext: string | undefined): void => {
         const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
         if (!resolvedVersionContext) {
             localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)

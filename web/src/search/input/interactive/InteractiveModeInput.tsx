@@ -54,7 +54,7 @@ interface InteractiveModeProps
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
 
-    setVersionContext: (versionContext: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 }
 
