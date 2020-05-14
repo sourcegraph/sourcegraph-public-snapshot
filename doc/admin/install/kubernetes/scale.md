@@ -13,8 +13,6 @@ increase the number of replicas of each of these services to handle higher scale
 
 We recommend setting the `sourcegraph-frontend`, `searcher`, and `gitserver` replica counts according to the following tables:
 
-<div class="table">
-
 | Users      | Number of `sourcegraph-frontend` replicas |
 | ---------- | ----------------------------------------- |
 | 10-500     | 1                                         |
@@ -24,8 +22,6 @@ We recommend setting the `sourcegraph-frontend`, `searcher`, and `gitserver` rep
 | 10000+     | 28                                        |
 
 _You can change the replica count of `sourcegraph-frontend` by editing [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml)._
-
-<br>
 
 | Repositories | Number of `searcher` replicas                                                  |
 | ------------ | ------------------------------------------------------------------------------ |
@@ -40,8 +36,6 @@ _You can change the replica count of `sourcegraph-frontend` by editing [base/fro
 
 _You can change the replica count of `searcher` by editing [base/searcher/searcher.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/searcher/searcher.Deployment.yaml)._
 
-<br>
-
 | Repositories | Number of `gitserver` replicas                                                |
 | ------------ | ----------------------------------------------------------------------------- |
 | 1-200        | 1                                                                             |
@@ -54,8 +48,6 @@ _You can change the replica count of `searcher` by editing [base/searcher/search
 
 _Read [configure.md](configure.md#Configure-gitserver-replica-count) to learn about how to change
 the replica count of `gitserver`._
-
-</div>
 
 ---
 

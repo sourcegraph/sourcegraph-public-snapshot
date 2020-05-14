@@ -929,6 +929,11 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 			  }
             }
             previewURL
+            diffStat {
+              added
+              deleted
+              changed
+            }
           }
         }
       }
@@ -948,6 +953,10 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 
 		if have, want := result.PreviewURL, "http://example.com/campaigns/new?patchSet=UGF0Y2hTZXQ6MQ%3D%3D"; have != want {
 			t.Fatalf("have PreviewURL %q, want %q", have, want)
+		}
+
+		if have, want := result.DiffStat, (apitest.DiffStat{Changed: 2}); have != want {
+			t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 		}
 	})
 }
@@ -1007,14 +1016,23 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var (
+		testDiffStatAdded   int32 = 0
+		testDiffStatDeleted int32 = 0
+		testDiffStatChanged int32 = 2
+	)
+
 	var patches []*campaigns.Patch
 	for _, repo := range rs {
 		patch := &campaigns.Patch{
-			PatchSetID: patchSet.ID,
-			RepoID:     repo.ID,
-			Rev:        testingRev,
-			BaseRef:    "master",
-			Diff:       testDiff,
+			PatchSetID:      patchSet.ID,
+			RepoID:          repo.ID,
+			Rev:             testingRev,
+			BaseRef:         "master",
+			Diff:            testDiff,
+			DiffStatAdded:   &testDiffStatAdded,
+			DiffStatDeleted: &testDiffStatDeleted,
+			DiffStatChanged: &testDiffStatChanged,
 		}
 
 		err := store.CreatePatch(ctx, patch)
@@ -1030,7 +1048,9 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queryPatches := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
+	queryPatchSet := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
+		t.Helper()
+
 		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
         query {
           node(id: %q) {
@@ -1093,7 +1113,7 @@ func TestPatchSetResolver(t *testing.T) {
 
 	for page := 0; page < 3; page++ {
 		var response struct{ Node apitest.PatchSet }
-		queryPatches(1, fmt.Sprintf(`"%d"`, page), &response)
+		queryPatchSet(1, fmt.Sprintf(`"%d"`, page), &response)
 
 		expectedLength := 1
 		if page >= 2 {
@@ -1117,7 +1137,7 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	var response struct{ Node apitest.PatchSet }
-	queryPatches(10000, "null", &response)
+	queryPatchSet(10000, "null", &response)
 
 	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)

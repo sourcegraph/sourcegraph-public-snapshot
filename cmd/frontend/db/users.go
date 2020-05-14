@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -687,6 +688,40 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) (_ []*types.Use
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
+
+// ListDates lists all user's created and deleted dates, used by usage stats.
+func (*users) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
+	rows, err := dbconn.Global.QueryContext(ctx, listDatesQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var d types.UserDates
+
+		err := rows.Scan(&d.UserID, &d.CreatedAt, &dbutil.NullTime{Time: &d.DeletedAt})
+		if err != nil {
+			return nil, err
+		}
+
+		dates = append(dates, d)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return dates, nil
+}
+
+const listDatesQuery = `
+-- source: cmd/frontend/db/users.go:ListDates
+SELECT id, created_at, deleted_at
+FROM users
+ORDER BY id ASC
+`
 
 func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}

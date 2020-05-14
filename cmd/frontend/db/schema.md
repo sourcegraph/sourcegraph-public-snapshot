@@ -282,6 +282,7 @@ Referenced by:
  timestamp         | timestamp with time zone | not null
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
+    "event_logs_anonymous_user_id" btree (anonymous_user_id)
     "event_logs_name" btree (name)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -537,16 +538,19 @@ Referenced by:
 
 # Table "public.patches"
 ```
-    Column    |           Type           |                         Modifiers                          
---------------+--------------------------+------------------------------------------------------------
- id           | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
- patch_set_id | bigint                   | not null
- repo_id      | bigint                   | not null
- rev          | text                     | not null
- diff         | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- base_ref     | text                     | not null
+      Column       |           Type           |                         Modifiers                          
+-------------------+--------------------------+------------------------------------------------------------
+ id                | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
+ patch_set_id      | bigint                   | not null
+ repo_id           | bigint                   | not null
+ rev               | text                     | not null
+ diff              | text                     | not null
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ base_ref          | text                     | not null
+ diff_stat_added   | integer                  | 
+ diff_stat_changed | integer                  | 
+ diff_stat_deleted | integer                  | 
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE

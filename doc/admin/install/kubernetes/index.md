@@ -8,8 +8,6 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-## Requirements
-
 - [Kubernetes](https://kubernetes.io/) v1.9 or later with an SSD storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.9.7 or later
@@ -79,4 +77,30 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Updating
 
-See the [Upgrading docs](../../updates/kubernetes.md).
+See the [Upgrading Howto](update.md) on how to upgrade.
+See the [Upgrading docs](../../updates/kubernetes.md) for details on what changed in a version and if manual migration steps
+are necessary.
+
+### Cluster-admin privileges
+
+> Note: Not all organizations have this split in admin privileges. If your organization does not then you don't need to
+> change anything and can ignore this section.
+
+The default installation has a few manifests that require cluster-admin privileges to apply. We have labelled all resources
+with a label indicating if they require cluster-admin privileges or not. This allows cluster admins to install the
+manifests that cannot be installed otherwise.
+
+- Manifests deployed by cluster-admin
+
+   ```bash
+   ./kubectl-apply-all.sh -l sourcegraph-resource-requires=cluster-admin
+   ```
+
+- Manifests deployed by non-cluster-admin
+
+   ```bash
+   ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
+   ```
+
+We also provide an [overlay](configure.md#non-privileged-overlay) that generates a version of the manifests that does not
+require cluster-admin privileges. 
