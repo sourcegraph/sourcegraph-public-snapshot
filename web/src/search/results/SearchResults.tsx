@@ -193,9 +193,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             if (caseSensitive !== this.props.caseSensitive) {
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
-                                            if (versionContext !== this.props.versionContext) {
-                                                this.props.setVersionContext(versionContext || '')
-                                            }
+
+                                            this.props.setVersionContext(versionContext || '')
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {
