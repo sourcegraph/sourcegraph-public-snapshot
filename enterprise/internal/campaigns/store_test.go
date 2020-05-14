@@ -377,6 +377,1111 @@ func testCampaigns(db *sql.DB) func(t *testing.T) {
 	}
 }
 
+func testChangesets(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+
+		githubActor := github.Actor{
+			AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+			Login:     "mrnugget",
+			URL:       "https://github.com/mrnugget",
+		}
+		githubPR := &github.PullRequest{
+			ID:           "FOOBARID",
+			Title:        "Fix a bunch of bugs",
+			Body:         "This fixes a bunch of bugs",
+			URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			Number:       12345,
+			Author:       githubActor,
+			Participants: []github.Actor{githubActor},
+			CreatedAt:    now,
+			UpdatedAt:    now,
+			HeadRefName:  "campaigns/test",
+		}
+
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+
+		repo := testRepo(1, "github")
+		deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(now))
+
+		if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets := make([]*cmpgn.Changeset, 0, 3)
+
+		t.Run("Create", func(t *testing.T) {
+			var i int
+			for i = 0; i < cap(changesets); i++ {
+				th := &cmpgn.Changeset{
+					RepoID:              repo.ID,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+					Metadata:            githubPR,
+					CampaignIDs:         []int64{int64(i) + 1},
+					ExternalID:          fmt.Sprintf("foobar-%d", i),
+					ExternalServiceType: "github",
+					ExternalBranch:      "campaigns/test",
+					ExternalUpdatedAt:   now,
+					ExternalState:       cmpgn.ChangesetStateOpen,
+					ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+					ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+				}
+
+				changesets = append(changesets, th)
+			}
+
+			err := s.CreateChangesets(ctx, changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = s.CreateChangesets(ctx, &cmpgn.Changeset{
+				RepoID:              deletedRepo.ID,
+				CreatedAt:           now,
+				UpdatedAt:           now,
+				Metadata:            githubPR,
+				CampaignIDs:         []int64{int64(i) + 1},
+				ExternalID:          fmt.Sprintf("foobar-%d", i),
+				ExternalServiceType: "github",
+				ExternalBranch:      "campaigns/test",
+				ExternalUpdatedAt:   now,
+				ExternalState:       cmpgn.ChangesetStateOpen,
+				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for _, have := range changesets {
+				if have.ID == 0 {
+					t.Fatal("id should not be zero")
+				}
+
+				if have.IsDeleted() {
+					t.Fatal("changeset is deleted")
+				}
+
+				want := have.Clone()
+
+				want.ID = have.ID
+				want.CreatedAt = now
+				want.UpdatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("GetChangesetExternalIDs", func(t *testing.T) {
+			have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, []string{githubPR.HeadRefName})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []string{"foobar-0", "foobar-1", "foobar-2"}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
+			spec := api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			}
+			have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []string{}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
+			spec := api.ExternalRepoSpec{
+				ID:          "invalid",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			}
+			have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []string{}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
+			spec := api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "invalid",
+			}
+			have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []string{}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
+			ids := make([]int64, len(changesets))
+			for i, c := range changesets {
+				ids[i] = c.ID
+			}
+
+			clones := make([]*cmpgn.Changeset, len(changesets))
+
+			for i, c := range changesets {
+				// Set only the fields on which we have a unique constraint
+				clones[i] = &cmpgn.Changeset{
+					RepoID:              c.RepoID,
+					ExternalID:          c.ExternalID,
+					ExternalServiceType: c.ExternalServiceType,
+				}
+			}
+
+			// Advance clock so store can determine whether Changeset was
+			// inserted or not
+			now = now.Add(time.Second)
+
+			err := s.CreateChangesets(ctx, clones...)
+			ae, ok := err.(AlreadyExistError)
+			if !ok {
+				t.Fatal(err)
+			}
+
+			{
+				sort.Slice(ae.ChangesetIDs, func(i, j int) bool { return ae.ChangesetIDs[i] < ae.ChangesetIDs[j] })
+				sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+				have, want := ae.ChangesetIDs, ids
+				if len(have) != len(want) {
+					t.Fatalf("%d changesets already exist, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+
+			{
+				// Verify that we got the original changesets back
+				have, want := clones, changesets
+				if len(have) != len(want) {
+					t.Fatalf("created %d changesets, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(changesets)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			count, err = s.CountChangesets(ctx, CountChangesetsOpts{CampaignID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("List", func(t *testing.T) {
+			for i := 1; i <= len(changesets); i++ {
+				opts := ListChangesetsOpts{CampaignID: int64(i)}
+
+				ts, next, err := s.ListChangesets(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, changesets[i-1:i]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			for i := 1; i <= len(changesets); i++ {
+				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: i})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(changesets) {
+						want = changesets[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := ts, changesets[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+
+			{
+				ids := make([]int64, len(changesets))
+				for i := range changesets {
+					ids[i] = changesets[i].ID
+				}
+
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := changesets
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(changesets); i++ {
+					opts := ListChangesetsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListChangesets(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := changesets[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
+				}
+			}
+
+			{
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != len(changesets) {
+					t.Fatalf("have 0 changesets. want %d", len(changesets))
+				}
+
+				for _, c := range changesets {
+					c.SetDeleted()
+					c.UpdatedAt = now
+				}
+
+				if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 0 {
+					t.Fatalf("have %d changesets. want 0", len(changesets))
+				}
+			}
+
+			// Limit of -1 should return all ChangeSets
+			{
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 3 {
+					t.Fatalf("have %d changesets. want 3", len(have))
+				}
+			}
+
+			stateOpen := cmpgn.ChangesetStateOpen
+			stateClosed := cmpgn.ChangesetStateClosed
+			stateApproved := cmpgn.ChangesetReviewStateApproved
+			stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
+			statePassed := cmpgn.ChangesetCheckStatePassed
+			stateFailed := cmpgn.ChangesetCheckStateFailed
+
+			filterCases := []struct {
+				opts      ListChangesetsOpts
+				wantCount int
+			}{
+				{
+					opts: ListChangesetsOpts{
+						ExternalState: &stateOpen,
+					},
+					wantCount: 3,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalState: &stateClosed,
+					},
+					wantCount: 0,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalReviewState: &stateApproved,
+					},
+					wantCount: 3,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalReviewState: &stateChangesRequested,
+					},
+					wantCount: 0,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalCheckState: &statePassed,
+					},
+					wantCount: 3,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalCheckState: &stateFailed,
+					},
+					wantCount: 0,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalState:      &stateOpen,
+						ExternalCheckState: &stateFailed,
+					},
+					wantCount: 0,
+				},
+				{
+					opts: ListChangesetsOpts{
+						ExternalState:       &stateOpen,
+						ExternalReviewState: &stateChangesRequested,
+					},
+					wantCount: 0,
+				},
+			}
+
+			for _, tc := range filterCases {
+				t.Run("", func(t *testing.T) {
+					have, _, err := s.ListChangesets(ctx, tc.opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if len(have) != tc.wantCount {
+						t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
+					}
+				})
+			}
+		})
+
+		t.Run("Null changeset state", func(t *testing.T) {
+			cs := &cmpgn.Changeset{
+				RepoID:              repo.ID,
+				Metadata:            githubPR,
+				CampaignIDs:         []int64{1},
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: "github",
+				ExternalBranch:      "campaigns/test",
+				ExternalUpdatedAt:   now,
+				ExternalState:       "",
+				ExternalReviewState: "",
+				ExternalCheckState:  "",
+			}
+
+			err := s.CreateChangesets(ctx, cs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				err := s.DeleteChangeset(ctx, cs.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
+
+			fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
+				ID: cs.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(cs.ExternalState, fromDB.ExternalState); diff != "" {
+				t.Error(diff)
+			}
+			if diff := cmp.Diff(cs.ExternalReviewState, fromDB.ExternalReviewState); diff != "" {
+				t.Error(diff)
+			}
+			if diff := cmp.Diff(cs.ExternalCheckState, fromDB.ExternalCheckState); diff != "" {
+				t.Error(diff)
+			}
+		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				want := changesets[0]
+				opts := GetChangesetOpts{ID: want.ID}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("ByExternalID", func(t *testing.T) {
+				want := changesets[0]
+				opts := GetChangesetOpts{
+					ExternalID:          want.ExternalID,
+					ExternalServiceType: want.ExternalServiceType,
+				}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("ByRepoID", func(t *testing.T) {
+				want := changesets[0]
+				opts := GetChangesetOpts{
+					RepoID: want.RepoID,
+				}
+
+				have, err := s.GetChangeset(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetChangesetOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetChangeset(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			want := make([]*cmpgn.Changeset, 0, len(changesets))
+			have := make([]*cmpgn.Changeset, 0, len(changesets))
+
+			now = now.Add(time.Second)
+			for _, c := range changesets {
+				c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
+				c.ExternalServiceType = bitbucketserver.ServiceType
+
+				have = append(have, c.Clone())
+
+				c.UpdatedAt = now
+				want = append(want, c)
+			}
+
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			for i := range have {
+				// Test that duplicates are not introduced.
+				have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
+			}
+
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			for i := range have {
+				// Test we can add to the set.
+				have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
+				want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
+			}
+
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
+
+			for i := range have {
+				sort.Slice(have[i].CampaignIDs, func(a, b int) bool {
+					return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
+				})
+
+				if diff := cmp.Diff(have[i], want[i]); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+
+			for i := range have {
+				// Test we can remove from the set.
+				have[i].CampaignIDs = have[i].CampaignIDs[:0]
+				want[i].CampaignIDs = want[i].CampaignIDs[:0]
+			}
+
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func testChangesetEvents(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+
+		issueComment := &github.IssueComment{
+			DatabaseID: 443827703,
+			Author: github.Actor{
+				AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+				Login:     "sqs",
+				URL:       "https://github.com/sqs",
+			},
+			Editor:              nil,
+			AuthorAssociation:   "MEMBER",
+			Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
+			URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			IncludesCreatedEdit: false,
+		}
+
+		events := make([]*cmpgn.ChangesetEvent, 0, 3)
+
+		t.Run("Upsert", func(t *testing.T) {
+			for i := 1; i < cap(events); i++ {
+				e := &cmpgn.ChangesetEvent{
+					ChangesetID: int64(i),
+					Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+					Key:         issueComment.Key(),
+					CreatedAt:   now,
+					Metadata:    issueComment,
+				}
+
+				events = append(events, e)
+			}
+
+			// Verify that no duplicates are introduced and no error is returned.
+			for i := 0; i < 2; i++ {
+				err := s.UpsertChangesetEvents(ctx, events...)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			for _, have := range events {
+				if have.ID == 0 {
+					t.Fatal("id should not be zero")
+				}
+
+				want := have.Clone()
+
+				want.ID = have.ID
+				want.CreatedAt = now
+				want.UpdatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(events)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			count, err = s.CountChangesetEvents(ctx, CountChangesetEventsOpts{ChangesetID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				want := events[0]
+				opts := GetChangesetEventOpts{ID: want.ID}
+
+				have, err := s.GetChangesetEvent(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("ByKey", func(t *testing.T) {
+				want := events[0]
+				opts := GetChangesetEventOpts{
+					ChangesetID: want.ChangesetID,
+					Kind:        want.Kind,
+					Key:         want.Key,
+				}
+
+				have, err := s.GetChangesetEvent(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetChangesetEventOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetChangesetEvent(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
+		})
+
+		t.Run("List", func(t *testing.T) {
+			t.Run("ByChangesetIDs", func(t *testing.T) {
+				for i := 1; i <= len(events); i++ {
+					opts := ListChangesetEventsOpts{ChangesetIDs: []int64{int64(i)}}
+
+					ts, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					have, want := ts, events[i-1:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d events, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+				}
+
+				{
+					opts := ListChangesetEventsOpts{ChangesetIDs: []int64{}}
+
+					for i := 1; i <= len(events); i++ {
+						opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
+					}
+
+					ts, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					have, want := ts, events
+					if len(have) != len(want) {
+						t.Fatalf("listed %d events, want: %d", len(have), len(want))
+					}
+				}
+			})
+
+			t.Run("WithLimit", func(t *testing.T) {
+				for i := 1; i <= len(events); i++ {
+					cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := next, int64(0)
+						if i < len(events) {
+							want = events[i].ID
+						}
+
+						if have != want {
+							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						}
+					}
+
+					{
+						have, want := cs, events[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d events, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				}
+			})
+
+			t.Run("WithCursor", func(t *testing.T) {
+				var cursor int64
+				for i := 1; i <= len(events); i++ {
+					opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := events[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
+				}
+			})
+
+			t.Run("EmptyResultListingAll", func(t *testing.T) {
+				opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}, Limit: -1}
+
+				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				if len(ts) != 0 {
+					t.Fatalf("listed %d events, want: %d", len(ts), 0)
+				}
+			})
+		})
+	}
+}
+
+func testListChangesetSyncData(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		tx := dbtest.NewTx(t, db)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		s := NewStoreWithClock(tx, clock)
+
+		ctx := context.Background()
+
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+
+		githubActor := github.Actor{
+			AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+			Login:     "mrnugget",
+			URL:       "https://github.com/mrnugget",
+		}
+		githubPR := &github.PullRequest{
+			ID:           "FOOBARID",
+			Title:        "Fix a bunch of bugs",
+			Body:         "This fixes a bunch of bugs",
+			URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			Number:       12345,
+			Author:       githubActor,
+			Participants: []github.Actor{githubActor},
+			CreatedAt:    now,
+			UpdatedAt:    now,
+			HeadRefName:  "campaigns/test",
+		}
+		issueComment := &github.IssueComment{
+			DatabaseID: 443827703,
+			Author: github.Actor{
+				AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+				Login:     "sqs",
+				URL:       "https://github.com/sqs",
+			},
+			Editor:              nil,
+			AuthorAssociation:   "MEMBER",
+			Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
+			URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			IncludesCreatedEdit: false,
+		}
+
+		var extSvcID int64 = 1
+		repo := testRepo(int(extSvcID), "github")
+		if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets := make([]*cmpgn.Changeset, 0, 3)
+		events := make([]*cmpgn.ChangesetEvent, 0)
+
+		for i := 0; i < cap(changesets); i++ {
+			changesets = append(changesets, &cmpgn.Changeset{
+				RepoID:              repo.ID,
+				CreatedAt:           now,
+				UpdatedAt:           now,
+				Metadata:            githubPR,
+				CampaignIDs:         []int64{int64(i) + 1},
+				ExternalID:          fmt.Sprintf("foobar-%d", i),
+				ExternalServiceType: "github",
+				ExternalBranch:      "campaigns/test",
+				ExternalUpdatedAt:   now,
+				ExternalState:       cmpgn.ChangesetStateOpen,
+				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			})
+		}
+
+		err := s.CreateChangesets(ctx, changesets...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// We need campaigns attached to each changeset
+		for _, cs := range changesets {
+			c := &cmpgn.Campaign{
+				Name:           fmt.Sprintf("ListChangesetSyncData test"),
+				ChangesetIDs:   []int64{cs.ID},
+				NamespaceOrgID: 23,
+			}
+			err := s.CreateCampaign(ctx, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cs.CampaignIDs = []int64{c.ID}
+
+		}
+
+		if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+			t.Fatal(err)
+		}
+
+		// The changesets, except one, get changeset events
+		for _, cs := range changesets[:len(changesets)-1] {
+			e := &cmpgn.ChangesetEvent{
+				ChangesetID: cs.ID,
+				Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+				Key:         issueComment.Key(),
+				CreatedAt:   now,
+				Metadata:    issueComment,
+			}
+
+			events = append(events, e)
+		}
+		err = s.UpsertChangesetEvents(ctx, events...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("ListChangesetSyncData", func(t *testing.T) {
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:        changesets[0].ID,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+				{
+					ChangesetID:        changesets[1].ID,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+				{
+					// No events
+					ChangesetID:        changesets[2].ID,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
+			// Close a campaign
+			closedCampaignID := changesets[0].CampaignIDs[0]
+			c, err := s.GetCampaign(ctx, GetCampaignOpts{ID: closedCampaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.ClosedAt = now
+			err = s.UpdateCampaign(ctx, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:        changesets[1].ID,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+				{
+					// No events
+					ChangesetID:        changesets[2].ID,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// If a changeset has ANY open campaigns we should list it
+			// Attach cs1 to both an open and closed campaign
+			openCampaignID := changesets[1].CampaignIDs[0]
+			changesets[0].CampaignIDs = []int64{closedCampaignID, openCampaignID}
+			err = s.UpdateChangesets(ctx, changesets[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			c1, err := s.GetCampaign(ctx, GetCampaignOpts{ID: openCampaignID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c1.ChangesetIDs = []int64{changesets[0].ID, changesets[1].ID}
+			err = s.UpdateCampaign(ctx, c1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:        changesets[0].ID,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+				{
+					ChangesetID:        changesets[1].ID,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+				{
+					// No events
+					ChangesetID:        changesets[2].ID,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  clock(),
+					ExternalServiceIDs: []int64{extSvcID},
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
@@ -389,1060 +1494,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 		s := NewStoreWithClock(tx, clock)
 
 		ctx := context.Background()
-
-		// Create a test repo
-		reposStore := repos.NewDBStore(db, sql.TxOptions{})
-		repo := &repos.Repo{
-			Name: "github.com/sourcegraph/sourcegraph-test-repo",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "external-id",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:github:4": {
-					ID:       "extsvc:github:4",
-					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-				},
-			},
-		}
-		deletedRepo := &repos.Repo{
-			Name: "github.com/sourcegraph/sourcegraph-old",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "external-id",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:github:4": {
-					ID:       "extsvc:github:4",
-					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph-old",
-				},
-			},
-			DeletedAt: time.Now(),
-		}
-		if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
-			t.Fatal(err)
-		}
-
-		t.Run("Changesets", func(t *testing.T) {
-			githubActor := github.Actor{
-				AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-				Login:     "mrnugget",
-				URL:       "https://github.com/mrnugget",
-			}
-			githubPR := &github.PullRequest{
-				ID:           "FOOBARID",
-				Title:        "Fix a bunch of bugs",
-				Body:         "This fixes a bunch of bugs",
-				URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
-				Number:       12345,
-				Author:       githubActor,
-				Participants: []github.Actor{githubActor},
-				CreatedAt:    now,
-				UpdatedAt:    now,
-				HeadRefName:  "campaigns/test",
-			}
-
-			changesets := make([]*cmpgn.Changeset, 0, 3)
-
-			t.Run("Create", func(t *testing.T) {
-				var i int
-				for i = 0; i < cap(changesets); i++ {
-					th := &cmpgn.Changeset{
-						RepoID:              repo.ID,
-						CreatedAt:           now,
-						UpdatedAt:           now,
-						Metadata:            githubPR,
-						CampaignIDs:         []int64{int64(i) + 1},
-						ExternalID:          fmt.Sprintf("foobar-%d", i),
-						ExternalServiceType: "github",
-						ExternalBranch:      "campaigns/test",
-						ExternalUpdatedAt:   now,
-						ExternalState:       cmpgn.ChangesetStateOpen,
-						ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-						ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-					}
-
-					changesets = append(changesets, th)
-				}
-
-				err := s.CreateChangesets(ctx, changesets...)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				err = s.CreateChangesets(ctx, &cmpgn.Changeset{
-					RepoID:              deletedRepo.ID,
-					CreatedAt:           now,
-					UpdatedAt:           now,
-					Metadata:            githubPR,
-					CampaignIDs:         []int64{int64(i) + 1},
-					ExternalID:          fmt.Sprintf("foobar-%d", i),
-					ExternalServiceType: "github",
-					ExternalBranch:      "campaigns/test",
-					ExternalUpdatedAt:   now,
-					ExternalState:       cmpgn.ChangesetStateOpen,
-					ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-					ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for _, have := range changesets {
-					if have.ID == 0 {
-						t.Fatal("id should not be zero")
-					}
-
-					if have.IsDeleted() {
-						t.Fatal("changeset is deleted")
-					}
-
-					want := have.Clone()
-
-					want.ID = have.ID
-					want.CreatedAt = now
-					want.UpdatedAt = now
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			})
-
-			t.Run("GetChangesetExternalIDs", func(t *testing.T) {
-				spec := api.ExternalRepoSpec{
-					ID:          "external-id",
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				}
-				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := []string{"foobar-0", "foobar-1", "foobar-2"}
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
-				spec := api.ExternalRepoSpec{
-					ID:          "external-id",
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				}
-				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := []string{}
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
-				spec := api.ExternalRepoSpec{
-					ID:          "invalid",
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				}
-				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := []string{}
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
-				spec := api.ExternalRepoSpec{
-					ID:          "external-id",
-					ServiceType: "github",
-					ServiceID:   "invalid",
-				}
-				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
-				if err != nil {
-					t.Fatal(err)
-				}
-				want := []string{}
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
-				ids := make([]int64, len(changesets))
-				for i, c := range changesets {
-					ids[i] = c.ID
-				}
-
-				clones := make([]*cmpgn.Changeset, len(changesets))
-
-				for i, c := range changesets {
-					// Set only the fields on which we have a unique constraint
-					clones[i] = &cmpgn.Changeset{
-						RepoID:              c.RepoID,
-						ExternalID:          c.ExternalID,
-						ExternalServiceType: c.ExternalServiceType,
-					}
-				}
-
-				// Advance clock so store can determine whether Changeset was
-				// inserted or not
-				now = now.Add(time.Second)
-
-				err := s.CreateChangesets(ctx, clones...)
-				ae, ok := err.(AlreadyExistError)
-				if !ok {
-					t.Fatal(err)
-				}
-
-				{
-					sort.Slice(ae.ChangesetIDs, func(i, j int) bool { return ae.ChangesetIDs[i] < ae.ChangesetIDs[j] })
-					sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-
-					have, want := ae.ChangesetIDs, ids
-					if len(have) != len(want) {
-						t.Fatalf("%d changesets already exist, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-
-				{
-					// Verify that we got the original changesets back
-					have, want := clones, changesets
-					if len(have) != len(want) {
-						t.Fatalf("created %d changesets, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			})
-
-			t.Run("Count", func(t *testing.T) {
-				count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(len(changesets)); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-
-				count, err = s.CountChangesets(ctx, CountChangesetsOpts{CampaignID: 1})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(1); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-			})
-
-			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(changesets); i++ {
-					opts := ListChangesetsOpts{CampaignID: int64(i)}
-
-					ts, next, err := s.ListChangesets(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					have, want := ts, changesets[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(changesets); i++ {
-					ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					{
-						have, want := next, int64(0)
-						if i < len(changesets) {
-							want = changesets[i].ID
-						}
-
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
-
-					{
-						have, want := ts, changesets[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
-						}
-					}
-				}
-
-				{
-					ids := make([]int64, len(changesets))
-					for i := range changesets {
-						ids[i] = changesets[i].ID
-					}
-
-					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					want := changesets
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-
-				{
-					var cursor int64
-					for i := 1; i <= len(changesets); i++ {
-						opts := ListChangesetsOpts{Cursor: cursor, Limit: 1}
-						have, next, err := s.ListChangesets(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						want := changesets[i-1 : i]
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-
-						cursor = next
-					}
-				}
-
-				{
-					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if len(have) != len(changesets) {
-						t.Fatalf("have 0 changesets. want %d", len(changesets))
-					}
-
-					for _, c := range changesets {
-						c.SetDeleted()
-						c.UpdatedAt = now
-					}
-
-					if err := s.UpdateChangesets(ctx, changesets...); err != nil {
-						t.Fatal(err)
-					}
-
-					have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if len(have) != 0 {
-						t.Fatalf("have %d changesets. want 0", len(changesets))
-					}
-				}
-
-				// Limit of -1 should return all ChangeSets
-				{
-					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if len(have) != 3 {
-						t.Fatalf("have %d changesets. want 3", len(have))
-					}
-				}
-
-				stateOpen := cmpgn.ChangesetStateOpen
-				stateClosed := cmpgn.ChangesetStateClosed
-				stateApproved := cmpgn.ChangesetReviewStateApproved
-				stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
-				statePassed := cmpgn.ChangesetCheckStatePassed
-				stateFailed := cmpgn.ChangesetCheckStateFailed
-
-				filterCases := []struct {
-					opts      ListChangesetsOpts
-					wantCount int
-				}{
-					{
-						opts: ListChangesetsOpts{
-							ExternalState: &stateOpen,
-						},
-						wantCount: 3,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalState: &stateClosed,
-						},
-						wantCount: 0,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalReviewState: &stateApproved,
-						},
-						wantCount: 3,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalReviewState: &stateChangesRequested,
-						},
-						wantCount: 0,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalCheckState: &statePassed,
-						},
-						wantCount: 3,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalCheckState: &stateFailed,
-						},
-						wantCount: 0,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalState:      &stateOpen,
-							ExternalCheckState: &stateFailed,
-						},
-						wantCount: 0,
-					},
-					{
-						opts: ListChangesetsOpts{
-							ExternalState:       &stateOpen,
-							ExternalReviewState: &stateChangesRequested,
-						},
-						wantCount: 0,
-					},
-				}
-
-				for _, tc := range filterCases {
-					t.Run("", func(t *testing.T) {
-						have, _, err := s.ListChangesets(ctx, tc.opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-						if len(have) != tc.wantCount {
-							t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
-						}
-					})
-				}
-			})
-
-			t.Run("Null changeset state", func(t *testing.T) {
-				cs := &cmpgn.Changeset{
-					RepoID:              repo.ID,
-					Metadata:            githubPR,
-					CampaignIDs:         []int64{1},
-					ExternalID:          fmt.Sprintf("foobar-%d", 42),
-					ExternalServiceType: "github",
-					ExternalBranch:      "campaigns/test",
-					ExternalUpdatedAt:   now,
-					ExternalState:       "",
-					ExternalReviewState: "",
-					ExternalCheckState:  "",
-				}
-
-				err := s.CreateChangesets(ctx, cs)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer func() {
-					err := s.DeleteChangeset(ctx, cs.ID)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}()
-
-				fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
-					ID: cs.ID,
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(cs.ExternalState, fromDB.ExternalState); diff != "" {
-					t.Error(diff)
-				}
-				if diff := cmp.Diff(cs.ExternalReviewState, fromDB.ExternalReviewState); diff != "" {
-					t.Error(diff)
-				}
-				if diff := cmp.Diff(cs.ExternalCheckState, fromDB.ExternalCheckState); diff != "" {
-					t.Error(diff)
-				}
-			})
-
-			t.Run("Get", func(t *testing.T) {
-				t.Run("ByID", func(t *testing.T) {
-					want := changesets[0]
-					opts := GetChangesetOpts{ID: want.ID}
-
-					have, err := s.GetChangeset(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("ByExternalID", func(t *testing.T) {
-					want := changesets[0]
-					opts := GetChangesetOpts{
-						ExternalID:          want.ExternalID,
-						ExternalServiceType: want.ExternalServiceType,
-					}
-
-					have, err := s.GetChangeset(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("ByRepoID", func(t *testing.T) {
-					want := changesets[0]
-					opts := GetChangesetOpts{
-						RepoID: want.RepoID,
-					}
-
-					have, err := s.GetChangeset(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("NoResults", func(t *testing.T) {
-					opts := GetChangesetOpts{ID: 0xdeadbeef}
-
-					_, have := s.GetChangeset(ctx, opts)
-					want := ErrNoResults
-
-					if have != want {
-						t.Fatalf("have err %v, want %v", have, want)
-					}
-				})
-			})
-
-			t.Run("Update", func(t *testing.T) {
-				want := make([]*cmpgn.Changeset, 0, len(changesets))
-				have := make([]*cmpgn.Changeset, 0, len(changesets))
-
-				now = now.Add(time.Second)
-				for _, c := range changesets {
-					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-					c.ExternalServiceType = bitbucketserver.ServiceType
-
-					have = append(have, c.Clone())
-
-					c.UpdatedAt = now
-					want = append(want, c)
-				}
-
-				if err := s.UpdateChangesets(ctx, have...); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-
-				for i := range have {
-					// Test that duplicates are not introduced.
-					have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
-				}
-
-				if err := s.UpdateChangesets(ctx, have...); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-
-				for i := range have {
-					// Test we can add to the set.
-					have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
-					want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
-				}
-
-				if err := s.UpdateChangesets(ctx, have...); err != nil {
-					t.Fatal(err)
-				}
-
-				for i := range have {
-					sort.Slice(have[i].CampaignIDs, func(a, b int) bool {
-						return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
-					})
-
-					if diff := cmp.Diff(have[i], want[i]); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-
-				for i := range have {
-					// Test we can remove from the set.
-					have[i].CampaignIDs = have[i].CampaignIDs[:0]
-					want[i].CampaignIDs = want[i].CampaignIDs[:0]
-				}
-
-				if err := s.UpdateChangesets(ctx, have...); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-		})
-
-		t.Run("ChangesetEvents", func(t *testing.T) {
-			events := make([]*cmpgn.ChangesetEvent, 0, 3)
-
-			issueComment := &github.IssueComment{
-				DatabaseID: 443827703,
-				Author: github.Actor{
-					AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
-					Login:     "sqs",
-					URL:       "https://github.com/sqs",
-				},
-				Editor:              nil,
-				AuthorAssociation:   "MEMBER",
-				Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
-				URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
-				CreatedAt:           now,
-				UpdatedAt:           now,
-				IncludesCreatedEdit: false,
-			}
-
-			t.Run("Upsert", func(t *testing.T) {
-				for i := 1; i < cap(events); i++ {
-					e := &cmpgn.ChangesetEvent{
-						ChangesetID: int64(i),
-						Kind:        cmpgn.ChangesetEventKindGitHubCommented,
-						Key:         issueComment.Key(),
-						CreatedAt:   now,
-						Metadata:    issueComment,
-					}
-
-					events = append(events, e)
-				}
-
-				// Verify that no duplicates are introduced and no error is returned.
-				for i := 0; i < 2; i++ {
-					err := s.UpsertChangesetEvents(ctx, events...)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				for _, have := range events {
-					if have.ID == 0 {
-						t.Fatal("id should not be zero")
-					}
-
-					want := have.Clone()
-
-					want.ID = have.ID
-					want.CreatedAt = now
-					want.UpdatedAt = now
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			})
-
-			t.Run("Count", func(t *testing.T) {
-				count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(len(events)); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-
-				count, err = s.CountChangesetEvents(ctx, CountChangesetEventsOpts{ChangesetID: 1})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(1); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
-			})
-
-			t.Run("Get", func(t *testing.T) {
-				t.Run("ByID", func(t *testing.T) {
-					want := events[0]
-					opts := GetChangesetEventOpts{ID: want.ID}
-
-					have, err := s.GetChangesetEvent(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("ByKey", func(t *testing.T) {
-					want := events[0]
-					opts := GetChangesetEventOpts{
-						ChangesetID: want.ChangesetID,
-						Kind:        want.Kind,
-						Key:         want.Key,
-					}
-
-					have, err := s.GetChangesetEvent(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-
-				t.Run("NoResults", func(t *testing.T) {
-					opts := GetChangesetEventOpts{ID: 0xdeadbeef}
-
-					_, have := s.GetChangesetEvent(ctx, opts)
-					want := ErrNoResults
-
-					if have != want {
-						t.Fatalf("have err %v, want %v", have, want)
-					}
-				})
-			})
-
-			t.Run("List", func(t *testing.T) {
-				t.Run("ByChangesetIDs", func(t *testing.T) {
-					for i := 1; i <= len(events); i++ {
-						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{int64(i)}}
-
-						ts, next, err := s.ListChangesetEvents(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						if have, want := next, int64(0); have != want {
-							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-						}
-
-						have, want := ts, events[i-1:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d events, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-					}
-
-					{
-						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{}}
-
-						for i := 1; i <= len(events); i++ {
-							opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
-						}
-
-						ts, next, err := s.ListChangesetEvents(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						if have, want := next, int64(0); have != want {
-							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-						}
-
-						have, want := ts, events
-						if len(have) != len(want) {
-							t.Fatalf("listed %d events, want: %d", len(have), len(want))
-						}
-					}
-				})
-
-				t.Run("WithLimit", func(t *testing.T) {
-					for i := 1; i <= len(events); i++ {
-						cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						{
-							have, want := next, int64(0)
-							if i < len(events) {
-								want = events[i].ID
-							}
-
-							if have != want {
-								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-							}
-						}
-
-						{
-							have, want := cs, events[:i]
-							if len(have) != len(want) {
-								t.Fatalf("listed %d events, want: %d", len(have), len(want))
-							}
-
-							if diff := cmp.Diff(have, want); diff != "" {
-								t.Fatal(diff)
-							}
-						}
-					}
-				})
-
-				t.Run("WithCursor", func(t *testing.T) {
-					var cursor int64
-					for i := 1; i <= len(events); i++ {
-						opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
-						have, next, err := s.ListChangesetEvents(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						want := events[i-1 : i]
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-
-						cursor = next
-					}
-				})
-
-				t.Run("EmptyResultListingAll", func(t *testing.T) {
-					opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}, Limit: -1}
-
-					ts, next, err := s.ListChangesetEvents(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					if len(ts) != 0 {
-						t.Fatalf("listed %d events, want: %d", len(ts), 0)
-					}
-				})
-			})
-		})
-
-		t.Run("ListChangesetSyncData", func(t *testing.T) {
-			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-				Limit: -1,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// A previous test decreases the repoID, set it back
-			for i := range changesets {
-				changesets[i].RepoID = repo.ID
-			}
-
-			err = s.UpdateChangesets(ctx, changesets...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// We need campaigns attached to each changeset
-			for i, cs := range changesets {
-				c := &cmpgn.Campaign{
-					Name:           fmt.Sprintf("ListChangesetSyncData test"),
-					ChangesetIDs:   []int64{cs.ID},
-					NamespaceOrgID: 23,
-				}
-				err := s.CreateCampaign(ctx, c)
-				if err != nil {
-					t.Fatal(err)
-				}
-				changesets[i].CampaignIDs = []int64{c.ID}
-				if err := s.UpdateChangesets(ctx, changesets[i]); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			// Differs from clock() due to updates higher up
-			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := []cmpgn.ChangesetSyncData{
-				{
-					ChangesetID:        1,
-					UpdatedAt:          clock(),
-					LatestEvent:        clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-				{
-					ChangesetID:        2,
-					UpdatedAt:          clock(),
-					LatestEvent:        clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-				{
-					// No events
-					ChangesetID:        3,
-					UpdatedAt:          clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-			}
-			if diff := cmp.Diff(want, hs); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-
-		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
-			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-				Limit: 10,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(changesets) != 3 {
-				t.Fatalf("Expected 3 changesets, got %d", len(changesets))
-			}
-			oldCampaign := changesets[0].CampaignIDs[0]
-
-			// Close a campaign
-			c, err := s.GetCampaign(ctx, GetCampaignOpts{
-				ID: oldCampaign,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			c.ClosedAt = now
-			err = s.UpdateCampaign(ctx, c)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Differs from clock() due to updates higher up
-			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			want := []cmpgn.ChangesetSyncData{
-				{
-					ChangesetID:        2,
-					UpdatedAt:          clock(),
-					LatestEvent:        clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-				{
-					// No events
-					ChangesetID:        3,
-					UpdatedAt:          clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-			}
-			if diff := cmp.Diff(want, hs); diff != "" {
-				t.Fatal(diff)
-			}
-
-			// If a changeset has ANY open campaigns we should list it
-			cs2, err := s.GetChangeset(ctx, GetChangesetOpts{
-				ID: 2,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Attach cs1 to both an open and closed campaign
-			changesets[0].CampaignIDs = []int64{oldCampaign, cs2.CampaignIDs[0]}
-			err = s.UpdateChangesets(ctx, changesets[0])
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			c1, err := s.GetCampaign(ctx, GetCampaignOpts{
-				ID: cs2.CampaignIDs[0],
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			c1.ChangesetIDs = []int64{changesets[0].ID, cs2.ID}
-			err = s.UpdateCampaign(ctx, c1)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			want = []cmpgn.ChangesetSyncData{
-				{
-					ChangesetID:        1,
-					UpdatedAt:          clock(),
-					LatestEvent:        clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-				{
-					ChangesetID:        2,
-					UpdatedAt:          clock(),
-					LatestEvent:        clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-				{
-					// No events
-					ChangesetID:        3,
-					UpdatedAt:          clock(),
-					ExternalUpdatedAt:  externalUpdatedAt,
-					ExternalServiceIDs: []int64{4},
-				},
-			}
-			if diff := cmp.Diff(want, hs); diff != "" {
-				t.Fatal(diff)
-			}
-		})
 
 		t.Run("PatchSets", func(t *testing.T) {
 			patchSets := make([]*cmpgn.PatchSet, 0, 3)
