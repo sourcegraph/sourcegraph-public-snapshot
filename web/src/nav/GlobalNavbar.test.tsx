@@ -37,6 +37,9 @@ const PROPS: GlobalNavbar['props'] = {
     onFiltersInQueryChange: () => undefined,
     smartSearchField: false,
     isSearchRelatedPage: true,
+    versionContext: undefined,
+    setVersionContext: () => undefined,
+    availableVersionContexts: [],
 }
 
 describe('GlobalNavbar', () => {

@@ -13,7 +13,7 @@ import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientRoots } from './api/roots'
+import { ClientWorkspace } from './api/workspace'
 import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
@@ -136,7 +136,7 @@ export async function createExtensionHostClientConnection(
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
-    subscription.add(new ClientRoots(proxy.roots, services.workspace))
+    subscription.add(new ClientWorkspace(proxy.workspace, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)

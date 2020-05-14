@@ -312,6 +312,15 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
             return { edits: [edit], selectText: comment }
         },
     },
+    {
+        id: 'addWebhooks',
+        label: 'Add webhook',
+        run: config => {
+            const value = { org: '<your_org_on_GitHub>', secret: '<any_secret_string>' }
+            const edits = setProperty(config, ['webhooks', -1], value, defaultFormattingOptions)
+            return { edits, selectText: '<your_org_on_GitHub>' }
+        },
+    },
 ]
 
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
@@ -851,6 +860,15 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 const value = '<certificate>'
                 const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'enableWebhooks',
+            label: 'Enable webhooks',
+            run: config => {
+                const value = { webhooks: { secret: '<any_secret_string>' } }
+                const edits = setProperty(config, ['plugin'], value, defaultFormattingOptions)
+                return { edits, selectText: '<any_secret_string>' }
             },
         },
     ],

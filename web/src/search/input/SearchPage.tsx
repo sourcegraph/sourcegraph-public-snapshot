@@ -31,6 +31,9 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContext } from '../../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -44,11 +47,14 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     // For NavLinks
     authRequired?: boolean
@@ -88,8 +94,8 @@ export class SearchPage extends React.Component<Props, State> {
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
                 <BrandLogo className="search-page__logo" isLightTheme={this.props.isLightTheme} />
-                <div className="search search-page__container">
-                    <div className="d-flex flex-row">
+                <div className="search-page__container">
+                    <div className="d-flex flex-row flex-shrink-past-contents">
                         {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             <InteractiveModeInput
                                 {...this.props}
@@ -100,7 +106,7 @@ export class SearchPage extends React.Component<Props, State> {
                             />
                         ) : (
                             <>
-                                <Form className="search flex-grow-1" onSubmit={this.onFormSubmit}>
+                                <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
@@ -108,7 +114,15 @@ export class SearchPage extends React.Component<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
-
+                                        <VersionContextDropdown
+                                            history={this.props.history}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            navbarSearchQuery={this.state.userQueryState.query}
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
+                                        />
                                         {this.props.smartSearchField ? (
                                             <LazyMonacoQueryInput
                                                 {...this.props}
@@ -145,6 +159,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             authenticatedUser={this.props.authenticatedUser}
                                             settingsCascade={this.props.settingsCascade}
                                             patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />

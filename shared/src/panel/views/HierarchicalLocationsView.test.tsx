@@ -52,6 +52,7 @@ describe('<HierarchicalLocationsView />', () => {
             defaultGroup: 'git://github.com/foo/bar',
             isLightTheme: true,
             fetchHighlightedFileLines: sinon.spy(),
+            versionContext: undefined,
         }
         return { services, props }
     }

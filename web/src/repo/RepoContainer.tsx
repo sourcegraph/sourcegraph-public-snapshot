@@ -39,6 +39,7 @@ import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -52,7 +53,8 @@ export interface RepoContainerContext
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        VersionContextProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -82,7 +84,8 @@ interface RepoContainerProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -312,6 +315,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            versionContext: this.props.versionContext,
         }
 
         return (

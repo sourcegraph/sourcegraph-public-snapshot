@@ -192,6 +192,11 @@ body,
     flex: 1;
 }
 
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
 .cursor-pointer {
     cursor: pointer;
 }

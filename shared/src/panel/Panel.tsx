@@ -17,6 +17,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 import { ThemeProps } from '../theme'
+import { VersionContextProps } from '../search/util'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -24,7 +25,8 @@ interface Props
         SettingsCascadeProps,
         ActivationProps,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        VersionContextProps {
     location: H.Location
     history: H.History
     repoName?: string

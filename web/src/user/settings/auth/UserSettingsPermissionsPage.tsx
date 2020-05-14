@@ -3,11 +3,17 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { eventLogger } from '../../../tracking/eventLogger'
+import * as H from 'history'
+import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
+import { scheduleUserPermissionsSync } from '../../../site-admin/backend'
 
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IUser }> = ({ user }) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IUser; history: H.History }> = ({
+    user,
+    history,
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
 
     return (
@@ -24,29 +30,58 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IU
                     is finished.
                 </div>
             ) : (
-                <table className="table">
-                    <tbody>
-                        <tr>
-                            <th>Last complete sync</th>
-                            <td>
-                                {user.permissionsInfo.syncedAt ? (
-                                    <Timestamp date={user.permissionsInfo.syncedAt} />
-                                ) : (
-                                    'Never'
-                                )}
-                            </td>
-                            <td className="text-muted">Updated by user permissions syncing</td>
-                        </tr>
-                        <tr>
-                            <th>Last incremental sync</th>
-                            <td>
-                                <Timestamp date={user.permissionsInfo.updatedAt} />
-                            </td>
-                            <td className="text-muted">Updated by repository permissions syncing</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div>
+                    <table className="table">
+                        <tbody>
+                            <tr>
+                                <th>Last complete sync</th>
+                                <td>
+                                    {user.permissionsInfo.syncedAt ? (
+                                        <Timestamp date={user.permissionsInfo.syncedAt} />
+                                    ) : (
+                                        'Never'
+                                    )}
+                                </td>
+                                <td className="text-muted">Updated by user permissions syncing</td>
+                            </tr>
+                            <tr>
+                                <th>Last incremental sync</th>
+                                <td>
+                                    <Timestamp date={user.permissionsInfo.updatedAt} />
+                                </td>
+                                <td className="text-muted">Updated by repository permissions syncing</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
+                </div>
             )}
         </div>
     )
+}
+
+interface ScheduleUserPermissionsSyncActionContainerProps {
+    user: GQL.IUser
+    history: H.History
+}
+
+class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<
+    ScheduleUserPermissionsSyncActionContainerProps
+> {
+    public render(): JSX.Element | null {
+        return (
+            <ActionContainer
+                title="Manually schedule a permissions sync"
+                description={<div>Site admins are able to manually schedule a permissions sync for this user.</div>}
+                buttonLabel="Schedule now"
+                flashText="Added to queue"
+                run={this.scheduleUserPermissions}
+                history={this.props.history}
+            />
+        )
+    }
+
+    private scheduleUserPermissions = async (): Promise<void> => {
+        await scheduleUserPermissionsSync({ user: this.props.user.id }).toPromise()
+    }
 }
