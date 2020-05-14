@@ -507,6 +507,7 @@ describe('Search regression test suite', () => {
                 )
             // Repo autocomplete from homepage
             await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            // Using id selector rather than `e2e-` classes as Monaco doesn't allow customizing classes
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
                 selector: '#monaco-query-input',
@@ -519,7 +520,6 @@ describe('Search regression test suite', () => {
                 wait: { timeout: 5000 },
                 selector: '.monaco-query-input-container .suggest-widget.visible span',
             })
-            console.log(await getSearchFieldValue())
             assert.strictEqual(await getSearchFieldValue(), 'repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
             // Submit search
@@ -536,7 +536,6 @@ describe('Search regression test suite', () => {
             })
             await driver.page.keyboard.press(Key.ArrowDown)
             await driver.page.keyboard.press(Key.Tab)
-            console.log(await getSearchFieldValue())
             assert.strictEqual(
                 await getSearchFieldValue(),
                 'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
