@@ -11,8 +11,9 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
 fi
 
 # Warn if dev-private needs to be updated.
-if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
-  echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/pull/10."
+required_commit="af5583531defe396468609f0a9ac0b4d9b932184"
+if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; then
+  echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/commit/$required_commit."
   echo
   echo "Try running:"
   echo
@@ -20,6 +21,8 @@ if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
   echo
   exit 1
 fi
+
+exit 0
 
 # shellcheck disable=SC1090
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
