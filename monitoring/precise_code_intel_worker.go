@@ -57,7 +57,7 @@ func PreciseCodeIntelWorker() *Container {
 							Query:             `increase(src_code_intel_db_errors_total{job="precise-code-intel-worker"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("db opration"),
+							PanelOptions:      PanelOptions().LegendFormat("db operation"),
 							PossibleSolutions: "none",
 						},
 					},
