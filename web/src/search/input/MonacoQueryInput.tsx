@@ -7,7 +7,7 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable, BehaviorSubject, combineLatest } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, mapTo } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
@@ -16,6 +16,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { hasProperty, isDefined } from '../../../../shared/src/util/types'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
+import { observeResize } from '../../util/dom'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -140,14 +141,11 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         this.subscriptions.add(
             combineLatest([this.containerRefs, this.editorRefs])
                 .pipe(
-                    filter((refs): refs is [HTMLElement, Monaco.editor.IStandaloneCodeEditor] => refs.every(isDefined))
+                    filter((refs): refs is [HTMLElement, Monaco.editor.IStandaloneCodeEditor] => refs.every(isDefined)),
+                    switchMap(([container, editor]) => observeResize(container).pipe(mapTo(editor)))
                 )
-                .subscribe(([container, editor]) => {
-                    const resizeObserver = new ResizeObserver(() => {
-                        editor.layout()
-                    })
-                    resizeObserver.observe(container)
-                    this.subscriptions.add(() => resizeObserver.disconnect())
+                .subscribe(editor => {
+                    editor.layout()
                 })
         )
     }
