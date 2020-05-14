@@ -24,9 +24,6 @@ export class ExtWorkspace implements ExtWorkspaceAPI, ProxyMarked {
         return this.roots
     }
 
-    public getVersionContext(): string | undefined {
-        return this.versionContext
-    }
 
     public readonly rootsChanges = new Subject<void>()
     public readonly versionContextChanges = new BehaviorSubject<string | undefined>(undefined)
