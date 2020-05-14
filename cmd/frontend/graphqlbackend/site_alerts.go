@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -97,6 +98,7 @@ func checkDuplicateRateLimits() (problems conf.Problems) {
 		if len(duplicates) < 2 {
 			continue
 		}
+		sort.Strings(duplicates)
 		msg := fmt.Sprintf("Multiple rate limiters configured for the same code host: %s", strings.Join(duplicates, ", "))
 		problems = append(problems, conf.NewExternalServiceProblem(msg))
 	}
