@@ -85,10 +85,10 @@ export class SearchPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const quickLinks = this.getQuickLinks()
         return (
-            <div className="search-page flex-shrink-past-contents">
+            <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
                 <BrandLogo className="search-page__logo" isLightTheme={this.props.isLightTheme} />
-                <div className="search search-page__container flex-shrink-past-contents">
+                <div className="search-page__container">
                     <div className="d-flex flex-row flex-shrink-past-contents">
                         {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             <InteractiveModeInput
@@ -100,10 +100,7 @@ export class SearchPage extends React.Component<Props, State> {
                             />
                         ) : (
                             <>
-                                <Form
-                                    className="search flex-grow-1 flex-shrink-past-contents"
-                                    onSubmit={this.onFormSubmit}
-                                >
+                                <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container flex-shrink-past-contents">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle

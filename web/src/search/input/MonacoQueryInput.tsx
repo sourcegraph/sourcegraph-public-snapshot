@@ -189,10 +189,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         }
         return (
             <>
-                <div
-                    ref={this.containerRefs.next.bind(this.containerRefs)}
-                    className="monaco-query-input-container flex-grow-1 flex-shrink-past-contents"
-                >
+                <div ref={this.containerRefs.next.bind(this.containerRefs)} className="monaco-query-input-container">
                     <div className="flex-grow-1 flex-shrink-past-contents">
                         <MonacoEditor
                             id="monaco-query-input"

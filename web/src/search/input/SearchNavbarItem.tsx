@@ -40,7 +40,7 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
     public render(): React.ReactNode {
         return (
             <Form
-                className="search search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
+                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
                 onSubmit={this.onFormSubmit}
             >
                 {this.props.smartSearchField ? (
