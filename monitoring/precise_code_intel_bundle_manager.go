@@ -70,7 +70,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				},
 			},
 			{
-				Title:  "Janitor",
+				Title:  "Janitor - cleans up and keeps free space on disk",
 				Hidden: true,
 				Rows: []Row{
 					{
@@ -114,7 +114,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				},
 			},
 			{
-				Title:  "Cache",
+				Title:  "Connection and data cache",
 				Hidden: true,
 				Rows: []Row{
 					{
@@ -140,7 +140,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				},
 			},
 			{
-				Title:  "External services",
+				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
 					{

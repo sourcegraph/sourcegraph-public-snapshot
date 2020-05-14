@@ -64,7 +64,7 @@ func PreciseCodeIntelWorker() *Container {
 				},
 			},
 			{
-				Title:  "Resetter",
+				Title:  "Upload resetter - re-queues uploads that did not complete processing",
 				Hidden: true,
 				Rows: []Row{
 					{
@@ -90,7 +90,7 @@ func PreciseCodeIntelWorker() *Container {
 				},
 			},
 			{
-				Title:  "External services",
+				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
 					{

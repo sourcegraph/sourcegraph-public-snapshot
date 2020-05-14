@@ -56,7 +56,7 @@ func PreciseCodeIntelAPIServer() *Container {
 				},
 			},
 			{
-				Title:  "Janitor",
+				Title:  "Janitor - cleans up upload records in Postgres",
 				Hidden: true,
 				Rows: []Row{
 					{
@@ -82,7 +82,7 @@ func PreciseCodeIntelAPIServer() *Container {
 				},
 			},
 			{
-				Title:  "External services",
+				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
 					{
