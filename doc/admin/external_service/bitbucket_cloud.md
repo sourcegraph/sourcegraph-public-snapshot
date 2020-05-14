@@ -28,7 +28,7 @@ Internal rate limiting can be configured to limit the rate at which requests are
 
 By default it is enabled at a rate of 7200 per hour (2 per second) but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising campaign changesets.
+**NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
 
 ## Configuration
 
