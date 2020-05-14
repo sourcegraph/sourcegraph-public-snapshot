@@ -79,7 +79,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 </div>
                 <button
                     type="submit"
-                    className={`btn btn-primary ${
+                    className={`btn btn-primary mb-3 ${
                         this.props.mode === 'create'
                             ? 'e2e-add-external-service-button'
                             : 'e2e-update-external-service-button'
