@@ -34,7 +34,8 @@ func New(
 	}
 }
 
-// TODO
+// Run periodically performs a best-effort cleanup process. See the following methods
+// for more specifics: removeProcessedUploadsWithoutBundleFile.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
