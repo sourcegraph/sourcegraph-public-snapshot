@@ -19,362 +19,351 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-func testCampaigns(db *sql.DB) func(t *testing.T) {
-	return func(t *testing.T) {
-		tx := dbtest.NewTx(t, db)
+func testCampaigns(t *testing.T, ctx context.Context, s *Store, clock clock) {
+	campaigns := make([]*cmpgn.Campaign, 0, 3)
 
-		now := time.Now().UTC().Truncate(time.Microsecond)
-		clock := func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
+	t.Run("Create", func(t *testing.T) {
+		for i := 0; i < cap(campaigns); i++ {
+			c := &cmpgn.Campaign{
+				Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
+				Description:  "All the Javascripts are belong to us",
+				Branch:       "upgrade-es-lint",
+				AuthorID:     23,
+				ChangesetIDs: []int64{int64(i) + 1},
+				PatchSetID:   42 + int64(i),
+				ClosedAt:     clock.now(),
+			}
+			if i == 0 {
+				// don't have a patch set for the first one
+				c.PatchSetID = 0
+				// Don't close the first one
+				c.ClosedAt = time.Time{}
+			}
+
+			if i%2 == 0 {
+				c.NamespaceOrgID = 23
+			} else {
+				c.NamespaceUserID = 42
+			}
+
+			want := c.Clone()
+			have := c
+
+			err := s.CreateCampaign(ctx, have)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have.ID == 0 {
+				t.Fatal("ID should not be zero")
+			}
+
+			want.ID = have.ID
+			want.CreatedAt = clock.now()
+			want.UpdatedAt = clock.now()
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			campaigns = append(campaigns, c)
 		}
-		s := NewStoreWithClock(tx, clock)
+	})
 
-		ctx := context.Background()
+	t.Run("Count", func(t *testing.T) {
+		count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		campaigns := make([]*cmpgn.Campaign, 0, 3)
+		if have, want := count, int64(len(campaigns)); have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
 
-		t.Run("Create", func(t *testing.T) {
-			for i := 0; i < cap(campaigns); i++ {
-				c := &cmpgn.Campaign{
-					Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
-					Description:  "All the Javascripts are belong to us",
-					Branch:       "upgrade-es-lint",
-					AuthorID:     23,
-					ChangesetIDs: []int64{int64(i) + 1},
-					PatchSetID:   42 + int64(i),
-					ClosedAt:     now,
-				}
-				if i == 0 {
-					// don't have a patch set for the first one
-					c.PatchSetID = 0
-					// Don't close the first one
-					c.ClosedAt = time.Time{}
-				}
+		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-				if i%2 == 0 {
-					c.NamespaceOrgID = 23
-				} else {
-					c.NamespaceUserID = 42
-				}
+		if have, want := count, int64(1); have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
 
-				want := c.Clone()
-				have := c
+		hasPatchSet := false
+		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-				err := s.CreateCampaign(ctx, have)
-				if err != nil {
-					t.Fatal(err)
-				}
+		if have, want := count, int64(1); have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
 
-				if have.ID == 0 {
-					t.Fatal("ID should not be zero")
-				}
+		hasPatchSet = true
+		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-				want.ID = have.ID
-				want.CreatedAt = now
-				want.UpdatedAt = now
+		if have, want := count, int64(2); have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
+	})
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+	t.Run("List", func(t *testing.T) {
+		for i := 1; i <= len(campaigns); i++ {
+			opts := ListCampaignsOpts{ChangesetID: int64(i)}
 
-				campaigns = append(campaigns, c)
-			}
-		})
-
-		t.Run("Count", func(t *testing.T) {
-			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+			ts, next, err := s.ListCampaigns(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(len(campaigns)); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if have, want := next, int64(0); have != want {
+				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 			}
 
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: 1})
+			have, want := ts, campaigns[i-1:i]
+			if len(have) != len(want) {
+				t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		}
+
+		for i := 1; i <= len(campaigns); i++ {
+			cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{Limit: i})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(1); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
-			}
-
-			hasPatchSet := false
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have, want := count, int64(1); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
-			}
-
-			hasPatchSet = true
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have, want := count, int64(2); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
-			}
-		})
-
-		t.Run("List", func(t *testing.T) {
-			for i := 1; i <= len(campaigns); i++ {
-				opts := ListCampaignsOpts{ChangesetID: int64(i)}
-
-				ts, next, err := s.ListCampaigns(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
+			{
+				have, want := next, int64(0)
+				if i < len(campaigns) {
+					want = campaigns[i].ID
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if have != want {
+					t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
 				}
+			}
 
-				have, want := ts, campaigns[i-1:i]
+			{
+				have, want := cs, campaigns[:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		}
+
+		{
+			var cursor int64
+			for i := 1; i <= len(campaigns); i++ {
+				opts := ListCampaignsOpts{Cursor: cursor, Limit: 1}
+				have, next, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := campaigns[i-1 : i]
+				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
+
+				cursor = next
 			}
+		}
 
-			for i := 1; i <= len(campaigns); i++ {
-				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{Limit: i})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				{
-					have, want := next, int64(0)
-					if i < len(campaigns) {
-						want = campaigns[i].ID
-					}
-
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-					}
-				}
-
-				{
-					have, want := cs, campaigns[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
-				}
-			}
-
+		filterTests := []struct {
+			name  string
+			state cmpgn.CampaignState
+			want  []*cmpgn.Campaign
+		}{
 			{
-				var cursor int64
-				for i := 1; i <= len(campaigns); i++ {
-					opts := ListCampaignsOpts{Cursor: cursor, Limit: 1}
-					have, next, err := s.ListCampaigns(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
+				name:  "Any",
+				state: cmpgn.CampaignStateAny,
+				want:  campaigns,
+			},
+			{
+				name:  "Closed",
+				state: cmpgn.CampaignStateClosed,
+				want:  campaigns[1:],
+			},
+			{
+				name:  "Open",
+				state: cmpgn.CampaignStateOpen,
+				want:  campaigns[0:1],
+			},
+		}
 
-					want := campaigns[i-1 : i]
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-
-					cursor = next
-				}
-			}
-
-			filterTests := []struct {
-				name  string
-				state cmpgn.CampaignState
-				want  []*cmpgn.Campaign
-			}{
-				{
-					name:  "Any",
-					state: cmpgn.CampaignStateAny,
-					want:  campaigns,
-				},
-				{
-					name:  "Closed",
-					state: cmpgn.CampaignStateClosed,
-					want:  campaigns[1:],
-				},
-				{
-					name:  "Open",
-					state: cmpgn.CampaignStateOpen,
-					want:  campaigns[0:1],
-				},
-			}
-
-			for _, tc := range filterTests {
-				t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
-					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if diff := cmp.Diff(have, tc.want); diff != "" {
-						t.Fatal(diff)
-					}
-				})
-			}
-
-			t.Run("ListCampaigns HasPatchSet true", func(t *testing.T) {
-				hasPatchSet := true
-				have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
+		for _, tc := range filterTests {
+			t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
+				have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
 				if err != nil {
 					t.Fatal(err)
 				}
-				if diff := cmp.Diff(have, campaigns[1:]); diff != "" {
+				if diff := cmp.Diff(have, tc.want); diff != "" {
 					t.Fatal(diff)
 				}
 			})
+		}
 
-			t.Run("ListCampaigns HasPatchSet false", func(t *testing.T) {
-				hasPatchSet := false
-				have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-		})
-
-		t.Run("Update", func(t *testing.T) {
-			for _, c := range campaigns {
-				c.Name += "-updated"
-				c.Description += "-updated"
-				c.AuthorID++
-				c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
-
-				if c.NamespaceUserID != 0 {
-					c.NamespaceUserID++
-				}
-
-				if c.NamespaceOrgID != 0 {
-					c.NamespaceOrgID++
-				}
-
-				now = now.Add(time.Second)
-				want := c
-				want.UpdatedAt = now
-
-				have := c.Clone()
-				if err := s.UpdateCampaign(ctx, have); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-
-				// Test that duplicates are not introduced.
-				have.ChangesetIDs = append(have.ChangesetIDs, have.ChangesetIDs...)
-				if err := s.UpdateCampaign(ctx, have); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-
-				// Test we can add to the set.
-				have.ChangesetIDs = append(have.ChangesetIDs, 42)
-				want.ChangesetIDs = append(want.ChangesetIDs, 42)
-
-				if err := s.UpdateCampaign(ctx, have); err != nil {
-					t.Fatal(err)
-				}
-
-				sort.Slice(have.ChangesetIDs, func(a, b int) bool {
-					return have.ChangesetIDs[a] < have.ChangesetIDs[b]
-				})
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-
-				// Test we can remove from the set.
-				have.ChangesetIDs = have.ChangesetIDs[:0]
-				want.ChangesetIDs = want.ChangesetIDs[:0]
-
-				if err := s.UpdateCampaign(ctx, have); err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+		t.Run("ListCampaigns HasPatchSet true", func(t *testing.T) {
+			hasPatchSet := true
+			have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, campaigns[1:]); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 
-		t.Run("Get", func(t *testing.T) {
-			t.Run("ByID", func(t *testing.T) {
-				want := campaigns[0]
-				opts := GetCampaignOpts{ID: want.ID}
-
-				have, err := s.GetCampaign(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("ByPatchSetID", func(t *testing.T) {
-				want := campaigns[0]
-				opts := GetCampaignOpts{PatchSetID: want.PatchSetID}
-
-				have, err := s.GetCampaign(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
-			})
-
-			t.Run("NoResults", func(t *testing.T) {
-				opts := GetCampaignOpts{ID: 0xdeadbeef}
-
-				_, have := s.GetCampaign(ctx, opts)
-				want := ErrNoResults
-
-				if have != want {
-					t.Fatalf("have err %v, want %v", have, want)
-				}
-			})
-		})
-
-		t.Run("Delete", func(t *testing.T) {
-			for i := range campaigns {
-				err := s.DeleteCampaign(ctx, campaigns[i].ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, int64(len(campaigns)-(i+1)); have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
-				}
+		t.Run("ListCampaigns HasPatchSet false", func(t *testing.T) {
+			hasPatchSet := false
+			have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
+				t.Fatal(diff)
 			}
 		})
-	}
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		for _, c := range campaigns {
+			c.Name += "-updated"
+			c.Description += "-updated"
+			c.AuthorID++
+			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
+
+			if c.NamespaceUserID != 0 {
+				c.NamespaceUserID++
+			}
+
+			if c.NamespaceOrgID != 0 {
+				c.NamespaceOrgID++
+			}
+
+			clock.add(1 * time.Second)
+
+			want := c
+			want.UpdatedAt = clock.now()
+
+			have := c.Clone()
+			if err := s.UpdateCampaign(ctx, have); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Test that duplicates are not introduced.
+			have.ChangesetIDs = append(have.ChangesetIDs, have.ChangesetIDs...)
+			if err := s.UpdateCampaign(ctx, have); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Test we can add to the set.
+			have.ChangesetIDs = append(have.ChangesetIDs, 42)
+			want.ChangesetIDs = append(want.ChangesetIDs, 42)
+
+			if err := s.UpdateCampaign(ctx, have); err != nil {
+				t.Fatal(err)
+			}
+
+			sort.Slice(have.ChangesetIDs, func(a, b int) bool {
+				return have.ChangesetIDs[a] < have.ChangesetIDs[b]
+			})
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Test we can remove from the set.
+			have.ChangesetIDs = have.ChangesetIDs[:0]
+			want.ChangesetIDs = want.ChangesetIDs[:0]
+
+			if err := s.UpdateCampaign(ctx, have); err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		}
+	})
+
+	t.Run("Get", func(t *testing.T) {
+		t.Run("ByID", func(t *testing.T) {
+			want := campaigns[0]
+			opts := GetCampaignOpts{ID: want.ID}
+
+			have, err := s.GetCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ByPatchSetID", func(t *testing.T) {
+			want := campaigns[0]
+			opts := GetCampaignOpts{PatchSetID: want.PatchSetID}
+
+			have, err := s.GetCampaign(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("NoResults", func(t *testing.T) {
+			opts := GetCampaignOpts{ID: 0xdeadbeef}
+
+			_, have := s.GetCampaign(ctx, opts)
+			want := ErrNoResults
+
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+	})
+
+	t.Run("Delete", func(t *testing.T) {
+		for i := range campaigns {
+			err := s.DeleteCampaign(ctx, campaigns[i].ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(campaigns)-(i+1)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		}
+	})
 }
 
 func testChangesets(db *sql.DB) func(t *testing.T) {
