@@ -18,6 +18,7 @@ import { VersionContext } from '../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { isEmpty } from 'lodash'
+import { useLocalStorage } from '../util/useLocalStorage'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
@@ -35,9 +36,7 @@ export interface VersionContextDropdownProps
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = (
     props: VersionContextDropdownProps
 ) => {
-    const [hasDismissedInfo, setHasDismissedInfo] = useState<boolean>(
-        !!localStorage.getItem(HAS_DISMISSED_INFO_KEY) && localStorage.getItem(HAS_DISMISSED_INFO_KEY) === 'true'
-    )
+    const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, 'false')
 
     const submitOnToggle = (versionContext: string): void => {
         const { history, navbarSearchQuery, filtersInQuery, caseSensitive, patternType } = props
@@ -73,14 +72,12 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
 
     const onDismissInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
         e.preventDefault()
-        localStorage.setItem(HAS_DISMISSED_INFO_KEY, 'true')
-        setHasDismissedInfo(true)
+        setHasDismissedInfo('true')
     }
 
     const showInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
         e.preventDefault()
-        localStorage.setItem(HAS_DISMISSED_INFO_KEY, 'false')
-        setHasDismissedInfo(false)
+        setHasDismissedInfo('false')
     }
 
     return (
@@ -110,7 +107,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                             <HelpCircleOutlineIcon className="icon-inline small" />
                                         </button>
                                     </div>
-                                    {!hasDismissedInfo && (
+                                    {hasDismissedInfo !== 'true' && (
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>
                                             <p className="mb-2">
