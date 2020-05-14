@@ -206,7 +206,16 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                                 >
                                     Webhooks
                                 </a>{' '}
-                                will be created automatically on the configured Bitbucket Server instance.
+                                will be created automatically on the configured Bitbucket Server instance. In case you
+                                don't provide an admin token,{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#manual-configuration"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    follow the docs on how to set up webhooks manually
+                                </a>
+                                .
                                 <br />
                                 To set up another webhook manually, use the following URL:
                             </p>
