@@ -5,9 +5,9 @@ import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
-import { Subscription, Observable, Subject, Unsubscribable, BehaviorSubject, combineLatest } from 'rxjs'
+import { Subscription, Observable, Subject, Unsubscribable, BehaviorSubject } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, mapTo } from 'rxjs/operators'
+import { map, distinctUntilChanged, publishReplay, refCount, filter, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
@@ -128,26 +128,31 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         publishReplay(1),
         refCount()
     )
-    private containerRefs = new BehaviorSubject<HTMLElement | null>(null)
-    private editorRefs = new BehaviorSubject<Monaco.editor.IStandaloneCodeEditor | null>(null)
+    private containerRefs = new Subject<HTMLElement | null>()
+    private editorRefs = new Subject<Monaco.editor.IStandaloneCodeEditor | null>()
     private subscriptions = new Subscription()
 
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-
+    constructor(props: MonacoQueryInputProps) {
+        super(props)
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
         // https://github.com/microsoft/monaco-editor/issues/28
         this.subscriptions.add(
-            combineLatest([this.containerRefs, this.editorRefs])
+            this.containerRefs
                 .pipe(
-                    filter((refs): refs is [HTMLElement, Monaco.editor.IStandaloneCodeEditor] => refs.every(isDefined)),
-                    switchMap(([container, editor]) => observeResize(container).pipe(mapTo(editor)))
+                    switchMap(container => (container ? observeResize(container) : [])),
+                    withLatestFrom(this.editorRefs),
+                    map(([, editor]) => editor),
+                    filter(isDefined)
                 )
                 .subscribe(editor => {
                     editor.layout()
                 })
         )
+    }
+
+    public componentDidMount(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {
