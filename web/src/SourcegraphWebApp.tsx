@@ -476,9 +476,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         if (!resolvedVersionContext) {
             localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
             this.setState({ versionContext: undefined })
+        } else {
+            localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
+            this.setState({ versionContext: resolvedVersionContext })
         }
-        localStorage.setItem(LAST_VERSION_CONTEXT_KEY, versionContext)
-        this.setState({ versionContext })
     }
 }
 
