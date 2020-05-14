@@ -337,7 +337,7 @@ You may also want to run Postgres within a docker container instead of as system
 
     Add these, for example, in your `~/.bashrc`:
 
-    ```shell
+    ```
     export PGPORT=5432
     export PGHOST=localhost
     export PGUSER=sourcegraph
