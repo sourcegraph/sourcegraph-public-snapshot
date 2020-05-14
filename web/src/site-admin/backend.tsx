@@ -221,7 +221,7 @@ export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }):
     ).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
+        mapTo(undefined)
     )
 }
 
