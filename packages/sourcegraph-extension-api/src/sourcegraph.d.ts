@@ -1003,11 +1003,13 @@ declare module 'sourcegraph' {
 
         /**
          * The current version context of the workspace, if any.
+         *
+         * A version context i
          */
         export const versionContext: string | undefined
 
         /**
-         * An event that is fired when a workspace root's version context changes.
+         * An event that is fired when a workspace's version context changes.
          */
         export const versionContextChanges: Subscribable<string | undefined>
     }
