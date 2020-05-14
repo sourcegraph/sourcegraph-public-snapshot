@@ -311,7 +311,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 You may also want to run Postgres within a docker container instead of as a system service
 
-1. Create a directory to store and mount the database from for persistence
+1. Create a directory to store and mount the database from for persistence:
 
     ```shell
     # Create a seperate dir to store the database
