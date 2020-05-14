@@ -313,7 +313,7 @@ You may also want to run Postgres within a docker container instead of as system
 
 1. Create a directory to store and mount the database from for persistence:
 
-    ```shell
+    ```
     # Create a seperate dir to store the database
     mkdir PGDATA_DIR
 
@@ -323,7 +323,7 @@ You may also want to run Postgres within a docker container instead of as system
 
 2. Run the container:
 
-  ```shell
+  ```
    docker run -d  -p 5432:5432 -e POSTGRES_PASSWORD=sourcegraph \
    -e POSTGRES_USER=sourcegraph -e POSTGRES_INITDB_ARGS=" --encoding=UTF8 " \
    -v $PGDATA_DIR:/var/lib/postgresql/data postgres
