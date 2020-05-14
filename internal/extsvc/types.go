@@ -118,9 +118,10 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) (strin
 }
 
 // Common describes basic fields expected to exist on an external service
-// TODO: This is a hack needed because we have ExternalService defined in two places
+// TODO: This is a hack needed because we have ExternalService defined in three places
 // cmd/repo-updater/repos
 // cmd/frontend/types
+// internal/api
 // Until we simplify this, RateLimits below will ask for just the fields it needs
 type Common struct {
 	Config      string
