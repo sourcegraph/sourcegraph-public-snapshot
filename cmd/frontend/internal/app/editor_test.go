@@ -128,6 +128,19 @@ func TestEditorRedirect(t *testing.T) {
 				"editor":  []string{"Atom"},
 				"version": []string{"v1.2.1"},
 				"search":  []string{"foobar"},
+
+				// TODO(slimsag): this is broken!
+				//
+				// I introduced this regression in https://github.com/sourcegraph/sourcegraph/pull/10586 by adding
+				// these tests with an incorrect misunderstanding of how the editors were using this API and caused
+				// all editor "search" actions to regress to "search in JUST this specific repo + file]"
+				//
+				// Editor extensions specify these when trying to perform a global search,
+				// so we cannot treat these as "search in repo/branch/file". When these are
+				// present, a global search must be performed:
+				"remote_url": []string{"git@github.com:a/b"},
+				"branch":     []string{"dev"},
+				"file":       []string{"mux.go"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=foobar&utm_source=Atom-v1.2.1",
 		},
