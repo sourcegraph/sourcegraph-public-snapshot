@@ -321,7 +321,7 @@ You may also want to run Postgres within a docker container instead of as a syst
     export PGDATA_DIR=/path/to/PGDATA_DIR/
     ```
 
-2. Run the container
+2. Run the container:
 
   ```shell
    docker run -d  -p 5432:5432 -e POSTGRES_PASSWORD=sourcegraph \
