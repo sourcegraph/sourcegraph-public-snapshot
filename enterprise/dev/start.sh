@@ -22,8 +22,6 @@ if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; 
   exit 1
 fi
 
-exit 0
-
 # shellcheck disable=SC1090
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
