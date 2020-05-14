@@ -41,12 +41,40 @@ func PreciseCodeIntelWorker() *Container {
 					},
 					{
 						{
+							Name:        "99th_percentile_db_duration",
+							Description: "99th percentile successful database query duration over 5m",
+							// TODO(efritz) - ensure these exclude error durations
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_code_intel_db_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
+							DataMayNotExist:   true,
+							DataMayBeNaN:      true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("db operation").Unit(Seconds),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "db_errors",
+							Description:       "database errors every 5m",
+							Query:             `increase(src_code_intel_db_errors_total{job="precise-code-intel-worker"}[5m])`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("db operation"),
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Upload resetter - re-queues uploads that did not complete processing",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
 							Name:              "processing_uploads_reset",
-							Description:       "jobs reset to queued state every 5m",
+							Description:       "uploads reset to queued state every 5m",
 							Query:             `sum(increase(src_upload_queue_resets_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("jobs"),
+							PanelOptions:      PanelOptions().LegendFormat("uploads"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -59,28 +87,12 @@ func PreciseCodeIntelWorker() *Container {
 							PossibleSolutions: "none",
 						},
 					},
-					{
-						{
-							Name:        "99th_percentile_db_duration",
-							Description: "99th percentile successful database query duration over 5m",
-							// TODO(efritz) - ensure these exclude error durations
-							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_code_intel_db_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
-							DataMayNotExist:   true,
-							DataMayBeNaN:      true,
-							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("{{op}}").Unit(Seconds),
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "db_errors",
-							Description:       "database errors every 5m",
-							Query:             `sum by (op)(increase(src_code_intel_db_errors_total{job="precise-code-intel-worker"}[5m]))`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("{{op}}"),
-							PossibleSolutions: "none",
-						},
-					},
+				},
+			},
+			{
+				Title:  "Internal service requests",
+				Hidden: true,
+				Rows: []Row{
 					{
 						{
 							Name:              "99th_percentile_bundle_manager_transfer_duration",
