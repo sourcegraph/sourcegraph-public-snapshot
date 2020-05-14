@@ -95,7 +95,7 @@ Tip: On the statistics page, you can enter an empty query to see statistics acro
 
 ### Version contexts
 
-Many companies have old versions of code running in production and need to search across all the code for a specific release.
+Many organizations have old versions of code running in production and need to search across all the code for a specific release.
 Version contexts allow creating sets of many repositories at specific revisions. When set, a version context limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
 
 Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
