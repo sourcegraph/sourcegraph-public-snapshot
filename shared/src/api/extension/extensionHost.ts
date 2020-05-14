@@ -202,7 +202,7 @@ function createExtensionAPI(
             get versionContext(): string | undefined {
                 return workspace.versionContextChanges.value
             },
-            versionContextChanges: workspace.versionContextChanges,
+            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
         configuration: Object.assign(configuration.changes.asObservable(), {
