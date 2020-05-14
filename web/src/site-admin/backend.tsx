@@ -1,6 +1,6 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { map, tap, mapTo } from 'rxjs/operators'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -205,6 +205,40 @@ export function checkMirrorRepositoryConnection(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
+    )
+}
+
+export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
+                scheduleRepositoryPermissionsSync(repository: $repository) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
+    )
+}
+
+export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleUserPermissionsSync($user: ID!) {
+                scheduleUserPermissionsSync(user: $user) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
     )
 }
 

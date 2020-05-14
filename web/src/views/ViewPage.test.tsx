@@ -19,6 +19,8 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
     history: H.createMemoryHistory(),
     location: H.createLocation('/'),
     extensionsController: { services: { contribution: { getContributions: () => ({}) } } } as Controller,
+    copyQueryButton: false,
+    versionContext: undefined,
 }
 
 describe('ViewPage', () => {

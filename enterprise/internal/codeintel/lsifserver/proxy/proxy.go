@@ -33,23 +33,29 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 		commit := q.Get("commit")
 		ctx := r.Context()
 
-		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
-		if !ok {
-			return
-		}
+		// We only need to translate the repository id and check for auth on the first
+		// upload request. If there is an upload identifier, this check has already
+		// been performed (or someone is uploading to an unknown identifier, which will
+		// naturally result in an error response).
+		if q.Get("uploadId") == "" {
+			repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+			if !ok {
+				return
+			}
 
-		// translate repository id to something that the precise-code-intel-api-server
-		// can reconcile in the database
-		q.Del("repository")
-		q.Set("repositoryId", fmt.Sprintf("%d", repo.ID))
+			// translate repository id to something that the precise-code-intel-api-server
+			// can reconcile in the database
+			q.Del("repository")
+			q.Set("repositoryId", fmt.Sprintf("%d", repo.ID))
 
-		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
-		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
-		// token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth {
-			if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
-				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
-					return
+			// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
+			// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
+			// token proving contributor access to the repository.
+			if conf.Get().LsifEnforceAuth {
+				if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
+					if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
+						return
+					}
 				}
 			}
 		}

@@ -29,6 +29,19 @@ func TestExists(t *testing.T) {
 	}
 }
 
+func TestExistsNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer ts.Close()
+
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	_, err := client.Exists(context.Background(), "main.go")
+	if err != ErrNotFound {
+		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
+	}
+}
+
 func TestExistsBadResponse(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -24,11 +25,6 @@ import (
 )
 
 func main() {
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
@@ -36,8 +32,9 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		pollInterval     = mustParseInterval(rawPollInterval, "PRECISE_CODE_INTEL_POLL_INTERVAL")
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		pollInterval     = mustParseInterval(rawPollInterval, "PRECISE_CODE_INTEL_POLL_INTERVAL")
+		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -49,12 +46,14 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
+	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
+	server := server.New()
 
-	server := server.Server{
-		Host: host,
-		Port: 3188,
+	uploadResetter := resetter.UploadResetter{
+		DB:            db,
+		ResetInterval: resetInterval,
+		Metrics:       resetterMetrics,
 	}
-	go server.Start()
 
 	worker := worker.NewWorker(
 		db,
@@ -63,10 +62,25 @@ func main() {
 		pollInterval,
 		workerMetrics,
 	)
-	go worker.Start()
 
+	go server.Start()
+	go uploadResetter.Run()
+	go worker.Start()
 	go debugserver.Start()
-	waitForSignal()
+
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
+
+	go func() {
+		// Insta-shutdown on a second signal
+		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
+	worker.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
@@ -83,15 +97,4 @@ func mustInitializeDatabase() db.DB {
 	}
 
 	return db
-}
-
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-
-	for i := 0; i < 2; i++ {
-		<-signals
-	}
-
-	os.Exit(0)
 }

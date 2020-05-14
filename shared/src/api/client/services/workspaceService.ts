@@ -30,6 +30,11 @@ export interface WorkspaceService {
     readonly roots: Subscribable<readonly WorkspaceRootWithMetadata[]> & {
         readonly value: readonly WorkspaceRootWithMetadata[]
     } & NextObserver<readonly WorkspaceRootWithMetadata[]>
+
+    /**
+     * An observable whose value is the current version context.
+     */
+    readonly versionContext: Subscribable<string | undefined> & NextObserver<string | undefined>
 }
 
 /**
@@ -37,7 +42,9 @@ export interface WorkspaceService {
  */
 export function createWorkspaceService(): WorkspaceService {
     const roots = new BehaviorSubject<readonly WorkspaceRootWithMetadata[]>([])
+    const versionContext = new BehaviorSubject<string | undefined>(undefined)
     return {
         roots,
+        versionContext,
     }
 }

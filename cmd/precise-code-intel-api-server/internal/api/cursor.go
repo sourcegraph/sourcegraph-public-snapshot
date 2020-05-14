@@ -15,11 +15,11 @@ import (
 type Cursor struct {
 	Phase                  string                // common
 	DumpID                 int                   // common
-	Path                   string                // same-dump/definition-monikers
-	Line                   int                   // same-dump
-	Character              int                   // same-dump
-	Monikers               []bundles.MonikerData // same-dump/definition-monikers
-	SkipResults            int                   // same-dump/definition-monikers
+	Path                   string                // same-dump/same-dump-monikers/definition-monikers
+	Line                   int                   // same-dump/same-dump-monikers
+	Character              int                   // same-dump/same-dump-monikers
+	Monikers               []bundles.MonikerData // same-dump/same-dump-monikers/definition-monikers
+	SkipResults            int                   // same-dump/same-dump-monikers/definition-monikers
 	Identifier             string                // same-repo/remote-repo
 	Scheme                 string                // same-repo/remote-repo
 	Name                   string                // same-repo/remote-repo

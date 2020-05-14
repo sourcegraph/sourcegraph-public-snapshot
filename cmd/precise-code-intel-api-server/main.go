@@ -10,7 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/resetter"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -24,18 +24,13 @@ import (
 )
 
 func main() {
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
 
 	var (
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
-		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		janitorInterval  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -47,26 +42,26 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
-	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
+	server := server.New(db, bundleManagerClient, codeIntelAPI)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	janitor := janitor.New(db, bundleManagerClient, janitorInterval, janitorMetrics)
 
-	server := server.Server{
-		Host:                host,
-		Port:                3186,
-		DB:                  db,
-		BundleManagerClient: bundleManagerClient,
-		CodeIntelAPI:        codeIntelAPI,
-	}
 	go server.Start()
-
-	uploadResetter := resetter.UploadResetter{
-		DB:            db,
-		ResetInterval: resetInterval,
-		Metrics:       resetterMetrics,
-	}
-	go uploadResetter.Run()
-
+	go janitor.Run()
 	go debugserver.Start()
-	waitForSignal()
+
+	// Attempt to clean up after first shutdown signal
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
+	<-signals
+
+	go func() {
+		// Insta-shutdown on a second signal
+		<-signals
+		os.Exit(0)
+	}()
+
+	server.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
@@ -83,15 +78,4 @@ func mustInitializeDatabase() db.DB {
 	}
 
 	return db
-}
-
-func waitForSignal() {
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGHUP)
-
-	for i := 0; i < 2; i++ {
-		<-signals
-	}
-
-	os.Exit(0)
 }

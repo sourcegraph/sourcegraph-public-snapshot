@@ -92,6 +92,36 @@ Examples:
 
 Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
+
+### Version contexts
+
+Many organizations have old versions of code running in production and need to search across all the code for a specific release.
+Version contexts allow creating sets of many repositories at specific revisions. When set, a version context limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
+
+Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
+
+```json
+"experimentalFeatures": {
+  "versionContexts": [
+    {
+      "name": “Sourcegraph 3.16”,
+      "revisions": [
+        {
+          "repo": "github.com/sourcegraph/sourcegraph",
+          "ref": “v3.16.0”
+        },
+        {
+          "repo": "github.com/sourcegraph/zoekt”,
+          "ref": "b56036a3b745033badc48807bd67e91cd8d73bdf"
+        }
+      ]
+    }
+  ]
+}
+```
+
+ After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
+
 ---
 
 ## Details

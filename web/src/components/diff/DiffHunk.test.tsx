@@ -15,8 +15,53 @@ describe('DiffHunk', () => {
         oldNoNewlineAt: false,
         newRange: { startLine: 159, lines: 7 },
         section: 'export async function register({',
-        body:
-            '         const subscriptions = new Subscription()\n         const decorationType = sourcegraph.app.createDecorationType()\n         const connection = await createConnection()\n-        logger.log(`WebSocket connection to TypeScript backend opened`)\n+        logger.log(`WebSocket connection to language server opened`)\n         subscriptions.add(\n             connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003e {\n                 const method = LSP_TO_LOG_LEVEL[type]\n',
+        highlight: {
+            __typename: 'HighlightedDiffHunkBody',
+            aborted: false,
+            lines: [
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html: '        const subscriptions = new Subscription()',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html: '        const decorationType = sourcegraph.app.createDecorationType()',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html: '        const connection = await createConnection()',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.DELETED,
+                    html: '        logger.log(`WebSocket connection to TypeScript backend opened`)',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.ADDED,
+                    html: '        logger.log(`WebSocket connection to language server opened`)',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html: '        subscriptions.add(',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html:
+                        '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003e {',
+                },
+                {
+                    __typename: 'HighlightedDiffHunkLine',
+                    kind: GQL.DiffHunkLineType.UNCHANGED,
+                    html: '                    const method = LSP_TO_LOG_LEVEL[type]',
+                },
+            ],
+        },
     } as GQL.IFileDiffHunk
 
     it('renders a unified diff view for the given diff hunk', () => {

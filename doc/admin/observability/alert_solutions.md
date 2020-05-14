@@ -339,6 +339,22 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 
+# precise-code-intel-api-server: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-api-server: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-api-server` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-api-server` for logs indicating request failures to `frontend` or `frontend-internal`.
+
 # precise-code-intel-api-server: container_restarts
 
 **Descriptions:**
@@ -376,6 +392,35 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-api-server container in `docker-compose.yml`.
 
+# precise-code-intel-bundle-manager: disk_space_remaining
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_
+
+
+- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_
+
+**Possible solutions:**
+
+- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
+
+# precise-code-intel-bundle-manager: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-bundle-manager` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
+
 # precise-code-intel-bundle-manager: container_restarts
 
 **Descriptions:**
@@ -412,6 +457,22 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+
+# precise-code-intel-worker: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-worker` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
 
 # precise-code-intel-worker: container_restarts
 

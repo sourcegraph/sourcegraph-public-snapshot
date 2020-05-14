@@ -3,10 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -38,7 +35,7 @@ func (s *Server) handler() http.Handler {
 
 // GET /uploads/{id:[0-9]+}
 func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
-	upload, exists, err := s.DB.GetUploadByID(r.Context(), int(idFromRequest(r)))
+	upload, exists, err := s.db.GetUploadByID(r.Context(), int(idFromRequest(r)))
 	if err != nil {
 		log15.Error("Failed to retrieve upload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to retrieve upload: %s", err.Error()), http.StatusInternalServerError)
@@ -54,8 +51,8 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
-	exists, err := s.DB.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
-		tipCommit, err := gitserver.Head(s.DB, repositoryID)
+	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
+		tipCommit, err := gitserver.Head(s.db, repositoryID)
 		if err != nil {
 			return "", errors.Wrap(err, "gitserver.Head")
 		}
@@ -80,7 +77,7 @@ func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) 
 	limit := getQueryIntDefault(r, "limit", DefaultUploadPageSize)
 	offset := getQueryInt(r, "offset")
 
-	uploads, totalCount, err := s.DB.GetUploadsByRepo(
+	uploads, totalCount, err := s.db.GetUploadsByRepo(
 		r.Context(),
 		id,
 		getQuery(r, "state"),
@@ -105,60 +102,9 @@ func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, map[string]interface{}{"uploads": uploads, "totalCount": totalCount})
 }
 
-// POST /upload
-func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
-	f, err := ioutil.TempFile("", "upload-")
-	if err != nil {
-		log15.Error("Failed to open target file", "error", err)
-		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	defer os.Remove(f.Name())
-	defer f.Close()
-
-	if _, err := io.Copy(f, r.Body); err != nil {
-		log15.Error("Failed to write payload", "error", err)
-		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	indexerName := getQuery(r, "indexerName")
-	if indexerName == "" {
-		if indexerName, err = readIndexerNameFromFile(f); err != nil {
-			log15.Error("Failed to read indexer name from upload", "error", err)
-			http.Error(w, fmt.Sprintf("failed to read indexer name from upload: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	tx, err := s.DB.Transact(r.Context())
-	if err != nil {
-		log15.Error("Failed to start transaction", "error", err)
-		http.Error(w, fmt.Sprintf("failed to start transaction: %s", err.Error()), http.StatusInternalServerError)
-	}
-	id, err := tx.Enqueue(
-		r.Context(),
-		getQuery(r, "commit"),
-		sanitizeRoot(getQuery(r, "root")),
-		getQueryInt(r, "repositoryId"),
-		indexerName,
-	)
-	if err == nil {
-		err = tx.Done(s.BundleManagerClient.SendUpload(r.Context(), id, f))
-	}
-	if err != nil {
-		log15.Error("Failed to enqueue payload", "error", err)
-		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-	writeJSON(w, map[string]interface{}{"id": fmt.Sprintf("%d", id)})
-}
-
 // GET /exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
-	dumps, err := s.CodeIntelAPI.FindClosestDumps(
+	dumps, err := s.codeIntelAPI.FindClosestDumps(
 		r.Context(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
@@ -175,7 +121,7 @@ func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 
 // GET /definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
-	defs, err := s.CodeIntelAPI.Definitions(
+	defs, err := s.codeIntelAPI.Definitions(
 		r.Context(),
 		getQuery(r, "path"),
 		getQueryInt(r, "line"),
@@ -211,8 +157,8 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		getQueryInt(r, "character"),
 		getQueryInt(r, "uploadId"),
 		getQuery(r, "cursor"),
-		s.DB,
-		s.BundleManagerClient,
+		s.db,
+		s.bundleManagerClient,
 	)
 	if err != nil {
 		if err == api.ErrMissingDump {
@@ -231,7 +177,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, newCursor, hasNewCursor, err := s.CodeIntelAPI.References(
+	locations, newCursor, hasNewCursor, err := s.codeIntelAPI.References(
 		r.Context(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
@@ -262,7 +208,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 
 // GET /hover
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
-	text, rn, exists, err := s.CodeIntelAPI.Hover(
+	text, rn, exists, err := s.codeIntelAPI.Hover(
 		r.Context(),
 		getQuery(r, "path"),
 		getQueryInt(r, "line"),
@@ -298,7 +244,7 @@ func (s *Server) handleUploads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	states, err := s.DB.GetStates(r.Context(), payload.IDs)
+	states, err := s.db.GetStates(r.Context(), payload.IDs)
 	if err != nil {
 		log15.Error("Failed to retrieve upload states", "error", err)
 		http.Error(w, fmt.Sprintf("failed to retrieve upload states: %s", err.Error()), http.StatusInternalServerError)
@@ -315,7 +261,7 @@ func (s *Server) handleUploads(w http.ResponseWriter, r *http.Request) {
 
 // POST /prune
 func (s *Server) handlePrune(w http.ResponseWriter, r *http.Request) {
-	id, prunable, err := s.DB.DeleteOldestDump(r.Context())
+	id, prunable, err := s.db.DeleteOldestDump(r.Context())
 	if err != nil {
 		log15.Error("Failed to prune upload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to prune upload: %s", err.Error()), http.StatusInternalServerError)
