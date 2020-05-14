@@ -255,3 +255,51 @@ func TestSendDBBadResponse(t *testing.T) {
 		t.Fatalf("unexpected nil error sending db")
 	}
 }
+
+func TestBulkExists(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
+		}
+		if r.URL.Path != "/exists" {
+			t.Errorf("unexpected method. want=%s have=%s", "/exists", r.URL.Path)
+		}
+
+		if diff := cmp.Diff("1,2,3,4,5", r.URL.Query().Get("ids")); diff != "" {
+			t.Errorf("unexpected ids (-want +got):\n%s", diff)
+		}
+
+		_, _ = w.Write([]byte(`{"1": false, "2": true, "3": false, "4": true, "5": true}`))
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	existsMap, err := client.Exists(context.Background(), []int{1, 2, 3, 4, 5})
+	if err != nil {
+		t.Fatalf("unexpected error checking bulk exists: %s", err)
+	}
+
+	expected := map[int]bool{
+		1: false,
+		2: true,
+		3: false,
+		4: true,
+		5: true,
+	}
+	if diff := cmp.Diff(expected, existsMap); diff != "" {
+		t.Errorf("unexpected exists map (-want +got):\n%s", diff)
+	}
+}
+
+func TestBulkExistsBadResponse(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	_, err := client.Exists(context.Background(), []int{1, 2, 3, 4, 5})
+	if err == nil {
+		t.Fatalf("unexpected nil error checking bulk exists")
+	}
+}

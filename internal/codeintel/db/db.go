@@ -73,13 +73,16 @@ type DB interface {
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The given function is expected to return the newest commit
-	// on the default branch when invoked.
+	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
+	// commit on the default branch when invoked.
 	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// This method returns a list of updated upload identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
+
+	// GetDumpIDs returns all dump ids in chronological order.
+	GetDumpIDs(ctx context.Context) ([]int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)

@@ -27,6 +27,7 @@ type ObservedDB struct {
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
 	resetStalledOperation              *observation.Operation
+	getDumpIDsOperation                *observation.Operation
 	getDumpByIDOperation               *observation.Operation
 	findClosestDumpsOperation          *observation.Operation
 	deleteOldestDumpOperation          *observation.Operation
@@ -130,6 +131,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"reset_stalled"},
 			Metrics:      metrics,
 		}),
+		getDumpIDsOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.GetDumpIDs",
+			MetricLabels: []string{"get_dump_ids"},
+			Metrics:      metrics,
+		}),
 		getDumpByIDOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.GetDumpByID",
 			MetricLabels: []string{"get_dump_by_id"},
@@ -217,6 +223,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		getStatesOperation:                 db.getStatesOperation,
 		deleteUploadByIDOperation:          db.deleteUploadByIDOperation,
 		resetStalledOperation:              db.resetStalledOperation,
+		getDumpIDsOperation:                db.getDumpIDsOperation,
 		getDumpByIDOperation:               db.getDumpByIDOperation,
 		findClosestDumpsOperation:          db.findClosestDumpsOperation,
 		deleteOldestDumpOperation:          db.deleteOldestDumpOperation,
@@ -361,6 +368,13 @@ func (db *ObservedDB) ResetStalled(ctx context.Context, now time.Time) (ids []in
 	ctx, endObservation := db.resetStalledOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
 	return db.db.ResetStalled(ctx, now)
+}
+
+// GetDumpIDs calls into the inner DB and registers the observed results.
+func (db *ObservedDB) GetDumpIDs(ctx context.Context) (_ []int, err error) {
+	ctx, endObservation := db.getDumpIDsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.GetDumpIDs(ctx)
 }
 
 // GetDumpByID calls into the inner DB and registers the observed results.

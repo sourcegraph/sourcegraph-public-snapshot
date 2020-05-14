@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -27,6 +29,15 @@ func getQueryIntDefault(r *http.Request, name string, defaultValue int) int {
 		value = defaultValue
 	}
 	return value
+}
+
+func getQueryInts(r *http.Request, name string) (values []int) {
+	for _, value := range strings.Split(r.URL.Query().Get(name), ",") {
+		value, _ := strconv.Atoi(value)
+		values = append(values, value)
+	}
+
+	return values
 }
 
 // idFromRequest returns the database id from the request URL's path. This method
@@ -60,4 +71,16 @@ func writeJSON(w http.ResponseWriter, payload interface{}) {
 	}
 
 	copyAll(w, bytes.NewReader(data))
+}
+
+func fileExists(filename string) (bool, error) {
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }

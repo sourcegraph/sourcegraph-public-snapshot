@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -29,6 +30,7 @@ func main() {
 
 	var (
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		janitorInterval  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -41,8 +43,11 @@ func main() {
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	codeIntelAPI := api.NewObserved(api.New(db, bundleManagerClient, gitserver.DefaultClient), observationContext)
 	server := server.New(db, bundleManagerClient, codeIntelAPI)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	janitor := janitor.New(db, bundleManagerClient, janitorInterval, janitorMetrics)
 
 	go server.Start()
+	go janitor.Run()
 	go debugserver.Start()
 
 	// Attempt to clean up after first shutdown signal

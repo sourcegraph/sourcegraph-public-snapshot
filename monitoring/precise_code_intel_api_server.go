@@ -101,6 +101,26 @@ func PreciseCodeIntelAPIServer() *Container {
 						},
 					},
 					{
+						{
+							Name:              "janitor_errors",
+							Description:       "janitor errors every 5m",
+							Query:             `sum(increase(src_api_server_janitor_errors_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_uploads_without_bundle_files",
+							Description:       "upload records removed (due to missing bundle files) every 5m",
+							Query:             `sum(increase(src_api_server_janitor_upload_records_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("records removed"),
+							PossibleSolutions: "none",
+						},
+					},
+					{
 						sharedFrontendInternalAPIErrorResponses("precise-code-intel-api-server"),
 					},
 				},

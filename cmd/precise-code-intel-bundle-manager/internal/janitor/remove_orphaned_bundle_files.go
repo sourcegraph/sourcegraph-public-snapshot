@@ -62,7 +62,7 @@ func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
 			}
 
 			log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
-			j.metrics.OprphanedBundleFilesRemoved.Add(1)
+			j.metrics.OrphanedBundleFilesRemoved.Add(1)
 		}
 	}
 

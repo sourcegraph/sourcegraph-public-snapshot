@@ -49,6 +49,9 @@ type BundleManagerClient interface {
 	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
 	// will also remove the original upload file with the same identifier from disk.
 	SendDB(ctx context.Context, bundleID int, r io.Reader) error
+
+	// Exists determines if a file exists on disk for all the supplied identifiers.
+	Exists(ctx context.Context, bundleIDs []int) (map[int]bool, error)
 }
 
 type baseClient interface {
@@ -209,6 +212,33 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io
 	}
 	body.Close()
 	return nil
+}
+
+// Exists determines if a file exists on disk for all the supplied identifiers.
+func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, err error) {
+	var bundleIDStrings []string
+	for _, bundleID := range bundleIDs {
+		bundleIDStrings = append(bundleIDStrings, fmt.Sprintf("%d", bundleID))
+	}
+
+	url, err := makeURL(c.bundleManagerURL, "exists", map[string]interface{}{
+		"ids": strings.Join(bundleIDStrings, ","),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.do(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	if err := json.NewDecoder(body).Decode(&target); err != nil {
+		return nil, err
+	}
+
+	return target, nil
 }
 
 func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) (err error) {
