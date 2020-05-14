@@ -41,6 +41,7 @@ import { toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -141,7 +142,8 @@ interface Props
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        VersionContextProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string

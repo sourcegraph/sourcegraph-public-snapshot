@@ -4,6 +4,7 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
 import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { VersionContext } from '../schema/site.schema'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -38,6 +39,16 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
+/**
+ * Parses the version context out of the URL search params (the 'c' parameter). If the version context
+ * is not present, return undefined.
+ */
+export function parseSearchURLVersionContext(query: string): string | undefined {
+    const searchParams = new URLSearchParams(query)
+    const context = searchParams.get('c')
+    return context ?? undefined
+}
+
 export function searchURLIsCaseSensitive(query: string): boolean {
     const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
     if (queryCaseSensitivity) {
@@ -60,7 +71,12 @@ export function searchURLIsCaseSensitive(query: string): boolean {
  */
 export function parseSearchURL(
     urlSearchQuery: string
-): { query: string | undefined; patternType: SearchPatternType | undefined; caseSensitive: boolean } {
+): {
+    query: string | undefined
+    patternType: SearchPatternType | undefined
+    caseSensitive: boolean
+    versionContext: string | undefined
+} {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
@@ -84,7 +100,12 @@ export function parseSearchURL(
         }
     }
 
-    return { query: finalQuery, patternType, caseSensitive }
+    return {
+        query: finalQuery,
+        patternType,
+        caseSensitive,
+        versionContext: parseSearchURLVersionContext(urlSearchQuery),
+    }
 }
 
 export function repoFilterForRepoRev(repoName: string, rev?: string): string {
@@ -129,4 +150,32 @@ export interface InteractiveSearchProps {
 
 export interface SmartSearchFieldProps {
     smartSearchField: boolean
+}
+
+/**
+ * Verifies whether a version context exists on an instance.
+ *
+ * For URLs that have a `c=$X` parameter, we must check that
+ * the version $X actually exists before trying to search with it.
+ *
+ * If the version context doesn't exist or there are no available version contexts, return undefined to
+ * use the default context.
+ *
+ * @param versionContext The version context to verify.
+ * @param availableVersionContexts A list of all version contexts defined in site configuration.
+ */
+export function resolveVersionContext(
+    versionContext: string | undefined,
+    availableVersionContexts: VersionContext[] | undefined
+): string | undefined {
+    if (
+        !versionContext ||
+        !availableVersionContexts ||
+        !availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext) ||
+        versionContext === 'default'
+    ) {
+        return undefined
+    }
+
+    return versionContext
 }

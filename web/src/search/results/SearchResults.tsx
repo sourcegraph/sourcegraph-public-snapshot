@@ -10,6 +10,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
+    resolveVersionContext,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -30,6 +31,8 @@ import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContext } from '../../schema/site.schema'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -39,7 +42,8 @@ export interface SearchResultsProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -50,10 +54,13 @@ export interface SearchResultsProps
         query: string,
         version: string,
         patternType: GQL.SearchPatternType,
+        versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    setVersionContext: (versionContext: string) => void
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 interface SearchResultsState {
@@ -99,7 +106,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
             const newLoc =
                 '/search?' +
-                buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
+                buildSearchURLQuery(
+                    navbarQuery,
+                    GQL.SearchPatternType.regexp,
+                    this.props.caseSensitive,
+                    this.props.versionContext,
+                    filtersInQuery
+                )
             this.props.history.replace(newLoc)
         }
 
@@ -119,6 +132,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             query: string
                             patternType: GQL.SearchPatternType
                             caseSensitive: boolean
+                            versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {
@@ -137,7 +151,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive }) =>
+                    switchMap(({ query, patternType, caseSensitive, versionContext }) =>
                         concat(
                             // Reset view state
                             [
@@ -153,6 +167,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
+                                    resolveVersionContext(versionContext, this.props.availableVersionContexts),
                                     this.props
                                 )
                                 .pipe(
@@ -177,6 +192,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             }
                                             if (caseSensitive !== this.props.caseSensitive) {
                                                 this.props.setCaseSensitivity(caseSensitive)
+                                            }
+                                            if (versionContext !== this.props.versionContext) {
+                                                this.props.setVersionContext(versionContext || '')
                                             }
                                         },
                                         error => {

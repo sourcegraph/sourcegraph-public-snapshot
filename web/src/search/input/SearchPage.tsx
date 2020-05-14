@@ -31,6 +31,9 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContext } from '../../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -44,11 +47,14 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     // For NavLinks
     authRequired?: boolean
@@ -108,7 +114,15 @@ export class SearchPage extends React.Component<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
-
+                                        <VersionContextDropdown
+                                            history={this.props.history}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            navbarSearchQuery={this.state.userQueryState.query}
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
+                                        />
                                         {this.props.smartSearchField ? (
                                             <LazyMonacoQueryInput
                                                 {...this.props}
@@ -145,6 +159,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             authenticatedUser={this.props.authenticatedUser}
                                             settingsCascade={this.props.settingsCascade}
                                             patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />

@@ -235,6 +235,7 @@
     "@hot-loader/react-dom": "^16.13.0",
     "@primer/octicons-react": "^9.6.0",
     "@reach/accordion": "^0.9.1",
+    "@reach/listbox": "^0.10.1",
     "@reach/menu-button": "0.10.2",
     "@sentry/browser": "^5.15.5",
     "@slimsag/react-shortcuts": "^1.2.1",

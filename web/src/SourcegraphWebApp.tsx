@@ -49,7 +49,12 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { parseSearchURLPatternType, searchURLIsCaseSensitive } from './search'
+import {
+    parseSearchURLPatternType,
+    searchURLIsCaseSensitive,
+    parseSearchURLVersionContext,
+    resolveVersionContext,
+} from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -58,6 +63,7 @@ import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 import { generateFiltersQuery } from '../../shared/src/util/url'
 import { NotificationType } from '../../shared/src/api/client/services/notifications'
 import { SettingsExperimentalFeatures } from './schema/settings.schema'
+import { VersionContext } from './schema/site.schema'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -139,6 +145,16 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the MonacoQueryInput search field.
      */
     smartSearchField: boolean
+
+    /**
+     * The version context the instance is in. If undefined, it means no version context is selected.
+     */
+    versionContext?: string
+
+    /**
+     * Available version contexts defined in the site configuration.
+     */
+    availableVersionContexts?: VersionContext[]
 }
 
 const notificationClassNames = {
@@ -151,6 +167,7 @@ const notificationClassNames = {
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const SEARCH_MODE_KEY = 'sg-search-mode'
+const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
@@ -199,6 +216,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
         const urlCase = searchURLIsCaseSensitive(window.location.search)
         const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
+        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
+        const lastVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+        const resolvedVersionContext = availableVersionContexts
+            ? parseSearchURLVersionContext(window.location.search) ||
+              resolveVersionContext(lastVersionContext || undefined, availableVersionContexts) ||
+              undefined
+            : undefined
 
         this.state = {
             themePreference: readStoredThemePreference(),
@@ -212,6 +236,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             splitSearchModes: false,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             smartSearchField: false,
+            versionContext: resolvedVersionContext,
+            availableVersionContexts,
         }
     }
 
@@ -267,9 +293,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         settingsCascade.final &&
                         !isErrorLike(settingsCascade.final) &&
                         settingsCascade.final['search.defaultPatternType']
-
                     const searchPatternType = defaultPatternType || 'literal'
-
                     this.setState({ searchPatternType })
                 }
             })
@@ -404,6 +428,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
+                                    versionContext={this.state.versionContext}
+                                    setVersionContext={this.setVersionContext}
+                                    availableVersionContexts={this.state.availableVersionContexts}
                                 />
                             )}
                         />
@@ -442,6 +469,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({
             searchCaseSensitivity: caseSensitive,
         })
+    }
+
+    private setVersionContext = (versionContext: string): void => {
+        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
+        if (!resolvedVersionContext) {
+            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
+            this.setState({ versionContext: undefined })
+        }
+        localStorage.setItem(LAST_VERSION_CONTEXT_KEY, versionContext)
+        this.setState({ versionContext })
     }
 }
 

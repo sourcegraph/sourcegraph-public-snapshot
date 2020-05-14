@@ -24,6 +24,9 @@ import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContext } from '../../../schema/site.schema'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -36,7 +39,8 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -49,6 +53,9 @@ interface InteractiveModeProps
     authenticatedUser: GQL.IUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+
+    setVersionContext: (versionContext: string) => void
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 interface InteractiveModeState {
@@ -220,6 +227,15 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <VersionContextDropdown
+                                    history={this.props.history}
+                                    navbarSearchQuery={this.props.navbarSearchState.query}
+                                    caseSensitive={this.props.caseSensitive}
+                                    patternType={this.props.patternType}
+                                    versionContext={this.props.versionContext}
+                                    setVersionContext={this.props.setVersionContext}
+                                    availableVersionContexts={this.props.availableVersionContexts}
+                                />
                                 <QueryInput
                                     {...this.props}
                                     location={this.props.location}

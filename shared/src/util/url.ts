@@ -560,6 +560,8 @@ export function withWorkspaceRootInputRevision(
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
+ * @param versionContext (optional): the version context to search in. If undefined, we interpret
+ * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  * @param filtersInQuery filters in an interactive mode query. For callers of
  * this function requiring correct behavior in interactive mode, this param
@@ -570,6 +572,7 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+    versionContext?: string,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
     const searchParams = new URLSearchParams()
@@ -616,6 +619,10 @@ export function buildSearchURLQuery(
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
             searchParams.delete('case')
         }
+    }
+
+    if (versionContext) {
+        searchParams.set('c', versionContext)
     }
 
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')

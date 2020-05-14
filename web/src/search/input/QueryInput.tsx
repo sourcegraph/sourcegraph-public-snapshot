@@ -36,6 +36,7 @@ import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 
@@ -43,7 +44,8 @@ interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        VersionContextProps {
     location: H.Location
     history: H.History
 
