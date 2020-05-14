@@ -1,6 +1,6 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { map, tap, mapTo } from 'rxjs/operators'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
