@@ -92,10 +92,12 @@ Examples:
 
 Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
+### Version contexts <span class="badge badge-primary">experimental</span>
 
-### Version contexts
+> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
 
 Many organizations have old versions of code running in production and need to search across all the code for a specific release.
+
 Version contexts allow creating sets of many repositories at specific revisions. When set, a version context limits your searches and code navigation actions (with basic code intelligence) to the repositories and revisions in the context.
 
 Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
@@ -103,16 +105,16 @@ Your site admin can add version contexts in site configuration under the `experi
 ```json
 "experimentalFeatures": {
   "versionContexts": [
-    {
-      "name": “Sourcegraph 3.16”,
+   {
+      "name": "srcgraph 3.15",
       "revisions": [
         {
           "repo": "github.com/sourcegraph/sourcegraph",
-          "ref": “v3.16.0”
+          "ref": "3.15"
         },
         {
-          "repo": "github.com/sourcegraph/zoekt”,
-          "ref": "b56036a3b745033badc48807bd67e91cd8d73bdf"
+          "repo": "github.com/sourcegraph/src-cli",
+          "ref": "3.11.2"
         }
       ]
     }
