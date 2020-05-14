@@ -55,7 +55,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:            "disk_space_remaining",
 							Description:     "disk space remaining by instance",
-							Query:           `(src_disk_space_available_bytes / src_disk_space_total_bytes) * 100`,
+							Query:           `(src_disk_space_available_bytes{job="precise-code-intel-bundle-manager"} / src_disk_space_total_bytes{job="precise-code-intel-bundle-manager"}) * 100`,
 							DataMayNotExist: true,
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
