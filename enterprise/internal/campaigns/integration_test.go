@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
 
@@ -26,7 +27,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("Campaigns", storeTest(db, testCampaigns))
-		t.Run("Changesets", testChangesets(db))
+		t.Run("Changesets", storeTest(db, testChangesets))
 		t.Run("ChangesetEvents", testChangesetEvents(db))
 		t.Run("ListChangesetSyncData", testListChangesetSyncData(db))
 		t.Run("PatchSets", testPatchSets(db))
@@ -74,9 +75,9 @@ type testClock struct {
 }
 
 func (c *testClock) now() time.Time                { return c.t }
-func (c *testClock) add(d time.Duration) time.Time { c.t.Add(d); return c.t }
+func (c *testClock) add(d time.Duration) time.Time { c.t = c.t.Add(d); return c.t }
 
-type storeTestFunc func(*testing.T, context.Context, *Store, clock)
+type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, clock)
 
 func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 	return func(t *testing.T) {
@@ -89,6 +90,8 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 		tx := dbtest.NewTx(t, db)
 		s := NewStoreWithClock(tx, c.now)
 
-		f(t, context.Background(), s, c)
+		rs := repos.NewDBStore(db, sql.TxOptions{})
+
+		f(t, context.Background(), s, rs, c)
 	}
 }
