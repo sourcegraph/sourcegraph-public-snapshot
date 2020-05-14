@@ -26,7 +26,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -141,7 +141,8 @@ interface Props
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string

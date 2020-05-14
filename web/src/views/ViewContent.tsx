@@ -5,7 +5,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import H from 'history'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 import { View, MarkupContent } from 'sourcegraph'
-import { CaseSensitivityProps, PatternTypeProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { hasProperty } from '../../../shared/src/util/types'
 import { isObject } from 'lodash'
@@ -13,7 +13,11 @@ import { isObject } from 'lodash'
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
-export interface ViewContentProps extends SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps {
+export interface ViewContentProps
+    extends SettingsCascadeProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        CopyQueryButtonProps {
     viewContent: View['content']
     location: H.Location
     history: H.History

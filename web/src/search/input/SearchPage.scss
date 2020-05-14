@@ -30,6 +30,12 @@
         width: 49rem;
         max-width: 90%;
         position: relative;
+
+        &:hover {
+            .toggle-container__copy-query-button {
+                opacity: 1;
+            }
+        }
     }
 
     &__input-container {

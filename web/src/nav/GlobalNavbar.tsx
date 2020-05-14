@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -40,7 +41,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        CopyQueryButtonProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null

@@ -10,7 +10,7 @@ import { fetchSuggestions } from '../backend'
 import { map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { CaseSensitivityProps, PatternTypeProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { hasProperty } from '../../../../shared/src/util/types'
@@ -21,7 +21,8 @@ export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
         ThemeProps,
         CaseSensitivityProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        CopyQueryButtonProps {
     location: H.Location
     history: H.History
     queryState: QueryState

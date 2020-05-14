@@ -22,6 +22,7 @@ import {
     CaseSensitivityProps,
     InteractiveSearchProps,
     repoFilterForRepoRev,
+    CopyQueryButtonProps,
 } from '../search'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
@@ -52,7 +53,8 @@ export interface RepoContainerContext
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -82,7 +84,8 @@ interface RepoContainerProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        CopyQueryButtonProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -312,6 +315,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            copyQueryButton: this.props.copyQueryButton,
         }
 
         return (

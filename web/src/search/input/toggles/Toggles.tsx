@@ -3,7 +3,7 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../..'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { SearchPatternType } from '../../../../../shared/src/graphql/schema'
 import { isEmpty } from 'lodash'
@@ -18,6 +18,7 @@ export interface TogglesProps
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
+        CopyQueryButtonProps,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
     navbarSearchQuery: string
     history: H.History
@@ -102,10 +103,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
 
     return (
         <div className={classNames('toggle-container', props.className)}>
-            <CopyQueryButton
-                fullQuery={fullQuery}
-                className="toggle-container__toggle toggle-container__copy-query-button"
-            />
+            {props.copyQueryButton && (
+                <CopyQueryButton
+                    fullQuery={fullQuery}
+                    className="toggle-container__toggle toggle-container__copy-query-button"
+                />
+            )}
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"

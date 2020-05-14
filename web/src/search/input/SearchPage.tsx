@@ -6,6 +6,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -44,7 +45,8 @@ interface Props
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        CopyQueryButtonProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History

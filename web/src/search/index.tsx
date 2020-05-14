@@ -130,3 +130,7 @@ export interface InteractiveSearchProps {
 export interface SmartSearchFieldProps {
     smartSearchField: boolean
 }
+
+export interface CopyQueryButtonProps {
+    copyQueryButton: boolean
+}

@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react'
 import { Form } from '../components/Form'
 import { QueryInput } from '../search/input/QueryInput'
-import { CaseSensitivityProps, PatternTypeProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
 import { SearchButton } from '../search/input/SearchButton'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { QueryState, submitSearch } from '../search/helpers'
 import H from 'history'
 
-interface Props extends SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps {
+interface Props extends SettingsCascadeProps, PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps {
     implicitQueryPrefix: string
 
     location: H.Location

@@ -17,7 +17,7 @@ import { fetchReposByQuery } from './backend'
 import { submitSearch, QueryState } from './helpers'
 import { QueryInput } from './input/QueryInput'
 import { SearchButton } from './input/SearchButton'
-import { PatternTypeProps, CaseSensitivityProps } from '.'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '.'
 import { ErrorAlert } from '../components/alerts'
 import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { useObservable } from '../../../shared/src/util/useObservable'
@@ -43,7 +43,8 @@ interface Props
     extends RouteComponentProps<{ id: GQL.ID }>,
         SettingsCascadeProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History

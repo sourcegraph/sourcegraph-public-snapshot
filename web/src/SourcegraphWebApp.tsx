@@ -139,6 +139,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether to display the MonacoQueryInput search field.
      */
     smartSearchField: boolean
+
+    /**
+     * Whether to display the copy query button.
+     */
+    copyQueryButton: boolean
 }
 
 const notificationClassNames = {
@@ -212,6 +217,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             splitSearchModes: false,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
             smartSearchField: false,
+            copyQueryButton: false,
         }
     }
 
@@ -280,8 +286,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField })
+                    const {
+                        splitSearchModes = true,
+                        smartSearchField = false,
+                        copyQueryButton = false,
+                    } = experimentalFeatures
+                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton })
                 }
             })
         )
@@ -404,6 +414,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
+                                    copyQueryButton={this.state.copyQueryButton}
                                 />
                             )}
                         />
