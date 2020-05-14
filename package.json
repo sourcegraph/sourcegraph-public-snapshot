@@ -26,7 +26,7 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "build-storybook": "build-storybook -c .storybook",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
-    "percy-storybook": "percy-storybook --widths=768",
+    "percy-storybook": "PERCY_TOKEN=${PERCY_STORYBOOK_TOKEN} percy-storybook --widths=768",
     "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
