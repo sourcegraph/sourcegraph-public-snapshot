@@ -258,7 +258,7 @@ You can install the all the versions specified in [.tool-versions](https://githu
 
 ## Step 2: Initialize your database
 
-See [Running Postgres in Docker](#Step-2-Using-Docker-to-run-Postgres) for an alternative approach.
+### Without Docker
 
 You need a fresh Postgres database and a database user that has full ownership of that database.
 
