@@ -23,6 +23,7 @@ func TestIntegration(t *testing.T) {
 	userID := insertTestUser(t, db)
 
 	t.Run("Store", testStore(db))
+	t.Run("Store_Campaigns", testCampaigns(db))
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
 	t.Run("MigratePatchesWithoutDiffStats", testMigratePatchesWithoutDiffStats(db, userID))
