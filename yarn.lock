@@ -1825,7 +1825,7 @@
     tabbable "^4.0.0"
     tslib "^1.11.2"
 
-"@reach/portal@^0.10.1", "@reach/portal@^0.10.2":
+"@reach/portal@^0.10.2":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/portal/-/portal-0.10.2.tgz#a2b4f69eaffad0115320e303d08ea57c8942b398"
   integrity sha512-ZQU7Xlx9fBv1UurttmaS3dfWRT60Dn9Dtt/wmFyIf5Rquw64jNNL0XD5z0zqgVB+j5qnKERMf1hosYMU3BDSgQ==
@@ -1833,7 +1833,7 @@
     "@reach/utils" "^0.10.2"
     tslib "^1.11.2"
 
-"@reach/rect@^0.10.1", "@reach/rect@^0.10.2":
+"@reach/rect@^0.10.2":
   version "0.10.2"
   resolved "https://registry.npmjs.org/@reach/rect/-/rect-0.10.2.tgz#6f1db6c7561e46c77505840c973d23fd5a57f7d4"
   integrity sha512-Bk9J40toquXhvvdv4uFe4yIRm2Bkdi5ljYHL7NuBoOcn4xHnk/kjAeqmg8mDwaiZzo2vRekawGU5td2aeO/S0A==
