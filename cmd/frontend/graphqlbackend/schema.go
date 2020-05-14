@@ -3330,6 +3330,11 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): CodeIntelUsageStatistics!
+    # Monitoring overview for this site.
+    monitoringStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+    ): MonitoringStatistics!
 }
 
 # The configuration for a site.
@@ -3628,6 +3633,24 @@ type DeploymentConfiguration {
     email: String
     # The site ID.
     siteID: String
+}
+
+# Monitoring overview.
+type MonitoringStatistics {
+    # Alerts fired in this time span.
+    alerts: [MonitoringAlert!]
+}
+
+# An alert fired by monitored metrics.
+type MonitoringAlert {
+    # Timestamp of alert event.
+    timestamp: DateTime!
+    # Name of alert event.
+    name: String!
+    # Name of service associated with event.
+    serviceName: String!
+    # Value of metric at time of alert.
+    value: Int!
 }
 
 # A list of survey responses
