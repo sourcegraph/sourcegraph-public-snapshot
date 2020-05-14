@@ -94,8 +94,8 @@ export class SearchPage extends React.Component<Props, State> {
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
                 <BrandLogo className="search-page__logo" isLightTheme={this.props.isLightTheme} />
-                <div className="search search-page__container">
-                    <div className="d-flex flex-row">
+                <div className="search-page__container">
+                    <div className="d-flex flex-row flex-shrink-past-contents">
                         {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             <InteractiveModeInput
                                 {...this.props}
@@ -106,7 +106,7 @@ export class SearchPage extends React.Component<Props, State> {
                             />
                         ) : (
                             <>
-                                <Form className="search flex-grow-1" onSubmit={this.onFormSubmit}>
+                                <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={this.onFormSubmit}>
                                     <div className="search-page__input-container">
                                         {this.props.splitSearchModes && (
                                             <SearchModeToggle
