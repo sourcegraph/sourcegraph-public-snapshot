@@ -309,7 +309,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 ### With Docker
 
-You may also want to run Postgres within a docker container instead of as system service:
+You may also want to run Postgres within a docker container instead of as a system service. Running within a container provides some advantages such as storing the data seperately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
 
 1. Create a directory to store and mount the database from for persistence:
 
