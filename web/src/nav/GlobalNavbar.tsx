@@ -69,7 +69,7 @@ interface Props
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
-    setVersionContext: (versionContext: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */

@@ -27,7 +27,7 @@ export interface VersionContextDropdownProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
-    setVersionContext: (versionContext: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
     navbarSearchQuery: string
@@ -63,7 +63,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     }
 
     const disableValue = (): void => {
-        props.setVersionContext('')
+        props.setVersionContext(undefined)
     }
 
     if (!props.availableVersionContexts || props.availableVersionContexts.length === 0) {
