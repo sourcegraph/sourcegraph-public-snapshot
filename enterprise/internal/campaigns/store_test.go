@@ -1359,7 +1359,7 @@ func testListChangesetSyncData(db *sql.DB) func(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		t.Run("ListChangesetSyncData", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
 			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 			if err != nil {
 				t.Fatal(err)
@@ -1392,8 +1392,7 @@ func testListChangesetSyncData(db *sql.DB) func(t *testing.T) {
 			}
 		})
 
-		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
-			// Close a campaign
+		t.Run("ignore closed campaign", func(t *testing.T) {
 			closedCampaignID := changesets[0].CampaignIDs[0]
 			c, err := s.GetCampaign(ctx, GetCampaignOpts{ID: closedCampaignID})
 			if err != nil {
