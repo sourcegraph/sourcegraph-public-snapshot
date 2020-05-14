@@ -320,6 +320,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 this.setState({ systemIsLightTheme: !event.matches })
             })
         )
+
+        // Send initial versionContext to extensions
+        this.extensionsController.services.workspace.versionContext.next(this.state.versionContext)
     }
 
     public componentWillUnmount(): void {
