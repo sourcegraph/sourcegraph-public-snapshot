@@ -78,7 +78,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "cache_miss_percentage",
 							Description:       "percentage of cache misses over all cache activity every 5m",
-							Query:             `(increase(src_cache_misses_total[5m]) / (increase(src_cache_hits_total[5m]) + increase(src_cache_misses_total[5m]))) * 100`,
+							Query:             `(increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]) / (increase(src_cache_hits_total{job="precise-code-intel-bundle-manager"}[5m]) + increase(src_cache_misses_total{job="precise-code-intel-bundle-manager"}[5m]))) * 100`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 80},
 							PanelOptions:      PanelOptions().LegendFormat("{{cache}}").Unit(Percentage),
