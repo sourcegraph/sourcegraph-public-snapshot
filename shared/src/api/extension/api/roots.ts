@@ -24,17 +24,15 @@ export class ExtWorkspace implements ExtWorkspaceAPI, ProxyMarked {
         return this.roots
     }
 
-
     public readonly rootChanges = new Subject<void>()
     public readonly versionContextChanges = new BehaviorSubject<string | undefined>(undefined)
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
         this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
-        this.rootsChanges.next()
+        this.rootChanges.next()
     }
 
     public $acceptVersionContext(versionContext: string | undefined): void {
-        this.versionContext = versionContext
         this.versionContextChanges.next(versionContext)
     }
 }

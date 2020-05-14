@@ -197,8 +197,8 @@ function createExtensionAPI(
             get roots(): readonly sourcegraph.WorkspaceRoot[] {
                 return workspace.getAllRoots()
             },
-            onDidChangeRoots: workspace.rootsChanges,
-            rootChanges: workspace.rootsChanges,
+            onDidChangeRoots: workspace.rootChanges,
+            rootChanges: workspace.rootChanges,
             get versionContext(): string | undefined {
                 return workspace.versionContextChanges.value
             },
