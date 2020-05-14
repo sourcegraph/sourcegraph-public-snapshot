@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - In the OSS version of Sourcegraph, authorization providers are properly initialized and GraphQL APIs are no longer blocked. [#3487](https://github.com/sourcegraph/sourcegraph/issues/3487)
+- Previously, GitLab repository paths containing certain characters could not be excluded (slashes and periods in parts of the paths). These characters are now allowed, so the repository paths can be excluded. [10096](https://github.com/sourcegraph/sourcegraph/issues/10096)
 
 ### Removed
 
