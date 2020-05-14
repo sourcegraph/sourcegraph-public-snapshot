@@ -25,7 +25,7 @@ export class ExtWorkspace implements ExtWorkspaceAPI, ProxyMarked {
     }
 
 
-    public readonly rootsChanges = new Subject<void>()
+    public readonly rootChanges = new Subject<void>()
     public readonly versionContextChanges = new BehaviorSubject<string | undefined>(undefined)
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
