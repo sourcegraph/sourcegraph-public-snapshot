@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -58,6 +60,10 @@ type Patch struct {
 
 	Diff string
 
+	DiffStatAdded   *int32
+	DiffStatChanged *int32
+	DiffStatDeleted *int32
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -66,6 +72,52 @@ type Patch struct {
 func (c *Patch) Clone() *Patch {
 	cc := *c
 	return &cc
+}
+
+// ComputeDiffStat parses the Diff of the Patch and sets the diff stat fields
+// that can be retrieved with DiffStat().
+// If the Diff is invalid or parsing failed, an error is returned.
+func (p *Patch) ComputeDiffStat() error {
+	stats := diff.Stat{}
+
+	diffReader := diff.NewMultiFileDiffReader(strings.NewReader(p.Diff))
+	for {
+		diff, err := diffReader.ReadFile()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		stat := diff.Stat()
+		stats.Added += stat.Added
+		stats.Deleted += stat.Deleted
+		stats.Changed += stat.Changed
+	}
+
+	p.DiffStatAdded = &stats.Added
+	p.DiffStatDeleted = &stats.Deleted
+	p.DiffStatChanged = &stats.Changed
+
+	return nil
+}
+
+// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged,
+// DiffStatDeleted are set. The second return value indicates whether these
+// fields are set and a diff.Stat has been returned.
+func (p *Patch) DiffStat() (diff.Stat, bool) {
+	s := diff.Stat{}
+
+	if p.DiffStatAdded == nil || p.DiffStatDeleted == nil || p.DiffStatChanged == nil {
+		return s, false
+	}
+
+	s.Added = *p.DiffStatAdded
+	s.Deleted = *p.DiffStatDeleted
+	s.Changed = *p.DiffStatChanged
+
+	return s, true
 }
 
 // A Campaign of changesets over multiple Repos over time.

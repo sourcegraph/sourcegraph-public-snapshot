@@ -78,26 +78,19 @@ func (r *patchSetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesOpts) (*graphqlbackend.DiffStat, error) {
-	patchesConnection := &patchesConnectionResolver{store: store, opts: opts}
-
-	patches, err := patchesConnection.Nodes(ctx)
+	patches, _, err := store.ListPatches(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	total := &graphqlbackend.DiffStat{}
 	for _, p := range patches {
-		fileDiffs, err := p.FileDiffs(ctx, &graphqlbackend.FileDiffsConnectionArgs{})
-		if err != nil {
-			return nil, err
+		s, ok := p.DiffStat()
+		if !ok {
+			return nil, fmt.Errorf("patch %d has no diff stat", p.ID)
 		}
 
-		s, err := fileDiffs.DiffStat(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		total.AddDiffStat(s)
+		total.AddStat(s)
 	}
 
 	return total, nil
@@ -117,7 +110,7 @@ type patchesConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once                   sync.Once
-	jobs                   []*campaigns.Patch
+	patches                []*campaigns.Patch
 	reposByID              map[api.RepoID]*repos.Repo
 	changesetJobsByPatchID map[int64]*campaigns.ChangesetJob
 	next                   int64
@@ -125,13 +118,13 @@ type patchesConnectionResolver struct {
 }
 
 func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
-	jobs, reposByID, changesetJobsByPatchID, _, err := r.compute(ctx)
+	patches, reposByID, changesetJobsByPatchID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.PatchResolver, 0, len(jobs))
-	for _, j := range jobs {
+	resolvers := make([]graphqlbackend.PatchResolver, 0, len(patches))
+	for _, j := range patches {
 		repo, ok := reposByID[j.RepoID]
 		if !ok {
 			return nil, fmt.Errorf("failed to load repo %d", j.RepoID)
@@ -158,14 +151,14 @@ func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 
 func (r *patchesConnectionResolver) compute(ctx context.Context) ([]*campaigns.Patch, map[api.RepoID]*repos.Repo, map[int64]*campaigns.ChangesetJob, int64, error) {
 	r.once.Do(func() {
-		r.jobs, r.next, r.err = r.store.ListPatches(ctx, r.opts)
+		r.patches, r.next, r.err = r.store.ListPatches(ctx, r.opts)
 		if r.err != nil {
 			return
 		}
 
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-		repoIDs := make([]api.RepoID, len(r.jobs))
-		for i, j := range r.jobs {
+		repoIDs := make([]api.RepoID, len(r.patches))
+		for i, j := range r.patches {
 			repoIDs[i] = j.RepoID
 		}
 
@@ -193,7 +186,7 @@ func (r *patchesConnectionResolver) compute(ctx context.Context) ([]*campaigns.P
 			r.changesetJobsByPatchID[c.PatchID] = c
 		}
 	})
-	return r.jobs, r.reposByID, r.changesetJobsByPatchID, r.next, r.err
+	return r.patches, r.reposByID, r.changesetJobsByPatchID, r.next, r.err
 }
 
 func (r *patchesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
