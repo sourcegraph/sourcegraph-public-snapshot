@@ -233,9 +233,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
             filtersInQuery: {},
-            splitSearchModes: false,
+            splitSearchModes: true,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
-            smartSearchField: false,
+            smartSearchField: true,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
         }
@@ -304,7 +304,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
+                    const { splitSearchModes = true, smartSearchField = true } = experimentalFeatures
                     this.setState({ splitSearchModes, smartSearchField })
                 }
             })
