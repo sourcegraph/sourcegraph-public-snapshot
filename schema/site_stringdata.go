@@ -54,12 +54,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "discussions": {
-          "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -502,7 +496,7 @@ const SiteSchemaJSON = `{
     },
     "email.imap": {
       "title": "IMAPServerConfig",
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
+      "description": "DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port"],
@@ -578,25 +572,6 @@ const SiteSchemaJSON = `{
         }
       ],
       "group": "Extensions"
-    },
-    "discussions": {
-      "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.",
-      "type": "object",
-      "properties": {
-        "abuseProtection": {
-          "description": "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
-          "type": "boolean",
-          "default": false
-        },
-        "abuseEmails": {
-          "description": "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
-          "type": "array",
-          "items": { "type": "string" },
-          "default": []
-        }
-      },
-      "group": "Experimental",
-      "hide": true
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form ` + "`" + `{\"*\": [\"org1\", \"org2\"]}` + "`" + `, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is ` + "`" + `\"*\"` + "`" + `.",

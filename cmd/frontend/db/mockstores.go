@@ -6,10 +6,6 @@ var Mocks MockStores
 type MockStores struct {
 	AccessTokens MockAccessTokens
 
-	DiscussionThreads         MockDiscussionThreads
-	DiscussionComments        MockDiscussionComments
-	DiscussionMailReplyTokens MockDiscussionMailReplyTokens
-
 	Repos         MockRepos
 	Orgs          MockOrgs
 	OrgMembers    MockOrgMembers
