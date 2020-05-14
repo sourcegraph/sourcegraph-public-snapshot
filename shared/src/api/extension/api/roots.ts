@@ -14,7 +14,6 @@ export class ExtWorkspace implements ExtWorkspaceAPI, ProxyMarked {
     public readonly [proxyMarker] = true
 
     private roots: readonly sourcegraph.WorkspaceRoot[] = []
-    private versionContext: string | undefined = undefined
 
     /**
      * Returns all workspace roots.
