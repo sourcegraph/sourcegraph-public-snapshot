@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -99,6 +101,10 @@ func (s *ReferencePageResolver) handleSameDumpCursor(ctx context.Context, cursor
 
 	locations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
+		if err == client.ErrNotFound {
+			log15.Warn("Bundle does not exist")
+			return nil, Cursor{}, false, nil
+		}
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
 	}
 
@@ -144,6 +150,10 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	// that are also encoded as monikers.
 	previousLocations, err := bundleClient.References(ctx, cursor.Path, cursor.Line, cursor.Character)
 	if err != nil {
+		if err == client.ErrNotFound {
+			log15.Warn("Bundle does not exist")
+			return nil, Cursor{}, false, nil
+		}
 		return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.References")
 	}
 
@@ -162,6 +172,10 @@ func (s *ReferencePageResolver) handleSameDumpMonikersCursor(ctx context.Context
 	for _, moniker := range cursor.Monikers {
 		results, count, err := bundleClient.MonikerResults(ctx, "reference", moniker.Scheme, moniker.Identifier, cursor.SkipResults, s.limit)
 		if err != nil {
+			if err == client.ErrNotFound {
+				log15.Warn("Bundle does not exist")
+				return nil, Cursor{}, false, nil
+			}
 			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.MonikerResults")
 		}
 
@@ -212,6 +226,10 @@ func (s *ReferencePageResolver) handleDefinitionMonikersCursor(ctx context.Conte
 
 		packageInformation, err := s.bundleManagerClient.BundleClient(cursor.DumpID).PackageInformation(ctx, cursor.Path, moniker.PackageInformationID)
 		if err != nil {
+			if err == client.ErrNotFound {
+				log15.Warn("Bundle does not exist")
+				return nil, Cursor{}, false, nil
+			}
 			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleManagerClient.PackageInformation")
 		}
 
@@ -368,6 +386,10 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		results, count, err := bundleClient.MonikerResults(ctx, "reference", scheme, identifier, cursor.SkipResultsInDump, limit)
 		if err != nil {
+			if err == client.ErrNotFound {
+				log15.Warn("Bundle does not exist")
+				return nil, Cursor{}, false, nil
+			}
 			return nil, Cursor{}, false, pkgerrors.Wrap(err, "bundleClient.MonikerResults")
 		}
 		if len(results) == 0 {
