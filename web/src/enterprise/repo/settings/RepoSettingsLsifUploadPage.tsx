@@ -108,7 +108,12 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                         </h2>
                     </div>
 
-                    {uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
+                    {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
+                        <div className="alert alert-primary mb-4 mt-3">
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">Still uploading...</span>
+                        </div>
+                    ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="e2e-upload-state">Upload is currently being processed...</span>

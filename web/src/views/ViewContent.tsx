@@ -30,16 +30,20 @@ export interface ViewContentProps
  * Renders the content of an extension-contributed view.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewContent, ...props }) => (
-    <>
+    <div className="view-content">
         {viewContent.map((content, i) =>
             isMarkupContent(content) ? (
-                <section key={i}>
+                <React.Fragment key={i}>
                     {content.kind === MarkupKind.Markdown || !content.kind ? (
-                        <Markdown dangerousInnerHTML={renderMarkdown(content.value)} history={props.history} />
+                        <Markdown
+                            className="view-content__markdown mb-1"
+                            dangerousInnerHTML={renderMarkdown(content.value)}
+                            history={props.history}
+                        />
                     ) : (
                         content.value
                     )}
-                </section>
+                </React.Fragment>
             ) : 'chart' in content ? (
                 <ChartViewContent key={i} content={content} history={props.history} />
             ) : content.component === 'QueryInput' ? (
@@ -52,5 +56,5 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewCon
                 />
             ) : null
         )}
-    </>
+    </div>
 )

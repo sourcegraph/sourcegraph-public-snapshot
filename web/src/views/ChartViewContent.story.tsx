@@ -14,7 +14,10 @@ const commonProps = {
 const { add } = storiesOf('ChartViewContent', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light container p-3">{story()}</div>
+        {/* Chart will always fill the container, so we need to give the container an explicit size. */}
+        <div className="theme-light" style={{ width: '32rem', height: '16rem' }}>
+            {story()}
+        </div>
     </>
 ))
 
@@ -81,7 +84,7 @@ add('Bar chart', () => (
                 {
                     dataKey: 'value',
                     name: 'A metric',
-                    fill: 'var(--warning)',
+                    fill: 'var(--oc-teal-7)',
                     linkURLs: [
                         '#1st_data_point',
                         '#2nd_data_point',
@@ -93,7 +96,6 @@ add('Bar chart', () => (
             ],
             xAxis: {
                 dataKey: 'name',
-                scale: 'linear',
                 type: 'category',
             },
         }}

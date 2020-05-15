@@ -202,7 +202,7 @@ func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
 func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
-		SET state = 'completed', finished_at = now()
+		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
 	`, id))
 }
@@ -211,7 +211,7 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
-		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
+		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s
 	`, failureSummary, failureStacktrace, id))
 }
