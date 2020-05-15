@@ -51,7 +51,11 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
+        <Link
+            to={url}
+            className={`tree-entry ${isDir ? 'font-weight-bold' : ''} e2e-tree-entry__${isDir ? 'directory' : 'file'}`}
+            title={filePath}
+        >
             {name}
             {isDir && '/'}
         </Link>
@@ -70,7 +74,7 @@ const TreeEntriesSection: React.FunctionComponent<{
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
 }> = ({ title, parentPath, entries }) =>
     entries.length > 0 ? (
-        <section className="tree-page__section">
+        <section className="tree-page__section e2e-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((e, i) => (
