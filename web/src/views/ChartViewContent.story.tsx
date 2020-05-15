@@ -14,7 +14,10 @@ const commonProps = {
 const { add } = storiesOf('ChartViewContent', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light container p-3">{story()}</div>
+        {/* Chart will always fill the container, so we need to give the container an explicit size. */}
+        <div className="theme-light" style={{ width: '32rem', height: '16rem' }}>
+            {story()}
+        </div>
     </>
 ))
 
