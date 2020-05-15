@@ -648,13 +648,13 @@ const aggreatedEvents = `
 SELECT
   name,
   DATE_TRUNC('month', NOW()) as month,
-  DATE_TRUNC('week', NOW()) as week,
+  DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval as week,
   DATE_TRUNC('day', NOW()) as day,
   COUNT(*) FILTER (
     WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
   ) AS total_month,
   COUNT(*) FILTER (
-    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
   ) AS total_week,
   COUNT(*) FILTER (
     WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
@@ -663,7 +663,7 @@ SELECT
     WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
   ) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
   ) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (
     WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
@@ -672,7 +672,7 @@ SELECT
     WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
  ) AS latencies_month,
  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
  ) AS latencies_week,
  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
     WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
