@@ -195,7 +195,7 @@ describe('e2e test suite', () => {
     })
 
     describe('External services', () => {
-        test('External service add, edit, delete', async () => {
+        test.skip('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
             await driver.ensureHasExternalService({
                 kind: ExternalServiceKind.GITHUB,
@@ -272,10 +272,10 @@ describe('e2e test suite', () => {
         const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
         const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
 
-        const testIfAwsCredentialsSet =
-            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
-                ? test
-                : test.skip.bind(test)
+        const testIfAwsCredentialsSet = test.skip.bind(test)
+        //    awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+        //        ? test
+        //        : test.skip.bind(test)
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
             await driver.ensureHasExternalService({
@@ -308,7 +308,7 @@ describe('e2e test suite', () => {
         const bbsToken = process.env.BITBUCKET_SERVER_TOKEN
         const bbsUsername = process.env.BITBUCKET_SERVER_USERNAME
 
-        const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
+        const testIfBBSCredentialsSet = test.skip.bind(test) // bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
 
         testIfBBSCredentialsSet('Bitbucket Server', async () => {
             await driver.ensureHasExternalService({
