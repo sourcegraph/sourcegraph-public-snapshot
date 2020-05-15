@@ -25,11 +25,9 @@ require (
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
-	github.com/emersion/go-imap v1.0.4
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.9.0
-	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.1
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
@@ -74,7 +72,6 @@ require (
 	github.com/karlseguin/expect v1.0.6 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.15.5
-	github.com/karrick/tparse/v2 v2.8.0
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.19.0+incompatible
@@ -87,7 +84,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mattn/goreman v0.0.0-00010101000000-000000000000 // indirect
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/mschoch/smat v0.2.0 // indirect
