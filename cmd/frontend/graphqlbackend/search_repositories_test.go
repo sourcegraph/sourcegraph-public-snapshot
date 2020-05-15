@@ -30,14 +30,14 @@ func TestSearchRepositories(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &types.Repo{ID: 123},
+					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "bar/one":
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &types.Repo{ID: 789},
+					Repo: &RepositoryResolver{repo: &types.Repo{ID: 789}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "foo/no-match":
@@ -124,7 +124,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "foo.go",
-					Repo: &types.Repo{ID: 123},
+					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "foo/no-match":
@@ -142,7 +142,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &types.Repo{ID: 123},
+					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -177,7 +177,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &types.Repo{ID: 123},
+					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		}
