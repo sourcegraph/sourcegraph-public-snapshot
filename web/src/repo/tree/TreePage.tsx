@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -51,7 +52,15 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
+        <Link
+            to={url}
+            className={classNames(
+                'tree-entry',
+                isDir && 'font-weight-bold',
+                `e2e-tree-entry-${isDir ? 'directory' : 'file'}`
+            )}
+            title={filePath}
+        >
             {name}
             {isDir && '/'}
         </Link>
@@ -70,7 +79,7 @@ const TreeEntriesSection: React.FunctionComponent<{
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
 }> = ({ title, parentPath, entries }) =>
     entries.length > 0 ? (
-        <section className="tree-page__section">
+        <section className="tree-page__section e2e-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((e, i) => (
