@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: yarn --ignore-engines --ignore-scripts
       - name: Generate
-        run: yarn gulp generate
+        run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
         working-directory: web/
         run: lsif-tsc -p .

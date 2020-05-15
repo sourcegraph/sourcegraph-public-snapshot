@@ -9,7 +9,7 @@ import (
 // PrepDirectories
 func PrepDirectories(bundleDir string) error {
 	for _, dir := range []string{UploadsDir(bundleDir), DBsDir(bundleDir)} {
-		if err := os.MkdirAll(filepath.Join(bundleDir, dir), os.ModePerm); err != nil {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
 		}
 	}

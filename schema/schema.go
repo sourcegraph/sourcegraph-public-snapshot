@@ -630,18 +630,6 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 
-// IMAPServerConfig description: DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.
-type IMAPServerConfig struct {
-	// Host description: The IMAP server host.
-	Host string `json:"host"`
-	// Password description: The username to use when communicating with the IMAP server.
-	Password string `json:"password,omitempty"`
-	// Port description: The IMAP server port.
-	Port int `json:"port"`
-	// Username description: The username to use when communicating with the IMAP server.
-	Username string `json:"username,omitempty"`
-}
-
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -979,8 +967,6 @@ type SiteConfiguration struct {
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailImap description: DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.
-	EmailImap *IMAPServerConfig `json:"email.imap,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

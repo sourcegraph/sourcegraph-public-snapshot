@@ -489,42 +489,6 @@
       ],
       "group": "Email"
     },
-    "email.imap": {
-      "title": "IMAPServerConfig",
-      "description": "DEPRECATED. Will be removed in 3.17. Was used by the now removed discussions feature.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port"],
-      "properties": {
-        "host": {
-          "description": "The IMAP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The IMAP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        }
-      },
-      "default": null,
-      "examples": [
-        {
-          "host": "imap.example.com",
-          "port": 993,
-          "username": "alice",
-          "password": "mypassword"
-        }
-      ],
-      "group": "Email",
-      "hide": true
-    },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
       "type": "string",
