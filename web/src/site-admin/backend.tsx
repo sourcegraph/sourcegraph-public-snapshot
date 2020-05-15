@@ -617,6 +617,7 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
                 site {
                     monitoringStatistics(days: $days) {
                         alerts {
+                            serviceName
                             name
                             timestamp
                             occurrences
