@@ -87,8 +87,17 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 		var (
 			name        = string(sample.Metric["name"])
 			serviceName = string(sample.Metric["service_name"])
+			prevVal     *model.SampleValue
 		)
 		for _, p := range sample.Values {
+			// don't ignore first
+			if prevVal != nil && p.Value == *prevVal {
+				continue
+			}
+			// copy value for comparison later
+			v := p.Value
+			prevVal = &v
+			// record alert in results
 			alerts = append(alerts, &MonitoringAlert{
 				NameValue:        name,
 				ServiceNameValue: serviceName,

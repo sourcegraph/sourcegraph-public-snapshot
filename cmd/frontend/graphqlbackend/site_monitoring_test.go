@@ -53,6 +53,22 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 		{"responds with appropriate error on timeout", fields{
 			queryErr: fmt.Errorf("timed out: %w", context.Canceled),
 		}, nil, errPrometheusUnavailable},
+		{"discards repeated values", fields{
+			queryValue: model.Matrix{
+				&model.SampleStream{
+					Metric: model.Metric{"name": "hello", "service_name": "world"},
+					Values: []model.SamplePair{
+						{Timestamp: sampleT, Value: model.SampleValue(1)},
+						{Timestamp: sampleT.Add(time.Hour), Value: model.SampleValue(1)},
+						{Timestamp: sampleT.Add(2 * time.Hour), Value: model.SampleValue(1)},
+					}},
+			},
+		}, []*MonitoringAlert{{
+			TimestampValue:   DateTime{sampleT.Time()},
+			NameValue:        "hello",
+			ServiceNameValue: "world",
+			OccurrencesValue: 1,
+		}}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
