@@ -22,7 +22,6 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dnaeon/go-vcr v1.0.1
-	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/ericchiang/k8s v1.2.0
