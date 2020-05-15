@@ -16,3 +16,9 @@ If you wish to control how frequently repositories are discovered or how frequen
 - [gitMaxConcurrentClones](../config/site_config.md#gitMaxConcurrentClones) controls the maximum number of _concurrent_ cloning / pulling operations that Sourcegraph will perform.
 
 You may also choose to disable automatic Git updates entirely and instead [configure repository webhooks](webhooks.md).
+
+## Code host API rate limiting
+
+Sourcegraph uses a configurable internal rate limiter for API requests made from Sourcegraph to [GitHub](../external_service/github.md#internal-rate-limits), [GitLab](../external_service/gitlab.md#internal-rate-limits), [Bitucket Server](../external_service/bitbucket_server.md#internal-rate-limits) and [Bitbucket Cloud](../external_service/bitbucket_cloud.md#internal-rate-limits).
+
+**NOTE** Internal rate limiting is currently only enforced for [Campaign](../../user/campaigns/index.md) changeset syncing
