@@ -22,9 +22,9 @@ describe('renderMarkdown', () => {
             '- bullet list item 2',
             '',
             '1. item 1',
-            '  ```ts'
-            '  const a = "string"',
-            '  ```'
+            '  ```ts',
+            '  const codeInsideTheBulletPoint = "string"',
+            '  ```',
             '1. item 2',
             '',
             '> quoted',
@@ -48,7 +48,8 @@ describe('renderMarkdown', () => {
             <li>bullet list item 2</li>
             </ul>
             <ol>
-            <li>item 1</li>
+            <li>item 1<pre><code class=\\"language-ts\\"><span class=\\"hljs-keyword\\">const</span> codeInsideTheBulletPoint = <span class=\\"hljs-string\\">\\"string\\"</span></code></pre>
+            </li>
             <li>item 2</li>
             </ol>
             <blockquote>
