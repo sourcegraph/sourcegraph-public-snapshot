@@ -6,10 +6,16 @@ import (
 	"log"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ep "github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	aws_rg "github.com/aws/aws-sdk-go-v2/service/resourcegroups"
+	aws_ext "github.com/aws/aws-sdk-go-v2/aws/external"
+	aws_cs "github.com/aws/aws-sdk-go-v2/service/configservice"
 )
+
+// see https://github.com/aws/aws-sdk-go-v2/blob/v0.18.0/service/configservice/api_enums.go#L462
+var awsResourceTypes = []aws_cs.ResourceType{
+	aws_cs.ResourceTypeAwsEc2Instance,
+	aws_cs.ResourceTypeAwsCloudFormationStack,
+}
 
 func collectAWSResources(ctx context.Context) ([]Resource, error) {
 	log := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
@@ -17,34 +23,43 @@ func collectAWSResources(ctx context.Context) ([]Resource, error) {
 		log.Printf("collecting resources")
 	}
 
+	cfg, err := aws_ext.LoadDefaultAWSConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init client: %w", err)
+	}
+
+	// query default aws regions
 	resources := make([]Resource, 0)
-	for _, p := range aws_ep.NewDefaultResolver().Partitions() {
-		for _, region := range p.Regions() {
-			if isVerbose(ctx) {
-				log.Printf("querying resources in region %s", region.ID())
-			}
-			rg := aws_rg.New(aws.Config{
-				Region: region.ID(),
-			})
-			pager := aws_rg.NewSearchResourcesPaginator(rg.SearchResourcesRequest(&aws_rg.SearchResourcesInput{
-				ResourceQuery: &aws_rg.ResourceQuery{
-					// TODO
-				},
-			}))
-			for pager.Next(ctx) {
-				page := pager.CurrentPage()
-				for _, r := range page.ResourceIdentifiers {
-					println(*r.ResourceArn)
+	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
+	for _, region := range pt.Regions() {
+		cfg.Region = region.ID()
+		cs := aws_cs.New(cfg.Copy())
+
+		for _, t := range awsResourceTypes {
+			var next *string
+			hasNext := true
+			for hasNext {
+				resp, err := cs.ListDiscoveredResourcesRequest(&aws_cs.ListDiscoveredResourcesInput{
+					ResourceType: t,
+					NextToken:    next,
+				}).Send(ctx)
+				if err != nil {
+					hasNext = false
+					if isVerbose(ctx) {
+						log.Printf("querying region '%s' for resources of type '%s' failed: %v", region.ID(), t, err)
+					}
+					continue
+				}
+				next = resp.NextToken
+				hasNext = next != nil
+				for _, res := range resp.ResourceIdentifiers {
 					resources = append(resources, Resource{
 						Platform:   PlatformAWS,
-						Identifier: *r.ResourceArn,
-						Type:       *r.ResourceType,
-						// TODO
+						Identifier: *res.ResourceId,
+						Type:       string(res.ResourceType),
+						Location:   region.ID(),
 					})
 				}
-			}
-			if err := pager.Err(); err != nil {
-				return nil, fmt.Errorf("failed to query resources in region %s: %w", region.ID(), err)
 			}
 		}
 	}
