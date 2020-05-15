@@ -17,7 +17,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -36,6 +36,7 @@ import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
 
@@ -43,7 +44,9 @@ interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
+        CopyQueryButtonProps,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
+        VersionContextProps {
     location: H.Location
     history: H.History
 

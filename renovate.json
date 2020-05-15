@@ -15,10 +15,6 @@
     {
       "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
       "reviewers": ["beyang"]
-    },
-    {
-      "paths": ["cmd/precise-code-intel/*"],
-      "reviewers": ["team:code-intel"]
     }
   ]
 }

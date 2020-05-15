@@ -16,6 +16,9 @@ import { ErrorAlert } from '../components/alerts'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { hasProperty } from '../../../shared/src/util/types'
 import * as H from 'history'
+import { CopyableText } from '../components/CopyableText'
+
+type ExternalService = Pick<GQL.IExternalService, 'id' | 'kind' | 'displayName' | 'config' | 'warning' | 'webhookURL'>
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
@@ -25,7 +28,7 @@ interface Props extends RouteComponentProps<{ id: GQL.ID }> {
 const LOADING = 'loading' as const
 
 interface State {
-    externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
+    externalServiceOrError: typeof LOADING | ExternalService | ErrorLike
 
     /**
      * The result of updating the external service: null when complete or not started yet,
@@ -72,12 +75,16 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         concat(
                             [{ updatedOrError: LOADING, warning: null }],
                             updateExternalService(input).pipe(
-                                mergeMap(({ warning }) =>
-                                    warning
-                                        ? of({ warning, updatedOrError: null })
+                                mergeMap(service =>
+                                    service.warning
+                                        ? of({
+                                              warning: service.warning,
+                                              externalServiceOrError: service,
+                                              updatedOrError: null,
+                                          })
                                         : concat(
                                               // Flash "updated" text
-                                              of({ updatedOrError: true }),
+                                              of({ updatedOrError: true, externalServiceOrError: service }),
                                               // Hide "updated" text again after 1s
                                               of({ updatedOrError: null }).pipe(delay(1000))
                                           )
@@ -114,22 +121,30 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             undefined
 
         let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
-        if (externalService && externalService.kind === GQL.ExternalServiceKind.GITHUB) {
+        if (
+            externalService &&
+            [GQL.ExternalServiceKind.GITHUB, GQL.ExternalServiceKind.GITLAB].includes(externalService.kind)
+        ) {
             const parsedConfig: unknown = parseJSONC(externalService.config)
-            // we have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the url
-            if (
+            const url =
                 typeof parsedConfig === 'object' &&
                 parsedConfig !== null &&
                 hasProperty('url')(parsedConfig) &&
-                typeof parsedConfig.url === 'string' &&
-                !parsedConfig.url.startsWith('https://github.com/')
-            ) {
+                typeof parsedConfig.url === 'string'
+                    ? new URL(parsedConfig.url)
+                    : undefined
+            // We have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the URL.
+            if (externalService.kind === GQL.ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
                 externalServiceCategory = codeHostExternalServices.ghe
+            }
+            // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
+            if (externalService.kind === GQL.ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+                externalServiceCategory = codeHostExternalServices.gitlab
             }
         }
 
         return (
-            <div className="site-admin-configuration-page mt-3">
+            <div className="site-admin-configuration-page">
                 {externalService ? (
                     <PageTitle title={`External service - ${externalService.displayName}`} />
                 ) : (
@@ -167,6 +182,70 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 {this.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
+                {externalService?.webhookURL && (
+                    <div className="alert alert-info">
+                        <h3>Campaign webhooks</h3>
+                        {externalService.kind === GQL.ExternalServiceKind.BITBUCKETSERVER ? (
+                            <p>
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Webhooks
+                                </a>{' '}
+                                will be created automatically on the configured Bitbucket Server instance. In case you
+                                don't provide an admin token,{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#manual-configuration"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    follow the docs on how to set up webhooks manually
+                                </a>
+                                .
+                                <br />
+                                To set up another webhook manually, use the following URL:
+                            </p>
+                        ) : (
+                            <p>
+                                Point{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/admin/external_service/github#webhooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    webhooks
+                                </a>{' '}
+                                for this code host connection at the following URL:
+                            </p>
+                        )}
+                        <CopyableText
+                            className="mb-2"
+                            text={externalService.webhookURL}
+                            size={externalService.webhookURL.length}
+                        />
+                        <p className="mb-0">
+                            Note that only{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/user/campaigns"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Campaigns
+                            </a>{' '}
+                            make use of this webhook. To enable webhooks to trigger repository updates on Sourcegraph,{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/admin/repo/webhooks"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                see the docs on how to use them
+                            </a>
+                            .
+                        </p>
+                    </div>
+                )}
             </div>
         )
     }
@@ -191,21 +270,32 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 }
 
 function isExternalService(
-    externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
+    externalServiceOrError: typeof LOADING | ExternalService | ErrorLike
 ): externalServiceOrError is GQL.IExternalService {
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
 }
 
-function updateExternalService(
-    input: GQL.IUpdateExternalServiceInput
-): Observable<Pick<GQL.IExternalService, 'warning'>> {
+const externalServiceFragment = gql`
+    fragment externalServiceFields on ExternalService {
+        id
+        kind
+        displayName
+        config
+        warning
+        webhookURL
+    }
+`
+
+function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<ExternalService> {
     return mutateGraphQL(
         gql`
             mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                 updateExternalService(input: $input) {
-                    warning
+                    ...externalServiceFields
                 }
             }
+
+            ${externalServiceFragment}
         `,
         { input }
     ).pipe(
@@ -214,23 +304,29 @@ function updateExternalService(
     )
 }
 
-function fetchExternalService(id: GQL.ID): Observable<GQL.IExternalService> {
+function fetchExternalService(id: GQL.ID): Observable<ExternalService> {
     return queryGraphQL(
         gql`
             query ExternalService($id: ID!) {
                 node(id: $id) {
-                    ... on ExternalService {
-                        id
-                        kind
-                        displayName
-                        config
-                    }
+                    __typename
+                    ...externalServiceFields
                 }
             }
+
+            ${externalServiceFragment}
         `,
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.IExternalService)
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('External service not found')
+            }
+            if (node.__typename !== 'ExternalService') {
+                throw new Error(`Node is a ${node.__typename}, not a ExternalService`)
+            }
+            return node
+        })
     )
 }

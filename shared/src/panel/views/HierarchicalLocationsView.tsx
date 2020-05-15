@@ -16,11 +16,15 @@ import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { VersionContextProps } from '../../search/util'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
 
-export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
+export interface HierarchicalLocationsViewProps
+    extends ExtensionsControllerProps<'services'>,
+        SettingsCascadeProps,
+        VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -271,6 +275,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         isLightTheme={this.props.isLightTheme}
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                         settingsCascade={this.props.settingsCascade}
+                        versionContext={this.props.versionContext}
                     />
                 </div>
             </div>

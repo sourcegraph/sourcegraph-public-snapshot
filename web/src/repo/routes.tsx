@@ -97,6 +97,8 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
+            copyQueryButton,
+            versionContext,
             ...context
         }: RepoRevContainerContext &
             RouteComponentProps<{
@@ -138,6 +140,8 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
+                copyQueryButton,
+                versionContext,
             }
 
             return (

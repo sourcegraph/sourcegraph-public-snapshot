@@ -30,21 +30,6 @@ jobs:
         working-directory: web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
-  lsif-precise-code-intel:
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-node
-    defaults:
-      run:
-        working-directory: cmd/precise-code-intel
-    steps:
-      - uses: actions/checkout@v1
-      - name: Install dependencies
-        run: yarn --ignore-engines --ignore-scripts
-      - name: Generate LSIF data
-        run: lsif-tsc -p .
-      - name: Upload LSIF data
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-
   lsif-shared:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node

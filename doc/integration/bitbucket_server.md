@@ -58,7 +58,7 @@ To disable native code intelligence, simply set **Sourcegraph URL** to an empty 
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
 
-To configure a webhook on the Sourcegraph side, set the [`"webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns/index.md) is created on the Bitbucket Server instance.
+To configure a webhook on the Sourcegraph side, set the [`"webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns/index.md) is created on the Bitbucket Server instance. If you need to configure the webhook on your instance manually, see [manual configuration](../admin/external_service/bitbucket_server.md#manual-configuration).
 
 Disabling the webhook is as easy as removing the `"webhooks"` property from the `"plugin"` section and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
 
@@ -110,7 +110,7 @@ Once the plugin is installed it registers an asynchronous listener (see [`Webhoo
 
 In order to persist the configured webhooks across restarts of the Bitbucket Server instance the plugin uses the [Active Objects ORM](https://developer.atlassian.com/server/framework/atlassian-sdk/active-objects/) of the Atlassian SDK. It registers two Active Objects: [`WebhookEntity` and `EventEntity`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/94e4be96b57286429cc543205164586af03e9b9b/src/main/resources/atlassian-plugin.xml#L10-L14).
 
-If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks (which is done by setting the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks)), it sends a request to the Bitbucket Server instance, every 30 seconds, to make sure that a webhook on the Bitbucket Server instance exists and points to the Sourcegraph instance.
+If Sourcegraph is configured to make use of the Bitbucket Server plugin webhooks (which is done by setting the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks)), it sends a request to the Bitbucket Server instance, every minute, to make sure that a webhook on the Bitbucket Server instance exists and points to the Sourcegraph instance.
 
 #### Fast permission syncing
 

@@ -259,6 +259,7 @@ func Test_defaultRepositories(t *testing.T) {
 		defaultsInDb     []string
 		indexedRepoNames map[string]bool
 		want             []string
+		excludePatterns  []string
 	}{
 		{
 			name:             "none in db => none returned",
@@ -272,9 +273,31 @@ func Test_defaultRepositories(t *testing.T) {
 			indexedRepoNames: map[string]bool{"indexedrepo": true},
 			want:             []string{"indexedrepo"},
 		},
+		{
+			name:             "should not return excluded repo",
+			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
+			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
+			excludePatterns:  []string{"indexedrepo3"},
+			want:             []string{"indexedrepo1", "indexedrepo2"},
+		},
+		{
+			name:             "should not return excluded repo (case insensitive)",
+			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
+			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
+			excludePatterns:  []string{"indexedrepo3"},
+			want:             []string{"indexedrepo1", "indexedrepo2"},
+		},
+		{
+			name:             "should not return excluded repos ending in `test`",
+			defaultsInDb:     []string{"repo1", "repo2", "repo-test", "repoTEST"},
+			indexedRepoNames: map[string]bool{"repo1": true, "repo2": true, "repo-test": true, "repoTEST": true},
+			excludePatterns:  []string{"test$"},
+			want:             []string{"repo1", "repo2"},
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
+
 			var drs []*types.Repo
 			for i, name := range tc.defaultsInDb {
 				r := &types.Repo{
@@ -300,7 +323,7 @@ func Test_defaultRepositories(t *testing.T) {
 				return indexed, unindexed, nil
 			}
 			ctx := context.Background()
-			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos)
+			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}

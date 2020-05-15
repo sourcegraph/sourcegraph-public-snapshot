@@ -7,6 +7,9 @@ import (
 
 // BundleClient is the interface to the precise-code-intel-bundle-manager service scoped to a particular dump.
 type BundleClient interface {
+	// ID gets the identifier of the target bundle.
+	ID() int
+
 	// Exists determines if the given path exists in the dump.
 	Exists(ctx context.Context, path string) (bool, error)
 
@@ -37,6 +40,11 @@ type bundleClientImpl struct {
 }
 
 var _ BundleClient = &bundleClientImpl{}
+
+// ID gets the identifier of the target bundle.
+func (c *bundleClientImpl) ID() int {
+	return c.bundleID
+}
 
 // Exists determines if the given path exists in the dump.
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (exists bool, err error) {

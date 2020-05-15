@@ -107,8 +107,18 @@ func addSharedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 
-	// Storybook
-	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
+	// Storybook coverage
+	pipeline.AddStep(":storybook::codecov:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
+		bk.Cmd("yarn run cover-storybook"),
+		bk.Cmd("yarn nyc report -r json"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
+
+	// Upload storybook to Percy
+	pipeline.AddStep(":storybook::percy:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("dev/ci/yarn-run.sh build-storybook percy-storybook"))
 }
 
 // Adds PostgreSQL backcompat tests.

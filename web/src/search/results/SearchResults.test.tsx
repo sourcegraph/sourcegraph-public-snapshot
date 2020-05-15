@@ -42,6 +42,9 @@ describe('SearchResults', () => {
         splitSearchModes: false,
         setPatternType: sinon.spy(),
         setCaseSensitivity: sinon.spy(),
+        versionContext: undefined,
+        setVersionContext: () => undefined,
+        availableVersionContexts: undefined,
     }
 
     it('calls the search request once', () => {

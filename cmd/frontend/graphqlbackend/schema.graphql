@@ -2805,7 +2805,8 @@ type FileMatch {
 type LineMatch {
     # The preview.
     preview: String!
-    # The line number.
+    # The line number. 0-based. The first line will have lineNumber 0. Note: A
+    # UI will normally display line numbers 1-based.
     lineNumber: Int!
     # Tuples of [offset, length] measured in characters (not bytes).
     offsetAndLengths: [[Int!]!]!

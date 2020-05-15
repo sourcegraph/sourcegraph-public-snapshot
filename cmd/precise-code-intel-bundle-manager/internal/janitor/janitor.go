@@ -35,7 +35,6 @@ func New(
 	}
 }
 
-// step performs a best-effort cleanup. See the following methods for more specifics.
 // Run periodically performs a best-effort cleanup process. See the following methods
 // for more specifics: removeOldUploadFiles, removeOrphanedBundleFiles, and freeSpace.
 func (j *Janitor) Run() {

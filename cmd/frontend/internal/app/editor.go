@@ -224,12 +224,12 @@ func parseEditorRequest(q url.Values) (*editorRequest, error) {
 		// Search request parsing
 		v.searchRequest = &editorSearchRequest{
 			query:     q.Get("search"),
-			remoteURL: q.Get("remote_url"),
-			branch:    q.Get("branch"),
-			revision:  q.Get("revision"),
-			file:      q.Get("file"),
+			remoteURL: q.Get("search_remote_url"),
+			branch:    q.Get("search_branch"),
+			revision:  q.Get("search_revision"),
+			file:      q.Get("search_file"),
 		}
-		if hostnameToPatternStr := q.Get("hostname_patterns"); hostnameToPatternStr != "" {
+		if hostnameToPatternStr := q.Get("search_hostname_patterns"); hostnameToPatternStr != "" {
 			if err := json.Unmarshal([]byte(hostnameToPatternStr), &v.searchRequest.hostnameToPattern); err != nil {
 				return nil, err
 			}
