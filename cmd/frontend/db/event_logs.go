@@ -604,13 +604,7 @@ ORDER BY 1 DESC, 2 ASC;
 
 // AggregatedEvents calculates AggregatedEvent for each every unique event type.
 func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.AggregatedEvent, err error) {
-	var names []*sqlf.Query
-	for _, name := range aggregatableNames {
-		names = append(names, sqlf.Sprintf("%s", name))
-	}
-	query := sqlf.Sprintf(aggreatedEventsFmtStr, sqlf.Join(names, ","))
-
-	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := dbconn.Global.QueryContext(ctx, aggreatedEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -647,25 +641,7 @@ func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.Aggreg
 	return events, nil
 }
 
-// aggregatableNames is a whitelist of events returned by AggregatedEvents.
-var aggregatableNames = []string{
-	"codeintel.lsifHover",
-	"codeintel.searchHover",
-	"codeintel.lsifDefinitions",
-	"codeintel.searchDefinitions",
-	"codeintel.lsifReferences",
-	"codeintel.searchReferences",
-	"search.latencies.literal",
-	"search.latencies.regexp",
-	"search.latencies.structural",
-	"search.latencies.file",
-	"search.latencies.repo",
-	"search.latencies.diff",
-	"search.latencies.commit",
-	"search.latencies.symbol",
-}
-
-const aggreatedEventsFmtStr = `
+const aggreatedEvents = `
 -- This query does multiple aggregations over the current day, week and month in one
 -- pass over the event_logs table. These are: unique number of users, total
 -- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
@@ -715,7 +691,22 @@ FROM (
     END AS user_id,
     DATE(TIMEZONE('UTC', timestamp)) AS date
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', NOW()) AND name IN (%s)
+  WHERE timestamp >= DATE_TRUNC('month', NOW()) AND name IN (
+    'codeintel.lsifHover',
+    'codeintel.searchHover',
+    'codeintel.lsifDefinitions',
+    'codeintel.searchDefinitions',
+    'codeintel.lsifReferences',
+    'codeintel.searchReferences',
+    'search.latencies.literal',
+    'search.latencies.regexp',
+    'search.latencies.structural',
+    'search.latencies.file',
+    'search.latencies.repo',
+    'search.latencies.diff',
+    'search.latencies.commit',
+    'search.latencies.symbol'
+  )
 ) q
 GROUP BY name
 `
