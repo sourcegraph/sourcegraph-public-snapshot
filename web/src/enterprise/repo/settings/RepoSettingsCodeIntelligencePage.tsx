@@ -79,7 +79,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
                         <span className="ml-2">
                             <Link to={`./code-intelligence/lsif-uploads/${node.id}`}>
                                 {node.state === GQL.LSIFUploadState.UPLOADING ? (
-                                    <span>Uplaoding</span>
+                                    <span>Uploading</span>
                                 ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
                                     <span>Processing</span>
                                 ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
