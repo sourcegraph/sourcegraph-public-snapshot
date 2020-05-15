@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
@@ -34,6 +36,10 @@ func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, cha
 func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
 	locations, err := bundleClient.Definitions(ctx, pathInBundle, line, character)
 	if err != nil {
+		if err == client.ErrNotFound {
+			log15.Warn("Bundle does not exist")
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "bundleClient.Definitions")
 	}
 	if len(locations) > 0 {
@@ -42,6 +48,10 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 
 	rangeMonikers, err := bundleClient.MonikersByPosition(context.Background(), pathInBundle, line, character)
 	if err != nil {
+		if err == client.ErrNotFound {
+			log15.Warn("Bundle does not exist")
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "bundleClient.MonikersByPosition")
 	}
 
@@ -62,6 +72,10 @@ func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundl
 
 				locations, _, err := bundleClient.MonikerResults(context.Background(), "definition", moniker.Scheme, moniker.Identifier, 0, DefintionMonikersLimit)
 				if err != nil {
+					if err == client.ErrNotFound {
+						log15.Warn("Bundle does not exist")
+						return nil, nil
+					}
 					return nil, errors.Wrap(err, "bundleClient.MonikerResults")
 				}
 				if len(locations) > 0 {

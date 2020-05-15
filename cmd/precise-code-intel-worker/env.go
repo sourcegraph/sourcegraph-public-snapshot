@@ -10,6 +10,7 @@ import (
 var (
 	rawBundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 	rawPollInterval     = env.Get("PRECISE_CODE_INTEL_POLL_INTERVAL", "1s", "Interval between queries to the work queue.")
+	rawResetInterval    = env.Get("PRECISE_CODE_INTEL_RESET_INTERVAL", "1m", "How often to reset stalled uploads.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.

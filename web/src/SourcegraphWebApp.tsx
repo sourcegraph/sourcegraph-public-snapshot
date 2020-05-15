@@ -147,6 +147,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     smartSearchField: boolean
 
     /**
+     * Whether to display the copy query button.
+     */
+    copyQueryButton: boolean
+
+    /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
     versionContext?: string
@@ -233,9 +238,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
             filtersInQuery: {},
-            splitSearchModes: false,
+            splitSearchModes: true,
             interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
-            smartSearchField: false,
+            copyQueryButton: false,
+            smartSearchField: true,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
         }
@@ -304,8 +310,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
                     const experimentalFeatures: SettingsExperimentalFeatures =
                         settingsCascade.final.experimentalFeatures || {}
-                    const { splitSearchModes = true, smartSearchField = false } = experimentalFeatures
-                    this.setState({ splitSearchModes, smartSearchField })
+                    const {
+                        splitSearchModes = true,
+                        smartSearchField = true,
+                        copyQueryButton = false,
+                    } = experimentalFeatures
+                    this.setState({ splitSearchModes, smartSearchField, copyQueryButton })
                 }
             })
         )
@@ -320,6 +330,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 this.setState({ systemIsLightTheme: !event.matches })
             })
         )
+
+        // Send initial versionContext to extensions
+        this.extensionsController.services.workspace.versionContext.next(this.state.versionContext)
     }
 
     public componentWillUnmount(): void {
@@ -428,6 +441,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setPatternType={this.setPatternType}
                                     setCaseSensitivity={this.setCaseSensitivity}
                                     smartSearchField={this.state.smartSearchField}
+                                    copyQueryButton={this.state.copyQueryButton}
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
@@ -480,6 +494,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
             this.setState({ versionContext: resolvedVersionContext })
         }
+
+        this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
 }
 

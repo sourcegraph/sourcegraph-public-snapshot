@@ -57,9 +57,10 @@ const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
 }
 
 function testWorkspaceService(
-    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
+    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }],
+    versionContext: string | undefined = undefined
 ): WorkspaceService {
-    return { roots: new BehaviorSubject(roots) }
+    return { roots: new BehaviorSubject(roots), versionContext: new BehaviorSubject(versionContext) }
 }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar

@@ -4,7 +4,7 @@ import { ActivationProps } from '../../../../shared/src/components/activation/Ac
 import { Form } from '../../components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
-import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps, CopyQueryButtonProps } from '..'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { QueryInput } from './QueryInput'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -19,6 +19,7 @@ interface Props
         SmartSearchFieldProps,
         SettingsCascadeProps,
         ThemeProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     location: H.Location
     history: H.History
@@ -42,7 +43,7 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
     public render(): React.ReactNode {
         return (
             <Form
-                className="search search--navbar-item d-flex align-items-flex-start flex-grow-1"
+                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
                 onSubmit={this.onFormSubmit}
             >
                 {this.props.smartSearchField ? (

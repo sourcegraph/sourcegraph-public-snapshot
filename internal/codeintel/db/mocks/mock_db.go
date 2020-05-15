@@ -38,6 +38,9 @@ type MockDB struct {
 	// GetDumpByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetDumpByID.
 	GetDumpByIDFunc *DBGetDumpByIDFunc
+	// GetDumpIDsFunc is an instance of a mock function object controlling
+	// the behavior of the method GetDumpIDs.
+	GetDumpIDsFunc *DBGetDumpIDsFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *DBGetPackageFunc
@@ -146,6 +149,11 @@ func NewMockDB() *MockDB {
 		GetDumpByIDFunc: &DBGetDumpByIDFunc{
 			defaultHook: func(context.Context, int) (db.Dump, bool, error) {
 				return db.Dump{}, false, nil
+			},
+		},
+		GetDumpIDsFunc: &DBGetDumpIDsFunc{
+			defaultHook: func(context.Context) ([]int, error) {
+				return nil, nil
 			},
 		},
 		GetPackageFunc: &DBGetPackageFunc{
@@ -283,6 +291,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		GetDumpByIDFunc: &DBGetDumpByIDFunc{
 			defaultHook: i.GetDumpByID,
+		},
+		GetDumpIDsFunc: &DBGetDumpIDsFunc{
+			defaultHook: i.GetDumpIDs,
 		},
 		GetPackageFunc: &DBGetPackageFunc{
 			defaultHook: i.GetPackage,
@@ -1231,6 +1242,111 @@ func (c DBGetDumpByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c DBGetDumpByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBGetDumpIDsFunc describes the behavior when the GetDumpIDs method of the
+// parent MockDB instance is invoked.
+type DBGetDumpIDsFunc struct {
+	defaultHook func(context.Context) ([]int, error)
+	hooks       []func(context.Context) ([]int, error)
+	history     []DBGetDumpIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetDumpIDs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GetDumpIDs(v0 context.Context) ([]int, error) {
+	r0, r1 := m.GetDumpIDsFunc.nextHook()(v0)
+	m.GetDumpIDsFunc.appendCall(DBGetDumpIDsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetDumpIDs method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGetDumpIDsFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetDumpIDs method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGetDumpIDsFunc) PushHook(hook func(context.Context) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGetDumpIDsFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGetDumpIDsFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBGetDumpIDsFunc) nextHook() func(context.Context) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGetDumpIDsFunc) appendCall(r0 DBGetDumpIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGetDumpIDsFuncCall objects describing the
+// invocations of this function.
+func (f *DBGetDumpIDsFunc) History() []DBGetDumpIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGetDumpIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGetDumpIDsFuncCall is an object that describes an invocation of method
+// GetDumpIDs on an instance of MockDB.
+type DBGetDumpIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGetDumpIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGetDumpIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBGetPackageFunc describes the behavior when the GetPackage method of the

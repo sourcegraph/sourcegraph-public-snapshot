@@ -117,11 +117,6 @@ if [[ -n "$yarn_pid" ]]; then
   wait "$yarn_pid"
 fi
 
-# Install precise code intel dependencies
-pushd ./cmd/precise-code-intel 1>/dev/null
-yarn --no-progress
-popd 1>/dev/null
-
 # Increase ulimit (not needed on Windows/WSL)
 # shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true

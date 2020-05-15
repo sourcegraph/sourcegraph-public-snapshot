@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
+
+// ErrNotFound occurs when the requested upload or bundle was evicted from disk.
+var ErrNotFound = errors.New("data does not exist")
 
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
 type BundleManagerClient interface {
@@ -45,6 +49,9 @@ type BundleManagerClient interface {
 	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
 	// will also remove the original upload file with the same identifier from disk.
 	SendDB(ctx context.Context, bundleID int, r io.Reader) error
+
+	// Exists determines if a file exists on disk for all the supplied identifiers.
+	Exists(ctx context.Context, bundleIDs []int) (map[int]bool, error)
 }
 
 type baseClient interface {
@@ -207,6 +214,33 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io
 	return nil
 }
 
+// Exists determines if a file exists on disk for all the supplied identifiers.
+func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, err error) {
+	var bundleIDStrings []string
+	for _, bundleID := range bundleIDs {
+		bundleIDStrings = append(bundleIDStrings, fmt.Sprintf("%d", bundleID))
+	}
+
+	url, err := makeURL(c.bundleManagerURL, "exists", map[string]interface{}{
+		"ids": strings.Join(bundleIDStrings, ","),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.do(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	if err := json.NewDecoder(body).Decode(&target); err != nil {
+		return nil, err
+	}
+
+	return target, nil
+}
+
 func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) (err error) {
 	url, err := makeBundleURL(c.bundleManagerURL, bundleID, op, qs)
 	if err != nil {
@@ -259,6 +293,11 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, ErrNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK {

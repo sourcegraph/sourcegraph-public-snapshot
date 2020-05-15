@@ -111,10 +111,13 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>
                                             <p className="mb-2">
-                                                Version contexts allow you to search a set of repositories based on a
-                                                hash, tag, or other interesting moment in time of multiple code bases.
-                                                Your administrator can configure version contexts in the site
-                                                configuration.
+                                                Version contexts (
+                                                <a href="http://docs.sourcegraph.com/user/search#version-contexts">
+                                                    documentation
+                                                </a>
+                                                ) allow you to search a set of repositories based on a commit hash, tag,
+                                                or other interesting moment in time of multiple code bases. Your
+                                                administrator can configure version contexts in the site configuration.
                                             </p>
                                             <button
                                                 type="button"

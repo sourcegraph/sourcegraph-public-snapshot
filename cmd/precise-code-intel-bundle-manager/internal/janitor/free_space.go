@@ -77,6 +77,11 @@ func (j *Janitor) evictBundle(pruneFn func(ctx context.Context) (int64, bool, er
 
 	fileInfo, err := os.Stat(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// Bundle file already gone, continue
+			return 0, true, nil
+		}
+
 		return 0, false, err
 	}
 

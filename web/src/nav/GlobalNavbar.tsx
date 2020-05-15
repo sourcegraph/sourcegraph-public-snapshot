@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -44,6 +45,7 @@ interface Props
         CaseSensitivityProps,
         InteractiveSearchProps,
         SmartSearchFieldProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>

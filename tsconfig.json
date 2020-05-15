@@ -8,7 +8,6 @@
     { "path": "web/src/regression" },
     { "path": "browser" },
     { "path": "browser/src/e2e" },
-    { "path": "cmd/precise-code-intel" },
     { "path": "schema" },
     { "path": "packages/sourcegraph-extension-api" },
     { "path": "packages/@sourcegraph/extension-api-types" },

@@ -34,6 +34,7 @@ exports[`ViewPage renders view 1`] = `
   </section>
   <QueryInputInViewContent
     caseSensitive={false}
+    copyQueryButton={false}
     history={
       Object {
         "action": "POP",

@@ -22,7 +22,17 @@ func TestIntegration(t *testing.T) {
 
 	userID := insertTestUser(t, db)
 
-	t.Run("Store", testStore(db))
+	t.Run("Store", func(t *testing.T) {
+		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
+		t.Run("Changesets", storeTest(db, testStoreChangesets))
+		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
+		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
+		t.Run("PatchSets", storeTest(db, testStorePatchSets))
+		t.Run("PatchSets_DeleteExpired", storeTest(db, testStorePatchSetsDeleteExpired))
+		t.Run("Patches", storeTest(db, testStorePatches))
+		t.Run("ChangesetJobs", storeTest(db, testStoreChangesetJobs))
+	})
+
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
 	t.Run("MigratePatchesWithoutDiffStats", testMigratePatchesWithoutDiffStats(db, userID))
