@@ -727,8 +727,8 @@ declare module 'sourcegraph' {
         /** The key in the data object. */
         dataKey: K
 
-        /** The scale of the axis. Currently only "time" is supported. */
-        scale: 'time' | 'linear'
+        /** The scale of the axis. */
+        scale?: 'time' | 'linear'
 
         /** The type of the data key. */
         type: 'number' | 'category'
@@ -821,6 +821,9 @@ declare module 'sourcegraph' {
     export interface View {
         /** The title of the view. */
         title: string
+
+        /** An optional subtitle displayed under the title. */
+        subtitle?: string
 
         /**
          * The content sections of the view. The sections are rendered in order.
