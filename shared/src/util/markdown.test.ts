@@ -22,6 +22,9 @@ describe('renderMarkdown', () => {
             '- bullet list item 2',
             '',
             '1. item 1',
+            '  ```ts'
+            '  const a = "string"',
+            '  ```'
             '1. item 2',
             '',
             '> quoted',
