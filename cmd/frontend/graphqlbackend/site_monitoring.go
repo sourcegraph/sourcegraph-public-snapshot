@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/ext"
-	prometheusAPI "github.com/prometheus/client_golang/api"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -30,15 +30,13 @@ func (r *MonitoringAlert) Occurrences() int32  { return r.OccurrencesValue }
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
 }) (*siteMonitoringStatisticsResolver, error) {
-	c, err := prometheusAPI.NewClient(prometheusAPI.Config{
-		Address: prometheusURL,
-	})
+	prom, err := newPrometheusQuerier()
 	if err != nil {
-		return nil, fmt.Errorf("prometheus unavailable: %w", err)
+		return nil, err
 	}
 	return &siteMonitoringStatisticsResolver{
 		ctx:      ctx,
-		prom:     prometheus.NewAPI(c),
+		prom:     prom,
 		timespan: time.Duration(*args.Days) * 24 * time.Hour,
 	}, nil
 }
@@ -50,13 +48,16 @@ type siteMonitoringStatisticsResolver struct {
 }
 
 func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) {
+	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
+	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
+
 	var err error
-	span, ctx := ot.StartSpanFromContext(r.ctx, "site.MonitoringStatistics.alerts")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 		}
+		cancel()
 		span.Finish()
 	}()
 
@@ -66,6 +67,9 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 			End:   time.Now(),
 			Step:  time.Hour,
 		})
+	if errors.Is(err, context.Canceled) {
+		return nil, errPrometheusUnavailable
+	}
 	if err != nil {
 		return nil, fmt.Errorf("prometheus query failed: %w", err)
 	}
@@ -74,7 +78,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 			r.timespan.String(), strings.Join(warn, ","))
 	}
 	if results.Type() != model.ValMatrix {
-		return nil, fmt.Errorf("received unexpected result type '%s' from query", results.Type())
+		return nil, fmt.Errorf("received unexpected result type '%s' from prometheus", results.Type())
 	}
 
 	data := results.(model.Matrix)

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -49,6 +50,9 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			ServiceNameValue: "world",
 			OccurrencesValue: 1,
 		}}, nil},
+		{"responds with appropriate error on timeout", fields{
+			queryErr: fmt.Errorf("timed out: %w", context.Canceled),
+		}, nil, errPrometheusUnavailable},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -62,7 +66,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			}
 			alerts, err := r.Alerts()
 			if err != nil {
-				if tt.wantErr != nil {
+				if tt.wantErr == nil {
 					t.Errorf("expected no error, got %v", err)
 				} else if !errors.Is(err, tt.wantErr) {
 					t.Errorf("expected error %v, got %v", tt.wantErr, err)

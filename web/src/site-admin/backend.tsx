@@ -2,7 +2,13 @@ import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    isErrorGraphQLResult,
+    gql,
+} from '../../../shared/src/graphql/graphql'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
@@ -610,7 +616,14 @@ export function fetchSiteUpdateCheck(): Observable<{
     )
 }
 
-export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics> {
+/**
+ * Resolves to false if prometheus API is unavailable.
+ *
+ * @param days number of days of data to fetch
+ */
+export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
+    // see equivalent in graphqlbackend.errPrometheusUnavailable
+    const errPrometheusUnavailable = 'prometheus API is unavailable'
     return queryGraphQL(
         gql`
             query SiteMonitoringStatistics($days: Int!) {
@@ -628,7 +641,20 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
         `,
         { days }
     ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.site.monitoringStatistics)
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                if (result.errors.find(e => e.message.includes(errPrometheusUnavailable))) {
+                    return false
+                }
+                throw createAggregateError(result.errors)
+            }
+            return result.data
+        }),
+        map(data => {
+            if (data) {
+                return data.site.monitoringStatistics
+            }
+            return data
+        })
     )
 }

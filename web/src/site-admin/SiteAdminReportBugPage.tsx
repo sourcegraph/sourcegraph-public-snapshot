@@ -93,7 +93,7 @@ function formatMonitoringStats(s: IMonitoringStatistics): string {
 
 export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
     const monitoringDaysBack = 7
-    const monitoringStats = useObservable(fetchMonitoringStats(monitoringDaysBack))
+    const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -125,21 +125,25 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
                 jsonSchema={allConfigSchema}
                 canEdit={false}
-                height={300}
+                height={monitoringStats === false ? 700 : 400}
                 isLightTheme={isLightTheme}
                 history={history}
                 readOnly={true}
             />
             <br />
-            <h3>Monitoring Data</h3>
-            <DynamicallyImportedMonacoSettingsEditor
-                value={monitoringStats ? formatMonitoringStats(monitoringStats) : ''}
-                height={300}
-                canEdit={false}
-                isLightTheme={isLightTheme}
-                history={history}
-                readOnly={true}
-            />
+            {monitoringStats !== false ? (
+                <>
+                    <h3>Monitoring Data</h3>
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={monitoringStats ? formatMonitoringStats(monitoringStats) : ''}
+                        height={300}
+                        canEdit={false}
+                        isLightTheme={isLightTheme}
+                        history={history}
+                        readOnly={true}
+                    />
+                </>
+            ) : undefined}
         </div>
     )
 }
