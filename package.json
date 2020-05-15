@@ -159,7 +159,6 @@
     "@types/uuid": "7.0.3",
     "@types/webpack": "4.41.12",
     "@types/webpack-dev-server": "3.10.1",
-    "@types/whatwg-url": "6.4.0",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.7.6",
     "babel-jest": "^25.2.6",
@@ -289,7 +288,6 @@
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",
-    "regenerator-runtime": "^0.13.5",
     "rxjs": "^6.5.5",
     "sanitize-html": "^1.22.1",
     "semver": "^7.3.2",
@@ -304,8 +302,7 @@
     "utility-types": "^3.10.0",
     "uuid": "^7.0.3",
     "webext-domain-permission-toggle": "^1.0.1",
-    "webextension-polyfill": "^0.6.0",
-    "whatwg-url": "^8.0.0"
+    "webextension-polyfill": "^0.6.0"
   },
   "resolutions": {
     "history": "4.5.1"

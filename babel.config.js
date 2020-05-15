@@ -1,5 +1,6 @@
 // @ts-check
 const logger = require('gulplog')
+const semver = require('semver')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
@@ -26,7 +27,8 @@ module.exports = api => {
           modules: isTest ? 'commonjs' : false,
           bugfixes: true,
           useBuiltIns: 'entry',
-          corejs: 3,
+          // See https://github.com/zloirock/core-js#babelpreset-env
+          corejs: semver.minVersion(require('./package.json').dependencies['core-js']),
         },
       ],
       '@babel/preset-typescript',
