@@ -53,7 +53,7 @@ const TreeEntry: React.FunctionComponent<{
     return (
         <Link
             to={url}
-            className={`tree-entry ${isDir ? 'font-weight-bold' : ''} e2e-tree-entry__${isDir ? 'directory' : 'file'}`}
+            className={`tree-entry ${isDir ? 'font-weight-bold' : ''} e2e-tree-entry-${isDir ? 'directory' : 'file'}`}
             title={filePath}
         >
             {name}

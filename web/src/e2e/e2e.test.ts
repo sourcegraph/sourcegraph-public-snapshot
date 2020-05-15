@@ -829,15 +829,13 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('.e2e-tree-entries', { visible: true })
                 await retry(async () =>
                     assert.equal(
-                        await driver.page.evaluate(
-                            () => document.querySelectorAll('.e2e-tree-entry__directory').length
-                        ),
+                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-tree-entry-directory').length),
                         1
                     )
                 )
                 await retry(async () =>
                     assert.equal(
-                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-tree-entry__file').length),
+                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-tree-entry-file').length),
                         7
                     )
                 )
