@@ -265,14 +265,16 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 	users := []uint32{1, 2}
 	durations := []int{40, 65, 72}
 
-	// Ensure current time is in the middle of an hour so that we can apply some jitter
-	// without going into a new hour/day (if our test run coincides with the end of a UTC day).
-	now := time.Now().UTC().Truncate(time.Hour).Add(time.Minute * 30)
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
 	days := []time.Time{
 		now,                           // Today
 		now.Add(-time.Hour * 24 * 3),  // This week
 		now.Add(-time.Hour * 24 * 4),  // This week
-		now.Add(-time.Hour * 24 * 10), // This month
+		now.Add(-time.Hour * 24 * 6),  // This month
 		now.Add(-time.Hour * 24 * 12), // This month
 		now.Add(-time.Hour * 24 * 40), // Previous month
 	}
@@ -317,7 +319,7 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 		{
 			Name:           "codeintel.searchHover",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24 * 7),
+			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:            now.Truncate(time.Hour * 24),
 			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
 			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
@@ -332,7 +334,7 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 		{
 			Name:           "search.latencies.literal",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24 * 7),
+			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:            now.Truncate(time.Hour * 24),
 			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
 			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
