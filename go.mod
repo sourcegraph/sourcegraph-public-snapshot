@@ -100,6 +100,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/common v0.9.1
 	github.com/prometheus/procfs v0.0.11 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/russellhaering/gosaml2 v0.4.0

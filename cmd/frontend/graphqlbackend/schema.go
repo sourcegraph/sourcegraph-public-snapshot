@@ -3647,10 +3647,8 @@ type MonitoringAlert {
     timestamp: DateTime!
     # Name of alert event.
     name: String!
-    # Name of service associated with event.
+    # Name of service associated with alert.
     serviceName: String!
-    # Value of metric at time of alert.
-    value: Int!
 }
 
 # A list of survey responses
