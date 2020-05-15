@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 type options struct {
@@ -13,21 +16,70 @@ type options struct {
 
 	dry     *bool
 	verbose *bool
+	timeout *time.Duration
 }
 
 func main() {
-	if err := run(options{
+	help := flag.Bool("help", false, "Show help text")
+	opts := options{
 		slackWebhook: flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
-		gcp:          flag.Bool("gcp", false, "If true, report on Google Cloud resources"),
-		aws:          flag.Bool("aws", false, "If true, report on Amazon Web Services resources"),
+		gcp:          flag.Bool("gcp", false, "Report on Google Cloud resources"),
+		aws:          flag.Bool("aws", false, "Report on Amazon Web Services resources"),
 
-		dry:     flag.Bool("dry", false, "If true, do not post updates to slack, but print them to stdout"),
-		verbose: flag.Bool("verbose", false, "If true, print debug output to stdout"),
-	}); err != nil {
+		dry:     flag.Bool("dry", false, "Do not post updates to slack, but print them to stdout"),
+		verbose: flag.Bool("verbose", false, "Print debug output to stdout"),
+		timeout: flag.Duration("timeout", time.Minute, "Set a timeout for report generation"),
+	}
+	flag.Parse()
+	if *help {
+		flag.CommandLine.Usage()
+		return
+	}
+	if err := run(opts); err != nil {
 		log.Fatal(err)
 	}
 }
 
+type ctxKey string
+
+const ctxVerbose = "debug"
+
+func isVerbose(ctx context.Context) bool {
+	return ctx.Value(ctxVerbose).(bool)
+}
+
 func run(opts options) error {
+	ctx, cancel := context.WithTimeout(context.Background(), *opts.timeout)
+	defer cancel()
+	ctx = context.WithValue(ctx, ctxVerbose, *opts.verbose)
+
+	// collect resources
+	resources := make([]Resource, 0)
+	if *opts.gcp {
+		r, err := collectGCPResources(ctx)
+		if err != nil {
+			return fmt.Errorf("gcp: %w", err)
+		}
+		resources = append(resources, r...)
+	}
+	if *opts.aws {
+		r, err := collectAWSResources(ctx)
+		if err != nil {
+			return fmt.Errorf("aws: %w", err)
+		}
+		resources = append(resources, r...)
+	}
+
+	// report results
+	if *opts.dry {
+		log.Println("dry run - collected resources:")
+		log.Println(reportString(resources))
+	} else {
+		if err := reportToSlack(ctx, *opts.slackWebhook, resources); err != nil {
+			return fmt.Errorf("slack: %w", err)
+		}
+	}
+
+	log.Printf("done - collected a total of %d resources\n", len(resources))
 	return nil
 }
