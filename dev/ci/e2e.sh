@@ -32,6 +32,7 @@ timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; 
     echo Waiting 5s for $URL...
     sleep 5
 done"
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
   echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
