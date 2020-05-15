@@ -30,6 +30,7 @@ export function registerHighlightContributions(): void {
     registerLanguage('c-like', require('highlight.js/lib/languages/c-like'))
     registerLanguage('cpp', require('highlight.js/lib/languages/cpp'))
     registerLanguage('cs', require('highlight.js/lib/languages/csharp'))
+    registerLanguage('csharp', require('highlight.js/lib/languages/csharp'))
     registerLanguage('css', require('highlight.js/lib/languages/css'))
     registerLanguage('dockerfile', require('highlight.js/lib/languages/dockerfile'))
     registerLanguage('elixir', require('highlight.js/lib/languages/elixir'))
