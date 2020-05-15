@@ -84,7 +84,7 @@ add('Bar chart', () => (
                 {
                     dataKey: 'value',
                     name: 'A metric',
-                    fill: 'var(--warning)',
+                    fill: 'var(--oc-teal-7)',
                     linkURLs: [
                         '#1st_data_point',
                         '#2nd_data_point',
@@ -96,7 +96,6 @@ add('Bar chart', () => (
             ],
             xAxis: {
                 dataKey: 'name',
-                scale: 'linear',
                 type: 'category',
             },
         }}

@@ -727,8 +727,8 @@ declare module 'sourcegraph' {
         /** The key in the data object. */
         dataKey: K
 
-        /** The scale of the axis. Currently only "time" is supported. */
-        scale: 'time' | 'linear'
+        /** The scale of the axis. */
+        scale?: 'time' | 'linear'
 
         /** The type of the data key. */
         type: 'number' | 'category'
