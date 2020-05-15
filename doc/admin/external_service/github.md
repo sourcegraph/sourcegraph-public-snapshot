@@ -46,7 +46,7 @@ You should always include a token in a configuration for a GitHub.com URL to avo
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
 
-By default it is enabled at a rate of 5000 per hour but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below).
 
 **NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
 

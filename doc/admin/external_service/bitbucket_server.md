@@ -90,7 +90,7 @@ Sourcegraph will mark repositories as archived if they have the `archived` label
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Server. 
 
-By default it is enabled at a rate of 28,800 per hour (8 per second) but this can be adjusted, see configuration below. If disabled, no rate limiting will be performed.
+If enabled, the default rate is set at 28,800 per hour (8 per second) which can be configured via the `requestsPerHour` field (see below).
 
 **NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
 
