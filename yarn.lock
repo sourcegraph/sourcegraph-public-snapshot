@@ -1030,7 +1030,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.2.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.4.0", "@babel/runtime@^7.4.4", "@babel/runtime@^7.4.5", "@babel/runtime@^7.5.0", "@babel/runtime@^7.5.4", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.3", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.4", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.6":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.2.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.4.0", "@babel/runtime@^7.4.4", "@babel/runtime@^7.4.5", "@babel/runtime@^7.5.0", "@babel/runtime@^7.5.4", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.3", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.4", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2", "@babel/runtime@^7.9.6":
   version "7.9.6"
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.9.6.tgz#a9102eb5cadedf3f31d08a9ecf294af7827ea29f"
   integrity sha512-64AF1xY3OAkFHqOb9s4jpgk1Mm5vDZ4L3acHvAml+53nO1XbXLuDodsVpO4OIUsmemlUHMxNdYMNJmsvOwLrvQ==
@@ -2071,8 +2071,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -2774,13 +2773,6 @@
   dependencies:
     "@types/filesystem" "*"
     "@types/har-format" "*"
-
-"@types/chrome@0.0.86":
-  version "0.0.86"
-  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.86.tgz#1026ef8e76db4fde1859cae858d73236fe670d69"
-  integrity sha512-7ehebPf/5IR64SYdD2Vig0q0oUCNbWMQ29kASlNJaHVVtA5/J/DnrxnYVPCID70o7LgHdYsav6I4/XdqAxjTLQ==
-  dependencies:
-    "@types/filesystem" "*"
 
 "@types/classnames@2.2.10":
   version "2.2.10"
@@ -18913,8 +18905,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.3.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -21015,19 +21006,19 @@ web-namespaces@^1.1.2:
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.2.tgz#c8dc267ab639505276bae19e129dbd6ae72b22b4"
   integrity sha512-II+n2ms4mPxK+RnIxRPOw3zwF2jRscdJIUE9BfkKHm4FYEg9+biIoTMnaZF5MpemE3T+VhMLrhbyD4ilkPCSbg==
 
-webext-additional-permissions@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/webext-additional-permissions/-/webext-additional-permissions-0.1.0.tgz#bc5a2a6cb8e60098c81a6004c446bfae2aefd85a"
-  integrity sha512-eA1o6BdRbpU5ClL6GcmwhGtVVzNTbQSqX9esakpurWYVt9ykpGQ1ZNe5l30Yt19GW0eRC8VdroOeJSumP5cMpQ==
-  dependencies:
-    "@types/chrome" "0.0.86"
-
-webext-domain-permission-toggle@^1.0.0:
+webext-additional-permissions@^1.0.0:
   version "1.0.0"
-  resolved "https://registry.npmjs.org/webext-domain-permission-toggle/-/webext-domain-permission-toggle-1.0.0.tgz#6f9a6d3234ffe596921d1be5ae8823ef5b02ebd2"
-  integrity sha512-K6RAOYtVCMAmqjQPopMbGOIoxpFU05ERGgaLkUNvFCdpPsXLB5y4m1+Cq1dezyfx6FU0lLEqxoL/5/49+EY5zA==
+  resolved "https://registry.npmjs.org/webext-additional-permissions/-/webext-additional-permissions-1.0.0.tgz#fe8977f702bcb7a3aa23d09efc87f308135b4fca"
+  integrity sha512-QHMAah++muVoK/d+aYM56BY2DdpMAFMvW/dG28/+SdYJxgUsShsm3fOuwCPIiAIgsC8lsM52hZNJ1ROeii1lKg==
   dependencies:
-    webext-additional-permissions "^0.1.0"
+    "@types/chrome" "0.0.106"
+
+webext-domain-permission-toggle@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/webext-domain-permission-toggle/-/webext-domain-permission-toggle-1.0.1.tgz#e0b2a3acbc5edc523c5d19e86c87aff79e6b562e"
+  integrity sha512-vP3Io5KB+9YSlexDpSykcPKyu/U9pH07YGRIN1snwl92mvHy0aQlOmwYhAdfxLf4KKT7E1te1Bo0+ZvZJYFK2g==
+  dependencies:
+    webext-additional-permissions "^1.0.0"
 
 webextension-polyfill@^0.6.0:
   version "0.6.0"

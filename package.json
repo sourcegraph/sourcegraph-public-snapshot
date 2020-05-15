@@ -301,7 +301,7 @@
     "tslib": "^1.11.1",
     "utility-types": "^3.10.0",
     "uuid": "^7.0.3",
-    "webext-domain-permission-toggle": "^1.0.0",
+    "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "whatwg-url": "^8.0.0"
   },
