@@ -13,7 +13,7 @@ import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { ExternalServiceKind, IMonitoringStatistics } from '../../../shared/src/graphql/schema'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
 
@@ -71,6 +71,12 @@ const allConfigSchema = {
                 final: settingsSchemaJSON,
             },
         },
+        alerts: {
+            type: 'array',
+            items: {
+                type: 'object',
+            },
+        },
     },
     definitions: values(externalServices)
         .map(schema => schema.definitions)
@@ -80,15 +86,6 @@ const allConfigSchema = {
 
 interface Props extends RouteComponentProps {
     isLightTheme: boolean
-}
-
-function formatMonitoringStats(s: IMonitoringStatistics): string {
-    const flatAlerts = s.alerts.map(s => JSON.stringify(s))
-    return `{
-  "alerts": [
-    ${flatAlerts.join(',\n    ')}
-  ]
-}`
 }
 
 export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
@@ -120,30 +117,23 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com.
                 </div>
             </div>
-            <h3>Site Configuration</h3>
             <DynamicallyImportedMonacoSettingsEditor
-                value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
+                value={
+                    allConfig
+                        ? JSON.stringify(
+                              monitoringStats ? { ...allConfig, ...monitoringStats } : allConfig,
+                              undefined,
+                              2
+                          )
+                        : ''
+                }
                 jsonSchema={allConfigSchema}
                 canEdit={false}
-                height={monitoringStats === false ? 700 : 400}
+                height={700}
                 isLightTheme={isLightTheme}
                 history={history}
                 readOnly={true}
             />
-            <br />
-            {monitoringStats !== false ? (
-                <>
-                    <h3>Monitoring Data</h3>
-                    <DynamicallyImportedMonacoSettingsEditor
-                        value={monitoringStats ? formatMonitoringStats(monitoringStats) : ''}
-                        height={300}
-                        canEdit={false}
-                        isLightTheme={isLightTheme}
-                        history={history}
-                        readOnly={true}
-                    />
-                </>
-            ) : undefined}
         </div>
     )
 }
