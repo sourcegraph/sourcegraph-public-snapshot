@@ -88,7 +88,7 @@ func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json
 	if criticalOnly {
 		months = 1
 	} else {
-		days, weeks, months = 2, 1, 1
+		days, weeks, months = 1, 1, 1
 	}
 	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
@@ -151,7 +151,7 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, erro
 
 func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
 	rec := recordOperation("getAndMarshalCodeIntelUsageJSON")
-	days, weeks, months := 2, 1, 1
+	days, weeks, months := 0, 1, 0
 	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
 		DayPeriods:            &days,
 		WeekPeriods:           &weeks,
@@ -168,7 +168,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
 	rec := recordOperation("getAndMarshalSearchUsageJSON")
-	days, weeks, months := 2, 1, 1
+	days, weeks, months := 0, 1, 0
 	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
 		DayPeriods:         &days,
 		WeekPeriods:        &weeks,
