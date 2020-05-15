@@ -77,7 +77,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "janitor_errors",
 							Description:       "janitor errors every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_errors_total[5m]))`,
+							Query:             `sum(increase(src_precise_code_intel_bundle_manager_janitor_errors_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
@@ -86,7 +86,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "janitor_old_uploads",
 							Description:       "upload files removed (due to age) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_upload_files_removed_total[5m]))`,
+							Query:             `sum(increase(src_precise_code_intel_bundle_manager_janitor_upload_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
@@ -95,7 +95,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "janitor_orphaned_dumps",
 							Description:       "bundle files removed (with no corresponding database entry) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_orphaned_bundle_files_removed_total[5m]))`,
+							Query:             `sum(increase(src_precise_code_intel_bundle_manager_janitor_orphaned_bundle_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
@@ -104,7 +104,7 @@ func PreciseCodeIntelBundleManager() *Container {
 						{
 							Name:              "janitor_old_dumps",
 							Description:       "bundle files removed (after evicting them from the database) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
+							Query:             `sum(increase(src_precise_code_intel_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),

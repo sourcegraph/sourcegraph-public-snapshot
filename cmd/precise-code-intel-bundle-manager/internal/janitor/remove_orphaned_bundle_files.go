@@ -15,7 +15,7 @@ import (
 )
 
 // OrphanedBundleBatchSize is the maximum number of bundle ids to request at
-// once from the precise-code-intel-api-server.
+// once from the precise-code-intel-server.
 const OrphanedBundleBatchSize = 100
 
 type StatesFn func(ctx context.Context, ids []int) (map[int]string, error)
@@ -29,7 +29,7 @@ func defaultStatesFn(ctx context.Context, ids []int) (map[int]string, error) {
 	return states, nil
 }
 
-// removeOrphanedBundleFiles calls the precise-code-intel-api-server to get the
+// removeOrphanedBundleFiles calls the precise-code-intel-server to get the
 // current state of the bundle known by this bundle manager. Any bundle on disk
 // that is in an errored state or is unknown by the API is removed.
 func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {

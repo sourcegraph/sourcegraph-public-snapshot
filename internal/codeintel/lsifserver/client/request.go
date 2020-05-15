@@ -21,7 +21,7 @@ type lsifRequest struct {
 	query  queryValues
 	body   io.ReadCloser
 
-	// (Optional) used in routing to select the "hot" precise-code-intel-api-server that
+	// (Optional) used in routing to select the "hot" precise-code-intel-server that
 	// was used in recent requests for similar data. Requests that are likely to open the
 	// same dump should hit the same server so that the SQLite database is already in the
 	// cache.
@@ -33,8 +33,8 @@ type lsifResponseMeta struct {
 	nextURL    string
 }
 
-// do will make a request to LSIF API server. This method will return an error if the
-// request cannot be made or the status code is 400 or 500-level. If a non-nil payload
+// do will make a request to precise code intel server. This method will return an error
+// if the request cannot be made or the status code is 400 or 500-level. If a non-nil payload
 // is given, the request body will be unmarshalled into it.
 func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload interface{}) (*lsifResponseMeta, error) {
 	method := lsifRequest.method
@@ -90,11 +90,11 @@ func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload inter
 	}, nil
 }
 
-// buildURL constructs a URL to the backend LSIF api server with the given path and
-// query values. If the provided cursor is non-nil, that will be used instead of the
+// buildURL constructs a URL to the backend precise code intel server with the given path
+// and query values. If the provided cursor is non-nil, that will be used instead of the
 // given path. If path is relative (indicated by a leading slash), then the configured
-// LSIF API server url is prepended. Otherwise, it is treated as an absolute URL. The
-// given query values will override any query string that is present in the given path.
+// precise code intel server url is prepended. Otherwise, it is treated as an absolute URL.
+// The given query values will override any query string that is present in the given path.
 //
 // This method can be used to construct a LSIF request URL either from a root
 // relative path on the first request of a paginated endpoint or from the URL

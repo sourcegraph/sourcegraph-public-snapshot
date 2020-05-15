@@ -41,7 +41,7 @@ func (j *Janitor) freeSpace(pruneFn PruneFn) error {
 	return nil
 }
 
-// evictBundles removes bundles from the database (via precise-code-intel-api-server)
+// evictBundles removes bundles from the database (via precise-code-intel-server)
 // and the filesystem until at least bytesToFree, or there are no more prunable bundles.
 func (j *Janitor) evictBundles(pruneFn func(ctx context.Context) (int64, bool, error), bytesToFree uint64) error {
 	for bytesToFree > 0 {
@@ -63,7 +63,7 @@ func (j *Janitor) evictBundles(pruneFn func(ctx context.Context) (int64, bool, e
 	return nil
 }
 
-// evictBundle calls the precise-code-intel-api-server for the identifier of
+// evictBundle calls the precise-code-intel-server for the identifier of
 // the oldest bundle to remove then deletes the associated file. This method
 // returns the size of the deleted file on success, and returns a false-valued
 // flag if there are no prunable bundles.

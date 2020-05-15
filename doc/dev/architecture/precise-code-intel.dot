@@ -56,15 +56,15 @@ digraph architecture {
         graph [style="dotted"]
         node [fillcolor="2"]
 
-        api_server [
-            label="api server"
+        server [
+            label="server"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel-api-server"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel-server"
         ]
-        worker [
-            label="worker"
+        converter [
+            label="converter"
             fillcolor="4"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel-worker"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel-converter"
         ]
         bundle_manager [
             label="bundle manager"
@@ -84,12 +84,12 @@ digraph architecture {
     }
 
     frontend_graphqlbackend -> {
-        api_server
+        server
     } [
         fillcolor="1"
     ]
 
-    api_server -> {
+    server -> {
         bundle_manager,
         postgres,
         frontend_config
@@ -97,7 +97,7 @@ digraph architecture {
         fillcolor="3"
     ]
 
-    worker -> {
+    converter -> {
         bundle_manager,
         postgres,
         frontend_gitserver_proxy,
@@ -107,7 +107,7 @@ digraph architecture {
     ]
 
     bundle_manager -> {
-        api_server,
+        server,
         volume,
         postgres,
         frontend_config

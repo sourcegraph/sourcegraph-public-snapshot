@@ -223,9 +223,9 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # Precise code intel
-/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
+/cmd/precise-code-intel-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
-/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/cmd/precise-code-intel-converter/ @sourcegraph/code-intel
 /internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel

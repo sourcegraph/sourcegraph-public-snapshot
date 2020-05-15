@@ -42,7 +42,7 @@ query {
 
 The example above resolves the [git tree](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects) (via `blob`) for the file `/baz/bonk.go`, then asks for the definitions under the cursor position `10:42`. The resolver for the `lsif` field can be found [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22func+%28r+*gitTreeEntryResolver%29+LSIF%28%22).
 
-The resolver for definitions, references, and hover fields within the `lsif` field are defined in the enterprise codeintel package. The definition resolver is [a method of `lsifQueryResolver`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lsifQueryResolver%29+definitions+file:codeintel+&patternType=literal), for example. These resolvers are very basic and simply call a method on the [lsif-server client](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22%29+Definitions%28%22+file:lsifserver/.*.go) that simply makes an HTTP request to the precise-code-intel-api-server (discussed below).
+The resolver for definitions, references, and hover fields within the `lsif` field are defined in the enterprise codeintel package. The definition resolver is [a method of `lsifQueryResolver`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lsifQueryResolver%29+definitions+file:codeintel+&patternType=literal), for example. These resolvers are very basic and simply call a method on the [lsif-server client](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22%29+Definitions%28%22+file:lsifserver/.*.go) that simply makes an HTTP request to the precise-code-intel-server (discussed below).
 
 It may be the case that the `lsif` field is not null, but there is no known definition for a particular source location. This happens in particular when a symbol is defined in a repository that does not also have (properly correlated) LSIF data.
 
@@ -60,9 +60,9 @@ Code intelligence queries are displayed in a [hover overlay](https://sourcegraph
 
 The browser extension will display the same [hover overlay](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+class+HoverOverlayContainer) as the UI does.
 
-## LSIF API Server
+## Precise code intel server
 
-The [precise-code-intel-api-server](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/precise-code-intel) accepts code intelligence queries via HTTP requests. The payload of each query is a repository ID, a commit hash, a file path, and a position in the source file. The definition endpoint is defined [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+definitions+file:precise-code-intel/.*/routes), for example.
+The [precise-code-intel-server](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/precise-code-intel-server) accepts code intelligence queries via HTTP requests. The payload of each query is a repository ID, a commit hash, a file path, and a position in the source file. The definition endpoint is defined [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+definitions+file:precise-code-intel/.*/routes), for example.
 
 Each query attempts to load a open LISF upload file (formatted as a SQLite database) from disk. Each LSIF upload is associated with a repository, a commit, and a _root_. The target LSIF upload is the upload with the same repository, commit, and a root that is a prefix of the request file path. If there is no LSIF upload for that exact commit, we try to load the _closest_ database by traversing ancestor and descendent commits until we find an upload with a matching repository and root.
 

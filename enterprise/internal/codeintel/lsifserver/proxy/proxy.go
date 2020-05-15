@@ -43,12 +43,12 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 				return
 			}
 
-			// translate repository id to something that the precise-code-intel-api-server
+			// translate repository id to something that the precise-code-intel-server
 			// can reconcile in the database
 			q.Del("repository")
 			q.Set("repositoryId", fmt.Sprintf("%d", repo.ID))
 
-			// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
+			// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-server upload
 			// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 			// token proving contributor access to the repository.
 			if conf.Get().LsifEnforceAuth {
