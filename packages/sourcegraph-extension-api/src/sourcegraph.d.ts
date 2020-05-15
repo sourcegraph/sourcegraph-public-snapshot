@@ -822,6 +822,9 @@ declare module 'sourcegraph' {
         /** The title of the view. */
         title: string
 
+        /** An optional subtitle displayed under the title. */
+        subtitle?: string
+
         /**
          * The content sections of the view. The sections are rendered in order.
          *

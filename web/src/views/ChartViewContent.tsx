@@ -64,7 +64,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
 
     const ChartComponent = content.chart === 'line' ? LineChart : BarChart
     return (
-        <ResponsiveContainer width="100%" minHeight={12 * 16}>
+        <ResponsiveContainer width="100%">
             <ChartComponent
                 className="cartesian-chart-view-content"
                 data={content.data}

@@ -324,44 +324,44 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 )
             ) : (
                 <>
-                    {treeOrError.isRoot ? (
-                        <header>
-                            <h2 className="tree-page__title">
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
-                            </h2>
-                            {repoDescription && <p>{repoDescription}</p>}
-                            <div className="btn-group mb-3">
-                                <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
-                                    <SourceCommitIcon className="icon-inline" /> Commits
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
-                                    <SourceBranchIcon className="icon-inline" /> Branches
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
-                                    <TagIcon className="icon-inline" /> Tags
-                                </Link>
-                                <Link
-                                    className="btn btn-secondary"
-                                    to={
-                                        rev
-                                            ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
-                                            : `/${repoName}/-/compare`
-                                    }
-                                >
-                                    <HistoryIcon className="icon-inline" /> Compare
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
-                                    <UserIcon className="icon-inline" /> Contributors
-                                </Link>
-                            </div>
-                        </header>
-                    ) : (
-                        <header>
+                    <header className="mb-3">
+                        {treeOrError.isRoot ? (
+                            <>
+                                <h2 className="tree-page__title">
+                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
+                                </h2>
+                                {repoDescription && <p>{repoDescription}</p>}
+                                <div className="btn-group mb-3">
+                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
+                                        <SourceCommitIcon className="icon-inline" /> Commits
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
+                                        <SourceBranchIcon className="icon-inline" /> Branches
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
+                                        <TagIcon className="icon-inline" /> Tags
+                                    </Link>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={
+                                            rev
+                                                ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
+                                                : `/${repoName}/-/compare`
+                                        }
+                                    >
+                                        <HistoryIcon className="icon-inline" /> Compare
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
+                                        <UserIcon className="icon-inline" /> Contributors
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
                             <h2 className="tree-page__title">
                                 <FolderIcon className="icon-inline" /> {filePath}
                             </h2>
-                        </header>
-                    )}
+                        )}
+                    </header>
                     {views && (
                         <ViewGrid
                             {...props}
