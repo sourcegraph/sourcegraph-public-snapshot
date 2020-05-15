@@ -3936,6 +3936,9 @@ enum LSIFUploadState {
 
     # This upload is queued to be processed later.
     QUEUED
+
+    # This upload is currently being transferred to Sourcegraph.
+    UPLOADING
 }
 
 # Metadata and status about an LSIF upload.
