@@ -114,7 +114,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = true
+				matchingIDs[m.Repo.repo.ID] = true
 			}
 		}
 	} else {
@@ -141,7 +141,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = false
+				matchingIDs[m.Repo.repo.ID] = false
 			}
 		}
 	}

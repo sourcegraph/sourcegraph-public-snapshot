@@ -31,6 +31,10 @@ type RepositoryResolver struct {
 	redirectURL *string
 	icon        string
 	matches     []*searchResultMatchResolver
+
+	defaultBranchOnce sync.Once
+	defaultBranch     *GitRefResolver
+	defaultBranchErr  error
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
@@ -172,28 +176,34 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 }
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
-	refName := string(bytes.TrimSpace(refBytes))
-
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
-	if err != nil {
-		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
-			return nil, nil
+	do := func() (*GitRefResolver, error) {
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
-	}
 
-	return &GitRefResolver{repo: r, name: refName}, nil
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
+		refName := string(bytes.TrimSpace(refBytes))
+
+		if err == nil && exitCode == 0 {
+			// Check that our repo is not empty
+			_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
+		}
+
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if err != nil {
+			if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		return &GitRefResolver{repo: r, name: refName}, nil
+	}
+	r.defaultBranchOnce.Do(func() {
+		r.defaultBranch, r.defaultBranchErr = do()
+	})
+	return r.defaultBranch, r.defaultBranchErr
 }
 
 func (r *RepositoryResolver) Language(ctx context.Context) string {

@@ -70,7 +70,7 @@ type FileMatchResolver struct {
 	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
-	Repo         *types.Repo
+	Repo         *RepositoryResolver
 	CommitID     api.CommitID
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
@@ -92,7 +92,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// values for all other fields.
 	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: fm.Repo},
+			repo:     fm.Repo,
 			oid:      GitObjectID(fm.CommitID),
 			inputRev: fm.InputRev,
 		},
@@ -101,7 +101,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 }
 
 func (fm *FileMatchResolver) Repository() *RepositoryResolver {
-	return &RepositoryResolver{repo: fm.Repo}
+	return fm.Repo
 }
 
 func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
@@ -144,7 +144,7 @@ func (r *FileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 }
 
 func (fm *FileMatchResolver) searchResultURIs() (string, string) {
-	return string(fm.Repo.Name), fm.JPath
+	return fm.Repo.Name(), fm.JPath
 }
 
 func (fm *FileMatchResolver) resultCount() int32 {
@@ -388,9 +388,10 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
+	repoResolver := &RepositoryResolver{repo: repo}
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
-		fm.Repo = repo
+		fm.Repo = repoResolver
 		fm.CommitID = commit
 		fm.InputRev = &rev
 	}
@@ -737,7 +738,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			var repos []*search.RepositoryRevisions
 
 			for _, m := range matches {
-				name := string(m.Repo.Name)
+				name := string(m.Repo.Name())
 				partition[name] = append(partition[name], m.JPath)
 			}
 

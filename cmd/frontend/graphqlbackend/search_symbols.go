@@ -291,6 +291,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
+	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
 	for _, symbol := range symbols {
 		commit := &GitCommitResolver{
 			repo:     &RepositoryResolver{repo: repoRevs.Repo},
@@ -308,11 +309,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
+			if repoResolvers[symbolRes.commit.repo.repo.Name] == nil {
+				repoResolvers[symbolRes.commit.repo.repo.Name] = &RepositoryResolver{repo: symbolRes.commit.repo.repo}
+			}
 			fileMatch := &FileMatchResolver{
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				Repo:    symbolRes.commit.repo.repo,
+				Repo:    repoResolvers[symbolRes.commit.repo.repo.Name],
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				CommitID: api.CommitID(symbolRes.commit.oid),

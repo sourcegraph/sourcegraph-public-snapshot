@@ -192,6 +192,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	}
 
 	matches := make([]*FileMatchResolver, len(resp.Files))
+	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -245,13 +246,16 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 				}
 			}
 		}
+		if repoResolvers[repoRev.Repo.Name] == nil {
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+		}
 		matches[i] = &FileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
-			Repo:         repoRev.Repo,
+			Repo:         repoResolvers[repoRev.Repo.Name],
 			CommitID:     repoRev.IndexedHEADCommit(),
 		}
 	}
