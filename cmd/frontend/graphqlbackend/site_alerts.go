@@ -3,11 +3,16 @@ package graphqlbackend
 import (
 	"context"
 	"strings"
+	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -75,8 +80,27 @@ func init() {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
 		// security vulnerability, but just in case this method is changed to return more
 		// information, let's lock it down.
+
+		// if Sourcegraph is severely out of date we will begin to notify admins and possibly users
+		// TODO (Dax): Remove Mock
+		//	version.Mock("3.17.15+2020-12-12")
+		months, err := version.HowLongOutOfDate(version.Version())
+		if err != nil {
+			log15.Info("err encounter: " + err.Error())
+			return []*Alert{
+				{
+					TypeValue:    AlertTypeError,
+					MessageValue: err.Error(),
+				},
+			}
+		}
+
 		if !args.IsSiteAdmin {
-			return nil
+			alert := outOfDateAlert(months, args.IsSiteAdmin)
+			if len(alert.MessageValue) == 0 {
+				return nil
+			}
+			return []*Alert{&alert}
 		}
 
 		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
@@ -100,11 +124,13 @@ func init() {
 		}
 		problems = append(problems, warnings...)
 
-		if len(problems) == 0 {
+		outOfDateAlert := outOfDateAlert(months, args.IsSiteAdmin)
+		if len(problems) == 0 && len(outOfDateAlert.MessageValue) == 0 {
 			return nil
 		}
 
-		alerts := make([]*Alert, 0, 2)
+		alerts := make([]*Alert, 0, 3)
+		alerts = append(alerts, &outOfDateAlert)
 
 		criticalProblems := problems.Critical()
 		if len(criticalProblems) > 0 {
@@ -134,4 +160,71 @@ func init() {
 		}
 		return alerts
 	})
+}
+
+func outOfDateAlert(months time.Month, isAdmin bool) Alert {
+
+	if isAdmin {
+		switch {
+		case months <= 0:
+			return Alert{}
+		case months == 1:
+			return Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              "Sourcegraph is 1 month out of date",
+				IsDismissibleWithKeyValue: "y", //TODO What does this mean?
+			}
+		case months == 2:
+			return Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              "Sourcegraph is 2 months out of date",
+				IsDismissibleWithKeyValue: "y",
+			}
+		case months == 3:
+			return Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date",
+			}
+		case months == 4:
+			return Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+
+		case months == 5:
+			return Alert{
+				TypeValue:    AlertTypeError,
+				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+
+		default:
+			return Alert{
+				TypeValue:    AlertTypeError,
+				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+		}
+	}
+	switch {
+	case months <= 3:
+		return Alert{}
+	case months == 4:
+		return Alert{
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			IsDismissibleWithKeyValue: "y", //Should only be dismissible by non-admins
+		}
+
+	case months == 5:
+		return Alert{
+			TypeValue:                 AlertTypeError,
+			MessageValue:              "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			IsDismissibleWithKeyValue: "y",
+		}
+
+	default:
+		return Alert{
+			TypeValue:    AlertTypeError,
+			MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+		}
+	}
 }

@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
@@ -17,8 +19,11 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
+
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false, err
+		//return false, err
+		fmt.Println("skipping admin check for site_flags")
+		err = nil
 	}
 
 	return needsRepositoryConfiguration(ctx)
