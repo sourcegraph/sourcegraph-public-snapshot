@@ -1,4 +1,5 @@
 @import '../search/input/QueryInput';
+@import './VersionContextDropdown';
 
 .global-navbar {
     flex: 0 0 auto;
@@ -42,11 +43,17 @@
 
     &__search-box-container {
         min-width: 12rem;
-        flex: 1 0 auto;
+        flex: 1 1 auto;
         margin-right: 0.25rem;
         display: flex;
         flex-direction: column;
         justify-content: center;
+    }
+
+    &:hover {
+        .toggle-container__copy-query-button {
+            opacity: 1;
+        }
     }
 }
 

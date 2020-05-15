@@ -555,3 +555,48 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 	}
 	return users, nil
 }
+
+// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
+// '%codeintel%' events in the event_logs table.
+func (l *eventLogs) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
+	rows, err := dbconn.Global.QueryContext(ctx, usersUsageCountsQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c types.UserUsageCounts
+
+		err := rows.Scan(
+			&c.Date,
+			&c.UserID,
+			&dbutil.NullInt32{N: &c.SearchCount},
+			&dbutil.NullInt32{N: &c.CodeIntelCount},
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		counts = append(counts, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return counts, nil
+}
+
+const usersUsageCountsQuery = `
+-- source: cmd/frontend/db/event_logs.go:UsersUsageCounts
+SELECT
+  DATE(timestamp),
+  user_id,
+  COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
+  COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
+FROM event_logs
+GROUP BY 1, 2
+ORDER BY 1 DESC, 2 ASC;
+`

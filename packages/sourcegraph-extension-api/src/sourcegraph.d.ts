@@ -721,6 +721,100 @@ declare module 'sourcegraph' {
         component: { locationProvider: string } | null
     }
 
+    export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
+
+    export interface ChartAxis<K extends keyof D, D extends object> {
+        /** The key in the data object. */
+        dataKey: K
+
+        /** The scale of the axis. Currently only "time" is supported. */
+        scale: 'time' | 'linear'
+
+        /** The type of the data key. */
+        type: 'number' | 'category'
+    }
+
+    export interface LineChartContent<D extends object, XK extends keyof D> {
+        chart: 'line'
+
+        /** An array of data objects, with one element for each step on the X axis. */
+        data: D[]
+
+        /** The series (lines) of the chart. */
+        series: {
+            /** The key in each data object for the values this line should be calculated from. */
+            dataKey: keyof D
+
+            /** The name of the line shown in the legend and tooltip. */
+            name?: string
+
+            /**
+             * The link URLs for each data point.
+             * A link URL should take the user to more details about the specific data point.
+             */
+            linkURLs?: string[]
+
+            /** The CSS color of the line. */
+            stroke?: string
+        }[]
+
+        xAxis: ChartAxis<XK, D>
+    }
+
+    export interface BarChartContent<D extends object, XK extends keyof D> {
+        chart: 'bar'
+
+        /** An array of data objects, with one element for each step on the X axis. */
+        data: D[]
+
+        /** The series of the chart. */
+        series: {
+            /** The key in each data object for the values this bar should be calculated from. */
+            dataKey: keyof D
+
+            /**
+             * An optional stack id of each bar.
+             * When two bars have the same same `stackId`, the two bars are stacked in order.
+             */
+            stackId?: string
+
+            /** The name of the series, shown in the legend. */
+            name?: string
+
+            /**
+             * The link URLs for each bar.
+             * A link URL should take the user to more details about the specific data point.
+             */
+            linkURLs?: string[]
+
+            /** The CSS fill color of the line. */
+            fill?: string
+        }[]
+
+        xAxis: ChartAxis<XK, D>
+    }
+
+    export interface PieChartContent<D extends object> {
+        chart: 'pie'
+
+        pies: {
+            /** The key of each sector's va lue. */
+            dataKey: keyof D
+
+            /** The key of each sector's name. */
+            nameKey: keyof D
+
+            /** The key of each sector's fill color. */
+            fillKey?: keyof D
+
+            /** An array of data objects, with one element for each pie sector. */
+            data: D[]
+
+            /** T he key of each sector's link URL. */
+            linkURLKey?: keyof D
+        }[]
+    }
+
     /**
      * A view is a page or partial page.
      */
@@ -736,6 +830,7 @@ declare module 'sourcegraph' {
          */
         content: (
             | MarkupContent
+            | ChartContent
             | { component: string; props: { [name: string]: string | number | boolean | null | undefined } }
         )[]
     }
@@ -905,6 +1000,21 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace root is added or removed from the workspace.
          */
         export const rootChanges: Subscribable<void>
+
+        /**
+         * The current version context of the workspace, if any.
+         *
+         * A version context is a set of repositories and revisions on a Sourcegraph instance.
+         * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         *
+         * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
+         */
+        export const versionContext: string | undefined
+
+        /**
+         * An event that is fired when a workspace's version context changes.
+         */
+        export const versionContextChanges: Subscribable<string | undefined>
     }
 
     /**

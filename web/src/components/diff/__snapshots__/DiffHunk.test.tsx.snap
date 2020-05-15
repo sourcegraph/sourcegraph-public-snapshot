@@ -47,7 +47,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const subscriptions = new Subscription()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -71,7 +78,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -95,7 +109,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -115,7 +136,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -135,7 +163,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -159,7 +194,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -183,7 +225,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -207,7 +256,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]
@@ -265,7 +321,14 @@ Array [
         }
       }
     >
-               const subscriptions = new Subscription()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
        
       <span
         className=""
@@ -301,7 +364,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -325,7 +395,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -350,7 +427,14 @@ Array [
         }
       }
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
        
       <span
         className=""
@@ -382,7 +466,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -406,7 +497,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -430,7 +528,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -454,7 +559,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]
@@ -511,7 +623,14 @@ Array [
         }
       }
     >
-               const subscriptions = new Subscription()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const subscriptions = new Subscription()",
+          }
+        }
+      />
        
       <span
         className=""
@@ -547,7 +666,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const decorationType = sourcegraph.app.createDecorationType()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const decorationType = sourcegraph.app.createDecorationType()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -571,7 +697,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               const connection = await createConnection()
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        const connection = await createConnection()",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -595,7 +728,14 @@ Array [
         }
       }
     >
-      -        logger.log(\`WebSocket connection to TypeScript backend opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to TypeScript backend opened\`)",
+          }
+        }
+      />
        
       <span
         className=""
@@ -627,7 +767,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-      +        logger.log(\`WebSocket connection to language server opened\`)
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        logger.log(\`WebSocket connection to language server opened\`)",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -651,7 +798,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-               subscriptions.add(
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "        subscriptions.add(",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -675,7 +829,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                   connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) => {",
+          }
+        }
+      />
     </td>
   </tr>,
   <tr
@@ -699,7 +860,14 @@ Array [
       className="diff-hunk__content"
       style={Object {}}
     >
-                       const method = LSP_TO_LOG_LEVEL[type]
+      <div
+        className="d-inline-block"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "                    const method = LSP_TO_LOG_LEVEL[type]",
+          }
+        }
+      />
     </td>
   </tr>,
 ]

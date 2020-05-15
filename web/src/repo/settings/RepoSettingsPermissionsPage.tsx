@@ -3,11 +3,17 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
+import { ActionContainer } from './components/ActionContainer'
+import * as H from 'history'
+import { scheduleRepositoryPermissionsSync } from '../../site-admin/backend'
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IRepository }> = ({ repo }) => {
+export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IRepository; history: H.History }> = ({
+    repo,
+    history,
+}) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
 
     return (
@@ -24,29 +30,60 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IR
                     is finished.
                 </div>
             ) : (
-                <table className="table">
-                    <tbody>
-                        <tr>
-                            <th>Last complete sync</th>
-                            <td>
-                                {repo.permissionsInfo.syncedAt ? (
-                                    <Timestamp date={repo.permissionsInfo.syncedAt} />
-                                ) : (
-                                    'Never'
-                                )}
-                            </td>
-                            <td className="text-muted">Updated by repository permissions syncing</td>
-                        </tr>
-                        <tr>
-                            <th>Last incremental sync</th>
-                            <td>
-                                <Timestamp date={repo.permissionsInfo.updatedAt} />
-                            </td>
-                            <td className="text-muted">Updated by user permissions syncing</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div>
+                    <table className="table">
+                        <tbody>
+                            <tr>
+                                <th>Last complete sync</th>
+                                <td>
+                                    {repo.permissionsInfo.syncedAt ? (
+                                        <Timestamp date={repo.permissionsInfo.syncedAt} />
+                                    ) : (
+                                        'Never'
+                                    )}
+                                </td>
+                                <td className="text-muted">Updated by repository permissions syncing</td>
+                            </tr>
+                            <tr>
+                                <th>Last incremental sync</th>
+                                <td>
+                                    <Timestamp date={repo.permissionsInfo.updatedAt} />
+                                </td>
+                                <td className="text-muted">Updated by user permissions syncing</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} history={history} />
+                </div>
             )}
         </div>
     )
+}
+
+interface ScheduleRepositoryPermissionsSyncActionContainerProps {
+    repo: GQL.IRepository
+    history: H.History
+}
+
+class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<
+    ScheduleRepositoryPermissionsSyncActionContainerProps
+> {
+    public render(): JSX.Element | null {
+        return (
+            <ActionContainer
+                title="Manually schedule a permissions sync"
+                description={
+                    <div>Site admins are able to manually schedule a permissions sync for this repository.</div>
+                }
+                buttonLabel="Schedule now"
+                flashText="Added to queue"
+                run={this.scheduleRepositoryPermissions}
+                history={this.props.history}
+            />
+        )
+    }
+
+    private scheduleRepositoryPermissions = async (): Promise<void> => {
+        await scheduleRepositoryPermissionsSync({ repository: this.props.repo.id }).toPromise()
+    }
 }

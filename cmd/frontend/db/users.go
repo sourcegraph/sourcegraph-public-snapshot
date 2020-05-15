@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -438,17 +439,6 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 		return err
 	}
 
-	// Soft-delete discussions data.
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_mail_reply_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -508,23 +498,6 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	// org settings that apply to other users, too. There is currently no way to hard-delete
 	// settings for an org or globally, but we can handle those rare cases manually.
 	if _, err := tx.ExecContext(ctx, "UPDATE settings SET author_user_id=NULL WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-
-	// Hard-delete discussions data.
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id IN (SELECT id FROM discussion_threads WHERE author_user_id=$1)", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_comments WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads WHERE author_user_id=$1", id); err != nil {
 		return err
 	}
 
@@ -687,6 +660,40 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) (_ []*types.Use
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
+
+// ListDates lists all user's created and deleted dates, used by usage stats.
+func (*users) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
+	rows, err := dbconn.Global.QueryContext(ctx, listDatesQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var d types.UserDates
+
+		err := rows.Scan(&d.UserID, &d.CreatedAt, &dbutil.NullTime{Time: &d.DeletedAt})
+		if err != nil {
+			return nil, err
+		}
+
+		dates = append(dates, d)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return dates, nil
+}
+
+const listDatesQuery = `
+-- source: cmd/frontend/db/users.go:ListDates
+SELECT id, created_at, deleted_at
+FROM users
+ORDER BY id ASC
+`
 
 func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}

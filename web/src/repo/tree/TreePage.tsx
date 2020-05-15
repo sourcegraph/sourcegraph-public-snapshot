@@ -26,7 +26,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -41,6 +41,7 @@ import { toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -141,7 +142,9 @@ interface Props
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string

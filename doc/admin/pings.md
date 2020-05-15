@@ -36,4 +36,9 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
-- Total count of code campaigns created
+- Campaign usage data
+  - Total count of created campaigns
+  - Total count of changesets created by campaigns
+  - Total count of changesets created by campaigns that have been merged
+  - Total count of changesets manually added to a campaign
+  - Total count of changesets manually added to a campaign that have been merged

@@ -62,7 +62,7 @@ The `webhooks` setting allows specifying the org webhook secrets necessary to au
 ]
 ```
 
-These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) with `repo-updater` permits.
+These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) which `repo-updater` permits.
 
 The following [webhook events](https://developer.github.com/webhooks/) are currently used:
 
@@ -76,7 +76,7 @@ The following [webhook events](https://developer.github.com/webhooks/) are curre
 
 To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
 
-Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
+Fill in the URL displayed after saving the `webhooks` setting mentioned above and make sure it is publicly available.
 
 The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
 

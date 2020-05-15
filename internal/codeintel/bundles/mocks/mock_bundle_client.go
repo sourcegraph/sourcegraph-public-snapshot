@@ -22,6 +22,9 @@ type MockBundleClient struct {
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *BundleClientHoverFunc
+	// IDFunc is an instance of a mock function object controlling the
+	// behavior of the method ID.
+	IDFunc *BundleClientIDFunc
 	// MonikerResultsFunc is an instance of a mock function object
 	// controlling the behavior of the method MonikerResults.
 	MonikerResultsFunc *BundleClientMonikerResultsFunc
@@ -53,6 +56,11 @@ func NewMockBundleClient() *MockBundleClient {
 		HoverFunc: &BundleClientHoverFunc{
 			defaultHook: func(context.Context, string, int, int) (string, client.Range, bool, error) {
 				return "", client.Range{}, false, nil
+			},
+		},
+		IDFunc: &BundleClientIDFunc{
+			defaultHook: func() int {
+				return 0
 			},
 		},
 		MonikerResultsFunc: &BundleClientMonikerResultsFunc{
@@ -91,6 +99,9 @@ func NewMockBundleClientFrom(i client.BundleClient) *MockBundleClient {
 		},
 		HoverFunc: &BundleClientHoverFunc{
 			defaultHook: i.Hover,
+		},
+		IDFunc: &BundleClientIDFunc{
+			defaultHook: i.ID,
 		},
 		MonikerResultsFunc: &BundleClientMonikerResultsFunc{
 			defaultHook: i.MonikerResults,
@@ -448,6 +459,105 @@ func (c BundleClientHoverFuncCall) Args() []interface{} {
 // invocation.
 func (c BundleClientHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// BundleClientIDFunc describes the behavior when the ID method of the
+// parent MockBundleClient instance is invoked.
+type BundleClientIDFunc struct {
+	defaultHook func() int
+	hooks       []func() int
+	history     []BundleClientIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleClient) ID() int {
+	r0 := m.IDFunc.nextHook()()
+	m.IDFunc.appendCall(BundleClientIDFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ID method of the
+// parent MockBundleClient instance is invoked and the hook queue is empty.
+func (f *BundleClientIDFunc) SetDefaultHook(hook func() int) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ID method of the parent MockBundleClient instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *BundleClientIDFunc) PushHook(hook func() int) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleClientIDFunc) SetDefaultReturn(r0 int) {
+	f.SetDefaultHook(func() int {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleClientIDFunc) PushReturn(r0 int) {
+	f.PushHook(func() int {
+		return r0
+	})
+}
+
+func (f *BundleClientIDFunc) nextHook() func() int {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleClientIDFunc) appendCall(r0 BundleClientIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleClientIDFuncCall objects describing
+// the invocations of this function.
+func (f *BundleClientIDFunc) History() []BundleClientIDFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleClientIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleClientIDFuncCall is an object that describes an invocation of
+// method ID on an instance of MockBundleClient.
+type BundleClientIDFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleClientIDFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleClientIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // BundleClientMonikerResultsFunc describes the behavior when the

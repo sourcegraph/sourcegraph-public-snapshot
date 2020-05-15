@@ -151,7 +151,8 @@ Object {
     wholeTitleClickable={false}
   >
     <FileDiffConnection
-      defaultFirst={25}
+      cursorPaging={true}
+      defaultFirst={15}
       hideSearch={true}
       history={
         Object {

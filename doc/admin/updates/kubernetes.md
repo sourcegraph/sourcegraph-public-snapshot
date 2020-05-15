@@ -1,8 +1,32 @@
 # Updating a Kubernetes Sourcegraph instance
 
 This document describes the exact changes needed to update a Kubernetes Sourcegraph instance.
+Follow the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster.
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+## 3.16
+
+### Note: The following deployments have had their `strategy` changed from `rolling` to `recreate`:
+  - redis-cache
+  - redis-store
+  - pgsql
+  - precise-code-intel-bundle-manager
+  - prometheus
+  
+This change was made to avoid two pods writing to the same volume and causing corruption. 
+
+To implement these changes run the followng:
+
+```shell script
+kubectl apply -f base/precise-code-intel/bundle-manager.Deployment.yaml
+kubectl apply -f base/redis/redis-cache.Deployment.yaml
+kubectl apply -f base/redis/redis-store.Deployment.yaml
+kubectl apply -f base/prometheus/prometheus.Deployment.yaml
+kubectl apply -f base/pgsql/pgsql.Deployment
+```
+
+For more information see[#676](https://github.com/sourcegraph/deploy-sourcegraph/pull/676)
 
 ## 3.15
 

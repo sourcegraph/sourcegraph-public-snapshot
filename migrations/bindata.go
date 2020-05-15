@@ -48,6 +48,12 @@
 // 1528395672_empty.up.sql (159B)
 // 1528395673_remove_unused_campaign_jobs_index.down.sql (90B)
 // 1528395673_remove_unused_campaign_jobs_index.up.sql (70B)
+// 1528395674_add_creation_method_columns_to_changesets.down.sql (147B)
+// 1528395674_add_creation_method_columns_to_changesets.up.sql (519B)
+// 1528395675_add_index_event_logs_anonymous_user_id.down.sql (68B)
+// 1528395675_add_index_event_logs_anonymous_user_id.up.sql (120B)
+// 1528395676_add_diff_stats_to_patches.down.sql (198B)
+// 1528395676_add_diff_stats_to_patches.up.sql (231B)
 
 package migrations
 
@@ -1076,6 +1082,126 @@ func _1528395673_remove_unused_campaign_jobs_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395674_add_creation_method_columns_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2e\x4a\x4d\x2c\x49\x4d\x89\x4f\xaa\x8c\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\xb3\x26\xcd\x84\xc4\x94\x94\xd4\x94\xf8\x92\x7c\x24\xfd\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x3f\x41\x08\x78\x93\x00\x00\x00")
+
+func _1528395674_add_creation_method_columns_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395674_add_creation_method_columns_to_changesetsDownSql,
+		"1528395674_add_creation_method_columns_to_changesets.down.sql",
+	)
+}
+
+func _1528395674_add_creation_method_columns_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395674_add_creation_method_columns_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395674_add_creation_method_columns_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc2, 0xd4, 0xae, 0xc4, 0x6, 0x7b, 0xa, 0xb, 0xfc, 0x7f, 0xe9, 0xd9, 0xf, 0x12, 0x1b, 0xdb, 0x48, 0x7a, 0x54, 0x9d, 0xcf, 0xcf, 0xce, 0x7e, 0xde, 0xd4, 0x88, 0x98, 0xba, 0x1c, 0xaf, 0xce}}
+	return a, nil
+}
+
+var __1528395674_add_creation_method_columns_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xd0\xc1\x4a\x03\x31\x10\x06\xe0\x7b\x9e\xe2\xbf\xad\x5e\x04\xaf\x5d\x2b\x64\x37\x53\x5d\xc8\x26\xb2\x9b\x45\x6f\x21\x4d\x62\x5d\xd1\x56\x9a\x08\x8a\xf8\xee\x52\x45\x4a\xa1\xd0\x1e\x7a\x0b\x19\xe6\x9b\xf9\xa7\xa2\x9b\x46\x95\x8c\x71\x69\xa8\x83\xe1\x95\x24\xf8\x27\xb7\x5c\xc4\x14\x73\x02\x17\x02\xb5\x96\x43\xab\xe0\xd7\xd1\xe5\x18\xec\xfc\xd3\x7a\xf7\xfa\xe6\xc6\xc5\x12\x95\xd6\x92\xb8\x82\xd2\x06\x6a\x90\x12\x82\x66\x7c\x90\x06\x8f\xee\x25\xc5\xf2\x08\xd5\x85\x10\x83\xcd\xab\xe3\x4d\x36\xdc\x09\x6e\x76\x3c\x97\xe0\x13\xeb\xc9\xec\xe1\xa6\xc8\xeb\xf7\xc8\xee\x6f\xa9\xa3\x5f\x93\x1e\x9a\xde\xf4\x0c\x00\xce\x7a\x92\x54\x1b\x5c\x62\xd6\xe9\x76\x2b\xda\xe7\xd5\x3c\xe1\xaf\x65\xfb\x39\x06\x4c\xe1\xd3\xc5\x18\xc0\x95\xd8\xbc\xfe\x87\xd8\x31\xa4\xc9\x24\xc7\x8f\x8c\xab\x6b\x14\xc5\x81\xfa\xd7\x77\x71\x7e\x20\xc7\xbe\x63\xef\x24\x39\x41\x8a\xcd\x0e\xb5\x6e\xdb\xc6\x94\xec\x27\x00\x00\xff\xff\x74\x11\xe0\x79\x07\x02\x00\x00")
+
+func _1528395674_add_creation_method_columns_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395674_add_creation_method_columns_to_changesetsUpSql,
+		"1528395674_add_creation_method_columns_to_changesets.up.sql",
+	)
+}
+
+func _1528395674_add_creation_method_columns_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395674_add_creation_method_columns_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395674_add_creation_method_columns_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x17, 0xbd, 0xf, 0x1, 0xc7, 0x49, 0xbe, 0xce, 0x67, 0x33, 0x94, 0x6e, 0x3e, 0xa3, 0x47, 0xe4, 0xc0, 0x41, 0x38, 0x1b, 0x96, 0xe4, 0x44, 0x67, 0x7c, 0x15, 0x7b, 0xb4, 0xe9, 0xf1, 0x4c, 0x3c}}
+	return a, nil
+}
+
+var __1528395675_add_index_event_logs_anonymous_user_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x4f\xcc\xcb\xcf\xab\xcc\xcd\x2f\x2d\x8e\x2f\x2d\x4e\x2d\x8a\xcf\x4c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x21\x2f\x6b\x31\x44\x00\x00\x00")
+
+func _1528395675_add_index_event_logs_anonymous_user_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395675_add_index_event_logs_anonymous_user_idDownSql,
+		"1528395675_add_index_event_logs_anonymous_user_id.down.sql",
+	)
+}
+
+func _1528395675_add_index_event_logs_anonymous_user_idDownSql() (*asset, error) {
+	bytes, err := _1528395675_add_index_event_logs_anonymous_user_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395675_add_index_event_logs_anonymous_user_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x95, 0x10, 0x6c, 0xbc, 0x9d, 0xe5, 0x80, 0xa3, 0xf3, 0x36, 0xa0, 0xbb, 0xb6, 0x9d, 0xd, 0x80, 0x4e, 0x43, 0xb3, 0x79, 0xcf, 0x71, 0x9, 0xfc, 0xff, 0x51, 0x44, 0x1c, 0x98, 0x9b, 0xbd, 0x4f}}
+	return a, nil
+}
+
+var __1528395675_add_index_event_logs_anonymous_user_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\x8e\x4f\xcc\xcb\xcf\xab\xcc\xcd\x2f\x2d\x8e\x2f\x2d\x4e\x2d\x8a\xcf\x4c\x51\xf0\xf7\x43\x92\x57\x08\x0d\xf6\xf4\x73\x57\x70\x0a\x09\x72\x75\x55\xd0\xc0\x50\xac\x09\xb2\xc7\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x39\xe3\xae\xff\x78\x00\x00\x00")
+
+func _1528395675_add_index_event_logs_anonymous_user_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395675_add_index_event_logs_anonymous_user_idUpSql,
+		"1528395675_add_index_event_logs_anonymous_user_id.up.sql",
+	)
+}
+
+func _1528395675_add_index_event_logs_anonymous_user_idUpSql() (*asset, error) {
+	bytes, err := _1528395675_add_index_event_logs_anonymous_user_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395675_add_index_event_logs_anonymous_user_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0x88, 0xd1, 0xc7, 0x2, 0xd0, 0x66, 0xe, 0x1b, 0xaa, 0x26, 0x38, 0x66, 0x70, 0x2d, 0xb7, 0xc4, 0xb3, 0xaa, 0x39, 0x45, 0x98, 0xee, 0xb5, 0xc1, 0xec, 0xf6, 0x8e, 0x9c, 0x3e, 0xc3, 0x7b}}
+	return a, nil
+}
+
+var __1528395676_add_diff_stats_to_patchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x48\x2c\x49\xce\x48\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xc9\x4c\x4b\x8b\x2f\x2e\x49\x2c\x89\x4f\x4c\x49\x49\x4d\xb1\x26\x4b\x6b\x72\x46\x62\x5e\x3a\xb9\x9a\x53\x52\x73\x52\x4b\x40\x9a\xb9\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xe7\x70\xbf\xe0\xc6\x00\x00\x00")
+
+func _1528395676_add_diff_stats_to_patchesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395676_add_diff_stats_to_patchesDownSql,
+		"1528395676_add_diff_stats_to_patches.down.sql",
+	)
+}
+
+func _1528395676_add_diff_stats_to_patchesDownSql() (*asset, error) {
+	bytes, err := _1528395676_add_diff_stats_to_patchesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395676_add_diff_stats_to_patches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x31, 0xe6, 0xc0, 0xd6, 0x8e, 0x4d, 0x87, 0xef, 0xd1, 0xf, 0x5d, 0xc6, 0x8f, 0x2b, 0xb6, 0xdc, 0xe9, 0x1c, 0xa6, 0x79, 0x47, 0x9a, 0xb0, 0xdf, 0x1e, 0xb6, 0xa8, 0xdb, 0x57, 0xaf, 0x55, 0x3a}}
+	return a, nil
+}
+
+var __1528395676_add_diff_stats_to_patchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xcc\x4b\x0a\xc2\x30\x10\x06\xe0\x7d\x4e\xf1\xdf\x23\xab\xb4\x8d\x12\xc8\x03\xec\x08\xee\xca\xd0\x99\x3e\x40\x8a\xd8\xb9\x3f\x6e\x5d\x8b\x17\xf8\xba\x78\x4d\xd5\x3b\x17\x32\xc5\x1b\x28\x74\x39\xe2\xc5\x36\x6f\x7a\x22\x0c\x03\xfa\x96\xef\xa5\x22\x5d\x50\x1b\x21\x3e\xd2\x48\x23\x64\x5f\x96\xe9\x34\xb6\x89\x45\x54\xb0\x1f\xa6\xab\xbe\xfd\xaf\xca\xbc\xf1\xb1\xfe\xc1\x11\x7d\xaa\x7d\x3b\xae\x6f\xa5\x24\xf2\xee\x13\x00\x00\xff\xff\xb0\x25\x5e\x25\xe7\x00\x00\x00")
+
+func _1528395676_add_diff_stats_to_patchesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395676_add_diff_stats_to_patchesUpSql,
+		"1528395676_add_diff_stats_to_patches.up.sql",
+	)
+}
+
+func _1528395676_add_diff_stats_to_patchesUpSql() (*asset, error) {
+	bytes, err := _1528395676_add_diff_stats_to_patchesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395676_add_diff_stats_to_patches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3b, 0x5c, 0xd0, 0x17, 0x72, 0xf7, 0xaf, 0x89, 0x4d, 0x81, 0x6c, 0xa1, 0x99, 0xd4, 0x21, 0xd0, 0x95, 0x7d, 0x6a, 0x56, 0x5e, 0x43, 0xc9, 0xba, 0x83, 0x5e, 0x61, 0xc3, 0x54, 0x1, 0xb, 0x87}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1215,6 +1341,12 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395672_empty.up.sql":                                                 _1528395672_emptyUpSql,
 	"1528395673_remove_unused_campaign_jobs_index.down.sql":                   _1528395673_remove_unused_campaign_jobs_indexDownSql,
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     _1528395673_remove_unused_campaign_jobs_indexUpSql,
+	"1528395674_add_creation_method_columns_to_changesets.down.sql":           _1528395674_add_creation_method_columns_to_changesetsDownSql,
+	"1528395674_add_creation_method_columns_to_changesets.up.sql":             _1528395674_add_creation_method_columns_to_changesetsUpSql,
+	"1528395675_add_index_event_logs_anonymous_user_id.down.sql":              _1528395675_add_index_event_logs_anonymous_user_idDownSql,
+	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                _1528395675_add_index_event_logs_anonymous_user_idUpSql,
+	"1528395676_add_diff_stats_to_patches.down.sql":                           _1528395676_add_diff_stats_to_patchesDownSql,
+	"1528395676_add_diff_stats_to_patches.up.sql":                             _1528395676_add_diff_stats_to_patchesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1306,6 +1438,12 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395672_empty.up.sql":                                                 {_1528395672_emptyUpSql, map[string]*bintree{}},
 	"1528395673_remove_unused_campaign_jobs_index.down.sql":                   {_1528395673_remove_unused_campaign_jobs_indexDownSql, map[string]*bintree{}},
 	"1528395673_remove_unused_campaign_jobs_index.up.sql":                     {_1528395673_remove_unused_campaign_jobs_indexUpSql, map[string]*bintree{}},
+	"1528395674_add_creation_method_columns_to_changesets.down.sql":           {_1528395674_add_creation_method_columns_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395674_add_creation_method_columns_to_changesets.up.sql":             {_1528395674_add_creation_method_columns_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395675_add_index_event_logs_anonymous_user_id.down.sql":              {_1528395675_add_index_event_logs_anonymous_user_idDownSql, map[string]*bintree{}},
+	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                {_1528395675_add_index_event_logs_anonymous_user_idUpSql, map[string]*bintree{}},
+	"1528395676_add_diff_stats_to_patches.down.sql":                           {_1528395676_add_diff_stats_to_patchesDownSql, map[string]*bintree{}},
+	"1528395676_add_diff_stats_to_patches.up.sql":                             {_1528395676_add_diff_stats_to_patchesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

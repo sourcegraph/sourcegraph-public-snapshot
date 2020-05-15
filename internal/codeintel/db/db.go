@@ -47,8 +47,15 @@ type DB interface {
 	// QueueSize returns the number of uploads in the queued state.
 	QueueSize(ctx context.Context) (int, error)
 
-	// Enqueue inserts a new upload with a "queued" state and returns its identifier.
-	Enqueue(ctx context.Context, commit, root string, repositoryID int, indexerName string) (int, error)
+	// InsertUpload inserts a new upload and returns its identifier.
+	InsertUpload(ctx context.Context, upload *Upload) (int, error)
+
+	// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
+	// (the resulting array is deduplicated on update).
+	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
+
+	// MarkQueued updates the state of the upload to queued.
+	MarkQueued(ctx context.Context, uploadID int) error
 
 	// MarkComplete updates the state of the upload to complete.
 	MarkComplete(ctx context.Context, id int) error
@@ -66,13 +73,16 @@ type DB interface {
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The given function is expected to return the newest commit
-	// on the default branch when invoked.
+	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
+	// commit on the default branch when invoked.
 	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// This method returns a list of updated upload identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
+
+	// GetDumpIDs returns all dump ids in chronological order.
+	GetDumpIDs(ctx context.Context) ([]int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)

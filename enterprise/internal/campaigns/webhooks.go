@@ -856,10 +856,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint, err := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, conf.ExternalURL())
-	if err != nil {
-		return errors.Wrap(err, "getting webhook URL")
-	}
+	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, conf.ExternalURL())
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",

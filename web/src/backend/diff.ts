@@ -19,6 +19,12 @@ export const FileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
         __typename
         oldPath
+        oldFile {
+            binary
+        }
+        newFile {
+            binary
+        }
         newPath
         mostRelevantFile {
             url
@@ -34,7 +40,13 @@ export const FileDiffFields = gql`
                 lines
             }
             section
-            body
+            highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
+                aborted
+                lines {
+                    kind
+                    html
+                }
+            }
         }
         stat {
             added
@@ -60,7 +72,13 @@ export const PreviewFileDiffFields = gql`
                 lines
             }
             section
-            body
+            highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
+                aborted
+                lines {
+                    kind
+                    html
+                }
+            }
         }
         stat {
             added
