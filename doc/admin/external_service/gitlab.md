@@ -47,7 +47,7 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab. 
 
-If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below).
+If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
 **NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
 
