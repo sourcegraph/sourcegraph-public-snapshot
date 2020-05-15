@@ -1,5 +1,5 @@
 import { RouteComponentProps } from 'react-router'
-import { fetchAllConfigAndSettings } from './backend'
+import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
 import React, { useMemo } from 'react'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import awsCodeCommitJSON from '../../../schema/aws_codecommit.schema.json'
@@ -83,6 +83,8 @@ interface Props extends RouteComponentProps {
 }
 
 export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+    const monitoringDaysBack = 7
+    const monitoringStats = useObservable(fetchMonitoringStats(monitoringDaysBack))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -109,11 +111,22 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                     support@sourcegraph.com.
                 </div>
             </div>
+            <h3>Site Configuration</h3>
             <DynamicallyImportedMonacoSettingsEditor
                 value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
                 jsonSchema={allConfigSchema}
                 canEdit={false}
-                height={800}
+                height={300}
+                isLightTheme={isLightTheme}
+                history={history}
+                readOnly={true}
+            />
+            <br />
+            <h3>Monitoring Data</h3>
+            <DynamicallyImportedMonacoSettingsEditor
+                value={monitoringStats ? JSON.stringify(monitoringStats, undefined, 2) : ''}
+                height={300}
+                canEdit={false}
                 isLightTheme={isLightTheme}
                 history={history}
                 readOnly={true}

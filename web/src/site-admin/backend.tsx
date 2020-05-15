@@ -609,3 +609,25 @@ export function fetchSiteUpdateCheck(): Observable<{
         map(data => data.site)
     )
 }
+
+export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics> {
+    return queryGraphQL(
+        gql`
+            query SiteMonitoringStatistics($days: Int!) {
+                site {
+                    monitoringStatistics(days: $days) {
+                        alerts {
+                            name
+                            timestamp
+                            occurrences
+                        }
+                    }
+                }
+            }
+        `,
+        { days }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site.monitoringStatistics)
+    )
+}
