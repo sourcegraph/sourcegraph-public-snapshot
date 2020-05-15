@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -53,7 +54,11 @@ const TreeEntry: React.FunctionComponent<{
     return (
         <Link
             to={url}
-            className={`tree-entry ${isDir ? 'font-weight-bold' : ''} e2e-tree-entry-${isDir ? 'directory' : 'file'}`}
+            className={classNames(
+                'tree-entry',
+                isDir && 'font-weight-bold',
+                `e2e-tree-entry-${isDir ? 'directory' : 'file'}`
+            )}
             title={filePath}
         >
             {name}
