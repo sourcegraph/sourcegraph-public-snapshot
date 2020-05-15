@@ -13,6 +13,7 @@ import assert from 'assert'
 import expect from 'expect'
 import { asError } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
+import delay from 'delay'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -293,6 +294,7 @@ describe('e2e test suite', () => {
                 }),
                 ensureRepos: ['aws/test'],
             })
+            await delay(10 * 1000)
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
             const blob: string = await (
                 await driver.page.waitFor(() => {
@@ -323,6 +325,7 @@ describe('e2e test suite', () => {
                 }),
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
+            await delay(10 * 1000)
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
             const blob: string = await (
                 await driver.page.waitFor(() => {
