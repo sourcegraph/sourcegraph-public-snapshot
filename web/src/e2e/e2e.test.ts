@@ -1254,9 +1254,13 @@ describe('e2e test suite', () => {
 
         test('regexp toggle appears and updates patternType query parameter when clicked', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+            // Wait for monaco query input to load to avoid race condition with the intermediate input
+            await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.waitForSelector('.e2e-regexp-toggle')
             await driver.page.click('.e2e-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            // Wait for monaco query input to load to avoid race condition with the intermediate input
+            await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.waitForSelector('.e2e-regexp-toggle')
             await driver.page.click('.e2e-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
