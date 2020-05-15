@@ -129,7 +129,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 }
                 jsonSchema={allConfigSchema}
                 canEdit={false}
-                height={700}
+                height={800}
                 isLightTheme={isLightTheme}
                 history={history}
                 readOnly={true}
