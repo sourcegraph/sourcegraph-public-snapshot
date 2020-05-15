@@ -598,7 +598,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	return &SearchResultsResolver{alert: alert}, nil
+	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
