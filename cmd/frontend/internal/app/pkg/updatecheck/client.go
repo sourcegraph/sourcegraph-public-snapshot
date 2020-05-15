@@ -149,37 +149,25 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, erro
 	return json.Marshal(campaignsUsage)
 }
 
-func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
-	rec := recordOperation("getAndMarshalCodeIntelUsageJSON")
-	days, weeks, months := 0, 1, 0
-	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
-		DayPeriods:            &days,
-		WeekPeriods:           &weeks,
-		MonthPeriods:          &months,
-		IncludeEventCounts:    true,
-		IncludeEventLatencies: true,
-	})
+func getAndMarshalAggregatedUsageJSON(ctx context.Context) (json.RawMessage, json.RawMessage, error) {
+	rec := recordOperation("getAndMarshalAggregatedUsageJSON")
+	codeIntelUsage, searchUsage, err := usagestats.GetAggregatedStats(ctx)
 	defer rec(err)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return json.Marshal(codeIntelUsage)
-}
 
-func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
-	rec := recordOperation("getAndMarshalSearchUsageJSON")
-	days, weeks, months := 0, 1, 0
-	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-		DayPeriods:         &days,
-		WeekPeriods:        &weeks,
-		MonthPeriods:       &months,
-		IncludeEventCounts: true,
-	})
-	defer rec(err)
+	serializedCodeIntelUsage, err := json.Marshal(codeIntelUsage)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return json.Marshal(searchUsage)
+
+	serializedSearchUsage, err := json.Marshal(searchUsage)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
 func updateURL(ctx context.Context) string {
@@ -245,13 +233,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
 		}
-		r.CodeIntelUsage, err = getAndMarshalCodeIntelUsageJSON(ctx)
+		r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
 		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeIntelUsageJSON failed", "error", err)
-		}
-		r.SearchUsage, err = getAndMarshalSearchUsageJSON(ctx)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalSearchUsageJSON failed", "error", err)
+			logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
 		}
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
@@ -263,6 +247,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.AuthProviders = authProviderTypes()
 	} else {
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
+		if err != nil {
+			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+		}
 	}
 
 	contents, err := json.Marshal(r)

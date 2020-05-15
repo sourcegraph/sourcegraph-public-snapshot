@@ -254,6 +254,102 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	}
 }
 
+func TestEventLogs_AggregatedEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	names := []string{"codeintel.searchHover", "search.latencies.literal", "unknown event"}
+	users := []uint32{1, 2}
+	durations := []int{40, 65, 72}
+
+	// Ensure current time is in the middle of an hour so that we can apply some jitter
+	// without going into a new hour/day (if our test run coincides with the end of a UTC day).
+	now := time.Now().UTC().Truncate(time.Hour).Add(time.Minute * 30)
+	days := []time.Time{
+		now,                           // Today
+		now.Add(-time.Hour * 24 * 3),  // This week
+		now.Add(-time.Hour * 24 * 4),  // This week
+		now.Add(-time.Hour * 24 * 10), // This month
+		now.Add(-time.Hour * 24 * 12), // This month
+		now.Add(-time.Hour * 24 * 40), // Previous month
+	}
+
+	durationOffset := 0
+	for _, user := range users {
+		for _, name := range names {
+			for _, duration := range durations {
+				for _, day := range days {
+					for i := 0; i < 25; i++ {
+						durationOffset++
+
+						e := &Event{
+							UserID: user,
+							Name:   name,
+							URL:    "test",
+							Source: "test",
+							// Make durations non-uniform to test percent_cont. The values
+							// in this test were hand-checked before being added to the assertion.
+							// Adding additional events or changing parameters will require these
+							// values to be checked again.
+							Argument: json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, duration+durationOffset)),
+							// Jitter current time +/- 30 minutes
+							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						}
+
+						if err := EventLogs.Insert(ctx, e); err != nil {
+							t.Fatal(err)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	events, err := EventLogs.AggregatedEvents(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedEvents := []types.AggregatedEvent{
+		{
+			Name:           "codeintel.searchHover",
+			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncate(time.Hour * 24 * 7),
+			Day:            now.Truncate(time.Hour * 24),
+			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
+			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
+			TotalDay:       int32(len(users) * len(durations) * 25),
+			UniquesMonth:   2,
+			UniquesWeek:    2,
+			UniquesDay:     2,
+			LatenciesMonth: []float64{944, 1772.1, 1839.51},
+			LatenciesWeek:  []float64{919, 1752.1, 1792.51},
+			LatenciesDay:   []float64{894, 1732.1, 1745.51},
+		},
+		{
+			Name:           "search.latencies.literal",
+			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncate(time.Hour * 24 * 7),
+			Day:            now.Truncate(time.Hour * 24),
+			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
+			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
+			TotalDay:       int32(len(users) * len(durations) * 25),
+			UniquesMonth:   2,
+			UniquesWeek:    2,
+			UniquesDay:     2,
+			LatenciesMonth: []float64{1394, 2222.1, 2289.51},
+			LatenciesWeek:  []float64{1369, 2202.1, 2242.51},
+			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
+		},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
 // due to db constraints. This method will also add some sub-day jitter to the timestamp.
 func makeTestEvent(e *Event) *Event {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -599,4 +600,122 @@ SELECT
 FROM event_logs
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
+`
+
+// AggregatedEvents calculates AggregatedEvent for each every unique event type.
+func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.AggregatedEvent, err error) {
+	var names []*sqlf.Query
+	for _, name := range aggregatableNames {
+		names = append(names, sqlf.Sprintf("%s", name))
+	}
+	query := sqlf.Sprintf(aggreatedEventsFmtStr, sqlf.Join(names, ","))
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.AggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			pq.Array(&event.LatenciesMonth),
+			pq.Array(&event.LatenciesWeek),
+			pq.Array(&event.LatenciesDay),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+// aggregatableNames is a whitelist of events returned by AggregatedEvents.
+var aggregatableNames = []string{
+	"codeintel.lsifHover",
+	"codeintel.searchHover",
+	"codeintel.lsifDefinitions",
+	"codeintel.searchDefinitions",
+	"codeintel.lsifReferences",
+	"codeintel.searchReferences",
+	"search.latencies.literal",
+	"search.latencies.regexp",
+	"search.latencies.structural",
+	"search.latencies.file",
+	"search.latencies.repo",
+	"search.latencies.diff",
+	"search.latencies.commit",
+	"search.latencies.symbol",
+}
+
+const aggreatedEventsFmtStr = `
+-- This query does multiple aggregations over the current day, week and month in one
+-- pass over the event_logs table. These are: unique number of users, total
+-- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
+SELECT
+  name,
+  DATE_TRUNC('month', NOW()) as month,
+  DATE_TRUNC('week', NOW()) as week,
+  DATE_TRUNC('day', NOW()) as day,
+  COUNT(*) FILTER (
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+  ) AS total_month,
+  COUNT(*) FILTER (
+    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+  ) AS total_week,
+  COUNT(*) FILTER (
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+  ) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+  ) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+  ) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+  ) AS uniques_day,
+ PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+ ) AS latencies_month,
+ PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
+    WHERE DATE_TRUNC('week', date) = DATE_TRUNC('week', NOW())
+ ) AS latencies_week,
+ PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+ ) AS latencies_day
+FROM (
+  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  SELECT
+    name,
+    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
+    (argument->'durationMs')::text::integer as latency,
+    CASE WHEN user_id = 0
+      -- It's faster to group by an int rather than text, so we convert
+      -- the anonymous_user_id to an int, rather than the user_id to text.
+      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+      ELSE user_id
+    END AS user_id,
+    DATE(TIMEZONE('UTC', timestamp)) AS date
+  FROM event_logs
+  WHERE timestamp >= DATE_TRUNC('month', NOW())
+) q
+WHERE name IN (%s) GROUP BY name
 `
