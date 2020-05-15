@@ -533,7 +533,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 
 	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	rr.SetIndexedHEADCommit("abc")
 	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
 
 	tests := []struct {
@@ -878,7 +877,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 				Repo: r.Repo,
 				Revs: r.Revs,
 			}
-			rev.SetIndexedHEADCommit("deadbeef")
 			indexed = append(indexed, rev)
 		}
 		return indexed

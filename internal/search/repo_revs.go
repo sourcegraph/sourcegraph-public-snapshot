@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -59,12 +58,6 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 type RepositoryRevisions struct {
 	Repo *types.Repo
 	Revs []RevisionSpecifier
-	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
-	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
-	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
-	// rationale.
-	mu                sync.Mutex
-	indexedHEADCommit api.CommitID
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
@@ -73,18 +66,6 @@ type RepositoryRevisions struct {
 
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)
-}
-
-func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.indexedHEADCommit
-}
-
-func (r *RepositoryRevisions) SetIndexedHEADCommit(ihc api.CommitID) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.indexedHEADCommit = ihc
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
