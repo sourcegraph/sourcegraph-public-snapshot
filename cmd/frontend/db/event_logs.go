@@ -715,7 +715,7 @@ FROM (
     END AS user_id,
     DATE(TIMEZONE('UTC', timestamp)) AS date
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', NOW())
+  WHERE timestamp >= DATE_TRUNC('month', NOW()) AND name IN (%s)
 ) q
-WHERE name IN (%s) GROUP BY name
+GROUP BY name
 `
