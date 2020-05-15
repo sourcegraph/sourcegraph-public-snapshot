@@ -288,7 +288,6 @@
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",
-    "regenerator-runtime": "^0.13.5",
     "rxjs": "^6.5.5",
     "sanitize-html": "^1.22.1",
     "semver": "^7.3.2",
