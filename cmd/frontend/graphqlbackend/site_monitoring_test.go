@@ -25,13 +25,18 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 		want    []*MonitoringAlert
 		wantErr error
 	}{
-		{"discards alerts with no occurrences", fields{
+		{"includes alerts with no occurrences", fields{
 			queryValue: model.Matrix{
 				&model.SampleStream{
 					Metric: model.Metric{"name": "hello", "service_name": "world"},
 					Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
 			},
-		}, []*MonitoringAlert{}, nil},
+		}, []*MonitoringAlert{{
+			TimestampValue:   DateTime{sampleT.Time()},
+			NameValue:        "hello",
+			ServiceNameValue: "world",
+			OccurrencesValue: 0,
+		}}, nil},
 		{"includes alerts with occurrences", fields{
 			queryValue: model.Matrix{
 				&model.SampleStream{
@@ -42,6 +47,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			TimestampValue:   DateTime{sampleT.Time()},
 			NameValue:        "hello",
 			ServiceNameValue: "world",
+			OccurrencesValue: 1,
 		}}, nil},
 	}
 	for _, tt := range tests {

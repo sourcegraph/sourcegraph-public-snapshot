@@ -19,11 +19,13 @@ type MonitoringAlert struct {
 	TimestampValue   DateTime
 	NameValue        string
 	ServiceNameValue string
+	OccurrencesValue int32
 }
 
 func (r *MonitoringAlert) Timestamp() DateTime { return r.TimestampValue }
 func (r *MonitoringAlert) Name() string        { return r.NameValue }
 func (r *MonitoringAlert) ServiceName() string { return r.ServiceNameValue }
+func (r *MonitoringAlert) Occurrences() int32  { return r.OccurrencesValue }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
@@ -62,7 +64,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 		prometheus.Range{
 			Start: time.Now().Add(-r.timespan),
 			End:   time.Now(),
-			Step:  24 * time.Hour,
+			Step:  time.Hour,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("prometheus query failed: %w", err)
@@ -83,15 +85,11 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 			serviceName = string(sample.Metric["service_name"])
 		)
 		for _, p := range sample.Values {
-			// skip values that indicate no occurences of this alert
-			if p.Value.String() == "0" {
-				continue
-			}
-
 			alerts = append(alerts, &MonitoringAlert{
 				NameValue:        name,
 				ServiceNameValue: serviceName,
 				TimestampValue:   DateTime{p.Timestamp.Time()},
+				OccurrencesValue: int32(p.Value),
 			})
 		}
 	}

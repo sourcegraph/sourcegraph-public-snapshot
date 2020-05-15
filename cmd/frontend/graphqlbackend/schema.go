@@ -3650,6 +3650,8 @@ type MonitoringAlert {
     name: String!
     # Name of service associated with alert.
     serviceName: String!
+    # Number of times this alert occured in window.
+    occurrences: Int!
 }
 
 # A list of survey responses
