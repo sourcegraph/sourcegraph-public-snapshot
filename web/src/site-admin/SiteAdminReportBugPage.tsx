@@ -13,7 +13,7 @@ import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { ExternalServiceKind, IMonitoringStatistics } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
 
@@ -82,6 +82,15 @@ interface Props extends RouteComponentProps {
     isLightTheme: boolean
 }
 
+function formatMonitoringStats(s: IMonitoringStatistics): string {
+    const flatAlerts = s.alerts.map(s => JSON.stringify(s))
+    return `{
+  "alerts": [
+    ${flatAlerts.join(',\n    ')}
+  ]
+}`
+}
+
 export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(fetchMonitoringStats(monitoringDaysBack))
@@ -124,7 +133,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
             <br />
             <h3>Monitoring Data</h3>
             <DynamicallyImportedMonacoSettingsEditor
-                value={monitoringStats ? JSON.stringify(monitoringStats, undefined, 2) : ''}
+                value={monitoringStats ? formatMonitoringStats(monitoringStats) : ''}
                 height={300}
                 canEdit={false}
                 isLightTheme={isLightTheme}
