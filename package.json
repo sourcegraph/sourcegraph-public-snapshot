@@ -298,7 +298,7 @@
     "tagged-template-noop": "^2.1.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.2",
-    "tslib": "^1.11.1",
+    "tslib": "^2.0.0",
     "utility-types": "^3.10.0",
     "uuid": "^7.0.3",
     "webext-domain-permission-toggle": "^1.0.1",
