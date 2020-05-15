@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
@@ -414,7 +415,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
-		alert := alertForQuery(raw, err)
+		alert := alertForQuery(raw, time.Now(), err)
 		if !strings.Contains(strings.ToLower(alert.title), "regexp") {
 			t.Errorf("title is '%s', want it to contain 'regexp'", alert.title)
 		}
@@ -437,7 +438,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
-		alert := alertForQuery(raw, err)
+		alert := alertForQuery(raw, time.Now(), err)
 		if strings.Contains(strings.ToLower(alert.title), "regexp") {
 			t.Errorf("title is '%s', want it not to contain 'regexp'", alert.title)
 		}
@@ -452,7 +453,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 		if err == nil {
 			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
 		}
-		alert := alertForQuery(raw, err)
+		alert := alertForQuery(raw, time.Now(), err)
 		if len(alert.proposedQueries) != 1 {
 			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
 		}

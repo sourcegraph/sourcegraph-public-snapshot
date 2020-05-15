@@ -861,9 +861,10 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
+	startTime := time.Now()
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
+		return &SearchResultsResolver{alert: alertForQuery("", startTime, err), start: startTime}, nil
 	}
 	if pattern == nil {
 		r.query = query.AndOrQuery{Query: scopeParameters}
@@ -916,7 +917,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r)}, nil
+		return &SearchResultsResolver{alert: alertForTimeout(usedTime, suggestTime, r), start: start}, nil
 	}
 	return rr, err
 }

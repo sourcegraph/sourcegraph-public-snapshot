@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/inconshreveable/log15"
 	"math"
 	"regexp"
 	regexpsyntax "regexp/syntax"
@@ -11,8 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/inconshreveable/log15"
+	"time"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -69,6 +69,8 @@ type SearchImplementer interface {
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
+	startTime := time.Now()
+
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
@@ -95,12 +97,12 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		// Else, fallback to the older existing parser.
 		queryInfo, err = query.ProcessAndOr(args.Query)
 		if err != nil {
-			return alertForQuery(args.Query, err), nil
+			return alertForQuery(args.Query, startTime, err), nil
 		}
 	} else {
 		queryInfo, err = query.Process(queryString, searchType)
 		if err != nil {
-			return alertForQuery(queryString, err), nil
+			return alertForQuery(queryString, startTime, err), nil
 		}
 	}
 
@@ -108,7 +110,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	if queryInfo.BoolValue(query.FieldStable) {
 		args, queryInfo, err = queryForStableResults(args, queryInfo)
 		if err != nil {
-			return alertForQuery(queryString, err), nil
+			return alertForQuery(queryString, startTime, err), nil
 		}
 	}
 

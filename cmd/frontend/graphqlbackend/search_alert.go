@@ -24,6 +24,7 @@ type searchAlert struct {
 	title           string
 	description     string
 	proposedQueries []*searchQueryDescription
+	startTime       time.Time
 }
 
 func (a searchAlert) Title() string { return a.title }
@@ -51,7 +52,7 @@ func alertForCappedAndExpression() *searchAlert {
 }
 
 // alertForQuery converts errors in the query to search alerts.
-func alertForQuery(queryString string, err error) *searchAlert {
+func alertForQuery(queryString string, startTime time.Time, err error) *searchAlert {
 	switch e := err.(type) {
 	case *syntax.ParseError:
 		return &searchAlert{
@@ -59,12 +60,14 @@ func alertForQuery(queryString string, err error) *searchAlert {
 			title:           capFirst(e.Msg),
 			description:     "Quoting the query may help if you want a literal match.",
 			proposedQueries: proposedQuotedQueries(queryString),
+			startTime:       startTime,
 		}
 	case *query.ValidationError:
 		return &searchAlert{
 			prometheusType: "validation_error",
 			title:          "Invalid Query",
 			description:    capFirst(e.Msg),
+			startTime:      startTime,
 		}
 	case *querytypes.TypeError:
 		switch e := e.Err.(type) {
@@ -74,6 +77,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				title:           capFirst(e.Error()),
 				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 				proposedQueries: proposedQuotedQueries(queryString),
+				startTime:       startTime,
 			}
 		}
 	case *query.UnsupportedError, *query.ExpectedOperand:
@@ -81,12 +85,14 @@ func alertForQuery(queryString string, err error) *searchAlert {
 			prometheusType: "unsupported_and_or_query",
 			title:          "Unable To Process Query",
 			description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
+			startTime:      startTime,
 		}
 	}
 	return &searchAlert{
 		prometheusType: "generic_invalid_query",
 		title:          "Unable To Process Query",
 		description:    capFirst(err.Error()),
+		startTime:      startTime,
 	}
 }
 
@@ -598,7 +604,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	return &SearchResultsResolver{alert: alert}, nil
+	return &SearchResultsResolver{alert: alert, start: a.startTime}, nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
