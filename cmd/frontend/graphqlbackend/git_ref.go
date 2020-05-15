@@ -83,6 +83,8 @@ type GitRefResolver struct {
 	name string
 
 	target GitObjectID // the target's OID, if known (otherwise computed on demand)
+
+	cachedGitObjectResolver *gitObjectResolver
 }
 
 // gitRefGQLID is a type used for marshaling and unmarshaling a Git ref's
@@ -120,7 +122,10 @@ func (r *GitRefResolver) Target() interface {
 	if r.target != "" {
 		return &gitObject{repo: r.repo, oid: r.target, typ: gitObjectTypeCommit}
 	}
-	return &gitObjectResolver{repo: r.repo, revspec: r.name}
+	if r.cachedGitObjectResolver == nil {
+		r.cachedGitObjectResolver = &gitObjectResolver{repo: r.repo, revspec: r.name}
+	}
+	return r.cachedGitObjectResolver
 }
 func (r *GitRefResolver) Repository() *RepositoryResolver { return r.repo }
 
