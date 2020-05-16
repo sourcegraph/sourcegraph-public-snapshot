@@ -353,8 +353,7 @@ export class Driver {
         if (alwaysCloning) {
             for (const slug of alwaysCloning) {
                 await this.page.goto(
-                    this.sourcegraphBaseUrl +
-                        `/site-admin/repositories?filter=cloning&query=${encodeURIComponent(slug)}`
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
                 )
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
