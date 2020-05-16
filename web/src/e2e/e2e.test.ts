@@ -213,10 +213,11 @@ describe('e2e test suite', () => {
 
             // Type in a new external service configuration.
             await driver.replaceText({
-                selector: '.view-line',
+                selector: '.monaco-editor',
                 newText:
                     '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
                 selectMethod: 'keyboard',
+                enterTextMethod: 'paste',
             })
             await driver.page.click('.e2e-update-external-service-button')
             // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up
