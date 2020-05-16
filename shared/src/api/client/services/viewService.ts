@@ -5,7 +5,7 @@ import { Evaluated, Contributions, ContributableViewContainer } from '../../prot
 import { isEqual } from 'lodash'
 import { asError, ErrorLike } from '../../../util/errors'
 import { finallyReleaseProxy } from '../api/common'
-import { DeepReplace, isNot, isExactly } from '../../../util/types'
+import { DeepReplace, isNot, isExactly, property, isTaggedUnionMember, allOf, isDefined } from '../../../util/types'
 
 /**
  * A view is a page or partial page.
@@ -41,7 +41,7 @@ export interface ViewService {
      *
      * @todo return a Map by ID and make this the primary API
      */
-    getWhere<W extends ContributableViewContainer>(where: W): Observable<ViewProviderFunction<ViewContexts[W]>[]>
+    getWhere<W extends ContributableViewContainer>(where: W): Observable<ViewProviderEntry<W>[]>
 
     /**
      * Get a view's content. The returned observable emits whenever the content changes. If there is
@@ -50,15 +50,22 @@ export interface ViewService {
     get<W extends ContributableViewContainer>(id: string, context: ViewContexts[W]): Observable<View | null>
 }
 
+export interface ViewProviderEntry<W extends ContributableViewContainer> {
+    /** The ID of the view. */
+    id: string
+
+    /** The view container the view was registered for. */
+    where: W
+
+    /** Provides the view content. */
+    provideView: ViewProviderFunction<ViewContexts[W]>
+}
+
 /**
  * Creates a new {@link ViewService}.
  */
 export const createViewService = (): ViewService => {
-    interface Provider<W extends ContributableViewContainer> {
-        where: W
-        provideView: ViewProviderFunction<ViewContexts[W]>
-    }
-    const providers = new BehaviorSubject<Map<string, Provider<ContributableViewContainer>>>(new Map())
+    const providers = new BehaviorSubject<Map<string, ViewProviderEntry<ContributableViewContainer>>>(new Map())
 
     return {
         register: <W extends ContributableViewContainer>(
@@ -69,7 +76,7 @@ export const createViewService = (): ViewService => {
             if (providers.value.has(id)) {
                 throw new Error(`view already exists with ID ${id}`)
             }
-            const provider = { where, provideView }
+            const provider = { id, where, provideView }
             providers.value.set(id, provider as any) // TODO: find a type-safe way
             providers.next(providers.value)
             return new Subscription(() => {
@@ -85,7 +92,7 @@ export const createViewService = (): ViewService => {
         },
         getWhere: where =>
             providers.pipe(
-                map(providers => [...providers.values()].filter(e => e.where === where).map(e => e.provideView)),
+                map(providers => [...providers.values()].filter(isTaggedUnionMember('where', where))),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             ),
         get: (id, context) =>
@@ -130,27 +137,35 @@ export const getView = <W extends ContributableViewContainer>(
         distinctUntilChanged()
     )
 
+export interface ViewProviderResult {
+    /** The ID of the view provider. */
+    id: string
+
+    /** The result returned by the provider. */
+    view: View | undefined | ErrorLike
+}
+
 export const getViewsForContainer = <W extends ContributableViewContainer>(
     where: W,
     params: ViewContexts[W],
     viewService: Pick<ViewService, 'getWhere'>
-): Observable<(View | undefined | ErrorLike)[]> =>
+): Observable<ViewProviderResult[]> =>
     viewService.getWhere(where).pipe(
         switchMap(providers =>
             combineLatest([
-                of(null), // don't block forever if no providers
+                of(null),
                 ...providers.map(provider =>
                     concat(
-                        [undefined], // don't block other providers on first emission
-                        provider(params).pipe(
+                        [undefined],
+                        provider.provideView(params).pipe(
                             catchError((err): [ErrorLike] => {
                                 console.error('View provider errored:', err)
                                 return [asError(err)]
                             })
                         )
-                    )
+                    ).pipe(map(view => ({ id: provider.id, view })))
                 ),
             ])
         ),
-        map(views => views.filter(isNot(isExactly(null))))
+        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
     )
