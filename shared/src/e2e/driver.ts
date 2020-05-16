@@ -340,7 +340,7 @@ export class Driver {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(
-                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?filter=cloned&query=${encodeURIComponent(slug)}`
                 )
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
