@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: yarn --ignore-engines --ignore-scripts
       - name: Generate
-        run: yarn gulp generate
+        run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
         working-directory: shared/
         run: lsif-tsc -p .
@@ -58,7 +58,7 @@ jobs:
       - name: Install dependencies
         run: yarn --ignore-engines --ignore-scripts
       - name: Generate
-        run: yarn gulp generate
+        run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
         working-directory: browser/
         run: lsif-tsc -p .
