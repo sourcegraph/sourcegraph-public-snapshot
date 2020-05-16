@@ -44,7 +44,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
           form="campaign-form"
           type="submit"
         >
-          Create
+          Create campaign
         </button>
       </div>
     </React.Fragment>
@@ -151,7 +151,7 @@ Array [
         form="campaign-form"
         type="submit"
       >
-        Create
+        Create campaign
       </button>
     </div>
   </form>,

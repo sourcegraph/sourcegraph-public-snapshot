@@ -504,7 +504,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 className="btn btn-primary e2e-campaign-create-btn"
                                 disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
                             >
-                                Create
+                                Create campaign
                             </button>
                         </div>
                     </>
