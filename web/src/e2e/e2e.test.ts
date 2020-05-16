@@ -275,9 +275,9 @@ describe('e2e test suite', () => {
         const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
 
         const testIfAwsCredentialsSet =
-           awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
-               ? test
-               : test.skip.bind(test)
+            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+                ? test
+                : test.skip.bind(test)
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
             await driver.ensureHasExternalService({
