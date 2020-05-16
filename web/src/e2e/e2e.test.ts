@@ -56,7 +56,7 @@ describe('e2e test suite', () => {
             config: JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
-                repos: clonedRepoSlugs,
+                repos: clonedRepoSlugs.concat(alwaysCloningRepoSlugs),
             }),
             ensureRepos: clonedRepoSlugs.map(slug => `github.com/${slug}`),
             alwaysCloning: alwaysCloningRepoSlugs.map(slug => `github.com/${slug}`),
