@@ -680,7 +680,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			for _, vcRepoRef := range versionContext.Revisions {
 				if vcRepoRef.Repo == string(repo.Name) {
 					repoRev.Repo = repo
-					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Ref})
+					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Rev})
 					break
 				}
 			}
