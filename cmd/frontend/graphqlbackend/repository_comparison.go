@@ -489,6 +489,10 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			if aborted {
 				r.highlightAborted = aborted
 			}
+			// It is okay to fail on binary files, we won't have to pick lines from such files in the Highlight resolver.
+			if err != nil && err == highlight.ErrBinary {
+				return []template.HTML{}, nil
+			}
 			return lines, err
 		}
 		r.highlightedBase, r.highlightErr = highlightFile(ctx, r.oldFile)

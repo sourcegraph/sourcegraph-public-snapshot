@@ -85,8 +85,8 @@ type Metadata struct {
 	Revision string
 }
 
-// errBinary is returned when a binary file was attempted to be highlighted.
-var errBinary = errors.New("cannot render binary file")
+// ErrBinary is returned when a binary file was attempted to be highlighted.
+var ErrBinary = errors.New("cannot render binary file")
 
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
@@ -125,7 +125,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", false, errBinary
+		return "", false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -466,9 +466,6 @@ func unhighlightLongLines(h string, n int) (string, error) {
 func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	html, aborted, err := Code(ctx, p)
 	if err != nil {
-		if err == errBinary {
-			return []template.HTML{}, aborted, nil
-		}
 		return nil, aborted, err
 	}
 	lines, err := splitHighlightedLines(html)
