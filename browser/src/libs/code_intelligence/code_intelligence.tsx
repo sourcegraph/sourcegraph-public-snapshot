@@ -109,7 +109,7 @@ import { delayUntilIntersecting, ViewResolver } from './views'
 
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
-import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 import { asError } from '../../../../shared/src/util/errors'
 
 registerHighlightContributions()
@@ -768,7 +768,7 @@ export function handleCodeHost({
                     errors.pipe(
                         // Don't swallow non-auth errors
                         tap(error => {
-                            if (!failedWithHTTPStatus(error, 401)) {
+                            if (!isHTTPAuthError(error)) {
                                 throw error
                             }
                         }),
