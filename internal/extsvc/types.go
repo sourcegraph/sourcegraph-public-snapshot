@@ -85,6 +85,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.AWSCodeCommitConnection{}
 	case "bitbucketserver":
 		cfg = &schema.BitbucketServerConnection{}
+	case "bitbucketcloud":
+		cfg = &schema.BitbucketCloudConnection{}
 	case "github":
 		cfg = &schema.GitHubConnection{}
 	case "gitlab":
