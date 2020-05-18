@@ -369,8 +369,8 @@ func TestDiffHunk(t *testing.T) {
 
 	t.Run("Highlight", func(t *testing.T) {
 		hunk.highlighter = &dummyFileHighlighter{
-			highlightedBase: []string{"B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"},
-			highlightedHead: []string{"H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"},
+			highlightedBase: []template.HTML{"B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"},
+			highlightedHead: []template.HTML{"H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"},
 		}
 
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
@@ -540,7 +540,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		t.Fatalf("highlighting aborted")
 	}
 
-	wantLinesBase := []string{
+	wantLinesBase := []template.HTML{
 		"<div><span style=\"color:#657b83;\">old1\n</span></div>",
 		"<div><span style=\"color:#657b83;\">old2\n</span></div>",
 		"<div><span style=\"color:#657b83;\">old3</span></div>",
@@ -549,7 +549,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		t.Fatalf("wrong highlightedBase: %s", diff)
 	}
 
-	wantLinesHead := []string{
+	wantLinesHead := []template.HTML{
 		"<div><span style=\"color:#657b83;\">new1\n</span></div>",
 		"<div><span style=\"color:#657b83;\">new2\n</span></div>",
 		"<div><span style=\"color:#657b83;\">new3</span></div>",
@@ -609,9 +609,9 @@ func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
 }
 
 type dummyFileHighlighter struct {
-	highlightedBase, highlightedHead []string
+	highlightedBase, highlightedHead []template.HTML
 }
 
-func (r *dummyFileHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error) {
+func (r *dummyFileHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error) {
 	return r.highlightedBase, r.highlightedHead, false, nil
 }

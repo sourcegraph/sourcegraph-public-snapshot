@@ -1,6 +1,7 @@
 package highlight
 
 import (
+	"context"
 	"html/template"
 	"testing"
 
@@ -160,7 +161,7 @@ func TestSplitHighlightedLines(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
 </span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div></div></td></tr></table>`
 
-	want := []string{
+	want := []template.HTML{
 		`<div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
 </span></div>`,
 		`<div><span style="color:#323232;">
@@ -182,5 +183,38 @@ func TestSplitHighlightedLines(t *testing.T) {
 	}
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestCodeAsLines(t *testing.T) {
+	fileContent := `line1
+line2
+line3`
+	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
+	Mocks.Code = func(p Params) (h template.HTML, aborted bool, err error) {
+		return template.HTML(highlightedCode), false, nil
+	}
+	t.Cleanup(ResetMocks)
+
+	highlightedLines, aborted, err := CodeAsLines(context.Background(), Params{
+		Content:  []byte(fileContent),
+		Filepath: "test/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if aborted {
+		t.Fatalf("highlighting aborted")
+	}
+
+	wantLines := []template.HTML{
+		"<div><span style=\"color:#657b83;\">line 1\n</span></div>",
+		"<div><span style=\"color:#657b83;\">line 2\n</span></div>",
+		"<div><span style=\"color:#657b83;\">line 3</span></div>",
+	}
+	if diff := cmp.Diff(wantLines, highlightedLines); diff != "" {
+		t.Fatalf("wrong highlighted lines: %s", diff)
 	}
 }

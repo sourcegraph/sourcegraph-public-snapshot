@@ -458,12 +458,12 @@ func unhighlightLongLines(h string, n int) (string, error) {
 
 // CodeAsLines highlights the file and returns a list of highlighted lines.
 // The returned boolean represents whether or not highlighting was aborted due
-// to timeout.
-func CodeAsLines(ctx context.Context, p Params) ([]string, bool, error) {
+// to timeout. Returns no lines for binary files.
+func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	html, aborted, err := Code(ctx, p)
 	if err != nil {
 		if err == errBinary {
-			return nil, aborted, nil
+			return []template.HTML{}, aborted, nil
 		}
 		return nil, aborted, err
 	}
@@ -474,13 +474,13 @@ func CodeAsLines(ctx context.Context, p Params) ([]string, bool, error) {
 // splitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func splitHighlightedLines(input template.HTML) ([]string, error) {
+func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
 	}
 
-	lines := make([]string, 0)
+	lines := make([]template.HTML, 0)
 
 	table := doc.FirstChild.LastChild.FirstChild // html > body > table
 	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
@@ -496,7 +496,7 @@ func splitHighlightedLines(input template.HTML) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		lines = append(lines, buf.String())
+		lines = append(lines, template.HTML(buf.String()))
 		buf.Reset()
 		tr = tr.NextSibling
 	}

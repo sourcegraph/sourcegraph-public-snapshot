@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"html/template"
 	"io"
 	"strconv"
 	"strings"
@@ -455,22 +456,22 @@ func NewDiffHunk(hunk *diff.Hunk, highlighter FileDiffHighlighter) *DiffHunk {
 }
 
 type FileDiffHighlighter interface {
-	Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error)
+	Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error)
 }
 
 type fileDiffHighlighter struct {
 	oldFile          FileResolver
 	newFile          FileResolver
-	highlightedBase  []string
-	highlightedHead  []string
+	highlightedBase  []template.HTML
+	highlightedHead  []template.HTML
 	highlightOnce    sync.Once
 	highlightErr     error
 	highlightAborted bool
 }
 
-func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]string, []string, bool, error) {
+func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error) {
 	r.highlightOnce.Do(func() {
-		highlightFile := func(ctx context.Context, file FileResolver) ([]string, error) {
+		highlightFile := func(ctx context.Context, file FileResolver) ([]template.HTML, error) {
 			if file == nil {
 				return nil, nil
 			}
@@ -539,16 +540,16 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
 			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
-			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
+			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
 			highlightedDiffHunkLineResolver.kind = "ADDED"
-			highlightedDiffHunkLineResolver.html = highlightedHead[headLine]
+			highlightedDiffHunkLineResolver.html = string(highlightedHead[headLine])
 			headLine++
 		} else if hunkLine[0] == '-' {
 			highlightedDiffHunkLineResolver.kind = "DELETED"
-			highlightedDiffHunkLineResolver.html = highlightedBase[baseLine]
+			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
 			baseLine++
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
