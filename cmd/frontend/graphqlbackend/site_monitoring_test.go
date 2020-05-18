@@ -14,7 +14,7 @@ import (
 
 func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 	mock := NewMockPrometheusQuerier()
-	sampleT := model.Time(time.Now().Unix())
+	sampleT := model.Time(time.Now().UTC().Unix())
 	type fields struct {
 		queryValue    model.Value
 		queryWarnings prometheus.Warnings
