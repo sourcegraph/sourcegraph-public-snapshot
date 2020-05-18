@@ -68,7 +68,6 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
      * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
-     *
      */
     public async logCodeIntelligenceEvent(
         event: string,
