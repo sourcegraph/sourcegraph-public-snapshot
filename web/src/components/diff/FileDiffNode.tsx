@@ -14,7 +14,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 export interface FileDiffNodeProps extends ThemeProps {
-    node: GQL.IFileDiff | GQL.IPreviewFileDiff
+    node: GQL.IFileDiff
     lineNumbers: boolean
     className?: string
     location: H.Location
@@ -62,12 +62,11 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
-        const renderAnchor = node.__typename !== 'PreviewFileDiff'
         const anchor = `diff-${node.internalID}`
 
         return (
             <>
-                {renderAnchor && <a id={anchor} />}
+                <a id={anchor} />
                 <div className={`file-diff-node card ${this.props.className || ''}`}>
                     <div className="card-header file-diff-node__header">
                         <button type="button" className="btn btn-sm btn-icon mr-2" onClick={this.toggleExpand}>
@@ -84,19 +83,13 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                 deleted={node.stat.deleted}
                                 className="file-diff-node__header-stat"
                             />
-                            {renderAnchor ? (
-                                <Link
-                                    to={{ ...this.props.location, hash: anchor }}
-                                    className="file-diff-node__header-path"
-                                >
-                                    {path}
-                                </Link>
-                            ) : (
-                                <span>{path}</span>
-                            )}
+                            <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
+                                {path}
+                            </Link>
                         </div>
                         <div className="file-diff-node__header-actions">
-                            {node.__typename === 'FileDiff' && (
+                            {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
+                            {node.mostRelevantFile.__typename === 'GitBlob' && (
                                 <Link
                                     to={node.mostRelevantFile.url}
                                     className="btn btn-sm"
@@ -108,8 +101,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         </div>
                     </div>
                     {this.state.expanded &&
-                        ((node.oldFile && node.oldFile.binary) ||
-                        (node.__typename === 'FileDiff' && node.newFile && node.newFile.binary) ? (
+                        ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary) ? (
                             <div className="text-muted m-2">Binary files can't be rendered.</div>
                         ) : (
                             <FileDiffHunks

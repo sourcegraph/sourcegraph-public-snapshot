@@ -20,7 +20,7 @@ describe('PatchNode', () => {
                         __typename: 'Patch',
                         diff: {
                             fileDiffs: {
-                                __typename: 'PreviewFileDiffConnection',
+                                __typename: 'FileDiffConnection',
                                 diffStat: {
                                     added: 100,
                                     changed: 200,
