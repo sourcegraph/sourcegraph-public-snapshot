@@ -141,8 +141,12 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 
 func newCodeIntelEventCategory() *ciEventCategoryStatistics {
 	return &ciEventCategoryStatistics{
-		LSIF:   &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
-		LSP:    &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
-		Search: &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
+		LSIF:   codeIntelEventStatistics(),
+		LSP:    codeIntelEventStatistics(),
+		Search: codeIntelEventStatistics(),
 	}
+}
+
+func codeIntelEventStatistics() *ciEventStatistics {
+	return &ciEventStatistics{EventLatencies: &ciEventLatencies{}}
 }
