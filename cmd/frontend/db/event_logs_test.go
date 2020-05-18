@@ -352,6 +352,64 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 	}
 }
 
+func TestEventLogs_AggregatedEventsSparseEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	for i := 0; i < 5; i++ {
+		e := &Event{
+			UserID: 1,
+			Name:   "codeintel.searchHover",
+			URL:    "test",
+			Source: "test",
+			// Make durations non-uniform to test percent_cont. The values
+			// in this test were hand-checked before being added to the assertion.
+			// Adding additional events or changing parameters will require these
+			// values to be checked again.
+			Argument:  json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, 50)),
+			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
+		}
+
+		if err := EventLogs.Insert(ctx, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	events, err := EventLogs.aggregatedEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedEvents := []types.AggregatedEvent{
+		{
+			Name:           "codeintel.searchHover",
+			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+			Day:            now.Truncate(time.Hour * 24),
+			TotalMonth:     5,
+			TotalWeek:      0,
+			TotalDay:       0,
+			UniquesMonth:   1,
+			UniquesWeek:    0,
+			UniquesDay:     0,
+			LatenciesMonth: []float64{50, 50, 50},
+			LatenciesWeek:  nil,
+			LatenciesDay:   nil,
+		},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion
 // due to db constraints. This method will also add some sub-day jitter to the timestamp.
 func makeTestEvent(e *Event) *Event {
