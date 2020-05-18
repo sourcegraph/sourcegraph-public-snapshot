@@ -214,17 +214,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("updatecheck.hasFindRefsOccurred failed", "error", err)
 		}
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
-		}
 		r.CampaignsUsage, err = getAndMarshalCampaignsUsageJSON(ctx)
 		if err != nil {
 			logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
-		}
-		r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
 		}
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
@@ -234,6 +226,30 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.HasExtURL = conf.UsingExternalURL()
 		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 		r.AuthProviders = authProviderTypes()
+
+		// The following methods are the most expensive to calculate, so we do them in
+		// parallel.
+
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+			}
+		}()
+		wg.Wait()
 	} else {
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 		if err != nil {
@@ -345,7 +361,7 @@ func Start() {
 	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
 		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 
