@@ -628,9 +628,9 @@ func TestVersionContext(t *testing.T) {
 							{
 								Name: "ctx-1",
 								Revisions: []*schema.VersionContextRevision{
-									{Repo: "github.com/sourcegraph/foo", Ref: "some-branch"},
-									{Repo: "github.com/sourcegraph/foobar", Ref: "v1.0.0"},
-									{Repo: "github.com/sourcegraph/bar", Ref: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+									{Repo: "github.com/sourcegraph/foo", Rev: "some-branch"},
+									{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
+									{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
 								},
 							},
 						},
