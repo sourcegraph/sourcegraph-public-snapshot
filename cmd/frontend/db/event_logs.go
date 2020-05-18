@@ -602,7 +602,6 @@ GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
 
-// SiteUsage calculates AggregatedEvent for each every unique event type.
 func (l *eventLogs) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsage(ctx, time.Now().UTC())
 }
