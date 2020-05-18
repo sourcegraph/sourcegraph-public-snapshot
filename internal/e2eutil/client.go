@@ -176,7 +176,7 @@ func (c *Client) authenticate(path string, body interface{}) error {
 
 // currentUserID returns the current user's GraphQL node ID.
 func (c *Client) currentUserID() (string, error) {
-	query := `
+	const query = `
 	query {
 		currentUser {
 			id
@@ -199,7 +199,8 @@ func (c *Client) currentUserID() (string, error) {
 }
 
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
-// An optional token can be passed to impersonate other users.
+// An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
+// the returned JSON response.
 func (c *Client) GraphQL(token, query string, variables map[string]interface{}, target interface{}) error {
 	body, err := jsoniter.Marshal(map[string]interface{}{
 		"query":     query,
@@ -235,6 +236,10 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "read response body")
 		}
 		return errors.New(string(p))
+	}
+
+	if target == nil {
+		return nil
 	}
 
 	return jsoniter.NewDecoder(resp.Body).Decode(target)
