@@ -8,25 +8,18 @@ import { badgeAttachmentStyleForTheme } from '../api/client/services/decoration'
 import { LinkOrSpan } from './LinkOrSpan'
 import { isEncodedImage } from '../util/icon'
 import { MdiReactIconComponentType } from 'mdi-react'
-import classNames from 'classnames'
 
-const chooseIconComponent = (icon: BadgeAttachmentRenderOptions['kind']): MdiReactIconComponentType => {
-    switch (icon) {
-        case 'info':
-            return InformationIcon
-        case 'warning':
-            return WarningIcon
-        case 'error':
-            return ErrorIcon
-    }
+const iconComponents: Record<BadgeAttachmentRenderOptions['kind'], MdiReactIconComponentType> = {
+    info: InformationIcon,
+    warning: WarningIcon,
+    error: ErrorIcon,
 }
 
-const isPredefinedIcon = (badge: BadgeAttachmentRenderOptions): boolean => 'kind' in badge
-
 const renderIcon = (badge: BadgeAttachmentRenderOptions, isLightTheme: boolean): JSX.Element | null => {
-    if (isPredefinedIcon(badge)) {
-        const Icon = chooseIconComponent(badge.kind)
-        return <Icon className={classNames('icon-inline', 'badge-decoration-attachment__icon-svg')} />
+    if ('kind' in badge) {
+        // means that we are using predefined icons
+        const Icon = iconComponents[badge.kind]
+        return <Icon className="icon-inline badge-decoration-attachment__icon-svg" />
     }
 
     const style = badgeAttachmentStyleForTheme(badge, isLightTheme)
@@ -52,9 +45,8 @@ export const BadgeAttachment: React.FunctionComponent<{
     attachment: BadgeAttachmentRenderOptions
     isLightTheme: boolean
 }> = ({ attachment, isLightTheme }) => (
-    // 'badge-decoration-attachment__contents'
     <LinkOrSpan
-        className={classNames('badge-decoration-attachment', isPredefinedIcon(attachment) && 'btn-icon')}
+        className="badge-decoration-attachment"
         to={attachment.linkURL}
         data-tooltip={attachment.hoverMessage}
         data-placement="left"

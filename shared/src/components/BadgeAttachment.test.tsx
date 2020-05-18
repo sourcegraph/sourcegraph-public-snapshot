@@ -23,9 +23,10 @@ describe('BadgeAttachment', () => {
     afterAll(cleanup)
 
     it('renders an img element with a base64 icon', () => {
-        // any because ts will error with '"kind" is missing'
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { container } = render(<BadgeAttachment attachment={oldFormatBadge as any} isLightTheme={true} />)
+        // note '"kind" is missing'
+        const { container } = render(
+            <BadgeAttachment attachment={oldFormatBadge as BadgeAttachmentRenderOptions} isLightTheme={true} />
+        )
         const item = container.querySelector('.badge-decoration-attachment__contents')
         expect(item).toBeTruthy()
         // we used to render an image with base64 content as a source

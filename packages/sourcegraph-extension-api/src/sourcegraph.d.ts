@@ -1145,19 +1145,24 @@ declare module 'sourcegraph' {
      */
     export interface ThemableBadgeAttachmentStyle {
         /**
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
          * The icon (a base64-encoded image icon) to display next to the wrapped value.
-         * */
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         icon?: string
 
         /**
+         * The CSS background-color property value for the attachment.
+         *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         * The CSS background-color property value for the attachment. */
+         */
         backgroundColor?: string
 
         /**
+         *  The CSS color property value for the attachment.
+         *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         *  The CSS color property value for the attachment. */
+         */
         color?: string
     }
 
@@ -1173,13 +1178,17 @@ declare module 'sourcegraph' {
         linkURL?: string
 
         /**
+         *  Overwrite style for light themes.
+         *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         *  Overwrite style for light themes. */
+         */
         light?: ThemableBadgeAttachmentStyle
 
         /**
+         *  Overwrite style for dark themes.
+         *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         *  Overwrite style for dark themes. */
+         */
         dark?: ThemableBadgeAttachmentStyle
     }
 
