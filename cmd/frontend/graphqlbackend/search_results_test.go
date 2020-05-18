@@ -254,6 +254,19 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
+
+	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
+		for _, v := range searchVersions {
+			r, err := (&schemaResolver{}).Search(&SearchArgs{Query: `repo:*`, Version: v})
+			if err != nil {
+				t.Fatal("Search:", err)
+			}
+			results, err := r.Results(context.Background())
+			if results.start.IsZero() {
+				t.Error("Start value is not set")
+			}
+		}
+	})
 }
 
 func BenchmarkSearchResults(b *testing.B) {
