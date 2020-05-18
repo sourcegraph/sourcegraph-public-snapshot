@@ -54,6 +54,8 @@
 // 1528395675_add_index_event_logs_anonymous_user_id.up.sql (120B)
 // 1528395676_add_diff_stats_to_patches.down.sql (198B)
 // 1528395676_add_diff_stats_to_patches.up.sql (231B)
+// 1528395677_add_index_user_external_accounts_user_id.down.sql (70B)
+// 1528395677_add_index_user_external_accounts_user_id.up.sql (157B)
 
 package migrations
 
@@ -1202,6 +1204,46 @@ func _1528395676_add_diff_stats_to_patchesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395677_add_index_user_external_accounts_user_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x4f\x4c\x4e\xce\x2f\xcd\x2b\x29\x8e\x07\x0b\x67\xa6\x58\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xa8\xc4\xe0\xc6\x46\x00\x00\x00")
+
+func _1528395677_add_index_user_external_accounts_user_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395677_add_index_user_external_accounts_user_idDownSql,
+		"1528395677_add_index_user_external_accounts_user_id.down.sql",
+	)
+}
+
+func _1528395677_add_index_user_external_accounts_user_idDownSql() (*asset, error) {
+	bytes, err := _1528395677_add_index_user_external_accounts_user_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395677_add_index_user_external_accounts_user_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2b, 0xbb, 0x92, 0x7b, 0x67, 0x4b, 0x8e, 0xbd, 0x2d, 0x96, 0xeb, 0xd0, 0xfe, 0x6f, 0x3b, 0x51, 0x3c, 0xc4, 0xba, 0x2b, 0xcf, 0xd7, 0x48, 0xf2, 0xc9, 0xe9, 0xcc, 0xd8, 0x8d, 0xf0, 0x8, 0x3e}}
+	return a, nil
+}
+
+var __1528395677_add_index_user_external_accounts_user_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xce\xb1\x0a\x83\x30\x14\x85\xe1\x3d\x4f\x71\xc6\xf6\x19\x9c\x6a\x7b\x6b\x2f\xe8\x0d\x24\x91\xba\x85\x60\xee\x50\x10\x0b\x1a\xa1\x8f\x5f\x2a\x5d\x5d\x0f\xe7\x83\xbf\xa6\x86\xa5\x32\xe6\xea\xe8\x12\x08\x2c\x37\x1a\xc0\x77\x88\x0d\xa0\x81\x7d\xf0\xd8\x56\x5d\xa2\x7e\x8a\x2e\x73\x9a\x62\x1a\xc7\xf7\x36\x97\x35\xee\xf3\x2b\x1b\x00\xb0\x72\xf0\x42\xef\x59\x1a\xd4\xc1\x11\xe1\xf4\x27\xe7\xdd\x3c\x1f\xe4\x08\x59\x27\x2d\x9a\x63\x2a\x60\x0f\xe9\xdb\xf6\x17\x63\xbb\x8e\x43\x65\xbe\x01\x00\x00\xff\xff\x75\x86\x07\xcb\x9d\x00\x00\x00")
+
+func _1528395677_add_index_user_external_accounts_user_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395677_add_index_user_external_accounts_user_idUpSql,
+		"1528395677_add_index_user_external_accounts_user_id.up.sql",
+	)
+}
+
+func _1528395677_add_index_user_external_accounts_user_idUpSql() (*asset, error) {
+	bytes, err := _1528395677_add_index_user_external_accounts_user_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395677_add_index_user_external_accounts_user_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9a, 0x7d, 0xef, 0x7e, 0x7, 0x56, 0x71, 0x0, 0xb2, 0xb5, 0xb9, 0xc4, 0xf3, 0xb6, 0xf6, 0x87, 0x7f, 0x13, 0xe8, 0x37, 0x46, 0x3d, 0xf3, 0x1c, 0xfe, 0x6d, 0xce, 0x3b, 0x36, 0xf5, 0xfe, 0x52}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1347,6 +1389,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                _1528395675_add_index_event_logs_anonymous_user_idUpSql,
 	"1528395676_add_diff_stats_to_patches.down.sql":                           _1528395676_add_diff_stats_to_patchesDownSql,
 	"1528395676_add_diff_stats_to_patches.up.sql":                             _1528395676_add_diff_stats_to_patchesUpSql,
+	"1528395677_add_index_user_external_accounts_user_id.down.sql":            _1528395677_add_index_user_external_accounts_user_idDownSql,
+	"1528395677_add_index_user_external_accounts_user_id.up.sql":              _1528395677_add_index_user_external_accounts_user_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1444,6 +1488,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395675_add_index_event_logs_anonymous_user_id.up.sql":                {_1528395675_add_index_event_logs_anonymous_user_idUpSql, map[string]*bintree{}},
 	"1528395676_add_diff_stats_to_patches.down.sql":                           {_1528395676_add_diff_stats_to_patchesDownSql, map[string]*bintree{}},
 	"1528395676_add_diff_stats_to_patches.up.sql":                             {_1528395676_add_diff_stats_to_patchesUpSql, map[string]*bintree{}},
+	"1528395677_add_index_user_external_accounts_user_id.down.sql":            {_1528395677_add_index_user_external_accounts_user_idDownSql, map[string]*bintree{}},
+	"1528395677_add_index_user_external_accounts_user_id.up.sql":              {_1528395677_add_index_user_external_accounts_user_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
