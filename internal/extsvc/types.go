@@ -125,7 +125,7 @@ func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, 
 		return RateLimitConfig{}, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, err := getLimitFromConfig(kind, parsed)
+	rlc, err := GetLimitFromConfig(kind, parsed)
 	if err != nil {
 		return RateLimitConfig{}, err
 	}
@@ -142,7 +142,8 @@ type RateLimitConfig struct {
 	IsDefault   bool
 }
 
-func getLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, err error) {
+// GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
+func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, err error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.

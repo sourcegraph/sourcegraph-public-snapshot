@@ -1,6 +1,9 @@
 package db
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := map[string]struct {
@@ -25,7 +28,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := (&ExternalServicesStore{}).ValidateConfig(test.kind, test.config, nil)
+			err := (&ExternalServicesStore{}).ValidateConfig(context.Background(), 0, test.kind, test.config, nil)
 			var errStr string
 			if err != nil {
 				errStr = err.Error()
