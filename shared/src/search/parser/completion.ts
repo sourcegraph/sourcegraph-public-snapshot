@@ -259,6 +259,14 @@ export async function getCompletionItems(
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,
+                        // Set the current value as filterText, so that all dynamic suggestions
+                        // returned by the server are displayed. otherwise, if the current filter value
+                        // is a regex pattern, Monaco's filtering might hide some suggestions.
+                        filterText:
+                            filterValue &&
+                            (filterValue?.token.type === 'literal'
+                                ? filterValue.token.value
+                                : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                     })),
             }
