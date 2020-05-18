@@ -19,7 +19,7 @@ type Client interface {
 	// DirectoryChildren determines all children known to git for the given directory names via an invocation
 	// of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 	// that key are the files nested under that directory.
-	DirectoryChildren(db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
+	DirectoryChildren(ctx context.Context, db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 }
 
 type defaultClient struct{}
@@ -34,6 +34,6 @@ func (c *defaultClient) CommitsNear(ctx context.Context, db db.DB, repositoryID 
 	return CommitsNear(ctx, db, repositoryID, commit)
 }
 
-func (c *defaultClient) DirectoryChildren(db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
-	return DirectoryChildren(db, repositoryID, commit, dirnames)
+func (c *defaultClient) DirectoryChildren(ctx context.Context, db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
+	return DirectoryChildren(ctx, db, repositoryID, commit, dirnames)
 }
