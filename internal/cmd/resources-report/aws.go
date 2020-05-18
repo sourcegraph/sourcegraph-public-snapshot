@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ep "github.com/aws/aws-sdk-go-v2/aws/endpoints"
@@ -16,9 +17,9 @@ import (
 type AWSResourceFetchFunc func(context.Context, aws.Config) ([]Resource, error)
 
 // refer to https://docs.aws.amazon.com/sdk-for-go/v2/api/ for how to query resources under /service
-var awsResources = []AWSResourceFetchFunc{
+var awsResources = map[string]AWSResourceFetchFunc{
 	// fetch ec2 instances
-	func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
+	"EC2::Instances": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
 		c := aws_ec2.New(cfg)
 		p := aws_ec2.NewDescribeInstancesPaginator(c.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
 		r := make([]Resource, 0)
@@ -40,7 +41,7 @@ var awsResources = []AWSResourceFetchFunc{
 		return r, p.Err()
 	},
 	// fetch kubernetes clusters
-	func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
+	"EKS::Clusters": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
 		c := aws_eks.New(cfg)
 		p := aws_eks.NewListClustersPaginator(c.ListClustersRequest(&aws_eks.ListClustersInput{}))
 		r := make([]Resource, 0)
@@ -60,6 +61,13 @@ var awsResources = []AWSResourceFetchFunc{
 	},
 }
 
+// refer to https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html#Concepts.RegionsAndAvailabilityZones.Availability
+// for available regions
+var awsRegionPrefixes = []string{
+	"us-",
+	"eu-",
+}
+
 func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) {
 	log := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
@@ -75,12 +83,29 @@ func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) 
 	resources := make([]Resource, 0)
 	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
 	for _, region := range pt.Regions() {
+		shouldCheckRegion := false
+		for _, prefix := range awsRegionPrefixes {
+			if strings.HasPrefix(region.ID(), prefix) {
+				shouldCheckRegion = true
+				break
+			}
+		}
+		if !shouldCheckRegion {
+			continue // skip this region
+		}
+		if verbose {
+			log.Printf("querying region %s", cfg.Region)
+		}
+
 		cfg.Region = region.ID()
 		// query configured resource in region
-		for _, fetch := range awsResources {
+		for rid, fetch := range awsResources {
 			r, err := fetch(ctx, cfg.Copy())
 			if err != nil {
-				return nil, fmt.Errorf("resource fetch failed: %w", err)
+				if verbose {
+					log.Printf("resource fetch for '%s' failed in region %s: %v", rid, cfg.Region, err)
+				}
+				continue
 			}
 			resources = append(resources, r...)
 		}
