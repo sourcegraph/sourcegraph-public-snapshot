@@ -105,7 +105,7 @@ index 9bd8209..d2acfa9 100644
 	repo := &repos.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}
 
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if rev != testBaseRevision && rev != testHeadRevision {
+		if rev != wantBaseRevision && rev != wantHeadRevision {
 			t.Fatalf("ResolveRev received wrong rev: %q", rev)
 		}
 		return api.CommitID(rev), nil
@@ -113,7 +113,7 @@ index 9bd8209..d2acfa9 100644
 	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
 
 	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
-		if string(id) != testBaseRevision && string(id) != testHeadRevision {
+		if string(id) != wantBaseRevision && string(id) != wantHeadRevision {
 			t.Fatalf("GetCommit received wrong ID: %s", id)
 		}
 		return &git.Commit{ID: id}, nil
@@ -124,8 +124,8 @@ index 9bd8209..d2acfa9 100644
 		store: ee.NewStoreWithClock(dbconn.Global, clock),
 		patch: &campaigns.Patch{
 			RepoID:  repo.ID,
-			Rev:     api.CommitID(testHeadRevision),
-			BaseRef: testBaseRevision,
+			Rev:     api.CommitID(wantHeadRevision),
+			BaseRef: wantBaseRevision,
 			Diff:    testDiff,
 		},
 		preloadedRepo: repo,
@@ -217,7 +217,7 @@ index 9bd8209..d2acfa9 100644
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(totalCount, tc.wantTotalCount); diff != "" {
+			if diff := cmp.Diff(tc.wantTotalCount, totalCount); diff != "" {
 				t.Fatalf("wrong totalCount: %s", diff)
 			}
 		}

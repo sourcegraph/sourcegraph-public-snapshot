@@ -30,13 +30,6 @@ func TestRepositoryComparison(t *testing.T) {
 	repo := &types.Repo{
 		ID:   api.RepoID(1),
 		Name: api.RepoName("github.com/sourcegraph/sourcegraph"),
-		// If we set this, NewRepositoryComparison needs an external service in
-		// the database.
-		// ExternalRepo: api.ExternalRepoSpec{
-		// 	ID:          "external-id",
-		// 	ServiceType: "github",
-		// 	ServiceID:   "https://github.com/",
-		// },
 	}
 
 	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
@@ -172,12 +165,12 @@ func TestRepositoryComparison(t *testing.T) {
 
 			n := nodes[0]
 			wantOldPath := "INSTALL.md"
-			if diff := cmp.Diff(n.OldPath(), &wantOldPath); diff != "" {
+			if diff := cmp.Diff(&wantOldPath, n.OldPath()); diff != "" {
 				t.Fatalf("wrong OldPath: %s", diff)
 			}
 
 			wantNewPath := "INSTALL.md"
-			if diff := cmp.Diff(n.NewPath(), &wantNewPath); diff != "" {
+			if diff := cmp.Diff(&wantNewPath, n.NewPath()); diff != "" {
 				t.Fatalf("wrong NewPath: %s", diff)
 			}
 
@@ -308,7 +301,7 @@ func TestRepositoryComparison(t *testing.T) {
 					t.Fatalf("pageInfo HasNextPage wrong. want=%t, have=%t", tc.wantHasNextPage, pageInfo.HasNextPage())
 				}
 
-				if diff := cmp.Diff(pageInfo.EndCursor(), tc.wantEndCursor); diff != "" {
+				if diff := cmp.Diff(tc.wantEndCursor, pageInfo.EndCursor()); diff != "" {
 					t.Fatal(diff)
 				}
 
@@ -316,7 +309,7 @@ func TestRepositoryComparison(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if diff := cmp.Diff(totalCount, tc.wantTotalCount); diff != "" {
+				if diff := cmp.Diff(tc.wantTotalCount, totalCount); diff != "" {
 					t.Fatalf("wrong totalCount: %s", diff)
 				}
 			}
@@ -362,7 +355,7 @@ func TestDiffHunk(t *testing.T) {
 	})
 
 	t.Run("Body", func(t *testing.T) {
-		if diff := cmp.Diff(hunk.Body(), testDiffFirstHunk); diff != "" {
+		if diff := cmp.Diff(testDiffFirstHunk, hunk.Body()); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -545,7 +538,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		"<div><span style=\"color:#657b83;\">old2\n</span></div>",
 		"<div><span style=\"color:#657b83;\">old3</span></div>",
 	}
-	if diff := cmp.Diff(highlightedBase, wantLinesBase); diff != "" {
+	if diff := cmp.Diff(wantLinesBase, highlightedBase); diff != "" {
 		t.Fatalf("wrong highlightedBase: %s", diff)
 	}
 
@@ -554,7 +547,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		"<div><span style=\"color:#657b83;\">new2\n</span></div>",
 		"<div><span style=\"color:#657b83;\">new3</span></div>",
 	}
-	if diff := cmp.Diff(highlightedHead, wantLinesHead); diff != "" {
+	if diff := cmp.Diff(wantLinesHead, highlightedHead); diff != "" {
 		t.Fatalf("wrong highlightedHead: %s", diff)
 	}
 }
