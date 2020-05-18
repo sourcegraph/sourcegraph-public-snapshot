@@ -302,7 +302,7 @@ type SearchEventLatencies struct {
 	P99 float64
 }
 
-// AggregatedEvent is an alternate view of SiteUsageStatistics which is
+// SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
 	Month                   time.Time
