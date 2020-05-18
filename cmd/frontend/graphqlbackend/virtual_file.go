@@ -75,6 +75,7 @@ func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
+		// TODO: Use `CanonicalURL` here for where to retrieve the file content, once we have a backend to retrieve such files.
 		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
 	})
 }

@@ -456,7 +456,7 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	return buf.String(), nil
 }
 
-// Lines highlights the file and returns a list of highlighted lines.
+// CodeAsLines highlights the file and returns a list of highlighted lines.
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout.
 func CodeAsLines(ctx context.Context, p Params) ([]string, bool, error) {

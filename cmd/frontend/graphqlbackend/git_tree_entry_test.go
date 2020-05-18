@@ -30,10 +30,10 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantContent := "foobar"
 
 	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
-		if name != testPath {
-			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", testPath, name)
+		if name != wantPath {
+			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
-		return []byte(testContent), nil
+		return []byte(wantContent), nil
 	}
 	t.Cleanup(func() { git.Mocks.ReadFile = nil })
 
@@ -43,7 +43,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 				repo: &types.Repo{Name: "my/repo"},
 			},
 		},
-		stat: CreateFileInfo(testPath, true),
+		stat: CreateFileInfo(wantPath, true),
 	}
 
 	newFileContent, err := gitTree.Content(context.Background())
@@ -51,7 +51,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(newFileContent, testContent); diff != "" {
+	if diff := cmp.Diff(newFileContent, wantContent); diff != "" {
 		t.Fatalf("wrong newFileContent: %s", diff)
 	}
 }

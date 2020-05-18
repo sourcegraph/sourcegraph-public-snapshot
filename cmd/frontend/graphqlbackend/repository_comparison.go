@@ -478,7 +478,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			if err != nil {
 				return nil, err
 			}
-			lines, aborted, err := highlight.Lines(ctx, highlight.Params{
+			lines, aborted, err := highlight.CodeAsLines(ctx, highlight.Params{
 				Content:            []byte(content),
 				Filepath:           file.Path(),
 				DisableTimeout:     args.DisableTimeout,

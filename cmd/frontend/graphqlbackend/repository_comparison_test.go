@@ -40,7 +40,7 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 
 	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
-		if string(id) != testBaseRevision && string(id) != testHeadRevision {
+		if string(id) != wantBaseRevision && string(id) != wantHeadRevision {
 			t.Fatalf("GetCommit received wrong ID: %s", id)
 		}
 
@@ -56,7 +56,7 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	defer func() { git.Mocks.ExecReader = nil }()
 
-	input := &RepositoryComparisonInput{Base: &testBaseRevision, Head: &testHeadRevision}
+	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(repo)
 
 	comp, err := NewRepositoryComparison(ctx, repoResolver, input)
@@ -79,7 +79,7 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Run("Range", func(t *testing.T) {
 		gitRange := comp.Range()
 
-		wantRangeExpr := fmt.Sprintf("%s...%s", testBaseRevision, testHeadRevision)
+		wantRangeExpr := fmt.Sprintf("%s...%s", wantBaseRevision, wantHeadRevision)
 		if have, want := gitRange.Expr(), wantRangeExpr; have != want {
 			t.Fatalf("range expression. want=%s, have=%s", want, have)
 		}
@@ -87,12 +87,12 @@ func TestRepositoryComparison(t *testing.T) {
 
 	t.Run("Commits", func(t *testing.T) {
 		commits := []*git.Commit{
-			{ID: api.CommitID(testBaseRevision)},
-			{ID: api.CommitID(testHeadRevision)},
+			{ID: api.CommitID(wantBaseRevision)},
+			{ID: api.CommitID(wantHeadRevision)},
 		}
 
 		git.Mocks.Commits = func(repo gitserver.Repo, opts git.CommitsOptions) ([]*git.Commit, error) {
-			wantRange := fmt.Sprintf("%s..%s", testBaseRevision, testHeadRevision)
+			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
 				t.Fatalf("git.Commits received wrong range. want=%s, have=%s", want, have)
@@ -207,7 +207,7 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantRelevantURL := fmt.Sprintf("/%s@%s/-/blob/%s", repo.Name, testHeadRevision, "INSTALL.md")
+			wantRelevantURL := fmt.Sprintf("/%s@%s/-/blob/%s", repo.Name, wantHeadRevision, "INSTALL.md")
 			if relevantURL != wantRelevantURL {
 				t.Fatalf("MostRelevantFile.CanonicalURL() is wrong. have=%q, want=%q", relevantURL, wantRelevantURL)
 			}
