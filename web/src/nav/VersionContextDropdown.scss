@@ -1,6 +1,8 @@
 @import '~@reach/listbox/styles.css';
 
 .version-context-dropdown {
+    width: max-content;
+
     &__button {
         display: flex;
         border-radius: 0;
