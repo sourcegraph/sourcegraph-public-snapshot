@@ -131,7 +131,7 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func reposExist(ctx context.Context, options resolveRepoOp) bool {
-	repos, _, _, err := resolveRepositories(ctx, options)
+	repos, _, _, _, err := resolveRepositories(ctx, options)
 	return err == nil && len(repos) > 0
 }
 
@@ -387,7 +387,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		}
 	}
 
-	repos, _, _, _ := r.resolveRepositories(ctx, nil)
+	repos, _, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
 		pathPatterns := make([]string, len(repos))
@@ -418,7 +418,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
