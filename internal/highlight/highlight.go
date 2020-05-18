@@ -94,6 +94,8 @@ var errBinary = errors.New("cannot render binary file")
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
+//
+// In the event the input content is binary, ErrBinary is returned.
 func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
@@ -458,7 +460,9 @@ func unhighlightLongLines(h string, n int) (string, error) {
 
 // CodeAsLines highlights the file and returns a list of highlighted lines.
 // The returned boolean represents whether or not highlighting was aborted due
-// to timeout. Returns no lines for binary files.
+// to timeout.
+//
+// In the event the input content is binary, ErrBinary is returned.
 func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	html, aborted, err := Code(ctx, p)
 	if err != nil {
