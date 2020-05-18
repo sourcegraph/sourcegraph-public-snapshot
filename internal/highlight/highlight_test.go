@@ -150,7 +150,7 @@ func TestUnhighlightLongLines_Complex(t *testing.T) {
 	}
 }
 
-func TestParseLinesFromHighlight(t *testing.T) {
+func TestSplitHighlightedLines(t *testing.T) {
 	input := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
@@ -176,7 +176,7 @@ func TestParseLinesFromHighlight(t *testing.T) {
 		`<div><span style="color:#323232;">
 </span></div>`,
 		`<div></div>`}
-	have, err := ParseLinesFromHighlight(input)
+	have, err := splitHighlightedLines(template.HTML(input))
 	if err != nil {
 		t.Fatal(err)
 	}

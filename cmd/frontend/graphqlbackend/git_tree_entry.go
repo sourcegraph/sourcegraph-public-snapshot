@@ -6,6 +6,7 @@ import (
 	neturl "net/url"
 	"os"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,6 +38,10 @@ func init() {
 type GitTreeEntryResolver struct {
 	commit *GitCommitResolver
 
+	contentOnce sync.Once
+	content     []byte
+	contentErr  error
+
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat os.FileInfo
@@ -53,6 +59,51 @@ func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
 func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
 func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
+
+func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
+
+func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
+	r.contentOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+		if err != nil {
+			r.contentErr = err
+		}
+
+		r.content, r.contentErr = git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
+	})
+
+	return string(r.content), r.contentErr
+}
+
+func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return "", err
+	}
+	return richHTML(content, path.Ext(r.Path()))
+}
+
+func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return false, err
+	}
+	return highlight.IsBinary([]byte(content)), nil
+}
+
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
+		RepoName: string(r.commit.repo.repo.Name),
+		Revision: string(r.commit.oid),
+	})
+}
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 

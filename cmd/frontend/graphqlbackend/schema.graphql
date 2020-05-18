@@ -1942,44 +1942,7 @@ type PreviewRepositoryComparison {
         first: Int
         # Return file diffs after the given cursor.
         after: String
-    ): PreviewFileDiffConnection!
-}
-
-# A list of file diffs that might be applied.
-type PreviewFileDiffConnection {
-    # A list of file diffs that might be applied.
-    nodes: [PreviewFileDiff!]!
-    # The total count of file diffs in the connection, if available. This total count may be larger than the number
-    # of nodes in this object when the result is paginated.
-    totalCount: Int
-    # Pagination information.
-    pageInfo: PageInfo!
-    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    diffStat: DiffStat!
-    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    rawDiff: String!
-}
-
-# A diff for a single file that has not been applied yet.
-# Subset of the FileDiff type.
-type PreviewFileDiff {
-    # The old (original) path of the file, or null if the file was added.
-    oldPath: String
-    # The old file, or null if the file was created (oldFile.path == oldPath).
-    oldFile: File2
-    # The new path of the file if the diff was applied, or null if the file was deleted.
-    newPath: String
-    # Hunks that were would be changed from old to new.
-    hunks: [FileDiffHunk!]!
-    # The diff stat for the whole file.
-    stat: DiffStat!
-    # FOR INTERNAL USE ONLY.
-    #
-    # An identifier for the file diff that is unique among all other file diffs in the list that
-    # contains it.
-    internalID: String!
+    ): FileDiffConnection!
 }
 
 # The differences between two concrete Git commits in a repository.
@@ -2623,6 +2586,41 @@ interface File2 {
     # The canonical URL to this file (using an immutable revision specifier).
     canonicalURL: String!
     # The URLs to this file on external services.
+    externalURLs: [ExternalLink!]!
+    # Highlight the file.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
+}
+
+# A virtual file is an arbitrary file that is generated in memory.
+type VirtualFile implements File2 {
+    # The full path (relative to the root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file.
+    name: String!
+    # False because this is a file, not a directory.
+    isDirectory: Boolean!
+    # The content of this file.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The file rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # Not implemented.
+    url: String!
+    # Not implemented.
+    canonicalURL: String!
+    # Not implemented.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(

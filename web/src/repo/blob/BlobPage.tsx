@@ -48,7 +48,7 @@ const fetchBlob = memoizeObservable(
         filePath: string
         isLightTheme: boolean
         disableTimeout: boolean
-    }): Observable<GQL.IGitBlob> =>
+    }): Observable<GQL.File2> =>
         queryGraphQL(
             gql`
                 query Blob(
@@ -107,7 +107,7 @@ interface State {
      * The blob data or error that happened.
      * undefined while loading.
      */
-    blobOrError?: GQL.IGitBlob | ErrorLike
+    blobOrError?: GQL.File2 | ErrorLike
 }
 
 // eslint-disable-next-line react/no-unsafe

@@ -20,47 +20,18 @@ export const FileDiffFields = gql`
         __typename
         oldPath
         oldFile {
+            __typename
             binary
         }
         newFile {
+            __typename
             binary
         }
         newPath
         mostRelevantFile {
+            __typename
             url
         }
-        hunks {
-            oldRange {
-                startLine
-                lines
-            }
-            oldNoNewlineAt
-            newRange {
-                startLine
-                lines
-            }
-            section
-            highlight(disableTimeout: false, isLightTheme: $isLightTheme) {
-                aborted
-                lines {
-                    kind
-                    html
-                }
-            }
-        }
-        stat {
-            added
-            changed
-            deleted
-        }
-        internalID
-    }
-`
-export const PreviewFileDiffFields = gql`
-    fragment PreviewFileDiffFields on PreviewFileDiff {
-        __typename
-        oldPath
-        newPath
         hunks {
             oldRange {
                 startLine
