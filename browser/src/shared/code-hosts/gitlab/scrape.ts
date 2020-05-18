@@ -113,7 +113,7 @@ export const getDiffID = (): string | undefined => {
 /**
  * Finds the file paths from the code view. If the name has changed, it'll return the base and head file paths.
  */
-export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 'filePath' | 'baseFilePath'> {
+export function getFilePathsFromCodeView(codeView: HTMLElement): { headFilePath: string; baseFilePath: string } {
     const filePathElements = codeView.querySelectorAll<HTMLElement>('.file-title-name')
     if (filePathElements.length === 0) {
         throw new Error('Unable to get file paths from code view: no .file-title.name')
@@ -132,7 +132,7 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
     const filePath = getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0))
 
     return {
-        filePath,
+        headFilePath: filePath,
         baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : filePath,
     }
 }
