@@ -604,7 +604,7 @@ ORDER BY 1 DESC, 2 ASC;
 
 // AggregatedEvents calculates AggregatedEvent for each every unique event type.
 func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.AggregatedEvent, err error) {
-	rows, err := dbconn.Global.QueryContext(ctx, aggreatedEvents)
+	rows, err := dbconn.Global.QueryContext(ctx, aggregatedEventsQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -641,42 +641,30 @@ func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.Aggreg
 	return events, nil
 }
 
-const aggreatedEvents = `
+const aggregatedEventsQuery = `
 -- This query does multiple aggregations over the current day, week and month in one
 -- pass over the event_logs table. These are: unique number of users, total
 -- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
 SELECT
   name,
-  DATE_TRUNC('month', NOW()) as month,
-  DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval as week,
-  DATE_TRUNC('day', NOW()) as day,
-  COUNT(*) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
-  ) AS total_month,
-  COUNT(*) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
-  ) AS total_week,
-  COUNT(*) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
-  ) AS total_day,
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
-  ) AS uniques_month,
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
-  ) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
-  ) AS uniques_day,
- PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
- ) AS latencies_month,
- PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
- ) AS latencies_week,
- PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
- ) AS latencies_day
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month)
+  AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week)
+  AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day)
+  AS latencies_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
   SELECT
@@ -689,9 +677,14 @@ FROM (
       THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
       ELSE user_id
     END AS user_id,
-    DATE(TIMEZONE('UTC', timestamp)) AS date
+    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
+    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+    DATE_TRUNC('month', TIMEZONE('UTC', NOW())) as current_month,
+    DATE_TRUNC('week', TIMEZONE('UTC', NOW()) + '1 day'::interval) - '1 day'::interval as current_week,
+    DATE_TRUNC('day', TIMEZONE('UTC', NOW())) as current_day
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', NOW()) AND name IN (
+  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', NOW())) AND name IN (
     'codeintel.lsifHover',
     'codeintel.searchHover',
     'codeintel.lsifDefinitions',
@@ -707,6 +700,6 @@ FROM (
     'search.latencies.commit',
     'search.latencies.symbol'
   )
-) q
-GROUP BY name
+) events
+GROUP BY name, current_month, current_week, current_day
 `
