@@ -459,8 +459,7 @@ func unhighlightLongLines(h string, n int) (string, error) {
 // Lines highlights the file and returns a list of highlighted lines.
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout.
-func Lines(ctx context.Context, p Params) ([]string, bool, error) {
-
+func CodeAsLines(ctx context.Context, p Params) ([]string, bool, error) {
 	html, aborted, err := Code(ctx, p)
 	if err != nil {
 		if err == errBinary {
@@ -474,7 +473,7 @@ func Lines(ctx context.Context, p Params) ([]string, bool, error) {
 
 // splitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
-// original, highlighed file.
+// original, highlighted file.
 func splitHighlightedLines(input template.HTML) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {

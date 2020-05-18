@@ -26,8 +26,8 @@ func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 }
 
 func TestGitTreeEntry_Content(t *testing.T) {
-	testPath := "foobar.md"
-	testContent := "foobar"
+	wantPath := "foobar.md"
+	wantContent := "foobar"
 
 	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
 		if name != testPath {
@@ -35,8 +35,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 		}
 		return []byte(testContent), nil
 	}
-
-	defer func() { git.Mocks.ReadFile = nil }()
+	t.Cleanup(func() { git.Mocks.ReadFile = nil })
 
 	gitTree := &GitTreeEntryResolver{
 		commit: &GitCommitResolver{

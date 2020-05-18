@@ -24,8 +24,8 @@ import (
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
 
-	testBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
-	testHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
+	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
+	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
 
 	repo := &types.Repo{
 		ID:   api.RepoID(1),
@@ -46,7 +46,7 @@ func TestRepositoryComparison(t *testing.T) {
 
 		return &git.Commit{ID: id}, nil
 	}
-	defer func() { git.Mocks.GetCommit = nil }()
+	t.Cleanup(func() { git.Mocks.GetCommit = nil })
 
 	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

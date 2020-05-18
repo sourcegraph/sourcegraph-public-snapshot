@@ -99,8 +99,8 @@ index 9bd8209..d2acfa9 100644
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	testBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
-	testHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
+	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
+	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
 
 	repo := &repos.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}
 
@@ -209,8 +209,8 @@ index 9bd8209..d2acfa9 100644
 				t.Fatalf("pageInfo HasNextPage wrong. want=%t, have=%t", tc.wantHasNextPage, pageInfo.HasNextPage())
 			}
 
-			if diff := cmp.Diff(pageInfo.EndCursor(), tc.wantEndCursor); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(tc.wantEndCursor, pageInfo.EndCursor()); diff != "" {
+				t.Fatalf("(-want +got):\n%s", diff)
 			}
 
 			totalCount, err := conn.TotalCount(ctx)
