@@ -27,6 +27,15 @@ module.exports = api => {
           modules: isTest ? 'commonjs' : false,
           bugfixes: true,
           useBuiltIns: 'entry',
+          include: [
+            // Polyfill URL because Chrome and Firefox are not spec-compliant
+            // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
+            'web.url',
+            // Commonly needed by extensions (used by vscode-jsonrpc)
+            'web.immediate',
+            // Avoids issues with RxJS interop
+            'esnext.symbol.observable',
+          ],
           // See https://github.com/zloirock/core-js#babelpreset-env
           corejs: semver.minVersion(require('./package.json').dependencies['core-js']),
         },
