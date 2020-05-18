@@ -2,16 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -64,48 +60,6 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
-func checkDuplicateRateLimits() (problems conf.Problems) {
-	externalServices, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
-	if err != nil {
-		problems = append(problems, conf.NewExternalServiceProblem(fmt.Sprintf("Could not load external services: %v", err)))
-		return problems
-	}
-
-	var rateLimits []extsvc.RateLimitConfig
-	for _, svc := range externalServices {
-		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
-		if err != nil {
-			if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
-				continue
-			}
-			problems = append(problems, conf.NewExternalServiceProblem(fmt.Sprintf("Could not get rate limit config: %v", err)))
-			return problems
-		}
-		rateLimits = append(rateLimits, rlc)
-	}
-
-	// BaseURL -> DisplayName
-	byURL := make(map[string][]string)
-	// Warn if more than one service for the same code host has a non default rate limiter set
-	for _, r := range rateLimits {
-		if r.IsDefault {
-			continue
-		}
-		byURL[r.BaseURL] = append(byURL[r.BaseURL], r.DisplayName)
-	}
-
-	for _, duplicates := range byURL {
-		if len(duplicates) < 2 {
-			continue
-		}
-		sort.Strings(duplicates)
-		msg := fmt.Sprintf("Multiple rate limiters configured for the same code host: %s", strings.Join(duplicates, ", "))
-		problems = append(problems, conf.NewExternalServiceProblem(msg))
-	}
-
-	return problems
-}
-
 func init() {
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if c.ExternalURL == "" {
@@ -113,8 +67,6 @@ func init() {
 		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.ExternalURL, "http://") {
 			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
 		}
-
-		problems = append(problems, checkDuplicateRateLimits()...)
 
 		return problems
 	})
