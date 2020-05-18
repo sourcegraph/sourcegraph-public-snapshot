@@ -48,7 +48,8 @@ func collectGCPResources(ctx context.Context) ([]Resource, error) {
 						resources = append(resources, Resource{
 							Platform:   PlatformGCP,
 							Identifier: asset.Name,
-							Location:   fmt.Sprintf("%s/%s", p.ProjectId, asset.Location),
+							Location:   asset.Location,
+							Owner:      p.ProjectId,
 							Type:       asset.AssetType,
 							Meta: map[string]interface{}{
 								"description": asset.Description,
