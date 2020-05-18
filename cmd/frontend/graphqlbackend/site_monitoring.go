@@ -101,7 +101,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 			alerts = append(alerts, &MonitoringAlert{
 				NameValue:        name,
 				ServiceNameValue: serviceName,
-				TimestampValue:   DateTime{p.Timestamp.Time().UTC()},
+				TimestampValue:   DateTime{p.Timestamp.Time().UTC().Truncate(time.Hour)},
 				OccurrencesValue: int32(p.Value),
 			})
 		}

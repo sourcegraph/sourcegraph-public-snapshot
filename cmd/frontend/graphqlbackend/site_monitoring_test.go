@@ -33,7 +33,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 					Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
 			},
 		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time()},
+			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
 			NameValue:        "hello",
 			ServiceNameValue: "world",
 			OccurrencesValue: 0,
@@ -45,7 +45,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 					Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(1)}}},
 			},
 		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time()},
+			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
 			NameValue:        "hello",
 			ServiceNameValue: "world",
 			OccurrencesValue: 1,
@@ -64,7 +64,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 					}},
 			},
 		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time()},
+			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
 			NameValue:        "hello",
 			ServiceNameValue: "world",
 			OccurrencesValue: 1,
