@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	"context"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"sync"
