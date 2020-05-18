@@ -83,7 +83,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     return (
         <>
             {props.availableVersionContexts ? (
-                <div className="version-context-dropdown">
+                <div className="version-context-dropdown text-nowrap">
                     <ListboxInput value={props.versionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
@@ -102,7 +102,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                     })}
                                 >
                                     <div className="version-context-dropdown__title pl-2 mb-1">
-                                        <span>Select version context</span>
+                                        <span className="text-nowrap">Select version context</span>
                                         <button type="button" className="btn btn-icon" onClick={showInfo}>
                                             <HelpCircleOutlineIcon className="icon-inline small" />
                                         </button>
