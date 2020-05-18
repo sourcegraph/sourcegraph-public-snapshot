@@ -6,15 +6,58 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ep "github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	aws_ext "github.com/aws/aws-sdk-go-v2/aws/external"
-	aws_cs "github.com/aws/aws-sdk-go-v2/service/configservice"
+	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_eks "github.com/aws/aws-sdk-go-v2/service/eks"
 )
 
-// see https://github.com/aws/aws-sdk-go-v2/blob/v0.18.0/service/configservice/api_enums.go#L462
-var awsResourceTypes = []aws_cs.ResourceType{
-	aws_cs.ResourceTypeAwsEc2Instance,
-	aws_cs.ResourceTypeAwsCloudFormationStack,
+type AWSResourceFetchFunc func(context.Context, aws.Config) ([]Resource, error)
+
+// refer to https://docs.aws.amazon.com/sdk-for-go/v2/api/ for how to query resources under /service
+var awsResources = []AWSResourceFetchFunc{
+	// fetch ec2 instances
+	func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
+		c := aws_ec2.New(cfg)
+		p := aws_ec2.NewDescribeInstancesPaginator(c.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
+		r := make([]Resource, 0)
+		for p.Next(ctx) {
+			page := p.CurrentPage()
+			for _, res := range page.Reservations {
+				for _, inst := range res.Instances {
+					r = append(r, Resource{
+						Platform:   PlatformAWS,
+						Identifier: *inst.InstanceId,
+						Location:   *inst.Placement.AvailabilityZone,
+						Owner:      *res.OwnerId,
+						Type:       fmt.Sprintf("EC2::%s", string(inst.InstanceType)),
+						Meta:       map[string]interface{}{},
+					})
+				}
+			}
+		}
+		return r, p.Err()
+	},
+	// fetch kubernetes clusters
+	func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
+		c := aws_eks.New(cfg)
+		p := aws_eks.NewListClustersPaginator(c.ListClustersRequest(&aws_eks.ListClustersInput{}))
+		r := make([]Resource, 0)
+		for p.Next(ctx) {
+			page := p.CurrentPage()
+			for _, cluster := range page.Clusters {
+				r = append(r, Resource{
+					Platform:   PlatformAWS,
+					Identifier: cluster,
+					Location:   cfg.Region,
+					Owner:      "",
+					Type:       "EKS::cluster",
+				})
+			}
+		}
+		return r, p.Err()
+	},
 }
 
 func collectAWSResources(ctx context.Context) ([]Resource, error) {
@@ -33,34 +76,13 @@ func collectAWSResources(ctx context.Context) ([]Resource, error) {
 	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
 	for _, region := range pt.Regions() {
 		cfg.Region = region.ID()
-		cs := aws_cs.New(cfg.Copy())
-
-		for _, t := range awsResourceTypes {
-			var next *string
-			hasNext := true
-			for hasNext {
-				resp, err := cs.ListDiscoveredResourcesRequest(&aws_cs.ListDiscoveredResourcesInput{
-					ResourceType: t,
-					NextToken:    next,
-				}).Send(ctx)
-				if err != nil {
-					hasNext = false
-					if isVerbose(ctx) {
-						log.Printf("querying region '%s' for resources of type '%s' failed: %v", region.ID(), t, err)
-					}
-					continue
-				}
-				next = resp.NextToken
-				hasNext = next != nil
-				for _, res := range resp.ResourceIdentifiers {
-					resources = append(resources, Resource{
-						Platform:   PlatformAWS,
-						Identifier: *res.ResourceId,
-						Type:       string(res.ResourceType),
-						Location:   region.ID(),
-					})
-				}
+		// query configured resource in region
+		for _, fetch := range awsResources {
+			r, err := fetch(ctx, cfg.Copy())
+			if err != nil {
+				return nil, fmt.Errorf("resource fetch failed: %w", err)
 			}
+			resources = append(resources, r...)
 		}
 	}
 

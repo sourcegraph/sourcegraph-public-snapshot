@@ -17,6 +17,7 @@ type Resource struct {
 	Identifier string
 	Type       string
 	Location   string
+	Owner      string
 	Meta       map[string]interface{}
 }
 
