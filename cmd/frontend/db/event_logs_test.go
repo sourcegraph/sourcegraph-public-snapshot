@@ -310,7 +310,7 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs.AggregatedEvents(ctx)
+	events, err := EventLogs.aggregatedEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}

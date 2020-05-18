@@ -604,7 +604,13 @@ ORDER BY 1 DESC, 2 ASC;
 
 // AggregatedEvents calculates AggregatedEvent for each every unique event type.
 func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.AggregatedEvent, err error) {
-	rows, err := dbconn.Global.QueryContext(ctx, aggreatedEvents)
+	return l.aggregatedEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggreatedEvents, now, now, now, now, now, now, now, now, now, now, now, now, now)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -647,35 +653,35 @@ const aggreatedEvents = `
 -- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
 SELECT
   name,
-  DATE_TRUNC('month', NOW()) as month,
-  DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval as week,
-  DATE_TRUNC('day', NOW()) as day,
+  DATE_TRUNC('month', %s::timestamp) as month,
+  DATE_TRUNC('week', %s::timestamp + '1 day'::interval) - '1 day'::interval as week,
+  DATE_TRUNC('day', %s::timestamp) as day,
   COUNT(*) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', %s::timestamp)
   ) AS total_month,
   COUNT(*) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', %s::timestamp + '1 day'::interval) - '1 day'::interval
   ) AS total_week,
   COUNT(*) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', %s::timestamp)
   ) AS total_day,
   COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', %s::timestamp)
   ) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', %s::timestamp + '1 day'::interval) - '1 day'::interval
   ) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', %s::timestamp)
   ) AS uniques_day,
  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+    WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', %s::timestamp)
  ) AS latencies_month,
  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', NOW() + '1 day'::interval) - '1 day'::interval
+    WHERE DATE_TRUNC('week', date + '1 day'::interval) - '1 day'::interval = DATE_TRUNC('week', %s::timestamp + '1 day'::interval) - '1 day'::interval
  ) AS latencies_week,
  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (
-    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', NOW())
+    WHERE DATE_TRUNC('day', date) = DATE_TRUNC('day', %s::timestamp)
  ) AS latencies_day
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
@@ -691,7 +697,7 @@ FROM (
     END AS user_id,
     DATE(TIMEZONE('UTC', timestamp)) AS date
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', NOW()) AND name IN (
+  WHERE timestamp >= DATE_TRUNC('month', %s::timestamp) AND name IN (
     'codeintel.lsifHover',
     'codeintel.searchHover',
     'codeintel.lsifDefinitions',
