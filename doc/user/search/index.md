@@ -110,11 +110,11 @@ Your site admin can add version contexts in site configuration under the `experi
       "revisions": [
         {
           "repo": "github.com/sourcegraph/sourcegraph",
-          "ref": "3.15"
+          "rev": "3.15"
         },
         {
           "repo": "github.com/sourcegraph/src-cli",
-          "ref": "3.11.2"
+          "rev": "3.11.2"
         }
       ]
     }
