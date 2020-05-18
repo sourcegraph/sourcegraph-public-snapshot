@@ -645,12 +645,13 @@ SELECT
   current_month,
   current_week,
   current_day,
+
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND user_id != 0) AS registered_uniques_month,
-  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND user_id != 0) AS registered_uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND user_id != 0) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND registered) AS registered_uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND registered) AS registered_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND registered) AS registered_uniques_day,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
   	AS integration_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
@@ -711,11 +712,18 @@ SELECT
       'DiffSearchResultsQueried'
     )
   ) AS monitor_uniques_week
+
 FROM (
   -- This sub-query is here to avoid re-doing this work above on each aggregation.
   SELECT
     name,
-    user_id,
+    user_id != 0 as registered,
+    CASE WHEN user_id = 0
+      -- It's faster to group by an int rather than text, so we convert
+      -- the anonymous_user_id to an int, rather than the user_id to text.
+      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+      ELSE user_id
+    END AS user_id,
     source,
     DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
     DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
@@ -726,6 +734,7 @@ FROM (
   FROM event_logs
   WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp))
 ) events
+
 GROUP BY current_month, current_week, current_day
 `
 
