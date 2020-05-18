@@ -14,7 +14,7 @@ import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtRoots } from './api/roots'
+import { ExtWorkspace } from './api/workspace'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
@@ -135,7 +135,7 @@ function createExtensionAPI(
     const extensions = new ExtExtensions()
     subscription.add(extensions)
 
-    const roots = new ExtRoots()
+    const workspace = new ExtWorkspace()
     const windows = new ExtWindows(proxy, documents)
     const views = new ExtViews(proxy.views)
     const configuration = new ExtConfiguration<any>(proxy.configuration)
@@ -152,7 +152,7 @@ function createExtensionAPI(
         configuration,
         documents,
         extensions,
-        roots,
+        workspace,
         windows,
     }
 
@@ -195,10 +195,14 @@ function createExtensionAPI(
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
             get roots(): readonly sourcegraph.WorkspaceRoot[] {
-                return roots.getAll()
+                return workspace.getAllRoots()
             },
-            onDidChangeRoots: roots.changes,
-            rootChanges: roots.changes,
+            onDidChangeRoots: workspace.rootChanges,
+            rootChanges: workspace.rootChanges,
+            get versionContext(): string | undefined {
+                return workspace.versionContextChanges.value
+            },
+            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
         configuration: Object.assign(configuration.changes.asObservable(), {

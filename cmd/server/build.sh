@@ -83,9 +83,6 @@ cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
-echo "--- precise code intel"
-cp -a ./cmd/precise-code-intel "$OUTPUT"
-
 echo "--- monitoring generation"
 pushd monitoring && go generate && popd
 

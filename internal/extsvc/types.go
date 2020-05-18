@@ -103,7 +103,7 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64, externalURL string) (string, error) {
+func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
 	var path string
 	switch strings.ToLower(kind) {
 	case "github":
@@ -111,10 +111,10 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) (strin
 	case "bitbucketserver":
 		path = "bitbucket-server-webhooks"
 	default:
-		return "", fmt.Errorf("unknown external service kind: %q", kind)
+		return ""
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID), nil
+	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID)
 }
 
 // ExtractRateLimitConfig extracts the rate limit config from the given args. If rate limiting is not

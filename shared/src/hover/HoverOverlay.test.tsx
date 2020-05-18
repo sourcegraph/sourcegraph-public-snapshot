@@ -1,6 +1,6 @@
 import { HoverAttachment } from '@sourcegraph/codeintellify/lib/types'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { registerLanguage } from 'highlight.js/lib/highlight'
+import { registerLanguage } from 'highlight.js/lib/core'
 import * as H from 'history'
 import { castArray } from 'lodash'
 import React from 'react'

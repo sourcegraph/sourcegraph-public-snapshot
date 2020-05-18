@@ -20,6 +20,9 @@ type MockBundleManagerClient struct {
 	// DeleteUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method DeleteUpload.
 	DeleteUploadFunc *BundleManagerClientDeleteUploadFunc
+	// ExistsFunc is an instance of a mock function object controlling the
+	// behavior of the method Exists.
+	ExistsFunc *BundleManagerClientExistsFunc
 	// GetUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUpload.
 	GetUploadFunc *BundleManagerClientGetUploadFunc
@@ -50,6 +53,11 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
+			},
+		},
+		ExistsFunc: &BundleManagerClientExistsFunc{
+			defaultHook: func(context.Context, []int) (map[int]bool, error) {
+				return nil, nil
 			},
 		},
 		GetUploadFunc: &BundleManagerClientGetUploadFunc{
@@ -90,6 +98,9 @@ func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleMan
 		},
 		DeleteUploadFunc: &BundleManagerClientDeleteUploadFunc{
 			defaultHook: i.DeleteUpload,
+		},
+		ExistsFunc: &BundleManagerClientExistsFunc{
+			defaultHook: i.Exists,
 		},
 		GetUploadFunc: &BundleManagerClientGetUploadFunc{
 			defaultHook: i.GetUpload,
@@ -322,6 +333,115 @@ func (c BundleManagerClientDeleteUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c BundleManagerClientDeleteUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// BundleManagerClientExistsFunc describes the behavior when the Exists
+// method of the parent MockBundleManagerClient instance is invoked.
+type BundleManagerClientExistsFunc struct {
+	defaultHook func(context.Context, []int) (map[int]bool, error)
+	hooks       []func(context.Context, []int) (map[int]bool, error)
+	history     []BundleManagerClientExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// Exists delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBundleManagerClient) Exists(v0 context.Context, v1 []int) (map[int]bool, error) {
+	r0, r1 := m.ExistsFunc.nextHook()(v0, v1)
+	m.ExistsFunc.appendCall(BundleManagerClientExistsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Exists method of the
+// parent MockBundleManagerClient instance is invoked and the hook queue is
+// empty.
+func (f *BundleManagerClientExistsFunc) SetDefaultHook(hook func(context.Context, []int) (map[int]bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Exists method of the parent MockBundleManagerClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *BundleManagerClientExistsFunc) PushHook(hook func(context.Context, []int) (map[int]bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BundleManagerClientExistsFunc) SetDefaultReturn(r0 map[int]bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) (map[int]bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BundleManagerClientExistsFunc) PushReturn(r0 map[int]bool, r1 error) {
+	f.PushHook(func(context.Context, []int) (map[int]bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *BundleManagerClientExistsFunc) nextHook() func(context.Context, []int) (map[int]bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BundleManagerClientExistsFunc) appendCall(r0 BundleManagerClientExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of BundleManagerClientExistsFuncCall objects
+// describing the invocations of this function.
+func (f *BundleManagerClientExistsFunc) History() []BundleManagerClientExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]BundleManagerClientExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BundleManagerClientExistsFuncCall is an object that describes an
+// invocation of method Exists on an instance of MockBundleManagerClient.
+type BundleManagerClientExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int]bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BundleManagerClientExistsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BundleManagerClientExistsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // BundleManagerClientGetUploadFunc describes the behavior when the

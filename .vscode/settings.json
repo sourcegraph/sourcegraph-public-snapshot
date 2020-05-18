@@ -64,10 +64,6 @@
       "directory": "shared",
       "changeProcessCWD": true,
     },
-    {
-      "directory": "cmd/precise-code-intel",
-      "changeProcessCWD": true,
-    },
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

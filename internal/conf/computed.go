@@ -128,11 +128,6 @@ func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
 }
 
-// CanReadEmail tells if an IMAP server is configured and reading email is possible.
-func CanReadEmail() bool {
-	return Get().EmailImap != nil
-}
-
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (

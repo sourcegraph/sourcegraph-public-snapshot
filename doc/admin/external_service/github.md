@@ -42,6 +42,14 @@ No token scopes are required if you only want to sync public repositories and do
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
+### Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
+
+If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
+
 ## Repository permissions
 
 By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
@@ -62,7 +70,7 @@ The `webhooks` setting allows specifying the org webhook secrets necessary to au
 ]
 ```
 
-These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) with `repo-updater` permits.
+These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) which `repo-updater` permits.
 
 The following [webhook events](https://developer.github.com/webhooks/) are currently used:
 
@@ -76,7 +84,7 @@ The following [webhook events](https://developer.github.com/webhooks/) are curre
 
 To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
 
-Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
+Fill in the URL displayed after saving the `webhooks` setting mentioned above and make sure it is publicly available.
 
 The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
 

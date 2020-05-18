@@ -81,13 +81,6 @@
       "problemMatcher": ["$eslint-stylish"],
     },
     {
-      "label": "eslint:precise-code-intel",
-      "type": "npm",
-      "script": "eslint",
-      "path": "cmd/precise-code-intel/",
-      "problemMatcher": ["$eslint-stylish"],
-    },
-    {
       "label": "eslint:release",
       "type": "npm",
       "script": "eslint",

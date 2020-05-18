@@ -42,7 +42,7 @@ exports[`<SiteAdminExternalServiceForm /> create GitHub 1`] = `
     </p>
   </div>
   <button
-    className="btn btn-primary e2e-add-external-service-button"
+    className="btn btn-primary mb-3 e2e-add-external-service-button"
     disabled={false}
     type="submit"
   >
@@ -93,7 +93,7 @@ exports[`<SiteAdminExternalServiceForm /> edit GitHub 1`] = `
     </p>
   </div>
   <button
-    className="btn btn-primary e2e-add-external-service-button"
+    className="btn btn-primary mb-3 e2e-add-external-service-button"
     disabled={false}
     type="submit"
   >
@@ -144,7 +144,7 @@ exports[`<SiteAdminExternalServiceForm /> edit GitHub, loading 1`] = `
     </p>
   </div>
   <button
-    className="btn btn-primary e2e-add-external-service-button"
+    className="btn btn-primary mb-3 e2e-add-external-service-button"
     disabled={true}
     type="submit"
   >

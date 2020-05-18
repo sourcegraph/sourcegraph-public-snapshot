@@ -29,6 +29,6 @@ comment:
   # Exceptions:
   # - PRs that only update docs, we don't need Codecov there.
   # - e2e tests, which don't run on most PRs.
-  after_n_builds: 5
+  after_n_builds: 6
 ignore:
   - '**/bindata.go'

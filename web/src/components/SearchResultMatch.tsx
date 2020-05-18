@@ -191,7 +191,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(i => (
-                                        <tr key={`this.props.item.url#${i}`}>
+                                        <tr key={`${this.props.item.url}#${i}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">
                                                 <code>{i}</code>

@@ -40,7 +40,7 @@ const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'numeric', da
 const dateTickFormatter = dateTickFormat.format.bind(dateTickFormat)
 
 const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-const tooltipLabelFormatter = tooltipLabelFormat.format.bind(tooltipLabelFormat)
+const dateTooltipLabelFormatter = tooltipLabelFormat.format.bind(tooltipLabelFormat)
 
 const toLocaleString = (value: {}): string => value.toLocaleString()
 
@@ -64,7 +64,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
 
     const ChartComponent = content.chart === 'line' ? LineChart : BarChart
     return (
-        <ResponsiveContainer width="100%" minHeight={12 * 16}>
+        <ResponsiveContainer width="100%">
             <ChartComponent
                 className="cartesian-chart-view-content"
                 data={content.data}
@@ -92,7 +92,9 @@ export const CartesianChartViewContent: React.FunctionComponent<{
                 />
                 <Tooltip
                     isAnimationActive={false}
-                    labelFormatter={tooltipLabelFormatter as LabelFormatter}
+                    labelFormatter={
+                        content.xAxis.scale === 'time' ? (dateTooltipLabelFormatter as LabelFormatter) : undefined
+                    }
                     allowEscapeViewBox={{ x: false, y: false }} // TODO assign z-indexes to grid items to allow overflow
                 />
                 {series.length > 1 && (

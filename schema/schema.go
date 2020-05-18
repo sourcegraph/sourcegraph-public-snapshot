@@ -330,14 +330,6 @@ type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
 }
-
-// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
-type Discussions struct {
-	// AbuseEmails description: Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
-	AbuseEmails []string `json:"abuseEmails,omitempty"`
-	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
-	AbuseProtection bool `json:"abuseProtection,omitempty"`
-}
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
 	Id string `json:"id,omitempty"`
@@ -395,8 +387,6 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.
-	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
@@ -638,18 +628,6 @@ type HTTPHeaderAuthProvider struct {
 	Type                      string `json:"type"`
 	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
-}
-
-// IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
-type IMAPServerConfig struct {
-	// Host description: The IMAP server host.
-	Host string `json:"host"`
-	// Password description: The username to use when communicating with the IMAP server.
-	Password string `json:"password,omitempty"`
-	// Port description: The IMAP server port.
-	Port int `json:"port"`
-	// Username description: The username to use when communicating with the IMAP server.
-	Username string `json:"username,omitempty"`
 }
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
@@ -925,6 +903,8 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
+	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
@@ -983,14 +963,10 @@ type SiteConfiguration struct {
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
-	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
-	Discussions *Discussions `json:"discussions,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailImap description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
-	EmailImap *IMAPServerConfig `json:"email.imap,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

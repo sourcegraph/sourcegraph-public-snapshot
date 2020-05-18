@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": ">=8.0.0 <14.0.0",
+    "node": "^14.2.0",
     "yarn": "^1.10.1"
   },
   "scripts": {
@@ -20,12 +20,13 @@
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate",
-    "test": "jest --testPathIgnorePatterns e2e regression integration",
+    "test": "jest --testPathIgnorePatterns e2e regression integration storybook",
     "test-e2e": "TS_NODE_PROJECT=web/src/e2e/tsconfig.json mocha ./web/src/e2e/e2e.test.ts",
     "cover-e2e": "nyc --hook-require=false yarn test-e2e",
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "storybook:build": "build-storybook -c .storybook",
-    "storybook:smoke-test": "yarn run storybook --smoke-test",
+    "build-storybook": "build-storybook -c .storybook",
+    "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
+    "percy-storybook": "PERCY_TOKEN=${PERCY_STORYBOOK_TOKEN} percy-storybook --widths=768",
     "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
@@ -37,13 +38,14 @@
     "not IE > 0"
   ],
   "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
     "extension": [
       ".tsx",
       ".ts"
     ],
     "include": [
-      "@(web|shared)/src/**/*.ts?(x)"
+      "@(web|shared|browser)/src/**/*.ts?(x)"
     ],
     "exclude": [
       "node_modules",
@@ -72,8 +74,10 @@
     "@babel/runtime": "^7.9.6",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
+    "@percy/storybook": "^3.3.0",
     "@slack/web-api": "^5.8.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.17.2",
@@ -87,6 +91,7 @@
     "@storybook/addon-links": "^5.3.18",
     "@storybook/addon-options": "^5.3.18",
     "@storybook/addon-storyshots": "^5.3.18",
+    "@storybook/addon-storyshots-puppeteer": "^5.3.18",
     "@storybook/addons": "^5.3.18",
     "@storybook/components": "^5.3.18",
     "@storybook/core": "^5.3.18",
@@ -126,6 +131,7 @@
     "@types/react": "16.9.34",
     "@types/react-circular-progressbar": "1.0.2",
     "@types/react-dom": "16.9.7",
+    "@types/react-grid-layout": "^0.17.1",
     "@types/react-hot-loader": "4.1.0",
     "@types/react-router": "5.1.7",
     "@types/react-router-dom": "5.1.5",
@@ -153,7 +159,6 @@
     "@types/uuid": "7.0.3",
     "@types/webpack": "4.41.12",
     "@types/webpack-dev-server": "3.10.1",
-    "@types/whatwg-url": "6.4.0",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.7.6",
     "babel-jest": "^25.2.6",
@@ -167,7 +172,7 @@
     "chalk": "^4.0.0",
     "chokidar-cli": "^2.1.0",
     "chrome-webstore-upload-cli": "^1.2.0",
-    "command-exists": "^1.2.8",
+    "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
     "css-loader": "^3.5.3",
     "eslint": "^6.8.0",
@@ -216,14 +221,14 @@
     "socket.io-client": "^2.3.0",
     "string-width": "^4.2.0",
     "style-loader": "^1.1.3",
-    "stylelint": "^13.3.0",
+    "stylelint": "^13.3.3",
     "term-size": "^2.2.0",
-    "terser-webpack-plugin": "^2.3.4",
+    "terser-webpack-plugin": "^3.0.1",
     "thread-loader": "^2.1.3",
     "to-string-loader": "^1.1.6",
     "ts-graphql-plugin": "^1.12.0",
     "ts-node": "^8.10.1",
-    "typescript": "^3.8.3",
+    "typescript": "^3.9.2",
     "utc-version": "^2.0.1",
     "web-ext": "^4.1.0",
     "webpack": "^4.43.0",
@@ -260,7 +265,7 @@
     "got": "^10.7.0",
     "graphiql": "^0.17.5",
     "he": "^1.2.0",
-    "highlight.js": "^9.18.1",
+    "highlight.js": "^10.0.2",
     "highlightjs-graphql": "^1.0.1",
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
@@ -275,6 +280,7 @@
     "react-circular-progressbar": "^2.0.3",
     "react-dom": "npm:@hot-loader/react-dom@^16.13.0",
     "react-dom-confetti": "^0.1.3",
+    "react-grid-layout": "^0.18.3",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",
     "react-stripe-elements": "^6.1.1",
@@ -282,7 +288,6 @@
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.4.1",
     "recharts": "^1.8.5",
-    "regenerator-runtime": "^0.13.5",
     "rxjs": "^6.5.5",
     "sanitize-html": "^1.22.1",
     "semver": "^7.3.2",
@@ -293,12 +298,11 @@
     "tagged-template-noop": "^2.1.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.2",
-    "tslib": "^1.11.1",
+    "tslib": "^2.0.0",
     "utility-types": "^3.10.0",
     "uuid": "^7.0.3",
-    "webext-domain-permission-toggle": "^1.0.0",
-    "webextension-polyfill": "^0.6.0",
-    "whatwg-url": "^8.0.0"
+    "webext-domain-permission-toggle": "^1.0.1",
+    "webextension-polyfill": "^0.6.0"
   },
   "resolutions": {
     "history": "4.5.1"

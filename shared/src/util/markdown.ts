@@ -1,4 +1,4 @@
-import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
+import { highlight, highlightAuto } from 'highlight.js/lib/core'
 import { without } from 'lodash'
 // This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
 // eslint-disable-next-line no-restricted-imports

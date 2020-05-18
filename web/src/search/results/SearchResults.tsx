@@ -59,7 +59,7 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    setVersionContext: (versionContext: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 }
 
@@ -193,9 +193,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             if (caseSensitive !== this.props.caseSensitive) {
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
-                                            if (versionContext !== this.props.versionContext) {
-                                                this.props.setVersionContext(versionContext || '')
-                                            }
+
+                                            this.props.setVersionContext(versionContext)
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {

@@ -202,7 +202,7 @@ func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
 func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
-		SET state = 'completed', finished_at = now()
+		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
 	`, id))
 }
@@ -211,7 +211,7 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
 	return db.exec(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
-		SET state = 'errored', finished_at = now(), failure_summary = %s, failure_stacktrace = %s
+		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s
 	`, failureSummary, failureStacktrace, id))
 }
@@ -318,8 +318,8 @@ func (db *dbImpl) GetStates(ctx context.Context, ids []int) (map[int]string, err
 }
 
 // DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-// the visibility of all uploads for that repository are recalculated. The given function is expected to return the newest commit
-// on the default branch when invoked.
+// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
+// commit on the default branch when invoked.
 func (db *dbImpl) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (_ bool, err error) {
 	tx, started, err := db.transact(ctx)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/server"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -31,8 +32,9 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		pollInterval     = mustParseInterval(rawPollInterval, "PRECISE_CODE_INTEL_POLL_INTERVAL")
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		pollInterval     = mustParseInterval(rawPollInterval, "PRECISE_CODE_INTEL_POLL_INTERVAL")
+		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -44,7 +46,14 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	workerMetrics := worker.NewWorkerMetrics(prometheus.DefaultRegisterer)
+	resetterMetrics := resetter.NewResetterMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
+
+	uploadResetter := resetter.UploadResetter{
+		DB:            db,
+		ResetInterval: resetInterval,
+		Metrics:       resetterMetrics,
+	}
 
 	worker := worker.NewWorker(
 		db,
@@ -55,6 +64,7 @@ func main() {
 	)
 
 	go server.Start()
+	go uploadResetter.Run()
 	go worker.Start()
 	go debugserver.Start()
 

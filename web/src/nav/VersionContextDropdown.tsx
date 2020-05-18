@@ -27,7 +27,7 @@ export interface VersionContextDropdownProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
-    setVersionContext: (versionContext: string) => void
+    setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
     navbarSearchQuery: string
@@ -63,7 +63,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     }
 
     const disableValue = (): void => {
-        props.setVersionContext('')
+        props.setVersionContext(undefined)
     }
 
     if (!props.availableVersionContexts || props.availableVersionContexts.length === 0) {
@@ -83,7 +83,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     return (
         <>
             {props.availableVersionContexts ? (
-                <div className="version-context-dropdown">
+                <div className="version-context-dropdown text-nowrap">
                     <ListboxInput value={props.versionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
@@ -102,7 +102,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                     })}
                                 >
                                     <div className="version-context-dropdown__title pl-2 mb-1">
-                                        <span>Select version context</span>
+                                        <span className="text-nowrap">Select version context</span>
                                         <button type="button" className="btn btn-icon" onClick={showInfo}>
                                             <HelpCircleOutlineIcon className="icon-inline small" />
                                         </button>
@@ -111,10 +111,13 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>
                                             <p className="mb-2">
-                                                Version contexts allow you to search a set of repositories based on a
-                                                hash, tag, or other interesting moment in time of multiple code bases.
-                                                Your administrator can configure version contexts in the site
-                                                configuration.
+                                                Version contexts (
+                                                <a href="http://docs.sourcegraph.com/user/search#version-contexts">
+                                                    documentation
+                                                </a>
+                                                ) allow you to search a set of repositories based on a commit hash, tag,
+                                                or other interesting moment in time of multiple code bases. Your
+                                                administrator can configure version contexts in the site configuration.
                                             </p>
                                             <button
                                                 type="button"
