@@ -238,7 +238,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 			JLimitHit: fileLimitHit,
 			uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			Repo:      repoRev.Repo,
-			CommitID:  repoRev.IndexedHEADCommit(),
+			CommitID:  api.CommitID(file.Version),
 		}
 	}
 

@@ -1053,10 +1053,10 @@ type VersionContext struct {
 
 // VersionContextRevision description: Description of the chosen repository and revision
 type VersionContextRevision struct {
-	// Ref description: Branch, tag, or commit hash
-	Ref string `json:"ref"`
 	// Repo description: Repository name
 	Repo string `json:"repo"`
+	// Rev description: Branch, tag, or commit hash
+	Rev string `json:"rev"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"

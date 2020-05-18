@@ -174,15 +174,32 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 		expLocation   string
 	}{
 		{
-			name:          "empty path, no redirect",
-			route:         routeRepo,
-			path:          "",
+			name:          "empty commit ID, no redirect",
+			common:        &Common{},
 			expStatusCode: http.StatusOK,
 		},
 		{
-			name:          "root path, no redirect",
-			route:         routeRepo,
-			path:          "/",
+			name:  "empty path, no redirect",
+			route: routeRepo,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expStatusCode: http.StatusOK,
+		},
+		{
+			name:  "root path, no redirect",
+			route: routeRepo,
+			path:  "/",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
 			expStatusCode: http.StatusOK,
 		},
 		{
@@ -193,6 +210,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
 			expStatusCode: http.StatusOK,
@@ -205,6 +223,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{}, // Not a directory
 			expStatusCode: http.StatusOK,
@@ -219,6 +238,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{}, // Not a directory
 			expHandled:    true,
@@ -234,6 +254,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
 			expHandled:    true,
@@ -249,7 +270,8 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
-				Rev: "@master",
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{}, // Not a directory
 			expHandled:    true,
@@ -265,7 +287,8 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
-				Rev: "@master",
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
 			expHandled:    true,
@@ -282,6 +305,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			expHandled:    true,
 			expStatusCode: http.StatusTemporaryRedirect,
@@ -296,6 +320,7 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			expHandled:    true,
 			expStatusCode: http.StatusTemporaryRedirect,
@@ -310,7 +335,8 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
-				Rev: "@master",
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			expHandled:    true,
 			expStatusCode: http.StatusTemporaryRedirect,
@@ -325,7 +351,8 @@ func Test_redirectTreeOrBlob(t *testing.T) {
 				Repo: &types.Repo{
 					Name: "github.com/user/repo",
 				},
-				Rev: "@master",
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
 			},
 			expHandled:    true,
 			expStatusCode: http.StatusTemporaryRedirect,

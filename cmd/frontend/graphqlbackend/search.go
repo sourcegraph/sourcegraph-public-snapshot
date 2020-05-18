@@ -677,10 +677,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		var revs []search.RevisionSpecifier
 		// versionContext will be nil if the query contains revision specifiers
 		if versionContext != nil {
-			for _, vcRepoRef := range versionContext.Revisions {
-				if vcRepoRef.Repo == string(repo.Name) {
+			for _, vcRepoRev := range versionContext.Revisions {
+				if vcRepoRev.Repo == string(repo.Name) {
 					repoRev.Repo = repo
-					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRef.Ref})
+					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
 					break
 				}
 			}

@@ -181,13 +181,13 @@ const SiteSchemaJSON = `{
                   "description": "Description of the chosen repository and revision",
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["repo", "ref"],
+                  "required": ["repo", "rev"],
                   "properties": {
                     "repo": {
                       "description": "Repository name",
                       "type": "string"
                     },
-                    "ref": {
+                    "rev": {
                       "description": "Branch, tag, or commit hash",
                       "type": "string"
                     }
@@ -206,15 +206,15 @@ const SiteSchemaJSON = `{
               "revisions": [
                 {
                   "repo": "github.com/sourcegraph/sourcegraph",
-                  "ref": "3.15"
+                  "rev": "3.15"
                 },
                 {
                   "repo": "github.com/sourcegraph/lib1",
-                  "ref": "23edr233r"
+                  "rev": "23edr233r"
                 },
                 {
                   "repo": "github.com/sourcegraph/lib2",
-                  "ref": "2.4"
+                  "rev": "2.4"
                 }
               ]
             }

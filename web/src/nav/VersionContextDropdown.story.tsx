@@ -24,9 +24,9 @@ const commonProps = subTypeOf<Partial<VersionContextDropdownProps>>()({
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     availableVersionContexts: [
-        { name: 'test 1', description: 'test 1', revisions: [{ ref: 'test', repo: 'github.com/test/test' }] },
-        { name: 'test 2', description: 'test 2', revisions: [{ ref: 'test', repo: 'github.com/test/test' }] },
-        { name: 'test 3', description: 'test 3', revisions: [{ ref: 'test', repo: 'github.com/test/test' }] },
+        { name: 'test 1', description: 'test 1', revisions: [{ rev: 'test', repo: 'github.com/test/test' }] },
+        { name: 'test 2', description: 'test 2', revisions: [{ rev: 'test', repo: 'github.com/test/test' }] },
+        { name: 'test 3', description: 'test 3', revisions: [{ rev: 'test', repo: 'github.com/test/test' }] },
     ],
     navbarSearchQuery: 'test',
     setVersionContext,
