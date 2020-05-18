@@ -17,10 +17,6 @@ func noopDoneFn(err error) error {
 	return err
 }
 
-// ErrNotTransactable occurs when Transact is called on a Database whose underlying
-// db handle does not support beginning a transaction.
-var ErrNotTransactable = errors.New("db: not transactable")
-
 // Transact returns a Database whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
@@ -50,9 +46,6 @@ func (db *dbImpl) transact(ctx context.Context) (*dbImpl, bool, error) {
 
 	return &dbImpl{db: tx}, true, nil
 }
-
-// ErrNoTransaction occurs when Savepoint or RollbackToSavepoint is called outside of a transaction.
-var ErrNoTransaction = errors.New("db: not in a transaction")
 
 // Savepoint creates a named position in the transaction from which all additional work can
 // be discarded.
