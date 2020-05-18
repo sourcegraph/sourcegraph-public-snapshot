@@ -279,7 +279,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		},
 		// This week
 		now.Add(-time.Hour * 24 * 3): {
-			[]uint32{2, 3, 5},
+			[]uint32{0, 2, 3, 5},
 			[]string{"ViewRepository", "ViewTree"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -291,7 +291,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		},
 		// This month
 		now.Add(-time.Hour * 24 * 6): {
-			[]uint32{1, 8, 9},
+			[]uint32{0, 1, 8, 9},
 			[]string{"ViewSiteAdminX"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -303,7 +303,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		},
 		// Previous month
 		now.Add(-time.Hour * 24 * 40): {
-			[]uint32{1, 5, 6, 13},
+			[]uint32{0, 1, 5, 6, 13},
 			[]string{"SearchResultsQueried", "DiffSearchResultsQueried"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -321,6 +321,10 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 							Source: source,
 							// Jitter current time +/- 30 minutes
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						}
+
+						if user == 0 {
+							e.AnonymousUserID = "deadbeef"
 						}
 
 						if err := EventLogs.Insert(ctx, e); err != nil {
@@ -341,21 +345,21 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 		Day:                     now.Truncate(time.Hour * 24),
-		UniquesMonth:            10,
-		UniquesWeek:             6,
+		UniquesMonth:            11,
+		UniquesWeek:             7,
 		UniquesDay:              5,
 		RegisteredUniquesMonth:  10,
 		RegisteredUniquesWeek:   6,
 		RegisteredUniquesDay:    5,
-		IntegrationUniquesMonth: 10,
-		IntegrationUniquesWeek:  6,
+		IntegrationUniquesMonth: 11,
+		IntegrationUniquesWeek:  7,
 		IntegrationUniquesDay:   5,
-		ManageUniquesMonth:      8,
-		CodeUniquesMonth:        7,
+		ManageUniquesMonth:      9,
+		CodeUniquesMonth:        8,
 		VerifyUniquesMonth:      8,
 		MonitorUniquesMonth:     0,
 		ManageUniquesWeek:       6,
-		CodeUniquesWeek:         3,
+		CodeUniquesWeek:         4,
 		VerifyUniquesWeek:       4,
 		MonitorUniquesWeek:      0,
 	}
