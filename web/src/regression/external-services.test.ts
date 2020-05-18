@@ -98,7 +98,7 @@ describe('External services GUI', () => {
                     enterTextMethod: 'paste',
                 })
                 await driver.replaceText({
-                    selector: '.monaco-editor',
+                    selector: '.e2e-external-service-editor .monaco-editor',
                     newText: githubConfig,
                     selectMethod: 'keyboard',
                     enterTextMethod: 'paste',
