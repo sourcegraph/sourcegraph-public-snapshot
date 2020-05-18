@@ -7,6 +7,68 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func GetSiteUsageStats(ctx context.Context, monthsOnly bool) (*types.SiteUsageStatistics, error) {
+	summary, err := db.EventLogs.SiteUsage(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := groupSiteUsageStats(summary, monthsOnly)
+	return stats, nil
+}
+
+func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types.SiteUsageStatistics {
+	stats := &types.SiteUsageStatistics{
+		DAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            summary.Day,
+				UserCount:            summary.UniquesDay,
+				RegisteredUserCount:  summary.RegisteredUniquesDay,
+				AnonymousUserCount:   summary.UniquesDay - summary.RegisteredUniquesDay,
+				IntegrationUserCount: summary.IntegrationUniquesDay,
+				Stages:               &types.Stages{},
+			},
+		},
+		WAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            summary.Week,
+				UserCount:            summary.UniquesWeek,
+				RegisteredUserCount:  summary.RegisteredUniquesWeek,
+				AnonymousUserCount:   summary.UniquesWeek - summary.RegisteredUniquesWeek,
+				IntegrationUserCount: summary.IntegrationUniquesWeek,
+				Stages: &types.Stages{
+					Manage:  summary.ManageUniquesWeek,
+					Code:    summary.CodeUniquesWeek,
+					Verify:  summary.VerifyUniquesWeek,
+					Monitor: summary.MonitorUniquesWeek,
+				},
+			},
+		},
+		MAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            summary.Month,
+				UserCount:            summary.UniquesMonth,
+				RegisteredUserCount:  summary.RegisteredUniquesMonth,
+				AnonymousUserCount:   summary.UniquesMonth - summary.RegisteredUniquesMonth,
+				IntegrationUserCount: summary.IntegrationUniquesMonth,
+				Stages: &types.Stages{
+					Manage:  summary.ManageUniquesMonth,
+					Code:    summary.CodeUniquesMonth,
+					Verify:  summary.VerifyUniquesMonth,
+					Monitor: summary.MonitorUniquesMonth,
+				},
+			},
+		},
+	}
+
+	if monthsOnly {
+		stats.DAUs = []*types.SiteActivityPeriod{}
+		stats.WAUs = []*types.SiteActivityPeriod{}
+	}
+
+	return stats
+}
+
 // GetAggregatedStats returns aggregates statistics for code intel and search usage.
 func GetAggregatedStats(ctx context.Context) (*types.CodeIntelUsageStatistics, *types.SearchUsageStatistics, error) {
 	events, err := db.EventLogs.AggregatedEvents(ctx)

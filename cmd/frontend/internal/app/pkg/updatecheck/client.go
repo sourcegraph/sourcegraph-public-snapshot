@@ -83,18 +83,7 @@ func recordOperation(method string) func(error) error {
 
 func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json.RawMessage, error) {
 	rec := recordOperation("getAndMarshalSiteActivityJSON")
-
-	var days, weeks, months int
-	if criticalOnly {
-		months = 1
-	} else {
-		days, weeks, months = 1, 1, 1
-	}
-	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
-	})
+	siteActivity, err := usagestats.GetSiteUsageStats(ctx, criticalOnly)
 	defer rec(err)
 
 	if err != nil {

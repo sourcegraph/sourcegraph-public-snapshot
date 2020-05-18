@@ -8,6 +8,135 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func TestGroupSiteUsageStats(t *testing.T) {
+	t1 := time.Now().UTC()
+	t2 := t1.Add(time.Hour)
+	t3 := t2.Add(time.Hour)
+
+	summary := types.SiteUsageSummary{
+		Month:                   t1,
+		Week:                    t2,
+		Day:                     t3,
+		UniquesMonth:            4,
+		UniquesWeek:             5,
+		UniquesDay:              6,
+		RegisteredUniquesMonth:  1,
+		RegisteredUniquesWeek:   2,
+		RegisteredUniquesDay:    3,
+		IntegrationUniquesMonth: 7,
+		IntegrationUniquesWeek:  8,
+		IntegrationUniquesDay:   9,
+		ManageUniquesMonth:      10,
+		CodeUniquesMonth:        11,
+		VerifyUniquesMonth:      12,
+		MonitorUniquesMonth:     13,
+		ManageUniquesWeek:       14,
+		CodeUniquesWeek:         15,
+		VerifyUniquesWeek:       16,
+		MonitorUniquesWeek:      17,
+	}
+	siteUsageStats := groupSiteUsageStats(summary, false)
+
+	expectedSiteUsageStats := &types.SiteUsageStatistics{
+		DAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            t3,
+				UserCount:            6,
+				RegisteredUserCount:  3,
+				AnonymousUserCount:   3,
+				IntegrationUserCount: 9,
+				Stages:               &types.Stages{},
+			},
+		},
+		WAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            t2,
+				UserCount:            5,
+				RegisteredUserCount:  2,
+				AnonymousUserCount:   3,
+				IntegrationUserCount: 8,
+				Stages: &types.Stages{
+					Manage:  14,
+					Code:    15,
+					Verify:  16,
+					Monitor: 17,
+				},
+			},
+		},
+		MAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            t1,
+				UserCount:            4,
+				RegisteredUserCount:  1,
+				AnonymousUserCount:   3,
+				IntegrationUserCount: 7,
+				Stages: &types.Stages{
+					Manage:  10,
+					Code:    11,
+					Verify:  12,
+					Monitor: 13,
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
+	t1 := time.Now().UTC()
+	t2 := t1.Add(time.Hour)
+	t3 := t2.Add(time.Hour)
+
+	summary := types.SiteUsageSummary{
+		Month:                   t1,
+		Week:                    t2,
+		Day:                     t3,
+		UniquesMonth:            4,
+		UniquesWeek:             5,
+		UniquesDay:              6,
+		RegisteredUniquesMonth:  1,
+		RegisteredUniquesWeek:   2,
+		RegisteredUniquesDay:    3,
+		IntegrationUniquesMonth: 7,
+		IntegrationUniquesWeek:  8,
+		IntegrationUniquesDay:   9,
+		ManageUniquesMonth:      10,
+		CodeUniquesMonth:        11,
+		VerifyUniquesMonth:      12,
+		MonitorUniquesMonth:     13,
+		ManageUniquesWeek:       14,
+		CodeUniquesWeek:         15,
+		VerifyUniquesWeek:       16,
+		MonitorUniquesWeek:      17,
+	}
+	siteUsageStats := groupSiteUsageStats(summary, true)
+
+	expectedSiteUsageStats := &types.SiteUsageStatistics{
+		DAUs: []*types.SiteActivityPeriod{},
+		WAUs: []*types.SiteActivityPeriod{},
+		MAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            t1,
+				UserCount:            4,
+				RegisteredUserCount:  1,
+				AnonymousUserCount:   3,
+				IntegrationUserCount: 7,
+				Stages: &types.Stages{
+					Manage:  10,
+					Code:    11,
+					Verify:  12,
+					Monitor: 13,
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestGroupAggregatedStats(t *testing.T) {
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Hour)

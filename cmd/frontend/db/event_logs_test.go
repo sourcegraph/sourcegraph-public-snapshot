@@ -254,6 +254,116 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	}
 }
 
+func TestEventLogs_SiteUsage(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	days := map[time.Time]struct {
+		users   []uint32
+		names   []string
+		sources []string
+	}{
+		// Today
+		now: {
+			[]uint32{1, 2, 3, 4, 5},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This week
+		now.Add(-time.Hour * 24 * 3): {
+			[]uint32{2, 3, 5},
+			[]string{"ViewRepository", "ViewTree"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This week
+		now.Add(-time.Hour * 24 * 4): {
+			[]uint32{1, 3, 5, 7},
+			[]string{"ViewSiteAdminX", "SavedSearchSlackClicked"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This month
+		now.Add(-time.Hour * 24 * 6): {
+			[]uint32{1, 8, 9},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This month
+		now.Add(-time.Hour * 24 * 12): {
+			[]uint32{1, 2, 3, 4, 5, 6, 11},
+			[]string{"ViewTree", "SavedSearchSlackClicked"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// Previous month
+		now.Add(-time.Hour * 24 * 40): {
+			[]uint32{1, 5, 6, 13},
+			[]string{"SearchResultsQueried", "DiffSearchResultsQueried"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+	}
+
+	for day, data := range days {
+		for _, user := range data.users {
+			for _, name := range data.names {
+				for _, source := range data.sources {
+					for i := 0; i < 5; i++ {
+						e := &Event{
+							UserID: user,
+							Name:   name,
+							URL:    "test",
+							Source: source,
+							// Jitter current time +/- 30 minutes
+							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						}
+
+						if err := EventLogs.Insert(ctx, e); err != nil {
+							t.Fatal(err)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	summary, err := EventLogs.siteUsage(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedSummary := types.SiteUsageSummary{
+		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                     now.Truncate(time.Hour * 24),
+		UniquesMonth:            10,
+		UniquesWeek:             6,
+		UniquesDay:              5,
+		RegisteredUniquesMonth:  10,
+		RegisteredUniquesWeek:   6,
+		RegisteredUniquesDay:    5,
+		IntegrationUniquesMonth: 10,
+		IntegrationUniquesWeek:  6,
+		IntegrationUniquesDay:   5,
+		ManageUniquesMonth:      8,
+		CodeUniquesMonth:        7,
+		VerifyUniquesMonth:      8,
+		MonitorUniquesMonth:     0,
+		ManageUniquesWeek:       6,
+		CodeUniquesWeek:         3,
+		VerifyUniquesWeek:       4,
+		MonitorUniquesWeek:      0,
+	}
+	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestEventLogs_AggregatedEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -602,8 +602,135 @@ GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
 
+// SiteUsage calculates AggregatedEvent for each every unique event type.
+func (l *eventLogs) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
+	return l.siteUsage(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
+	query := sqlf.Sprintf(siteUsageQuery, now, now, now, now)
+
+	err = dbconn.Global.QueryRowContext(
+		ctx,
+		query.Query(sqlf.PostgresBindVar),
+		query.Args()...,
+	).Scan(
+		&summary.Month,
+		&summary.Week,
+		&summary.Day,
+		&summary.UniquesMonth,
+		&summary.UniquesWeek,
+		&summary.UniquesDay,
+		&summary.RegisteredUniquesMonth,
+		&summary.RegisteredUniquesWeek,
+		&summary.RegisteredUniquesDay,
+		&summary.IntegrationUniquesMonth,
+		&summary.IntegrationUniquesWeek,
+		&summary.IntegrationUniquesDay,
+		&summary.ManageUniquesMonth,
+		&summary.CodeUniquesMonth,
+		&summary.VerifyUniquesMonth,
+		&summary.MonitorUniquesMonth,
+		&summary.ManageUniquesWeek,
+		&summary.CodeUniquesWeek,
+		&summary.VerifyUniquesWeek,
+		&summary.MonitorUniquesWeek,
+	)
+
+	return summary, err
+}
+
+const siteUsageQuery = `
+SELECT
+  current_month,
+  current_week,
+  current_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND user_id != 0) AS registered_uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND user_id != 0) AS registered_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND user_id != 0) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_day,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name LIKE 'ViewSiteAdmin%%%%'
+  ) AS manage_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'ViewRepository',
+      'ViewBlob',
+      'ViewTree',
+      'SearchResultsQueried'
+    )
+  ) AS code_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'SavedSearchEmailClicked',
+      'SavedSearchSlackClicked',
+      'SavedSearchEmailNotificationSent'
+    )
+  ) AS verify_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'DiffSearchResultsQueried'
+    )
+  ) AS monitor_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name LIKE 'ViewSiteAdmin%%%%'
+  ) AS manage_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'ViewRepository',
+      'ViewBlob',
+      'ViewTree',
+      'SearchResultsQueried'
+    )
+  ) AS code_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'SavedSearchEmailClicked',
+      'SavedSearchSlackClicked',
+      'SavedSearchEmailNotificationSent'
+    )
+  ) AS verify_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'DiffSearchResultsQueried'
+    )
+  ) AS monitor_uniques_week
+FROM (
+  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  SELECT
+    name,
+    user_id,
+    source,
+    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
+    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+    DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) as current_month,
+    DATE_TRUNC('week', TIMEZONE('UTC', %s::timestamp) + '1 day'::interval) - '1 day'::interval as current_week,
+    DATE_TRUNC('day', TIMEZONE('UTC', %s::timestamp)) as current_day
+  FROM event_logs
+  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp))
+) events
+GROUP BY current_month, current_week, current_day
+`
+
 // AggregatedEvents calculates AggregatedEvent for each every unique event type.
-func (l *eventLogs) AggregatedEvents(ctx context.Context) (events []types.AggregatedEvent, err error) {
+func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
 	return l.aggregatedEvents(ctx, time.Now().UTC())
 }
 
