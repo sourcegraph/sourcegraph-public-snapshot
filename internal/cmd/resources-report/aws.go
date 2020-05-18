@@ -60,9 +60,9 @@ var awsResources = []AWSResourceFetchFunc{
 	},
 }
 
-func collectAWSResources(ctx context.Context) ([]Resource, error) {
+func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) {
 	log := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
-	if isVerbose(ctx) {
+	if verbose {
 		log.Printf("collecting resources")
 	}
 

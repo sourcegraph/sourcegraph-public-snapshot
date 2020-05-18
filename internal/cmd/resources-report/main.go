@@ -40,30 +40,21 @@ func main() {
 	}
 }
 
-type ctxKey string
-
-const ctxVerbose = "debug"
-
-func isVerbose(ctx context.Context) bool {
-	return ctx.Value(ctxVerbose).(bool)
-}
-
 func run(opts options) error {
 	ctx, cancel := context.WithTimeout(context.Background(), *opts.timeout)
 	defer cancel()
-	ctx = context.WithValue(ctx, ctxVerbose, *opts.verbose)
 
 	// collect resources
 	resources := make([]Resource, 0)
 	if *opts.gcp {
-		r, err := collectGCPResources(ctx)
+		r, err := collectGCPResources(ctx, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("gcp: %w", err)
 		}
 		resources = append(resources, r...)
 	}
 	if *opts.aws {
-		r, err := collectAWSResources(ctx)
+		r, err := collectAWSResources(ctx, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("aws: %w", err)
 		}

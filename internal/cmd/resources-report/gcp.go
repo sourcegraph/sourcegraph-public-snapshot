@@ -19,9 +19,9 @@ var gcpAssetTypes = []string{
 	"dataproc.googleapis.com/Cluster",
 }
 
-func collectGCPResources(ctx context.Context) ([]Resource, error) {
+func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) {
 	log := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
-	if isVerbose(ctx) {
+	if verbose {
 		log.Printf("collecting resources with types: %+v", gcpAssetTypes)
 	}
 
@@ -38,7 +38,7 @@ func collectGCPResources(ctx context.Context) ([]Resource, error) {
 	if err := crm.Projects.List().Pages(ctx, func(page *gcp_crm.ListProjectsResponse) error {
 		for _, p := range page.Projects {
 			parent := fmt.Sprintf("projects/%s", p.ProjectId)
-			if isVerbose(ctx) {
+			if verbose {
 				log.Printf("found project: %s", parent)
 			}
 
