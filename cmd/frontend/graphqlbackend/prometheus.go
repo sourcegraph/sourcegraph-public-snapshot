@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var prometheusURL = env.Get("PROMETHEUS_SERVER_URL", "http://prometheus:9090", "prometheus server URL")
+var prometheusURL = env.Get("PROMETHEUS_URL", "http://prometheus:9090", "prometheus server URL")
 
 //go:generate $PWD/.bin/go-mockgen -f github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend -i prometheusQuerier -o prometheus_mock.go
 
