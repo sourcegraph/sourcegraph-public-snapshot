@@ -188,7 +188,7 @@ func (e *ExternalServicesStore) validateGithubConnection(ctx context.Context, id
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
-	err = e.validateDuplicateRateLimits(ctx, err, id, "GITHUB", c)
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITHUB", c))
 
 	return err.ErrorOrNil()
 }
@@ -199,7 +199,7 @@ func (e *ExternalServicesStore) validateGitlabConnection(ctx context.Context, id
 		err = multierror.Append(err, validate(c, ps))
 	}
 
-	err = e.validateDuplicateRateLimits(ctx, err, id, "GITLAB", c)
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITLAB", c))
 
 	return err.ErrorOrNil()
 }
@@ -214,59 +214,47 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Co
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
 
-	err = e.validateDuplicateRateLimits(ctx, err, id, "BITBUCKETSERVER", c)
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "BITBUCKETSERVER", c))
 
 	return err.ErrorOrNil()
 }
 
 func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
-	err := new(multierror.Error)
-
-	err = e.validateDuplicateRateLimits(ctx, err, id, "BITBUCKETCLOUD", c)
-
-	return err.ErrorOrNil()
+	return e.validateDuplicateRateLimits(ctx, id, "BITBUCKETCLOUD", c)
 }
 
-func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, err *multierror.Error, id int64, kind string, parsedConfig interface{}) *multierror.Error {
-	if err == nil {
-		err = new(multierror.Error)
-	}
-
+func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
 	// Check if rate limit is already defined for this code host on another external service
-	rlc, limitErr := extsvc.GetLimitFromConfig(kind, parsedConfig)
-	if limitErr != nil {
-		err = multierror.Append(err, errors.Wrap(limitErr, "getting rate limit config"))
-		return err
+	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
+	if err != nil {
+		return errors.Wrap(err, "getting rate limit config")
 	}
 
 	// Default implies that no overriding rate limit has been set so it can't conflict with anything
 	if rlc.IsDefault {
-		return err
+		return nil
 	}
 
 	baseURL := rlc.BaseURL
 	// A rate limit has been defined
-	services, listErr := e.List(ctx, ExternalServicesListOptions{
+	services, err := e.List(ctx, ExternalServicesListOptions{
 		Kinds: []string{kind},
 	})
-	if listErr != nil {
-		err = multierror.Append(err, errors.Wrap(listErr, "listing existing services"))
-		return err
+	if err != nil {
+		return errors.Wrap(err, "listing existing services")
 	}
 
 	for _, svc := range services {
-		rlc, limitErr := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
-		if limitErr != nil {
-			err = multierror.Append(err, errors.Wrap(limitErr, "extracting rate limit config"))
-			return err
+		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+		if err != nil {
+			return errors.Wrap(err, "extracting rate limit config")
 		}
 		if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
-			err = multierror.Append(err, fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName))
-			return err
+			return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
 		}
 	}
 
-	return err
+	return nil
 }
 
 // Create creates a external service.
