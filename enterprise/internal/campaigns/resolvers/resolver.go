@@ -34,6 +34,7 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 }
 
 func allowReadAccess(ctx context.Context) error {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if readAccess := conf.CampaignsReadAccessEnabled(); readAccess {
 		return nil
 	}

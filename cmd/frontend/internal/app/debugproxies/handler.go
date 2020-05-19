@@ -143,6 +143,7 @@ func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO (Dax): Does this require 🚨 everywhere its called?
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
