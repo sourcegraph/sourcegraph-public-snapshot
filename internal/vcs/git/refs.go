@@ -340,12 +340,9 @@ func showRef(ctx context.Context, repo gitserver.Repo, args ...string) ([]Ref, e
 
 var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
 
-// ValidateBranchName returns an error if the given string is not a valid branch name.
+// ValidateBranchName returns false if the given string is not a valid branch name.
 // It follows the rules here: https://git-scm.com/docs/git-check-ref-format
 // NOTE: It does not require a slash as mentioned in point 2.
-func ValidateBranchName(branch string) error {
-	if invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head") {
-		return errors.New("invalid git branch")
-	}
-	return nil
+func ValidateBranchName(branch string) bool {
+	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
 }

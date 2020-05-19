@@ -655,7 +655,7 @@ func validateCampaignBranch(branch string) error {
 	if branch == "" {
 		return ErrCampaignBranchBlank
 	}
-	if err := git.ValidateBranchName(branch); err != nil {
+	if !git.ValidateBranchName(branch) {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
