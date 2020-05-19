@@ -15,9 +15,6 @@ var ErrDequeueTransaction = errors.New("unexpected transaction")
 // ErrDequeueRace occurs when an upload selected for dequeue has been locked by another worker.
 var ErrDequeueRace = errors.New("unexpected transaction")
 
-// ErrJobNotFinalized occurs when the job handler's transaction is closed without finalizing the job.
-var ErrJobNotFinalized = errors.New("job not finalized")
-
 // ErrNoSavepoint occurs when there is no savepont to rollback to.
 var ErrNoSavepoint = errors.New("no savepoint defined")
 

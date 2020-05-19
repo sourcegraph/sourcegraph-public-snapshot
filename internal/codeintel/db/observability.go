@@ -206,6 +206,10 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 
 // wrap the given database with the same observed operations as the receiver database.
 func (db *ObservedDB) wrap(other DB) DB {
+	if other == nil {
+		return nil
+	}
+
 	return &ObservedDB{
 		db:                                 other,
 		savepointOperation:                 db.savepointOperation,
@@ -251,10 +255,10 @@ func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
 }
 
 // Savepoint calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Savepoint(ctx context.Context, name string) (err error) {
+func (db *ObservedDB) Savepoint(ctx context.Context) (_ string, err error) {
 	ctx, endObservation := db.savepointOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.Savepoint(ctx, name)
+	return db.db.Savepoint(ctx)
 }
 
 // RollbackToSavepoint calls into the inner DB and registers the observed results.
@@ -335,18 +339,12 @@ func (db *ObservedDB) MarkErrored(ctx context.Context, id int, failureSummary, f
 }
 
 // Dequeue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ JobHandle, _ bool, err error) {
+func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ DB, _ bool, err error) {
 	ctx, endObservation := db.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	upload, jobHandle, ok, err := db.db.Dequeue(ctx)
-	if err == nil && ok {
-		// TODO(efritz) - find a way to do this without casting
-		if impl, ok := jobHandle.(*jobHandleImpl); ok {
-			impl.db = db.wrap(impl.db)
-		}
-	}
-	return upload, jobHandle, ok, err
+	upload, tx, ok, err := db.db.Dequeue(ctx)
+	return upload, db.wrap(tx), ok, err
 }
 
 // GetStates calls into the inner DB and registers the observed results.
