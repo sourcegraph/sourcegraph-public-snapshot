@@ -216,9 +216,6 @@ func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failu
 	`, failureSummary, failureStacktrace, id))
 }
 
-// ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.
-var ErrDequeueTransaction = errors.New("unexpected transaction")
-
 // Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
 // upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
 // If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned along with a
@@ -255,9 +252,6 @@ func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) 
 		return upload, jobHandle, ok, nil
 	}
 }
-
-// ErrDequeueRace occurs when an upload selected for dequeue has been locked by another worker.
-var ErrDequeueRace = errors.New("unexpected transaction")
 
 // dequeue begins a transaction to lock an upload record for updating. This marks the upload as
 // ineligible for a dequeue to other worker processes. All updates to the database while this record
