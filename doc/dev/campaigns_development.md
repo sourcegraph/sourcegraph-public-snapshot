@@ -1,18 +1,17 @@
 # Developing campaigns
 
-## What are code change campaigns?
+## What are campaigns?
 
-Before diving into the technical part of campaigns, make sure to read up on what code campaigns are, what it's not and what we want it to be:
+Before diving into the technical part of campaigns, make sure to read up on what campaigns are, what they're not and what we want them to be.
 
-1. Start by reading through the [code change management product page](https://about.sourcegraph.com/product/code-change-management/)
-1. **IMPORTANT:** Watch the videos! At the bottom of that page, you'll find two demo videos. A lot of our work aims to reproduce what you can see in these videos — in a scalable way that supports multiple code hosts. **Make sure to watch these videos!**
-1. Take a look at the [sequence of milestones](https://docs.google.com/document/d/1TDsjrCy55UTZA_NyofVssnBotTyPP6Hvbrsp__aUCfM/edit#heading=h.go9qqwdnhiyu) to get a high-level overview of what we did so far and what still needs to be done
-1. Read through the [user documentation](../user/campaigns/index.md).
+1. Start by looking at the product page for [code change management](https://about.sourcegraph.com/product/code-change-management)
+1. Read through the first page of the [campaigns documentation](https://docs.sourcegraph.com/user/campaigns/) **IMPORTANT:** Watch the video!
 
 ## Starting up your environment
 
 1. Run `./enterprise/dev/start.sh` — Wait until all repositories are cloned.
-2. Follow the [user guide on creating campaigns](../user/campaigns/index.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
+2. Follow the [campaigns "Getting started" guide](../user/campaigns/getting_started.md) to setup campaigns.
+3. Create [your first campaign](../user/campaigns/creating_campaign_from_patches.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
 
 ## Glossary
 
