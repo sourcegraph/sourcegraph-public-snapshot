@@ -178,6 +178,8 @@ Dockerfile @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/prometheus.go @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
