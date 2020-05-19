@@ -390,10 +390,8 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	repos, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
-		pathPatterns := make([]string, len(repos))
 		for i, repo := range repos {
 			paths[i] = string(repo.Repo.Name)
-			pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 		}
 
 		// See if we can narrow it down by using filters like
