@@ -47,7 +47,7 @@ type siteMonitoringStatisticsResolver struct {
 	timespan time.Duration
 }
 
-const alertsResolution = 12*time.Hour
+const alertsResolution = 12 * time.Hour
 
 func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) {
 	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
