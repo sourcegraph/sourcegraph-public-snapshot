@@ -47,6 +47,8 @@ type siteMonitoringStatisticsResolver struct {
 	timespan time.Duration
 }
 
+const alertsResolution = 12*time.Hour
+
 func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) {
 	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
 	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
@@ -65,7 +67,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) 
 		prometheus.Range{
 			Start: time.Now().Add(-r.timespan),
 			End:   time.Now(),
-			Step:  time.Hour,
+			Step:  alertsResolution,
 		})
 	if errors.Is(err, context.Canceled) {
 		return nil, errPrometheusUnavailable
