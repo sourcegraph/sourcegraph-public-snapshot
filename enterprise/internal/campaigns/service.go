@@ -131,9 +131,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 		return err
 	}
 
-	if c.PatchSetID != 0 && c.Branch == "" {
-		err = ErrCampaignBranchBlank
-		return err
+	if c.PatchSetID != 0 {
+		if err := validateCampaignBranch(c.Branch); err != nil {
+			return err
+		}
 	}
 
 	if c.PatchSetID == 0 || draft {
@@ -458,9 +459,13 @@ type UpdateCampaignArgs struct {
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
-// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
+// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
 // branch is blank. This is only enforced when creating published campaigns with a patch set.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
+
+// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
+// branch is invalid. This is only enforced when creating published campaigns with a patch set.
+var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
 // attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
@@ -538,8 +543,8 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if args.Branch != nil && campaign.Branch != *args.Branch {
-		if *args.Branch == "" {
-			return nil, nil, ErrCampaignBranchBlank
+		if err := validateCampaignBranch(*args.Branch); err != nil {
+			return nil, nil, err
 		}
 
 		campaign.Branch = *args.Branch
@@ -644,6 +649,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
+}
+
+func validateCampaignBranch(branch string) error {
+	if branch == "" {
+		return ErrCampaignBranchBlank
+	}
+	if !git.ValidateBranchName(branch) {
+		return ErrCampaignBranchInvalid
+	}
+	return nil
 }
 
 // campaignPublished returns true if all ChangesetJobs have been created yet

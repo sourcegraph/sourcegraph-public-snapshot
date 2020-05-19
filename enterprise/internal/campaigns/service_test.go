@@ -316,6 +316,13 @@ func TestService(t *testing.T) {
 				process: true,
 				err:     ErrCampaignBranchBlank.Error(),
 			},
+			{
+				name:    "change campaign invalid branch",
+				branch:  strPointer("invalid-branch."),
+				draft:   true,
+				process: true,
+				err:     ErrCampaignBranchInvalid.Error(),
+			},
 		}
 		for _, tc := range subTests {
 			t.Run(tc.name, func(t *testing.T) {
