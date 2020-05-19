@@ -598,7 +598,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	// Passing time.now() is a workaround that prevents (sr *SearchResultsResolver) ElapsedMilliseconds() from returning a wrong calculation
+	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
 	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
 }
 
