@@ -51,8 +51,10 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
-	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
-		tipCommit, err := gitserver.Head(s.db, repositoryID)
+	ctx := r.Context()
+
+	exists, err := s.db.DeleteUploadByID(ctx, int(idFromRequest(r)), func(repositoryID int) (string, error) {
+		tipCommit, err := gitserver.Head(ctx, s.db, repositoryID)
 		if err != nil {
 			return "", errors.Wrap(err, "gitserver.Head")
 		}

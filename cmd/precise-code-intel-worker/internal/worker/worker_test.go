@@ -221,7 +221,7 @@ func TestProcess(t *testing.T) {
 	gitserverClient.HeadFunc.SetDefaultReturn(makeCommit(30), nil)
 
 	// Return some ancestors for each commit args
-	gitserverClient.CommitsNearFunc.SetDefaultHook(func(db db.DB, repositoryID int, commit string) (map[string][]string, error) {
+	gitserverClient.CommitsNearFunc.SetDefaultHook(func(ctx context.Context, db db.DB, repositoryID int, commit string) (map[string][]string, error) {
 		offset, err := strconv.ParseInt(commit, 10, 64)
 		if err != nil {
 			return nil, err
