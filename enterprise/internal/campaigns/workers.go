@@ -52,7 +52,7 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		}
 
 		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, c, &job); runErr != nil {
-			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", err)
+			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", runErr)
 		}
 		// We don't assign to err here so that we don't roll back the transaction
 		// ExecChangesetJob will save the error in the job row
