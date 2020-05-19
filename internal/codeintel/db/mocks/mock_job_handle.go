@@ -4,8 +4,9 @@ package mocks
 
 import (
 	"context"
-	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
+
+	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // MockJobHandle is a mock impelementation of the JobHandle interface (from

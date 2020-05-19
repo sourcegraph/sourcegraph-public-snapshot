@@ -316,7 +316,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	var next scheduledSync
 	var ok bool
 
-	svcID := strconv.FormatInt(s.externalServiceID, 10)
+	svcID := strconv.Itoa(s.externalServiceID)
 
 	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
 	// are not safe for concurrent use

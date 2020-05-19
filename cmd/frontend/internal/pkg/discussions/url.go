@@ -49,9 +49,9 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 
 		fragment := url.Values{}
 		fragment.Set("tab", "discussions")
-		fragment.Set("threadID", strconv.FormatInt(t.ID, 10))
+		fragment.Set("threadID", strconv.Itoa(t.ID))
 		if c != nil {
-			fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
+			fragment.Set("commentID", strconv.Itoa(c.ID))
 		}
 		encFragment := fragment.Encode()
 		if t.TargetRepo.StartLine != nil {

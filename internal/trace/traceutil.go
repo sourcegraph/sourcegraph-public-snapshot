@@ -182,10 +182,10 @@ func (e *encoder) EmitInt(key string, value int) {
 }
 
 func (e *encoder) EmitInt32(key string, value int32) {
-	e.EmitString(key, strconv.FormatInt(int64(value), 10))
+	e.EmitString(key, strconv.Itoa(int64(value)))
 }
 func (e *encoder) EmitInt64(key string, value int64) {
-	e.EmitString(key, strconv.FormatInt(value, 10))
+	e.EmitString(key, strconv.Itoa(value))
 }
 func (e *encoder) EmitUint32(key string, value uint32) {
 	e.EmitString(key, strconv.FormatUint(uint64(value), 10))

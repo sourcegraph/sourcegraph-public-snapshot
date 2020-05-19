@@ -294,13 +294,13 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	switch pr := meta.(type) {
 	case *github.PullRequest:
 		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(pr.Number, 10)
+		c.ExternalID = strconv.Itoa(pr.Number)
 		c.ExternalServiceType = github.ServiceType
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+		c.ExternalID = strconv.Itoa(int64(pr.ID))
 		c.ExternalServiceType = bitbucketserver.ServiceType
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))

@@ -4,9 +4,10 @@ package mocks
 
 import (
 	"context"
-	client "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"io"
 	"sync"
+
+	client "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
 // MockBundleManagerClient is a mock impelementation of the

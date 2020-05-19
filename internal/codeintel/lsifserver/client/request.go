@@ -160,7 +160,7 @@ func (qv queryValues) Set(name string, value string) {
 }
 
 func (qv queryValues) SetInt(name string, value int64) {
-	qv.Set(name, strconv.FormatInt(int64(value), 10))
+	qv.Set(name, strconv.Itoa(int64(value)))
 }
 
 func (qv queryValues) SetOptionalString(name string, value *string) {

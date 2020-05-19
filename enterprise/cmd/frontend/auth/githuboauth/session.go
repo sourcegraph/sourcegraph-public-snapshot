@@ -78,7 +78,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,
-				AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
+				AccountID:   strconv.Itoa(derefInt64(ghUser.ID)),
 			},
 			ExternalAccountData: data,
 			CreateIfNotExist:    s.allowSignup,

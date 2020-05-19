@@ -114,7 +114,7 @@ func (h Webhook) upsertChangesetEvent(
 
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
 		RepoID:              r.ID,
-		ExternalID:          strconv.FormatInt(pr.ID, 10),
+		ExternalID:          strconv.Itoa(pr.ID),
 		ExternalServiceType: h.ServiceType,
 	})
 	if err != nil {

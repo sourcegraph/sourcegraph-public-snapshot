@@ -186,7 +186,7 @@ type IssueComment struct {
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e IssueComment) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.Itoa(e.DatabaseID)
 }
 
 // RenamedTitleEvent represents a 'renamed' event on a given pull request.
@@ -232,7 +232,7 @@ type PullRequestReview struct {
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e PullRequestReview) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.Itoa(e.DatabaseID)
 }
 
 // PullRequestReviewThread represents a thread of review comments on a given pull request.
@@ -280,7 +280,7 @@ type PullRequestReviewComment struct {
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e PullRequestReviewComment) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.Itoa(e.DatabaseID)
 }
 
 // ReopenedEvent represents a 'reopened' event on a pull request.
@@ -636,7 +636,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 			labeled[repoLabel] = r
 		}
 
-		prLabel := repoLabel + "_" + strconv.FormatInt(pr.Number, 10)
+		prLabel := repoLabel + "_" + strconv.Itoa(pr.Number)
 		r.PRs[prLabel] = pr
 	}
 

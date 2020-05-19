@@ -72,7 +72,7 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 		}
 
 		// Return id as a string to maintain backwards compatibility with src-cli
-		payload, err := json.Marshal(map[string]string{"id": strconv.FormatInt(uploadID, 10)})
+		payload, err := json.Marshal(map[string]string{"id": strconv.Itoa(uploadID)})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

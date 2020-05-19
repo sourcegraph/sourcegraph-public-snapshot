@@ -216,7 +216,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		}
 		q.Set("Deadline", string(t))
 	}
-	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
+	q.Set("FileMatchLimit", strconv.Itoa(int64(p.FileMatchLimit)))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
 	}

@@ -3,9 +3,10 @@
 package mocks
 
 import (
+	"sync"
+
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
-	"sync"
 )
 
 // MockClient is a mock impelementation of the Client interface (from the

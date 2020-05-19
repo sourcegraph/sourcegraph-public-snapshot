@@ -324,7 +324,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteID:         pr.ClientSiteID,
 		LicenseKey:           pr.LicenseKey,
 		HasUpdate:            strconv.FormatBool(hasUpdate),
-		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
+		UniqueUsersToday:     strconv.Itoa(int64(pr.UniqueUsers)),
 		SiteActivity:         pr.Activity,       // no change in schema
 		CampaignsUsage:       pr.CampaignsUsage, // no change in schema
 		CodeIntelUsage:       codeIntelUsage,
@@ -334,7 +334,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),
 		DeployType:           pr.DeployType,
-		TotalUserAccounts:    strconv.FormatInt(int64(pr.TotalUsers), 10),
+		TotalUserAccounts:    strconv.Itoa(int64(pr.TotalUsers)),
 		HasExternalURL:       strconv.FormatBool(pr.HasExtURL),
 		HasRepos:             strconv.FormatBool(pr.HasRepos),
 		EverSearched:         strconv.FormatBool(pr.EverSearched),

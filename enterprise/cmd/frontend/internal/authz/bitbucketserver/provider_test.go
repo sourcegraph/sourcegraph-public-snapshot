@@ -270,7 +270,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		repoIDs := func(names ...string) (ids []extsvc.RepoID) {
 			for _, name := range names {
 				if r, ok := f.repos[name]; ok {
-					ids = append(ids, extsvc.RepoID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.RepoID(strconv.Itoa(int64(r.ID))))
 				}
 			}
 			return ids
@@ -364,7 +364,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		userIDs := func(names ...string) (ids []extsvc.AccountID) {
 			for _, name := range names {
 				if r, ok := f.users[name]; ok {
-					ids = append(ids, extsvc.AccountID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.AccountID(strconv.Itoa(int64(r.ID))))
 				}
 			}
 			return ids

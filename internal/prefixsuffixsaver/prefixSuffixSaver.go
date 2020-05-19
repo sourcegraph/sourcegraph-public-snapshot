@@ -70,7 +70,7 @@ func (w *Writer) Bytes() []byte {
 	buf.Grow(len(w.prefix) + len(w.suffix) + 50)
 	buf.Write(w.prefix)
 	buf.WriteString("\n... omitting ")
-	buf.WriteString(strconv.FormatInt(w.skipped, 10))
+	buf.WriteString(strconv.Itoa(w.skipped))
 	buf.WriteString(" bytes ...\n")
 	buf.Write(w.suffix[w.suffixOff:])
 	buf.Write(w.suffix[:w.suffixOff])

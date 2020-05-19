@@ -56,7 +56,7 @@ func New(opts ServerOpts) (*Server, error) {
 }
 
 func (s *Server) Start() {
-	addr := net.JoinHostPort(s.host, strconv.FormatInt(int64(s.port), 10))
+	addr := net.JoinHostPort(s.host, strconv.Itoa(int64(s.port)))
 	handler := ot.Middleware(s.handler())
 	server := &http.Server{Addr: addr, Handler: handler}
 

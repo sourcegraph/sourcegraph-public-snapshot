@@ -539,7 +539,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(dir GitDir, now time.Time) error {
-	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.Itoa(now.Unix()))
 	if err != nil {
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
@@ -595,7 +595,7 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 
 	// We set a flag in the config for the cleanup janitor job to fix. The
 	// janitor runs every minute.
-	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.FormatInt(time.Now().Unix(), 10))
+	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.Itoa(time.Now().Unix()))
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}

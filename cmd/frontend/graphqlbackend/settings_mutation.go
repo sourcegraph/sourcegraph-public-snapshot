@@ -208,7 +208,7 @@ func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, erro
 			if v == nil {
 				return "null"
 			}
-			return strconv.FormatInt(int64(*v), 10)
+			return strconv.Itoa(int64(*v))
 		}
 		var lastID *int32
 		if settings != nil {

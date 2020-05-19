@@ -126,7 +126,7 @@ func TestMonitor_Update(t *testing.T) {
 			h: http.Header{
 				"X-RateLimit-Limit":     []string{"500"},
 				"X-RateLimit-Remaining": []string{"1"},
-				"X-RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+				"X-RateLimit-Reset":     []string{strconv.Itoa(now.Add(time.Minute).Unix())},
 			},
 			after: &Monitor{
 				HeaderPrefix: "X-",
@@ -143,7 +143,7 @@ func TestMonitor_Update(t *testing.T) {
 				"X-From-Cache":        []string{"1"},
 				"RateLimit-Limit":     []string{"500"},
 				"RateLimit-Remaining": []string{"1"},
-				"RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+				"RateLimit-Reset":     []string{strconv.Itoa(now.Add(time.Minute).Unix())},
 			},
 			after: &Monitor{},
 		},

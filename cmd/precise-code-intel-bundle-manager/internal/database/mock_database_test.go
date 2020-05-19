@@ -4,8 +4,9 @@ package database
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"sync"
+
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 // MockDatabase is a mock impelementation of the Database interface (from

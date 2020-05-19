@@ -247,7 +247,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	extIDs := make([]extsvc.AccountID, 0, len(ids))
 	for _, id := range ids {
-		extIDs = append(extIDs, extsvc.AccountID(strconv.FormatInt(int64(id), 10)))
+		extIDs = append(extIDs, extsvc.AccountID(strconv.Itoa(int64(id))))
 	}
 
 	return extIDs, err

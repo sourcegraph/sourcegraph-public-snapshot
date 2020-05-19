@@ -285,7 +285,7 @@ func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) s
 func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	path := "repositories"
 	if sinceRepoID > 0 {
-		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
+		path += "?per_page=100&since=" + strconv.Itoa(sinceRepoID)
 	}
 	return c.listRepositories(ctx, path)
 }

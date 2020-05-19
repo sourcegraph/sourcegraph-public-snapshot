@@ -725,7 +725,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	} else {
 		scopeParameters = append(scopeParameters, query.Parameter{
 			Field: "count",
-			Value: strconv.FormatInt(int64(want), 10),
+			Value: strconv.Itoa(int64(want)),
 		})
 	}
 
@@ -736,7 +736,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	for {
 		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
 			if field == "count" {
-				value = strconv.FormatInt(int64(tryCount), 10)
+				value = strconv.Itoa(int64(tryCount))
 			}
 			return query.Parameter{Field: field, Value: value, Negated: negated}
 		})

@@ -4,9 +4,10 @@ package mocks
 
 import (
 	"context"
+	"sync"
+
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	writer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
-	"sync"
 )
 
 // MockWriter is a mock impelementation of the Writer interface (from the
