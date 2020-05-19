@@ -40,7 +40,7 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 		}
 
 		deleted, err := j.db.DeleteUploadByID(ctx, id, func(repositoryID int) (string, error) {
-			tipCommit, err := gitserver.Head(j.db, repositoryID)
+			tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
 			if err != nil {
 				return "", errors.Wrap(err, "gitserver.Head")
 			}

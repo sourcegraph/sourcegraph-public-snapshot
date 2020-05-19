@@ -93,6 +93,10 @@ func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 
 // Commits returns all commits matching the options.
 func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
+	if Mocks.Commits != nil {
+		return Mocks.Commits(repo, opt)
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()

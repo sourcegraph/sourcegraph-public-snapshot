@@ -43,7 +43,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	mockGitserverClient.HeadFunc.SetDefaultReturn(makeCommit(30), nil)
 
 	// Return some ancestors for each commit args
-	mockGitserverClient.CommitsNearFunc.SetDefaultHook(func(db db.DB, repositoryID int, commit string) (map[string][]string, error) {
+	mockGitserverClient.CommitsNearFunc.SetDefaultHook(func(ctx context.Context, db db.DB, repositoryID int, commit string) (map[string][]string, error) {
 		offset, err := strconv.ParseInt(commit, 10, 64)
 		if err != nil {
 			return nil, err

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its
@@ -22,6 +23,7 @@ var Mocks, emptyMocks struct {
 	ResolveRevision  func(spec string, opt *ResolveRevisionOptions) (api.CommitID, error)
 	Stat             func(commit api.CommitID, name string) (os.FileInfo, error)
 	GetObject        func(objectName string) (OID, ObjectType, error)
+	Commits          func(repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

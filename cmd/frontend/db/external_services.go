@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
-
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
@@ -72,7 +72,8 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 }
 
 // ValidateConfig validates the given external service configuration.
-func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.AuthProviders) error {
+// A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
+func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, kind, config string, ps []schema.AuthProviders) error {
 	ext, ok := ExternalServiceKinds[kind]
 	if !ok {
 		return fmt.Errorf("invalid external service kind: %s", kind)
@@ -114,21 +115,28 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGithubConnection(&c)
+		err = e.validateGithubConnection(ctx, id, &c)
 
 	case "GITLAB":
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGitlabConnection(&c, ps)
+		err = e.validateGitlabConnection(ctx, id, &c, ps)
 
 	case "BITBUCKETSERVER":
 		var c schema.BitbucketServerConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateBitbucketServerConnection(&c)
+		err = e.validateBitbucketServerConnection(ctx, id, &c)
+
+	case "BITBUCKETCLOUD":
+		var c schema.BitbucketCloudConnection
+		if err = json.Unmarshal(normalized, &c); err != nil {
+			return err
+		}
+		err = e.validateBitbucketCloudConnection(ctx, id, &c)
 
 	case "OTHER":
 		var c schema.OtherExternalServiceConnection
@@ -170,7 +178,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnection) error {
+func (e *ExternalServicesStore) validateGithubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitHubValidators {
 		err = multierror.Append(err, validate(c))
@@ -180,18 +188,23 @@ func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnect
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITHUB", c))
+
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateGitlabConnection(c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func (e *ExternalServicesStore) validateGitlabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitLabValidators {
 		err = multierror.Append(err, validate(c, ps))
 	}
+
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITLAB", c))
+
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection) error {
+func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.BitbucketServerValidators {
 		err = multierror.Append(err, validate(c))
@@ -201,7 +214,47 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
 
+	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "BITBUCKETSERVER", c))
+
 	return err.ErrorOrNil()
+}
+
+func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
+	return e.validateDuplicateRateLimits(ctx, id, "BITBUCKETCLOUD", c)
+}
+
+func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
+	// Check if rate limit is already defined for this code host on another external service
+	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
+	if err != nil {
+		return errors.Wrap(err, "getting rate limit config")
+	}
+
+	// Default implies that no overriding rate limit has been set so it can't conflict with anything
+	if rlc.IsDefault {
+		return nil
+	}
+
+	baseURL := rlc.BaseURL
+	// A rate limit has been defined
+	services, err := e.List(ctx, ExternalServicesListOptions{
+		Kinds: []string{kind},
+	})
+	if err != nil {
+		return errors.Wrap(err, "listing existing services")
+	}
+
+	for _, svc := range services {
+		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+		if err != nil {
+			return errors.Wrap(err, "extracting rate limit config")
+		}
+		if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
+			return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
+		}
+	}
+
+	return nil
 }
 
 // Create creates a external service.
@@ -215,7 +268,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 	ps := confGet().AuthProviders
-	if err := c.ValidateConfig(externalService.Kind, externalService.Config, ps); err != nil {
+	if err := c.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}
 
@@ -246,7 +299,7 @@ func (c *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			return err
 		}
 
-		if err := c.ValidateConfig(externalService.Kind, *update.Config, ps); err != nil {
+		if err := c.ValidateConfig(ctx, id, externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}
 	}

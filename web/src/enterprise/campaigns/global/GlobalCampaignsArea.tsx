@@ -14,6 +14,7 @@ import { CampaignCLIHelp } from './create/CampaignCLIHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -38,6 +39,19 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
         } else {
             content = (
                 <>
+                    <DismissibleAlert partialStorageKey="campaigns-beta" className="alert-info">
+                        <p className="mb-0">
+                            Campaigns are currently in beta. During the beta period, campaigns are free to use. After
+                            the beta period, campaigns will be available as a paid add-on. Get in touch on Twitter{' '}
+                            <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in our{' '}
+                            <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or
+                            email{' '}
+                            <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
+                                feedback@sourcegraph.com
+                            </a>
+                            . We're looking forward to your feedback!
+                        </p>
+                    </DismissibleAlert>
                     {/* eslint-disable react/jsx-no-bind */}
                     <Switch>
                         <Route
@@ -73,17 +87,6 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         />
                     </Switch>
                     {/* eslint-enable react/jsx-no-bind */}
-                    <p className="mt-4 font-italic">
-                        Campaigns are currently in <span className="badge badge-info">Beta</span>. During the beta
-                        period, campaigns are free to use. After the beta period, campaigns will be available as a paid
-                        add-on. Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an
-                        issue in our{' '}
-                        <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or email{' '}
-                        <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
-                            feedback@sourcegraph.com
-                        </a>
-                        . We're looking forward to your feedback!
-                    </p>
                 </>
             )
         }

@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { eventLogger } from '../../../tracking/eventLogger'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { PageTitle } from '../../../../components/PageTitle'
+import { Timestamp } from '../../../../components/time/Timestamp'
+import { eventLogger } from '../../../../tracking/eventLogger'
 import * as H from 'history'
-import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
-import { scheduleUserPermissionsSync } from '../../../site-admin/backend'
+import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
+import { scheduleUserPermissionsSync } from '../../../../site-admin/backend'
 
 /**
  * The user settings permissions page.

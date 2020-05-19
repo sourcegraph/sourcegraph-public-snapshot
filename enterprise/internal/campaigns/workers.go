@@ -52,7 +52,7 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		}
 
 		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, c, &job); runErr != nil {
-			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", err)
+			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", runErr)
 		}
 		// We don't assign to err here so that we don't roll back the transaction
 		// ExecChangesetJob will save the error in the job row
@@ -177,9 +177,7 @@ func ExecChangesetJob(
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
-		// Since we also produce diffs manually, we might not have context lines,
-		// so we need to disable that check with `--unidiff-zero`.
-		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
+		GitApplyArgs: []string{"-p0"},
 		Push:         true,
 	})
 	if err != nil {

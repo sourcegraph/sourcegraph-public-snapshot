@@ -326,4 +326,25 @@ describe('getCompletionItems()', () => {
                 .map(({ insertText }) => insertText)
         ).toStrictEqual(['file:^jsonrpc2\\.go$ ', 'repo:^github\\.com/sourcegraph/jsonrpc2\\.go$ '])
     })
+
+    test('sets current filter value as filterText', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('f:^jsonrpc') as ParseSuccess<Sequence>).token,
+                    { column: 11 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'jsonrpc2.go',
+                            name: 'jsonrpc2.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ filterText }) => filterText)
+        ).toStrictEqual(['^jsonrpc'])
+    })
 })

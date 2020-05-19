@@ -170,7 +170,7 @@ func (p *processor) Process(
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
-			directoryChildren, err := p.gitserverClient.DirectoryChildren(db, upload.RepositoryID, upload.Commit, dirnames)
+			directoryChildren, err := p.gitserverClient.DirectoryChildren(ctx, db, upload.RepositoryID, upload.Commit, dirnames)
 			if err != nil {
 				return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 			}
@@ -243,11 +243,11 @@ func (p *processor) Process(
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
 func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, repositoryID int, commit string) error {
-	tipCommit, err := p.gitserverClient.Head(db, repositoryID)
+	tipCommit, err := p.gitserverClient.Head(ctx, db, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
-	newCommits, err := p.gitserverClient.CommitsNear(db, repositoryID, tipCommit)
+	newCommits, err := p.gitserverClient.CommitsNear(ctx, db, repositoryID, tipCommit)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitsNear")
 	}
@@ -257,7 +257,7 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 		// commit and the tip so that we can accurately determine what is visible from the tip. If we
 		// do not do this before the updateDumpsVisibleFromTip call below, no dumps will be reachable
 		// from the tip and all dumps will be invisible.
-		additionalCommits, err := p.gitserverClient.CommitsNear(db, repositoryID, commit)
+		additionalCommits, err := p.gitserverClient.CommitsNear(ctx, db, repositoryID, commit)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsNear")
 		}

@@ -261,6 +261,13 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
 func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request) (requestHandled bool, err error) {
+	// NOTE: It makes no sense for this function to proceed if the commit ID
+	// for the repository is empty. It is most likely the repository is still
+	// clone in progress.
+	if common.CommitID == "" {
+		return false, nil
+	}
+
 	if path == "/" || path == "" {
 		if routeName != routeRepo {
 			// Redirect to repo route

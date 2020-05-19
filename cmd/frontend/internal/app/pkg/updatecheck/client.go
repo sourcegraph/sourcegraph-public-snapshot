@@ -83,18 +83,7 @@ func recordOperation(method string) func(error) error {
 
 func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json.RawMessage, error) {
 	rec := recordOperation("getAndMarshalSiteActivityJSON")
-
-	var days, weeks, months int
-	if criticalOnly {
-		months = 1
-	} else {
-		days, weeks, months = 1, 1, 1
-	}
-	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
-	})
+	siteActivity, err := usagestats.GetSiteUsageStats(ctx, criticalOnly)
 	defer rec(err)
 
 	if err != nil {
@@ -149,37 +138,25 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, erro
 	return json.Marshal(campaignsUsage)
 }
 
-func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
-	rec := recordOperation("getAndMarshalCodeIntelUsageJSON")
-	days, weeks, months := 0, 1, 0
-	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
-		DayPeriods:            &days,
-		WeekPeriods:           &weeks,
-		MonthPeriods:          &months,
-		IncludeEventCounts:    true,
-		IncludeEventLatencies: true,
-	})
+func getAndMarshalAggregatedUsageJSON(ctx context.Context) (json.RawMessage, json.RawMessage, error) {
+	rec := recordOperation("getAndMarshalAggregatedUsageJSON")
+	codeIntelUsage, searchUsage, err := usagestats.GetAggregatedStats(ctx)
 	defer rec(err)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return json.Marshal(codeIntelUsage)
-}
 
-func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
-	rec := recordOperation("getAndMarshalSearchUsageJSON")
-	days, weeks, months := 0, 1, 0
-	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-		DayPeriods:         &days,
-		WeekPeriods:        &weeks,
-		MonthPeriods:       &months,
-		IncludeEventCounts: true,
-	})
-	defer rec(err)
+	serializedCodeIntelUsage, err := json.Marshal(codeIntelUsage)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return json.Marshal(searchUsage)
+
+	serializedSearchUsage, err := json.Marshal(searchUsage)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return serializedCodeIntelUsage, serializedSearchUsage, nil
 }
 
 func updateURL(ctx context.Context) string {
@@ -237,21 +214,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		if err != nil {
 			logFunc("updatecheck.hasFindRefsOccurred failed", "error", err)
 		}
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
-		}
 		r.CampaignsUsage, err = getAndMarshalCampaignsUsageJSON(ctx)
 		if err != nil {
 			logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
-		}
-		r.CodeIntelUsage, err = getAndMarshalCodeIntelUsageJSON(ctx)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalCodeIntelUsageJSON failed", "error", err)
-		}
-		r.SearchUsage, err = getAndMarshalSearchUsageJSON(ctx)
-		if err != nil {
-			logFunc("updatecheck.getAndMarshalSearchUsageJSON failed", "error", err)
 		}
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
@@ -261,8 +226,35 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.HasExtURL = conf.UsingExternalURL()
 		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 		r.AuthProviders = authProviderTypes()
+
+		// The following methods are the most expensive to calculate, so we do them in
+		// parallel.
+
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+			}
+		}()
+		wg.Wait()
 	} else {
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
+		if err != nil {
+			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+		}
 	}
 
 	contents, err := json.Marshal(r)
@@ -369,7 +361,7 @@ func Start() {
 	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
 		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 

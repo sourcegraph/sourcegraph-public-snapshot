@@ -36,11 +36,10 @@ describe('e2e test suite', () => {
             logBrowserConsole: true,
             ...config,
         })
-        const repoSlugs = [
+        const clonedRepoSlugs = [
             'sourcegraph/java-langserver',
             'gorilla/mux',
             'gorilla/securecookie',
-            'sourcegraphtest/AlwaysCloningTest',
             'sourcegraph/jsonrpc2',
             'sourcegraph/go-diff',
             'sourcegraph/appdash',
@@ -48,6 +47,7 @@ describe('e2e test suite', () => {
             'sourcegraph-testing/automation-e2e-test',
             'sourcegraph/e2e-test-private-repository',
         ]
+        const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
@@ -56,9 +56,10 @@ describe('e2e test suite', () => {
             config: JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
-                repos: repoSlugs,
+                repos: clonedRepoSlugs.concat(alwaysCloningRepoSlugs),
             }),
-            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
+            ensureRepos: clonedRepoSlugs.map(slug => `github.com/${slug}`),
+            alwaysCloning: alwaysCloningRepoSlugs.map(slug => `github.com/${slug}`),
         })
     })
 
@@ -212,10 +213,11 @@ describe('e2e test suite', () => {
 
             // Type in a new external service configuration.
             await driver.replaceText({
-                selector: '.view-line',
+                selector: '.monaco-editor',
                 newText:
                     '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
                 selectMethod: 'keyboard',
+                enterTextMethod: 'paste',
             })
             await driver.page.click('.e2e-update-external-service-button')
             // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up

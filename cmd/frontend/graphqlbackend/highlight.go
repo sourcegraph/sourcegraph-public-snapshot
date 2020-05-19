@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"html/template"
 
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -36,13 +38,39 @@ func fromVCSHighlights(vcsHighlights []git.Highlight) []*highlightedRange {
 	return highlights
 }
 
-// A highlighting implementation for diff nodes. Returns the highlighted lines for both base and head, aborted status and an optional error.
-type DiffHighlighter interface {
-	Highlight(ctx context.Context, args *HighlightArgs) (highlightedBase []string, highlightedHead []string, aborted bool, err error)
-}
-
 type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       bool
 	HighlightLongLines bool
+}
+
+type highlightedFileResolver struct {
+	aborted bool
+	html    string
+}
+
+func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
+func (h *highlightedFileResolver) HTML() string  { return h.html }
+
+func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
+	var (
+		html            template.HTML
+		result          = &highlightedFileResolver{}
+		err             error
+		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
+	)
+	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
+		Content:            []byte(content),
+		Filepath:           path,
+		DisableTimeout:     args.DisableTimeout,
+		IsLightTheme:       args.IsLightTheme,
+		HighlightLongLines: args.HighlightLongLines,
+		SimulateTimeout:    simulateTimeout,
+		Metadata:           metadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result.html = string(html)
+	return result, nil
 }

@@ -59,8 +59,6 @@ Site configuration example:
 
 ## GitHub
 
-> NOTE: GitHub authentication is currently beta.
-
 [Create a GitHub OAuth
 application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
 GitHub Enterprise, create one on your instance, not GitHub.com). Set the following values, replacing
@@ -108,8 +106,6 @@ The `allowOrgs` fields restricts logins to members of the specified GitHub organ
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
 ## GitLab
-
-> NOTE: GitLab authentication is currently beta.
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
 the following values, replacing `sourcegraph.example.com` with the IP or hostname of your

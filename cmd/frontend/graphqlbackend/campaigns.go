@@ -277,7 +277,7 @@ type PatchResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() PatchResolver
-	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (PreviewFileDiffConnection, error)
+	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 
@@ -320,21 +320,4 @@ type PatchSetResolver interface {
 
 	PreviewURL() string
 	DiffStat(ctx context.Context) (*DiffStat, error)
-}
-
-type PreviewFileDiff interface {
-	OldPath() *string
-	NewPath() *string
-	Hunks() []*DiffHunk
-	Stat() *DiffStat
-	OldFile() *GitTreeEntryResolver
-	InternalID() string
-}
-
-type PreviewFileDiffConnection interface {
-	Nodes(ctx context.Context) ([]PreviewFileDiff, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	DiffStat(ctx context.Context) (*DiffStat, error)
-	RawDiff(ctx context.Context) (string, error)
 }

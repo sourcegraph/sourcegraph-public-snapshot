@@ -263,33 +263,44 @@ func countSearchFilterUsersPerPeriod(ctx context.Context, periodType db.PeriodTy
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		TotalUsers:         0,
-		Literal:            &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Regexp:             &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Structural:         &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		File:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		Repo:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		Diff:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		Commit:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		Symbol:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
-		Case:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Committer:          &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Lang:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Fork:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Archived:           &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Count:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Timeout:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Content:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Before:             &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		After:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Author:             &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Message:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Index:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Repogroup:          &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Repohasfile:        &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Repohascommitafter: &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		PatternType:        &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		Type:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
-		SearchModes:        &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
+		Literal:            newSearchEventStatistics(),
+		Regexp:             newSearchEventStatistics(),
+		Structural:         newSearchEventStatistics(),
+		File:               newSearchEventStatistics(),
+		Repo:               newSearchEventStatistics(),
+		Diff:               newSearchEventStatistics(),
+		Commit:             newSearchEventStatistics(),
+		Symbol:             newSearchEventStatistics(),
+		Case:               newSearchCountStatistics(),
+		Committer:          newSearchCountStatistics(),
+		Lang:               newSearchCountStatistics(),
+		Fork:               newSearchCountStatistics(),
+		Archived:           newSearchCountStatistics(),
+		Count:              newSearchCountStatistics(),
+		Timeout:            newSearchCountStatistics(),
+		Content:            newSearchCountStatistics(),
+		Before:             newSearchCountStatistics(),
+		After:              newSearchCountStatistics(),
+		Author:             newSearchCountStatistics(),
+		Message:            newSearchCountStatistics(),
+		Index:              newSearchCountStatistics(),
+		Repogroup:          newSearchCountStatistics(),
+		Repohasfile:        newSearchCountStatistics(),
+		Repohascommitafter: newSearchCountStatistics(),
+		PatternType:        newSearchCountStatistics(),
+		Type:               newSearchCountStatistics(),
+		SearchModes:        newSearchModeUsageStatistics(),
 	}
+}
+
+func newSearchEventStatistics() *types.SearchEventStatistics {
+	return &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}}
+}
+
+func newSearchCountStatistics() *types.SearchCountStatistics {
+	return &types.SearchCountStatistics{}
+}
+
+func newSearchModeUsageStatistics() *types.SearchModeUsageStatistics {
+	return &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}}
 }

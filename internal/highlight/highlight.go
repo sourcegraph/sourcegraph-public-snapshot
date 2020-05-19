@@ -85,13 +85,21 @@ type Metadata struct {
 	Revision string
 }
 
+// ErrBinary is returned when a binary file was attempted to be highlighted.
+var ErrBinary = errors.New("cannot render binary file")
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
+//
+// In the event the input content is binary, ErrBinary is returned.
 func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	if Mocks.Code != nil {
+		return Mocks.Code(p)
+	}
 	var prometheusStatus string
 	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
@@ -117,7 +125,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", false, errors.New("cannot render binary file")
+		return "", false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -450,14 +458,30 @@ func unhighlightLongLines(h string, n int) (string, error) {
 	return buf.String(), nil
 }
 
-// ParseLinesFromHighlight takes the highlighted html table and returns a slice of highlighted strings, where each string corresponds a single line in the original, highlighed file.
-func ParseLinesFromHighlight(input string) ([]string, error) {
-	doc, err := html.Parse(strings.NewReader(input))
+// CodeAsLines highlights the file and returns a list of highlighted lines.
+// The returned boolean represents whether or not highlighting was aborted due
+// to timeout.
+//
+// In the event the input content is binary, ErrBinary is returned.
+func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
+	html, aborted, err := Code(ctx, p)
+	if err != nil {
+		return nil, aborted, err
+	}
+	lines, err := splitHighlightedLines(html)
+	return lines, aborted, err
+}
+
+// splitHighlightedLines takes the highlighted HTML table and returns a slice
+// of highlighted strings, where each string corresponds a single line in the
+// original, highlighted file.
+func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
+	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
 	}
 
-	lines := make([]string, 0)
+	lines := make([]template.HTML, 0)
 
 	table := doc.FirstChild.LastChild.FirstChild // html > body > table
 	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
@@ -473,7 +497,7 @@ func ParseLinesFromHighlight(input string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		lines = append(lines, buf.String())
+		lines = append(lines, template.HTML(buf.String()))
 		buf.Reset()
 		tr = tr.NextSibling
 	}

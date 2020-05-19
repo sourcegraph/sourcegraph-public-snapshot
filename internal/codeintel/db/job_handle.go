@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 )
 
 // JobHandle wraps a transaction used by the upload converter. This transaction marks the upload as
@@ -59,9 +58,6 @@ func (h *jobHandleImpl) DB() DB {
 	return h.db
 }
 
-// ErrJobNotFinalized occurs when the job handler's transaction is closed without finalizing the job.
-var ErrJobNotFinalized = errors.New("job not finalized")
-
 // Done closes the underlying transaction. If neither MarkComplete or MarkErrored were invoked,
 // this method returns an error.
 func (h *jobHandleImpl) Done(err error) error {
@@ -84,9 +80,6 @@ func (h *jobHandleImpl) Savepoint(ctx context.Context) error {
 	h.savepoints = append(h.savepoints, savepointID)
 	return h.db.Savepoint(ctx, savepointID)
 }
-
-// ErrNoSavepoint occurs when there is no savepont to rollback to.
-var ErrNoSavepoint = errors.New("no savepoint defined")
 
 // RollbackToLastSavepoint throws away all the work on the underlying transaction since the
 // last call to Savepoint. This method returns an error if there is no live savepoint in this
