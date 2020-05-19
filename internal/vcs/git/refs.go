@@ -344,7 +344,7 @@ var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|
 // It follows the rules here: https://git-scm.com/docs/git-check-ref-format
 // NOTE: It does not require a slash as mentioned in point 2.
 func ValidateBranchName(branch string) error {
-	if invalidBranch.MatchString(branch) {
+	if invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head") {
 		return errors.New("invalid git branch")
 	}
 	return nil

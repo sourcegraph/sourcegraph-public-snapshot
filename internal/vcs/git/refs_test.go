@@ -411,6 +411,16 @@ func TestValidateBranchName(t *testing.T) {
 			branch: "valid\\branch",
 			valid:  false,
 		},
+		{
+			name:   "head not allowed",
+			branch: "head",
+			valid:  false,
+		},
+		{
+			name:   "Head not allowed",
+			branch: "Head",
+			valid:  false,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateBranchName(tc.branch)
