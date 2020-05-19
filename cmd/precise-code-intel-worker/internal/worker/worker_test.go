@@ -67,9 +67,8 @@ func TestDequeueAndProcessSuccess(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
-	jobHandle := dbmocks.NewMockJobHandle()
 	mockProcessor := NewMockProcessor()
-	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
 
 	worker := &Worker{
 		db:        mockDB,
@@ -84,12 +83,12 @@ func TestDequeueAndProcessSuccess(t *testing.T) {
 	if !dequeued {
 		t.Errorf("expected upload dequeue")
 	}
-	if len(jobHandle.MarkErroredFunc.History()) != 0 {
+	if len(mockDB.MarkErroredFunc.History()) != 0 {
 		t.Errorf("unexpected call to MarkErrored")
 	}
-	if len(jobHandle.DoneFunc.History()) != 1 {
+	if len(mockDB.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
-	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil {
+	} else if doneErr := mockDB.DoneFunc.History()[0].Arg0; doneErr != nil {
 		t.Errorf("unexpected error to Done: %s", doneErr)
 	}
 }
@@ -104,9 +103,8 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
-	jobHandle := dbmocks.NewMockJobHandle()
 	mockProcessor := NewMockProcessor()
-	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
+	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
 	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("process failure"))
 
 	worker := &Worker{
@@ -122,14 +120,14 @@ func TestDequeueAndProcessProcessFailure(t *testing.T) {
 	if !dequeued {
 		t.Errorf("expected upload dequeue")
 	}
-	if len(jobHandle.MarkErroredFunc.History()) != 1 {
+	if len(mockDB.MarkErroredFunc.History()) != 1 {
 		t.Errorf("expected call to MarkErrored")
-	} else if errText := jobHandle.MarkErroredFunc.History()[0].Arg1; errText != "process failure" {
+	} else if errText := mockDB.MarkErroredFunc.History()[0].Arg2; errText != "process failure" {
 		t.Errorf("unexpected failure text. want=%q have=%q", "process failure", errText)
 	}
-	if len(jobHandle.DoneFunc.History()) != 1 {
+	if len(mockDB.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
-	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil {
+	} else if doneErr := mockDB.DoneFunc.History()[0].Arg0; doneErr != nil {
 		t.Errorf("unexpected error to Done: %s", doneErr)
 	}
 }
@@ -144,10 +142,9 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
-	jobHandle := dbmocks.NewMockJobHandle()
 	mockProcessor := NewMockProcessor()
-	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
-	jobHandle.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("db failure"))
+	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
+	mockDB.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("db failure"))
 	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
 
 	worker := &Worker{
@@ -160,9 +157,9 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "db failure") {
 		t.Errorf("unexpected error to Done. want=%q have=%q", "db failure", err)
 	}
-	if len(jobHandle.DoneFunc.History()) != 1 {
+	if len(mockDB.DoneFunc.History()) != 1 {
 		t.Errorf("expected call to Done")
-	} else if doneErr := jobHandle.DoneFunc.History()[0].Arg0; doneErr != nil && !strings.Contains(doneErr.Error(), "db failure") {
+	} else if doneErr := mockDB.DoneFunc.History()[0].Arg0; doneErr != nil && !strings.Contains(doneErr.Error(), "db failure") {
 		t.Errorf("unexpected error to Done. want=%q have=%q", "db failure", doneErr)
 	}
 }
@@ -177,10 +174,9 @@ func TestDequeueAndProcessDoneFailure(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
-	jobHandle := dbmocks.NewMockJobHandle()
 	mockProcessor := NewMockProcessor()
-	mockDB.DequeueFunc.SetDefaultReturn(upload, jobHandle, true, nil)
-	jobHandle.DoneFunc.SetDefaultReturn(fmt.Errorf("db failure"))
+	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
+	mockDB.DoneFunc.SetDefaultReturn(fmt.Errorf("db failure"))
 	mockProcessor.ProcessFunc.SetDefaultReturn(fmt.Errorf("failed"))
 
 	worker := &Worker{
@@ -207,7 +203,6 @@ func TestProcess(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	gitserverClient := gitservermocks.NewMockClient()
-	jobHandle := dbmocks.NewMockJobHandle()
 
 	// Give correlation package a valid input dump
 	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
@@ -240,7 +235,7 @@ func TestProcess(t *testing.T) {
 		gitserverClient:     gitserverClient,
 	}
 
-	err := processor.Process(context.Background(), mockDB, upload, jobHandle)
+	err := processor.Process(context.Background(), mockDB, upload)
 	if err != nil {
 		t.Fatalf("unexpected error processing upload: %s", err)
 	}
@@ -328,7 +323,6 @@ func TestProcessError(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	gitserverClient := gitservermocks.NewMockClient()
-	jobHandle := dbmocks.NewMockJobHandle()
 
 	// Give correlation package a valid input dump
 	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
@@ -341,19 +335,19 @@ func TestProcessError(t *testing.T) {
 		gitserverClient:     gitserverClient,
 	}
 
-	err := processor.Process(context.Background(), mockDB, upload, jobHandle)
+	err := processor.Process(context.Background(), mockDB, upload)
 	if err == nil {
 		t.Fatalf("unexpected nil error processing upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(jobHandle.RollbackToLastSavepointFunc.History()) != 1 {
-		t.Errorf("unexpected number of RollbackToLastSavepoint calls. want=%d have=%d", 1, len(jobHandle.RollbackToLastSavepointFunc.History()))
+	if len(mockDB.RollbackToSavepointFunc.History()) != 1 {
+		t.Errorf("unexpected number of RollbackToLastSavepoint calls. want=%d have=%d", 1, len(mockDB.RollbackToSavepointFunc.History()))
 	}
 
 	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(jobHandle.RollbackToLastSavepointFunc.History()))
+		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(mockDB.RollbackToSavepointFunc.History()))
 	}
 
 }

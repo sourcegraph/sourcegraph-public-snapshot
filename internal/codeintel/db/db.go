@@ -24,13 +24,14 @@ type DB interface {
 	// to a TxBeginner.
 	Transact(ctx context.Context) (DB, error)
 
-	// Savepoint creates a named position in the transaction from which all additional work can
-	// be discarded.
-	Savepoint(ctx context.Context, name string) error
+	// Savepoint creates a named position in the transaction from which all additional work
+	// can be discarded. The returned identifier can be passed to RollbackToSavepont to undo
+	// all the work since this call.
+	Savepoint(ctx context.Context) (string, error)
 
 	// RollbackToSavepoint throws away all the work on the underlying transaction since the
 	// savepoint with the given name was created.
-	RollbackToSavepoint(ctx context.Context, name string) error
+	RollbackToSavepoint(ctx context.Context, savepointID string) error
 
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
@@ -64,10 +65,10 @@ type DB interface {
 	MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) error
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
-	// If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned along with a
-	// false-valued flag.  This method must not be called from within a transaction.
-	Dequeue(ctx context.Context) (Upload, JobHandle, bool, error)
+	// upload is returned along with a DB instance which wraps the transaction. This transaction must be closed.
+	// If there is no such unlocked upload, a zero-value upload and nil DB will be returned along with a false
+	// valued flag. This method must not be called from within a transaction.
+	Dequeue(ctx context.Context) (Upload, DB, bool, error)
 
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
@@ -135,7 +136,8 @@ type DB interface {
 type GetTipCommitFn func(repositoryID int) (string, error)
 
 type dbImpl struct {
-	db dbutil.DB
+	db           dbutil.DB
+	savepointIDs []string
 }
 
 var _ DB = &dbImpl{}
