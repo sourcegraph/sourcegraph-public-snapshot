@@ -214,6 +214,58 @@
               ]
             }
           ]
+        },
+        "searchMultipleBranchIndexing": {
+          "description": "JSON array of repositories and branches to index",
+          "type": "array",
+          "items": {
+            "description": "Repository and branches to index",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "branches"],
+            "properties": {
+              "name": {
+                "description": "Name of the repository",
+                "type": "string",
+                "minLength": 1
+              },
+              "branches": {
+                "description": "List of branches to index",
+                "type": "array",
+                "items": {
+                  "title": "searchMultipleBranchIndexingConfig",
+                  "description": "Configuration of the branch to index. Revisions or commit can optionally be specified.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name"],
+                  "properties": {
+                    "name": {
+                      "description": "Name of the branch to index",
+                      "type": "string"
+                    },
+                    "version": {
+                      "description": "Revision or commit",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "github.com/sourcegraph/sourcegraph",
+              "branches": [
+                {
+                  "name": "master"
+                },
+                {
+                  "name": "3.16",
+                  "version": "864fd1f3fd4b0c4c63b04cb40ee00a3d76e5c096"
+                }
+              ]
+            }
+          ]
         }
       },
       "examples": [
