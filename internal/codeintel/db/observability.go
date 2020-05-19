@@ -24,6 +24,7 @@ type ObservedDB struct {
 	markCompleteOperation              *observation.Operation
 	markErroredOperation               *observation.Operation
 	dequeueOperation                   *observation.Operation
+	requeueOperation                   *observation.Operation
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
 	resetStalledOperation              *observation.Operation
@@ -113,6 +114,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 		dequeueOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.Dequeue",
 			MetricLabels: []string{"dequeue"},
+			Metrics:      metrics,
+		}),
+		requeueOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.Requeue",
+			MetricLabels: []string{"requeue"},
 			Metrics:      metrics,
 		}),
 		getStatesOperation: observationContext.Operation(observation.Op{
@@ -214,6 +220,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		markCompleteOperation:              db.markCompleteOperation,
 		markErroredOperation:               db.markErroredOperation,
 		dequeueOperation:                   db.dequeueOperation,
+		requeueOperation:                   db.requeueOperation,
 		getStatesOperation:                 db.getStatesOperation,
 		deleteUploadByIDOperation:          db.deleteUploadByIDOperation,
 		resetStalledOperation:              db.resetStalledOperation,
@@ -340,6 +347,13 @@ func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ JobHandle, _ boo
 		}
 	}
 	return upload, jobHandle, ok, err
+}
+
+// Dequeue calls into the inner DB and registers the observed results.
+func (db *ObservedDB) Requeue(ctx context.Context, id int, delay time.Duration) (err error) {
+	ctx, endObservation := db.requeueOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.Requeue(ctx, id, delay)
 }
 
 // GetStates calls into the inner DB and registers the observed results.

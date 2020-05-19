@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -41,6 +42,8 @@ type JobHandle interface {
 
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
 	MarkErrored(ctx context.Context, failureSummary, failureStacktrace string) error
+
+	Requeue(ctx context.Context, id int, processingDelay time.Duration) error
 }
 
 type jobHandleImpl struct {
@@ -132,4 +135,8 @@ func (h *jobHandleImpl) mark() {
 		// the marked flag if we later perform a rollback on error.
 		h.markedSavepoint = h.savepoints[len(h.savepoints)-1]
 	}
+}
+
+func (h *jobHandleImpl) Requeue(ctx context.Context, id int, processingDelay time.Duration) error {
+	return h.db.Requeue(ctx, id, processingDelay)
 }

@@ -22,6 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
+const (
+	CloneInProgressDelay = time.Minute
+)
+
 type Worker struct {
 	db           db.DB
 	processor    Processor
@@ -129,6 +133,17 @@ func (p *processor) Process(
 	upload db.Upload,
 	jobHandle db.JobHandle,
 ) (err error) {
+	cloneInProgress, notFound, err := p.gitserverClient.RepoStatus(upload.RepositoryID, upload.Commit)
+	if (err != nil) {
+		log15.Warn("Failed to determine repo status", "repo", upload.RepositoryID, "commit", upload.Commit)
+		return errors.Wrap(err, "jobHandle.RepoStatus")
+	} else if (cloneInProgress) {
+		jobHandle.Requeue(ctx, upload.ID, CloneInProgressDelay)
+	} else if (notFound) {
+		log15.Warn("Upload for invalid repository/commit pair", "repo", upload.RepositoryID, "commit", upload.Commit)
+		return errors.New("Upload for invalid repository/commit pair")
+	}
+
 	// Create scratch directory that we can clean on completion/failure
 	name, err := ioutil.TempDir("", "")
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {
@@ -100,6 +101,10 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 		if gitserver.IsRevisionNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false
+		}
+
+		if vcs.IsCloneInProgress(err) {
+			return repo, true
 		}
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)

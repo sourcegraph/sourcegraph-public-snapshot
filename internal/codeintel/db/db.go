@@ -69,6 +69,8 @@ type DB interface {
 	// false-valued flag.  This method must not be called from within a transaction.
 	Dequeue(ctx context.Context) (Upload, JobHandle, bool, error)
 
+	Requeue(ctx context.Context, id int, processingDelay time.Duration) error
+
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 

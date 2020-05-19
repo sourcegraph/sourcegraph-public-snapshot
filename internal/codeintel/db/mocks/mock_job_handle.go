@@ -6,6 +6,7 @@ import (
 	"context"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
+	"time"
 )
 
 // MockJobHandle is a mock impelementation of the JobHandle interface (from
@@ -24,6 +25,9 @@ type MockJobHandle struct {
 	// MarkErroredFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkErrored.
 	MarkErroredFunc *JobHandleMarkErroredFunc
+	// RequeueFunc is an instance of a mock function object controlling the
+	// behavior of the method Requeue.
+	RequeueFunc *JobHandleRequeueFunc
 	// RollbackToLastSavepointFunc is an instance of a mock function object
 	// controlling the behavior of the method RollbackToLastSavepoint.
 	RollbackToLastSavepointFunc *JobHandleRollbackToLastSavepointFunc
@@ -56,6 +60,11 @@ func NewMockJobHandle() *MockJobHandle {
 				return nil
 			},
 		},
+		RequeueFunc: &JobHandleRequeueFunc{
+			defaultHook: func(context.Context, int, time.Duration) error {
+				return nil
+			},
+		},
 		RollbackToLastSavepointFunc: &JobHandleRollbackToLastSavepointFunc{
 			defaultHook: func(context.Context) error {
 				return nil
@@ -84,6 +93,9 @@ func NewMockJobHandleFrom(i db.JobHandle) *MockJobHandle {
 		},
 		MarkErroredFunc: &JobHandleMarkErroredFunc{
 			defaultHook: i.MarkErrored,
+		},
+		RequeueFunc: &JobHandleRequeueFunc{
+			defaultHook: i.Requeue,
 		},
 		RollbackToLastSavepointFunc: &JobHandleRollbackToLastSavepointFunc{
 			defaultHook: i.RollbackToLastSavepoint,
@@ -504,6 +516,114 @@ func (c JobHandleMarkErroredFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c JobHandleMarkErroredFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobHandleRequeueFunc describes the behavior when the Requeue method of
+// the parent MockJobHandle instance is invoked.
+type JobHandleRequeueFunc struct {
+	defaultHook func(context.Context, int, time.Duration) error
+	hooks       []func(context.Context, int, time.Duration) error
+	history     []JobHandleRequeueFuncCall
+	mutex       sync.Mutex
+}
+
+// Requeue delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobHandle) Requeue(v0 context.Context, v1 int, v2 time.Duration) error {
+	r0 := m.RequeueFunc.nextHook()(v0, v1, v2)
+	m.RequeueFunc.appendCall(JobHandleRequeueFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Requeue method of
+// the parent MockJobHandle instance is invoked and the hook queue is empty.
+func (f *JobHandleRequeueFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Requeue method of the parent MockJobHandle instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *JobHandleRequeueFunc) PushHook(hook func(context.Context, int, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *JobHandleRequeueFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *JobHandleRequeueFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *JobHandleRequeueFunc) nextHook() func(context.Context, int, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobHandleRequeueFunc) appendCall(r0 JobHandleRequeueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobHandleRequeueFuncCall objects describing
+// the invocations of this function.
+func (f *JobHandleRequeueFunc) History() []JobHandleRequeueFuncCall {
+	f.mutex.Lock()
+	history := make([]JobHandleRequeueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobHandleRequeueFuncCall is an object that describes an invocation of
+// method Requeue on an instance of MockJobHandle.
+type JobHandleRequeueFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobHandleRequeueFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobHandleRequeueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

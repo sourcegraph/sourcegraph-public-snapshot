@@ -17,6 +17,7 @@ type Upload struct {
 	Root              string     `json:"root"`
 	VisibleAtTip      bool       `json:"visibleAtTip"`
 	UploadedAt        time.Time  `json:"uploadedAt"`
+	ProcessAfter      time.Time  `json:"processAfter"`
 	State             string     `json:"state"`
 	FailureSummary    *string    `json:"failureSummary"`
 	FailureStacktrace *string    `json:"failureStacktrace"`
@@ -230,7 +231,7 @@ func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) 
 		id, ok, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`
 			UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
 				SELECT id FROM lsif_uploads
-				WHERE state = 'queued'
+				WHERE state = 'queued' AND process_after < now()
 				ORDER BY uploaded_at
 				FOR UPDATE SKIP LOCKED LIMIT 1
 			)
@@ -307,6 +308,14 @@ func (db *dbImpl) dequeue(ctx context.Context, id int) (_ Upload, _ JobHandle, _
 		return Upload{}, nil, false, tx.Done(ErrDequeueRace)
 	}
 	return upload, &jobHandleImpl{db: tx, id: id}, true, nil
+}
+
+func (db *dbImpl) Requeue(ctx context.Context, id int, processingDelay time.Duration) error {
+	return db.exec(ctx, sqlf.Sprintf(`
+		UPDATE lsif_uploads
+		SET state = 'queued', started_at = NULL, process_after = now() + %s
+		WHERE id = %s
+	`, processingDelay, id))
 }
 
 // GetStates returns the states for the uploads with the given identifiers.

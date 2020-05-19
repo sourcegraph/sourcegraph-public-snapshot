@@ -21,6 +21,9 @@ type MockClient struct {
 	// HeadFunc is an instance of a mock function object controlling the
 	// behavior of the method Head.
 	HeadFunc *ClientHeadFunc
+	// RepoStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoStatus.
+	RepoStatusFunc *ClientRepoStatusFunc
 }
 
 // NewMockClient creates a new mock of the Client interface. All methods
@@ -42,6 +45,11 @@ func NewMockClient() *MockClient {
 				return "", nil
 			},
 		},
+		RepoStatusFunc: &ClientRepoStatusFunc{
+			defaultHook: func(int, string) (bool, bool, error) {
+				return false, false, nil
+			},
+		},
 	}
 }
 
@@ -57,6 +65,9 @@ func NewMockClientFrom(i gitserver.Client) *MockClient {
 		},
 		HeadFunc: &ClientHeadFunc{
 			defaultHook: i.Head,
+		},
+		RepoStatusFunc: &ClientRepoStatusFunc{
+			defaultHook: i.RepoStatus,
 		},
 	}
 }
@@ -393,4 +404,115 @@ func (c ClientHeadFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientRepoStatusFunc describes the behavior when the RepoStatus method of
+// the parent MockClient instance is invoked.
+type ClientRepoStatusFunc struct {
+	defaultHook func(int, string) (bool, bool, error)
+	hooks       []func(int, string) (bool, bool, error)
+	history     []ClientRepoStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) RepoStatus(v0 int, v1 string) (bool, bool, error) {
+	r0, r1, r2 := m.RepoStatusFunc.nextHook()(v0, v1)
+	m.RepoStatusFunc.appendCall(ClientRepoStatusFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the RepoStatus method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientRepoStatusFunc) SetDefaultHook(hook func(int, string) (bool, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoStatus method of the parent MockClient instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientRepoStatusFunc) PushHook(hook func(int, string) (bool, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ClientRepoStatusFunc) SetDefaultReturn(r0 bool, r1 bool, r2 error) {
+	f.SetDefaultHook(func(int, string) (bool, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ClientRepoStatusFunc) PushReturn(r0 bool, r1 bool, r2 error) {
+	f.PushHook(func(int, string) (bool, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ClientRepoStatusFunc) nextHook() func(int, string) (bool, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientRepoStatusFunc) appendCall(r0 ClientRepoStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientRepoStatusFuncCall objects describing
+// the invocations of this function.
+func (f *ClientRepoStatusFunc) History() []ClientRepoStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientRepoStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientRepoStatusFuncCall is an object that describes an invocation of
+// method RepoStatus on an instance of MockClient.
+type ClientRepoStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 int
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientRepoStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientRepoStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }

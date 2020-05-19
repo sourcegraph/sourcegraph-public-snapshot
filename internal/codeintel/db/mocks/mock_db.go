@@ -74,6 +74,9 @@ type MockDB struct {
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBRepoNameFunc
+	// RequeueFunc is an instance of a mock function object controlling the
+	// behavior of the method Requeue.
+	RequeueFunc *DBRequeueFunc
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *DBResetStalledFunc
@@ -208,6 +211,11 @@ func NewMockDB() *MockDB {
 				return "", nil
 			},
 		},
+		RequeueFunc: &DBRequeueFunc{
+			defaultHook: func(context.Context, int, time.Duration) error {
+				return nil
+			},
+		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: func(context.Context, time.Time) ([]int, error) {
 				return nil, nil
@@ -319,6 +327,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		RepoNameFunc: &DBRepoNameFunc{
 			defaultHook: i.RepoName,
+		},
+		RequeueFunc: &DBRequeueFunc{
+			defaultHook: i.Requeue,
 		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: i.ResetStalled,
@@ -2571,6 +2582,114 @@ func (c DBRepoNameFuncCall) Args() []interface{} {
 // invocation.
 func (c DBRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBRequeueFunc describes the behavior when the Requeue method of the
+// parent MockDB instance is invoked.
+type DBRequeueFunc struct {
+	defaultHook func(context.Context, int, time.Duration) error
+	hooks       []func(context.Context, int, time.Duration) error
+	history     []DBRequeueFuncCall
+	mutex       sync.Mutex
+}
+
+// Requeue delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Requeue(v0 context.Context, v1 int, v2 time.Duration) error {
+	r0 := m.RequeueFunc.nextHook()(v0, v1, v2)
+	m.RequeueFunc.appendCall(DBRequeueFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Requeue method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRequeueFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Requeue method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRequeueFunc) PushHook(hook func(context.Context, int, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBRequeueFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBRequeueFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *DBRequeueFunc) nextHook() func(context.Context, int, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRequeueFunc) appendCall(r0 DBRequeueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRequeueFuncCall objects describing the
+// invocations of this function.
+func (f *DBRequeueFunc) History() []DBRequeueFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRequeueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRequeueFuncCall is an object that describes an invocation of method
+// Requeue on an instance of MockDB.
+type DBRequeueFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRequeueFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRequeueFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBResetStalledFunc describes the behavior when the ResetStalled method of

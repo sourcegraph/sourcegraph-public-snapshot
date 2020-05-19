@@ -16,6 +16,8 @@ type Client interface {
 	// of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 	// that key are the files nested under that directory.
 	DirectoryChildren(db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
+
+	RepoStatus(repositoryID int, commit string) (cloneInProgress, notFound bool, err error)
 }
 
 type defaultClient struct{}
@@ -32,4 +34,8 @@ func (c *defaultClient) CommitsNear(db db.DB, repositoryID int, commit string) (
 
 func (c *defaultClient) DirectoryChildren(db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
 	return DirectoryChildren(db, repositoryID, commit, dirnames)
+}
+
+func (c *defaultClient) RepoStatus(repositoryID int, commit string) (cloneInProgress, notFound bool, err error) {
+	return RepoStatus(repositoryID, commit)
 }
