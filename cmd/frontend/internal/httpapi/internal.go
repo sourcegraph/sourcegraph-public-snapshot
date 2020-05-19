@@ -142,10 +142,7 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 //
 // See getIndexOptions in the zoekt repository.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	// TODO parse out a repo name. Currently zoekt-sourcegraph-indexserver does
-	// not send the repo name in this request. However, it could quite easily
-	// send it as a query param. We will likely need to support no repo name
-	// specified for one release just to ease the rollout of this feature.
+	repo := r.URL.Query().Get("repo")
 
 	opts := struct {
 		// LargeFiles is a slice of glob patterns where matching file paths should
@@ -154,18 +151,44 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 		LargeFiles []string
 
 		// Symbols if true will make zoekt index the output of ctags.
-		Symbols    bool
+		Symbols bool
 
 		// Branches is a slice of branches to index. By default it will be
 		// HEAD. These will be resolved, so you can pass in tags/refs/commits.
 		//
 		// Indexing multiple branches is still experimental. As such this should
 		// only be set if an admin has opted into it.
-		Branches []string
+		Branches []struct {
+			Name    string
+			Version string
+		} `json:",omitempty"`
 	}{
 		LargeFiles: conf.Get().SearchLargeFiles,
 		Symbols:    conf.SymbolIndexEnabled(),
 	}
+
+	if repo != "" {
+		var found bool
+		for _, r := range conf.Get().ExperimentalFeatures.SearchMultipleBranchIndexing {
+			if r.Name == repo {
+				found = true
+				opts.Branches = make([]struct {
+					Name    string
+					Version string
+				}, len(r.Branches))
+				for i := range r.Branches {
+					opts.Branches[i].Name = r.Branches[i].Name
+					opts.Branches[i].Version = r.Branches[i].Version
+				}
+			}
+		}
+
+		if !found {
+			w.WriteHeader(http.StatusNotFound)
+			return nil
+		}
+	}
+
 	err := json.NewEncoder(w).Encode(opts)
 	if err != nil {
 		return errors.Wrap(err, "encode")
