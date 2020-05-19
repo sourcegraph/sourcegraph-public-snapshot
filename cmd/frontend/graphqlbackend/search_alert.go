@@ -598,6 +598,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
+	// Passing time.now() is a workaround that prevents (sr *SearchResultsResolver) ElapsedMilliseconds() from returning a wrong calculation
 	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
 }
 
