@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Dynamic repo search filters on branches which contain special characters are correctly escaped now. [#10810](https://github.com/sourcegraph/sourcegraph/pull/10810)
+
 ### Removed
 
 ## 3.16.0
