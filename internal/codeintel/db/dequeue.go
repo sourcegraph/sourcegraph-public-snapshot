@@ -56,7 +56,7 @@ func (db *dbImpl) dequeueRecord(
 
 // dequeueByID begins a transaction to lock an record for updating. This marks the record as ineligible
 // to other dequeue processes. All updates to the database while this record is being processes should
-// happen through returned transactional DB, which must be explicitly closed (via CloseTx) at the end of
+// happen through returned transactional DB, which must be explicitly closed (via Done) at the end of
 // processing by the caller.
 func (db *dbImpl) dequeueByID(
 	ctx context.Context,
