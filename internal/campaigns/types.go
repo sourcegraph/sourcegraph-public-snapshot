@@ -32,7 +32,7 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// A PatchSet is a collection of multiple Patchs.
+// A PatchSet is a collection of multiple Patches.
 type PatchSet struct {
 	ID int64
 
