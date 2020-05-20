@@ -6,6 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -16,19 +19,27 @@ var (
 
 	preciseCodeIntelAPIServerURLsOnce sync.Once
 	preciseCodeIntelAPIServerURLs     *endpoint.Map
-
-	DefaultClient = &Client{
-		endpoint: LSIFURLs(),
-		HTTPClient: &http.Client{
-			// ot.Transport will propagate opentracing spans
-			Transport: &ot.Transport{},
-		},
-	}
 )
 
 type Client struct {
 	endpoint   *endpoint.Map
 	HTTPClient *http.Client
+	server     *Server
+}
+
+func New(
+	db db.DB,
+	bundleManagerClient bundles.BundleManagerClient,
+	codeIntelAPI api.CodeIntelAPI,
+) *Client {
+	return &Client{
+		endpoint: LSIFURLs(),
+		HTTPClient: &http.Client{
+			// ot.Transport will propagate opentracing spans
+			Transport: &ot.Transport{},
+		},
+		server: NewServer(db, bundleManagerClient, codeIntelAPI),
+	}
 }
 
 func LSIFURLs() *endpoint.Map {

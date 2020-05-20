@@ -20,13 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func NewProxy() (*httpapi.LSIFServerProxy, error) {
+func NewProxy(lsifserverClient *client.Client) (*httpapi.LSIFServerProxy, error) {
 	return &httpapi.LSIFServerProxy{
-		UploadHandler: http.HandlerFunc(uploadProxyHandler()),
+		UploadHandler: http.HandlerFunc(uploadProxyHandler(lsifserverClient)),
 	}, nil
 }
 
-func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler(lsifserverClient *client.Client) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
@@ -72,7 +72,7 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		proxyResp, err := client.DefaultClient.RawRequest(ctx, proxyReq)
+		proxyResp, err := lsifserverClient.RawRequest(ctx, proxyReq)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
