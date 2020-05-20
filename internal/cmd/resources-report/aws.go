@@ -79,8 +79,11 @@ func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) 
 		return nil, fmt.Errorf("failed to init client: %w", err)
 	}
 
-	// query default aws regions
 	var resources []Resource
+
+	// query default aws regions - the only partition we are interested in is the
+	// normal `aws` regions, which will always exist (other partitions include China,
+	// US government, etc.)
 	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
 	for _, region := range pt.Regions() {
 		shouldCheckRegion := false
