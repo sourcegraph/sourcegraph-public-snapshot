@@ -1331,7 +1331,7 @@ type SearchResults {
     repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
-    # reached.
+    # reached, or because they were excluded due to being forks or archives.
     #
     # In paginated search requests, this represents the set of repositories searched for the
     # individual paginated request / input cursor and not the global set of repositories that

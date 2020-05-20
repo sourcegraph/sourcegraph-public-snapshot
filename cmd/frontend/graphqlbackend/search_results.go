@@ -54,6 +54,7 @@ type searchResultsCommon struct {
 	indexed  []*types.Repo             // repos that were searched using an index
 	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
 	missing  []*types.Repo             // repos that could not be searched because they do not exist
+	excluded excludedRepos             // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
@@ -122,6 +123,8 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.indexed = append(c.indexed, other.indexed...)
 	c.cloning = append(c.cloning, other.cloning...)
 	c.missing = append(c.missing, other.missing...)
+	c.excluded.forks = c.excluded.forks + other.excluded.forks
+	c.excluded.archived = c.excluded.archived + other.excluded.archived
 	c.timedout = append(c.timedout, other.timedout...)
 	c.resultCount += other.resultCount
 
@@ -277,6 +280,12 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		}
 	}
 
+	if sr.searchResultsCommon.excluded.forks > 0 {
+		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo")
+	}
+	if sr.searchResultsCommon.excluded.archived > 0 {
+		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo")
+	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
@@ -1284,27 +1293,27 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, res *SearchResultsResolver, err error) {
+	repos, missingRepoRevs, excludedRepos, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	return repos, missingRepoRevs, nil, nil
+	return repos, missingRepoRevs, excludedRepos, nil, nil
 }
 
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
@@ -1356,7 +1365,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
+	repos, missingRepoRevs, excludedRepos, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -1432,6 +1441,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			return &requiredWg
 		}
 		return &optionalWg
+	}
+
+	if excludedRepos != nil {
+		common.excluded = *excludedRepos
 	}
 
 	// Apply search limits and generate warnings before firing off workers.
@@ -1680,7 +1693,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
+		len(results),
+		common.limitHit,
+		len(common.cloning),
+		len(common.missing),
+		common.excluded.forks,
+		common.excluded.archived,
+		len(common.timedout))
 
 	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
