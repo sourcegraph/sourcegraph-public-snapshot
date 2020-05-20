@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -75,8 +74,9 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		return nil, fmt.Errorf("prometheus query failed: %w", err)
 	}
 	if len(warn) > 0 {
-		log.Printf("site.monitoring.alerts: warnings encountered on prometheus query (%s): [ %s ]",
-			r.timespan.String(), strings.Join(warn, ","))
+		log15.Warn("site.monitoring.alerts: warnings encountered on prometheus query",
+			"timespan", r.timespan.String(),
+			"warnings", warn)
 	}
 	if results.Type() != model.ValMatrix {
 		return nil, fmt.Errorf("received unexpected result type '%s' from prometheus", results.Type())
