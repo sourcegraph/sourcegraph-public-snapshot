@@ -10,10 +10,11 @@ import (
 	"github.com/pkg/errors"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
 )
 
 func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
-	mock := NewMockPrometheusQuerier()
+	mock := prometheusutil.NewMockPrometheusQuerier()
 	sampleT := model.Time(time.Now().UTC().Unix())
 	type fields struct {
 		queryValue    model.Value
@@ -63,7 +64,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 				queryErr: fmt.Errorf("timed out: %w", context.Canceled),
 			},
 			want:    nil,
-			wantErr: errPrometheusUnavailable,
+			wantErr: prometheusutil.ErrPrometheusUnavailable,
 		}, {
 			name: "discards repeated values",
 			fields: fields{

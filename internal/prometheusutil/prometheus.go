@@ -1,4 +1,4 @@
-package graphqlbackend
+package prometheusutil
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var prometheusURL = env.Get("PROMETHEUS_URL", "http://prometheus:9090", "prometheus server URL")
+var PrometheusURL = env.Get("PROMETHEUS_URL", "http://prometheus:9090", "prometheus server URL")
 
-// prometheusQuerier provides a shim around prometheus.API
-type prometheusQuerier interface {
+// PrometheusQuerier provides a shim around prometheus.API
+type PrometheusQuerier interface {
 	// QueryRange performs a query for the given range.
 	QueryRange(ctx context.Context, query string, r prometheus.Range) (model.Value, prometheus.Warnings, error)
 }
@@ -23,14 +23,14 @@ type prometheusQuerier interface {
 // prometheus API access times out, both of which indicate that the server API has likely
 // been configured to explicitly disallow access to prometheus, or that prometheus is not
 // deployed at all. The website checks for this error in `fetchMonitoringStats`, for example.
-var errPrometheusUnavailable = errors.New("prometheus API is unavailable")
+var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
 
-func newPrometheusQuerier() (prometheusQuerier, error) {
-	if prometheusURL == "" {
-		return nil, errPrometheusUnavailable
+func NewPrometheusQuerier() (PrometheusQuerier, error) {
+	if PrometheusURL == "" {
+		return nil, ErrPrometheusUnavailable
 	}
 	c, err := prometheusAPI.NewClient(prometheusAPI.Config{
-		Address: prometheusURL,
+		Address: PrometheusURL,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("prometheus configuration malformed: %w", err)

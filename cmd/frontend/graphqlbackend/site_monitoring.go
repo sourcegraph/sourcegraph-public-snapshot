@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"github.com/sourcegraph/sourcegraph/internal/prometheusutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -30,7 +31,7 @@ func (r *MonitoringAlert) Occurrences() int32  { return r.OccurrencesValue }
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
 }) (*siteMonitoringStatisticsResolver, error) {
-	prom, err := newPrometheusQuerier()
+	prom, err := prometheusutil.NewPrometheusQuerier()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 }
 
 type siteMonitoringStatisticsResolver struct {
-	prom     prometheusQuerier
+	prom     prometheusutil.PrometheusQuerier
 	timespan time.Duration
 }
 
@@ -68,7 +69,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			Step:  alertsResolution,
 		})
 	if errors.Is(err, context.Canceled) {
-		return nil, errPrometheusUnavailable
+		return nil, prometheusutil.ErrPrometheusUnavailable
 	}
 	if err != nil {
 		return nil, errors.Wrap(err, "prometheus query failed")
