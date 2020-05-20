@@ -6,9 +6,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type Janitor struct {
+	db                 db.DB
 	bundleDir          string
 	desiredPercentFree int
 	janitorInterval    time.Duration
@@ -19,6 +21,7 @@ type Janitor struct {
 }
 
 func New(
+	db db.DB,
 	bundleDir string,
 	desiredPercentFree int,
 	janitorInterval time.Duration,
@@ -26,6 +29,7 @@ func New(
 	metrics JanitorMetrics,
 ) *Janitor {
 	return &Janitor{
+		db:                 db,
 		bundleDir:          bundleDir,
 		desiredPercentFree: desiredPercentFree,
 		janitorInterval:    janitorInterval,
@@ -35,8 +39,7 @@ func New(
 	}
 }
 
-// Run periodically performs a best-effort cleanup process. See the following methods
-// for more specifics: removeOldUploadFiles, removeOrphanedBundleFiles, and freeSpace.
+// Run periodically performs a best-effort cleanup process.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
@@ -66,12 +69,16 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
 	}
 
-	if err := j.removeOrphanedBundleFiles(defaultStatesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		return errors.Wrap(err, "janitor.removeOrphanedBundleFiles")
 	}
 
-	if err := j.freeSpace(defaultPruneFn); err != nil {
+	if err := j.freeSpace(); err != nil {
 		return errors.Wrap(err, "janitor.freeSpace")
+	}
+
+	if err := j.removeProcessedUploadsWithoutBundleFile(); err != nil {
+		return errors.Wrap(err, "janitor.removeProcessedUploadsWithoutBundle")
 	}
 
 	return nil

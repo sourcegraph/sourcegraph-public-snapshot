@@ -92,6 +92,9 @@ func PreciseCodeIntelBundleManager() *Container {
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
 							PossibleSolutions: "none",
 						},
+					},
+					// TODO - reorganize this
+					{
 						{
 							Name:              "janitor_orphaned_dumps",
 							Description:       "bundle files removed (with no corresponding database entry) every 5m",
@@ -108,6 +111,15 @@ func PreciseCodeIntelBundleManager() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_uploads_without_bundle_files",
+							Description:       "upload records removed (due to missing bundle files) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("records removed"),
 							PossibleSolutions: "none",
 						},
 					},

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -71,16 +70,4 @@ func writeJSON(w http.ResponseWriter, payload interface{}) {
 	}
 
 	copyAll(w, bytes.NewReader(data))
-}
-
-func fileExists(filename string) (bool, error) {
-	if _, err := os.Stat(filename); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return true, nil
 }

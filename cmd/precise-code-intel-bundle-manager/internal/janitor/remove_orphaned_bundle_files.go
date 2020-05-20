@@ -11,28 +11,16 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
 
 // OrphanedBundleBatchSize is the maximum number of bundle ids to request at
 // once from the precise-code-intel-api-server.
 const OrphanedBundleBatchSize = 100
 
-type StatesFn func(ctx context.Context, ids []int) (map[int]string, error)
-
-func defaultStatesFn(ctx context.Context, ids []int) (map[int]string, error) {
-	states, err := client.DefaultClient.States(ctx, ids)
-	if err != nil {
-		return nil, errors.Wrap(err, "lsifserver.States")
-	}
-
-	return states, nil
-}
-
 // removeOrphanedBundleFiles calls the precise-code-intel-api-server to get the
 // current state of the bundle known by this bundle manager. Any bundle on disk
 // that is in an errored state or is unknown by the API is removed.
-func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
+func (j *Janitor) removeOrphanedBundleFiles() error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
 		return err
@@ -45,9 +33,9 @@ func (j *Janitor) removeOrphanedBundleFiles(statesFn StatesFn) error {
 
 	allStates := map[int]string{}
 	for _, batch := range batchIntSlice(ids, OrphanedBundleBatchSize) {
-		states, err := statesFn(context.Background(), batch)
+		states, err := j.db.GetStates(context.Background(), batch)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "db.GetStates")
 		}
 
 		for k, v := range states {
