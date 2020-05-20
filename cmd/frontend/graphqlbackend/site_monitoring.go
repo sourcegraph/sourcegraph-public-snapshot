@@ -2,9 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
@@ -70,7 +71,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		return nil, errPrometheusUnavailable
 	}
 	if err != nil {
-		return nil, fmt.Errorf("prometheus query failed: %w", err)
+		return nil, errors.Wrap(err, "prometheus query failed")
 	}
 	if len(warn) > 0 {
 		log15.Warn("site.monitoring.alerts: warnings encountered on prometheus query",
