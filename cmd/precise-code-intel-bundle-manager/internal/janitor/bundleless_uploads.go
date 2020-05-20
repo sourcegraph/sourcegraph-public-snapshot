@@ -14,7 +14,7 @@ import (
 func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	ctx := context.Background()
 
-	// TODO(efritz) - paginate
+	// TODO(efritz) - request in batches
 	ids, err := j.db.GetDumpIDs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "db.GetDumpIDs")

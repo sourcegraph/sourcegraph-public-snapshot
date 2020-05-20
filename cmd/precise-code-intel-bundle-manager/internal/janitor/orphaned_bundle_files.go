@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 )
 
-// OrphanedBundleBatchSize is the maximum number of bundle ids to request at
-// once from the precise-code-intel-api-server.
+// OrphanedBundleBatchSize is the maximum number of bundle ids to request the state
+// of from the database at once.
 const OrphanedBundleBatchSize = 100
 
 // removeOrphanedBundleFiles calls the precise-code-intel-api-server to get the
@@ -31,20 +31,20 @@ func (j *Janitor) removeOrphanedBundleFiles() error {
 		ids = append(ids, id)
 	}
 
-	allStates := map[int]string{}
+	states := map[int]string{}
 	for _, batch := range batchIntSlice(ids, OrphanedBundleBatchSize) {
-		states, err := j.db.GetStates(context.Background(), batch)
+		batchStates, err := j.db.GetStates(context.Background(), batch)
 		if err != nil {
 			return errors.Wrap(err, "db.GetStates")
 		}
 
-		for k, v := range states {
-			allStates[k] = v
+		for k, v := range batchStates {
+			states[k] = v
 		}
 	}
 
 	for id, path := range pathsByID {
-		if state, exists := allStates[id]; !exists || state == "errored" {
+		if state, exists := states[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
 				return err
 			}

@@ -24,12 +24,9 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		}
 	}
 
-	var idArgs [][]int
 	mockDB := dbmocks.NewMockDB()
 	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
 		sort.Ints(ids)
-		idArgs = append(idArgs, ids)
-
 		return map[int]string{
 			1:  "completed",
 			2:  "queued",
@@ -61,6 +58,11 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 	}
 
+	var idArgs [][]int
+	for _, call := range mockDB.GetStatesFunc.History() {
+		idArgs = append(idArgs, call.Arg1)
+	}
+
 	expectedArgs := [][]int{ids}
 	if diff := cmp.Diff(expectedArgs, idArgs); diff != "" {
 		t.Errorf("unexpected arguments to statesFn (-want +got):\n%s", diff)
@@ -81,11 +83,8 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		}
 	}
 
-	var idArgs [][]int
 	mockDB := dbmocks.NewMockDB()
 	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
-		idArgs = append(idArgs, ids)
-
 		states := map[int]string{}
 		for _, id := range ids {
 			if id%2 == 0 {
@@ -115,12 +114,12 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	var allArgs []int
-	for _, args := range idArgs {
-		if len(args) > OrphanedBundleBatchSize {
-			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(args))
+	for _, call := range mockDB.GetStatesFunc.History() {
+		if len(call.Arg1) > OrphanedBundleBatchSize {
+			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(call.Arg1))
 		}
 
-		allArgs = append(allArgs, args...)
+		allArgs = append(allArgs, call.Arg1...)
 	}
 	sort.Ints(allArgs)
 
