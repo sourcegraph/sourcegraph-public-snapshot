@@ -1,16 +1,7 @@
-import {
-    ProxyMarked,
-    transferHandlers,
-    ProxyMethods,
-    createEndpoint,
-    releaseProxy,
-    TransferHandler,
-    Remote,
-} from 'comlink'
+import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote } from 'comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
-import { noop } from 'lodash'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -75,9 +66,3 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
     value !== null &&
     hasProperty('subscribe')(value) &&
     typeof value.subscribe === 'function'
-
-export const addProxyMethods = <T>(value: T): T & ProxyMethods =>
-    Object.assign(value, {
-        [createEndpoint]: () => Promise.resolve(new MessagePort()),
-        [releaseProxy]: noop,
-    })

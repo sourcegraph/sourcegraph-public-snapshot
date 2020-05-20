@@ -1,6 +1,6 @@
 import { from, merge, Observable, Unsubscribable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { EndpointPair } from '../../platform/context'
+import { EndpointPair, PlatformContext } from '../../platform/context'
 import { InitData } from '../extension/extensionHost'
 import { createExtensionHostClientConnection } from './connection'
 import { Services } from './services'
@@ -22,11 +22,12 @@ export interface ExtensionHostClient extends Unsubscribable {
 export function createExtensionHostClient(
     services: Services,
     extensionHostEndpoint: Observable<EndpointPair>,
-    initData: InitData
+    initData: InitData,
+    ctx: PlatformContext
 ): ExtensionHostClient {
     const client = extensionHostEndpoint.pipe(
         switchMap(endpoints =>
-            from(createExtensionHostClientConnection(endpoints, services, initData)).pipe(
+            from(createExtensionHostClientConnection(endpoints, services, initData, ctx)).pipe(
                 switchMap(client => merge([client], new Observable<never>(() => client)))
             )
         )

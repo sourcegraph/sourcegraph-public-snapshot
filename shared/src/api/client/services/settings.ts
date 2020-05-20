@@ -1,7 +1,7 @@
-import { from, Subscribable } from 'rxjs'
+import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { PlatformContext } from '../../../platform/context'
-import { isSettingsValid, Settings, SettingsCascadeOrError } from '../../../settings/settings'
+import { isSettingsValid } from '../../../settings/settings'
 
 /**
  * A key path that refers to a location in a JSON document.
@@ -22,43 +22,15 @@ export interface SettingsEdit {
     value: any
 }
 
-/**
- * The settings service manages the settings cascade for the viewer.
- *
- * @template S The settings type.
- */
-export interface SettingsService<S extends Settings = Settings> {
-    /**
-     * The settings cascade.
-     */
-    data: Subscribable<SettingsCascadeOrError<S>>
-
-    /**
-     * Update the settings for the settings subject with the highest precedence.
-     *
-     * @todo Support specifying which settings subject whose settings to update.
-     */
-    update(edit: SettingsEdit): Promise<void>
-}
-
-/**
- * Create a {@link SettingsService} instance.
- *
- * @template S The settings type.
- */
-export function createSettingsService<S extends Settings = Settings>({
-    settings: data,
-    updateSettings,
-}: Pick<PlatformContext, 'settings' | 'updateSettings'>): SettingsService<S> {
-    return {
-        data: data as Subscribable<SettingsCascadeOrError<S>>, // cast to add type parameter S
-        update: async edit => {
-            const settings = await from(data).pipe(first()).toPromise()
-            if (!isSettingsValid(settings)) {
-                throw new Error('invalid settings (internal error)')
-            }
-            const subject = settings.subjects[settings.subjects.length - 1]
-            await updateSettings(subject.subject.id, edit)
-        },
+export async function updateSettings(
+    ctx: Pick<PlatformContext, 'settings' | 'updateSettings'>,
+    edit: SettingsEdit
+): Promise<void> {
+    const { settings: data, updateSettings: update } = ctx
+    const settings = await from(data).pipe(first()).toPromise()
+    if (!isSettingsValid(settings)) {
+        throw new Error('invalid settings (internal error)')
     }
+    const subject = settings.subjects[settings.subjects.length - 1]
+    await update(subject.subject.id, edit)
 }

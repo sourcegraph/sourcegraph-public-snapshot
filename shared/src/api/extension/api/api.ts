@@ -1,10 +1,10 @@
 import { ProxyMarked } from 'comlink'
 import { InitData } from '../extensionHost'
-import { ExtConfigurationAPI } from './configuration'
 import { ExtDocumentsAPI } from './documents'
 import { ExtExtensionsAPI } from './extensions'
 import { ExtWorkspaceAPI } from './workspace'
 import { ExtWindowsAPI } from './windows'
+import { ExposedToClient } from '../../contract'
 
 export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
 
@@ -15,5 +15,5 @@ export interface ExtensionHostAPI extends ProxyMarked {
     extensions: ExtExtensionsAPI
     workspace: ExtWorkspaceAPI
     windows: ExtWindowsAPI
-    configuration: ExtConfigurationAPI<any>
+    newExtAPI: ExposedToClient
 }
