@@ -216,91 +216,35 @@ func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failu
 	`, failureSummary, failureStacktrace, id))
 }
 
-// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
-// If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned along with a
-// false-valued flag. This method must not be called from within a transaction.
-func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) {
-	for {
-		// First, we try to select an eligible upload record outside of a transaction. This will skip
-		// any rows that are currently locked inside of a transaction of another worker process.
-		id, ok, err := scanFirstInt(db.query(ctx, sqlf.Sprintf(`
-			UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
-				SELECT id FROM lsif_uploads
-				WHERE state = 'queued'
-				ORDER BY uploaded_at
-				FOR UPDATE SKIP LOCKED LIMIT 1
-			)
-			RETURNING u.id
-		`)))
-		if err != nil || !ok {
-			return Upload{}, nil, false, err
-		}
-
-		upload, jobHandle, ok, err := db.dequeue(ctx, id)
-		if err != nil {
-			// This will occur if we selected an ID that raced with another worker. If both workers
-			// select the same ID and the other process begins its transaction first, this condition
-			// will occur. We'll re-try the process by selecting a fresh ID.
-			if err == ErrDequeueRace {
-				continue
-			}
-
-			return Upload{}, nil, false, errors.Wrap(err, "db.dequeue")
-		}
-
-		return upload, jobHandle, ok, nil
-	}
+var uploadColumnsWithNullRank = []*sqlf.Query{
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("commit"),
+	sqlf.Sprintf("root"),
+	sqlf.Sprintf("visible_at_tip"),
+	sqlf.Sprintf("uploaded_at"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_summary"),
+	sqlf.Sprintf("failure_stacktrace"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("repository_id"),
+	sqlf.Sprintf("indexer"),
+	sqlf.Sprintf("num_parts"),
+	sqlf.Sprintf("uploaded_parts"),
+	sqlf.Sprintf("NULL"),
 }
 
-// dequeue begins a transaction to lock an upload record for updating. This marks the upload as
-// ineligible for a dequeue to other worker processes. All updates to the database while this record
-// is being processes should happen through the JobHandle's transaction, which must be explicitly
-// closed (via CloseTx) at the end of processing by the caller.
-func (db *dbImpl) dequeue(ctx context.Context, id int) (_ Upload, _ JobHandle, _ bool, err error) {
-	tx, started, err := db.transact(ctx)
-	if err != nil {
-		return Upload{}, nil, false, err
-	}
-	if !started {
-		return Upload{}, nil, false, ErrDequeueTransaction
+// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
+// upload is returned along with a DB instance which wraps the transaction. This transaction must be closed.
+// If there is no such unlocked upload, a zero-value upload and nil DB will be returned along with a false
+// valued flag. This method must not be called from within a transaction.
+func (db *dbImpl) Dequeue(ctx context.Context) (Upload, DB, bool, error) {
+	upload, tx, ok, err := db.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadDequeue)
+	if err != nil || !ok {
+		return Upload{}, tx, ok, err
 	}
 
-	// SKIP LOCKED is necessary not to block on this select. We allow the database driver to return
-	// sql.ErrNoRows on this condition so we can determine if we need to select a new upload to process
-	// on race conditions with other worker processes.
-	upload, exists, err := scanFirstUpload(tx.query(
-		ctx,
-		sqlf.Sprintf(`
-			SELECT
-				u.id,
-				u.commit,
-				u.root,
-				u.visible_at_tip,
-				u.uploaded_at,
-				u.state,
-				u.failure_summary,
-				u.failure_stacktrace,
-				u.started_at,
-				u.finished_at,
-				u.repository_id,
-				u.indexer,
-				u.num_parts,
-				u.uploaded_parts,
-				NULL
-			FROM lsif_uploads u
-			WHERE id = %s
-			FOR UPDATE SKIP LOCKED
-			LIMIT 1
-		`, id),
-	))
-	if err != nil {
-		return Upload{}, nil, false, tx.Done(err)
-	}
-	if !exists {
-		return Upload{}, nil, false, tx.Done(ErrDequeueRace)
-	}
-	return upload, &jobHandleImpl{db: tx, id: id}, true, nil
+	return upload.(Upload), tx, true, nil
 }
 
 // GetStates returns the states for the uploads with the given identifiers.

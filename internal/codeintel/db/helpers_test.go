@@ -11,6 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
+type printableRank struct{ value *int }
+
+func (r printableRank) String() string {
+	if r.value == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%d", r.value)
+}
+
 // makeCommit formats an integer as a 40-character git commit hash.
 func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
@@ -90,4 +99,17 @@ func insertPackageReferences(t *testing.T, db DB, packageReferences []types.Pack
 	if err := db.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}
+}
+
+// unwrapDB gets the underlying dbImpl from a DB interface value.
+func unwrapDB(db DB) *dbImpl {
+	if dbImpl, ok := db.(*dbImpl); ok {
+		return dbImpl
+	}
+
+	if observed, ok := db.(*ObservedDB); ok {
+		return unwrapDB(observed.db)
+	}
+
+	return nil
 }

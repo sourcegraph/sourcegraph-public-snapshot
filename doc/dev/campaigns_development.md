@@ -21,7 +21,7 @@ The code campaigns feature introduces a lot of new names, GraphQL queries and mu
 | ------------------- | -------------------- | -------------------| ----------- |
 | `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets on code hosts. The central entity. |
 | `ExternalChangeset` | `campaigns.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
-| `PatchSet`          | `campaigns.PatchSet`       | `patch_sets`       | A patch set is a collection of patches that will be applied by creating and publishing a Campaign. A campaign *has one* patch set. |
+| `PatchSet`          | `campaigns.PatchSet`       | `patch_sets`       | A patch set is a collection of patches that will be applied by creating and publishing a campaign. A campaign *has one* patch set. |
 | `Patch`             | `campaigns.Patch`          | `patches`          | A patch for a repository that *can* be turned into a changeset on a code host. It belongs to a patch set, which has multiple patches, one per repository. |
 | -                   | `campaigns.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `Patch` (GraphQL)/`campaigns.Patch` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a patch set. |
 | `ChangesetEvent`    | `campaigns.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
@@ -43,12 +43,12 @@ The code campaigns feature introduces a lot of new names, GraphQL queries and mu
 
 ## GitHub testing account
 
-The campaigns feature requires creating changesets (PRs) on code hosts. If you are not part of the Sourcegraph organization, we recommend you create dummy projects to safely test changes on so you do not spam real repositories with your tests. If you _are_ part of the Sourcegraph organization, we have an account set up for this purpose.
+Campaigns create changesets (PRs) on code hosts. If you are not part of the Sourcegraph organization, we recommend you create dummy projects to safely test changes on so you do not spam real repositories with your tests. If you _are_ part of the Sourcegraph organization, we have an account set up for this purpose.
 
 To use this account, follow these steps:
 
 1. Find the GitHub `sd9` user in 1Password
-2. Copy the Campaigns Testing Token
+2. Copy the `Campaigns Testing Token`
 3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub config with the token, like this:
 
 ```json
