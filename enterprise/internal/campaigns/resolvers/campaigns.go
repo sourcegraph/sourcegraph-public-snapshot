@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"path"
 	"sync"
 	"time"
@@ -334,6 +335,20 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
+}
+
+func (r *campaignResolver) HiddenChangesets(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) (graphqlbackend.HiddenExternalChangesetsConnectionResolver, error) {
+	return nil, errors.New("TODO: not implemented")
+}
+
+func (r *campaignResolver) HiddenPatches(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) (graphqlbackend.HiddenPatchesConnectionResolver, error) {
+	return nil, errors.New("TODO: not implemented")
 }
 
 type changesetDiffsConnectionResolver struct {

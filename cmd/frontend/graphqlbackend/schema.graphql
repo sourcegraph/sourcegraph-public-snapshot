@@ -494,6 +494,9 @@ type PatchSet implements Node {
     # The proposed patches for the changesets that will be created by the campaign.
     patches(first: Int): PatchConnection!
 
+    # The hidden patches for which the user doesn't have read permissions.
+    hiddenPatches(first: Int): HiddenPatchConnection!
+
     # The URL where the patchset preview is displayed (and where you can create a campaign from it).
     previewURL: String!
 
@@ -584,6 +587,7 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign that already exist on the code host.
+    # Only includes changesets for which the user has read permissions.
     changesets(
         first: Int
         # Only include changesets with the given state.
@@ -595,10 +599,18 @@ type Campaign implements Node {
     ): ExternalChangesetConnection!
 
     # All the changesets in this campaign whose state is ChangesetState.OPEN.
+    # Only includes changesets for which the user has read permissions.
     openChangesets: ExternalChangesetConnection!
+
+    # All the changesets in this campaign for which the user doesn't have read
+    # permissions.
+    hiddenChangesets(
+        first: Int
+    ): HiddenExternalChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
     # the "to" parameter.
+    # The counts include hidden changesets.
     changesetCountsOverTime(
         # Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
         from: DateTime
@@ -622,7 +634,15 @@ type Campaign implements Node {
     # Campaign.status field increments with every patch turned into an ExternalChangeset.
     patches(first: Int): PatchConnection!
 
+    # The hidden patches that will be turned into changesets on the code host
+    # when publishing the campaign. Mirroring the behavior of patches &
+    # changesets, the number of nodes in hiddenChangesets will increase with
+    # each decrease in hiddenPatches.
+    hiddenPatches(first: Int): HiddenPatchConnection!
+
     # The diff stat for all the patches and changesets in the campaign.
+    # Excluding the stats of hidden changesets and hidden patches, for which
+    # the user doesn't have read permissions.
     diffStat: DiffStat!
 }
 
@@ -854,6 +874,73 @@ input UpdateExternalServiceInput {
     displayName: String
     # The updated config, if provided.
     config: String
+}
+
+# A changeset on a code host (e.g., a pull request on GitHub) for which the
+# viewer doesn't have read permissions.
+type HiddenExternalChangeset implements Node {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+
+    # The state of the changeset.
+    state: ChangesetState!
+}
+
+# A list of hidden changesets.
+type HiddenExternalChangesetConnection {
+    # A list of changesets.
+    nodes: [HiddenExternalChangeset!]!
+
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A hidden patch is patch for which the user doesn't have read permissions.
+type HiddenPatch implements Node {
+    # The id of the patch.
+    id: ID!
+
+    # Whether the patch is enqueued for publication. Defaults to false. It will be true when any of
+    # the following has occurred:
+    #
+    # - A campaign has been created with the patchset to which this patch belongs.
+    # - A campaign with the patchset has been published after being in draft mode.
+    # - The patch has been individually published through the publishChangeset mutation.
+    publicationEnqueued: Boolean!
+}
+
+# A list of hidden patches.
+type HiddenPatchConnection {
+    # A list of hidden patches.
+    nodes: [HiddenPatch!]!
+
+    # The total number of hidden patches in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # Describes options for rendering Markdown.

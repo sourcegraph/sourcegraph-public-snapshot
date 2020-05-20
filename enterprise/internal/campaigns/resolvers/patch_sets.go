@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -102,6 +103,13 @@ func (r *patchSetResolver) PreviewURL() string {
 	q.Set("patchSet", string(r.ID()))
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+func (r *patchSetResolver) HiddenPatches(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) (graphqlbackend.HiddenPatchesConnectionResolver, error) {
+	return nil, errors.New("TODO: not implemented")
 }
 
 type patchesConnectionResolver struct {

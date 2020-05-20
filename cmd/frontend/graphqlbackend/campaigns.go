@@ -225,6 +225,9 @@ type CampaignResolver interface {
 	PublishedAt(ctx context.Context) (*DateTime, error)
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
 	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	HiddenChangesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (HiddenExternalChangesetsConnectionResolver, error)
+	HiddenPatches(ctx context.Context, args *graphqlutil.ConnectionArgs) (HiddenPatchesConnectionResolver, error)
 }
 
 type CampaignsConnectionResolver interface {
@@ -320,4 +323,32 @@ type PatchSetResolver interface {
 
 	PreviewURL() string
 	DiffStat(ctx context.Context) (*DiffStat, error)
+
+	HiddenPatches(ctx context.Context, args *graphqlutil.ConnectionArgs) (HiddenPatchesConnectionResolver, error)
+}
+
+type HiddenExternalChangesetsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]HiddenExternalChangesetResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type HiddenExternalChangesetResolver interface {
+	ID() graphql.ID
+	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
+	NextSyncAt() *DateTime
+	State() campaigns.ChangesetState
+}
+
+type HiddenPatchesConnectionResolver interface {
+	Nodes(ctx context.Context) ([]HiddenPatchResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type HiddenPatchResolver interface {
+	ID() graphql.ID
+	PublicationEnqueued(ctx context.Context) (bool, error)
 }
