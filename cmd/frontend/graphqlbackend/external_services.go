@@ -72,7 +72,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
