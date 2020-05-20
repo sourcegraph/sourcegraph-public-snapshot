@@ -30,6 +30,9 @@ type RepositoryResolver struct {
 	repo    *types.Repo
 	icon    string
 	matches []*searchResultMatchResolver
+
+	// rev optionally specifies a revision to go to for search results.
+	rev string
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
@@ -221,7 +224,12 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 	return nil
 }
 
-func (r *RepositoryResolver) URL() string { return "/" + string(r.repo.Name) }
+func (r *RepositoryResolver) URL() string {
+	if r.rev != "" {
+		return "/" + string(r.repo.Name) + "@" + r.rev
+	}
+	return "/" + string(r.repo.Name)
+}
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
@@ -232,7 +240,13 @@ func (r *RepositoryResolver) Icon() string {
 }
 
 func (r *RepositoryResolver) Label() (*markdownResolver, error) {
-	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+	var label string
+	if r.rev != "" {
+		label = string(r.repo.Name) + "@" + r.rev
+	} else {
+		label = string(r.repo.Name)
+	}
+	text := "[" + label + "](/" + label + ")"
 	return &markdownResolver{text: text}, nil
 }
 
