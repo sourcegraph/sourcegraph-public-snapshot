@@ -12,10 +12,8 @@ import (
 
 // https://cloud.google.com/asset-inventory/docs/supported-asset-types#searchable_asset_types
 var gcpAssetTypes = []string{
-	"appengine.googleapis.com/Version",
 	"compute.googleapis.com/Disk",
 	"compute.googleapis.com/Instance",
-	"compute.googleapis.com/InstanceGroup",
 	"dataproc.googleapis.com/Cluster",
 }
 

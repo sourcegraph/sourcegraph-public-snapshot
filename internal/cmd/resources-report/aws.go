@@ -32,10 +32,34 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Identifier: *instance.InstanceId,
 						Location:   *instance.Placement.AvailabilityZone,
 						Owner:      *reservation.OwnerId,
-						Type:       fmt.Sprintf("EC2::%s", string(instance.InstanceType)),
-						Meta:       map[string]interface{}{},
+						Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
+						Meta: map[string]interface{}{
+							"tags": instance.Tags,
+						},
 					})
 				}
+			}
+		}
+		return rs, pager.Err()
+	},
+	// fetch ec2 volumes
+	"EC2::Volumes": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
+		client := aws_ec2.New(cfg)
+		pager := aws_ec2.NewDescribeVolumesPaginator(client.DescribeVolumesRequest(&aws_ec2.DescribeVolumesInput{}))
+		var rs []Resource
+		for pager.Next(ctx) {
+			page := pager.CurrentPage()
+			for _, volume := range page.Volumes {
+				rs = append(rs, Resource{
+					Platform:   PlatformAWS,
+					Identifier: *volume.VolumeId,
+					Location:   *volume.AvailabilityZone,
+					Owner:      "",
+					Type:       fmt.Sprintf("EC2::Volumes::%s", string(volume.VolumeType)),
+					Meta: map[string]interface{}{
+						"tags": volume.Tags,
+					},
+				})
 			}
 		}
 		return rs, pager.Err()
@@ -53,7 +77,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 					Identifier: cluster,
 					Location:   cfg.Region,
 					Owner:      "",
-					Type:       "EKS::cluster",
+					Type:       "EKS::Cluster",
 				})
 			}
 		}
