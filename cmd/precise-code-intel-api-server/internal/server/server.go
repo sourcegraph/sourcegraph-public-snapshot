@@ -22,6 +22,7 @@ type Server struct {
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
 	codeIntelAPI        api.CodeIntelAPI
+	enqueuer            *Enqueuer
 	server              *http.Server
 	once                sync.Once
 }
@@ -40,6 +41,7 @@ func New(
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
 		codeIntelAPI:        codeIntelAPI,
+		enqueuer:            NewEnqueuer(db, bundleManagerClient),
 	}
 
 	s.server = &http.Server{
