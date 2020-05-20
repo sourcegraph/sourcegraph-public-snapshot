@@ -37,6 +37,11 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err == ErrMetadataExceedsBuffer {
+			http.Error(w, "Could not read indexer name from metaData vertex. Please supply it explicitly.", http.StatusBadRequest)
+			return
+		}
+
 		log15.Error("Failed to enqueue payload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), http.StatusInternalServerError)
 		return
