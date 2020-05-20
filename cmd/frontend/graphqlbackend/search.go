@@ -367,7 +367,7 @@ func exactlyOneRepo(repoFilters []string) bool {
 }
 
 // A type that counts how many repos with a certain label were excluded from search results.
-type excludedRepos = struct {
+type excludedRepos struct {
 	forks    int
 	archived int
 }
@@ -378,6 +378,7 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 	if q == nil {
 		return &excludedRepos{}
 	}
+	var err error
 	var numExcludedForks, numExcludedArchived int
 	forkStr, _ := q.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
@@ -387,7 +388,10 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 		selectForks := op
 		selectForks.OnlyForks = true
 		selectForks.NoForks = false
-		numExcludedForks, _ = db.Repos.Count(ctx, selectForks)
+		numExcludedForks, err = db.Repos.Count(ctx, selectForks)
+		if err != nil {
+			log15.Warn("repo count for excluded fork", "err", err)
+		}
 	}
 	archivedStr, _ := q.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
@@ -397,7 +401,10 @@ func computeExcludedRepositories(ctx context.Context, q query.QueryInfo, op db.R
 		selectArchived := op
 		selectArchived.OnlyArchived = true
 		selectArchived.NoArchived = false
-		numExcludedArchived, _ = db.Repos.Count(ctx, selectArchived)
+		numExcludedArchived, err = db.Repos.Count(ctx, selectArchived)
+		if err != nil {
+			log15.Warn("repo count for excluded archive", "err", err)
+		}
 	}
 	return &excludedRepos{forks: numExcludedForks, archived: numExcludedArchived}
 }
