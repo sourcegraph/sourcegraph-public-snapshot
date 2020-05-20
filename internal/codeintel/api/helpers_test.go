@@ -271,7 +271,7 @@ func setMockBundleClientPackageInformation(t *testing.T, mockBundleClient *bundl
 }
 
 func readTestFilter(t *testing.T, dirname, filename string) []byte {
-	content, err := ioutil.ReadFile(fmt.Sprintf("../../testdata/filters/%s/%s", dirname, filename))
+	content, err := ioutil.ReadFile(fmt.Sprintf("./testdata/filters/%s/%s", dirname, filename))
 	if err != nil {
 		t.Fatalf("unexpected error reading: %s", err)
 	}
