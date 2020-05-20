@@ -62,10 +62,10 @@ For more details on these steps, refer to [Amazon EKS prerequisites: Create your
 
 > **Note:** You can always come back here later and modify these values to scale up/down the number of worker nodes. To do so, just visit the console page again, select **Actions**, **Create Change Set For Current Stack**, enter the same template URL mentioned above, modify the values and hit "next" until reviewing final changes, and finally **Execute**.
 
-1.  Under **KeyName**, choose a valid key name so that you can SSH into worker nodes if needed in the future.
-2.   Under **VpcId**, select `eks-vpc-sourcegraph-VPC`.
-3.   Under **Subnets**, search for and select *all* `eks-vpc-sourcegraph` subnets.
-4.   Click **Next** through the following pages until you get the option to **Create stack**. Review the configuration and click **Create stack**.
+9.  Under **KeyName**, choose a valid key name so that you can SSH into worker nodes if needed in the future.
+10.   Under **VpcId**, select `eks-vpc-sourcegraph-VPC`.
+11.   Under **Subnets**, search for and select *all* `eks-vpc-sourcegraph` subnets.
+12.   Click **Next** through the following pages until you get the option to **Create stack**. Review the configuration and click **Create stack**.
 
 For more details on these steps, refer to [Worker Nodes: Amazon EKS-optimized Linux AMI](https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html).
 
