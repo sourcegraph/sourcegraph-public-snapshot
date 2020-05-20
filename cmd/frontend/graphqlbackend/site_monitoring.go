@@ -68,9 +68,6 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			End:   time.Now(),
 			Step:  alertsResolution,
 		})
-	if errors.Is(err, context.Canceled) {
-		return nil, prometheusutil.ErrPrometheusUnavailable
-	}
 	if err != nil {
 		return nil, errors.Wrap(err, "prometheus query failed")
 	}

@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -58,13 +57,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 				ServiceNameValue: "world",
 				OccurrencesValue: 1,
 			}},
-			wantErr: nil}, {
-			name: "responds with appropriate error on timeout",
-			fields: fields{
-				queryErr: fmt.Errorf("timed out: %w", context.Canceled),
-			},
-			want:    nil,
-			wantErr: prometheusutil.ErrPrometheusUnavailable,
+			wantErr: nil,
 		}, {
 			name: "discards repeated values",
 			fields: fields{

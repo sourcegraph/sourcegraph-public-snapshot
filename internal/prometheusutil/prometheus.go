@@ -30,7 +30,8 @@ func NewPrometheusQuerier() (PrometheusQuerier, error) {
 		return nil, ErrPrometheusUnavailable
 	}
 	c, err := prometheusAPI.NewClient(prometheusAPI.Config{
-		Address: PrometheusURL,
+		Address:      PrometheusURL,
+		RoundTripper: &roundTripper{},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("prometheus configuration malformed: %w", err)
