@@ -826,6 +826,7 @@ func main() {
 		PreciseCodeIntelAPIServer(),
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
+		PreciseCodeIntelIndexer(),
 		QueryRunner(),
 		Replacer(),
 		RepoUpdater(),
