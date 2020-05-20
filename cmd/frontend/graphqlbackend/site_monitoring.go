@@ -61,7 +61,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		span.Finish()
 	}()
 
-	results, warn, err := r.prom.QueryRange(ctx, "sum by (service_name,name)(alert_count{name!=\"\"})",
+	results, warn, err := r.prom.QueryRange(ctx, `sum by (service_name,name)(alert_count{name!=""})`,
 		prometheus.Range{
 			Start: time.Now().Add(-r.timespan),
 			End:   time.Now(),
