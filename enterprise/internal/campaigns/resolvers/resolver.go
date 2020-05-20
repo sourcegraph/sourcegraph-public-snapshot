@@ -47,7 +47,7 @@ func allowReadAccess(ctx context.Context) error {
 	return nil
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
