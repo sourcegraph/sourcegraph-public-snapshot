@@ -2,9 +2,8 @@ package prometheusutil
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	"github.com/pkg/errors"
 	prometheusAPI "github.com/prometheus/client_golang/api"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -34,7 +33,7 @@ func NewPrometheusQuerier() (PrometheusQuerier, error) {
 		RoundTripper: &roundTripper{},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("prometheus configuration malformed: %w", err)
+		return nil, errors.Wrap(err, "prometheus configuration malformed")
 	}
 	return prometheus.NewAPI(c), nil
 }
