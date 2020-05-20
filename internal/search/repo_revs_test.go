@@ -3,13 +3,11 @@ package search
 import (
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {
 	tests := map[string]struct {
-		repo api.RepoName
+		repo string
 		revs []RevisionSpecifier
 	}{
 		"repo":           {repo: "repo", revs: []RevisionSpecifier{}},

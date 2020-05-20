@@ -536,11 +536,11 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
-		if _, err := regexp.Compile(string(repoPattern)); err != nil {
+		if _, err := regexp.Compile(repoPattern); err != nil {
 			return nil, &badRequestError{err}
 		}
-		repoPattern = api.RepoName(optimizeRepoPatternWithHeuristics(string(repoPattern)))
-		includePatterns[i] = string(repoPattern)
+		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+		includePatterns[i] = repoPattern
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
 			if err != nil {
