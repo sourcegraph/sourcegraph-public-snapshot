@@ -41,6 +41,8 @@ func DBFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
 }
 
+// PathExists returns (true, nil) if the specified path exists, or (false, error) if an error
+// occurred (such as not having permission to read the path).
 func PathExists(filename string) (bool, error) {
 	if _, err := os.Stat(filename); err != nil {
 		if os.IsNotExist(err) {
