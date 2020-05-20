@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
@@ -33,9 +35,10 @@ var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "update
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
-	Date          time.Time // the time that the last check completed
-	Err           error     // the error that occurred, if any
-	UpdateVersion string    // the version string of the updated version, if any
+	Date            time.Time // the time that the last check completed
+	Err             error     // the error that occurred, if any
+	UpdateVersion   string    // the version string of the updated version, if any
+	MonthsOutOfDate int       // used if UpdateVersion is unavailable
 }
 
 // HasUpdate reports whether the status indicates an update is available.
@@ -323,15 +326,25 @@ func check(ctx context.Context) (*Status, error) {
 	mu.Unlock()
 
 	updateVersion, err := doCheck()
+	monthsSinceRelease := 0
+	var versionErr error
+	if err != nil {
+		// fallback to using the version and current month to determine if a update is available
+		monthsSinceRelease, versionErr = version.HowLongOutOfDate(version.Version())
+		if versionErr != nil {
+			err = errors.Wrap(err, versionErr.Error())
+		}
+	}
 
 	mu.Lock()
 	if startedAt != nil && !startedAt.After(thisCheckStartedAt) {
 		startedAt = nil
 	}
 	lastStatus = &Status{
-		Date:          time.Now(),
-		Err:           err,
-		UpdateVersion: updateVersion,
+		Date:            time.Now(),
+		Err:             err,
+		UpdateVersion:   updateVersion,
+		MonthsOutOfDate: monthsSinceRelease,
 	}
 	mu.Unlock()
 
