@@ -80,14 +80,15 @@ const (
 // aboutRedirects contains map entries, each of which indicates that
 // sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
-	"about":    "about",
-	"plan":     "plan",
-	"contact":  "contact",
-	"pricing":  "pricing",
-	"privacy":  "privacy",
-	"security": "security",
-	"terms":    "terms",
-	"jobs":     "jobs",
+	"about":      "about",
+	"plan":       "plan",
+	"contact":    "contact",
+	"pricing":    "pricing",
+	"privacy":    "privacy",
+	"security":   "security",
+	"terms":      "terms",
+	"jobs":       "jobs",
+	"help/terms": "terms",
 }
 
 // Router returns the router that serves pages for our web app.
