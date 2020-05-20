@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"sync"
 	"time"
@@ -143,7 +144,7 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
-) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+) (graphqlbackend.ChangesetsConnectionResolver, error) {
 	opts, err := listChangesetOptsFromArgs(args)
 	if err != nil {
 		return nil, err
@@ -155,7 +156,7 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ChangesetsConnectionResolver, error) {
 	state := campaigns.ChangesetStateOpen
 	return &changesetsConnectionResolver{
 		store: r.store,
@@ -338,7 +339,12 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 	}
 	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
 	for _, c := range changesets {
-		comp, err := c.Diff(ctx)
+		changesetResolver, ok := c.(*changesetResolver)
+		if !ok {
+			return nil, fmt.Errorf("not a changeset resolver: %T", c)
+		}
+
+		comp, err := changesetResolver.Diff(ctx)
 		if err != nil {
 			return nil, err
 		}

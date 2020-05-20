@@ -392,6 +392,11 @@ func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
+	n, ok := r.Node.(HiddenExternalChangesetResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
 	n, ok := r.Node.(PatchResolver)
 	return n, ok
