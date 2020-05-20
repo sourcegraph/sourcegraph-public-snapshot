@@ -205,7 +205,7 @@ func (s *Enqueuer) handleEnqueueSinglePayload(r *http.Request, uploadArgs Upload
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
-func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
+func (s *Enqueuer) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
 	id, err := s.db.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
