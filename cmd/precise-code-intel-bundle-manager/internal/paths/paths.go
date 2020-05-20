@@ -40,3 +40,15 @@ func UploadPartFilename(bundleDir string, id, index int64) string {
 func DBFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
 }
+
+func PathExists(filename string) (bool, error) {
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
