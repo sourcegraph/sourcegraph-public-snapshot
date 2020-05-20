@@ -23,11 +23,11 @@ export interface ComponentDescriptor<C extends object = {}> extends Conditional<
  *
  * @template C Context information that is passed to `render` and `condition`
  */
-export interface RouteDescriptor<C extends object = {}> extends Conditional<C> {
+export interface RouteDescriptor<C extends object = {}, P = any> extends Conditional<C> {
     /** Path of this route (appended to the current match) */
     readonly path: string
     readonly exact?: boolean
-    readonly render: (props: C & RouteComponentProps<any>) => React.ReactNode
+    readonly render: (props: C & RouteComponentProps<P>) => React.ReactNode
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {

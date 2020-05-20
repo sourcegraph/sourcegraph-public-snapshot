@@ -15,7 +15,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
@@ -23,11 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/processrestart"
@@ -35,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -79,15 +79,46 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
+// InitDB initializes the global database connection and sets the
+// version of the frontend in our versions table.
+func InitDB() error {
+	if err := dbconn.ConnectToDB(""); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	migrate := true
+
+	for {
+		// We need this loop so that we handle the missing versions table,
+		// which would be added by running the migrations. Once we detect that
+		// it's missing, we run the migrations and try to update the version again.
+
+		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
+			return err
+		}
+
+		if !migrate {
+			return nil
+		}
+
+		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+			return err
+		}
+
+		migrate = false
+	}
+}
+
 // Main is the main entrypoint for the frontend server program.
 func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
 	if dbconn.Global == nil {
-		// Connect to the database and start the configuration server.
-		if err := dbconn.ConnectToDB(""); err != nil {
-			log.Fatal(err)
+		if err := InitDB(); err != nil {
+			log.Fatalf("ERROR: %v", err)
 		}
 	}
 
@@ -97,9 +128,6 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
-	if err := confdb.RunMigrations(context.Background()); err != nil {
-		log.Fatal(err)
-	}
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
@@ -158,13 +186,13 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
+	globals.WatchPermissionsBackgroundSync()
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
-	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
@@ -173,10 +201,10 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	// graphqlbackend.A8NResolver is set by enterprise frontend
-	var a8nResolver graphqlbackend.A8NResolver
-	if graphqlbackend.NewA8NResolver != nil {
-		a8nResolver = graphqlbackend.NewA8NResolver(dbconn.Global)
+	// graphqlbackend.CampaignsResolver is set by enterprise frontend
+	var campaignsResolver graphqlbackend.CampaignsResolver
+	if graphqlbackend.NewCampaignsResolver != nil {
+		campaignsResolver = graphqlbackend.NewCampaignsResolver(dbconn.Global)
 	}
 
 	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
@@ -191,7 +219,7 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		authzResolver = graphqlbackend.NewAuthzResolver()
 	}
 
-	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver, authzResolver)
+	schema, err := graphqlbackend.NewSchema(campaignsResolver, codeIntelResolver, authzResolver)
 	if err != nil {
 		return err
 	}
@@ -226,7 +254,7 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	srv.GoServe(l, &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		WriteTimeout: 10 * time.Minute,
 	})
 
 	if httpAddrInternal != "" {

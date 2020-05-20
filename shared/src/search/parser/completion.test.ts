@@ -1,215 +1,350 @@
-import { getCompletionItems } from './completion'
+import * as Monaco from 'monaco-editor'
+import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
 import { NEVER, of } from 'rxjs'
-import { IFile } from '../../graphql/schema'
+import { SearchSuggestion } from '../../graphql/schema'
 
 describe('getCompletionItems()', () => {
-    test('returns static filter type completions', async () => {
+    test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
-            await getCompletionItems(
-                'a',
-                (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
-                { column: 3 },
-                () => NEVER
-            )
-        ).toStrictEqual({
-            suggestions: [
-                {
-                    detail: 'Include only results from repositories matching the given regex pattern.',
-                    filterText: 'repo',
-                    insertText: 'repo:',
-                    kind: 17,
-                    label: 'repo',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: 'group-name (include results from the named group)',
-                    filterText: 'repogroup',
-                    insertText: 'repogroup:',
-                    kind: 17,
-                    label: 'repogroup',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: 'regex-pattern (include results from repos that contain a matching file)',
-                    filterText: 'repohasfile',
-                    insertText: 'repohasfile:',
-                    kind: 17,
-                    label: 'repohasfile',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: '"string specifying time frame" (filter out stale repositories without recent commits)',
-                    filterText: 'repohascommitafter',
-                    insertText: 'repohascommitafter:',
-                    kind: 17,
-                    label: 'repohascommitafter',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-            ],
-        })
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
+                    { column: 3 },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                        {
+                            __typename: 'Symbol',
+                            name: 'RepoRoutes',
+                            kind: 'VARIABLE',
+                            location: {
+                                resource: {
+                                    repository: {
+                                        name: 'github.com/sourcegraph/jsonrpc2',
+                                    },
+                                },
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'index',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+            'visibility',
+        ])
+    })
+
+    test("returns static filter type completions along with dynamically fetched completions when the token doesn't match a filter", async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('reposi') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                        {
+                            __typename: 'Symbol',
+                            name: 'RepoRoutes',
+                            kind: 'VARIABLE',
+                            location: {
+                                resource: {
+                                    repository: {
+                                        name: 'github.com/sourcegraph/jsonrpc2',
+                                    },
+                                },
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'index',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+            'visibility',
+            'github.com/sourcegraph/jsonrpc2',
+            'RepoRoutes',
+        ])
+    })
+
+    test('returns suggestions for an empty query', async () => {
+        expect(
+            (
+                await getCompletionItems((parseSearchQuery('') as ParseSuccess<Sequence>).token, { column: 1 }, NEVER)
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'index',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+            'visibility',
+        ])
+    })
+
+    test('returns suggestions on whitespace', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('a ') as ParseSuccess<Sequence>).token,
+                    { column: 3 },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'index',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+            'visibility',
+            'github.com/sourcegraph/jsonrpc2',
+        ])
     })
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
-            await getCompletionItems(
-                'a',
-                (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
-                { column: 3 },
-                () => NEVER
-            )
-        ).toStrictEqual({
-            suggestions: [
-                {
-                    detail: 'Include only results from repositories matching the given regex pattern.',
-                    filterText: 'repo',
-                    insertText: 'repo:',
-                    kind: 17,
-                    label: 'repo',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: 'group-name (include results from the named group)',
-                    filterText: 'repogroup',
-                    insertText: 'repogroup:',
-                    kind: 17,
-                    label: 'repogroup',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: 'regex-pattern (include results from repos that contain a matching file)',
-                    filterText: 'repohasfile',
-                    insertText: 'repohasfile:',
-                    kind: 17,
-                    label: 'repohasfile',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-                {
-                    detail: '"string specifying time frame" (filter out stale repositories without recent commits)',
-                    filterText: 'repohascommitafter',
-                    insertText: 'repohascommitafter:',
-                    kind: 17,
-                    label: 'repohascommitafter',
-                    range: {
-                        endColumn: 3,
-                        endLineNumber: 1,
-                        startColumn: 1,
-                        startLineNumber: 1,
-                    },
-                },
-            ],
-        })
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
+                    { column: 3 },
+                    of([])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'after',
+            'archived',
+            'author',
+            'before',
+            'case',
+            'content',
+            'count',
+            'file',
+            '-file',
+            'fork',
+            'index',
+            'lang',
+            '-lang',
+            'message',
+            'patterntype',
+            'repo',
+            '-repo',
+            'repogroup',
+            'repohascommitafter',
+            'repohasfile',
+            '-repohasfile',
+            'timeout',
+            'type',
+            'visibility',
+        ])
     })
 
     test('returns completions for filters with discrete values', async () => {
         expect(
-            await getCompletionItems(
-                'a',
-                (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
-                { column: 7 },
-                () => NEVER
-            )
-        ).toStrictEqual({
-            suggestions: [
-                {
-                    filterText: 'yes',
-                    insertText: 'yes ',
-                    kind: 18,
-                    label: 'yes',
-                    range: {
-                        endColumn: 7,
-                        endLineNumber: 1,
-                        startColumn: 6,
-                        startLineNumber: 1,
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
+                    NEVER
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual(['yes', 'no'])
+    })
+
+    test('returns completions for filters with static suggestions', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('lang:') as ParseSuccess<Sequence>).token,
+                    {
+                        column: 6,
                     },
-                },
-                {
-                    filterText: 'no',
-                    insertText: 'no ',
-                    kind: 18,
-                    label: 'no',
-                    range: {
-                        endColumn: 7,
-                        endLineNumber: 1,
-                        startColumn: 6,
-                        startLineNumber: 1,
-                    },
-                },
-            ],
-        })
+                    of([])
+                )
+            )?.suggestions.map(({ label }) => label)
+        ).toStrictEqual([
+            'c',
+            'cpp',
+            'csharp',
+            'css',
+            'go',
+            'graphql',
+            'haskell',
+            'html',
+            'java',
+            'javascript',
+            'json',
+            'lua',
+            'markdown',
+            'php',
+            'powershell',
+            'python',
+            'r',
+            'ruby',
+            'sass',
+            'swift',
+            'typescript',
+        ])
     })
 
     test('returns dynamically fetched completions', async () => {
         expect(
-            await getCompletionItems(
-                'a',
-                (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
-                { column: 7 },
-                () =>
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
+                    { column: 7 },
                     of([
                         {
                             __typename: 'File',
                             path: 'connect.go',
                             name: 'connect.go',
-                            isDirectory: false,
-                            url: 'b',
                             repository: {
-                                name: 'r',
+                                name: 'github.com/sourcegraph/jsonrpc2',
                             },
-                        } as IFile,
-                    ])
-            )
-        ).toStrictEqual({
-            suggestions: [
-                {
-                    detail: 'connect.go - r',
-                    filterText: 'file:connect.go',
-                    insertText: '^connect\\.go$ ',
-                    kind: 18,
-                    label: 'connect.go',
-                    range: {
-                        endColumn: 7,
-                        endLineNumber: 1,
-                        startColumn: 6,
-                        startLineNumber: 1,
-                    },
-                },
-            ],
-        })
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
+        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$' }])
+    })
+
+    test('inserts valid filters when selecting a file or repository suggestion', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('jsonrpc') as ParseSuccess<Sequence>).token,
+                    { column: 8 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'jsonrpc2.go',
+                            name: 'jsonrpc2.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2.go',
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions
+                .filter(
+                    ({ kind }) =>
+                        kind === Monaco.languages.CompletionItemKind.File || kind === repositoryCompletionItemKind
+                )
+                .map(({ insertText }) => insertText)
+        ).toStrictEqual(['file:^jsonrpc2\\.go$ ', 'repo:^github\\.com/sourcegraph/jsonrpc2\\.go$ '])
+    })
+
+    test('sets current filter value as filterText', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('f:^jsonrpc') as ParseSuccess<Sequence>).token,
+                    { column: 11 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'jsonrpc2.go',
+                            name: 'jsonrpc2.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ filterText }) => filterText)
+        ).toStrictEqual(['^jsonrpc'])
     })
 })

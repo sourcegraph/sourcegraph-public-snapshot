@@ -12,8 +12,8 @@ describe('ExtWindow', () => {
         const wins = new ExtWindow(NOOP_PROXY, DOCUMENTS, [
             {
                 type: 'added',
-                editorId: 'editor#0',
-                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                viewerId: 'viewer#0',
+                viewerData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origViewComponent = wins.activeViewComponent
@@ -22,19 +22,19 @@ describe('ExtWindow', () => {
         wins.update([
             {
                 type: 'updated',
-                editorId: 'editor#0',
-                editorData: { selections: [new Selection(1, 2, 3, 4)] },
+                viewerId: 'viewer#0',
+                viewerData: { selections: [new Selection(1, 2, 3, 4)] },
             },
         ])
         expect(wins.activeViewComponent).toBe(origViewComponent)
     })
 
-    test('creates new ExtCodeEditor object for a different editorId', () => {
+    test('creates new ExtCodeEditor object for a different viewerId', () => {
         const wins = new ExtWindow(NOOP_PROXY, DOCUMENTS, [
             {
                 type: 'added',
-                editorId: 'editor#0',
-                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                viewerId: 'viewer#0',
+                viewerData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origViewComponent = wins.activeViewComponent
@@ -43,8 +43,8 @@ describe('ExtWindow', () => {
         wins.update([
             {
                 type: 'added',
-                editorId: 'editor#1',
-                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                viewerId: 'viewer#1',
+                viewerData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         expect(wins.activeViewComponent).not.toBe(origViewComponent)
@@ -62,8 +62,8 @@ describe('ExtWindows', () => {
         wins.$acceptWindowData([
             {
                 type: 'added',
-                editorId: 'editor#0',
-                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                viewerId: 'viewer#0',
+                viewerData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origWin = wins.activeWindow
@@ -72,8 +72,8 @@ describe('ExtWindows', () => {
         wins.$acceptWindowData([
             {
                 type: 'updated',
-                editorId: 'editor#0',
-                editorData: { selections: [] },
+                viewerId: 'viewer#0',
+                viewerData: { selections: [] },
             },
         ])
         expect(wins.activeWindow).toBe(origWin)
@@ -81,8 +81,8 @@ describe('ExtWindows', () => {
         wins.$acceptWindowData([
             {
                 type: 'added',
-                editorId: 'editor#1',
-                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                viewerId: 'viewer#1',
+                viewerData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         expect(wins.activeWindow).toBe(origWin)

@@ -1,91 +1,89 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ErrorAlert should add a prefix if given 1`] = `
-<div>
-  <div
-    class="alert alert-danger"
-  >
-    <alertcircleicon
-      class="icon icon-inline"
-    />
-     
-    <strong>
-      An error happened
-      :
-    </strong>
-     
-    <span
-      class="markdown"
-    >
-      An error happened
-    </span>
-  </div>
+<div
+  className="alert alert-danger"
+>
+  <AlertCircleIcon
+    className="icon icon-inline"
+  />
+   
+  <strong>
+    An error happened
+    :
+  </strong>
+   
+  <span
+    className="markdown"
+    dangerouslySetInnerHTML={
+      Object {
+        "__html": "An error happened",
+      }
+    }
+    onClick={[Function]}
+  />
 </div>
 `;
 
 exports[`ErrorAlert should omit the icon if icon={false} 1`] = `
-<div>
-  <div
-    class="alert alert-danger"
-  >
-     
-     
-    <span
-      class="markdown"
-    >
-      An error happened
-    </span>
-  </div>
+<div
+  className="alert alert-danger"
+>
+   
+   
+  <span
+    className="markdown"
+    dangerouslySetInnerHTML={
+      Object {
+        "__html": "An error happened",
+      }
+    }
+    onClick={[Function]}
+  />
 </div>
 `;
 
 exports[`ErrorAlert should render a Go multierror nicely 1`] = `
-<div>
-  <div
-    class="alert alert-danger"
-  >
-    <alertcircleicon
-      class="icon icon-inline"
-    />
-     
-     
-    <span
-      class="markdown"
-    >
-      <ul>
-        
-
-        <li>
-          Additional property asdasd is not allowed
-        </li>
-        
-
-        <li>
-          projectQuery.0: String length must be greater than or equal to 1
-        </li>
-        
-
-      </ul>
-    </span>
-  </div>
+<div
+  className="alert alert-danger"
+>
+  <AlertCircleIcon
+    className="icon icon-inline"
+  />
+   
+   
+  <span
+    className="markdown"
+    dangerouslySetInnerHTML={
+      Object {
+        "__html": "<ul>
+<li>Additional property asdasd is not allowed</li>
+<li>projectQuery.0: String length must be greater than or equal to 1</li>
+</ul>",
+      }
+    }
+    onClick={[Function]}
+  />
 </div>
 `;
 
 exports[`ErrorAlert should render an Error object as an alert 1`] = `
-<div>
-  <div
-    class="alert alert-danger"
-  >
-    <alertcircleicon
-      class="icon icon-inline"
-    />
-     
-     
-    <span
-      class="markdown"
-    >
-      An error happened
-    </span>
-  </div>
+<div
+  className="alert alert-danger"
+>
+  <AlertCircleIcon
+    className="icon icon-inline"
+  />
+   
+   
+  <span
+    className="markdown"
+    dangerouslySetInnerHTML={
+      Object {
+        "__html": "An error happened",
+      }
+    }
+    onClick={[Function]}
+  />
 </div>
 `;

@@ -58,7 +58,7 @@ func generate(log *log.Logger) (string, error) {
 			log.Println("docker pull complete")
 		}
 		runIgnoreError("docker", "rm", "--force", dbname)
-		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-p", "5433:5432", "postgres:9.6")
+		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
 		if err := server.Start(); err != nil {
 			return "", err
 		}
@@ -96,6 +96,10 @@ func generate(log *log.Logger) (string, error) {
 
 	if err := dbconn.ConnectToDB(dataSource); err != nil {
 		return "", fmt.Errorf("ConnectToDB: %w", err)
+	}
+
+	if err := dbconn.MigrateDB(dbconn.Global, dataSource); err != nil {
+		return "", fmt.Errorf("MigrateDB: %w", err)
 	}
 
 	db, err := dbconn.Open(dataSource)

@@ -1,22 +1,32 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual } from 'lodash'
-import * as React from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
-import { from, of, Subject, Subscription, throwError } from 'rxjs'
-import { catchError, map, startWith, switchMap } from 'rxjs/operators'
+import { from, of, throwError, Observable } from 'rxjs'
+import { catchError, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
-import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
+import {
+    ProductSubscriptionUserCountFormControl,
+    MIN_USER_COUNT,
+} from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
 import { productSubscriptionInputForLocationHash } from './UserSubscriptionsNewProductSubscriptionPage'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ErrorAlert } from '../../../components/alerts'
+import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
+
+export enum PaymentValidity {
+    Valid = 'Valid',
+    Invalid = 'Invalid',
+    NoPaymentRequired = 'NoPaymentRequired',
+}
 
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.
@@ -25,10 +35,10 @@ export interface ProductSubscriptionFormData {
     /** The customer account (user) owning the product subscription. */
     accountID: GQL.ID
     productSubscription: GQL.IProductSubscriptionInput
-    paymentToken: string
+    paymentToken: string | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface Props extends ThemeProps {
     /**
@@ -50,226 +60,215 @@ interface Props extends ThemeProps {
     initialValue?: GQL.IProductSubscriptionInput
 
     /**
-     * The state of the form submission (the operation triggered by onSubmit): null when it hasn't
-     * been submitted yet, loading, or an error. The parent is expected to redirect to another page
-     * when the submission is successful, so this component doesn't handle the form submission
-     * success state.
+     * The state of the form submission (the operation triggered by onSubmit): undefined when it
+     * hasn't been submitted yet, loading, or an error. The parent is expected to redirect to
+     * another page when the submission is successful, so this component doesn't handle the form
+     * submission success state.
      */
-    submissionState: null | typeof LOADING | ErrorLike
+    submissionState: undefined | typeof LOADING | ErrorLike
 
     /** The text for the form's primary button. */
     primaryButtonText: string
 
+    /**
+     * The text for the form's primary button when no payment is required. Defaults to
+     * `primaryButtonText` if not set.
+     */
+    primaryButtonTextNoPaymentRequired?: string
+
     /** A fragment to render below the form's primary button. */
     afterPrimaryButton?: React.ReactFragment
+
+    history: H.History
 }
 
-interface State {
-    /** The selected product plan. */
-    billingPlanID: string | null
-
-    /** The user count input by the user. */
-    userCount: number | null
-
-    /** Whether the payment and billing information is valid. */
-    paymentValidity: boolean
-
-    /**
-     * The result of creating the billing token (which refers to the payment method chosen by the
-     * user): null if successful or not yet started, loading, or an error.
-     */
-    paymentTokenOrError: null | typeof LOADING | ErrorLike
-}
+const DEFAULT_USER_COUNT = MIN_USER_COUNT
 
 /**
  * Displays a form for a product subscription.
  */
-// eslint-disable-next-line @typescript-eslint/class-name-casing
-class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
-    constructor(props: Props & ReactStripeElements.InjectedStripeProps) {
-        super(props)
-
-        this.state = {
-            paymentValidity: false,
-            paymentTokenOrError: null,
-            ...this.getStateForInitialValue(props),
-        }
+const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeElements.InjectedStripeProps> = ({
+    accountID,
+    subscriptionID,
+    onSubmit: parentOnSubmit,
+    initialValue,
+    submissionState,
+    primaryButtonText,
+    primaryButtonTextNoPaymentRequired = primaryButtonText,
+    afterPrimaryButton,
+    isLightTheme,
+    stripe,
+    history,
+}) => {
+    if (!stripe) {
+        throw new Error('billing service is not available')
     }
 
-    private getStateForInitialValue({ initialValue }: Props): Pick<State, 'billingPlanID' | 'userCount'> {
-        return initialValue || { billingPlanID: null, userCount: 1 }
-    }
+    /** The selected product plan. */
+    const [billingPlanID, setBillingPlanID] = useState<string | null>(initialValue?.billingPlanID || null)
 
-    private submits = new Subject<void>()
-    private subscriptions = new Subscription()
+    /** The user count input by the user. */
+    const [userCount, setUserCount] = useState<number | null>(initialValue?.userCount || DEFAULT_USER_COUNT)
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
-                .pipe(
+    /** The validity of the payment and billing information. */
+    const [paymentValidity, setPaymentValidity] = useState<PaymentValidity>(PaymentValidity.Invalid)
+
+    // When Props#initialValue changes, clobber our values. It's unlikely that this prop would
+    // change without the component being unmounted, but handle this case for completeness
+    // anyway.
+    useEffect(() => {
+        setBillingPlanID(initialValue?.billingPlanID || null)
+        setUserCount(initialValue?.userCount || DEFAULT_USER_COUNT)
+    }, [initialValue])
+
+    /**
+     * The result of creating the billing token (which refers to the payment method chosen by the
+     * user): undefined if successful or not yet started, loading, or an error.
+     */
+    const [nextSubmit, paymentToken] = useEventObservable(
+        useCallback(
+            (submits: Observable<void>) =>
+                submits.pipe(
                     switchMap(() =>
                         // TODO(sqs): store name, address, company, etc., in token
-                        from(this.props.stripe!.createToken()).pipe(
+                        (paymentValidity !== PaymentValidity.NoPaymentRequired
+                            ? from(stripe.createToken())
+                            : of({ token: undefined, error: undefined })
+                        ).pipe(
                             switchMap(({ token, error }) => {
                                 if (error) {
                                     return throwError(error)
                                 }
-                                if (!token) {
-                                    return throwError(new Error('no payment token'))
-                                }
-                                if (!this.props.accountID) {
+                                if (!accountID) {
                                     return throwError(new Error('no account (unauthenticated user)'))
                                 }
-                                if (!this.state.billingPlanID) {
+                                if (!billingPlanID) {
                                     return throwError(new Error('no product plan selected'))
                                 }
-                                if (this.state.userCount === null) {
+                                if (userCount === null) {
                                     return throwError(new Error('invalid user count'))
                                 }
-                                if (!this.state.paymentValidity) {
+                                if (!token && paymentValidity !== PaymentValidity.NoPaymentRequired) {
                                     return throwError(new Error('invalid payment and billing'))
                                 }
-                                this.props.onSubmit({
-                                    accountID: this.props.accountID,
+                                parentOnSubmit({
+                                    accountID,
                                     productSubscription: {
-                                        billingPlanID: this.state.billingPlanID,
-                                        userCount: this.state.userCount,
+                                        billingPlanID,
+                                        userCount,
                                     },
-                                    paymentToken: token.id,
+                                    paymentToken: token ? token.id : null,
                                 })
-                                return of(null)
+                                return of(undefined)
                             }),
                             catchError(err => [asError(err)]),
                             startWith(LOADING)
                         )
-                    ),
-                    map(result => ({ paymentTokenOrError: result }))
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                    )
+                ),
+            [accountID, billingPlanID, parentOnSubmit, paymentValidity, stripe, userCount]
         )
-    }
+    )
+    const onSubmit = useCallback<React.FormEventHandler>(
+        e => {
+            e.preventDefault()
+            nextSubmit()
+        },
+        [nextSubmit]
+    )
 
-    public componentDidUpdate(prevProps: Props): void {
-        // When Props#initialValue changes, clobber our values. It's unlikely that this prop would
-        // change without the component being unmounted, but handle this case for completeness
-        // anyway.
-        if (!isEqual(prevProps.initialValue, this.props.initialValue)) {
-            /* eslint react/no-did-update-set-state: warn */
-            this.setState(this.getStateForInitialValue(this.props))
-        }
-    }
+    const disableForm = Boolean(
+        submissionState === LOADING ||
+            userCount === null ||
+            paymentValidity === PaymentValidity.Invalid ||
+            paymentToken === LOADING ||
+            (paymentToken && !isErrorLike(paymentToken))
+    )
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        const disableForm = Boolean(
-            this.props.submissionState === LOADING ||
-                this.state.userCount === null ||
-                !this.state.paymentValidity ||
-                this.state.paymentTokenOrError === LOADING ||
-                (this.state.paymentTokenOrError && !isErrorLike(this.state.paymentTokenOrError))
-        )
-
-        const productSubscriptionInput: GQL.IProductSubscriptionInput | null =
-            this.state.billingPlanID !== null && this.state.userCount !== null
+    const productSubscriptionInput = useMemo<GQL.IProductSubscriptionInput | null>(
+        () =>
+            billingPlanID !== null && userCount !== null
                 ? {
-                      billingPlanID: this.state.billingPlanID,
-                      userCount: this.state.userCount,
+                      billingPlanID,
+                      userCount,
                   }
-                : null
+                : null,
+        [billingPlanID, userCount]
+    )
 
-        return (
-            <div className="product-subscription-form">
-                <LicenseGenerationKeyWarning />
-                <Form onSubmit={this.onSubmit}>
-                    <div className="row">
-                        <div className="col-md-6">
-                            <ProductSubscriptionUserCountFormControl
-                                value={this.state.userCount}
-                                onChange={this.onUserCountChange}
-                            />
-                            <h4 className="mt-2 mb-0">Plan</h4>
-                            <ProductPlanFormControl
-                                value={this.state.billingPlanID}
-                                onChange={this.onBillingPlanIDChange}
-                            />
-                        </div>
-                        <div className="col-md-6 mt-3 mt-md-0">
-                            <h3 className="mt-2 mb-0">Billing</h3>
-                            <NewProductSubscriptionPaymentSection
-                                productSubscription={productSubscriptionInput}
-                                accountID={this.props.accountID}
-                                subscriptionID={this.props.subscriptionID}
-                                onValidityChange={this.onPaymentValidityChange}
-                            />
-                            {!this.props.accountID && (
-                                <div className="form-group mt-3">
-                                    <Link
-                                        to={`/sign-up?returnTo=${encodeURIComponent(
-                                            `/subscriptions/new${productSubscriptionInputForLocationHash(
-                                                productSubscriptionInput
-                                            )}`
-                                        )}`}
-                                        className="btn btn-lg btn-primary w-100 center"
-                                    >
-                                        Create account or sign in to continue
-                                    </Link>
-                                    <small className="form-text text-muted">
-                                        A user account on Sourcegraph.com is required to create a subscription so you
-                                        can view the license key and invoice.
-                                    </small>
-                                    <hr className="my-3" />
-                                    <small className="form-text text-muted">
-                                        Next, you'll enter payment information and buy the subscription.
-                                    </small>
-                                </div>
-                            )}
-                            <PaymentTokenFormControl
-                                disabled={disableForm || !this.props.accountID}
-                                isLightTheme={this.props.isLightTheme}
-                            />
+    return (
+        <div className="product-subscription-form">
+            <LicenseGenerationKeyWarning />
+            <Form onSubmit={onSubmit}>
+                <div className="row">
+                    <div className="col-md-6">
+                        <ProductSubscriptionUserCountFormControl value={userCount} onChange={setUserCount} />
+                        <h4 className="mt-2 mb-0">Plan</h4>
+                        <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} history={history} />
+                    </div>
+                    <div className="col-md-6 mt-3 mt-md-0">
+                        <h3 className="mt-2 mb-0">Billing</h3>
+                        <NewProductSubscriptionPaymentSection
+                            productSubscription={productSubscriptionInput}
+                            accountID={accountID}
+                            subscriptionID={subscriptionID}
+                            onValidityChange={setPaymentValidity}
+                        />
+                        {!accountID && (
                             <div className="form-group mt-3">
-                                <button
-                                    type="submit"
-                                    disabled={disableForm || !this.props.accountID}
-                                    className={`btn btn-lg btn-${
-                                        disableForm || !this.props.accountID ? 'secondary' : 'success'
-                                    } w-100 d-flex align-items-center justify-content-center`}
+                                <Link
+                                    to={`/sign-up?returnTo=${encodeURIComponent(
+                                        `/subscriptions/new${productSubscriptionInputForLocationHash(
+                                            productSubscriptionInput
+                                        )}`
+                                    )}`}
+                                    className="btn btn-lg btn-primary w-100 center"
                                 >
-                                    {this.state.paymentTokenOrError === LOADING ||
-                                    this.props.submissionState === LOADING ? (
-                                        <>
-                                            <LoadingSpinner className="icon-inline mr-2" /> Processing...
-                                        </>
-                                    ) : (
-                                        this.props.primaryButtonText
-                                    )}
-                                </button>
-                                {this.props.afterPrimaryButton}
+                                    Create account or sign in to continue
+                                </Link>
+                                <small className="form-text text-muted">
+                                    A user account on Sourcegraph.com is required to create a subscription so you can
+                                    view the license key and invoice.
+                                </small>
+                                <hr className="my-3" />
+                                <small className="form-text text-muted">
+                                    Next, you'll enter payment information and buy the subscription.
+                                </small>
                             </div>
+                        )}
+                        <PaymentTokenFormControl
+                            disabled={
+                                disableForm || !accountID || paymentValidity === PaymentValidity.NoPaymentRequired
+                            }
+                            isLightTheme={isLightTheme}
+                        />
+                        <div className="form-group mt-3">
+                            <button
+                                type="submit"
+                                disabled={disableForm || !accountID}
+                                className={`btn btn-lg btn-${
+                                    disableForm || !accountID ? 'secondary' : 'success'
+                                } w-100 d-flex align-items-center justify-content-center`}
+                            >
+                                {paymentToken === LOADING || submissionState === LOADING ? (
+                                    <>
+                                        <LoadingSpinner className="icon-inline mr-2" /> Processing...
+                                    </>
+                                ) : paymentValidity !== PaymentValidity.NoPaymentRequired ? (
+                                    primaryButtonText
+                                ) : (
+                                    primaryButtonTextNoPaymentRequired
+                                )}
+                            </button>
+                            {afterPrimaryButton}
                         </div>
                     </div>
-                </Form>
-                {isErrorLike(this.state.paymentTokenOrError) && (
-                    <ErrorAlert className="mt-3" error={this.state.paymentTokenOrError} />
-                )}
-                {isErrorLike(this.props.submissionState) && (
-                    <ErrorAlert className="mt-3" error={this.props.submissionState} />
-                )}
-            </div>
-        )
-    }
-
-    private onBillingPlanIDChange = (value: string | null): void => this.setState({ billingPlanID: value })
-    private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
-    private onPaymentValidityChange = (value: boolean): void => this.setState({ paymentValidity: value })
-
-    private onSubmit: React.FormEventHandler = e => {
-        e.preventDefault()
-        this.submits.next()
-    }
+                </div>
+            </Form>
+            {isErrorLike(paymentToken) && <ErrorAlert className="mt-3" error={paymentToken} history={history} />}
+            {isErrorLike(submissionState) && <ErrorAlert className="mt-3" error={submissionState} history={history} />}
+        </div>
+    )
 }
 
 export const ProductSubscriptionForm: React.FunctionComponent<Props> = props => (

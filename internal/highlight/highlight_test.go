@@ -1,8 +1,11 @@
 package highlight
 
 import (
+	"context"
 	"html/template"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestPreSpansToTable_Simple(t *testing.T) {
@@ -99,5 +102,119 @@ func TestIssue6892(t *testing.T) {
 	}
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
+
+func TestUnhighlightLongLines_Simple(t *testing.T) {
+	input := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span>under 40 bytes</span><span> spans are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span>this line is over 40 bytes</span><span> so spans are not kept
+</span></div></td></tr></table>`
+
+	want := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span>under 40 bytes</span><span> spans are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span>this line is over 40 bytes so spans are not kept
+</span></div></td></tr></tbody></table>`
+	got, err := unhighlightLongLines(input, 40)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
+
+func TestUnhighlightLongLines_Complex(t *testing.T) {
+	input := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="font-weight:bold;color:#a71d5d;">spans on uber long lines like this are dropped </span><span style="color:#323232;">spans on uber
+</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">)
+</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div></div></td></tr></table>`
+
+	want := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span>spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber long lines like this are dropped spans on uber
+</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">)
+</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div></div></td></tr></tbody></table>`
+	got, err := unhighlightLongLines(input, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	}
+}
+
+func TestSplitHighlightedLines(t *testing.T) {
+	input := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">)
+</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div></div></td></tr></table>`
+
+	want := []template.HTML{
+		`<div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
+</span></div>`,
+		`<div><span style="color:#323232;">
+</span></div>`,
+		`<div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div>`,
+		`<div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
+</span></div>`,
+		`<div><span style="color:#323232;">)
+</span></div>`,
+		`<div><span style="color:#323232;">
+</span></div>`,
+		`<div><span style="color:#323232;">
+</span></div>`,
+		`<div></div>`}
+	have, err := splitHighlightedLines(template.HTML(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestCodeAsLines(t *testing.T) {
+	fileContent := `line1
+line2
+line3`
+	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
+	Mocks.Code = func(p Params) (h template.HTML, aborted bool, err error) {
+		return template.HTML(highlightedCode), false, nil
+	}
+	t.Cleanup(ResetMocks)
+
+	highlightedLines, aborted, err := CodeAsLines(context.Background(), Params{
+		Content:  []byte(fileContent),
+		Filepath: "test/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if aborted {
+		t.Fatalf("highlighting aborted")
+	}
+
+	wantLines := []template.HTML{
+		"<div><span style=\"color:#657b83;\">line 1\n</span></div>",
+		"<div><span style=\"color:#657b83;\">line 2\n</span></div>",
+		"<div><span style=\"color:#657b83;\">line 3</span></div>",
+	}
+	if diff := cmp.Diff(wantLines, highlightedLines); diff != "" {
+		t.Fatalf("wrong highlighted lines: %s", diff)
 	}
 }

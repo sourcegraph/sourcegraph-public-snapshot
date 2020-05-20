@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -19,9 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -57,7 +58,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketS
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
@@ -126,9 +127,14 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.ExternalURL).Handler(trace.TraceRoute(handler(serveExternalURL)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
+	m.Get(apirouter.GitExec).Handler(trace.TraceRoute(handler(serveGitExec)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
-	m.Get(apirouter.GitExec).Handler(trace.TraceRoute(handler(serveGitExec)))
+	gitService := &gitServiceHandler{
+		Gitserver: gitserver.DefaultClient,
+	}
+	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(http.HandlerFunc(gitService.serveInfoRefs)))
+	m.Get(apirouter.GitUploadPack).Handler(trace.TraceRoute(http.HandlerFunc(gitService.serveGitUploadPack)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))

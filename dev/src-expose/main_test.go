@@ -7,10 +7,11 @@ import (
 )
 
 func TestExplain(t *testing.T) {
-	want := `Periodically syncing directories as git repositories to bam.
+	wantSnapshotter := `Periodically syncing directories as git repositories to bam.
 - foo/bar
 - baz
-Serving the repositories at http://[::]:10810.
+`
+	wantAddr := `Serving the repositories at http://[::]:10810.
 
 FIRST RUN NOTE: If src-expose has not yet been setup on Sourcegraph, then you
 need to configure Sourcegraph to sync with src-expose. Paste the following
@@ -29,9 +30,12 @@ configuration as an Other External Service in Sourcegraph:
 		Destination: "bam",
 		Dirs:        []*SyncDir{{Dir: "foo/bar"}, {Dir: "baz"}},
 	}
-	addr := "[::]:10810"
+	if got, want := explainSnapshotter(s), wantSnapshotter; got != want {
+		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+	}
 
-	if got := explain(s, addr); got != want {
+	addr := "[::]:10810"
+	if got, want := explainAddr(addr), wantAddr; got != want {
 		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
 	}
 }

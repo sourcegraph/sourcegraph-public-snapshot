@@ -2,13 +2,15 @@ package search
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -72,8 +74,9 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 		matches = append(matches,
 			protocol.FileMatch{
 				Path:        m.URI,
-				LimitHit:    false,
 				LineMatches: lineMatches,
+				MatchCount:  len(m.Matches),
+				LimitHit:    false,
 			})
 	}
 	return matches
@@ -161,6 +164,22 @@ func lookupMatcher(language string) string {
 	return ""
 }
 
+// languageMetric takes an extension and list of include patterns and returns a
+// label that describes which language is inferred for structural matching.
+func languageMetric(matcher string, includePatterns *[]string) string {
+	if matcher != "" {
+		return matcher
+	}
+
+	if len(*includePatterns) > 0 {
+		extension := filepath.Ext((*includePatterns)[0])
+		if extension != "" {
+			return fmt.Sprintf("inferred:%s", extension)
+		}
+	}
+	return "inferred:.generic"
+}
+
 func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
@@ -175,11 +194,8 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
 
-	if matcher == "" {
-		requestTotalStructuralSearch.WithLabelValues("inferred").Inc()
-	} else {
-		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
-	}
+	v := languageMetric(matcher, &includePatterns)
+	requestTotalStructuralSearch.WithLabelValues(v).Inc()
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
@@ -204,10 +220,8 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 }
 
 var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "searcher",
-	Subsystem: "service",
-	Name:      "request_total_structural_search",
-	Help:      "Number of returned structural search requests.",
+	Name: "searcher_service_request_total_structural_search",
+	Help: "Number of returned structural search requests.",
 }, []string{"language"})
 
 func init() {

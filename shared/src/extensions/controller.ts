@@ -119,7 +119,7 @@ export function createController(context: PlatformContext): Controller {
         const LOG_EDITORS = false
         if (LOG_EDITORS) {
             subscriptions.add(
-                services.editor.editorUpdates.subscribe(() => log('info', 'editors', services.editor.editors))
+                services.viewer.viewerUpdates.subscribe(() => log('info', 'editors', services.viewer.viewers))
             )
         }
 

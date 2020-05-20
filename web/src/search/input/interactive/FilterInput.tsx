@@ -8,8 +8,6 @@ import {
     distinctUntilChanged,
     switchMap,
     map,
-    filter,
-    toArray,
     catchError,
     debounceTime,
     takeUntil,
@@ -22,33 +20,24 @@ import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
-import { generateFiltersQuery } from '../helpers'
 import {
     QueryState,
     formatInteractiveQueryForFuzzySearch,
     validFilterAndValueBeforeCursor,
     filterStaticSuggestions,
 } from '../../helpers'
-import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
-import {
-    FiltersToTypeAndValue,
-    FilterTypes,
-    isNegatableFilter,
-} from '../../../../../shared/src/search/interactive/util'
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
+import { dedupeWhitespace, isQuoted } from '../../../../../shared/src/util/strings'
+import { FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CheckButton } from './CheckButton'
-import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypesToProseNames } from './filters'
+import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
+import { generateFiltersQuery } from '../../../../../shared/src/util/url'
+import { InteractiveSearchProps } from '../..'
 
-interface Props {
-    /**
-     * The filters currently added to the query.
-     */
-    filtersInQuery: FiltersToTypeAndValue
-
+interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * The query in the main query input.
      */
@@ -67,7 +56,7 @@ interface Props {
     /**
      * The search filter type, as available in {@link SuggstionTypes}
      */
-    filterType: FilterTypes
+    filterType: Exclude<FilterType, FilterType.patterntype>
 
     /**
      * Whether or not this FilterInput is currently editable.
@@ -109,7 +98,7 @@ interface Props {
     toggleFilterNegated: (filterKey: string) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** Only show suggestions if search input is focused */
@@ -199,22 +188,27 @@ export class FilterInput extends React.Component<Props, State> {
 
                         fullQuery = formatInteractiveQueryForFuzzySearch(fullQuery, filterType, inputValue)
                         const suggestions = fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
-                            filter(isDefined),
-                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => {
-                                // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
-                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                        case SuggestionTypes.repohasfile:
-                                            return suggestion.type === SuggestionTypes.file
-                                        default:
-                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
-                                    }
-                                }
-                                return true
-                            }),
-                            toArray(),
+                            map((suggestions): Suggestion[] =>
+                                suggestions
+                                    .map(createSuggestion)
+                                    .filter(isDefined)
+                                    .map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true }))
+                                    .filter(suggestion => {
+                                        // Only show fuzzy-suggestions that are relevant to the typed filter
+                                        if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                            switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                                case FilterType.repohasfile:
+                                                    return suggestion.type === FilterType.file
+                                                default:
+                                                    return (
+                                                        suggestion.type ===
+                                                        filterAndValueBeforeCursor.resolvedFilterType
+                                                    )
+                                            }
+                                        }
+                                        return true
+                                    })
+                            ),
                             map(suggestions => ({
                                 suggestions: {
                                     values: suggestions,
@@ -261,6 +255,12 @@ export class FilterInput extends React.Component<Props, State> {
         this.setFiniteFilterDefault.next()
     }
 
+    public componentDidUpdate(prevProps: Props): void {
+        if (isFiniteFilter(this.props.filterType) && this.props.value !== prevProps.value) {
+            this.inputValues.next(this.props.value)
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -273,10 +273,16 @@ export class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        if (this.state.inputValue !== '') {
-            // Don't allow empty filters.
+        if (this.state.inputValue !== '' || this.props.filterType === FilterType.type) {
+            // Don't allow empty filters, unless it's the type filter.
+            let inputValue = this.state.inputValue
+
+            // Filters should always be quoted and escaped before being sent to the backend.
+            inputValue = JSON.stringify(inputValue)
+
+            this.inputValues.next(inputValue)
             // Update the top-level filtersInQueryMap with the new value for this filter.
-            this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
+            this.props.onFilterEdited(this.props.mapKey, inputValue)
         }
     }
 
@@ -298,6 +304,12 @@ export class FilterInput extends React.Component<Props, State> {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
         }
+        // Filters are always quoted and escaped, but we don't display the quoted and escaped value
+        // to the user when editing. This makes queries easier to edit and makes sure URLs are always
+        // properly escaped.
+        const { inputValue } = this.state
+        // Check for isQuoted before parsing to support old URLs that don't have quotes around filters.
+        this.inputValues.next(isQuoted(inputValue) ? JSON.parse(inputValue) : inputValue)
         this.props.toggleFilterEditable(this.props.mapKey)
     }
 
@@ -454,7 +466,7 @@ export class FilterInput extends React.Component<Props, State> {
                                                 ) : (
                                                     this.state.suggestions.values.map((suggestion, index) => {
                                                         const isSelected = highlightedIndex === index
-                                                        const key = `${index}-${suggestion}`
+                                                        const key = `${index}-${suggestion.value}`
                                                         return (
                                                             <SuggestionItem
                                                                 key={key}
@@ -497,7 +509,7 @@ export class FilterInput extends React.Component<Props, State> {
             <Form onSubmit={this.onSubmitInput}>
                 <div className="filter-input__form e2e-filter-input-finite-form">
                     <div className="filter-input__radio-button-container">
-                        <span>{`${FilterTypesToProseNames[this.props.filterType]}:`}</span>
+                        <span>{`${FilterTypeToProseNames[this.props.filterType]}:`}</span>
                         {isFiniteFilter(this.props.filterType) &&
                             finiteFilters[this.props.filterType].values.map(val => (
                                 <div key={val.value} className="filter-input__radio">
@@ -511,7 +523,7 @@ export class FilterInput extends React.Component<Props, State> {
                                         autoFocus={true}
                                     />
                                     <label htmlFor={val.value} tabIndex={0} className="filter-input__radio-label">
-                                        {startCase(val.value)}
+                                        {val.displayValue ? startCase(val.displayValue) : startCase(val.value)}
                                     </label>
                                 </div>
                             ))}

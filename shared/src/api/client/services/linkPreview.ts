@@ -4,8 +4,9 @@ import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from
 import * as sourcegraph from 'sourcegraph'
 import { renderMarkdown } from '../../../util/markdown'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { propertyIsDefined } from '../../../util/types'
+import { property, isDefined } from '../../../util/types'
 import { FeatureProviderRegistry } from './registry'
+import { finallyReleaseProxy } from '../api/common'
 
 interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
     kind: sourcegraph.MarkupKind.PlainText
@@ -87,6 +88,7 @@ export function provideLinkPreview(
                 providers.map(provider =>
                     from(
                         provider(url).pipe(
+                            finallyReleaseProxy(),
                             catchError(err => {
                                 if (logErrors) {
                                     console.error(err)
@@ -107,8 +109,8 @@ export function provideLinkPreview(
 
 function mergeLinkPreviews(values: (sourcegraph.LinkPreview | null | undefined)[]): LinkPreviewMerged | null {
     const nonemptyValues = values.filter((p): p is sourcegraph.LinkPreview => !!p)
-    const contentValues = nonemptyValues.filter(propertyIsDefined('content'))
-    const hoverValues = nonemptyValues.filter(propertyIsDefined('hover'))
+    const contentValues = nonemptyValues.filter(property('content', isDefined))
+    const hoverValues = nonemptyValues.filter(property('hover', isDefined))
     if (hoverValues.length === 0 && contentValues.length === 0) {
         return null
     }

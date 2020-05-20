@@ -3,14 +3,19 @@ package db
 import (
 	"context"
 
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type MockPerms struct {
-	LoadRepoPermissions        func(ctx context.Context, p *iauthz.RepoPermissions) error
-	LoadUserPermissions        func(ctx context.Context, p *iauthz.UserPermissions) error
-	LoadUserPendingPermissions func(ctx context.Context, p *iauthz.UserPendingPermissions) error
-	SetRepoPermissions         func(ctx context.Context, p *iauthz.RepoPermissions) error
-	SetRepoPendingPermissions  func(ctx context.Context, bindIDs []string, p *iauthz.RepoPermissions) error
-	ListPendingUsers           func(ctx context.Context) ([]string, error)
+	Transact                     func(ctx context.Context) (*PermsStore, error)
+	LoadRepoPermissions          func(ctx context.Context, p *authz.RepoPermissions) error
+	LoadUserPermissions          func(ctx context.Context, p *authz.UserPermissions) error
+	LoadUserPendingPermissions   func(ctx context.Context, p *authz.UserPendingPermissions) error
+	SetUserPermissions           func(ctx context.Context, p *authz.UserPermissions) error
+	SetRepoPermissions           func(ctx context.Context, p *authz.RepoPermissions) error
+	SetRepoPendingPermissions    func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error
+	ListPendingUsers             func(ctx context.Context) ([]string, error)
+	ListExternalAccounts         func(ctx context.Context, userID int32) ([]*extsvc.Account, error)
+	GetUserIDsByExternalAccounts func(ctx context.Context, accounts *extsvc.Accounts) (map[string]int32, error)
 }

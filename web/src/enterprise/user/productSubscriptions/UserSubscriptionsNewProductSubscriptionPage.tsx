@@ -1,20 +1,21 @@
-import H from 'history'
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import * as React from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, createAggregateError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
-import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
+import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
@@ -22,17 +23,10 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
      * authenticated user and this page is accessed at /subscriptions/new.
      */
     user: GQL.IUser | null
+    history: H.History
 }
 
-const LOADING: 'loading' = 'loading'
-
-interface State {
-    /**
-     * The result of creating the paid product subscription: null when complete or not started yet,
-     * loading, or an error.
-     */
-    creationOrError: null | typeof LOADING | ErrorLike
-}
+const LOADING = 'loading' as const
 
 /**
  * Displays a form and payment flow to purchase a product subscription.
@@ -41,78 +35,74 @@ interface State {
  * view it at /subscriptions/new and are allowed to price out a subscription, but they must sign in
  * to buy the subscription.
  */
-export class UserSubscriptionsNewProductSubscriptionPage extends React.Component<Props, State> {
-    public state: State = { creationOrError: null }
+export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponent<Props> = ({
+    user,
+    location,
+    history,
+    isLightTheme,
+}) => {
+    useEffect(() => eventLogger.logViewEvent('UserSubscriptionsNewProductSubscription'), [])
 
-    private submits = new Subject<GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSubscriptionsNewProductSubscription')
-        this.subscriptions.add(
-            this.submits
-                .pipe(
+    /**
+     * The result of creating the paid product subscription: undefined when complete or not started yet,
+     * loading, or an error.
+     */
+    const [nextCreation, creation] = useEventObservable(
+        useCallback(
+            (creations: Observable<GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments>) =>
+                creations.pipe(
                     switchMap(args =>
                         createPaidProductSubscription(args).pipe(
                             tap(({ productSubscription }) => {
                                 // Redirect to new subscription upon success.
-                                this.props.history.push(productSubscription.url)
+                                history.push(productSubscription.url)
                             }),
-                            mapTo(null),
+                            mapTo(undefined),
                             catchError(err => [asError(err)]),
-                            startWith(LOADING),
-                            map(c => ({ creationOrError: c }))
+                            startWith(LOADING)
                         )
                     )
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                ),
+            [history]
         )
+    )
+
+    if (user && !user.viewerCanAdminister) {
+        return <HeroPage icon={AlertCircleIcon} title="Not authorized" />
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        if (this.props.user && !this.props.user.viewerCanAdminister) {
-            return <HeroPage icon={AlertCircleIcon} title="Not authorized" />
-        }
-
-        return (
-            <div className="user-subscriptions-new-product-subscription-page">
-                <PageTitle title="New product subscription" />
-                {this.props.user && <BackToAllSubscriptionsLink user={this.props.user} />}
-                <h2>New subscription</h2>
-                <ProductSubscriptionForm
-                    accountID={this.props.user ? this.props.user.id : null}
-                    subscriptionID={null}
-                    initialValue={parseProductSubscriptionInputFromLocation(this.props.location) || undefined}
-                    isLightTheme={this.props.isLightTheme}
-                    onSubmit={this.onSubmit}
-                    submissionState={this.state.creationOrError}
-                    primaryButtonText="Buy subscription"
-                    afterPrimaryButton={
-                        <small className="form-text text-muted">
-                            Your license key will be available immediately after payment.
-                            <br />
-                            <br />
-                            <Link to="/terms" target="_blank">
-                                Terms of Service
-                            </Link>{' '}
-                            |{' '}
-                            <Link to="/privacy" target="_blank">
-                                Privacy Policy
-                            </Link>
-                        </small>
-                    }
-                />
-            </div>
-        )
-    }
-
-    private onSubmit = (args: ProductSubscriptionFormData): void => {
-        this.submits.next(args)
-    }
+    return (
+        <div className="user-subscriptions-new-product-subscription-page">
+            <PageTitle title="New product subscription" />
+            {user && <BackToAllSubscriptionsLink user={user} />}
+            <h2>New subscription</h2>
+            <ProductSubscriptionForm
+                accountID={user ? user.id : null}
+                subscriptionID={null}
+                initialValue={parseProductSubscriptionInputFromLocation(location) || undefined}
+                isLightTheme={isLightTheme}
+                onSubmit={nextCreation}
+                submissionState={creation}
+                primaryButtonText="Buy subscription"
+                primaryButtonTextNoPaymentRequired="Create subscription"
+                afterPrimaryButton={
+                    <small className="form-text text-muted">
+                        Your license key will be available immediately.
+                        <br />
+                        <br />
+                        <Link to="/terms" target="_blank">
+                            Terms of Service
+                        </Link>{' '}
+                        |{' '}
+                        <Link to="/privacy" target="_blank">
+                            Privacy Policy
+                        </Link>
+                    </small>
+                }
+                history={history}
+            />
+        </div>
+    )
 }
 
 /**
@@ -155,7 +145,7 @@ function createPaidProductSubscription(
             mutation CreatePaidProductSubscription(
                 $accountID: ID!
                 $productSubscription: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     createPaidProductSubscription(

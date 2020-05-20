@@ -10,6 +10,9 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
+import { SignInButton } from '../../libs/code_intelligence/SignInButton'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface ButtonProps {
     className?: string
@@ -30,12 +33,17 @@ export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
 export interface CodeViewToolbarProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         ExtensionsControllerProps,
-        FileInfoWithContents,
         TelemetryProps,
         CodeViewToolbarClassProps {
     sourcegraphURL: string
-    onEnabledChange?: (enabled: boolean) => void
+
+    /**
+     * Information about the file or diff the toolbar is displayed on.
+     */
+    fileInfoOrError: FileInfoWithContents | ErrorLike
+
     buttonProps?: ButtonProps
+    onSignInClose: () => void
     location: H.Location
 }
 
@@ -50,47 +58,64 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             location={props.location}
             scope={props.scope}
         />{' '}
-        {props.baseCommitID && props.baseHasFileContents && (
-            <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
-                <OpenDiffOnSourcegraph
-                    ariaLabel="View file diff on Sourcegraph"
-                    platformContext={props.platformContext}
+        {isErrorLike(props.fileInfoOrError) ? (
+            isHTTPAuthError(props.fileInfoOrError) ? (
+                <SignInButton
+                    sourcegraphURL={props.sourcegraphURL}
+                    onSignInClose={props.onSignInClose}
                     className={props.actionItemClass}
                     iconClassName={props.actionItemIconClass}
-                    openProps={{
-                        sourcegraphURL: props.sourcegraphURL,
-                        repoName: props.baseRepoName || props.repoName,
-                        filePath: props.baseFilePath || props.filePath,
-                        rev: props.baseRev || props.baseCommitID,
-                        query: {
-                            diff: {
-                                rev: props.baseCommitID,
-                            },
-                        },
-                        commit: {
-                            baseRev: props.baseRev || props.baseCommitID,
-                            headRev: props.rev || props.commitID,
-                        },
-                    }}
                 />
-            </li>
-        )}{' '}
-        {// Only show the "View file" button if we were able to fetch the file contents
-        // from the Sourcegraph instance
-        !props.baseCommitID && (props.content !== undefined || props.baseContent !== undefined) && (
-            <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
-                <OpenOnSourcegraph
-                    ariaLabel="View file on Sourcegraph"
-                    className={props.actionItemClass}
-                    iconClassName={props.actionItemIconClass}
-                    openProps={{
-                        sourcegraphURL: props.sourcegraphURL,
-                        repoName: props.repoName,
-                        filePath: props.filePath,
-                        rev: props.rev || props.commitID,
-                    }}
-                />
-            </li>
+            ) : null
+        ) : (
+            <>
+                {props.fileInfoOrError.baseCommitID && props.fileInfoOrError.baseHasFileContents && (
+                    <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                        <OpenDiffOnSourcegraph
+                            ariaLabel="View file diff on Sourcegraph"
+                            platformContext={props.platformContext}
+                            className={props.actionItemClass}
+                            iconClassName={props.actionItemIconClass}
+                            openProps={{
+                                sourcegraphURL: props.sourcegraphURL,
+                                repoName: props.fileInfoOrError.baseRepoName || props.fileInfoOrError.repoName,
+                                filePath: props.fileInfoOrError.baseFilePath || props.fileInfoOrError.filePath,
+                                rev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
+                                query: {
+                                    diff: {
+                                        rev: props.fileInfoOrError.baseCommitID,
+                                    },
+                                },
+                                commit: {
+                                    baseRev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
+                                    headRev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                },
+                            }}
+                        />
+                    </li>
+                )}{' '}
+                {
+                    // Only show the "View file" button if we were able to fetch the file contents
+                    // from the Sourcegraph instance
+                    !props.fileInfoOrError.baseCommitID &&
+                        (props.fileInfoOrError.content !== undefined ||
+                            props.fileInfoOrError.baseContent !== undefined) && (
+                            <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                                <OpenOnSourcegraph
+                                    ariaLabel="View file on Sourcegraph"
+                                    className={props.actionItemClass}
+                                    iconClassName={props.actionItemIconClass}
+                                    openProps={{
+                                        sourcegraphURL: props.sourcegraphURL,
+                                        repoName: props.fileInfoOrError.repoName,
+                                        filePath: props.fileInfoOrError.filePath,
+                                        rev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                    }}
+                                />
+                            </li>
+                        )
+                }
+            </>
         )}
     </ul>
 )

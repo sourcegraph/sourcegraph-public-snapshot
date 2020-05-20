@@ -11,8 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
@@ -37,6 +37,10 @@ func (r *lsifUploadResolver) InputCommit() string {
 
 func (r *lsifUploadResolver) InputRoot() string {
 	return r.lsifUpload.Root
+}
+
+func (r *lsifUploadResolver) InputIndexer() string {
+	return r.lsifUpload.Indexer
 }
 
 func (r *lsifUploadResolver) State() string {
@@ -65,6 +69,10 @@ func (r *lsifUploadResolver) FinishedAt() *graphqlbackend.DateTime {
 
 func (r *lsifUploadResolver) IsLatestForRepo() bool {
 	return r.lsifUpload.VisibleAtTip
+}
+
+func (r *lsifUploadResolver) PlaceInQueue() *int32 {
+	return r.lsifUpload.PlaceInQueue
 }
 
 type lsifUploadFailureReasonResolver struct {

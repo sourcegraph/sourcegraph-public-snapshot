@@ -2,24 +2,27 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestExampleRepositoryQuerySplit(t *testing.T) {
@@ -53,7 +56,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				HeadRef:   "refs/heads/test-pr-6",
 				BaseRef:   "refs/heads/master",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 		},
 		{
@@ -61,10 +64,10 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:     "This is a test PR",
 				Body:      "This is the description of the test PR",
-				HeadRef:   "heads/refs/always-open-pr",
-				BaseRef:   "heads/refs/master",
+				HeadRef:   "refs/heads/always-open-pr",
+				BaseRef:   "refs/heads/master",
 				Repo:      repo,
-				Changeset: &a8n.Changeset{},
+				Changeset: &campaigns.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
 			err:    "",
@@ -74,7 +77,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_CreateChangeset_" + tc.name
+
+		tc.name = "GithubSource_CreateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -96,7 +100,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -138,7 +142,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 		{
 			name: "success",
 			cs: &Changeset{
-				Changeset: &a8n.Changeset{
+				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
 					},
@@ -171,7 +175,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -208,7 +212,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				Title:   "This is a new title",
 				Body:    "This is a new body",
 				BaseRef: "refs/heads/master",
-				Changeset: &a8n.Changeset{
+				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
 					},
@@ -241,7 +245,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -277,15 +281,15 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 			cs: []*Changeset{
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &a8n.Changeset{ExternalID: "5550"},
+					Changeset: &campaigns.Changeset{ExternalID: "5550"},
 				},
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
-					Changeset: &a8n.Changeset{ExternalID: "50"},
+					Changeset: &campaigns.Changeset{ExternalID: "50"},
 				},
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &a8n.Changeset{ExternalID: "5834"},
+					Changeset: &campaigns.Changeset{ExternalID: "5834"},
 				},
 			},
 		},
@@ -315,7 +319,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -422,7 +426,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -435,6 +439,62 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			if tc.assert != nil {
 				tc.assert(t, repo)
 			}
+		})
+	}
+}
+
+func TestGithubSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*github.Repository
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	svc := ExternalService{ID: 1, Kind: "GITHUB"}
+
+	tests := []struct {
+		name   string
+		schmea *schema.GitHubConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.GitHubConnection{
+				Url: "https://github.com",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.GitHubConnection{
+				Url:        "https://github.com",
+				GitURLType: "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.GitHubConnection{
+				Url:                   "https://github.com",
+				RepositoryPathPattern: "gh/{nameWithOwner}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "GithubSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			s, err := newGithubSource(&svc, test.schmea, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }
@@ -624,7 +684,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

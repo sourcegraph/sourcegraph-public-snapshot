@@ -90,8 +90,9 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         return (
             <div
                 key={this.props.node.id}
-                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${this.props
-                    .className || ''}`}
+                className={`git-commit-node ${this.props.compact ? 'git-commit-node--compact' : ''} ${
+                    this.props.className || ''
+                }`}
             >
                 <div className="git-commit-node__row git-commit-node__main">
                     {!this.props.compact ? (

@@ -13,7 +13,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
@@ -29,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type InjectedHTML struct {
@@ -166,12 +168,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
+			if errcode.IsNotFound(err) {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errors.Cause(err) == repoupdater.ErrUnauthorized {
+			if errcode.IsUnauthorized(err) {
 				// Not authorized to access repository.
 				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil
@@ -256,6 +258,76 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "app.html", common)
 }
 
+// redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
+// or a tree page to a blob page if the directory is actually a file.
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request) (requestHandled bool, err error) {
+	// NOTE: It makes no sense for this function to proceed if the commit ID
+	// for the repository is empty. It is most likely the repository is still
+	// clone in progress.
+	if common.CommitID == "" {
+		return false, nil
+	}
+
+	if path == "/" || path == "" {
+		if routeName != routeRepo {
+			// Redirect to repo route
+			target := "/" + string(common.Repo.Name) + common.Rev
+			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+			return true, nil
+		}
+		return false, nil
+	}
+	cachedRepo, err := backend.CachedGitRepo(r.Context(), common.Repo)
+	if err != nil {
+		return false, err
+	}
+	stat, err := git.Stat(r.Context(), *cachedRepo, common.CommitID, path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			serveError(w, r, err, http.StatusNotFound)
+			return true, nil
+		}
+		return false, err
+	}
+	expectedDir := routeName == routeTree
+	if stat.Mode().IsDir() != expectedDir {
+		target := "/" + string(common.Repo.Name) + common.Rev + "/-/"
+		if expectedDir {
+			target += "blob"
+		} else {
+			target += "tree"
+		}
+		target += path
+		http.Redirect(w, r, auth.SafeRedirectURL(target), http.StatusTemporaryRedirect)
+		return true, nil
+	}
+	return false, nil
+}
+
+// serveTree serves the tree (directory) pages.
+func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		common, err := newCommon(w, r, "", serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r)
+		if handled {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		common.Title = title(common, r)
+		return renderTemplate(w, "app.html", common)
+	}
+}
+
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
@@ -265,6 +337,15 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		if common == nil {
 			return nil // request was handled
 		}
+
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r)
+		if handled {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
 		common.Title = title(common, r)
 
 		q := r.URL.Query()

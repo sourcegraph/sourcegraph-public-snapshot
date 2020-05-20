@@ -8,16 +8,10 @@ export enum ConnectionErrors {
     UnableToConnect,
 }
 
-interface StatusClassNames {
-    connecting: 'warning'
-    connected: 'success'
-    error: 'error'
-}
-
-const statusClassNames: StatusClassNames = {
+const statusClassNames = {
     connecting: 'warning',
     connected: 'success',
-    error: 'error',
+    error: 'danger',
 }
 
 /**
@@ -29,7 +23,7 @@ const zeroWidthNbsp = '\u2060'
 
 export interface ServerURLFormProps {
     className?: string
-    status: keyof StatusClassNames
+    status: keyof typeof statusClassNames
     connectionError?: ConnectionErrors
 
     value: string
@@ -123,7 +117,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     />
                 </div>
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
-                    <div className="mt-1">
+                    <div className="alert alert-danger mt-2 mb-0">
                         Authentication to Sourcegraph failed.{' '}
                         <a href={this.props.value} target="_blank" rel="noopener noreferrer">
                             Sign in to your instance
@@ -132,7 +126,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     </div>
                 )}
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
-                    <div className="mt-1">
+                    <div className="alert alert-danger mt-2 mb-0">
                         <p>
                             Unable to connect to{' '}
                             <a href={this.props.value} target="_blank" rel="noopener noreferrer">
@@ -140,7 +134,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                             </a>
                             . Ensure the URL is correct and you are{' '}
                             <a href={this.props.value + '/sign-in'} target="_blank" rel="noopener noreferrer">
-                                logged in
+                                signed in
                             </a>
                             .
                         </p>
@@ -153,7 +147,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                 for this URL.
                             </p>
                         )}
-                        <p>
+                        <p className="mb-0">
                             <b>Site admins:</b> ensure that{' '}
                             <a
                                 href="https://docs.sourcegraph.com/admin/config/site_config"

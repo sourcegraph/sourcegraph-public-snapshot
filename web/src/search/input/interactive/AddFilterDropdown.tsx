@@ -1,16 +1,16 @@
 import React, { useCallback } from 'react'
-import { FilterTypes, filterTypeKeys } from '../../../../../shared/src/search/interactive/util'
+import { FilterType, filterTypeKeys } from '../../../../../shared/src/search/interactive/util'
 import { defaultFilterTypes } from './AddFilterRow'
-import { FilterTypesToProseNames } from './filters'
+import { FilterTypeToProseNames } from './filters'
 
 interface Props {
-    onAddNewFilter: (filterType: FilterTypes) => void
+    onAddNewFilter: (filterType: FilterType) => void
 }
 
 export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilter }) => {
     const addNewFilter = useCallback(
         (e: React.ChangeEvent<HTMLSelectElement>): void => {
-            onAddNewFilter(e.target.value as FilterTypes)
+            onAddNewFilter(e.target.value as FilterType)
         },
         [onAddNewFilter]
     )
@@ -25,10 +25,15 @@ export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilt
                 Add filter…
             </option>
             {filterTypeKeys
-                .filter(filter => !defaultFilterTypes.includes(filter) && filter !== FilterTypes.case)
+                .filter(
+                    filter =>
+                        !defaultFilterTypes.includes(filter) &&
+                        filter !== FilterType.case &&
+                        filter !== FilterType.patterntype
+                )
                 .map(filter => (
                     <option key={filter} value={filter} className={`e2e-filter-dropdown-option-${filter}`}>
-                        {FilterTypesToProseNames[filter]}
+                        {FilterTypeToProseNames[filter]}
                     </option>
                 ))}
         </select>

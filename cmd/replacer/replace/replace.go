@@ -25,16 +25,16 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/trace"
+	nettrace "golang.org/x/net/trace"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/gorilla/schema"
 )
@@ -132,10 +132,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.ResponseWriter, r *http.Request) (deadlineHit bool, err error) {
-	tr := trace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr := nettrace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.RewriteSpecification)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Replace")
+	span, ctx := ot.StartSpanFromContext(ctx, "Replace")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)
@@ -268,30 +268,22 @@ const megabyte = float64(1000 * 1000)
 
 var (
 	running = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "running",
-		Help:      "Number of running search requests.",
+		Name: "replacer_service_running",
+		Help: "Number of running search requests.",
 	})
 	archiveSize = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "archive_size_bytes",
-		Help:      "Observes the size when an archive is searched.",
-		Buckets:   []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
+		Name:    "replacer_service_archive_size_bytes",
+		Help:    "Observes the size when an archive is searched.",
+		Buckets: []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
 	})
 	archiveFiles = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "archive_files",
-		Help:      "Observes the number of files when an archive is searched.",
-		Buckets:   []float64{100, 1000, 10000, 50000, 100000},
+		Name:    "replacer_service_archive_files",
+		Help:    "Observes the number of files when an archive is searched.",
+		Buckets: []float64{100, 1000, 10000, 50000, 100000},
 	})
 	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "replacer",
-		Subsystem: "service",
-		Name:      "request_total",
-		Help:      "Number of returned replace requests.",
+		Name: "replacer_service_request_total",
+		Help: "Number of returned replace requests.",
 	}, []string{"code"})
 )
 

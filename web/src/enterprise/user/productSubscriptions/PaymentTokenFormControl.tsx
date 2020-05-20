@@ -24,7 +24,6 @@ export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => 
                     props.disabled ? 'disabled' : ''
                 }`}
                 disabled={props.disabled}
-                // eslint-disable-next-line react/forbid-dom-props
                 style={{
                     base: {
                         fontFamily:

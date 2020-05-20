@@ -18,6 +18,7 @@ import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import * as H from 'history'
 
 interface UserNodeProps {
     /**
@@ -34,6 +35,7 @@ interface UserNodeProps {
      * Called when the user is updated by an action in this list item.
      */
     onDidUpdate?: () => void
+    history: H.History
 }
 
 interface UserNodeState {
@@ -165,7 +167,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )}
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {this.state.errorDescription && (
+                    <ErrorAlert className="mt-2" error={this.state.errorDescription} history={this.props.history} />
+                )}
                 {this.state.resetPasswordURL && (
                     <div className="alert alert-success mt-2">
                         <p>
@@ -207,7 +211,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 
@@ -235,7 +239,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         resetPasswordURL,
                     })
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 
@@ -266,24 +270,20 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 }
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
+    history: H.History
 }
 
 interface State {
     users?: GQL.IUser[]
     totalCount?: number
 }
-
-class FilteredUserConnection extends FilteredConnection<
-    GQL.IUser,
-    Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'>
-> {}
 
 /**
  * A page displaying the users on this site.
@@ -303,9 +303,10 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'> = {
+        const nodeProps: Omit<UserNodeProps, 'node'> = {
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
+            history: this.props.history,
         }
 
         return (
@@ -319,7 +320,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         </Link>
                     </div>
                 </div>
-                <FilteredUserConnection
+                <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="user"
                     pluralNoun="users"

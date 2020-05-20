@@ -90,6 +90,32 @@ exports[`OptionsMenu doesn't render the permissions alert on about://addons 1`] 
       />
     </div>
   </form>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
 </div>
 `;
 
@@ -183,6 +209,32 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://extensions
       />
     </div>
   </form>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
 </div>
 `;
 
@@ -276,6 +328,32 @@ exports[`OptionsMenu doesn't render the permissions alert on chrome://newtab 1`]
       />
     </div>
   </form>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
 </div>
 `;
 
@@ -369,6 +447,32 @@ exports[`OptionsMenu renders a default state 1`] = `
       />
     </div>
   </form>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
 </div>
 `;
 
@@ -466,24 +570,52 @@ exports[`OptionsMenu renders the current tab permissions alert 1`] = `
     className="options-menu__section"
   >
     <div
-      className="alert alert-danger"
+      className="alert alert-info"
     >
-      Sourcegraph is not enabled on 
-      <strong>
-        gitlab.com
-      </strong>
-      .
-       
-      <a
-        className="request-permissions__test"
-        href=""
+      <p>
+        The Sourcegraph browser extension adds hover tooltips to code views on code hosts such as GitHub, GitLab, Bitbucket Server and Phabricator.
+      </p>
+      <p>
+        You must grant permissions to enable Sourcegraph on 
+        <strong>
+          gitlab.com
+        </strong>
+        .
+      </p>
+      <button
+        className="btn btn-light request-permissions__test"
         onClick={[Function]}
+        type="button"
       >
         Grant permissions
-      </a>
-       
-      to enable Sourcegraph.
+      </button>
     </div>
+  </div>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
   </div>
 </div>
 `;
@@ -578,6 +710,32 @@ exports[`OptionsMenu renders the feature flags 1`] = `
       />
     </div>
   </form>
+  <div
+    className="options-menu__section"
+  >
+    <p>
+      Learn more about privacy concerns, troubleshooting and extension features
+       
+      <a
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        target="blank"
+      >
+        here
+      </a>
+      .
+    </p>
+    <p>
+      Search open source software at
+       
+      <a
+        href="https://sourcegraph.com/search"
+        target="blank"
+      >
+        sourcegraph.com/search
+      </a>
+      .
+    </p>
+  </div>
   <div
     className="options-menu__section"
   >

@@ -25,17 +25,13 @@ We use Go to write backend services.
 
 ### syntect-server
 
-[syntect-server](https://github.com/sourcegraph/syntect_server) is a minimal HTTP server written in Rust that wraps the [Syntect](https://github.com/trishume/syntect) syntax highlighting library (also written in Rust) to expose a JSON API. This service does not require a lot of maintance, but when it does, [it is a pain](https://sourcegraph.slack.com/archives/C02FSM7DW/p1568340378055300?thread_ts=1568340378.055300).
+[syntect-server](https://github.com/sourcegraph/syntect_server) is a minimal HTTP server written in Rust that wraps the [Syntect](https://github.com/trishume/syntect) syntax highlighting library (also written in Rust) to expose a JSON API. This service does not require a lot of maintenance, but when it does, [it is a pain](https://sourcegraph.slack.com/archives/C02FSM7DW/p1568340378055300?thread_ts=1568340378.055300).
 
 Why do we put up with this pain? As of October 2019, Syntect continues to be the best option for us to deliver high quality syntax highlighting to our users across a wide variety of languages. References:
 
 - [Original rational](https://news.ycombinator.com/item?id=17932872)
 - [Syntect vs. VS Code syntax highlighting
 ](https://docs.google.com/document/d/1MqqEgihKzRehdDS_k9kb8t_p8vROCymC2FWn1Yvj6Ng/edit)
-
-### lsif-server
-
-This was written in TypeScript so we could directly depend on the official [LSIF type definitions that are published by Microsoft as a TypeScript interface](https://github.com/microsoft/lsif-node/blob/master/protocol/src/protocol.ts).
 
 ### LSIF generators and language servers
 

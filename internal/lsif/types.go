@@ -12,6 +12,7 @@ type LSIFUpload struct {
 	RepositoryID      api.RepoID `json:"repositoryId"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
+	Indexer           string     `json:"indexer"`
 	Filename          string     `json:"filename"`
 	State             string     `json:"state"`
 	UploadedAt        time.Time  `json:"uploadedAt"`
@@ -20,6 +21,7 @@ type LSIFUpload struct {
 	FailureSummary    *string    `json:"failureSummary"`
 	FailureStacktrace *string    `json:"failureStacktrace"`
 	VisibleAtTip      bool       `json:"visibleAtTip"`
+	PlaceInQueue      *int32     `json:"placeInQueue"`
 }
 
 type LSIFLocation struct {

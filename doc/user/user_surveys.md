@@ -1,6 +1,12 @@
 # User surveys
 
+## Submit a survey
+
 After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it that you would recommend Sourcegraph to a friend?", and to provide some qualitative product feedback.
+
+Users can also always submit (or re-submit) this survey by visiting `https://sourcegraph.example.com/survey`.
+
+## View survey responses
 
 Responses to this survey are visible to all site admins on the Sourcegraph instance. View all responses on the **Site admin > User surveys** page. (The URL is `https://sourcegraph.example.com/site-admin/surveys`.)
 

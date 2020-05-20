@@ -15,13 +15,21 @@ import { parseRepoURI } from '../../util/url'
 import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { VersionContextProps } from '../../search/util'
 
-export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
+/** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
+const MAXIMUM_LOCATION_RESULTS = 500
+
+export interface HierarchicalLocationsViewProps
+    extends ExtensionsControllerProps<'services'>,
+        SettingsCascadeProps,
+        VersionContextProps {
     location: H.Location
     /**
-     * The higher-order observable that emits the locations.
+     * The observable that emits the locations.
      */
-    locations: Observable<Observable<Location[] | null>>
+    locations: Observable<MaybeLoadingResult<Location[]>>
 
     /**
      * In the grouping (i.e., by repository and, optionally, then by file), this is the URI of the first group.
@@ -45,10 +53,12 @@ export interface HierarchicalLocationsViewProps extends ExtensionsControllerProp
 
 interface State {
     /**
-     * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
-     * to load.
+     * Locations (inside files identified by LSP-style git:// URIs) to display,
+     * loading, or an error if they failed to load.
+     *
+     * Locations may be truncated if the result set is too large.
      */
-    locationsOrError: { results?: Location[]; loading: boolean } | ErrorLike
+    locationsOrError: MaybeLoadingResult<{ locations: Location[]; isTruncated: boolean } | ErrorLike>
 
     selectedGroups?: string[]
 }
@@ -57,7 +67,7 @@ interface State {
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
 export class HierarchicalLocationsView extends React.PureComponent<HierarchicalLocationsViewProps, State> {
-    public state: State = { locationsOrError: { loading: true } }
+    public state: State = { locationsOrError: { isLoading: true, result: { locations: [], isTruncated: false } } }
 
     private componentUpdates = new Subject<HierarchicalLocationsViewProps>()
     private subscriptions = new Subscription()
@@ -73,35 +83,45 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 .pipe(
                     switchMap(locationProviderResults =>
                         locationProviderResults.pipe(
-                            switchMap(locations =>
-                                locations.pipe(
-                                    map(result => ({ results: result || [], loading: true })),
-                                    catchError((error): [ErrorLike] => [asError(error)]),
-                                    startWith<State['locationsOrError']>({ results: undefined, loading: true }),
-                                    tap(locationsOrError => {
-                                        const hasResults =
-                                            locationsOrError &&
-                                            !isErrorLike(locationsOrError) &&
-                                            !!locationsOrError.results &&
-                                            locationsOrError.results.length > 0
-                                        this.props.extensionsController.services.context.updateContext({
-                                            'panel.locations.hasResults': hasResults,
-                                        })
-                                    }),
-                                    endWith<State['locationsOrError']>({ loading: false })
-                                )
-                            )
+                            // Truncate the result set if it is too large,
+                            // to avoid crashing the UI. A banner will be displayed to the user
+                            // when this is the case.
+                            map(({ isLoading, result: locations }) => {
+                                const isTruncated = locations.length > MAXIMUM_LOCATION_RESULTS
+                                return {
+                                    isLoading,
+                                    result: {
+                                        locations: isTruncated
+                                            ? locations.slice(0, MAXIMUM_LOCATION_RESULTS)
+                                            : locations,
+                                        isTruncated,
+                                    },
+                                }
+                            }),
+                            catchError((error): [State['locationsOrError']] => [
+                                { isLoading: false, result: asError(error) },
+                            ]),
+                            startWith({
+                                result: { locations: [], isTruncated: false },
+                                isLoading: true,
+                            }),
+                            tap(({ result }) => {
+                                const hasResults = !isErrorLike(result) && result.locations.length > 0
+                                this.props.extensionsController.services.context.updateContext({
+                                    'panel.locations.hasResults': hasResults,
+                                })
+                            }),
+                            endWith({ isLoading: false })
                         )
                     )
                 )
-                .subscribe(
-                    locationsOrError =>
-                        this.setState(old => ({
-                            locationsOrError: isErrorLike(locationsOrError)
-                                ? locationsOrError
-                                : { ...old.locationsOrError, ...locationsOrError },
-                        })),
-                    error => console.error(error)
+                .subscribe(locationsOrError =>
+                    this.setState(previous => ({
+                        locationsOrError: {
+                            ...previous.locationsOrError,
+                            ...locationsOrError,
+                        },
+                    }))
                 )
         )
 
@@ -119,16 +139,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     }
 
     public render(): JSX.Element | null {
-        if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError error={this.state.locationsOrError} />
+        if (isErrorLike(this.state.locationsOrError.result)) {
+            return <FileLocationsError error={this.state.locationsOrError.result} />
         }
-        if (
-            this.state.locationsOrError.loading &&
-            (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
-        ) {
-            return <LoadingSpinner className="icon-inline m-1" />
+        if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.locations.length === 0) {
+            return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
         }
-        if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
+        if (this.state.locationsOrError.result.locations.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -156,7 +173,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError.results || [],
+            this.state.locationsOrError.result.locations,
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
             { uri: this.props.defaultGroup }
@@ -196,59 +213,71 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         })
 
         return (
-            <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
-                {selectedGroups &&
-                    groupsToDisplay.map(
-                        (g, i) =>
-                            g && (
-                                <Resizable
-                                    key={i}
-                                    className="hierarchical-locations-view__resizable"
-                                    handlePosition="right"
-                                    storageKey={`hierarchical-locations-view-resizable:${g.name}`}
-                                    defaultSize={g.defaultSize}
-                                    element={
-                                        <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
-                                            {groups[i].map((group, j) => (
-                                                <span
-                                                    key={j}
-                                                    className={`list-group-item hierarchical-locations-view__item ${
-                                                        selectedGroups[i] === group.key ? 'active' : ''
-                                                    }`}
-                                                    onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
-                                                >
+            <div className="hierarchical-locations-wrapper">
+                {this.state.locationsOrError.result.isTruncated && (
+                    <div className="alert alert-warning py-1 px-3 m-2 text-nowrap text-center">
+                        <small>
+                            <strong>Large result set</strong> - only showing the first {MAXIMUM_LOCATION_RESULTS}{' '}
+                            results.
+                        </small>
+                    </div>
+                )}
+                <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
+                    {selectedGroups &&
+                        groupsToDisplay.map(
+                            (g, i) =>
+                                g && (
+                                    <Resizable
+                                        key={i}
+                                        className="hierarchical-locations-view__resizable"
+                                        handlePosition="right"
+                                        storageKey={`hierarchical-locations-view-resizable:${g.name}`}
+                                        defaultSize={g.defaultSize}
+                                        element={
+                                            <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
+                                                {groups[i].map((group, j) => (
                                                     <span
-                                                        className="hierarchical-locations-view__item-name"
-                                                        title={group.key}
+                                                        key={j}
+                                                        className={`list-group-item hierarchical-locations-view__item ${
+                                                            selectedGroups[i] === group.key ? 'active' : ''
+                                                        }`}
+                                                        onClick={e =>
+                                                            this.onSelectTree(e, selectedGroups, i, group.key)
+                                                        }
                                                     >
-                                                        <span className="hierarchical-locations-view__item-name-text">
-                                                            <RepoLink to={null} repoName={group.key} />
+                                                        <span
+                                                            className="hierarchical-locations-view__item-name"
+                                                            title={group.key}
+                                                        >
+                                                            <span className="hierarchical-locations-view__item-name-text">
+                                                                <RepoLink to={null} repoName={group.key} />
+                                                            </span>
+                                                        </span>
+                                                        <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
+                                                            {group.count}
                                                         </span>
                                                     </span>
-                                                    <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                        {group.count}
-                                                    </span>
-                                                </span>
-                                            ))}
-                                            {!isErrorLike(this.state.locationsOrError) &&
-                                                this.state.locationsOrError.loading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
+                                                ))}
+                                                {this.state.locationsOrError.isLoading && (
+                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
                                                 )}
-                                        </div>
-                                    }
-                                />
-                            )
-                    )}
-                <FileLocations
-                    className="hierarchical-locations-view__content"
-                    location={this.props.location}
-                    locations={of(visibleLocations)}
-                    onSelect={this.props.onSelectLocation}
-                    icon={SourceRepositoryIcon}
-                    isLightTheme={this.props.isLightTheme}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    settingsCascade={this.props.settingsCascade}
-                />
+                                            </div>
+                                        }
+                                    />
+                                )
+                        )}
+                    <FileLocations
+                        className="hierarchical-locations-view__content"
+                        location={this.props.location}
+                        locations={of(visibleLocations)}
+                        onSelect={this.props.onSelectLocation}
+                        icon={SourceRepositoryIcon}
+                        isLightTheme={this.props.isLightTheme}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        settingsCascade={this.props.settingsCascade}
+                        versionContext={this.props.versionContext}
+                    />
+                </div>
             </div>
         )
     }

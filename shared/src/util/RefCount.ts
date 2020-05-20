@@ -27,7 +27,7 @@ export class RefCount<T> implements Pick<Set<T>, 'keys' | 'delete'> {
     public decrement(key: T): boolean {
         const current = this.refCount.get(key)
         if (current === undefined) {
-            throw new Error(`No refCount for key: ${key}`)
+            throw new Error(`No refCount for key: ${String(key)}`)
         } else if (current === 1) {
             this.refCount.delete(key)
             return true

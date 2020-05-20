@@ -13,10 +13,6 @@ describe('Extensions controller', () => {
                 sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                 assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL),
             },
-            {
-                subjects: [],
-                final: '{}',
-            },
             false
         )
         return expect(

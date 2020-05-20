@@ -11,7 +11,6 @@ import (
 	"net/url"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,31 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
 
 var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of requests sent to repoupdater.")
 
-var (
-	// ErrNotFound is when a repository is not found.
-	ErrNotFound = errors.New("repository not found")
-
-	// ErrUnauthorized is when an authorization error occurred.
-	ErrUnauthorized = errors.New("not authorized")
-
-	// ErrTemporarilyUnavailable is when the repository was reported as being temporarily
-	// unavailable.
-	ErrTemporarilyUnavailable = errors.New("repository temporarily unavailable")
-)
-
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // REPO_UPDATER_URL environment variable.
 var DefaultClient = &Client{
 	URL: repoupdaterURL,
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
+		// ot.Transport will propagate opentracing spans and whether or not to trace
+		Transport: &ot.Transport{
 			RoundTripper: requestMeter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
@@ -89,7 +77,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -120,11 +108,20 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if err == nil && result != nil {
 		switch {
 		case result.ErrorNotFound:
-			err = ErrNotFound
+			err = &ErrNotFound{
+				Repo:       args.Repo,
+				IsNotFound: true,
+			}
 		case result.ErrorUnauthorized:
-			err = ErrUnauthorized
+			err = &ErrUnauthorized{
+				Repo:    args.Repo,
+				NoAuthz: true,
+			}
 		case result.ErrorTemporarilyUnavailable:
-			err = ErrTemporarilyUnavailable
+			err = &ErrTemporary{
+				Repo:        args.Repo,
+				IsTemporary: true,
+			}
 		}
 	}
 	return result, err
@@ -177,6 +174,64 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*p
 	return &res, nil
 }
 
+// MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
+var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
+
+func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
+	if MockEnqueueChangesetSync != nil {
+		return MockEnqueueChangesetSync(ctx, ids)
+	}
+
+	req := protocol.ChangesetSyncRequest{IDs: ids}
+	resp, err := c.httpPost(ctx, "enqueue-changeset-sync", req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.ChangesetSyncResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return err
+	}
+
+	if res.Error == "" {
+		return nil
+	}
+	return errors.New(res.Error)
+}
+
+func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "read response body")
+	}
+
+	var res protocol.PermsSyncResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return err
+	}
+
+	if res.Error == "" {
+		return nil
+	}
+	return errors.New(res.Error)
+}
+
 // SyncExternalService requests the given external service to be synced.
 func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
@@ -212,7 +267,7 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 
 // RepoExternalServices requests the external services associated with a
 // repository with the given id.
-func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.ExternalService, error) {
+func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api.ExternalService, error) {
 	req := protocol.RepoExternalServicesRequest{ID: id}
 	resp, err := c.httpPost(ctx, "repo-external-services", &req)
 	if err != nil {
@@ -237,7 +292,7 @@ func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.Ext
 
 // ExcludeRepo adds the repository with the given id to all of the
 // external services exclude lists that match its kind.
-func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeRepoResponse, error) {
+func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.ExcludeRepoResponse, error) {
 	if id == 0 {
 		return &protocol.ExcludeRepoResponse{}, nil
 	}
@@ -317,7 +372,7 @@ func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, er
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

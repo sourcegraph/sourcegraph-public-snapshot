@@ -28,6 +28,48 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestZoektResultCountFactor(t *testing.T) {
+	cases := []struct {
+		name     string
+		numRepos int
+		pattern  *search.TextPatternInfo
+		want     int
+	}{
+		{
+			name:     "One repo implies max scaling factor",
+			numRepos: 1,
+			pattern:  &search.TextPatternInfo{},
+			want:     100,
+		},
+		{
+			name:     "Eleven repos implies a scaling factor between min and max",
+			numRepos: 11,
+			pattern:  &search.TextPatternInfo{},
+			want:     8,
+		},
+		{
+			name:     "More than 500 repos implies a min scaling factor",
+			numRepos: 501,
+			pattern:  &search.TextPatternInfo{},
+			want:     1,
+		},
+		{
+			name:     "Setting a count greater than defautl max results (30) adapts scaling factor",
+			numRepos: 501,
+			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
+			want:     10,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := zoektResultCountFactor(tt.numRepos, tt.pattern)
+			if tt.want != got {
+				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
+			}
+		})
+	}
+}
+
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
@@ -127,86 +169,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 			}
 			if !queryEqual(got, q) {
 				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
-			}
-		})
-	}
-}
-
-func TestStructuralPatToZoektQuery(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Pattern  string
-		Function func(string) (zoektquery.Q, error)
-		Want     string
-	}{
-		{
-			Name:     "Just a hole",
-			Pattern:  ":[1]",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"()(?-s:.)*?()")`,
-		},
-		{
-			Name:     "Adjacent holes",
-			Pattern:  ":[1]:[2]:[3]",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"()(?-s:.)*?()(?-s:.)*?()(?-s:.)*?()")`,
-		},
-		{
-			Name:     "Substring between holes",
-			Pattern:  ":[1] substring :[2]",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+substring[\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
-		},
-		{
-			Name:     "Substring before and after different hole kinds",
-			Pattern:  "prefix :[[1]] :[2.] suffix",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(prefix[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+suffix)")`,
-		},
-		{
-			Name:     "Substrings covering all hole kinds.",
-			Pattern:  `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(1\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+2\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+3\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+4\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+5\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+6\\.[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+done\\.)")`,
-		},
-		{
-			Name:     "Substrings across multiple lines.",
-			Pattern:  ``,
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"()")`,
-		},
-		{
-			Name:     "Allow alphanumeric identifiers in holes",
-			Pattern:  "sub :[alphanum_ident_123] string",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(sub[\\t-\\n\\f-\\r ]+)(?-s:.)*?([\\t-\\n\\f-\\r ]+string)")`,
-		},
-
-		{
-			Name:     "Whitespace separated holes",
-			Pattern:  ":[1] :[2]",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"()(?-s:.)*?([\\t-\\n\\f-\\r ]+)(?-s:.)*?()")`,
-		},
-		{
-			Name:     "Expect newline separated pattern",
-			Pattern:  "ParseInt(:[stuff], :[x]) if err ",
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
-		},
-		{
-			Name: "Contiguous whitespace is replaced by regex",
-			Pattern: `ParseInt(:[stuff],    :[x])
-             if err `,
-			Function: StructuralPatToRegexpQuery,
-			Want:     `(and case_regex:"(ParseInt\\()(?-s:.)*?(,[\\t-\\n\\f-\\r ]+)(?-s:.)*?(\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+)")`,
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			got, _ := tt.Function(tt.Pattern)
-			if got.String() != tt.Want {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), tt.Want)
 			}
 		})
 	}
@@ -571,7 +533,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 
 	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	rr.SetIndexedHEADCommit("abc")
 	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
 
 	tests := []struct {
@@ -605,7 +566,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				since:           func(time.Time) time.Duration { return 4 * time.Second },
+				since:           func(time.Time) time.Duration { return time.Minute },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -916,7 +877,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 				Repo: r.Repo,
 				Revs: r.Revs,
 			}
-			rev.SetIndexedHEADCommit("deadbeef")
 			indexed = append(indexed, rev)
 		}
 		return indexed

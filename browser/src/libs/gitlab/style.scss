@@ -107,6 +107,8 @@
 }
 
 .code-view-toolbar--gitlab {
+    display: flex;
+
     // Same style as for Gitlab's svg icons
     img {
         vertical-align: baseline;

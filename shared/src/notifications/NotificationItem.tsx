@@ -2,11 +2,15 @@ import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { NotificationType } from '../api/client/services/notifications'
 import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
+import classNames from 'classnames'
 
-interface Props {
+export interface NotificationClassNameProps {
+    notificationClassNames: Record<sourcegraph.NotificationType, string>
+}
+
+interface Props extends NotificationClassNameProps {
     notification: Notification
     onDismiss: (notification: Notification) => void
     className?: string
@@ -39,7 +43,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     distinctUntilChanged(),
                     switchMap(progress =>
                         from(progress || []).pipe(
-                            // Hide progress bar and update message if error occured
+                            // Hide progress bar and update message if error occurred
                             // Merge new progress updates with previous
                             scan<sourcegraph.Progress, Required<sourcegraph.Progress>>(
                                 (current, { message = current.message, percentage = current.percentage }) => ({
@@ -68,16 +72,23 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         this.subscription.unsubscribe()
     }
     public render(): JSX.Element | null {
-        const bootstrapClass = getBootstrapClass(this.props.notification.type)
         return (
             <div
-                className={`sourcegraph-notification-item alert alert-${bootstrapClass} ${this.props.className || ''}`}
+                className={classNames(
+                    'sourcegraph-notification-item',
+                    this.props.className,
+                    this.props.notificationClassNames[this.props.notification.type]
+                )}
             >
                 <div className="sourcegraph-notification-item__body-container">
                     <div className="sourcegraph-notification-item__body">
                         <div
                             className="sourcegraph-notification-item__title"
-                            dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.notification.message || '') }}
+                            dangerouslySetInnerHTML={{
+                                __html: renderMarkdown(this.props.notification.message || '', {
+                                    allowDataUriLinksAndDownloads: true,
+                                }),
+                            }}
                         />
                         {this.state.progress && (
                             <div
@@ -100,7 +111,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     )}
                 </div>
                 {this.props.notification.progress && this.state.progress && (
-                    <div className="progress">
+                    <div className="sourcegraph-notification-item__progress progress">
                         <div
                             className="sourcegraph-notification-item__progressbar progress-bar"
                             // eslint-disable-next-line react/forbid-dom-props
@@ -113,22 +124,4 @@ export class NotificationItem extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void => this.props.onDismiss(this.props.notification)
-}
-
-/**
- * @returns The Bootstrap class that corresponds to {@link type}.
- */
-function getBootstrapClass(type: sourcegraph.NotificationType | undefined): string {
-    switch (type) {
-        case NotificationType.Error:
-            return 'danger'
-        case NotificationType.Warning:
-            return 'warning'
-        case NotificationType.Success:
-            return 'success'
-        case NotificationType.Info:
-            return 'info'
-        default:
-            return 'secondary'
-    }
 }

@@ -1,4 +1,4 @@
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
@@ -22,6 +22,8 @@ export class EventLogger implements TelemetryService {
     private anonUid?: string
 
     constructor() {
+        // EventLogger is never teared down
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(() => {
             this.log('BrowserExtensionConnectedToServer')
 

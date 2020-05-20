@@ -183,7 +183,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
     /**
      * linkRowClick is the click handler for <Link>
      */
-    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    private linkRowClick: React.MouseEventHandler<HTMLAnchorElement> = () => {
         this.props.setActiveNode(this.node)
         this.props.onSelect(this.node)
     }

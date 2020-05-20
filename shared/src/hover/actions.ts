@@ -1,7 +1,7 @@
-import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat } from 'rxjs'
 import {
     catchError,
     delay,
@@ -10,9 +10,10 @@ import {
     first,
     map,
     share,
-    startWith,
     switchMap,
     takeUntil,
+    scan,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
@@ -20,16 +21,16 @@ import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../backend/errors'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContext, PlatformContextProps } from '../platform/context'
+import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
+import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * This function is passed to {@link module:@sourcegraph/codeintellify.createHoverifier}, which uses it to fetch
@@ -64,7 +65,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParams>
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
-    hoverPosition: TextDocumentPositionParams
+    hoverPosition: TextDocumentPositionParams & URLToFileContext
 }
 
 /**
@@ -92,51 +93,55 @@ export function getHoverActionsContext(
           },
     hoverContext: HoveredToken & HoverContext
 ): Observable<Context<TextDocumentPositionParams>> {
-    const params: TextDocumentPositionParams = {
+    const params: TextDocumentPositionParams & URLToFileContext = {
         textDocument: { uri: makeRepoURI(hoverContext) },
         position: { line: hoverContext.line - 1, character: hoverContext.character - 1 },
+        part: hoverContext.part,
     }
     const definitionURLOrError = getDefinitionURL(
         { urlToFile, requestGraphQL },
         extensionsController.services,
         params
     ).pipe(
-        map(result => (result ? result.url : result)), // we only care about the URL or null, not whether there are multiple
-        catchError(err => [asError(err) as ErrorLike]),
+        catchError((err): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(err) }]),
         share()
     )
 
     return combineLatest([
-        // the fairly long LOADER_DELAY has elapsed.
-        merge(
-            [undefined], // don't block on the first emission
-            of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError)),
-            definitionURLOrError
-        ),
+        // definitionURLOrError:
+        definitionURLOrError.pipe(emitLoading<UIDefinitionURL | ErrorLike, null>(LOADER_DELAY, null)),
 
+        // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
         extensionsController.services.textDocumentReferences
             .providersForDocument(params.textDocument)
             .pipe(map(providers => providers.length !== 0)),
 
+        // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is
         // punctuation or something else that has no meaningful references. This reduces UI jitter when it can be
         // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
         // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
         merge(
-            of(true).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError.pipe(filter(v => !!v)))),
+            [false],
+            of(true).pipe(
+                delay(LOADER_DELAY),
+                takeUntil(definitionURLOrError.pipe(filter(({ result }) => result !== null)))
+            ),
             definitionURLOrError.pipe(
-                filter(v => !!v),
-                map(v => !!v)
+                filter(({ result }) => result !== null),
+                mapTo(true)
             )
-        ).pipe(startWith(false)),
+        ),
     ]).pipe(
         map(
             ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
                 'goToDefinition.showLoading': definitionURLOrError === LOADING,
                 'goToDefinition.url':
-                    (definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError) ||
+                    (definitionURLOrError !== LOADING &&
+                        !isErrorLike(definitionURLOrError) &&
+                        definitionURLOrError?.url) ||
                     null,
                 'goToDefinition.notFound':
                     definitionURLOrError !== LOADING &&
@@ -146,7 +151,10 @@ export function getHoverActionsContext(
 
                 'findReferences.url':
                     hasReferenceProvider && showFindReferences
-                        ? urlToFile({ ...hoverContext, position: hoverContext, viewState: 'references' })
+                        ? urlToFile(
+                              { ...hoverContext, position: hoverContext, viewState: 'references' },
+                              { part: hoverContext.part }
+                          )
                         : null,
 
                 // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
@@ -155,6 +163,18 @@ export function getHoverActionsContext(
         ),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
+}
+
+export interface UIDefinitionURL {
+    /**
+     * The target browser URL to navigate to when go to definition is invoked.
+     */
+    url: string
+
+    /**
+     * Whether the URL refers to a definition panel that shows multiple definitions.
+     */
+    multiple: boolean
 }
 
 /**
@@ -174,72 +194,91 @@ export function getDefinitionURL(
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
-    params: TextDocumentPositionParams
-): Observable<{ url: string; multiple: boolean } | null> {
+    params: TextDocumentPositionParams & URLToFileContext
+): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
     return textDocumentDefinition.getLocations(params).pipe(
-        switchMap(locations => locations),
-        switchMap(definitions => {
-            if (definitions === null || definitions.length === 0) {
-                return of(null)
-            }
-
-            // Get unique definitions.
-            definitions = uniqWith(definitions, isEqual)
-
-            if (definitions.length > 1) {
-                // Open the panel to show all definitions.
-                const uri = withWorkspaceRootInputRevision(
-                    workspace.roots.value || [],
-                    parseRepoURI(params.textDocument.uri)
-                )
-                return of({
-                    url: urlToFile({
-                        ...uri,
-                        rev: uri.rev || '',
-                        filePath: uri.filePath || '',
-                        position: { line: params.position.line + 1, character: params.position.character + 1 },
-                        viewState: 'def',
-                    }),
-                    multiple: true,
-                })
-            }
-            const def = definitions[0]
-
-            // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
-            // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
-            // branch name to a URL with a full Git commit SHA.
-            const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
-
-            if (def.range) {
-                uri.position = {
-                    line: def.range.start.line + 1,
-                    character: def.range.start.character + 1,
+        switchMap(
+            ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
+                if (definitions.length === 0) {
+                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }
-            }
 
-            // When returning a single definition, include the repo's
-            // `rawRepoName`, to allow building URLs on the code host.
-            return resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
-                // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
-                // we're executing in a browser extension pointed to the public sourcegraph.com,
-                // in which case repoName === rawRepoName.
-                catchError(err => {
-                    if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                        return [uri.repoName]
+                // Get unique definitions.
+                definitions = uniqWith(definitions, isEqual)
+
+                if (definitions.length > 1) {
+                    // Open the panel to show all definitions.
+                    const uri = withWorkspaceRootInputRevision(
+                        workspace.roots.value || [],
+                        parseRepoURI(params.textDocument.uri)
+                    )
+                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({
+                        isLoading,
+                        result: {
+                            url: urlToFile(
+                                {
+                                    ...uri,
+                                    rev: uri.rev || '',
+                                    filePath: uri.filePath || '',
+                                    position: {
+                                        line: params.position.line + 1,
+                                        character: params.position.character + 1,
+                                    },
+                                    viewState: 'def',
+                                },
+                                { part: params.part }
+                            ),
+                            multiple: true,
+                        },
+                    })
+                }
+                const def = definitions[0]
+
+                // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
+                // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
+                // branch name to a URL with a full Git commit SHA.
+                const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
+
+                if (def.range) {
+                    uri.position = {
+                        line: def.range.start.line + 1,
+                        character: def.range.start.character + 1,
                     }
-                    throw err
-                }),
-                map(rawRepoName => ({
-                    url: urlToFile({
-                        ...uri,
-                        rev: uri.rev || '',
-                        filePath: uri.filePath || '',
-                        rawRepoName,
-                    }),
-                    multiple: false,
-                }))
-            )
-        })
+                }
+
+                // When returning a single definition, include the repo's
+                // `rawRepoName`, to allow building URLs on the code host.
+                return concat(
+                    // While we resolve the raw repo name, emit isLoading with the previous result
+                    // (merged in the scan() below)
+                    [{ isLoading: true }],
+                    resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
+                        // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
+                        // we're executing in a browser extension pointed to the public sourcegraph.com,
+                        // in which case repoName === rawRepoName.
+                        catchError(err => {
+                            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+                                return [uri.repoName]
+                            }
+                            throw err
+                        }),
+                        map(rawRepoName => ({
+                            url: urlToFile(
+                                { ...uri, rev: uri.rev || '', filePath: uri.filePath || '', rawRepoName },
+                                { part: params.part }
+                            ),
+                            multiple: false,
+                        })),
+                        map(result => ({ isLoading, result }))
+                    )
+                )
+            }
+        ),
+        // Merge partial updates
+        scan(
+            (previous, current) => ({ ...previous, ...current }),
+            ((): MaybeLoadingResult<UIDefinitionURL | null> => ({ isLoading: true, result: null }))()
+        )
     )
 }
 
@@ -250,6 +289,7 @@ export function registerHoverContributions({
     extensionsController,
     platformContext: { urlToFile, requestGraphQL },
     history,
+    locationAssign,
 }: (
     | (ExtensionsControllerProps & PlatformContextProps)
     | {
@@ -265,6 +305,8 @@ export function registerHoverContributions({
       }
 ) & {
     history: H.History
+    /** Implementation of `window.location.assign()` used to navigate to external URLs. */
+    locationAssign: typeof location.assign
 }): Unsubscribable {
     const subscriptions = new Subscription()
 
@@ -332,13 +374,13 @@ export function registerHoverContributions({
         extensionsController.services.commands.registerCommand({
             command: 'goToDefinition',
             run: async (paramsStr: string) => {
-                const params: TextDocumentPositionParams = JSON.parse(paramsStr)
-                const result = await getDefinitionURL(
+                const params: TextDocumentPositionParams & URLToFileContext = JSON.parse(paramsStr)
+                const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,
                     params
                 )
-                    .pipe(first())
+                    .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
                     .toPromise()
                 if (!result) {
                     throw new Error('No definition found.')
@@ -357,7 +399,13 @@ export function registerHoverContributions({
                     }
                     throw new Error('Already at the definition.')
                 }
-                history.push(result.url)
+                if (isExternalLink(result.url)) {
+                    // External links must be navigated to through the browser
+                    locationAssign(result.url)
+                } else {
+                    // Use history library to handle in-app navigation
+                    history.push(result.url)
+                }
             },
         })
     )

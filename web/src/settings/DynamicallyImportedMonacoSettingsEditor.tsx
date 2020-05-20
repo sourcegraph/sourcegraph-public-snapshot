@@ -27,6 +27,14 @@ interface Props
 
     className?: string
 
+    /**
+     * Block navigation if the editor contents were changed.
+     * Set to `false` if another component already blocks navigation.
+     *
+     * @default true
+     */
+    blockNavigationIfDirty?: boolean
+
     onSave?: (value: string) => void
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
@@ -52,18 +60,20 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private configEditor?: _monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
-        // Prevent navigation when dirty.
-        this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
-                if (action === 'REPLACE') {
-                    return undefined
-                }
-                if (this.props.loading || this.isDirty) {
-                    return 'Discard changes?'
-                }
-                return undefined // allow navigation
-            })
-        )
+        if (this.props.blockNavigationIfDirty !== false) {
+            // Prevent navigation when dirty.
+            this.subscriptions.add(
+                this.props.history.block((location: H.Location, action: H.Action) => {
+                    if (action === 'REPLACE') {
+                        return undefined
+                    }
+                    if (this.props.loading || this.isDirty) {
+                        return 'Discard changes?'
+                    }
+                    return undefined // allow navigation
+                })
+            )
+        }
     }
 
     public componentWillUnmount(): void {
@@ -86,7 +96,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                 {this.props.canEdit && (
                     <SaveToolbar
                         dirty={isDirty}
-                        disabled={this.props.loading || this.props.saving || !isDirty}
                         saving={this.props.saving}
                         onSave={this.onSave}
                         onDiscard={this.discard}
@@ -186,7 +195,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
             const action = editor.getAction(id)
             action.run().then(
                 () => undefined,
-                (err: any) => console.error(err)
+                err => console.error(err)
             )
         } else {
             alert('Wait for editor to load before running action.')

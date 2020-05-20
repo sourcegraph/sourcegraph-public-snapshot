@@ -9,9 +9,8 @@ import {
     toPositionHashComponent,
 } from '../../../shared/src/util/url'
 
-export function toTreeURL(ctx: RepoFile): string {
-    const rev = ctx.commitID || ctx.rev || ''
-    return `/${encodeRepoRev(ctx.repoName, rev)}/-/tree/${ctx.filePath}`
+export function toTreeURL(target: RepoFile): string {
+    return `/${encodeRepoRev(target)}/-/tree/${target.filePath}`
 }
 
 /**
@@ -50,10 +49,10 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
  */
 export function replaceRevisionInURL(href: string, newRev: string): string {
     const parsed = parseBrowserRepoURL(href)
-    const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
+    const repoRev = `/${encodeRepoRev(parsed)}`
 
     const u = new URL(href, window.location.href)
-    u.pathname = `/${encodeRepoRev(parsed.repoName, newRev)}${u.pathname.slice(repoRev.length)}`
+    u.pathname = `/${encodeRepoRev({ ...parsed, rev: newRev })}${u.pathname.slice(repoRev.length)}`
     return `${u.pathname}${u.search}${u.hash}`
 }
 
@@ -141,7 +140,7 @@ export interface ParsedRepoRev {
  * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
  */
 export function parseRepoRev(repoRev: string): ParsedRepoRev {
-    const [repo, rev] = repoRev.split('@', 2)
+    const [repo, rev] = repoRev.split('@', 2) as [string, string | undefined]
     return {
         repoName: decodeURIComponent(repo),
         rev: rev && decodeURIComponent(rev),

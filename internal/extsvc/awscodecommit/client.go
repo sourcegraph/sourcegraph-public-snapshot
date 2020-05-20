@@ -1,6 +1,7 @@
 package awscodecommit
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 
@@ -33,8 +34,8 @@ func NewClient(config aws.Config) *Client {
 // cacheKeyPrefix returns the cache key prefix to use. It incorporates the credentials to
 // avoid leaking cached data that was fetched with one set of credentials to a (possibly
 // different) user with a different set of credentials.
-func (c *Client) cacheKeyPrefix() (string, error) {
-	cred, err := c.aws.Credentials.Retrieve() // typically instant, or at least cached and fast
+func (c *Client) cacheKeyPrefix(ctx context.Context) (string, error) {
+	cred, err := c.aws.Credentials.Retrieve(ctx) // typically instant, or at least cached and fast
 	if err != nil {
 		return "", err
 	}

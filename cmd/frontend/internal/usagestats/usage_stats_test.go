@@ -1,52 +1,103 @@
 package usagestats
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func TestStartOfWeek(t *testing.T) {
-	defer func() {
-		timeNow = time.Now
-	}()
+func TestGetArchive(t *testing.T) {
+	setupForTest(t)
 
-	want := time.Date(2020, 1, 19, 0, 0, 0, 0, time.UTC)
+	now := time.Now().UTC()
+	ctx := context.Background()
 
-	mockTimeNow(time.Date(2020, 1, 19, 5, 30, 10, 0, time.UTC))
-	got := startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	user, err := db.Users.Create(ctx, db.NewUser{
+		Email:           "foo@bar.com",
+		Username:        "admin",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	mockTimeNow(time.Date(2020, 1, 23, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	event := &db.Event{
+		Name:      "SearchResultsQueried",
+		URL:       "test",
+		UserID:    uint32(user.ID),
+		Source:    "test",
+		Timestamp: now,
 	}
 
-	mockTimeNow(time.Date(2020, 1, 25, 23, 59, 59, 0, time.UTC))
-	got = startOfWeek(0)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	err = db.EventLogs.Insert(ctx, event)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	mockTimeNow(time.Date(2020, 1, 28, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(1)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	dates, err := db.Users.ListDates(ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	mockTimeNow(time.Date(2021, 1, 19, 0, 0, 0, 0, time.UTC))
-	got = startOfWeek(52)
-	if !want.Equal(got) {
-		t.Fatalf("got %s, want %s", got.Format(time.RFC3339), want.Format(time.RFC3339))
+	archive, err := GetArchive(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"UsersUsageCounts.csv": fmt.Sprintf("date,user_id,search_count,code_intel_count\n%s,%d,%d,%d\n",
+			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+			event.UserID,
+			1,
+			0,
+		),
+		"UsersDates.csv": fmt.Sprintf("user_id,created_at,deleted_at\n%d,%s,%s\n",
+			dates[0].UserID,
+			dates[0].CreatedAt.Format(time.RFC3339),
+			"NULL",
+		),
+	}
+
+	for _, f := range zr.File {
+		content, ok := want[f.Name]
+		if !ok {
+			continue
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, err := ioutil.ReadAll(rc)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		delete(want, f.Name)
+
+		if content != string(have) {
+			t.Errorf("%q has wrong content:\nwant: %s\nhave: %s", f.Name, content, string(have))
+		}
+	}
+
+	for file := range want {
+		t.Errorf("Missing file from ZIP archive %q", file)
 	}
 }
 
@@ -101,7 +152,7 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "SearchSubmitted", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +262,7 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 }
 
 func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
-	MockStageUniques = func(_ time.Time) (*types.Stages, error) {
+	MockStageUniqueUsers = func(_ time.Time) (*types.Stages, error) {
 		return nil, nil
 	}
 

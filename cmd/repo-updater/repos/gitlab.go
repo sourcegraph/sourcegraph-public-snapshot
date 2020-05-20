@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A GitLabSource yields repositories from a single GitLab connection configured
@@ -24,7 +24,7 @@ import (
 type GitLabSource struct {
 	svc                 *ExternalService
 	config              *schema.GitLabConnection
-	exclude             map[string]bool
+	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
 	client              *gitlab.Client
@@ -60,15 +60,14 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate and cache user-defined name transformations.
@@ -131,6 +130,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
+		Private:      proj.Visibility == "private",
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -161,7 +161,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude[p.PathWithNamespace] || s.exclude[strconv.Itoa(p.ID)]
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

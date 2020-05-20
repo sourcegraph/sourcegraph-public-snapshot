@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func canSendEmail(ctx context.Context) error {

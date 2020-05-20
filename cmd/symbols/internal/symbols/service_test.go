@@ -4,41 +4,24 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
-	"os/exec"
-	"path"
 	"reflect"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 func init() {
-	if libSqlite3Pcre == "" {
-		repositoryRoot, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
-		if err != nil {
-			panic("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and you're not in the git repository, which is where the library is expected to be.")
-		}
-		if runtime.GOOS == "darwin" {
-			libSqlite3Pcre = path.Join(strings.TrimSpace(string(repositoryRoot)), "libsqlite3-pcre.dylib")
-		} else {
-			libSqlite3Pcre = path.Join(strings.TrimSpace(string(repositoryRoot)), "libsqlite3-pcre.so")
-		}
-		if _, err := os.Stat(libSqlite3Pcre); os.IsNotExist(err) {
-			panic(fmt.Errorf("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and %s doesn't exist at the root of the repository - try building it with `./cmd/symbols/build.sh buildLibsqlite3Pcre`", libSqlite3Pcre))
-		}
-	}
+	sqliteutil.SetLocalLibpath()
 }
 
 func TestIsLiteralEquality(t *testing.T) {
@@ -74,7 +57,7 @@ func TestIsLiteralEquality(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	MustRegisterSqlite3WithPcre()
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {

@@ -29,23 +29,22 @@ Ensure the following values are set for the application configuration in the ide
 ## 2. Add a SAML auth provider to Sourcegraph site configuration
 
 1. In Sourcegraph [site config](../../config/site_config.md), ensure `externalURL` is set to a value (with no trailing slash) consistent with the URL you used in the previous section in the identity provider configuration.
-
 1. Add an item to `auth.providers` with `type` "saml" and *either* `identityProviderMetadataURL` or `identityProviderMetadata` set. The former is preferred, but not all identity providers support it (it is sometimes called "App Federation Metadata URL" or just "SAML metadata URL"). Here are some examples of what your site config might look like:
 
 Example 1:
 
-   ```json
-   {
-    // ...
-    "externalURL": "https://sourcegraph.example.com",
-    "auth.providers": [
-      {
-        "type": "saml",
-        "identityProviderMetadataURL": "https://example.com/saml-metadata"
-      }
-    ]
-   }
-   ```
+```json
+{
+  // ...
+  "externalURL": "https://sourcegraph.example.com",
+  "auth.providers": [
+    {
+      "type": "saml",
+      "identityProviderMetadataURL": "https://example.com/saml-metadata"
+    }
+  ]
+}
+```
 
 Example 2:
 
@@ -60,7 +59,7 @@ Example 2:
       // This is a long XML string you download from your identity provider.
       // You can escape it to a JSON string using a tool like
       // https://json-escape-text.now.sh.
-      "identityProviderMetadataURL": "<?xml version=\"1.0\" encoding=\"utf-8\"?><EntityDescriptor ID=\"_86c6d3fd-e0a9-4b99-b830-40b248003fb9\" entityID=\"https://sts.windows.net/6c1b91af-8e37-4921-bbfa-ef68aa2e2d1e/\" xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\" /><SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256\" /><Reference URI=\"#_86c6d3fd-e0a9-4b99-b830-40b248003fb9\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\" /><Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\" /></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#sha256\" /><DigestValue> ..."
+      "identityProviderMetadata": "<?xml version=\"1.0\" encoding=\"utf-8\"?><EntityDescriptor ID=\"_86c6d3fd-e0a9-4b99-b830-40b248003fb9\" entityID=\"https://sts.windows.net/6c1b91af-8e37-4921-bbfa-ef68aa2e2d1e/\" xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\" /><SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256\" /><Reference URI=\"#_86c6d3fd-e0a9-4b99-b830-40b248003fb9\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\" /><Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\" /></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#sha256\" /><DigestValue> ..."
     }
   ]
 }

@@ -1,14 +1,14 @@
 package bitbucketserver
 
 import (
-	"database/sql"
 	"fmt"
-	"net/url"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -19,11 +19,12 @@ import (
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
 	conns []*schema.BitbucketServerConnection,
-	db *sql.DB,
+	db dbutil.DB,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username)
+		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
+		p, err := newAuthzProvider(db, c, pluginPerm)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -41,22 +42,22 @@ func NewAuthzProviders(
 }
 
 func newAuthzProvider(
-	db *sql.DB,
-	a *schema.BitbucketServerAuthorization,
-	instanceURL, username string,
+	db dbutil.DB,
+	c *schema.BitbucketServerConnection,
+	pluginPerm bool,
 ) (authz.Provider, error) {
-	if a == nil {
+	if c.Authorization == nil {
 		return nil, nil
 	}
 
 	errs := new(multierror.Error)
 
-	ttl, err := iauthz.ParseTTL(a.Ttl)
+	ttl, err := iauthz.ParseTTL(c.Authorization.Ttl)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
 
-	hardTTL, err := iauthz.ParseTTL(a.HardTTL)
+	hardTTL, err := iauthz.ParseTTL(c.Authorization.HardTTL)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -65,22 +66,16 @@ func newAuthzProvider(
 		errs = multierror.Append(errs, errors.Errorf("authorization.hardTTL: must be larger than ttl"))
 	}
 
-	baseURL, err := url.Parse(instanceURL)
+	cli, err := bitbucketserver.NewClient(c, nil)
 	if err != nil {
 		errs = multierror.Append(errs, err)
-	}
-
-	cli := bitbucketserver.NewClient(baseURL, nil)
-	cli.Username = username
-
-	if err = cli.SetOAuth(a.Oauth.ConsumerKey, a.Oauth.SigningKey); err != nil {
-		errs = multierror.Append(errs, errors.Wrap(err, "authorization.oauth.signingKey"))
+		return nil, errs.ErrorOrNil()
 	}
 
 	var p authz.Provider
-	switch idp := a.IdentityProvider; {
+	switch idp := c.Authorization.IdentityProvider; {
 	case idp.Username != nil:
-		p = NewProvider(cli, db, ttl, hardTTL)
+		p = NewProvider(cli, db, ttl, hardTTL, pluginPerm)
 	default:
 		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
@@ -91,6 +86,6 @@ func newAuthzProvider(
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateAuthz(c *schema.BitbucketServerConnection) error {
-	_, err := newAuthzProvider(nil, c.Authorization, c.Url, c.Username)
+	_, err := newAuthzProvider(nil, c, false)
 	return err
 }

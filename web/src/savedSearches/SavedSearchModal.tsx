@@ -93,7 +93,9 @@ export class SavedSearchModal extends React.Component<Props, State> {
             this.props.history.push(
                 this.state.saveLocation.toLowerCase() === 'user'
                     ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
-                    : `/organizations/${this.state.organization}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
+                    : `/organizations/${this.state.organization!}/searches/add?query=${encodedQuery}&patternType=${
+                          this.props.patternType
+                      }`
             )
         }
     }

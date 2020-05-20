@@ -38,16 +38,6 @@ func (Repo) Fork() bool {
 	return false
 }
 
-// InsertRepoOp represents an operation to insert a repository.
-type InsertRepoOp struct {
-	Name         RepoName
-	Description  string
-	Fork         bool
-	Archived     bool
-	Enabled      bool
-	ExternalRepo ExternalRepoSpec
-}
-
 // ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
 type ExternalRepoSpec struct {
 	// ID is the repository's ID on the external service. Its value is opaque except to the repo-updater.

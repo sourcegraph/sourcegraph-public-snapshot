@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
-	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	nettrace "golang.org/x/net/trace"
 )
 
 // startParsers starts the parser process pool.
@@ -38,7 +38,7 @@ func (s *Service) startParsers() error {
 }
 
 func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
+	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -49,7 +49,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	span.SetTag("repo", string(repo))
 	span.SetTag("commit", string(commitID))
 
-	tr := trace.New("parseUncached", string(repo))
+	tr := nettrace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 
 	totalSymbols := 0
@@ -192,28 +192,20 @@ func entryToSymbol(e ctags.Entry) protocol.Symbol {
 
 var (
 	parsing = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parsing",
-		Help:      "The number of parse jobs currently running.",
+		Name: "symbols_parse_parsing",
+		Help: "The number of parse jobs currently running.",
 	})
 	parseQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_queue_size",
-		Help:      "The number of parse jobs enqueued.",
+		Name: "symbols_parse_parse_queue_size",
+		Help: "The number of parse jobs enqueued.",
 	})
 	parseQueueTimeouts = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_queue_timeouts",
-		Help:      "The total number of parse jobs that timed out while enqueued.",
+		Name: "symbols_parse_parse_queue_timeouts",
+		Help: "The total number of parse jobs that timed out while enqueued.",
 	})
 	parseFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "parse",
-		Name:      "parse_failed",
-		Help:      "The total number of parse jobs that failed.",
+		Name: "symbols_parse_parse_failed",
+		Help: "The total number of parse jobs that failed.",
 	})
 )
 

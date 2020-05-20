@@ -1,5 +1,0 @@
-{
-  "extends": ["../tslint.config.js"],
-  "linterOptions": { "exclude": ["node_modules/**", "coverage/**"] },
-  "rules": {}
-}

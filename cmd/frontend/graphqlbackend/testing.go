@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 )
 
 var (

@@ -15,7 +15,7 @@
 //
 // EXAMPLE
 //
-//   go run ./pkg/license/generate-license.go -private-key key.pem -tags=dev -users=100 -expires=8784h
+//   go run generate-license.go -private-key key.pem -tags=dev -users=100 -expires=8784h
 package main
 
 import (

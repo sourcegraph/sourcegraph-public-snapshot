@@ -1,99 +1,26 @@
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
+import React, { useCallback } from 'react'
 import { RouteComponentProps, Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { Observable, Subject, Subscription, concat, from } from 'rxjs'
+import { map, tap, filter, switchMap, mapTo, catchError } from 'rxjs/operators'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
+import { createAggregateError, isErrorLike, asError, ErrorLike } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { ErrorAlert } from '../components/alerts'
+import { useEventObservable } from '../../../shared/src/util/useObservable'
+import * as H from 'history'
 
-interface ExternalServiceNodeProps {
-    node: GQL.IExternalService
-    onDidUpdate: () => void
-}
-
-interface ExternalServiceNodeState {
-    loading: boolean
-    errorDescription?: string
-}
-
-class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, ExternalServiceNodeState> {
-    public state: ExternalServiceNodeState = {
-        loading: false,
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <li
-                className="external-service-node list-group-item py-2"
-                data-e2e-external-service-name={this.props.node.displayName}
-            >
-                <div className="d-flex align-items-center justify-content-between">
-                    <div>{this.props.node.displayName}</div>
-                    <div>
-                        <Link
-                            className="btn btn-secondary btn-sm e2e-edit-external-service-button"
-                            to={`/site-admin/external-services/${this.props.node.id}`}
-                            data-tooltip="External service settings"
-                        >
-                            <SettingsIcon className="icon-inline" /> Edit
-                        </Link>{' '}
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-danger e2e-delete-external-service-button"
-                            onClick={this.deleteExternalService}
-                            disabled={this.state.loading}
-                            data-tooltip="Delete external service"
-                        >
-                            <DeleteIcon className="icon-inline" />
-                        </button>
-                    </div>
-                </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
-            </li>
-        )
-    }
-
-    private deleteExternalService = (): void => {
-        if (!window.confirm(`Delete the external service ${this.props.node.displayName}?`)) {
-            return
-        }
-
-        this.setState({
-            errorDescription: undefined,
-            loading: true,
-        })
-
-        deleteExternalService(this.props.node.id)
-            .toPromise()
-            .then(
-                () => {
-                    // Refresh site flags so that global site alerts
-                    // reflect the latest configuration.
-                    refreshSiteFlags().subscribe({ error: err => console.error(err) })
-
-                    this.setState({ loading: false })
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                err => this.setState({ loading: false, errorDescription: err.message })
-            )
-    }
-}
-
-function deleteExternalService(externalService: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+async function deleteExternalService(externalService: GQL.ID): Promise<void> {
+    const result = await mutateGraphQL(
         gql`
             mutation DeleteExternalService($externalService: ID!) {
                 deleteExternalService(externalService: $externalService) {
@@ -102,26 +29,73 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
             }
         `,
         { externalService }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteExternalService) {
-                throw createInvalidGraphQLMutationResponseError('DeleteExternalService')
-            }
-        })
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
+interface ExternalServiceNodeProps {
+    node: GQL.IExternalService
+    onDidUpdate: () => void
+    history: H.History
+}
+
+const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({ node, onDidUpdate, history }) => {
+    const [nextDeleteClick, deletedOrError] = useEventObservable(
+        useCallback(
+            (clicks: Observable<React.MouseEvent>) =>
+                clicks.pipe(
+                    filter(() => window.confirm(`Delete the external service ${node.displayName}?`)),
+                    switchMap(() =>
+                        concat(
+                            ['in-progress' as const],
+                            from(deleteExternalService(node.id)).pipe(
+                                mapTo(true as const),
+                                catchError((error): [ErrorLike] => [asError(error)])
+                            )
+                        )
+                    ),
+                    tap(onDidUpdate),
+                    tap(() => refreshSiteFlags().subscribe())
+                ),
+            [node.displayName, node.id, onDidUpdate]
+        )
+    )
+
+    return (
+        <li className="external-service-node list-group-item py-2" data-e2e-external-service-name={node.displayName}>
+            <div className="d-flex align-items-center justify-content-between">
+                <div>{node.displayName}</div>
+                <div>
+                    <Link
+                        className="btn btn-secondary btn-sm e2e-edit-external-service-button"
+                        to={`/site-admin/external-services/${node.id}`}
+                        data-tooltip="External service settings"
+                    >
+                        <SettingsIcon className="icon-inline" /> Edit
+                    </Link>{' '}
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-danger e2e-delete-external-service-button"
+                        onClick={nextDeleteClick}
+                        disabled={deletedOrError === 'in-progress'}
+                        data-tooltip="Delete external service"
+                    >
+                        <DeleteIcon className="icon-inline" />
+                    </button>
+                </div>
+            </div>
+            {isErrorLike(deletedOrError) && <ErrorAlert className="mt-2" error={deletedOrError} history={history} />}
+        </li>
     )
 }
 
-interface Props extends RouteComponentProps<{}>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {
+    history: H.History
+}
 
 interface State {
     noExternalServices?: boolean
 }
-
-class FilteredExternalServiceConnection extends FilteredConnection<
-    GQL.IExternalService,
-    Pick<ExternalServiceNodeProps, 'onDidUpdate'>
-> {}
 
 /**
  * A page displaying the external services on this site.
@@ -138,13 +112,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalServices')
         this.subscriptions.add(
-            this.queryExternalServices({ first: 1 })
-                .pipe(
-                    tap(externalServicesResult =>
-                        this.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
-                    )
-                )
-                .subscribe()
+            this.queryExternalServices({ first: 1 }).subscribe(externalServicesResult =>
+                this.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
+            )
         )
     }
 
@@ -186,8 +156,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         )
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
+        const nodeProps: Omit<ExternalServiceNodeProps, 'node'> = {
             onDidUpdate: this.onDidUpdateExternalServices,
+            history: this.props.history,
         }
 
         if (this.state.noExternalServices) {
@@ -206,7 +177,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                     </Link>
                 </div>
                 <p className="mt-2">Manage code host connections to sync repositories.</p>
-                <FilteredExternalServiceConnection
+                <FilteredConnection<GQL.IExternalService, Omit<ExternalServiceNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"

@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -45,11 +47,18 @@ func TestParseIncludePattern(t *testing.T) {
 		`github.com`:  {regexp: `github.com`},
 		`github\.com`: {like: []string{`%github.com%`}},
 
+		// https://github.com/sourcegraph/sourcegraph/issues/9146
+		`github.com/.*/ini$`:      {regexp: `github.com/.*/ini$`},
+		`github\.com/.*/ini$`:     {regexp: `github\.com/.*/ini$`},
+		`github\.com/go-ini/ini$`: {like: []string{`%github.com/go-ini/ini`}},
+
 		// https://github.com/sourcegraph/sourcegraph/issues/4166
-		`golang/oauth.*`:       {like: []string{"%golang/oauth%"}},
-		`^golang/oauth.*`:      {like: []string{"golang/oauth%"}},
-		`golang/(oauth.*|bla)`: {like: []string{"%golang/oauth%", "%golang/bla%"}},
-		`golang/(oauth|bla)`:   {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/oauth.*`:                    {like: []string{"%golang/oauth%"}},
+		`^golang/oauth.*`:                   {like: []string{"golang/oauth%"}},
+		`golang/(oauth.*|bla)`:              {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/(oauth|bla)`:                {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
+		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
@@ -58,21 +67,25 @@ func TestParseIncludePattern(t *testing.T) {
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
 	}
 	for pattern, want := range tests {
-		t.Run(pattern, func(t *testing.T) {
-			exact, like, regexp, err := parseIncludePattern(pattern)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(exact, want.exact) {
-				t.Errorf("got exact %q, want %q", exact, want.exact)
-			}
-			if !reflect.DeepEqual(like, want.like) {
-				t.Errorf("got like %q, want %q", like, want.like)
-			}
-			if regexp != want.regexp {
-				t.Errorf("got regexp %q, want %q", regexp, want.regexp)
-			}
-		})
+		exact, like, regexp, err := parseIncludePattern(pattern)
+		if err != nil {
+			t.Fatal(pattern, err)
+		}
+		if !reflect.DeepEqual(exact, want.exact) {
+			t.Errorf("got exact %q, want %q for %s", exact, want.exact, pattern)
+		}
+		if !reflect.DeepEqual(like, want.like) {
+			t.Errorf("got like %q, want %q for %s", like, want.like, pattern)
+		}
+		if regexp != want.regexp {
+			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
+		}
+		if qs, err := parsePattern(pattern); err != nil {
+			t.Fatal(pattern, err)
+		} else if testing.Verbose() {
+			q := sqlf.Join(qs, "AND")
+			t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+		}
 	}
 }
 
@@ -90,7 +103,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -131,7 +144,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -150,7 +163,7 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +183,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -194,5 +207,38 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
 		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
+	}
+}
+
+func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	i := 0
+	for _, fork := range []bool{true, false} {
+		for _, archived := range []bool{true, false} {
+			i++
+			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
+
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+				t.Fatal(err)
+			}
+
+			rp, err := Repos.GetByName(ctx, name)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rp.Fork != fork {
+				t.Fatalf("rp.Fork: %v != %v", rp.Fork, fork)
+			}
+			if rp.Archived != archived {
+				t.Fatalf("rp.Archived: %v != %v", rp.Archived, archived)
+			}
+		}
 	}
 }

@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type Test struct {
@@ -292,7 +292,12 @@ func TestUrlRedactor(t *testing.T) {
 		{
 			url:      "http://user:password@github.com/foo/bar/",
 			message:  "fatal: repository 'http://user:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>:<redacted>@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://user:<redacted>@github.com/foo/bar/' not found",
+		},
+		{
+			url:      "http://git:password@github.com/foo/bar/",
+			message:  "fatal: repository 'http://git:password@github.com/foo/bar/' not found",
+			redacted: "fatal: repository 'http://git:<redacted>@github.com/foo/bar/' not found",
 		},
 		{
 			url:      "http://token@github.com///repo//nick/",
@@ -311,32 +316,38 @@ func TestUrlRedactor(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
-			t.Errorf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
-		}
+		t.Run("", func(t *testing.T) {
+			if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
+				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
+			}
+		})
 	}
 }
 
+func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+	t.Helper()
+	c := exec.Command(cmd, arg...)
+	c.Dir = dir
+	c.Env = []string{
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+	}
+	b, err := c.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
+	}
+	return string(b)
+}
+
 func TestCloneRepo(t *testing.T) {
-	remote, cleanup1 := tmpDir(t)
-	defer cleanup1()
+	remote := tmpDir(t)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = repo
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, repo, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.
@@ -348,8 +359,7 @@ func TestCloneRepo(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir, cleanup2 := tmpDir(t)
-	defer cleanup2()
+	reposDir := tmpDir(t)
 
 	s := &Server{
 		ReposDir:         reposDir,
@@ -407,25 +417,12 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestRemoveBadRefs(t *testing.T) {
-	dir, cleanup := tmpDir(t)
-	defer cleanup()
+	dir := tmpDir(t)
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = dir
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, dir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can add bad refs

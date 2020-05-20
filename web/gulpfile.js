@@ -24,9 +24,9 @@ const logWebpackStats = stats => {
 
 async function webpack() {
   const compiler = createWebpackCompiler(webpackConfig)
-  /** @type {import('webpack')} */
+  /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
-    compiler.run((err, stats) => ((err ? reject(err) : resolve(stats))))
+    compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
   })
   logWebpackStats(stats)
   if (stats.hasErrors()) {
@@ -35,6 +35,9 @@ async function webpack() {
 }
 
 async function webpackDevServer() {
+  const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
+  const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
+
   /** @type {import('webpack-dev-server').Configuration & { liveReload?: boolean }} */
   const options = {
     hot: !process.env.NO_HOT,
@@ -56,6 +59,8 @@ async function webpackDevServer() {
           socket.on('error', err => console.error('WebSocket proxy error:', err)),
       },
     },
+    sockHost,
+    sockPort,
   }
   WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)

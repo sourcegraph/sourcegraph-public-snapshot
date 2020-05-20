@@ -1,5 +1,5 @@
 import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -14,12 +14,12 @@ import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../shared/src/util/types'
 import {
     escapeRevspecForURL,
     FileSpec,
     ModeSpec,
-    PositionSpec,
+    UIPositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -34,6 +34,8 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
+import * as H from 'history'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -51,6 +53,7 @@ interface RepositoryCompareAreaProps
         ExtensionsControllerProps,
         ThemeProps {
     repo: GQL.IRepository
+    history: H.History
 }
 
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
@@ -113,7 +116,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     relativeElement: repositoryCompareAreaElement!,
                 })),
                 // Can't reposition HoverOverlay if it wasn't rendered
-                filter(propertyIsDefined('hoverOverlayElement'))
+                filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
@@ -126,7 +129,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
@@ -155,7 +158,13 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
+                />
+            )
         }
 
         let spec: { base: string | null; head: string | null } | null | undefined

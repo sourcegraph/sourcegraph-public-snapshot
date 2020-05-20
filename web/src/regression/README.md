@@ -64,7 +64,7 @@ export NO_CLEANUP=true
 
 - Start the Docker image `IMAGE=sourcegraph/server:VERSION ./dev/run-server-image.sh`
 
-- Then run `yarn jest src/regression/search.test.ts`
+- Then run `yarn mocha src/regression/search.test.ts`
 
 Tips:
 

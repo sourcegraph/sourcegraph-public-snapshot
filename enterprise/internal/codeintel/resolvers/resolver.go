@@ -7,8 +7,8 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
 
 type Resolver struct{}
@@ -64,7 +64,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 //
 // This method implements cursor-based forward pagination. The `after` parameter
 // should be an `endCursor` value from a previous request. This value is the rel="next"
-// URL in the Link header of the LSIF server response. This URL includes all of the
+// URL in the Link header of the LSIF API server response. This URL includes all of the
 // query variables required to fetch the subsequent page of results. This state is not
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
@@ -91,13 +91,13 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	upload, err := client.DefaultClient.Exists(ctx, &struct {
+	uploads, err := client.DefaultClient.Exists(ctx, &struct {
 		RepoID api.RepoID
-		Commit string
+		Commit api.CommitID
 		Path   string
 	}{
 		RepoID: args.Repository.Type().ID,
-		Commit: string(args.Commit),
+		Commit: args.Commit,
 		Path:   args.Path,
 	})
 
@@ -105,14 +105,14 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		return nil, err
 	}
 
-	if upload == nil {
+	if len(uploads) == 0 {
 		return nil, nil
 	}
 
 	return &lsifQueryResolver{
-		repoID: args.Repository.Type().ID,
-		commit: args.Commit,
-		path:   args.Path,
-		upload: upload,
+		repositoryResolver: args.Repository,
+		commit:             args.Commit,
+		path:               args.Path,
+		uploads:            uploads,
 	}, nil
 }

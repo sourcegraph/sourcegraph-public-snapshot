@@ -1,6 +1,9 @@
 package search
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,7 +24,7 @@ func (t TextParameters) typeParametersValue()    {}
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
 	PatternInfo        *CommitPatternInfo
-	Query              *query.Query
+	Query              query.QueryInfo
 	Diff               bool
 	ExtraMessageValues []string
 }
@@ -75,7 +78,7 @@ type TextParameters struct {
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
-	Query *query.Query
+	Query query.QueryInfo
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -97,7 +100,7 @@ type TextParameters struct {
 type TextParametersForCommitParameters struct {
 	PatternInfo *CommitPatternInfo
 	Repos       []*RepositoryRevisions
-	Query       *query.Query
+	Query       query.QueryInfo
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -126,6 +129,61 @@ type TextPatternInfo struct {
 	PatternMatchesPath    bool
 
 	Languages []string
+}
+
+func (p *TextPatternInfo) String() string {
+	args := []string{fmt.Sprintf("%q", p.Pattern)}
+	if p.IsRegExp {
+		args = append(args, "re")
+	}
+	if p.IsStructuralPat {
+		if p.CombyRule != "" {
+			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
+		} else {
+			args = append(args, "comby")
+		}
+	}
+	if p.IsWordMatch {
+		args = append(args, "word")
+	}
+	if p.IsCaseSensitive {
+		args = append(args, "case")
+	}
+	if !p.PatternMatchesContent {
+		args = append(args, "nocontent")
+	}
+	if !p.PatternMatchesPath {
+		args = append(args, "nopath")
+	}
+	if p.FileMatchLimit > 0 {
+		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
+	}
+	for _, lang := range p.Languages {
+		args = append(args, fmt.Sprintf("lang:%s", lang))
+	}
+
+	for _, inc := range p.FilePatternsReposMustInclude {
+		args = append(args, fmt.Sprintf("repositoryPathPattern:%s", inc))
+	}
+	for _, dec := range p.FilePatternsReposMustExclude {
+		args = append(args, fmt.Sprintf("-repositoryPathPattern:%s", dec))
+	}
+
+	path := "glob"
+	if p.PathPatternsAreRegExps {
+		path = "f"
+	}
+	if p.PathPatternsAreCaseSensitive {
+		path = "F"
+	}
+	if p.ExcludePattern != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	}
+	for _, inc := range p.IncludePatterns {
+		args = append(args, fmt.Sprintf("%s:%q", path, inc))
+	}
+
+	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
 }
 
 // CommitPatternInfo is the data type that describes the properties of

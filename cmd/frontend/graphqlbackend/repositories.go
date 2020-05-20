@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -40,12 +39,7 @@ func (r *schemaResolver) Repositories(args *struct {
 		}},
 	}
 	if args.Names != nil {
-		// Make an exact-match regexp for each name.
-		patterns := make([]string, len(*args.Names))
-		for i, name := range *args.Names {
-			patterns[i] = regexp.QuoteMeta(name)
-		}
-		opt.IncludePatterns = []string{"^(" + strings.Join(patterns, "|") + ")$"}
+		opt.Names = *args.Names
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -151,7 +145,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				for i, repo := range repos {
 					repoNames[i] = repo.Name
 				}
-				response, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
+				response, err := gitserver.DefaultClient.RepoCloneProgress(ctx, repoNames...)
 				if err != nil {
 					r.err = err
 					return
@@ -285,7 +279,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	}
 
 	if !args.Enabled {
-		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
+		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.repo.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
 		}

@@ -1,5 +1,4 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover } from 'sourcegraph'
 import { HoverMerged } from '../types/hover'
@@ -13,138 +12,161 @@ const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kin
 
 describe('getHover', () => {
     describe('0 providers', () => {
-        test('returns null', () =>
+        test('returns null', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', { a: [] }),
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', { a: [] }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: null,
+                ).toBe('-a', {
+                    a: { isLoading: false, result: null },
                 })
-            ))
+            )
+        })
     })
 
     describe('1 provider', () => {
-        test('returns null result from provider', () =>
+        it('returns null result from provider', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', { a: [() => of(null)] }),
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', { a: [() => cold('--a', { a: null })] }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: null,
+                ).toBe('-l-r', {
+                    l: { isLoading: true, result: null },
+                    r: { isLoading: false, result: null },
                 })
-            ))
+            )
+        })
 
-        test('returns result from provider', () =>
+        test('returns result from provider', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT)],
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', {
+                            a: [() => cold('-a', { a: FIXTURE_RESULT })],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: FIXTURE_RESULT_MERGED,
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: null },
+                    r: { isLoading: false, result: FIXTURE_RESULT_MERGED },
                 })
-            ))
+            )
+        })
     })
 
     describe('2 providers', () => {
-        test('returns null result if both providers return null', () =>
+        it('returns null result if both providers return null', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
-                            a: [() => of(null), () => of(null)],
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', {
+                            a: [() => cold('-a', { a: null }), () => cold('-a', { a: null })],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: null,
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: null },
+                    r: { isLoading: false, result: null },
                 })
-            ))
+            )
+        })
 
-        test('omits null result from 1 provider', () =>
+        it('omits null result from 1 provider', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => of(null)],
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', {
+                            a: [() => cold('-a', { a: FIXTURE_RESULT }), () => cold('-a', { a: null })],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: FIXTURE_RESULT_MERGED,
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: null },
+                    r: { isLoading: false, result: FIXTURE_RESULT_MERGED },
                 })
-            ))
+            )
+        })
 
-        test('omits error result from 1 provider', () =>
+        it('omits error result from 1 provider', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => throwError(new Error('err'))],
+                        cold<ProvideTextDocumentHoverSignature[]>('-a', {
+                            a: [() => cold('-a', { a: FIXTURE_RESULT }), () => cold('-#', {}, new Error('err'))],
                         }),
                         FIXTURE.TextDocumentPositionParams,
                         false
                     )
-                ).toBe('-a-|', {
-                    a: FIXTURE_RESULT_MERGED,
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: null },
+                    r: { isLoading: false, result: FIXTURE_RESULT_MERGED },
                 })
-            ))
+            )
+        })
 
-        test('merges results from providers', () =>
+        it('merges results from providers', () => {
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getHover(
                         cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
                             a: [
                                 () =>
-                                    of({
-                                        contents: { value: 'c1' },
-                                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                                    cold('-a', {
+                                        a: {
+                                            contents: { value: 'c1' },
+                                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                                        },
                                     }),
                                 () =>
-                                    of({
-                                        contents: { value: 'c2' },
-                                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                                    cold('-a', {
+                                        a: {
+                                            contents: { value: 'c2' },
+                                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                                        },
                                     }),
                             ],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: {
-                        contents: [
-                            { value: 'c1', kind: MarkupKind.PlainText },
-                            { value: 'c2', kind: MarkupKind.PlainText },
-                        ],
-                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: null },
+                    r: {
+                        isLoading: false,
+                        result: {
+                            contents: [
+                                { value: 'c1', kind: MarkupKind.PlainText },
+                                { value: 'c2', kind: MarkupKind.PlainText },
+                            ],
+                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                        },
                     },
                 })
-            ))
+            )
+        })
     })
 
     describe('multiple emissions', () => {
-        test('returns stream of results', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('returns stream of results', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getHover(
-                        cold<ProvideTextDocumentHoverSignature[]>('-a-b-|', {
-                            a: [() => of(FIXTURE_RESULT)],
-                            b: [() => of(null)],
+                        cold<ProvideTextDocumentHoverSignature[]>('-a-b', {
+                            a: [() => cold('-a', { a: FIXTURE_RESULT })],
+                            b: [() => cold('-a', { a: null })],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-b-|', {
-                    a: FIXTURE_RESULT_MERGED,
-                    b: null,
+                ).toBe('-abcd', {
+                    a: { isLoading: true, result: null },
+                    b: { isLoading: false, result: FIXTURE_RESULT_MERGED },
+                    c: { isLoading: true, result: null },
+                    d: { isLoading: false, result: null },
                 })
-            ))
+            })
+        })
     })
 })

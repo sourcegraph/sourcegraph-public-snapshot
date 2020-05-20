@@ -1,4 +1,5 @@
-import { registerLanguage } from 'highlight.js/lib/highlight'
+import { registerLanguage } from 'highlight.js/lib/core'
+import { definer as graphQLLanguage } from 'highlightjs-graphql'
 
 let registered = false
 
@@ -25,8 +26,11 @@ export function registerHighlightContributions(): void {
     registerLanguage('php', require('highlight.js/lib/languages/php'))
     registerLanguage('bash', require('highlight.js/lib/languages/bash'))
     registerLanguage('clojure', require('highlight.js/lib/languages/clojure'))
+    // This is a dependency of cpp.
+    registerLanguage('c-like', require('highlight.js/lib/languages/c-like'))
     registerLanguage('cpp', require('highlight.js/lib/languages/cpp'))
-    registerLanguage('cs', require('highlight.js/lib/languages/cs'))
+    registerLanguage('cs', require('highlight.js/lib/languages/csharp'))
+    registerLanguage('csharp', require('highlight.js/lib/languages/csharp'))
     registerLanguage('css', require('highlight.js/lib/languages/css'))
     registerLanguage('dockerfile', require('highlight.js/lib/languages/dockerfile'))
     registerLanguage('elixir', require('highlight.js/lib/languages/elixir'))
@@ -41,9 +45,13 @@ export function registerHighlightContributions(): void {
     registerLanguage('markdown', require('highlight.js/lib/languages/markdown'))
     registerLanguage('diff', require('highlight.js/lib/languages/diff'))
     registerLanguage('json', require('highlight.js/lib/languages/json'))
+    registerLanguage('jsonc', require('highlight.js/lib/languages/json'))
     registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
     registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))
+    registerLanguage('perl', require('highlight.js/lib/languages/perl'))
+    registerLanguage('scala', require('highlight.js/lib/languages/scala'))
+    registerLanguage('graphql', graphQLLanguage)
     /* eslint-enable @typescript-eslint/no-require-imports */
     /* eslint-enable @typescript-eslint/no-var-requires */
 }

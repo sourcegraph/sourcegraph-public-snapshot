@@ -4,6 +4,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/githuboauth"
@@ -12,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func init() {

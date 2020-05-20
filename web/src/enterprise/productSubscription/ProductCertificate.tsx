@@ -30,18 +30,16 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     footer,
     className = '',
 }) => (
-    <>
-        <div className={`product-certificate card ${className || ''}`}>
-            <div className="card-body d-flex align-items-center">
-                <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
-                <div>
-                    <h2 className="font-weight-normal mb-1">{title}</h2>
-                    {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}
-                    {detail && <p className="text-muted mb-0">{detail}</p>}
-                </div>
+    <div className={`product-certificate e2e-product-certificate card ${className || ''}`}>
+        <div className="card-body d-flex align-items-center">
+            <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
+            <div>
+                <h2 className="font-weight-normal mb-1">{title}</h2>
+                {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}
+                {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
-            <div className="product-certificate__bg" />
-            {footer}
         </div>
-    </>
+        <div className="product-certificate__bg" />
+        {footer}
+    </div>
 )

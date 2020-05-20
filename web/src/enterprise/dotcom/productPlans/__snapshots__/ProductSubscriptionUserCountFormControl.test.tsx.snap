@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProductSubscriptionUserCountFormControl renders 1`] = `
+<div
+  className="product-subscription-user-count-control form-group align-items-center "
+>
+  <label
+    className="mb-0 mr-2 font-weight-bold"
+    htmlFor="product-subscription-user-count-control__userCount"
+  >
+    Users
+  </label>
+  <div
+    className="d-flex align-items-center"
+  >
+    <input
+      className="form-control w-auto"
+      id="product-subscription-user-count-control__userCount"
+      max={50000}
+      min={25}
+      onChange={[Function]}
+      required={true}
+      step={25}
+      type="number"
+      value={123}
+    />
+  </div>
+</div>
+`;

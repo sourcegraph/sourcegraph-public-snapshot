@@ -63,7 +63,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 
     history: H.History
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface ExtensionsResult {
     /** The configured extensions. */
@@ -204,11 +204,15 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 {this.state.data.resultOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.data.resultOrError) ? (
-                    <ErrorAlert error={this.state.data.resultOrError} />
+                    <ErrorAlert error={this.state.data.resultOrError} history={this.props.history} />
                 ) : (
                     <>
                         {this.state.data.resultOrError.error && (
-                            <ErrorAlert className="mb-2" error={this.state.data.resultOrError.error} />
+                            <ErrorAlert
+                                className="mb-2"
+                                error={this.state.data.resultOrError.error}
+                                history={this.props.history}
+                            />
                         )}
                         {this.state.data.resultOrError.extensions.length === 0 ? (
                             this.state.data.query ? (

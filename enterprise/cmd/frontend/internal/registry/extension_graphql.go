@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"strings"
+	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -13,6 +14,10 @@ import (
 // extensionDBResolver implements the GraphQL type RegistryExtension.
 type extensionDBResolver struct {
 	v *dbExtension
+
+	// Supplied as part of list endpoints, but
+	// calculated as part of single-extension endpoints
+	r *dbRelease
 }
 
 func (r *extensionDBResolver) ID() graphql.ID {
@@ -34,11 +39,14 @@ func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.Reg
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }
 func (r *extensionDBResolver) Manifest(ctx context.Context) (graphqlbackend.ExtensionManifest, error) {
-	manifest, _, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	release, err := r.release(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return registry.NewExtensionManifest(manifest), nil
+	if release == nil {
+		return registry.NewExtensionManifest(nil), nil
+	}
+	return registry.NewExtensionManifest(&release.Manifest), nil
 }
 
 func (r *extensionDBResolver) CreatedAt() *graphqlbackend.DateTime {
@@ -50,11 +58,14 @@ func (r *extensionDBResolver) UpdatedAt() *graphqlbackend.DateTime {
 }
 
 func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	_, publishedAt, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	release, err := r.release(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &graphqlbackend.DateTime{Time: publishedAt}, nil
+	if release == nil {
+		return &graphqlbackend.DateTime{Time: time.Time{}}, nil
+	}
+	return &graphqlbackend.DateTime{Time: release.CreatedAt}, nil
 }
 
 func (r *extensionDBResolver) URL() string {
@@ -81,6 +92,16 @@ func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, er
 		return false, nil
 	}
 	return err == nil, err
+}
+
+func (r *extensionDBResolver) release(ctx context.Context) (*dbRelease, error) {
+	if r.r != nil {
+		return r.r, nil
+	}
+
+	var err error
+	r.r, err = getLatestRelease(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	return r.r, err
 }
 
 func strptr(s string) *string { return &s }

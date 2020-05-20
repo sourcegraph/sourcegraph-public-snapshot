@@ -18,12 +18,12 @@ exports[`QueryBuilderPage simple 1`] = `
       type="text"
       value=""
     />
-    <ForwardRef
+    <Link
       className="btn btn-primary disabled"
       to="/search?q=&patternType=literal"
     >
       Search
-    </ForwardRef>
+    </Link>
   </div>
   <QueryBuilder
     onFieldsQueryChange={[Function]}

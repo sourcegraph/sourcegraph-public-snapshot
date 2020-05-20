@@ -8,22 +8,22 @@ import (
 	"path"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func BenchmarkSearch(b *testing.B) {
-	MustRegisterSqlite3WithPcre()
-	ctagsCommand := ctags.GetCommand()
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
 	service := Service{
 		FetchTar: testutil.FetchTarFromGithub,
 		NewParser: func() (ctags.Parser, error) {
-			return ctags.NewParser(ctagsCommand)
+			return ctags.New()
 		},
 		Path: "/tmp/symbols-cache",
 	}

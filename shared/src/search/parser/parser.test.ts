@@ -61,6 +61,31 @@ describe('parseSearchQuery()', () => {
             type: 'success',
         }))
 
+    test('triple quotes', () => {
+        expect(parseSearchQuery('"""')).toMatchObject({
+            range: {
+                end: 3,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 3,
+                            start: 0,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: '"""',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
     test('filter', () =>
         expect(parseSearchQuery('a:b')).toMatchObject({
             range: {
@@ -184,6 +209,98 @@ describe('parseSearchQuery()', () => {
                                 token: {
                                     quotedValue: 'b',
                                     type: 'quoted',
+                                },
+                                type: 'success',
+                            },
+                            type: 'filter',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
+    test('filter with a value ending with a colon', () => {
+        expect(parseSearchQuery('f:a:')).toStrictEqual({
+            range: {
+                end: 4,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 4,
+                            start: 0,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    end: 1,
+                                    start: 0,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'f',
+                                },
+                                type: 'success',
+                            },
+                            filterValue: {
+                                range: {
+                                    end: 4,
+                                    start: 2,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'a:',
+                                },
+                                type: 'success',
+                            },
+                            type: 'filter',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
+    test('filter where the value is a colon', () => {
+        expect(parseSearchQuery('f::')).toStrictEqual({
+            range: {
+                end: 3,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 3,
+                            start: 0,
+                        },
+                        token: {
+                            filterType: {
+                                range: {
+                                    end: 1,
+                                    start: 0,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: 'f',
+                                },
+                                type: 'success',
+                            },
+                            filterValue: {
+                                range: {
+                                    end: 3,
+                                    start: 2,
+                                },
+                                token: {
+                                    type: 'literal',
+                                    value: ':',
                                 },
                                 type: 'success',
                             },

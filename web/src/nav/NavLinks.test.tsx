@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { flatten, noop } from 'lodash'
+import { noop } from 'lodash'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -25,18 +25,21 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
             return element.toString()
         }
         if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
-            return `${element.props.children.props.children} ${element.props.children.props.href ||
-                element.props.children.props.to}`
+            const href = element.props.children.props.href || element.props.children.props.to
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            return `${element.props.children.props.children} ${href}`
         }
         if (typeof element.type === 'symbol' || typeof element.type === 'string') {
-            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
+            return React.Children.map(element.props.children, element => getDisplayName(element)).flat()
         }
         return (element.type as any).displayName || element.type.name || 'Unknown'
     }
 
-    return flatten(
-        React.Children.map(renderer.getRenderOutput().props.children, e => getDisplayName(e)).filter(e => !!e)
+    return React.Children.map<string | string[], React.ReactChild>(renderer.getRenderOutput().props.children, e =>
+        getDisplayName(e)
     )
+        .filter(e => !!e)
+        .flat()
 }
 
 describe('NavLinks', () => {

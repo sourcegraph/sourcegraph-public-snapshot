@@ -1,14 +1,10 @@
 import * as React from 'react'
 import { FilterInput } from './FilterInput'
 import { QueryState } from '../../helpers'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/interactive/util'
+import { InteractiveSearchProps } from '../..'
 
-interface Props {
-    /**
-     * The filters currently added to the query.
-     */
-    filtersInQuery: FiltersToTypeAndValue
-
+interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * The query in the main query input.
      */
@@ -69,7 +65,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                             <FilterInput
                                 key={field}
                                 mapKey={field}
-                                filterType={filtersInQuery[field].type}
+                                filterType={filtersInQuery[field].type as Exclude<FilterType, FilterType.patterntype>}
                                 value={filtersInQuery[field].value}
                                 editable={filtersInQuery[field].editable}
                                 negated={filtersInQuery[field].negated}

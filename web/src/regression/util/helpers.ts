@@ -31,6 +31,7 @@ import {
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
+import { asError } from '../../../../shared/src/util/errors'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
@@ -61,7 +62,9 @@ export async function ensureLoggedInOrCreateTestUser(
             await driver.ensureLoggedIn({ username, password: testUserPassword })
             return userDestructor
         } catch (err) {
-            console.log(`Login failed (error: ${err.message}), will attempt to create user ${JSON.stringify(username)}`)
+            console.log(
+                `Login failed (error: ${asError(err).message}), will attempt to create user ${JSON.stringify(username)}`
+            )
         }
     }
 
@@ -90,7 +93,13 @@ async function createTestUser(
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${err.message})`))
+                throwError(
+                    new Error(
+                        `Could not create user ${JSON.stringify(
+                            username
+                        )} (you may need to update the sudo access token used by the test): ${asError(err).message})`
+                    )
+                )
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )
@@ -114,11 +123,7 @@ export async function createAuthProvider(
     const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
     const authProviders = siteConfigParsed['auth.providers']
-    if (
-        authProviders &&
-        authProviders.filter(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)
-            .length > 0
-    ) {
+    if (authProviders?.some(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)) {
         return () => Promise.resolve() // provider already exists
     }
     const editFns = [
@@ -147,7 +152,7 @@ export async function ensureNewUser(
             await deleteUser({ requestGraphQL }, username)
         }
     } catch (err) {
-        if (!err.message.includes('user not found')) {
+        if (!asError(err).message.includes('user not found')) {
             throw err
         }
     }

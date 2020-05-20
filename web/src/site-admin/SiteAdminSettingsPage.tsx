@@ -14,7 +14,7 @@ interface Props extends RouteComponentProps<{}>, PlatformContextProps, SettingsC
 
 export const SiteAdminSettingsPage: React.FunctionComponent<Props> = props => (
     <>
-        <PageTitle title="Site settings" />
+        <PageTitle title="Global settings" />
         <SettingsArea
             {...props}
             subject={props.site}

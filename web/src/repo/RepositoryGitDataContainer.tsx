@@ -1,16 +1,21 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRevNotFoundErrorLike,
+} from '../../../shared/src/backend/errors'
 import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
+import { ErrorMessage } from '../components/alerts'
+import * as H from 'history'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,
@@ -36,6 +41,7 @@ interface Props {
 
     /** The fragment to render if the repository's Git data is accessible. */
     children: React.ReactNode
+    history: H.History
 }
 
 interface State {
@@ -71,15 +77,13 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.code) {
-                                            case ECLONEINPROGESS:
-                                                // Display cloning screen to the user and retry
-                                                this.setState({ gitDataPresentOrError: error })
-                                                return
-                                            default:
-                                                // Display error to the user and do not retry
-                                                throw error
+                                        if (isCloneInProgressErrorLike(error)) {
+                                            // Display cloning screen to the user and retry
+                                            this.setState({ gitDataPresentOrError: error })
+                                            return
                                         }
+                                        // Display error to the user and do not retry
+                                        throw error
                                     }),
                                     delay(1000)
                                 )
@@ -93,7 +97,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                     )
                 )
                 .subscribe(
-                    resolvedRev => this.setState({ gitDataPresentOrError: true }),
+                    () => this.setState({ gitDataPresentOrError: true }),
                     error => console.error(error)
                 )
         )
@@ -116,25 +120,24 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
 
         if (isErrorLike(this.state.gitDataPresentOrError)) {
             // Show error page
-            switch (this.state.gitDataPresentOrError.code) {
-                case ECLONEINPROGESS:
-                    return (
-                        <RepositoryCloningInProgressPage
-                            repoName={this.props.repoName}
-                            progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
-                        />
-                    )
-                case EREVNOTFOUND:
-                    return <EmptyRepositoryPage />
-                default:
-                    return (
-                        <HeroPage
-                            icon={AlertCircleIcon}
-                            title="Error"
-                            subtitle={upperFirst(this.state.gitDataPresentOrError.message)}
-                        />
-                    )
+            if (isCloneInProgressErrorLike(this.state.gitDataPresentOrError)) {
+                return (
+                    <RepositoryCloningInProgressPage
+                        repoName={this.props.repoName}
+                        progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
+                    />
+                )
             }
+            if (isRevNotFoundErrorLike(this.state.gitDataPresentOrError)) {
+                return <EmptyRepositoryPage />
+            }
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} history={this.props.history} />}
+                />
+            )
         }
 
         return this.props.children

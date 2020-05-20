@@ -25,7 +25,7 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	commit := &GitCommitResolver{
 		repo:   &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 		oid:    "c1",
-		author: *toSignatureResolver(&gitSignatureWithDate),
+		author: *toSignatureResolver(&gitSignatureWithDate, false),
 	}
 	sr := &searchSymbolResult{symbol, baseURI, "go", commit}
 

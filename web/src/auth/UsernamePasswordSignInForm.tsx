@@ -37,13 +37,15 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         return (
             <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
                 {window.context.allowSignup ? (
-                    <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
-                        Don't have an account? Sign up.
-                    </Link>
+                    <p>
+                        <Link to={`/sign-up${this.props.location.search}`}>Don't have an account? Sign up.</Link>
+                    </p>
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
-                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} icon={false} />}
+                {this.state.error && (
+                    <ErrorAlert className="my-2" error={this.state.error} icon={false} history={this.props.history} />
+                )}
                 <div className="form-group">
                     <input
                         className="form-control signin-signup-form__input"
@@ -79,7 +81,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     )}
                 </div>
                 {this.state.loading && (
-                    <div className="signin-signup-form__loader">
+                    <div className="w-100 text-center mb-2">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
@@ -118,8 +120,12 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         })
             .then(resp => {
                 if (resp.status === 200) {
-                    const returnTo = getReturnTo(this.props.location)
-                    window.location.replace(returnTo)
+                    if (new URLSearchParams(this.props.location.search).get('close') === 'true') {
+                        window.close()
+                    } else {
+                        const returnTo = getReturnTo(this.props.location)
+                        window.location.replace(returnTo)
+                    }
                 } else if (resp.status === 401) {
                     throw new Error('User or password was incorrect')
                 } else {

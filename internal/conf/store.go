@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-// Store manages the in-memory storage, access,
+// store manages the in-memory storage, access,
 // and updating of the site configuration in a threadsafe manner.
-type Store struct {
+type store struct {
 	configMu  sync.RWMutex
 	lastValid *Unified
 	mock      *Unified
@@ -26,16 +26,16 @@ type Store struct {
 	once  sync.Once
 }
 
-// NewStore returns a new configuration store.
-func NewStore() *Store {
-	return &Store{
+// newStore returns a new configuration store.
+func newStore() *store {
+	return &store{
 		ready: make(chan struct{}),
 	}
 }
 
 // LastValid returns the last valid site configuration that this
 // store was updated with.
-func (s *Store) LastValid() *Unified {
+func (s *store) LastValid() *Unified {
 	s.WaitUntilInitialized()
 
 	s.configMu.RLock()
@@ -49,7 +49,7 @@ func (s *Store) LastValid() *Unified {
 }
 
 // Raw returns the last raw configuration that this store was updated with.
-func (s *Store) Raw() conftypes.RawUnified {
+func (s *store) Raw() conftypes.RawUnified {
 	s.WaitUntilInitialized()
 
 	s.rawMu.RLock()
@@ -59,7 +59,7 @@ func (s *Store) Raw() conftypes.RawUnified {
 
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
-func (s *Store) Mock(mockery *Unified) {
+func (s *store) Mock(mockery *Unified) {
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
@@ -67,7 +67,7 @@ func (s *Store) Mock(mockery *Unified) {
 	s.initialize()
 }
 
-type UpdateResult struct {
+type updateResult struct {
 	Changed bool
 	Old     *Unified
 	New     *Unified
@@ -81,14 +81,14 @@ type UpdateResult struct {
 //
 // configChange is defined iff the cache was actually updated.
 // TODO@ggilmore: write a less-vague description
-func (s *Store) MaybeUpdate(rawConfig conftypes.RawUnified) (UpdateResult, error) {
+func (s *store) MaybeUpdate(rawConfig conftypes.RawUnified) (updateResult, error) {
 	s.rawMu.Lock()
 	defer s.rawMu.Unlock()
 
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
-	result := UpdateResult{
+	result := updateResult{
 		Changed: false,
 		Old:     s.lastValid,
 		New:     s.lastValid,
@@ -122,7 +122,7 @@ func (s *Store) MaybeUpdate(rawConfig conftypes.RawUnified) (UpdateResult, error
 
 // WaitUntilInitialized blocks and only returns to the caller once the store
 // has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
-func (s *Store) WaitUntilInitialized() {
+func (s *store) WaitUntilInitialized() {
 	mode := getMode()
 	if mode == modeServer {
 		deadlockTimeout := 5 * time.Minute
@@ -153,7 +153,7 @@ func (s *Store) WaitUntilInitialized() {
 	<-s.ready
 }
 
-func (s *Store) initialize() {
+func (s *store) initialize() {
 	s.once.Do(func() {
 		close(s.ready)
 	})

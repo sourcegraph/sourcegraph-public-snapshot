@@ -9,6 +9,7 @@ Select your SAML identity provider for setup instructions:
 - [OneLogin](one_login.md)
 - [Ping Identity](generic.md)
 - [Salesforce Identity](generic.md)
+- [JumpCloud](jump_cloud.md)
 - [Other](generic.md)
 
 For advanced SAML configuration options, see the [`saml` auth provider documentation](../../config/critical_config.md#saml).

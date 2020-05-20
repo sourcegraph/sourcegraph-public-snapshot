@@ -1,0 +1,1188 @@
+<!-- Created from https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs -->
+<head prefix="og: http://ogp.me/ns#">
+<meta charset="utf-8">
+<link href="https://assets.gitlab-static.net" rel="dns-prefetch">
+<link crossorigin="" href="https://assets.gitlab-static.net" rel="preconnnect">
+<meta content="IE=edge" http-equiv="X-UA-Compatible">
+<meta content="object" property="og:type">
+<meta content="GitLab" property="og:site_name">
+<meta content="Test Merge Request (!1) · Merge Requests · sourcegraph / jsonrpc2" property="og:title">
+<meta content="A merge request for testing purposes (used in our tests)" property="og:description">
+<meta content="https://assets.gitlab-static.net/assets/gitlab_logo-7ae504fe4f68fdebb3c2034e36621930cd36ea87924c11ff65dbcb8ed50dca58.png" property="og:image">
+<meta content="64" property="og:image:width">
+<meta content="64" property="og:image:height">
+<meta content="https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1" property="og:url">
+<meta content="summary" property="twitter:card">
+<meta content="Test Merge Request (!1) · Merge Requests · sourcegraph / jsonrpc2" property="twitter:title">
+<meta content="A merge request for testing purposes (used in our tests)" property="twitter:description">
+<meta content="https://assets.gitlab-static.net/assets/gitlab_logo-7ae504fe4f68fdebb3c2034e36621930cd36ea87924c11ff65dbcb8ed50dca58.png" property="twitter:image">
+<meta property="twitter:label1" content="Author"><meta property="twitter:data1" content="Felix Becker">
+<title>Test Merge Request (!1) · Merge Requests · sourcegraph / jsonrpc2 · GitLab</title>
+<meta content="A merge request for testing purposes (used in our tests)" name="description">
+<link rel="shortcut icon" type="image/png" href="https://gitlab.com/assets/favicon-7901bd695fb93edb07975966062049829afb56cf11511236e61bcf425070e36e.png" id="favicon" data-original-href="https://gitlab.com/assets/favicon-7901bd695fb93edb07975966062049829afb56cf11511236e61bcf425070e36e.png">
+<link rel="stylesheet" media="all" href="https://assets.gitlab-static.net/assets/application-b5479da436d0a5238c900951dd2549fe6cb7160b1896f39ef3c7aeb1a5863aeb.css">
+<link rel="stylesheet" media="print" href="https://assets.gitlab-static.net/assets/print-74c3df10dad473d66660c828e3aa54ca3bfeac6d8bb708643331403fe7211e60.css">
+
+
+<link rel="stylesheet" media="all" href="https://assets.gitlab-static.net/assets/highlight/themes/dark-b079013cfc8e90eab11e6bf2ae08c9f7df18bb77602a480ced3ef903912a9476.css">
+<script async="" src="https://assets.gitlab-static.net/assets/snowplow/sp-e10fd598642f1a4dd3e9e0e026f6a1ffa3c31b8a40efd92db3f92d32873baed6.js"></script><script nonce="">
+//<![CDATA[
+window.gon={};gon.api_version="v4";gon.default_avatar_url="https://assets.gitlab-static.net/assets/no_avatar-849f9c04a3a0d0cea2424ae97b27447dc64a7dbfae83c036c45b403392f0e8ba.png";gon.max_file_size=10;gon.asset_host="https://assets.gitlab-static.net";gon.webpack_public_path="https://assets.gitlab-static.net/assets/webpack/";gon.relative_url_root="";gon.shortcuts_path="/help/shortcuts";gon.user_color_scheme="dark";gon.sentry_dsn="https://526a2f38a53d44e3a8e69bfa001d1e8b@sentry.gitlab.net/15";gon.sentry_environment=null;gon.gitlab_url="https://gitlab.com";gon.revision="0bf60009bec";gon.gitlab_logo="https://assets.gitlab-static.net/assets/gitlab_logo-7ae504fe4f68fdebb3c2034e36621930cd36ea87924c11ff65dbcb8ed50dca58.png";gon.sprite_icons="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg";gon.sprite_file_icons="https://gitlab.com/assets/file_icons-7262fc6897e02f1ceaf8de43dc33afa5e4f9a2067f4f68ef77dcc87946575e9e.svg";gon.emoji_sprites_css_path="https://assets.gitlab-static.net/assets/emoji_sprites-289eccffb1183c188b630297431be837765d9ff4aed6130cf738586fb307c170.css";gon.test_env=false;gon.suggested_label_colors={"#0033CC":"UA blue","#428BCA":"Moderate blue","#44AD8E":"Lime green","#A8D695":"Feijoa","#5CB85C":"Slightly desaturated green","#69D100":"Bright green","#004E00":"Very dark lime green","#34495E":"Very dark desaturated blue","#7F8C8D":"Dark grayish cyan","#A295D6":"Slightly desaturated blue","#5843AD":"Dark moderate blue","#8E44AD":"Dark moderate violet","#FFECDB":"Very pale orange","#AD4363":"Dark moderate pink","#D10069":"Strong pink","#CC0033":"Strong red","#FF0000":"Pure red","#D9534F":"Soft red","#D1D100":"Strong yellow","#F0AD4E":"Soft orange","#AD8D43":"Dark moderate orange"};gon.first_day_of_week=0;gon.ee=true;gon.current_user_id=2479048;gon.current_username="felixfbecker";gon.current_user_fullname="Felix Becker";gon.current_user_avatar_url="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=80\u0026d=identicon";gon.features={"suppressAjaxNavigationErrors":true,"scopedLabels":true,"diffsBatchLoad":false,"vueIssuableSidebar":false,"releaseSearchFilter":true,"sastMergeRequestReportApi":true,"dastMergeRequestReportApi":true,"containerScanningMergeRequestReportApi":true,"dependencyScanningMergeRequestReportApi":true,"parsedLicenseReport":true,"anonymousVisualReviewFeedback":false};gon.sourcegraph={"url":"https://sourcegraph.com"};
+//]]>
+</script>
+
+<script src="https://assets.gitlab-static.net/assets/webpack/runtime.b78871eb.bundle.js" defer="defer"></script>
+<script src="https://assets.gitlab-static.net/assets/webpack/main.45ce0eff.chunk.js" defer="defer"></script>
+<script src="https://assets.gitlab-static.net/assets/webpack/sentry.fb899e74.chunk.js" defer="defer"></script>
+<script src="https://assets.gitlab-static.net/assets/webpack/commons~pages.admin.clusters~pages.admin.clusters.destroy~pages.admin.clusters.edit~pages.admin.clus~adc06f2a.0e3f651c.chunk.js" defer="defer"></script>
+<script src="https://assets.gitlab-static.net/assets/webpack/commons~pages.groups.epics.index~pages.groups.epics.show~pages.groups.milestones.edit~pages.groups.m~b7d7bc7f.28bceb28.chunk.js" defer="defer"></script>
+<script src="https://assets.gitlab-static.net/assets/webpack/pages.projects.merge_requests.show.70ff16c6.chunk.js" defer="defer"></script>
+<script nonce="">
+//<![CDATA[
+window.uploads_path = "/sourcegraph/jsonrpc2/uploads";
+
+
+
+//]]>
+</script>
+<meta name="csrf-param" content="authenticity_token">
+<meta name="csrf-token" content="u/M8XSQyKrt0sFDn+wxZjLanmQVyeg/t49+/m/C91yHm/gR7WyGy9ZEb2izyf2M18KEQTq9H+9Z/Z6XU68SDeQ==">
+<meta name="csp-nonce" content="jmRunY5okt7MCtJZE1s/XQ==">
+<meta content="origin-when-cross-origin" name="referrer">
+<meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport">
+<meta content="#474D57" name="theme-color">
+<link rel="apple-touch-icon" type="image/x-icon" href="https://assets.gitlab-static.net/assets/touch-icon-iphone-5a9cee0e8a51212e70b90c87c12f382c428870c0ff67d1eb034d884b78d2dae7.png">
+<link rel="apple-touch-icon" type="image/x-icon" href="https://assets.gitlab-static.net/assets/touch-icon-ipad-a6eec6aeb9da138e507593b464fdac213047e49d3093fc30e90d9a995df83ba3.png" sizes="76x76">
+<link rel="apple-touch-icon" type="image/x-icon" href="https://assets.gitlab-static.net/assets/touch-icon-iphone-retina-72e2aadf86513a56e050e7f0f2355deaa19cc17ed97bbe5147847f2748e5a3e3.png" sizes="120x120">
+<link rel="apple-touch-icon" type="image/x-icon" href="https://assets.gitlab-static.net/assets/touch-icon-ipad-retina-8ebe416f5313483d9c1bc772b5bbe03ecad52a54eba443e5215a22caed2a16a2.png" sizes="152x152">
+<link color="rgb(226, 67, 41)" href="https://assets.gitlab-static.net/assets/logo-d36b5212042cebc89b96df4bf6ac24e43db316143e89926c0db839ff694d2de4.svg" rel="mask-icon">
+<meta content="https://assets.gitlab-static.net/assets/msapplication-tile-1196ec67452f618d39cdd85e2e3a542f76574c071051ae7effbfde01710eb17d.png" name="msapplication-TileImage">
+<meta content="#30353E" name="msapplication-TileColor">
+
+
+
+<script nonce="">
+//<![CDATA[
+;(function(p,l,o,w,i,n,g){if(!p[i]){p.GlobalSnowplowNamespace=p.GlobalSnowplowNamespace||[];
+p.GlobalSnowplowNamespace.push(i);p[i]=function(){(p[i].q=p[i].q||[]).push(arguments)
+};p[i].q=p[i].q||[];n=l.createElement(o);g=l.getElementsByTagName(o)[0];n.async=1;
+n.src=w;g.parentNode.insertBefore(n,g)}}(window,document,"script","https://assets.gitlab-static.net/assets/snowplow/sp-e10fd598642f1a4dd3e9e0e026f6a1ffa3c31b8a40efd92db3f92d32873baed6.js","snowplow"));
+
+window.snowplowOptions = {"namespace":"gl","hostname":"snowplow.trx.gitlab.net","cookieDomain":".gitlab.com","appId":"gitlab","formTracking":true,"linkClickTracking":true,"igluRegistryUrl":null}
+
+
+//]]>
+</script>
+<style type="text/css">.toasted{padding:0 20px}.toasted.rounded{border-radius:24px}.toasted .primary,.toasted.toasted-primary{border-radius:2px;min-height:38px;line-height:1.1em;background-color:#353535;padding:0 20px;font-size:15px;font-weight:300;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24)}.toasted .primary.success,.toasted.toasted-primary.success{background:#4caf50}.toasted .primary.error,.toasted.toasted-primary.error{background:#f44336}.toasted .primary.info,.toasted.toasted-primary.info{background:#3f51b5}.toasted .primary .action,.toasted.toasted-primary .action{color:#a1c2fa}.toasted.bubble{border-radius:30px;min-height:38px;line-height:1.1em;background-color:#ff7043;padding:0 20px;font-size:15px;font-weight:300;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24)}.toasted.bubble.success{background:#4caf50}.toasted.bubble.error{background:#f44336}.toasted.bubble.info{background:#3f51b5}.toasted.bubble .action{color:#8e2b0c}.toasted.outline{border-radius:30px;min-height:38px;line-height:1.1em;background-color:#fff;border:1px solid #676767;padding:0 20px;font-size:15px;color:#676767;box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);font-weight:700}.toasted.outline.success{color:#4caf50;border-color:#4caf50}.toasted.outline.error{color:#f44336;border-color:#f44336}.toasted.outline.info{color:#3f51b5;border-color:#3f51b5}.toasted.outline .action{color:#607d8b}.toasted-container{position:fixed;z-index:10000}.toasted-container,.toasted-container.full-width{display:-ms-flexbox;display:flex;-ms-flex-direction:column;flex-direction:column}.toasted-container.full-width{max-width:86%;width:100%}.toasted-container.full-width.fit-to-screen{min-width:100%}.toasted-container.full-width.fit-to-screen .toasted:first-child{margin-top:0}.toasted-container.full-width.fit-to-screen.top-right{top:0;right:0}.toasted-container.full-width.fit-to-screen.top-left{top:0;left:0}.toasted-container.full-width.fit-to-screen.top-center{top:0;left:0;-webkit-transform:translateX(0);transform:translateX(0)}.toasted-container.full-width.fit-to-screen.bottom-right{right:0;bottom:0}.toasted-container.full-width.fit-to-screen.bottom-left{left:0;bottom:0}.toasted-container.full-width.fit-to-screen.bottom-center{left:0;bottom:0;-webkit-transform:translateX(0);transform:translateX(0)}.toasted-container.top-right{top:10%;right:7%}.toasted-container.top-left{top:10%;left:7%}.toasted-container.top-center{top:10%;left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%)}.toasted-container.bottom-right{right:5%;bottom:7%}.toasted-container.bottom-left{left:5%;bottom:7%}.toasted-container.bottom-center{left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);bottom:7%}.toasted-container.bottom-left .toasted,.toasted-container.top-left .toasted{float:left}.toasted-container.bottom-right .toasted,.toasted-container.top-right .toasted{float:right}.toasted-container .toasted{top:35px;width:auto;clear:both;margin-top:10px;position:relative;max-width:100%;height:auto;word-break:normal;display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center;-ms-flex-pack:justify;justify-content:space-between;box-sizing:inherit}.toasted-container .toasted .fa,.toasted-container .toasted .fab,.toasted-container .toasted .far,.toasted-container .toasted .fas,.toasted-container .toasted .material-icons,.toasted-container .toasted .mdi{margin-right:.5rem;margin-left:-.4rem}.toasted-container .toasted .fa.after,.toasted-container .toasted .fab.after,.toasted-container .toasted .far.after,.toasted-container .toasted .fas.after,.toasted-container .toasted .material-icons.after,.toasted-container .toasted .mdi.after{margin-left:.5rem;margin-right:-.4rem}.toasted-container .toasted .action{text-decoration:none;font-size:.8rem;padding:8px;margin:5px -7px 5px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;cursor:pointer}.toasted-container .toasted .action.icon{padding:4px;display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center;-ms-flex-pack:center;justify-content:center}.toasted-container .toasted .action.icon .fa,.toasted-container .toasted .action.icon .material-icons,.toasted-container .toasted .action.icon .mdi{margin-right:0;margin-left:4px}.toasted-container .toasted .action.icon:hover{text-decoration:none}.toasted-container .toasted .action:hover{text-decoration:underline}@media only screen and (max-width:600px){#toasted-container{min-width:100%}#toasted-container .toasted:first-child{margin-top:0}#toasted-container.top-right{top:0;right:0}#toasted-container.top-left{top:0;left:0}#toasted-container.top-center{top:0;left:0;-webkit-transform:translateX(0);transform:translateX(0)}#toasted-container.bottom-right{right:0;bottom:0}#toasted-container.bottom-left{left:0;bottom:0}#toasted-container.bottom-center{left:0;bottom:0;-webkit-transform:translateX(0);transform:translateX(0)}#toasted-container.bottom-center,#toasted-container.top-center{-ms-flex-align:stretch!important;align-items:stretch!important}#toasted-container.bottom-left .toasted,#toasted-container.bottom-right .toasted,#toasted-container.top-left .toasted,#toasted-container.top-right .toasted{float:none}#toasted-container .toasted{border-radius:0}}</style><style type="text/css">
+.tour-item.active[data-v-068086ea] {
+  background: #f6fafe;
+}
+.tour-item.active .tour-title[data-v-068086ea] {
+  font-weight: bold;
+}
+</style><style type="text/css">
+.file-addition,
+.file-addition-solid {
+  color: #1aaa55;
+}
+.file-modified,
+.file-modified-solid {
+  color: #fc9403;
+}
+.file-deletion,
+.file-deletion-solid {
+  color: #db3b21;
+}
+</style><style type="text/css">
+.highlighted[data-v-8bcca2c2] {
+  color: #1f78d1;
+  font-weight: 600;
+}
+</style><style type="text/css">
+.file-finder-overlay[data-v-7679498a] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 200;
+}
+.file-finder[data-v-7679498a] {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.diff-file-changes[data-v-7679498a] {
+  top: 50px;
+  max-height: 327px;
+}
+</style><style type="text/css">
+.dropdown {
+  min-width: 0;
+  max-height: 170px;
+}
+</style><style type="text/css">
+@keyframes shadow-fade {
+from {
+    box-shadow: 0 0 4px #919191;
+}
+to {
+    box-shadow: 0 0 0 #dfdfdf;
+}
+}
+.diff-file.is-active {
+  box-shadow: 0 0 0 #dfdfdf;
+  animation: shadow-fade 1.2s 0.1s 1;
+}
+</style><style type="text/css">
+.file-row {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+  border-radius: 3px;
+  text-align: left;
+  cursor: pointer;
+}
+.file-row:hover,
+.file-row:focus {
+  background: #f2f2f2;
+}
+.file-row:active {
+  background: #dfdfdf;
+}
+.file-row.is-active {
+  background: #f2f2f2;
+}
+.file-row-name-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  overflow: visible;
+}
+.file-row-name {
+  display: inline-block;
+  flex: 1;
+  max-width: inherit;
+  height: 19px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-row-name .file-row-icon {
+  margin-right: 2px;
+  vertical-align: middle;
+}
+</style><style type="text/css">
+.file-row-stats {
+  font-size: 12px;
+}
+</style><style type="text/css">
+.tree-list-blobs .file-row-name {
+  margin-left: 12px;
+}
+.diff-tree-search-shortcut {
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.tree-list-icon:not(button) {
+  pointer-events: none;
+}
+</style><style type="text/css">
+.severity-badge {
+  background-color: #f2f2f2;
+  border-radius: 0.3em;
+  color: #505050;
+  display: inline-block;
+  font-size: 0.9em;
+  font-weight: bold;
+  line-height: 1em;
+  padding: 0.6em 0.4em 0.4em;
+  text-transform: uppercase;
+}
+.severity-badge-critical {
+  background-color: #fae5e1;
+  color: #c0341e;
+}
+.severity-badge-high {
+  background-color: #fff1de;
+  color: #de7e00;
+}
+.severity-badge-medium {
+  background-color: #ede8fb;
+  color: #6d49cb;
+}
+.severity-badge-unknown {
+  background-color: #ffffff;
+  border: 1px solid;
+  color: #707070;
+}
+</style><script charset="utf-8" src="https://assets.gitlab-static.net/assets/webpack/vendors~select2.445b4f0c.chunk.js"></script><script type="application/javascript" src="https://gitlab.com/assets/webpack/sourcegraph/scripts/integration.bundle.js" defer=""></script><link rel="stylesheet" type="text/css" href="https://gitlab.com/assets/webpack/sourcegraph/css/style.bundle.css" id="sourcegraph-styles"></head>
+
+<body class="ui-indigo  gl-browser-chrome gl-platform-mac" data-find-file="/sourcegraph/jsonrpc2/find_file/master" data-group="" data-page="projects:merge_requests:show" data-project="jsonrpc2">
+<script nonce="">
+//<![CDATA[
+gl = window.gl || {};
+gl.GfmAutoComplete = gl.GfmAutoComplete || {};
+gl.GfmAutoComplete.dataSources = {"members":"/sourcegraph/jsonrpc2/-/autocomplete_sources/members?type=MergeRequest\u0026type_id=1","issues":"/sourcegraph/jsonrpc2/-/autocomplete_sources/issues","mergeRequests":"/sourcegraph/jsonrpc2/-/autocomplete_sources/merge_requests","labels":"/sourcegraph/jsonrpc2/-/autocomplete_sources/labels?type=MergeRequest\u0026type_id=1","milestones":"/sourcegraph/jsonrpc2/-/autocomplete_sources/milestones","commands":"/sourcegraph/jsonrpc2/-/autocomplete_sources/commands?type=MergeRequest\u0026type_id=1","snippets":"/sourcegraph/jsonrpc2/-/autocomplete_sources/snippets"};
+
+
+//]]>
+</script>
+<script nonce="">
+//<![CDATA[
+gl = window.gl || {};
+gl.client = {"isChrome":true,"isMac":true};
+
+
+//]]>
+</script>
+
+
+<header class="navbar navbar-gitlab navbar-expand-sm js-navbar" data-qa-selector="navbar">
+<a class="sr-only gl-accessibility" href="#content-body" tabindex="1">Skip to content</a>
+<div class="container-fluid">
+<div class="header-content">
+<div class="title-container">
+<h1 class="title">
+<a title="Dashboard" id="logo" href="/"><svg width="24" height="24" class="tanuki-logo" viewBox="0 0 36 36">
+  <path class="tanuki-shape tanuki-left-ear" fill="#e24329" d="M2 14l9.38 9v-9l-4-12.28c-.205-.632-1.176-.632-1.38 0z"></path>
+  <path class="tanuki-shape tanuki-right-ear" fill="#e24329" d="M34 14l-9.38 9v-9l4-12.28c.205-.632 1.176-.632 1.38 0z"></path>
+  <path class="tanuki-shape tanuki-nose" fill="#e24329" d="M18,34.38 3,14 33,14 Z"></path>
+  <path class="tanuki-shape tanuki-left-eye" fill="#fc6d26" d="M18,34.38 11.38,14 2,14 6,25Z"></path>
+  <path class="tanuki-shape tanuki-right-eye" fill="#fc6d26" d="M18,34.38 24.62,14 34,14 30,25Z"></path>
+  <path class="tanuki-shape tanuki-left-cheek" fill="#fca326" d="M2 14L.1 20.16c-.18.565 0 1.2.5 1.56l17.42 12.66z"></path>
+  <path class="tanuki-shape tanuki-right-cheek" fill="#fca326" d="M34 14l1.9 6.16c.18.565 0 1.2-.5 1.56L18 34.38z"></path>
+</svg>
+
+<span class="logo-text d-none d-lg-block prepend-left-8">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 617 169"><path d="M315.26 2.97h-21.8l.1 162.5h88.3v-20.1h-66.5l-.1-142.4M465.89 136.95c-5.5 5.7-14.6 11.4-27 11.4-16.6 0-23.3-8.2-23.3-18.9 0-16.1 11.2-23.8 35-23.8 4.5 0 11.7.5 15.4 1.2v30.1h-.1m-22.6-98.5c-17.6 0-33.8 6.2-46.4 16.7l7.7 13.4c8.9-5.2 19.8-10.4 35.5-10.4 17.9 0 25.8 9.2 25.8 24.6v7.9c-3.5-.7-10.7-1.2-15.1-1.2-38.2 0-57.6 13.4-57.6 41.4 0 25.1 15.4 37.7 38.7 37.7 15.7 0 30.8-7.2 36-18.9l4 15.9h15.4v-83.2c-.1-26.3-11.5-43.9-44-43.9M557.63 149.1c-8.2 0-15.4-1-20.8-3.5V70.5c7.4-6.2 16.6-10.7 28.3-10.7 21.1 0 29.2 14.9 29.2 39 0 34.2-13.1 50.3-36.7 50.3m9.2-110.6c-19.5 0-30 13.3-30 13.3v-21l-.1-27.8h-21.3l.1 158.5c10.7 4.5 25.3 6.9 41.2 6.9 40.7 0 60.3-26 60.3-70.9-.1-35.5-18.2-59-50.2-59M77.9 20.6c19.3 0 31.8 6.4 39.9 12.9l9.4-16.3C114.5 6 97.3 0 78.9 0 32.5 0 0 28.3 0 85.4c0 59.8 35.1 83.1 75.2 83.1 20.1 0 37.2-4.7 48.4-9.4l-.5-63.9V75.1H63.6v20.1h38l.5 48.5c-5 2.5-13.6 4.5-25.3 4.5-32.2 0-53.8-20.3-53.8-63-.1-43.5 22.2-64.6 54.9-64.6M231.43 2.95h-21.3l.1 27.3v94.3c0 26.3 11.4 43.9 43.9 43.9 4.5 0 8.9-.4 13.1-1.2v-19.1c-3.1.5-6.4.7-9.9.7-17.9 0-25.8-9.2-25.8-24.6v-65h35.7v-17.8h-35.7l-.1-38.5M155.96 165.47h21.3v-124h-21.3v124M155.96 24.37h21.3V3.07h-21.3v21.3"></path></svg>
+
+</span>
+</a></h1>
+<ul class="list-unstyled navbar-sub-nav">
+<li id="nav-projects-dropdown" class="home dropdown header-projects qa-projects-dropdown" data-track-label="projects_dropdown" data-track-event="click_dropdown" data-track-value=""><button class="btn" data-toggle="dropdown" type="button">
+Projects
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</button>
+<div class="dropdown-menu frequent-items-dropdown-menu">
+<div class="frequent-items-dropdown-container">
+<div class="frequent-items-dropdown-sidebar qa-projects-dropdown-sidebar">
+<ul>
+<li class=""><a class="qa-your-projects-link" href="/dashboard/projects">Your projects
+</a></li><li class=""><a href="/dashboard/projects/starred">Starred projects
+</a></li><li class=""><a href="/explore">Explore projects
+</a></li></ul>
+</div>
+<div class="frequent-items-dropdown-content">
+<div><div class="search-input-container d-none d-sm-block"><input placeholder="Search your projects" type="search" class="form-control"> <svg aria-hidden="true" class="search-icon s16 ic-search"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#search"></use></svg></div> <!----> <div class="section-header">
+    Frequently visited
+  </div> <div class="frequent-items-list-container"><ul class="list-unstyled"><li class="section-empty">
+      Projects you visit often will appear here
+    </li></ul></div></div>
+</div>
+</div>
+
+</div>
+</li><li id="nav-groups-dropdown" class="d-none d-md-block home dropdown header-groups qa-groups-dropdown" data-track-label="groups_dropdown" data-track-event="click_dropdown" data-track-value=""><button class="btn" data-toggle="dropdown" type="button">
+Groups
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</button>
+<div class="dropdown-menu frequent-items-dropdown-menu">
+<div class="frequent-items-dropdown-container">
+<div class="frequent-items-dropdown-sidebar qa-groups-dropdown-sidebar">
+<ul>
+<li class=""><a class="qa-your-groups-link" href="/dashboard/groups">Your groups
+</a></li><li class=""><a href="/explore/groups">Explore groups
+</a></li></ul>
+</div>
+<div class="frequent-items-dropdown-content">
+<div><div class="search-input-container d-none d-sm-block"><input placeholder="Search your groups" type="search" class="form-control"> <svg aria-hidden="true" class="search-icon s16 ic-search"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#search"></use></svg></div> <!----> <div class="section-header">
+    Frequently visited
+  </div> <div class="frequent-items-list-container"><ul class="list-unstyled"><li class="section-empty">
+      Groups you visit often will appear here
+    </li></ul></div></div>
+</div>
+</div>
+
+</div>
+</li><li class="header-more dropdown">
+<a data-qa-selector="more_dropdown" data-toggle="dropdown" href="#">
+More
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</a>
+<div class="dropdown-menu">
+<ul>
+<li class="d-md-none">
+<a href="/dashboard/groups">Groups
+</a></li>
+<li class=""><a href="/dashboard/activity">Activity
+</a></li><li class=""><a class="dashboard-shortcuts-milestones" href="/dashboard/milestones">Milestones
+</a></li><li class=""><a class="dashboard-shortcuts-snippets" data-qa-selector="snippets_link" href="/dashboard/snippets">Snippets
+</a></li><li class=""><a href="/-/analytics">Analytics
+</a></li>
+<li class="dropdown">
+<a class="dropdown-item" href="/-/operations/environments">Environments
+</a><a class="dropdown-item" href="/-/operations">Operations
+</a>
+</li>
+</ul>
+</div>
+</li>
+<li class="hidden">
+<a class="dashboard-shortcuts-projects" href="/dashboard/projects">Projects
+</a></li>
+
+</ul>
+
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li class="header-new dropdown" data-track-event="click_dropdown" data-track-label="new_dropdown" data-track-value="">
+<a class="header-new-dropdown-toggle has-tooltip qa-new-menu-toggle" id="js-onboarding-new-project-link" title="New..." ref="tooltip" aria-label="New..." data-toggle="dropdown" data-placement="bottom" data-container="body" data-display="static" href="/projects/new"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#plus-square"></use></svg>
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</a><div class="dropdown-menu dropdown-menu-right">
+<ul>
+<li class="dropdown-bold-header">
+This project
+</li>
+<li><a href="/sourcegraph/jsonrpc2/merge_requests/new">New merge request</a></li>
+<li class="divider"></li>
+<li class="dropdown-bold-header">GitLab</li>
+<li><a class="qa-global-new-project-link" href="/projects/new">New project</a></li>
+<li><a href="/groups/new">New group</a></li>
+<li><a class="qa-global-new-snippet-link" href="/snippets/new">New snippet</a></li>
+</ul>
+</div>
+</li>
+
+<li class="nav-item d-none d-lg-block m-auto">
+<div class="search search-form" data-track-event="activate_form_input" data-track-label="navbar_search" data-track-value="">
+<form class="form-inline" action="/search" accept-charset="UTF-8" method="get"><input name="utf8" type="hidden" value="✓"><div class="search-input-container">
+<div class="search-input-wrap">
+<div class="dropdown" data-url="/search/autocomplete">
+<input type="search" name="search" id="search" placeholder="Search or jump to…" class="search-input dropdown-menu-toggle no-outline js-search-dashboard-options js-autocomplete-disabled" spellcheck="false" tabindex="1" autocomplete="off" data-issues-path="/dashboard/issues" data-mr-path="/dashboard/merge_requests" data-qa-selector="search_term_field" aria-label="Search or jump to…">
+<button class="hidden js-dropdown-search-toggle" data-toggle="dropdown" type="button"></button>
+<div class="dropdown-menu dropdown-select js-dashboard-search-options">
+<div class="dropdown-content"><ul>
+<li class="dropdown-menu-empty-item">
+<a>
+Loading...
+</a>
+</li>
+</ul>
+</div><div class="dropdown-loading"><i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin"></i></div>
+</div>
+<svg class="s16 search-icon"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#search"></use></svg>
+<svg class="s16 clear-icon js-clear-input"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#close"></use></svg>
+</div>
+</div>
+</div>
+<input type="hidden" name="group_id" id="group_id" class="js-search-group-options">
+<input type="hidden" name="project_id" id="search_project_id" value="5650765" class="js-search-project-options" data-project-path="jsonrpc2" data-name="jsonrpc2" data-issues-path="/sourcegraph/jsonrpc2/issues" data-mr-path="/sourcegraph/jsonrpc2/merge_requests" data-issues-disabled="true">
+<input type="hidden" name="scope" id="scope" value="merge_requests">
+<input type="hidden" name="repository_ref" id="repository_ref">
+<input type="hidden" name="nav_source" id="nav_source" value="navbar">
+<div class="search-autocomplete-opts hide" data-autocomplete-path="/search/autocomplete" data-autocomplete-project-id="5650765"></div>
+</form></div>
+
+</li>
+<li class="nav-item d-inline-block d-lg-none">
+<a title="Search" aria-label="Search" data-toggle="tooltip" data-placement="bottom" data-container="body" href="/search?project_id=5650765"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#search"></use></svg>
+</a></li>
+<li class="user-counter"><a title="Issues" class="dashboard-shortcuts-issues" aria-label="Issues" data-toggle="tooltip" data-placement="bottom" data-container="body" href="/dashboard/issues?assignee_username=felixfbecker"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#issues"></use></svg>
+<span class="badge badge-pill green-badge hidden issues-count">
+0
+</span>
+</a></li><li class="user-counter"><a title="Merge requests" class="dashboard-shortcuts-merge_requests" aria-label="Merge requests" data-toggle="tooltip" data-placement="bottom" data-container="body" href="/dashboard/merge_requests?assignee_username=felixfbecker"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#git-merge"></use></svg>
+<span class="badge badge-pill hidden merge-requests-count">
+0
+</span>
+</a></li><li class="user-counter"><a title="To-Do List" aria-label="To-Do List" class="shortcuts-todos" data-toggle="tooltip" data-placement="bottom" data-container="body" href="/dashboard/todos"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-done"></use></svg>
+<span class="badge badge-pill todos-count">
+11
+</span>
+</a></li><li class="nav-item header-help dropdown d-none d-md-block">
+<a class="header-help-dropdown-toggle" data-toggle="dropdown" href="/help"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#question"></use></svg>
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</a><div class="dropdown-menu dropdown-menu-right">
+<ul>
+<li>
+<a href="/help">Help</a>
+</li>
+<li>
+<a href="https://about.gitlab.com/getting-help/">Support</a>
+</li>
+
+<li class="divider"></li>
+<li>
+<a href="https://about.gitlab.com/submit-feedback">Submit feedback</a>
+</li>
+<li>
+<a target="_blank" class="text-nowrap" href="https://about.gitlab.com/contributing">Contribute to GitLab
+</a>
+
+</li>
+
+<li>
+<a href="https://next.gitlab.com/">Switch to GitLab Next</a>
+</li>
+</ul>
+
+</div>
+</li>
+<li class="dropdown header-user nav-item" data-qa-selector="user_menu" data-track-event="click_dropdown" data-track-label="profile_dropdown" data-track-value="">
+<a class="header-user-dropdown-toggle" data-toggle="dropdown" href="/felixfbecker"><img width="23" height="23" class="header-user-avatar qa-user-avatar js-lazy-loaded qa-js-lazy-loaded" src="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=46&amp;d=identicon">
+<svg class="caret-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg>
+</a><div class="dropdown-menu dropdown-menu-right">
+<ul>
+<li class="current-user">
+<div class="user-name bold">
+Felix Becker
+</div>
+@felixfbecker
+</li>
+<li class="divider"></li>
+<li>
+<button type="button" class="btn menu-item">Set status</button>
+</li>
+<li>
+<a class="profile-link" data-user="felixfbecker" href="/felixfbecker">Profile</a>
+</li>
+<li>
+<a class="trial-link" href="/-/trial_registrations/new">
+Start a Gold trial
+<gl-emoji title="rocket" data-name="rocket" data-unicode-version="6.0">🚀</gl-emoji>
+</a>
+</li>
+<li>
+<a data-qa-selector="settings_link" href="/profile">Settings</a>
+</li>
+<li class="divider d-md-none"></li>
+<li class="d-md-none">
+<a href="/help">Help</a>
+</li>
+<li class="d-md-none">
+<a href="https://about.gitlab.com/getting-help/">Support</a>
+</li>
+
+<li class="d-md-none">
+<a href="https://about.gitlab.com/submit-feedback">Submit feedback</a>
+</li>
+<li class="d-md-none">
+<a target="_blank" class="text-nowrap" href="https://about.gitlab.com/contributing">Contribute to GitLab
+</a>
+
+</li>
+
+<li class="d-md-none">
+<a href="https://next.gitlab.com/">Switch to GitLab Next</a>
+</li>
+<li class="divider"></li>
+<li>
+<a class="sign-out-link" data-qa-selector="sign_out_link" href="/users/sign_out">Sign out</a>
+</li>
+</ul>
+
+</div>
+</li>
+</ul>
+</div>
+<button class="navbar-toggler d-block d-sm-none" type="button">
+<span class="sr-only">Toggle navigation</span>
+<svg class="s12 more-icon js-navbar-toggle-right"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#ellipsis_h"></use></svg>
+<svg class="s12 close-icon js-navbar-toggle-left"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#close"></use></svg>
+</button>
+</div>
+</div>
+</header>
+<!---->
+
+<div class="layout-page page-gutter page-with-contextual-sidebar right-sidebar-expanded">
+<div class="nav-sidebar">
+<div class="nav-sidebar-inner-scroll" style="overflow-y: scroll;">
+<div class="context-header">
+<a title="jsonrpc2" href="/sourcegraph/jsonrpc2"><div class="avatar-container rect-avatar s40 project-avatar">
+<div class="avatar s40 avatar-tile identicon bg2">J</div>
+</div>
+<div class="sidebar-context-title">
+jsonrpc2
+</div>
+</a></div>
+<ul class="sidebar-top-level-items">
+<li class="home"><a class="shortcuts-project rspec-project-link" data-qa-selector="project_link" href="/sourcegraph/jsonrpc2"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#home"></use></svg>
+</div>
+<span class="nav-item-name">
+Project overview
+</span>
+</a><ul class="sidebar-sub-level-items">
+<li class="fly-out-top-item"><a href="/sourcegraph/jsonrpc2"><strong class="fly-out-top-item-name">
+Project overview
+</strong>
+</a></li><li class="divider fly-out-top-item"></li>
+<li class=""><a title="Project details" class="shortcuts-project" href="/sourcegraph/jsonrpc2"><span>Details</span>
+</a></li><li class=""><a title="Activity" class="shortcuts-project-activity" data-qa-selector="activity_link" href="/sourcegraph/jsonrpc2/activity"><span>Activity</span>
+</a></li><li class=""><a title="Releases" class="shortcuts-project-releases" href="/sourcegraph/jsonrpc2/-/releases"><span>Releases</span>
+</a></li><li class=""><a title="Cycle Analytics" class="shortcuts-project-cycle-analytics" href="/sourcegraph/jsonrpc2/-/cycle_analytics"><span>Cycle Analytics</span>
+</a></li><li class=""><a title="Insights" class="shortcuts-project-insights" data-qa-selector="project_insights_link" href="/sourcegraph/jsonrpc2/insights/"><span>Insights</span>
+</a></li>
+</ul>
+</li><li class=""><a class="shortcuts-tree qa-project-menu-repo" href="/sourcegraph/jsonrpc2/tree/master"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#doc-text"></use></svg>
+</div>
+<span class="nav-item-name" id="js-onboarding-repo-link">
+Repository
+</span>
+</a><ul class="sidebar-sub-level-items">
+<li class="fly-out-top-item"><a href="/sourcegraph/jsonrpc2/tree/master"><strong class="fly-out-top-item-name">
+Repository
+</strong>
+</a></li><li class="divider fly-out-top-item"></li>
+<li class=""><a href="/sourcegraph/jsonrpc2/tree/master">Files
+</a></li><li class=""><a id="js-onboarding-commits-link" href="/sourcegraph/jsonrpc2/commits/master">Commits
+</a></li><li class=""><a class="qa-branches-link" id="js-onboarding-branches-link" href="/sourcegraph/jsonrpc2/-/branches">Branches
+</a></li><li class=""><a href="/sourcegraph/jsonrpc2/-/tags">Tags
+</a></li><li class=""><a href="/sourcegraph/jsonrpc2/-/graphs/master">Contributors
+</a></li><li class=""><a href="/sourcegraph/jsonrpc2/-/network/master">Graph
+</a></li><li class=""><a href="/sourcegraph/jsonrpc2/compare?from=master&amp;to=master">Compare
+</a></li><li class=""><a href="/sourcegraph/jsonrpc2/-/graphs/master/charts">Charts
+</a></li><li class=""><a data-qa-selector="path_locks_link" href="/sourcegraph/jsonrpc2/path_locks">Locked Files
+</a></li>
+</ul>
+</li><li class="active"><a class="shortcuts-merge_requests" data-qa-selector="merge_requests_link" href="/sourcegraph/jsonrpc2/merge_requests"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#git-merge"></use></svg>
+</div>
+<span class="nav-item-name" id="js-onboarding-mr-link">
+Merge Requests
+</span>
+<span class="badge badge-pill count merge_counter js-merge-counter">
+1
+</span>
+</a><ul class="sidebar-sub-level-items is-fly-out-only">
+<li class="fly-out-top-item active"><a href="/sourcegraph/jsonrpc2/merge_requests"><strong class="fly-out-top-item-name">
+Merge Requests
+</strong>
+<span class="badge badge-pill count merge_counter js-merge-counter fly-out-badge">
+1
+</span>
+</a></li></ul>
+</li><li class=""><a data-qa-selector="security_dashboard_link" href="/sourcegraph/jsonrpc2/security/dashboard"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#shield"></use></svg>
+</div>
+<span class="nav-item-name">
+Security &amp; Compliance
+</span>
+</a><ul class="sidebar-sub-level-items">
+<li class="fly-out-top-item"><a href="/sourcegraph/jsonrpc2/security/dashboard"><strong class="fly-out-top-item-name">
+Security &amp; Compliance
+</strong>
+</a></li><li class="divider fly-out-top-item"></li>
+<li class=""><a title="Security Dashboard" href="/sourcegraph/jsonrpc2/security/dashboard"><span>Security Dashboard</span>
+</a></li><li class=""><a title="Dependency List" data-qa-selector="dependency_list_link" href="/sourcegraph/jsonrpc2/dependencies"><span>Dependency List</span>
+</a></li></ul>
+</li>
+<li class=""><a class="shortcuts-operations qa-link-operations" href="/sourcegraph/jsonrpc2/-/feature_flags"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#cloud-gear"></use></svg>
+</div>
+<span class="nav-item-name">
+Operations
+</span>
+</a><ul class="sidebar-sub-level-items">
+<li class="fly-out-top-item"><a href="/sourcegraph/jsonrpc2/-/feature_flags"><strong class="fly-out-top-item-name">
+Operations
+</strong>
+</a></li><li class="divider fly-out-top-item"></li>
+<li class=""><a title="Error Tracking" class="shortcuts-tracking qa-operations-tracking-link" href="/sourcegraph/jsonrpc2/error_tracking"><span>
+Error Tracking
+</span>
+</a></li>
+<li class=""><a title="Feature Flags" class="shortcuts-feature-flags" href="/sourcegraph/jsonrpc2/-/feature_flags"><span>
+Feature Flags
+</span>
+</a></li>
+</ul>
+</li>
+<li class=""><a class="shortcuts-tree" href="/sourcegraph/jsonrpc2/edit"><div class="nav-icon-container">
+<svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#settings"></use></svg>
+</div>
+<span class="nav-item-name qa-settings-item" id="js-onboarding-settings-link">
+Settings
+</span>
+</a><ul class="sidebar-sub-level-items">
+<li class="fly-out-top-item"><a href="/sourcegraph/jsonrpc2/edit"><strong class="fly-out-top-item-name">
+Settings
+</strong>
+</a></li><li class="divider fly-out-top-item"></li>
+<li class=""><a title="General" class="qa-general-settings-link" href="/sourcegraph/jsonrpc2/edit"><span>
+General
+</span>
+</a></li><li class=""><a title="Members" class="qa-link-members-settings" id="js-onboarding-settings-members-link" href="/sourcegraph/jsonrpc2/-/project_members"><span>
+Members
+</span>
+</a></li><li class=""><a title="Integrations" data-qa-selector="integrations_settings_link" href="/sourcegraph/jsonrpc2/-/settings/integrations"><span>
+Integrations
+</span>
+</a></li><li class=""><a title="Repository" href="/sourcegraph/jsonrpc2/-/settings/repository"><span>
+Repository
+</span>
+</a></li><li class=""><a title="Pages" href="/sourcegraph/jsonrpc2/pages"><span>
+Pages
+</span>
+</a></li><li class=""><a title="Audit Events" data-qa-selector="audit_events_settings_link" href="/sourcegraph/jsonrpc2/audit_events">Audit Events
+</a></li>
+</ul>
+</li><a class="toggle-sidebar-button js-toggle-sidebar qa-toggle-sidebar rspec-toggle-sidebar" role="button" title="Toggle sidebar" type="button">
+<svg class="icon-angle-double-left"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-double-left"></use></svg>
+<svg class="icon-angle-double-right"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-double-right"></use></svg>
+<span class="collapse-text">Collapse sidebar</span>
+</a>
+<button name="button" type="button" class="close-nav-button"><svg class="s16"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#close"></use></svg>
+<span class="collapse-text">Close sidebar</span>
+</button>
+<li class="hidden">
+<a title="Activity" class="shortcuts-project-activity" href="/sourcegraph/jsonrpc2/activity"><span>
+Activity
+</span>
+</a></li>
+<li class="hidden">
+<a title="Network" class="shortcuts-network" href="/sourcegraph/jsonrpc2/-/network/master">Graph
+</a></li>
+<li class="hidden">
+<a title="Charts" class="shortcuts-repository-charts" href="/sourcegraph/jsonrpc2/-/graphs/master/charts">Charts
+</a></li>
+<li class="hidden">
+<a title="Commits" class="shortcuts-commits" href="/sourcegraph/jsonrpc2/commits/master">Commits
+</a></li>
+</ul>
+</div>
+</div>
+
+<div class="content-wrapper">
+
+<div class="mobile-overlay"></div>
+<div class="alert-wrapper">
+
+
+
+
+
+
+<nav class="breadcrumbs container-fluid container-limited limit-container-width" role="navigation">
+<div class="breadcrumbs-container">
+<button name="button" type="button" class="toggle-mobile-nav"><span class="sr-only">Open sidebar</span>
+<i aria-hidden="true" data-hidden="true" class="fa fa-bars"></i>
+</button><div class="breadcrumbs-links js-title-container">
+<ul class="list-unstyled breadcrumbs-list js-breadcrumbs-list">
+<li><a class="group-path breadcrumb-item-text js-breadcrumb-item-text " href="/sourcegraph"><img class="avatar-tile js-lazy-loaded qa-js-lazy-loaded" width="15" height="15" src="https://assets.gitlab-static.net/uploads/-/system/group/avatar/2582152/3979584.png?width=15">sourcegraph</a><svg class="s8 breadcrumbs-list-angle"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-right"></use></svg></li> <li><a href="/sourcegraph/jsonrpc2"><span class="breadcrumb-item-text js-breadcrumb-item-text">jsonrpc2</span></a><svg class="s8 breadcrumbs-list-angle"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-right"></use></svg></li>
+<li><a href="/sourcegraph/jsonrpc2/merge_requests">Merge Requests</a><svg class="s8 breadcrumbs-list-angle"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-right"></use></svg></li>
+
+<li>
+<h2 class="breadcrumbs-sub-title"><a href="/sourcegraph/jsonrpc2/merge_requests/1">!1</a></h2>
+</li>
+</ul>
+</div>
+
+</div>
+</nav>
+
+<div class="d-flex"></div>
+</div>
+<div class="container-fluid limit-container-width">
+<div class="content" id="content-body">
+<div class="flash-container flash-container-page sticky">
+</div>
+
+<div class="merge-request" data-lock-version="0" data-mr-action="show" data-project-path="/sourcegraph/jsonrpc2" data-url="/sourcegraph/jsonrpc2/merge_requests/1.json">
+<div class="detail-page-header">
+<div class="detail-page-header-body">
+<div class="issuable-status-box status-box status-box-open">
+<svg class="s16 d-block d-sm-none"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#issue-open-m"></use></svg>
+<span class="d-none d-sm-block">
+Open
+</span>
+</div>
+<div class="issuable-meta">
+Opened <time class="js-timeago" title="" datetime="2019-12-04T22:46:53Z" data-toggle="tooltip" data-placement="top" data-container="body" data-original-title="Dec 4, 2019 10:46pm">just now</time> by <strong><a class="author-link js-user-link  d-none d-sm-inline" data-user-id="2479048" data-username="felixfbecker" data-name="Felix Becker" href="/felixfbecker"><img width="24" class="avatar avatar-inline s24 js-lazy-loaded qa-js-lazy-loaded" alt="" src="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=48&amp;d=identicon"><span class="author">Felix Becker</span></a><a class="author-link js-user-link  d-inline d-sm-none" data-user-id="2479048" data-username="felixfbecker" data-name="Felix Becker" href="/felixfbecker"><span class="author">@felixfbecker</span></a></strong><span class="has-tooltip prepend-left-4" title="1st contribution!"></span><span id="task_status" class="d-none d-sm-none d-md-inline-block prepend-left-8"></span><span id="task_status_short" class="d-md-none"></span>
+</div>
+<a class="btn btn-default float-right d-block d-sm-none gutter-toggle issuable-gutter-toggle js-sidebar-toggle" href="#">
+<i aria-hidden="true" data-hidden="true" class="fa fa-angle-double-left"></i>
+</a>
+</div>
+<div class="detail-page-header-actions js-issuable-actions">
+<div class="clearfix issue-btn-group dropdown">
+<button class="btn btn-default float-left d-md-none d-lg-none d-xl-none" data-toggle="dropdown" type="button">
+Options
+<i aria-hidden="true" data-hidden="true" class="fa fa-caret-down"></i>
+</button>
+<div class="dropdown-menu dropdown-menu-right d-lg-none d-xl-none">
+<ul>
+<li><a href="/sourcegraph/jsonrpc2/merge_requests/1/edit">Edit</a></li>
+<li class="js-close-item">
+<a title="Close merge request" rel="nofollow" data-method="put" href="/sourcegraph/jsonrpc2/merge_requests/1?merge_request%5Bstate_event%5D=close">Close</a>
+</li>
+<li class="hidden">
+<a class="reopen-mr-link" title="Reopen merge request" rel="nofollow" data-method="put" href="/sourcegraph/jsonrpc2/merge_requests/1?merge_request%5Bstate_event%5D=reopen">Reopen</a>
+</li>
+</ul>
+</div>
+<a class="d-none d-sm-none d-md-block btn btn-grouped js-issuable-edit qa-edit-button" href="/sourcegraph/jsonrpc2/merge_requests/1/edit">Edit</a>
+<a class="d-none d-sm-none d-md-block btn btn-grouped btn-close js-btn-issue-action " title="Close merge request" data-qa-selector="close_issue_button" rel="nofollow" data-method="put" href="/sourcegraph/jsonrpc2/merge_requests/1?merge_request%5Bstate_event%5D=close">Close merge request</a>
+<a class="d-none d-sm-none d-md-block btn btn-grouped btn-reopen js-btn-issue-action hidden" title="Reopen merge request" data-qa-selector="reopen_issue_button" rel="nofollow" data-method="put" href="/sourcegraph/jsonrpc2/merge_requests/1?merge_request%5Bstate_event%5D=reopen">Reopen merge request</a>
+
+</div>
+</div>
+</div>
+
+<div class="merge-request-details issuable-details" data-id="5650765">
+<div class="detail-page-description">
+<h2 class="title qa-title">
+Test Merge Request
+</h2>
+<div>
+<div class="description js-task-list-container qa-description is-task-list-enabled">
+<div class="md">
+<p data-sourcepos="1:1-1:56" dir="auto">A merge request for testing purposes (used in our tests)</p>
+</div>
+<textarea class="hidden js-task-list-field">A merge request for testing purposes (used in our tests)</textarea>
+</div>
+</div>
+
+</div>
+
+<div class="modal" id="modal_merge_info" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header">
+<h3 class="modal-title">Check out, review, and merge locally</h3>
+<button aria-label="Close" class="close" data-dismiss="modal" type="button">
+<span aria-hidden="">×</span>
+</button>
+</div>
+<div class="modal-body">
+<p>
+<strong>Step 1.</strong>
+Fetch and check out the branch for this merge request
+</p>
+<button class="btn btn-clipboard btn-transparent" data-toggle="tooltip" data-placement="bottom" data-container="body" data-title="Copy commands" data-clipboard-target="pre#merge-info-1" type="button" title="Copy commands" aria-label="Copy commands"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+<pre class="dark" id="merge-info-1">git fetch origin
+git checkout -b "changes" "origin/changes"
+</pre>
+<p>
+<strong>Step 2.</strong>
+Review the changes locally
+</p>
+<p>
+<strong>Step 3.</strong>
+Merge the branch and fix any conflicts that come up
+</p>
+<button class="btn btn-clipboard btn-transparent" data-toggle="tooltip" data-placement="bottom" data-container="body" data-title="Copy commands" data-clipboard-target="pre#merge-info-3" type="button" title="Copy commands" aria-label="Copy commands"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+<pre class="dark" id="merge-info-3">git fetch origin
+git checkout "origin/master"
+git merge --no-ff "changes"
+</pre>
+<p>
+<strong>Step 4.</strong>
+Push the result of the merge to GitLab
+</p>
+<button class="btn btn-clipboard btn-transparent" data-toggle="tooltip" data-placement="bottom" data-container="body" data-title="Copy commands" data-clipboard-target="pre#merge-info-4" type="button" title="Copy commands" aria-label="Copy commands"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+<pre class="dark" id="merge-info-4">git push origin "master"
+</pre>
+<p>
+<strong>Tip:</strong>
+You can also checkout merge requests locally by
+<a target="_blank" rel="noopener noreferrer" href="/help/user/project/merge_requests/index.md#checkout-merge-requests-locally">following these guidelines</a>.
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<script nonce="">
+//<![CDATA[
+window.gl = window.gl || {};
+window.gl.mrWidgetData = {"source_project_full_path":"sourcegraph/jsonrpc2","target_project_full_path":"sourcegraph/jsonrpc2","email_patches_path":"/sourcegraph/jsonrpc2/merge_requests/1.patch","plain_diff_path":"/sourcegraph/jsonrpc2/merge_requests/1.diff","merge_request_basic_path":"/sourcegraph/jsonrpc2/merge_requests/1.json?serializer=basic","merge_request_widget_path":"/sourcegraph/jsonrpc2/merge_requests/1/widget.json","merge_request_cached_widget_path":"/sourcegraph/jsonrpc2/merge_requests/1/cached_widget.json","commit_change_content_path":"/sourcegraph/jsonrpc2/merge_requests/1/commit_change_content","conflicts_docs_path":"/help/user/project/merge_requests/resolve_conflicts.md","merge_request_pipelines_docs_path":"/help/ci/merge_request_pipelines/index.md","ci_environments_status_path":"/sourcegraph/jsonrpc2/merge_requests/1/ci_environments_status","issues_links":{"assign_to_closing":null,"closing":"","mentioned_but_not_closing":""},"blob_path":{},"vulnerability_feedback_path":"/sourcegraph/jsonrpc2/vulnerability_feedback","create_vulnerability_feedback_issue_path":null,"create_vulnerability_feedback_merge_request_path":"/sourcegraph/jsonrpc2/vulnerability_feedback","create_vulnerability_feedback_dismissal_path":"/sourcegraph/jsonrpc2/vulnerability_feedback","has_approvals_available":true,"api_approvals_path":"/api/v4/projects/5650765/merge_requests/1/approvals","api_approval_settings_path":"/api/v4/projects/5650765/merge_requests/1/approval_settings","api_approve_path":"/api/v4/projects/5650765/merge_requests/1/approve","api_unapprove_path":"/api/v4/projects/5650765/merge_requests/1/unapprove","merge_train_when_pipeline_succeeds_docs_path":"/help/ci/merge_request_pipelines/pipelines_for_merged_results/merge_trains/index.md#startadd-to-merge-train-when-pipeline-succeeds","blocking_merge_requests":{"total_count":0,"hidden_count":0,"visible_merge_requests":{}},"id":43966046,"iid":1,"description":"A merge request for testing purposes (used in our tests)","title":"Test Merge Request","auto_merge_enabled":false,"state":"opened","merge_commit_sha":null,"short_merge_commit_sha":null,"merge_error":null,"merge_status":"can_be_merged","merge_user_id":null,"source_branch":"changes","source_project_id":5650765,"target_branch":"master","target_branch_sha":"dbf20885e7ff39b0d5b64878148113e8433571f1","target_project_id":5650765,"squash":false,"rebase_in_progress":false,"default_squash_commit_message":"Test Merge Request","commits_count":1,"merge_ongoing":false,"work_in_progress":false,"has_conflicts":false,"can_be_merged":true,"remove_source_branch":false,"source_branch_exists":true,"branch_missing":false,"commits_without_merge_commits":[{"message":"Change code\n","short_id":"769bc435","title":"Change code"}],"diff_head_sha":"769bc43591f3899889741de472538975a1b50ce7","metrics":null,"diverged_commits_count":0,"target_branch_commits_path":"/sourcegraph/jsonrpc2/commits/master","target_branch_tree_path":"/sourcegraph/jsonrpc2/tree/master","merge_commit_path":null,"source_branch_path":"/sourcegraph/jsonrpc2/-/branches/changes","source_branch_with_namespace_link":"\u003ca href=\"/sourcegraph/jsonrpc2/tree/changes\"\u003echanges\u003c/a\u003e","auto_merge_strategy":null,"available_auto_merge_strategies":[],"source_branch_protected":false,"allow_collaboration":false,"should_be_rebased":false,"ff_only_enabled":false,"merge_user":null,"default_merge_commit_message":"Merge branch 'changes' into 'master'\n\nTest Merge Request\n\nSee merge request sourcegraph/jsonrpc2!1","mergeable":true,"default_merge_commit_message_with_description":"Merge branch 'changes' into 'master'\n\nTest Merge Request\n\nA merge request for testing purposes (used in our tests)\n\nSee merge request sourcegraph/jsonrpc2!1","mergeable_discussions_state":true,"project_archived":false,"only_allow_merge_if_pipeline_succeeds":false,"has_ci":false,"ci_status":null,"cancel_auto_merge_path":"/sourcegraph/jsonrpc2/merge_requests/1/cancel_auto_merge","test_reports_path":null,"exposed_artifacts_path":null,"create_issue_to_resolve_discussions_path":null,"current_user":{"can_remove_source_branch":true,"can_revert_on_current_merge_request":false,"can_cherry_pick_on_current_merge_request":false,"can_create_issue":false},"can_push_to_source_branch":true,"new_blob_path":"/sourcegraph/jsonrpc2/new/changes","rebase_path":null,"conflict_resolution_path":null,"remove_wip_path":null,"merge_path":"/sourcegraph/jsonrpc2/merge_requests/1/merge","cherry_pick_in_fork_path":null,"revert_in_fork_path":null,"merge_pipelines_enabled":false}
+
+window.gl.mrWidgetData.squash_before_merge_help_path = '/help/user/project/merge_requests/squash_and_merge';
+window.gl.mrWidgetData.troubleshooting_docs_path = '/help/user/project/merge_requests/index.md#troubleshooting';
+window.gl.mrWidgetData.security_approvals_help_page_path = '/help/user/application_security/index.html#security-approvals-in-merge-requests-ultimate';
+
+
+
+//]]>
+</script><div class="mr-state-widget prepend-top-default"><div class="mr-source-target append-bottom-default"><div class="circle-icon-container append-right-default align-self-start align-self-lg-center"><svg aria-hidden="true" class="s24 ic-git-merge"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#git-merge"></use></svg></div> <div class="git-merge-container d-flex"><div class="normal"><strong>
+        Request to merge
+        <span class="label-branch label-truncate js-source-branch"><a href="/sourcegraph/jsonrpc2/tree/changes">changes</a></span><button title="" data-clipboard-text="{&quot;text&quot;:&quot;changes&quot;,&quot;gfm&quot;:&quot;`changes`&quot;}" type="button" class="btn btn-secondary btn-default btn-transparent btn-clipboard" data-original-title="Copy branch name"><svg aria-hidden="true" class="s16 ic-duplicate"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+        into
+        <span class="label-branch label-truncate"><a href="/sourcegraph/jsonrpc2/tree/master" class="js-target-branch"> master </a></span></strong> <!----></div> <div class="branch-actions d-flex"><a href="/-/ide/project/sourcegraph/jsonrpc2/merge_requests/1?target_project=" title="" data-placement="bottom" tabindex="0" role="button" class="btn btn-default js-web-ide d-none d-md-inline-block append-right-8" data-original-title="">
+          Open in Web IDE
+        </a> <button data-target="#modal_merge_info" data-toggle="modal" type="button" class="btn btn-default js-check-out-branch append-right-8">
+          Check out branch
+        </button> <span class="dropdown"><button type="button" data-toggle="dropdown" aria-label="Download as" aria-haspopup="true" aria-expanded="false" class="btn dropdown-toggle qa-dropdown-toggle"><svg aria-hidden="true" class="s16 ic-download"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#download"></use></svg> <i aria-hidden="true" class="fa fa-caret-down"></i></button> <ul class="dropdown-menu dropdown-menu-right"><li><a href="/sourcegraph/jsonrpc2/merge_requests/1.patch" download="" class="js-download-email-patches qa-download-email-patches">
+              Email patches
+            </a></li> <li><a href="/sourcegraph/jsonrpc2/merge_requests/1.diff" download="" class="js-download-plain-diff qa-download-plain-diff">
+              Plain diff
+            </a></li></ul></span></div></div></div> <!----> <div class="mr-widget-heading mr-widget-workflow"><div class="mr-widget-content"><div class="js-mr-approvals d-flex align-items-start align-items-md-center"><div class="circle-icon-container append-right-default align-self-start align-self-lg-center"><svg aria-hidden="true" class="s24 ic-approval"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#approval"></use></svg></div> <!----> <!----> <div class="d-flex align-items-center"><span class="text-muted">No approval required</span> <!----></div></div> <!----></div> </div> <div class="mr-section-container mr-widget-workflow"><!----> <!----> <!----> <!----> <!----> <!----> <!----> <div class="mr-widget-section"><div><div class="mr-widget-body media"><div class="d-flex align-self-start"><div class="square s24 h-auto d-flex-center append-right-default"><span class="ci-status-icon ci-status-icon-success js-ci-status-icon-success"><svg aria-hidden="true" class="s24 ic-status_success"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#status_success"></use></svg></span></div> <!----></div> <div class="media-body"><div class="mr-widget-body-controls media space-children"><span class="btn-group"><button type="button" class="qa-merge-button btn btn-sm btn-success accept-merge-request"><!---->
+            Merge
+          </button> <!----> <!----></span> <div class="media-body-wrap space-children"><label><input id="remove-source-branch-input" type="checkbox" class="js-remove-source-branch-checkbox">
+              Delete source branch
+            </label> <!----></div></div></div></div> <!----> <div class=""><div class="js-mr-widget-commits-count mr-widget-extension clickable d-flex align-items-center px-3 py-2"><button aria-label="Expand" type="button" class="btn commit-edit-toggle square s24 append-right-default btn-blank" variant="blank"><svg aria-hidden="true" class="s16 ic-chevron-right"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#chevron-right"></use></svg></button> <span><span class="vertical-align-middle"><strong class="commits-count-message">1 commit</strong> and <strong>1 merge commit</strong> will be added to <span class="label-branch">master</span>.</span> <button type="button" class="btn modify-message-button btn-link" variant="link">
+        Modify merge commit
+      </button></span></div> <div style="display: none;"><ul class="border-top content-list commits-list flex-list"><!----> <li><div class="commit-message-editor"><div class="d-flex flex-wrap align-items-center justify-content-between"><label for="merge-message-edit" class="col-form-label"><strong>Merge commit message</strong></label> </div> <textarea id="merge-message-edit" dir="auto" required="required" rows="7" class="form-control js-gfm-input append-bottom-default commit-message-edit"></textarea> <label><input id="include-description" type="checkbox">
+            Include merge request description
+          </label></div></li></ul></div></div></div> <div class="mr-widget-info"><!----> <!----> <!----> <!----> <!----></div></div> <!----> <div class="mr-widget-footer"><section class="mr-widget-help font-italic">
+    You can merge this merge request manually using the
+   <button type="button" data-toggle="modal" data-target="#modal_merge_info" class="btn-link btn-blank js-open-modal-help">
+    command line
+  </button></section></div></div> <!----></div>
+<div class="content-block content-block-small emoji-list-container js-noteable-awards">
+<div class="awards js-awards-block" data-award-url="/sourcegraph/jsonrpc2/merge_requests/1/toggle_award_emoji">
+<button class=" award-control btn has-tooltip js-emoji-btn" data-title="" type="button">
+<gl-emoji title="thumbs up sign" data-name="thumbsup" data-unicode-version="6.0">👍</gl-emoji>
+<span class="award-control-text js-counter">
+0
+</span>
+</button>
+<button class=" award-control btn has-tooltip js-emoji-btn" data-title="" type="button">
+<gl-emoji title="thumbs down sign" data-name="thumbsdown" data-unicode-version="6.0">👎</gl-emoji>
+<span class="award-control-text js-counter">
+0
+</span>
+</button>
+<div class="award-menu-holder js-award-holder">
+<button aria-label="Add reaction" class="btn award-control has-tooltip js-add-award" data-title="Add reaction" type="button">
+<span class="award-control-icon award-control-icon-neutral"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#slight-smile"></use></svg></span>
+<span class="award-control-icon award-control-icon-positive"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#smiley"></use></svg></span>
+<span class="award-control-icon award-control-icon-super-positive"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#smile"></use></svg></span>
+<i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin award-control-icon award-control-icon-loading"></i>
+</button>
+</div>
+</div>
+
+</div>
+<div class="js-tabs-affix merge-request-tabs-holder">
+<div class="merge-request-tabs-container">
+<ul class="merge-request-tabs nav-tabs nav nav-links">
+<li class="notes-tab" data-qa-selector="notes_tab">
+<a data-action="show" data-target="#notes" data-toggle="tabvue" href="/sourcegraph/jsonrpc2/merge_requests/1">Discussion
+<span class="badge badge-pill">0</span>
+</a></li>
+<li class="commits-tab">
+<a data-action="commits" data-target="#commits" data-toggle="tabvue" href="/sourcegraph/jsonrpc2/merge_requests/1/commits">Commits
+<span class="badge badge-pill">1</span>
+</a></li>
+<li class="diffs-tab qa-diffs-tab active">
+<a data-action="diffs" data-target="#diffs" data-toggle="tabvue" href="/sourcegraph/jsonrpc2/merge_requests/1/diffs">Changes
+<span class="badge badge-pill">1</span>
+</a></li>
+</ul>
+<div class="d-flex flex-wrap align-items-center justify-content-lg-end">
+<!---->
+<!---->
+</div>
+</div>
+</div>
+<div class="tab-content" id="diff-notes-app">
+<div data-v-7679498a="" class="file-finder-overlay diff-file-finder" style="display: none;"><div data-v-7679498a="" class="dropdown-menu diff-file-changes file-finder show"><div data-v-7679498a="" class="dropdown-input"><input data-v-7679498a="" placeholder="Search files" type="search" autocomplete="off" class="dropdown-input-field"> <i data-v-7679498a="" aria-hidden="true" class="fa fa-search dropdown-input-search"></i> <i data-v-7679498a="" aria-label="Clear search input" role="button" class="fa fa-times dropdown-input-clear"></i></div> <div data-v-7679498a=""><div data-v-7679498a="" style="display: block; overflow-y: auto; height: 55px;"><ul class="" style="display: block; padding-top: 0px; padding-bottom: 0px;"><li data-v-7679498a=""><button data-v-8bcca2c2="" data-v-7679498a="" type="button" class="diff-changed-file disable-hover"><span data-v-8bcca2c2=""><svg class="s16 diff-file-changed-icon append-right-8"><use xlink:href="https://gitlab.com/assets/file_icons-7262fc6897e02f1ceaf8de43dc33afa5e4f9a2067f4f68ef77dcc87946575e9e.svg#go"></use></svg> <!----> <!----></span> <span data-v-8bcca2c2="" class="diff-changed-file-content append-right-8"><strong data-v-8bcca2c2="" class="diff-changed-file-name"><span data-v-8bcca2c2="" class="">c</span><span data-v-8bcca2c2="" class="">a</span><span data-v-8bcca2c2="" class="">l</span><span data-v-8bcca2c2="" class="">l</span><span data-v-8bcca2c2="" class="">_</span><span data-v-8bcca2c2="" class="">o</span><span data-v-8bcca2c2="" class="">p</span><span data-v-8bcca2c2="" class="">t</span><span data-v-8bcca2c2="" class="">.</span><span data-v-8bcca2c2="" class="">g</span><span data-v-8bcca2c2="" class="">o</span></strong> <span data-v-8bcca2c2="" class="diff-changed-file-path prepend-top-5"><span data-v-8bcca2c2="" class="">c</span><span data-v-8bcca2c2="" class="">a</span><span data-v-8bcca2c2="" class="">l</span><span data-v-8bcca2c2="" class="">l</span><span data-v-8bcca2c2="" class="">_</span><span data-v-8bcca2c2="" class="">o</span><span data-v-8bcca2c2="" class="">p</span><span data-v-8bcca2c2="" class="">t</span><span data-v-8bcca2c2="" class="">.</span><span data-v-8bcca2c2="" class="">g</span><span data-v-8bcca2c2="" class="">o</span></span></span> <span data-v-8bcca2c2="" class="diff-changed-stats"><span data-v-8bcca2c2=""><span data-v-8bcca2c2="" class="cgreen bold"><svg data-v-8bcca2c2="" aria-hidden="true" class="align-text-top s16 ic-file-addition"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-addition"></use></svg> 4
+      </span> <span data-v-8bcca2c2="" class="cred bold ml-1"><svg data-v-8bcca2c2="" aria-hidden="true" class="align-text-top s16 ic-file-deletion"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-deletion"></use></svg> 1
+      </span></span></span></button></li></ul></div></div></div></div>
+<div class="notes tab-pane voting_notes" id="notes" style="display: none;">
+<div class="row">
+<section class="col-md-12">
+<script class="js-notes-data" type="application/json">{"notesUrl":"/sourcegraph/jsonrpc2/noteable/merge_request/43966046/notes","notesIds":[],"now":1575499614,"diffView":"inline","enableGFM":{"emojis":true,"members":true,"issues":true,"mergeRequests":true,"epics":true,"milestones":true,"labels":true}}</script>
+<div class="issuable-discussion js-vue-notes-event">
+<div id="notes" style="display: none;"><ul id="notes-list" class="notes main-notes-list timeline"> <li class="timeline-entry note note-wrapper discussion-filter-note js-discussion-filter-note" style="display: none;"><div class="timeline-icon d-none d-lg-flex"><svg aria-hidden="true" class="s16 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></div> <div class="timeline-content"><div>You're only seeing <b>other activity</b> in the feed. To add a comment, switch to one of the following options.</div> <div class="discussion-filter-actions mt-2"><button type="button" class="btn btn-default" variant="default">
+        Show all activity
+      </button> <button type="button" class="btn btn-default" variant="default">
+        Show comments only
+      </button></div></div></li></ul> <div><ul class="notes notes-form timeline"><li class="timeline-entry note-form"><div class="timeline-entry-inner"><div class="flash-container error-alert timeline-content"></div> <div class="timeline-icon d-none d-sm-none d-md-block"><a href="/felixfbecker" class="gl-link user-avatar-link"><span><img src="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=80&amp;d=identicon" width="40" height="40" alt="Felix Becker" data-src="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=80&amp;d=identicon" class="avatar s40 "> <!----></span><!----></a></div> <div class="timeline-content timeline-content-form"><form class="new-note common-note-form gfm-form js-main-target-form"><div class="error-alert"></div> <!----> <div class="js-vue-markdown-field md-area position-relative gfm-form"><div class="md-header"><ul class="nav-links clearfix"><li class="md-header-tab active"><button tabindex="-1" type="button" class="js-write-link">
+        Write
+      </button></li> <li class="md-header-tab"><button tabindex="-1" type="button" class="js-preview-link js-md-preview-button">
+        Preview
+      </button></li> <li class="md-header-toolbar active"><div class="d-inline-block"><button data-md-tag="**" data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" title="" aria-label="Add bold text" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add bold text"><svg aria-hidden="true" class="s16 ic-bold"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#bold"></use></svg></button> <button data-md-tag="*" data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" title="" aria-label="Add italic text" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add italic text"><svg aria-hidden="true" class="s16 ic-italic"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#italic"></use></svg></button> <button data-md-tag="> " data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" data-md-prepend="true" title="" aria-label="Insert a quote" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Insert a quote"><svg aria-hidden="true" class="s16 ic-quote"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#quote"></use></svg></button></div> <div class="d-inline-block ml-md-2 ml-0"><!----> <button data-md-tag="`" data-md-cursor-offset="0" data-md-select="" data-md-block="```" data-md-tag-content="" title="" aria-label="Insert code" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Insert code"><svg aria-hidden="true" class="s16 ic-code"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#code"></use></svg></button> <button data-md-tag="[{text}](url)" data-md-cursor-offset="0" data-md-select="url" data-md-block="" data-md-tag-content="" title="" aria-label="Add a link" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add a link"><svg aria-hidden="true" class="s16 ic-link"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#link"></use></svg></button></div> <div class="d-inline-block ml-md-2 ml-0"><button data-md-tag="* " data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" data-md-prepend="true" title="" aria-label="Add a bullet list" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add a bullet list"><svg aria-hidden="true" class="s16 ic-list-bulleted"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#list-bulleted"></use></svg></button> <button data-md-tag="1. " data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" data-md-prepend="true" title="" aria-label="Add a numbered list" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add a numbered list"><svg aria-hidden="true" class="s16 ic-list-numbered"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#list-numbered"></use></svg></button> <button data-md-tag="* [ ] " data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" data-md-prepend="true" title="" aria-label="Add a task list" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add a task list"><svg aria-hidden="true" class="s16 ic-list-task"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#list-task"></use></svg></button> <button data-md-tag="| header | header |
+| ------ | ------ |
+| cell | cell |
+| cell | cell |" data-md-cursor-offset="0" data-md-select="" data-md-block="" data-md-tag-content="" data-md-prepend="true" title="" aria-label="Add a table" type="button" tabindex="-1" data-container="body" class="toolbar-btn js-md" data-original-title="Add a table"><svg aria-hidden="true" class="s16 ic-table"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#table"></use></svg></button></div> <div class="d-inline-block ml-md-2 ml-0"><button aria-label="Go full screen" data-container="body" tabindex="-1" title="" type="button" class="toolbar-btn toolbar-fullscreen-btn js-zen-enter" data-original-title="Go full screen"><svg aria-hidden="true" class="s16 ic-screen-full"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#screen-full"></use></svg></button></div></li></ul></div> <div class="md-write-holder"><div class="zen-backdrop div-dropzone-wrapper"><div class="div-dropzone dz-clickable"><textarea id="note-body" dir="auto" name="note[note]" data-supports-quick-actions="true" aria-label="Description" placeholder="Write a comment or drag your files here…" class="note-textarea js-vue-comment-form js-note-text
+js-gfm-input js-autosize markdown-area js-vue-textarea qa-comment-input" style="overflow: hidden scroll; overflow-wrap: break-word; resize: none; height: 140px;"></textarea><div class="div-dropzone-hover"><i class="fa fa-paperclip div-dropzone-icon"></i></div></div> <a href="#" aria-label="Enter zen mode" class="zen-control zen-control-leave js-zen-leave"><svg aria-hidden="true" class="s32 ic-screen-normal"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#screen-normal"></use></svg></a> <div class="comment-toolbar clearfix"><div class="toolbar-text"><!----> <a tabindex="-1" rel="noopener" target="_blank" href="/help/user/markdown" class="gl-link">Markdown</a>
+      and
+      <a tabindex="-1" rel="noopener" target="_blank" href="/help/user/project/quick_actions" class="gl-link">quick actions</a>
+      are supported
+    </div> <span class="uploading-container"><span class="uploading-progress-container hide"><i aria-hidden="true" class="fa fa-file-image-o toolbar-button-icon"></i> <span class="attaching-file-message"></span> <span class="uploading-progress">0%</span> <span class="uploading-spinner"><i aria-hidden="true" class="fa fa-spinner fa-spin toolbar-button-icon"></i></span></span> <span class="uploading-error-container hide"><span class="uploading-error-icon"><i aria-hidden="true" class="fa fa-file-image-o toolbar-button-icon"></i></span> <span class="uploading-error-message"></span> <button type="button" class="retry-uploading-link">Try again</button> or
+      <button type="button" class="attach-new-file markdown-selector">
+        attach a new file
+      </button></span> <button tabindex="-1" type="button" class="markdown-selector button-attach-file btn-link"><i aria-hidden="true" class="fa fa-file-image-o toolbar-button-icon"></i><span class="text-attach-file">Attach a file</span></button> <button type="button" class="btn btn-default btn-sm hide button-cancel-uploading-files">
+      Cancel
+    </button></span></div></div></div> <div class="js-vue-md-preview md md-preview-holder" style="display: none;"></div> <!----></div> <div class="note-form-actions"><div class="float-left btn-group
+append-right-10 comment-type-dropdown js-comment-type-dropdown droplab-dropdown"><button disabled="disabled" type="submit" data-track-label="comment_button" data-track-event="click_button" class="btn btn-success js-comment-button js-comment-submit-button
+                    qa-comment-button">
+                  Comment
+                </button> <button disabled="disabled" name="button" type="button" data-display="static" data-toggle="dropdown" aria-label="Open comment type dropdown" class="btn btn-success note-type-toggle js-note-new-discussion dropdown-toggle qa-note-dropdown"><i aria-hidden="true" class="fa fa-caret-down toggle-icon"></i></button> <ul class="note-type-dropdown dropdown-open-top dropdown-menu"><li class="droplab-item-selected"><button type="button" class="btn btn-transparent"><i aria-hidden="true" class="fa fa-check icon"></i> <div class="description"><strong>Comment</strong> <p>
+                          Add a general comment to this merge request.
+                        </p></div></button></li> <li class="divider droplab-item-ignore"></li> <li class=""><button type="button" class="btn btn-transparent qa-discussion-option"><i aria-hidden="true" class="fa fa-check icon"></i> <div class="description"><strong>Start thread</strong> <p>Discuss a specific suggestion or question that needs to be resolved.</p></div></button></li></ul></div> <button type="button" class="btn-close js-note-target-close btn btn-comment btn-comment-and-close js-action-button"><!----> <span class="js-loading-button-label"> Close merge request </span></button></div></form></div></div></li></ul></div></div>
+</div>
+</section>
+</div>
+</div>
+<div class="commits tab-pane" id="commits" style="display: none;">
+</div>
+<div class="pipelines tab-pane" id="pipelines" style="display: none;">
+</div>
+<div style=""><div class="diffs tab-pane active" id="diffs"><div class="mr-version-controls border-top border-bottom"><div class="mr-version-menus-container content-block container-limited limit-container-width mx-lg-auto px-3"><button type="button" title="Show file browser" class="btn btn-default append-right-8 js-toggle-tree-list" data-original-title="Hide file browser"><svg aria-hidden="true" class="s16 ic-expand-left"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#expand-left"></use></svg></button> <div class="d-flex align-items-center compare-versions-container">
+      Changes between
+      <span class="dropdown inline mr-version-dropdown"><a data-toggle="dropdown" aria-expanded="false" class="dropdown-menu-toggle btn btn-default w-100"><span> latest version </span> <svg aria-hidden="true" class="position-absolute s12 ic-angle-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg></a> <div class="dropdown-menu dropdown-select dropdown-menu-selectable"><div class="dropdown-content"><ul><li><a href="/sourcegraph/jsonrpc2/merge_requests/1/diffs?diff_id=65860889" class="is-active"><div><strong>
+                latest version
+                <!----></strong></div> <div><small class="commit-sha"> 769bc435 </small></div> <div><small>
+                  1 commit,
+                 <time title="" class="js-timeago" data-original-title="Dec 4, 2019 2:46pm PST">just now</time></small></div></a></li></ul></div></div></span>
+      and
+      <span class="dropdown inline mr-version-compare-dropdown"><a data-toggle="dropdown" aria-expanded="false" class="dropdown-menu-toggle btn btn-default w-100"><span> master </span> <svg aria-hidden="true" class="position-absolute s12 ic-angle-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-down"></use></svg></a> <div class="dropdown-menu dropdown-select dropdown-menu-selectable"><div class="dropdown-content"><ul><li><a href="/sourcegraph/jsonrpc2/merge_requests/1/diffs?diff_id=65860889" class="is-active"><div><strong>
+                master
+                (base)</strong></div> <div><small class="commit-sha">  </small></div> <div><small><!----> <!----></small></div></a></li></ul></div></div></span></div> <div class="inline-parallel-buttons d-none d-md-flex ml-auto"><div class="diff-stats is-compare-versions-header d-none d-lg-inline-flex"><div class="diff-stats-group"><svg aria-hidden="true" class="diff-stats-icon text-secondary s16 ic-doc-code"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#doc-code"></use></svg> <strong>1 File</strong></div> <div class="diff-stats-group cgreen"><svg aria-hidden="true" class="diff-stats-icon s16 ic-file-addition"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-addition"></use></svg> <strong>4</strong></div> <div class="diff-stats-group cred"><svg aria-hidden="true" class="diff-stats-icon s16 ic-file-deletion"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-deletion"></use></svg> <strong>1</strong></div></div> <!----> <button type="button" class="btn append-right-8 btn-secondary" style="display: none;">
+        Expand all
+      </button> <div class="dropdown"><button type="button" data-toggle="dropdown" data-display="static" class="btn btn-default js-show-diff-settings"><svg aria-hidden="true" class="s16 ic-settings"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#settings"></use></svg> <svg aria-hidden="true" class="s16 ic-arrow-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#arrow-down"></use></svg></button> <div class="dropdown-menu dropdown-menu-right p-2 pt-3 pb-3"><div><span class="bold d-block mb-1">File browser</span> <div class="btn-group d-flex"><button type="button" class="btn w-100 js-list-view btn-secondary">
+          List view
+        </button> <button type="button" class="btn w-100 js-tree-view btn-secondary active">
+          Tree view
+        </button></div></div> <div class="mt-2"><span class="bold d-block mb-1">Compare changes</span> <div class="btn-group d-flex js-diff-view-buttons"><button id="inline-diff-btn" data-view-type="inline" type="button" class="btn w-100 js-inline-diff-button btn-secondary active">
+          Inline
+        </button> <button id="parallel-diff-btn" data-view-type="parallel" type="button" class="btn w-100 js-parallel-diff-button btn-secondary">
+          Side-by-side
+        </button></div></div> <div class="mt-2"><label class="mb-0"><input id="show-whitespace" type="checkbox">
+        Show whitespace changes
+      </label></div></div></div></div></div></div> <!----> <div data-can-create-note="true" class="files d-flex prepend-top-default"><div class="diff-tree-list js-diff-tree-list mr-3" style="width: 320px; display: none;"><div class="position-absolute position-top-0 position-bottom-0 drag-handle position-right-0" size="320" style="cursor: ew-resize;"></div> <div class="tree-list-holder d-flex flex-column"><div class="append-bottom-8 position-relative tree-list-search d-flex"><div class="flex-fill d-flex"><svg aria-hidden="true" class="position-absolute tree-list-icon s16 ic-search"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#search"></use></svg> <label for="diff-tree-search" class="sr-only">Filter files or search with cmd+p</label> <input id="diff-tree-search" placeholder="Filter files or search with cmd+p" type="search" name="diff-tree-search" class="form-control"> <button aria-label="Clear search" type="button" class="position-absolute bg-transparent tree-list-icon tree-list-clear-icon border-0 p-0" style="display: none;"><svg aria-hidden="true" class="s16 ic-close"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#close"></use></svg></button></div></div> <div class="tree-list-scroll"><div><div title="call_opt.go" role="button" class="file-row"><div class="file-row-name-container"><span class="file-row-name str-truncated"><span class="file-changed-icon d-inline-block append-right-5 ml-auto" data-original-title="" title=""><svg aria-hidden="true" class="s16 ic-file-modified file-modified float-left d-block"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-modified"></use></svg></span>
+        call_opt.go
+      </span> <span class="file-row-stats"><span class="cgreen"> +4 </span> <span class="cred"> -1 </span></span></div></div> <!----></div></div></div></div> <div class="diff-files-holder container-limited limit-container-width mx-lg-auto px-3"><!----> <div id="9e1d3828a925c1eca74b74c20b58a9138f886d29" class="diff-file file-holder sg-mounted"><div class="js-file-title file-title file-title-flex-parent js-file-title file-title"><div class="file-header-content"><svg aria-hidden="true" class="diff-toggle-caret append-right-5 s16 ic-chevron-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#chevron-down"></use></svg> <a id="diffFile.file_path" href="#diff-content-9e1d3828a925c1eca74b74c20b58a9138f886d29" class="append-right-4"><span aria-hidden="true"><svg class="s18 append-right-5"><use xlink:href="https://gitlab.com/assets/file_icons-7262fc6897e02f1ceaf8de43dc33afa5e4f9a2067f4f68ef77dcc87946575e9e.svg#go"></use></svg> <!----> <!----></span> <strong title="" data-container="body" class="file-title-name" data-original-title="call_opt.go">
+        call_opt.go
+      </strong></a> <button title="" data-clipboard-text="{&quot;text&quot;:&quot;call_opt.go&quot;,&quot;gfm&quot;:&quot;`call_opt.go`&quot;}" type="button" class="btn btn-secondary btn-default btn-transparent btn-clipboard" data-original-title="Copy file path"><svg aria-hidden="true" class="s16 ic-duplicate"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button> <!----> <!----></div> <div class="file-actions d-none d-sm-block"><div class="diff-stats d-inline-flex"><!----> <div class="diff-stats-group cgreen"><svg aria-hidden="true" class="diff-stats-icon s16 ic-file-addition"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-addition"></use></svg> <strong>4</strong></div> <div class="diff-stats-group cred"><svg aria-hidden="true" class="diff-stats-icon s16 ic-file-deletion"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#file-deletion"></use></svg> <strong>1</strong></div></div> <div role="group" class="btn-group"><span title="" data-original-title="Toggle comments for this file"><button data-qa-selector="toggle_comments_button" type="button" disabled="disabled" class="btn js-btn-vue-toggle-comments btn btn-secondary disabled"><svg aria-hidden="true" class="s16 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button></span> <a title="" href="/sourcegraph/jsonrpc2/edit/changes/call_opt.go?from_merge_request_iid=1" class="btn js-edit-blob btn-secondary" data-original-title="Edit file"><svg aria-hidden="true" class="s16 ic-pencil"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#pencil"></use></svg></a> <!----> <button title="" type="button" class="btn expand-file btn-secondary" data-original-title="Show full file"><svg aria-hidden="true" class="s16 ic-doc-expand"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#doc-expand"></use></svg></button> <a title="" target="blank" href="/sourcegraph/jsonrpc2/blob/769bc43591f3899889741de472538975a1b50ce7/call_opt.go" class="btn view-file btn-secondary" data-original-title="View file @ 769bc435"><svg aria-hidden="true" class="s16 ic-doc-text"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#doc-text"></use></svg></a> <!----></div></div></div> <!----> <div id="diff-content-9e1d3828a925c1eca74b74c20b58a9138f886d29"><div class="diff-content"><div class="diff-viewer"><table class="code diff-wrap-lines js-syntax-highlight text-file js-diff-inline-view dark"><colgroup><col style="width: 50px;"> <col style="width: 50px;"> <col></colgroup> <tbody><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_1_1" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="1" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_1_1"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="1" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_1_1"></a> <!----></div></td> <td class="line_content"><span id="LC1" class="line" lang="go"><span class="k">package</span> <span class="n">jsonrpc2</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_2_2" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="2" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_2_2"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="2" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_2_2"></a> <!----></div></td> <td class="line_content"><span id="LC2" class="line" lang="go"></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_3_3" class="line_holder new"><td class="diff-line-num old_line new"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <!----> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line new"><div><!----> <a data-linenumber="3" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_3"></a> <!----></div></td> <td class="line_content new"><span id="LC3" class="line" lang="go"><span class="k">import</span> <span class="s">"fmt"</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_3_4" class="line_holder new"><td class="diff-line-num old_line new"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <!----> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line new"><div><!----> <a data-linenumber="4" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_4"></a> <!----></div></td> <td class="line_content new"><span id="LC4" class="line" lang="go"></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="3" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="5" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5"></a> <!----></div></td> <td class="line_content"><span id="LC5" class="line" lang="go"><span class="c">// CallOption is an option that can be provided to (*Conn).Call to</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_4_6" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="4" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_4_6"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="6" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_4_6"></a> <!----></div></td> <td class="line_content"><span id="LC6" class="line" lang="go"><span class="c">// configure custom behavior. See Meta.</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_5_7" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="5" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_5_7"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="7" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_5_7"></a> <!----></div></td> <td class="line_content"><span id="LC7" class="line" lang="go"><span class="k">type</span> <span class="n">CallOption</span> <span class="k">interface</span> <span class="p">{</span></span>
+</td></tr> <!----> <!----><tr class="line_expansion match"><td colspan="3" class="text-center"><div class="content js-line-expansion-content"><a data-placement="top" data-container="body" title="" class="cursor-pointer js-unfold unfold-icon d-inline-block pt-2 pb-2" data-original-title="Expand up"><svg aria-hidden="true" class="s12 ic-expand-up"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#expand-up"></use></svg></a> <a class="mx-2 cursor-pointer js-unfold-all"><span>Show all lines</span></a> <a data-placement="top" data-container="body" title="" class="cursor-pointer js-unfold-down has-tooltip unfold-icon d-inline-block pt-2 pb-2" data-original-title="Expand down"><svg aria-hidden="true" class="s12 ic-expand-down"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#expand-down"></use></svg></a></div></td></tr> <!----> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_23_25" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="23" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_23_25"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="25" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_23_25"></a> <!----></div></td> <td class="line_content"><span id="LC25" class="line" lang="go"><span class="c">// taken to ensure there are no conflicts with any previously picked ID, nor</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_24_26" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="24" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_24_26"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="26" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_24_26"></a> <!----></div></td> <td class="line_content"><span id="LC26" class="line" lang="go"><span class="c">// with the default sequence ID.</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_25_27" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="25" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_25_27"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="27" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_25_27"></a> <!----></div></td> <td class="line_content"><span id="LC27" class="line" lang="go"><span class="k">func</span> <span class="n">PickID</span><span class="p">(</span><span class="n">id</span> <span class="n">ID</span><span class="p">)</span> <span class="n">CallOption</span> <span class="p">{</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_26_28" class="line_holder new"><td class="diff-line-num old_line new"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <!----> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line new"><div><!----> <a data-linenumber="28" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_26_28"></a> <!----></div></td> <td class="line_content new"><span id="LC28" class="line" lang="go">	<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"hello"</span><span class="p">)</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_26_29" class="line_holder new"><td class="diff-line-num old_line new"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <!----> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line new"><div><!----> <a data-linenumber="29" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_26_29"></a> <!----></div></td> <td class="line_content new"><span id="LC29" class="line" lang="go">	<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"world"</span><span class="p">)</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_26_30" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="26" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_26_30"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="30" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_26_30"></a> <!----></div></td> <td class="line_content"><span id="LC30" class="line" lang="go">	<span class="k">return</span> <span class="n">callOptionFunc</span><span class="p">(</span><span class="k">func</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span><span class="n">Request</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_27_31" class="line_holder old"><td class="diff-line-num old_line old"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="27" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_27_31"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line old"><div><!----> <!----> <!----></div></td> <td class="line_content old"><span id="LC27" class="line" lang="go">		<span class="n">r</span><span class="o">.</span><span class="n">ID</span> <span class="o">=</span> <span class="n">id</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_28_31" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="28" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_28_31"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="31" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_28_31"></a> <!----></div></td> <td class="line_content"><span id="LC31" class="line" lang="go">		<span class="k">return</span> <span class="no">nil</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_29_32" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="29" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_29_32"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="32" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_29_32"></a> <!----></div></td> <td class="line_content"><span id="LC32" class="line" lang="go">	<span class="p">})</span></span>
+</td></tr> <!----> <!----><!----> <tr id="9e1d3828a925c1eca74b74c20b58a9138f886d29_30_33" class="line_holder"><td class="diff-line-num old_line"><div><button type="button" title="Add a comment to this line" class="add-diff-note js-add-diff-note-button qa-diff-comment" style="display: none;"><svg aria-hidden="true" class="s12 ic-comment"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#comment"></use></svg></button> <a data-linenumber="30" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_30_33"></a> <!----></div></td> <td class="diff-line-num new_line qa-new-diff-line"><div><!----> <a data-linenumber="33" href="#9e1d3828a925c1eca74b74c20b58a9138f886d29_30_33"></a> <!----></div></td> <td class="line_content"><span id="LC33" class="line" lang="go"><span class="p">}</span></span></td></tr> <!----> <!----></tbody></table> <!----></div></div></div></div></div></div></div></div>
+</div>
+<div class="mr-loading-status">
+<div class="loading hide"><i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin"></i></div>
+</div>
+</div>
+</div>
+<aside aria-live="polite" class="js-issuable-sidebar js-right-sidebar right-sidebar right-sidebar-expanded" data-signed-in="">
+<div class="issuable-sidebar">
+<div class="block issuable-sidebar-header">
+<span class="issuable-header-text hide-collapsed float-left">
+To Do
+</span>
+<a aria-label="Toggle sidebar" class="gutter-toggle float-right js-sidebar-toggle has-tooltip" data-boundary="viewport" data-container="body" data-placement="left" href="#" role="button" title="Collapse sidebar">
+<i aria-hidden="true" data-hidden="true" class="fa fa-angle-double-right"></i>
+</a>
+<button aria-label="Add a To Do" class="btn btn-default float-right issuable-header-btn issuable-todo-btn js-issuable-todo" data-boundary="viewport" data-create-path="/sourcegraph/jsonrpc2/todos" data-issuable-id="43966046" data-issuable-type="merge_request" data-mark-icon="<svg class=&quot;todo-undone&quot;><use xlink:href=&quot;https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-done&quot;></use></svg>" data-mark-text="Mark as done" data-todo-icon="<svg><use xlink:href=&quot;https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-add&quot;></use></svg>" data-todo-text="Add a To Do" data-track-event="click_button" data-track-label="right_sidebar" data-track-property="update_todo" data-track-value="" title="Add a To Do" type="button">
+<span class="issuable-todo-inner js-issuable-todo-inner">Add a To Do</span>
+<i aria-hidden="true" data-hidden="true" class="fa fa-spin fa-spinner"></i>
+</button>
+
+</div>
+<form class="issuable-context-form inline-update js-issuable-update" action="/sourcegraph/jsonrpc2/merge_requests/1.json" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="✓"><div class="block todo hide-expanded">
+<button aria-label="Add a To Do" class="btn-blank dont-change-state has-tooltip issuable-todo-btn js-issuable-todo sidebar-collapsed-icon" data-boundary="viewport" data-container="body" data-create-path="/sourcegraph/jsonrpc2/todos" data-is-collapsed="" data-issuable-id="43966046" data-issuable-type="merge_request" data-mark-icon="<svg class=&quot;todo-undone&quot;><use xlink:href=&quot;https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-done&quot;></use></svg>" data-mark-text="Mark as done" data-placement="left" data-todo-icon="<svg><use xlink:href=&quot;https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-add&quot;></use></svg>" data-todo-text="Add a To Do" data-track-event="click_button" data-track-label="right_sidebar" data-track-property="update_todo" data-track-value="" title="Add a To Do" type="button">
+<span class="issuable-todo-inner js-issuable-todo-inner"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#todo-add"></use></svg></span>
+<i aria-hidden="true" data-hidden="true" class="fa fa-spin fa-spinner"></i>
+</button>
+
+</div>
+<div class="block assignee qa-assignee-block">
+<div><div data-qa-selector="assignee_title" class="title hide-collapsed">
+  0 Assignees
+  <!----> <a href="#" data-qa-selector="assignee_edit_link" data-track-event="click_edit_button" data-track-label="right_sidebar" data-track-property="assignee" class="js-sidebar-dropdown-toggle edit-link float-right">
+    Edit
+  </a> <!----></div> <div class="value"><div title="" class="sidebar-collapsed-icon sidebar-collapsed-user" data-original-title="Assignee(s)"><i aria-label="None" class="fa fa-user"></i>  <!----></div> <div class="value hide-collapsed"><span class="assign-yourself no-value qa-assign-yourself">
+        None
+
+          -
+          <button type="button" class="btn-link">
+            assign yourself
+          </button></span></div></div></div>
+<div class="selectbox hide-collapsed">
+<input type="hidden" name="merge_request[assignee_ids][]" value="0">
+<div class="dropdown "><button class="dropdown-menu-toggle js-user-search js-author-search js-multiselect js-save-user-data" type="button" data-first-user="felixfbecker" data-current-user="true" data-iid="1" data-issuable-type="merge_request" data-project-id="5650765" data-author-id="2479048" data-field-name="merge_request[assignee_ids][]" data-issue-update="/sourcegraph/jsonrpc2/merge_requests/1.json" data-ability-name="merge_request" data-null-user="true" data-display="static" data-multi-select="true" data-dropdown-title="Select assignee(s)" data-dropdown-header="Assignee(s)" data-toggle="dropdown"><span class="dropdown-toggle-text ">Select assignee(s)</span><i aria-hidden="true" data-hidden="true" class="fa fa-chevron-down"></i></button><div class="dropdown-menu dropdown-select dropdown-menu-user dropdown-menu-selectable dropdown-menu-author"><div class="dropdown-title"><span>Assign to</span><button class="dropdown-title-button dropdown-menu-close" aria-label="Close" type="button"><i aria-hidden="true" data-hidden="true" class="fa fa-times dropdown-menu-close-icon"></i></button></div><div class="dropdown-input"><input type="search" id="" class="dropdown-input-field qa-dropdown-input-field" placeholder="Search users" autocomplete="off"><i aria-hidden="true" data-hidden="true" class="fa fa-search dropdown-input-search"></i><i aria-hidden="true" data-hidden="true" role="button" class="fa fa-times dropdown-input-clear js-dropdown-input-clear"></i></div><div class="dropdown-content "></div><div class="dropdown-loading"><i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin"></i></div></div></div>
+</div>
+
+</div>
+
+<div class="block milestone" data-qa-selector="milestone_block">
+<div class="sidebar-collapsed-icon has-tooltip" data-boundary="viewport" data-container="body" data-html="true" data-placement="left" title="Milestone">
+<i aria-hidden="true" data-hidden="true" class="fa fa-clock-o"></i>
+<span class="milestone-title collapse-truncated-title" data-qa-selector="milestone_title">
+None
+</span>
+</div>
+<div class="title hide-collapsed">
+Milestone
+<i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin hidden block-loading"></i>
+<a class="js-sidebar-dropdown-toggle edit-link float-right" data-track-label="right_sidebar" data-track-property="milestone" data-track-event="click_edit_button" data-track-value="" href="#">Edit</a>
+</div>
+<div class="value hide-collapsed">
+<span class="no-value">
+None
+</span>
+</div>
+<div class="selectbox hide-collapsed">
+<input type="hidden" name="merge_request[milestone_id]">
+<div class="dropdown "><button class="dropdown-menu-toggle js-milestone-select js-extra-options" type="button" data-show-no="true" data-field-name="merge_request[milestone_id]" data-project-id="5650765" data-issuable-id="43966046" data-milestones="/sourcegraph/jsonrpc2/-/milestones.json" data-ability-name="merge_request" data-issue-update="/sourcegraph/jsonrpc2/merge_requests/1.json" data-use-id="true" data-default-no="true" data-null-default="true" data-display="static" data-toggle="dropdown"><span class="dropdown-toggle-text ">Milestone</span><i aria-hidden="true" data-hidden="true" class="fa fa-chevron-down"></i></button><div class="dropdown-menu dropdown-select dropdown-menu-selectable"><div class="dropdown-title"><span>Assign milestone</span><button class="dropdown-title-button dropdown-menu-close" aria-label="Close" type="button"><i aria-hidden="true" data-hidden="true" class="fa fa-times dropdown-menu-close-icon"></i></button></div><div class="dropdown-input"><input type="search" id="" class="dropdown-input-field qa-dropdown-input-field" placeholder="Search milestones" autocomplete="off"><i aria-hidden="true" data-hidden="true" class="fa fa-search dropdown-input-search"></i><i aria-hidden="true" data-hidden="true" role="button" class="fa fa-times dropdown-input-clear js-dropdown-input-clear"></i></div><div class="dropdown-content "></div><div class="dropdown-loading"><i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin"></i></div></div></div>
+</div>
+</div>
+<div class="block"><div class="time_tracker time-tracking-component-wrap"><div title="" data-container="body" data-placement="left" data-boundary="viewport" class="sidebar-collapsed-icon" data-original-title="Time tracking"><svg aria-hidden="true" class="s16 ic-timer"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#timer"></use></svg> <div class="time-tracking-collapsed-summary"><div class="no-tracking"><span class="no-value"> None </span></div></div></div> <div class="title hide-collapsed">
+    Time tracking
+    <div class="help-button float-right"><i aria-hidden="true" class="fa fa-question-circle"></i></div> <!----></div> <div class="time-tracking-content hide-collapsed"><!----> <!----> <div class="time-tracking-no-tracking-pane"><span class="no-value"> No estimate or time spent </span></div> <!----> <!----></div></div></div>
+<div class="block labels">
+<div class="sidebar-collapsed-icon js-sidebar-labels-tooltip" data-boundary="viewport" data-container="body" data-placement="left" title="" data-original-title="Labels">
+<i aria-hidden="true" data-hidden="true" class="fa fa-tags"></i>
+<span>
+0
+</span>
+</div>
+<div class="title hide-collapsed">
+Labels
+<i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin hidden block-loading"></i>
+<a class="js-sidebar-dropdown-toggle edit-link qa-edit-link-labels float-right" data-track-label="right_sidebar" data-track-property="labels" data-track-event="click_edit_button" data-track-value="" href="#">Edit</a>
+</div>
+<div class="dont-hide hide-collapsed issuable-show-labels value" data-qa-selector="labels_block">
+<span class="no-value">
+None
+</span>
+</div>
+<div class="selectbox hide-collapsed">
+<div class="dropdown">
+<button class="dropdown-menu-toggle js-label-select js-multiselect js-label-sidebar-dropdown" data-ability-name="merge_request" data-default-label="Labels" data-display="static" data-field-name="merge_request[label_names][]" data-issue-update="/sourcegraph/jsonrpc2/merge_requests/1.json" data-labels="/sourcegraph/jsonrpc2/-/labels.json?include_ancestor_groups=true" data-namespace-path="sourcegraph" data-project-path="jsonrpc2" data-scoped-labels="true" data-scoped-labels-documentation-link="/help/user/project/labels.md#scoped-labels" data-show-any="true" data-show-no="true" data-toggle="dropdown" type="button">
+<span class="dropdown-toggle-text is-default">
+Labels
+</span>
+<i aria-hidden="true" data-hidden="true" class="fa fa-chevron-down"></i>
+</button>
+<div class="dropdown-menu dropdown-select dropdown-menu-paging qa-dropdown-menu-labels dropdown-menu-labels dropdown-menu-selectable dropdown-extended-height">
+<div class="dropdown-page-one">
+<div class="dropdown-title"><span>Assign labels</span><button class="dropdown-title-button dropdown-menu-close" aria-label="Close" type="button"><i aria-hidden="true" data-hidden="true" class="fa fa-times dropdown-menu-close-icon"></i></button></div>
+<div class="dropdown-input"><input type="search" id="" class="dropdown-input-field qa-dropdown-input-field" placeholder="Search" autocomplete="off"><i aria-hidden="true" data-hidden="true" class="fa fa-search dropdown-input-search"></i><i aria-hidden="true" data-hidden="true" role="button" class="fa fa-times dropdown-input-clear js-dropdown-input-clear"></i></div>
+<div class="dropdown-content"></div>
+<div class="dropdown-footer"><ul class="dropdown-footer-list">
+<li>
+<a class="dropdown-toggle-page" href="#">
+Create project label
+</a>
+</li>
+<li>
+<a data-is-link="true" href="/sourcegraph/jsonrpc2/-/labels">Manage project labels
+</a></li>
+</ul>
+</div><div class="dropdown-loading"><i aria-hidden="true" data-hidden="true" class="fa fa-spinner fa-spin"></i></div>
+</div>
+
+<div class="dropdown-page-two dropdown-new-label">
+<div class="dropdown-title"><button class="dropdown-title-button dropdown-menu-back" aria-label="Go back" type="button"><i aria-hidden="true" data-hidden="true" class="fa fa-arrow-left"></i></button><span>Create project label</span><button class="dropdown-title-button dropdown-menu-close" aria-label="Close" type="button"><i aria-hidden="true" data-hidden="true" class="fa fa-times dropdown-menu-close-icon"></i></button></div>
+<div class="dropdown-content"><div class="dropdown-labels-error js-label-error" style="display: none;"></div>
+<input class="default-dropdown-input" id="new_label_name" placeholder="Name new label" type="text">
+<div class="suggest-colors suggest-colors-dropdown">
+<div class="suggest-colors"><a class="has-tooltip" style="background-color: #0033CC" data-color="#0033CC" title="UA blue" href="#"></a><a class="has-tooltip" style="background-color: #428BCA" data-color="#428BCA" title="Moderate blue" href="#"></a><a class="has-tooltip" style="background-color: #44AD8E" data-color="#44AD8E" title="Lime green" href="#"></a><a class="has-tooltip" style="background-color: #A8D695" data-color="#A8D695" title="Feijoa" href="#"></a><a class="has-tooltip" style="background-color: #5CB85C" data-color="#5CB85C" title="Slightly desaturated green" href="#"></a><a class="has-tooltip" style="background-color: #69D100" data-color="#69D100" title="Bright green" href="#"></a><a class="has-tooltip" style="background-color: #004E00" data-color="#004E00" title="Very dark lime green" href="#"></a><a class="has-tooltip" style="background-color: #34495E" data-color="#34495E" title="Very dark desaturated blue" href="#"></a><a class="has-tooltip" style="background-color: #7F8C8D" data-color="#7F8C8D" title="Dark grayish cyan" href="#"></a><a class="has-tooltip" style="background-color: #A295D6" data-color="#A295D6" title="Slightly desaturated blue" href="#"></a><a class="has-tooltip" style="background-color: #5843AD" data-color="#5843AD" title="Dark moderate blue" href="#"></a><a class="has-tooltip" style="background-color: #8E44AD" data-color="#8E44AD" title="Dark moderate violet" href="#"></a><a class="has-tooltip" style="background-color: #FFECDB" data-color="#FFECDB" title="Very pale orange" href="#"></a><a class="has-tooltip" style="background-color: #AD4363" data-color="#AD4363" title="Dark moderate pink" href="#"></a><a class="has-tooltip" style="background-color: #D10069" data-color="#D10069" title="Strong pink" href="#"></a><a class="has-tooltip" style="background-color: #CC0033" data-color="#CC0033" title="Strong red" href="#"></a><a class="has-tooltip" style="background-color: #FF0000" data-color="#FF0000" title="Pure red" href="#"></a><a class="has-tooltip" style="background-color: #D9534F" data-color="#D9534F" title="Soft red" href="#"></a><a class="has-tooltip" style="background-color: #D1D100" data-color="#D1D100" title="Strong yellow" href="#"></a><a class="has-tooltip" style="background-color: #F0AD4E" data-color="#F0AD4E" title="Soft orange" href="#"></a><a class="has-tooltip" style="background-color: #AD8D43" data-color="#AD8D43" title="Dark moderate orange" href="#"></a></div>
+</div>
+<div class="dropdown-label-color-input">
+<div class="dropdown-label-color-preview js-dropdown-label-color-preview"></div>
+<input class="default-dropdown-input" id="new_label_color" placeholder="Assign custom color like #FF0000" type="text">
+</div>
+<div class="clearfix">
+<button class="btn btn-primary float-left js-new-label-btn disabled" type="button" disabled="">
+Create
+</button>
+<button class="btn btn-default float-right js-cancel-label-btn" type="button">
+Cancel
+</button>
+</div>
+</div></div>
+
+</div>
+</div>
+</div>
+</div>
+
+<script id="js-lock-issue-data" type="application/json">{"is_locked":false,"is_editable":true}</script>
+<div class="block issuable-sidebar-item lock"><div title="" data-container="body" data-placement="left" data-boundary="viewport" class="sidebar-collapsed-icon" data-original-title="Unlocked"><svg aria-hidden="true" class="sidebar-item-icon is-active s16 ic-lock-open"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#lock-open"></use></svg></div> <div class="title hide-collapsed">
+    Lock merge request
+    <button type="button" data-track-event="click_edit_button" data-track-label="right_sidebar" data-track-property="lock_issue" class="float-right lock-edit">
+      Edit
+    </button></div> <div class="value sidebar-item-value hide-collapsed"><!----> <div class="no-value sidebar-item-value hide-collapsed"><svg aria-hidden="true" class="sidebar-item-icon inline s16 ic-lock-open"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#lock-open"></use></svg> Unlocked
+    </div></div></div>
+<div class="block participants"><div><div title="" data-container="body" data-placement="left" data-boundary="viewport" class="sidebar-collapsed-icon" data-original-title="1 participant"><i aria-hidden="true" class="fa fa-users"></i> <span class="js-participants-collapsed-count"> 1 </span></div> <div class="title hide-collapsed"><!---->
+    1 participant
+  </div> <div class="participants-list hide-collapsed"><div class="participants-author js-participants-author"><a href="https://gitlab.com/felixfbecker" class="author-link"><span><img src="https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=80&amp;d=identicon" width="24" height="24" alt="user avatar" class="avatar s24 avatar-inline js-lazy-loaded qa-js-lazy-loaded" data-original-title="" title=""> <div aria-hidden="true" class="js-user-avatar-image-toolip d-none" style="display: none;"><div> Felix Becker </div></div></span></a></div></div> <!----></div></div>
+<div class="block subscriptions"><div><span title="" data-container="body" data-placement="left" data-boundary="viewport" class="sidebar-collapsed-icon" data-original-title="Notifications on"><svg aria-hidden="true" class="sidebar-item-icon is-active s16 ic-notifications"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#notifications"></use></svg></span> <span class="issuable-header-text hide-collapsed float-left"> Notifications </span> <label class="toggle-wrapper float-right hide-collapsed js-issuable-subscribe-button"><!----> <button aria-label="Toggle Status: ON" type="button" class="project-feature-toggle is-checked"><div class="gl-spinner-container loading-icon"><span aria-label="Loading" aria-hidden="true" class="gl-spinner gl-spinner-orange gl-spinner-sm"></span></div> <span class="toggle-icon"><svg aria-hidden="true" class="toggle-icon-svg s16 ic-status_success_borderless"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#status_success_borderless"></use></svg></span></button></label></div></div>
+<div class="block project-reference">
+<div class="sidebar-collapsed-icon dont-change-state">
+<button class="btn btn-clipboard btn-transparent" data-toggle="tooltip" data-placement="left" data-container="body" data-title="Copy reference" data-boundary="viewport" data-clipboard-text="sourcegraph/jsonrpc2!1" type="button" title="Copy reference" aria-label="Copy reference"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+</div>
+<div class="cross-project-reference hide-collapsed">
+<span>
+Reference:
+<cite title="sourcegraph/jsonrpc2!1">
+sourcegraph/jsonrpc2!1
+</cite>
+</span>
+<button class="btn btn-clipboard btn-transparent" data-toggle="tooltip" data-placement="left" data-container="body" data-title="Copy reference" data-boundary="viewport" data-clipboard-text="sourcegraph/jsonrpc2!1" type="button" title="Copy reference" aria-label="Copy reference"><svg><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#duplicate"></use></svg></button>
+</div>
+</div>
+</form><script class="js-sidebar-options" type="application/json">{"endpoint":"/sourcegraph/jsonrpc2/merge_requests/1.json?serializer=sidebar_extras","toggleSubscriptionEndpoint":"/sourcegraph/jsonrpc2/merge_requests/1/toggle_subscription","moveIssueEndpoint":"/sourcegraph/jsonrpc2/issues/1/move","projectsAutocompleteEndpoint":"/autocomplete/projects?project_id=5650765","editable":true,"currentUser":{"id":2479048,"name":"Felix Becker","username":"felixfbecker","state":"active","avatar_url":"https://secure.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434?s=80\u0026d=identicon","web_url":"https://gitlab.com/felixfbecker","todo":null,"can_edit":true,"can_move":false,"can_admin_label":true,"can_merge":true},"rootPath":"/","fullPath":"sourcegraph/jsonrpc2","timeTrackingLimitToHours":false,"weightOptions":["None",0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],"weightNoneValue":"None"}</script>
+</div>
+</aside>
+
+
+<div style="display: none;"><nav class="review-bar-component"><div class="review-bar-content qa-review-bar"><div class="dropdown float-right review-preview-dropdown"><button type="button" class="btn btn-success review-preview-dropdown-toggle qa-review-preview-toggle">
+    Finish review
+    <span class="drafts-count-component"><span class="drafts-count-number">0</span> <span class="sr-only"> drafts </span></span> <svg aria-hidden="true" class="s16 ic-angle-up"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#angle-up"></use></svg></button> <div class="dropdown-menu dropdown-menu-large dropdown-menu-right dropdown-open-top"><div class="dropdown-title">
+      0 pending comments
+      <button aria-label="Close" type="button" class="dropdown-title-button dropdown-menu-close"><svg aria-hidden="true" class="s16 ic-close"><use xlink:href="https://gitlab.com/assets/icons-312c16d38220d2412b554d43f05ac0ffa8a701e91fb02cd4332740f6b87ebb5b.svg#close"></use></svg></button></div> <div class="dropdown-content"><ul></ul></div> <div class="dropdown-footer"><button type="button" class="float-right append-right-8 btn btn-success js-publish-draft-button qa-submit-review"><!----> <span>
+    Submit review
+    <!----></span></button></div></div></div> <button type="button" class="qa-discard-review float-right btn btn-align-content"><!----> <span class="js-loading-button-label"> Discard review </span></button></div></nav> <!----></div>
+<script nonce="">
+//<![CDATA[
+// Append static, server-generated data not included in merge request entity (EE-Only)
+// Object.assign would be useful here, but it blows up Phantom.js in tests
+window.gl.mrWidgetData.is_geo_secondary_node = 'false' === 'true';
+window.gl.mrWidgetData.geo_secondary_help_path = '/help/administration/geo/replication/configuration.md';
+window.gl.mrWidgetData.sast_help_path = '/help/user/application_security/sast/index';
+window.gl.mrWidgetData.sast_container_help_path = '/help/user/application_security/container_scanning/index';
+window.gl.mrWidgetData.dast_help_path = '/help/user/application_security/dast/index';
+window.gl.mrWidgetData.dependency_scanning_help_path = '/help/user/application_security/dependency_scanning/index';
+window.gl.mrWidgetData.vulnerability_feedback_help_path = '/help/user/application_security/index';
+window.gl.mrWidgetData.approvals_help_path = '/help/user/project/merge_requests/merge_request_approvals';
+window.gl.mrWidgetData.visual_review_app_available = 'true' === 'true';
+window.gl.mrWidgetData.license_management_comparison_path = '/sourcegraph/jsonrpc2/merge_requests/1/license_management_reports'
+window.gl.mrWidgetData.container_scanning_comparison_path = '/sourcegraph/jsonrpc2/merge_requests/1/container_scanning_reports'
+window.gl.mrWidgetData.dependency_scanning_comparison_path = '/sourcegraph/jsonrpc2/merge_requests/1/dependency_scanning_reports'
+window.gl.mrWidgetData.sast_comparison_path = '/sourcegraph/jsonrpc2/merge_requests/1/sast_reports'
+window.gl.mrWidgetData.dast_comparison_path = '/sourcegraph/jsonrpc2/merge_requests/1/dast_reports'
+
+
+//]]>
+</script>
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+<input type="file" multiple="multiple" class="dz-hidden-input" style="visibility: hidden; position: absolute; top: 0px; left: 0px; height: 0px; width: 0px;"><div id="sourcegraph-app-background" style="display: none;"></div><iframe src="https://gitlab.com/assets/webpack/sourcegraph/extensionHostFrame.html" style="display: none;"></iframe><div class="hover-overlay-mount hover-overlay-mount__gitlab"></div><div class="global-debug"><div class="global-debug navbar navbar-expand"><div class="navbar-nav align-items-center"><div class="nav-item"><button type="button" id="extension-status-popover" class="btn btn-link text-decoration-none px-2"><span class="text-muted">Ext</span> <svg class="mdi-icon icon-inline" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M7,15L12,10L17,15H7Z"></path></svg></button></div></div></div></div></body>

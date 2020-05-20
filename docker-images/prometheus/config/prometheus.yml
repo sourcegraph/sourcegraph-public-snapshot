@@ -14,17 +14,17 @@ alerting:
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
-  - "*_rules.yml"
-  - "/sg_prometheus_add_ons/*_rules.yml"
+  - '*_rules.yml'
+  - '/sg_prometheus_add_ons/*_rules.yml'
 
 # A scrape configuration containing exactly one endpoint to scrape for metrics:
 scrape_configs:
   # Scrape prometheus itself for metrics.
-  - job_name: "prometheus"
+  - job_name: 'prometheus'
     static_configs:
-        - targets: ["localhost:9090"]
+      - targets: ['localhost:9090']
 
-  - job_name: "sg"
+  - job_name: 'sg'
     file_sd_configs:
       - files:
-          - "/sg_prometheus_add_ons/*_targets.yml"
+          - '/sg_prometheus_add_ons/*_targets.yml'

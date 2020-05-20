@@ -58,12 +58,14 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
+	hasSingleChild := len(entries) == 1
 	var l []*GitTreeEntryResolver
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &GitTreeEntryResolver{
-				commit: r.commit,
-				stat:   entry,
+				commit:        r.commit,
+				stat:          entry,
+				isSingleChild: &hasSingleChild,
 			})
 		}
 	}

@@ -10,6 +10,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
+import * as H from 'history'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -22,11 +23,15 @@ interface ResetPasswordInitFormState {
     submitOrError: undefined | 'loading' | ErrorLike | null
 }
 
+interface ResetPasswordInitFormProps {
+    history: H.History
+}
+
 /**
  * A form where the user can initiate the reset-password flow. This is the 1st step in the
  * reset-password flow; ResetPasswordCodePage is the 2nd step.
  */
-class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFormState> {
+class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormProps, ResetPasswordInitFormState> {
     public state: ResetPasswordInitFormState = {
         email: '',
         submitOrError: undefined,
@@ -67,7 +72,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                 </button>
                 {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
-                    <ErrorAlert className="mt-2" error={this.state.submitOrError} />
+                    <ErrorAlert className="mt-2" error={this.state.submitOrError} history={this.props.history} />
                 )}
             </Form>
         )
@@ -100,7 +105,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                     })
                 } else {
                     resp.text()
-                        .catch(err => null)
+                        .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
                         .catch(err => console.error(err))
                 }
@@ -112,6 +117,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
 interface ResetPasswordCodeFormProps {
     userID: number
     code: string
+    history: H.History
 }
 
 interface ResetPasswordCodeFormState {
@@ -163,7 +169,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 </button>
                 {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
-                    <ErrorAlert className="mt-2" error={this.state.submitOrError} />
+                    <ErrorAlert className="mt-2" error={this.state.submitOrError} history={this.props.history} />
                 )}
             </Form>
         )
@@ -225,12 +231,12 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
                 const code = searchParams.get('code')
                 const userID = parseInt(searchParams.get('userID') || '', 10)
                 if (code && !isNaN(userID)) {
-                    body = <ResetPasswordCodeForm code={code} userID={userID} />
+                    body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
                 } else {
                     body = <div className="alert alert-danger">The password reset link you followed is invalid.</div>
                 }
             } else {
-                body = <ResetPasswordInitForm />
+                body = <ResetPasswordInitForm history={this.props.history} />
             }
         } else {
             body = (

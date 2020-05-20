@@ -1,0 +1,218 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SiteAdminProductLicenseNode active 1`] = `
+<li
+  className="list-group-item py-2"
+>
+  <div
+    className="d-flex align-items-center justify-content-between"
+  >
+    <div
+      className="mr-3 text-truncate"
+    >
+      <strong>
+        License in
+         
+        <a
+          className="mr-3"
+          href="/s"
+        >
+          s
+        </a>
+      </strong>
+      <span
+        className="mr-3"
+      >
+        <AccountName />
+      </span>
+    </div>
+    <div>
+      <span
+        className="mr-3"
+        title="Tags: a"
+      >
+        NB
+         (
+        123 users
+        )
+      </span>
+      <div
+        className="d-inline-block mr-3 "
+        data-tooltip="Jan 1, 2021, 12:00:00 AM"
+      >
+        <strong
+          className="text-success"
+        >
+          Valid
+        </strong>
+         (
+        15 years remaining
+        )
+      </div>
+      <span
+        className="text-muted"
+      >
+        Created 
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
+        >
+          in almost 14 years
+        </span>
+      </span>
+    </div>
+  </div>
+  <div>
+    Tags: 
+    <div
+      className="mr-1 badge badge-secondary"
+    >
+      a
+    </div>
+  </div>
+  <div
+    className="copyable-text form-inline mt-2 d-block"
+  >
+    <div
+      className="input-group"
+    >
+      <input
+        className="copyable-text__input form-control"
+        onClick={[Function]}
+        readOnly={true}
+        type="text"
+        value="lk1"
+      />
+      <div
+        className="input-group-append"
+      >
+        <button
+          className="btn btn-secondary"
+          disabled={false}
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+            />
+          </svg>
+           
+          Copy
+        </button>
+      </div>
+    </div>
+  </div>
+</li>
+`;
+
+exports[`SiteAdminProductLicenseNode inactive 1`] = `
+<li
+  className="list-group-item py-2"
+>
+  <div
+    className="d-flex align-items-center justify-content-between"
+  >
+    <div
+      className="mr-3 text-truncate"
+    >
+      <strong>
+        License in
+         
+        <a
+          className="mr-3"
+          href="/s"
+        >
+          s
+        </a>
+      </strong>
+      <span
+        className="mr-3"
+      >
+        <AccountName />
+      </span>
+    </div>
+    <div>
+      <span
+        className="mr-3"
+        title="Tags: a"
+      >
+        NB
+         (
+        123 users
+        )
+      </span>
+      <span
+        className="text-warning font-weight-bold mr-3"
+        data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
+      >
+        Inactive
+      </span>
+      <span
+        className="text-muted"
+      >
+        Created 
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
+        >
+          in almost 14 years
+        </span>
+      </span>
+    </div>
+  </div>
+  <div>
+    Tags: 
+    <div
+      className="mr-1 badge badge-secondary"
+    >
+      a
+    </div>
+  </div>
+  <div
+    className="copyable-text form-inline mt-2 d-block"
+  >
+    <div
+      className="input-group"
+    >
+      <input
+        className="copyable-text__input form-control"
+        onClick={[Function]}
+        readOnly={true}
+        type="text"
+        value="lk1"
+      />
+      <div
+        className="input-group-append"
+      >
+        <button
+          className="btn btn-secondary"
+          disabled={false}
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+            />
+          </svg>
+           
+          Copy
+        </button>
+      </div>
+    </div>
+  </div>
+</li>
+`;

@@ -1,4 +1,5 @@
 @import './Suggestion';
+@import './toggles/Toggles.scss';
 
 .query-input2 {
     flex: 1 1 auto;
@@ -13,7 +14,7 @@
         border-bottom-right-radius: 0;
         // Padding added so that the input value does not overlap with the toggle buttons.
         // The padding should be calculated by the width of an icon width * number of icons + 0. 5rem.
-        padding-right: calc(#{$toggle-icon-width} * 2 + 0.5rem);
+        padding-right: calc(#{$toggle-icon-width} * 4 + 0.5rem);
 
         &--with-mode-toggle {
             border-top-left-radius: 0;
@@ -71,33 +72,8 @@
 
     &__toggle-container {
         position: absolute;
-        display: flex;
         right: 0.375rem;
         top: 0.375rem;
-    }
-
-    &__toggle {
-        display: block;
-        cursor: pointer;
-        &:not(:last-child) {
-            margin-right: 0.25rem;
-        }
-    }
-
-    &__toggle-icon {
-        border: 1px solid transparent;
-
-        &--active {
-            border: 1px solid $color-border-active;
-            padding-bottom: 0.25rem;
-            border-radius: 2px;
-            .theme-dark & {
-                background: $color-bg-5;
-            }
-            .theme-light & {
-                background: $color-light-bg-3;
-            }
-        }
     }
 }
 

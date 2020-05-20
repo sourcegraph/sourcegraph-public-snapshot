@@ -13,8 +13,8 @@ Below are examples that search repositories on [Sourcegraph.com](https://sourceg
 - [New usages of a function](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+type:diff+after:%221+week+ago%22+%5C.subscribe%5C%28+lang:typescript)<br/>
 `type:diff after:"1 week ago" \.subscribe\( lang:typescript`
 
-- [Recent quality related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28tslint:disable%29)<br/>
-`repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`
+- [Recent quality related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28eslint-disable%29)<br/>
+`repo:@*refs/heads/:^master type:diff after:"1 week ago" (eslint-disable)`
 
 - [Recent dependency changes](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+file:package.json+type:diff+after:%221+week+ago%22)<br/>
 `file:package.json type:diff after:"1 week ago"`

@@ -46,7 +46,7 @@ In general, to get the best performance:
 
 #### Result ordering
 
-The paginated search API produces search results with an eventually stable order. That is, in general results are in a stable enough order for programmatically consuming the entire result set, and repeated requests for the same search query generally see the same results. But if you for example intend to directly diff two complete result sets recieved via the paginated API there are some edge cases:
+The paginated search API produces search results with an eventually stable order. That is, in general results are in a stable enough order for programmatically consuming the entire result set, and repeated requests for the same search query generally see the same results. But if you for example intend to directly diff two complete result sets received via the paginated API there are some edge cases:
 
 1. If new results are introduced (e.g. via a new commit) while a query or subsequent query is ongoing, Sourcegraph _MAY_ include those results.
 2. If results are removed (e.g. via a new commit) while a query or subsequent query is ongoing, Sourcegraph _MAY_ skip over some results in the total set.

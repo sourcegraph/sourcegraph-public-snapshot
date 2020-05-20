@@ -9,6 +9,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type RepositoryResolver struct {
@@ -78,6 +78,30 @@ func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
 	return &r.repo.ExternalRepo
 }
 
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Fork, nil
+}
+
+func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Archived, nil
+}
+
+func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.Private, nil
+}
+
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	err := r.hydrate(ctx)
 	if err != nil {
@@ -96,6 +120,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	return r.repo.Description, nil
 }
 
+// Deprecated: Use repositoryRedirect query instead.
 func (r *RepositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
@@ -265,9 +290,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 }
 
 func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
 	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
@@ -287,13 +309,14 @@ type RepoAuthorizedUserArgs struct {
 }
 
 func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *AuthorizedUserArgs) (UserConnectionResolver, error) {
-	if EnterpriseResolvers.authzResolver == nil {
-		return nil, authzInEnterprise
-	}
 	return EnterpriseResolvers.authzResolver.AuthorizedUsers(ctx, &RepoAuthorizedUserArgs{
 		RepositoryID:       r.ID(),
 		AuthorizedUserArgs: args,
 	})
+}
+
+func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
+	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

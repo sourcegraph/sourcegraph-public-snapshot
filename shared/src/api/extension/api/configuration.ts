@@ -1,5 +1,5 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
+import { Remote, ProxyMarked, proxyMarker } from 'comlink'
+import { ReplaySubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
@@ -9,7 +9,7 @@ import { ClientConfigurationAPI } from '../../client/api/configuration'
  * @template C - The configuration schema.
  */
 class ExtConfigurationSection<C extends object> implements sourcegraph.Configuration<C> {
-    constructor(private proxy: ProxyResult<ClientConfigurationAPI>, private data: C) {}
+    constructor(private proxy: Remote<ClientConfigurationAPI>, private data: C) {}
 
     public get<K extends keyof C>(key: K): C[K] | undefined {
         return this.data[key]
@@ -35,7 +35,7 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
  * @internal
  * @template C - The configuration schema.
  */
-export interface ExtConfigurationAPI<C> extends ProxyValue {
+export interface ExtConfigurationAPI<C> extends ProxyMarked {
     $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void
 }
 
@@ -43,39 +43,31 @@ export interface ExtConfigurationAPI<C> extends ProxyValue {
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     /**
      * The settings data observable, assigned when the initial data is received from the client. Extensions should
      * never be able to call {@link ExtConfiguration}'s methods before the initial data is received.
      */
-    private data?: BehaviorSubject<Readonly<SettingsCascade<C>>>
+    private data?: Readonly<SettingsCascade<C>>
 
-    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {}
+    // Buffer size of 1, so that sourcegraph.configuration:
+    // - doesn't emit until initial settings have been received.
+    // - emits immediately on subscription after initial settings have been received.
+    public readonly changes = new ReplaySubject<void>(1)
+
+    constructor(private proxy: Remote<ClientConfigurationAPI>) {}
 
     public $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void {
-        if (!this.data) {
-            this.data = new BehaviorSubject(data)
-        } else {
-            this.data.next(Object.freeze(data))
-        }
-    }
-
-    private getData(): BehaviorSubject<Readonly<SettingsCascade<C>>> {
-        if (!this.data) {
-            throw new Error('unexpected internal error: settings data is not yet available')
-        }
-        return this.data
+        this.data = Object.freeze(data)
+        this.changes.next()
     }
 
     public get(): sourcegraph.Configuration<C> {
-        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.getData().value.final))
-    }
-
-    public subscribe(observer?: PartialObserver<C>): Unsubscribable
-    public subscribe(next?: (value: C) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
-    public subscribe(...args: any[]): sourcegraph.Unsubscribable {
-        return this.getData().subscribe(...args)
+        if (!this.data) {
+            throw new Error('unexpected internal error: settings data is not yet available')
+        }
+        return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.data.final))
     }
 }

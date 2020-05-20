@@ -11,12 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -24,8 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
+
+// recorder records operational metrics for methods.
+var recorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck", metrics.WithLabels("method"))
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
@@ -67,81 +71,198 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func getSiteActivityJSON() ([]byte, error) {
-	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
-	})
+// recordOperation returns a record fn that is called on any given return err. If an error is encountered
+// it will register the err metric. The err is never altered.
+func recordOperation(method string) func(error) error {
+	start := time.Now()
+	return func(err error) error {
+		recorder.Observe(time.Since(start).Seconds(), 1, &err, method)
+		return err
+	}
+}
+
+func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (json.RawMessage, error) {
+	rec := recordOperation("getAndMarshalSiteActivityJSON")
+	siteActivity, err := usagestats.GetSiteUsageStats(ctx, criticalOnly)
+	defer rec(err)
+
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(siteActivity)
 }
 
+func hasSearchOccurred(ctx context.Context) (bool, error) {
+	rec := recordOperation("hasSearchOccurred")
+	searchOccurred, err := usagestats.HasSearchOccurred()
+	return searchOccurred, rec(err)
+}
+
+func hasFindRefsOccurred(ctx context.Context) (bool, error) {
+	rec := recordOperation("hasSearchOccured")
+	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
+	return findRefsOccurred, rec(err)
+}
+
+func getTotalUsersCount(ctx context.Context) (int, error) {
+	rec := recordOperation("getTotalUsersCount")
+	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
+	return totalUsers, rec(err)
+}
+
+func getTotalReposCount(ctx context.Context) (int, error) {
+	rec := recordOperation("getTotalReposCount")
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	return totalRepos, rec(err)
+}
+
+func getUsersActiveTodayCount(ctx context.Context) (int, error) {
+	rec := recordOperation("getUsersActiveTodayCount")
+	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
+	return count, rec(err)
+}
+
+func getInitialSiteAdminEmail(ctx context.Context) (string, error) {
+	rec := recordOperation("getInitialSiteAdminEmail")
+	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return initAdminEmail, rec(err)
+}
+
+func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	rec := recordOperation("getAndMarshalCampaignsUsageJSON")
+	campaignsUsage, err := usagestats.GetCampaignsUsageStatistics(ctx)
+	defer rec(err)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(campaignsUsage)
+}
+
+func getAndMarshalAggregatedUsageJSON(ctx context.Context) (json.RawMessage, json.RawMessage, error) {
+	rec := recordOperation("getAndMarshalAggregatedUsageJSON")
+	codeIntelUsage, searchUsage, err := usagestats.GetAggregatedStats(ctx)
+	defer rec(err)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	serializedCodeIntelUsage, err := json.Marshal(codeIntelUsage)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	serializedSearchUsage, err := json.Marshal(searchUsage)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return serializedCodeIntelUsage, serializedSearchUsage, nil
+}
+
 func updateURL(ctx context.Context) string {
+	return baseURL.String()
+}
+
+func updateBody(ctx context.Context) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = log15.Warn
 	}
 
-	q := url.Values{}
-	q.Set("version", version.Version())
-	q.Set("site", siteid.Get())
-	q.Set("auth", strings.Join(authProviderTypes(), ","))
-	q.Set("deployType", conf.DeployType())
-	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
-	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
-
-	// TODO(Dan): migrate this to the new usagestats package.
-	//
-	// For the time being, instances will report daily active users through the legacy package via this argument,
-	// as well as using the new package through the `act` argument below. This will allow comparison during the
-	// transition.
-	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
-	if err != nil {
-		logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
+	r := &pingRequest{
+		ClientSiteID:        siteid.Get(),
+		DeployType:          conf.DeployType(),
+		ClientVersionString: version.Version(),
+		LicenseKey:          conf.Get().LicenseKey,
+		CodeIntelUsage:      []byte("{}"),
+		SearchUsage:         []byte("{}"),
+		CampaignsUsage:      []byte("{}"),
 	}
-	q.Set("u", strconv.Itoa(count))
+
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
 	if err != nil {
 		logFunc("db.Users.Count failed", "error", err)
 	}
-	q.Set("totalUsers", strconv.Itoa(totalUsers))
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
-	hasRepos := totalRepos > 0
-	if err != nil {
-		logFunc("db.Repos.Count failed", "error", err)
-	}
-	q.Set("repos", strconv.FormatBool(hasRepos))
-	searchOccurred, err := usagestats.HasSearchOccurred()
-	if err != nil {
-		logFunc("usagestats.HasSearchOccurred failed", "error", err)
-	}
-	// Searches only count if repos have been added.
-	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
-	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
-	if err != nil {
-		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
-	}
-	q.Set("refs", strconv.FormatBool(findRefsOccurred))
-	if act, err := getSiteActivityJSON(); err != nil {
-		logFunc("getSiteActivityJSON failed", "error", err)
-	} else {
-		q.Set("act", string(act))
-	}
-	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	r.TotalUsers = int32(totalUsers)
+	r.InitialAdminEmail, err = db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
-	q.Set("initAdmin", initAdminEmail)
-	svcs, err := externalServiceKinds(ctx)
-	if err != nil {
-		logFunc("externalServicesKinds failed", "error", err)
+
+	if !conf.Get().DisableNonCriticalTelemetry {
+		// TODO(Dan): migrate this to the new usagestats package.
+		//
+		// For the time being, instances will report daily active users through the legacy package via this argument,
+		// as well as using the new package through the `act` argument below. This will allow comparison during the
+		// transition.
+		count, err := getUsersActiveTodayCount(ctx)
+		if err != nil {
+			logFunc("updatecheck.getUsersActiveToday failed", "error", err)
+		}
+		r.UniqueUsers = int32(count)
+		totalRepos, err := getTotalReposCount(ctx)
+		if err != nil {
+			logFunc("updatecheck.getTotalReposCount failed", "error", err)
+		}
+		r.HasRepos = totalRepos > 0
+
+		r.EverSearched, err = hasSearchOccurred(ctx)
+		if err != nil {
+			logFunc("updatecheck.hasSearchOccurred failed", "error", err)
+		}
+		r.EverFindRefs, err = hasFindRefsOccurred(ctx)
+		if err != nil {
+			logFunc("updatecheck.hasFindRefsOccurred failed", "error", err)
+		}
+		r.CampaignsUsage, err = getAndMarshalCampaignsUsageJSON(ctx)
+		if err != nil {
+			logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
+		}
+		r.ExternalServices, err = externalServiceKinds(ctx)
+		if err != nil {
+			logFunc("externalServicesKinds failed", "error", err)
+		}
+
+		r.HasExtURL = conf.UsingExternalURL()
+		r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
+		r.AuthProviders = authProviderTypes()
+
+		// The following methods are the most expensive to calculate, so we do them in
+		// parallel.
+
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
+			if err != nil {
+				logFunc("updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+			}
+		}()
+		wg.Wait()
+	} else {
+		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
+		if err != nil {
+			logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
+		}
 	}
-	q.Set("extsvcs", strings.Join(svcs, ","))
-	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
+
+	contents, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(contents), nil
 }
 
 func authProviderTypes() []string {
@@ -154,7 +275,9 @@ func authProviderTypes() []string {
 }
 
 func externalServiceKinds(ctx context.Context) ([]string, error) {
+	rec := recordOperation("externalServiceKinds")
 	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +292,11 @@ func externalServiceKinds(ctx context.Context) ([]string, error) {
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
 	doCheck := func() (updateVersion string, err error) {
-		resp, err := ctxhttp.Get(ctx, nil, updateURL(ctx))
+		body, err := updateBody(ctx)
+		if err != nil {
+			return "", err
+		}
+		resp, err := ctxhttp.Post(ctx, nil, updateURL(ctx), "application/json", body)
 		if err != nil {
 			return "", err
 		}
@@ -234,7 +361,7 @@ func Start() {
 	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 300*time.Second)
 		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 

@@ -96,16 +96,16 @@ type IsRepoClonedRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoRequest is a request for information about multiple repositories on gitserver.
-type RepoInfoRequest struct {
-	// Repos are the repositories to get information about.
-	Repos []api.RepoName
-}
-
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
 	Repo api.RepoName
+}
+
+// RepoInfoRequest is a request for information about multiple repositories on gitserver.
+type RepoInfoRequest struct {
+	// Repos are the repositories to get information about.
+	Repos []api.RepoName
 }
 
 // RepoInfo is the information requests about a single repository
@@ -131,6 +131,25 @@ type RepoInfoResponse struct {
 	Results map[api.RepoName]*RepoInfo
 }
 
+// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// repositories on gitserver.
+type RepoCloneProgressRequest struct {
+	Repos []api.RepoName
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+type RepoCloneProgress struct {
+	CloneInProgress bool   // whether the repository is currently being cloned
+	CloneProgress   string // a progress message from the running clone command.
+	Cloned          bool   // whether the repository has been cloned successfully
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress request
+// for multiple repositories at the same time.
+type RepoCloneProgressResponse struct {
+	Results map[api.RepoName]*RepoCloneProgress
+}
+
 // CreateCommitFromPatchRequest is the request information needed for creating
 // the simulated staging area git object for a repo.
 type CreateCommitFromPatchRequest struct {
@@ -142,6 +161,8 @@ type CreateCommitFromPatchRequest struct {
 	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
+	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
 	// Push specifies whether the target ref will be pushed to the code host
@@ -179,7 +200,7 @@ func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err 
 	e.Error.RepositoryName = repo
 	e.Error.Command = command
 	e.Error.CombinedOutput = out
-	e.Error.Err = err
+	e.Error.InternalError = err.Error()
 }
 
 // CreateCommitFromPatchError is populated on errors running
@@ -187,8 +208,10 @@ func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err 
 type CreateCommitFromPatchError struct {
 	// RepositoryName is the name of the repository
 	RepositoryName string
-	// Error is the internal error
-	Err error
+
+	// InternalError is the internal error
+	InternalError string
+
 	// Command is the last git command that was attempted
 	Command string
 	// CombinedOutput is the combined stderr and stdout from running the command
@@ -197,13 +220,5 @@ type CreateCommitFromPatchError struct {
 
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
-	if e.Err == nil {
-		return ""
-	}
-	return e.Err.Error()
-}
-
-// Unwrap return the original error and satisfies the errors.Unwrap interface
-func (e *CreateCommitFromPatchError) Unwrap() error {
-	return e.Err
+	return e.InternalError
 }

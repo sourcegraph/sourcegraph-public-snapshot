@@ -7,7 +7,7 @@ set -euo pipefail
 
 trap "rm -f comment.txt" EXIT
 
-cat > comment.txt <<EOF
+cat >comment.txt <<EOF
 Dear all,
 
 This is your release captain speaking. 🚂🚂🚂

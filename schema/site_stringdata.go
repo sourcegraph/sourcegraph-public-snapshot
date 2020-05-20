@@ -54,20 +54,26 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "discussions": {
-          "description": "Enables the code discussions experiment.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "debug.log": {
+          "description": "Turns on debug logging for specific debugging scenarios.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extsvc.gitlab": {
+              "description": "Log GitLab API requests.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "automation": {
-          "description": "Enables the experimental code automation features.",
+          "description": "Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -78,8 +84,14 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "andOrQuery": {
+          "description": "Interpret a search input query as an and/or query.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "bitbucketServerFastPerm": {
-          "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. This requires the installation of the Bitbucket Server Sourcegraph plugin. Warning: there may be performance degradation under significant load.",
+          "description": "DEPRECATED: Configure in Bitbucket Server config.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -99,18 +111,143 @@ const SiteSchemaJSON = `{
               "description": "insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.\nIf InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.",
               "type": "boolean",
               "default": false
+            },
+            "certificates": {
+              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-----BEGIN CERTIFICATE-----\n",
+                "examples": ["-----BEGIN CERTIFICATE-----\n..."]
+              }
             }
           }
+        },
+        "customGitFetch": {
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "type": "array",
+          "items": {
+            "title": "CustomGitFetchMapping",
+            "description": "Mapping from Git clone URl domain/path to git fetch command. The ` + "`" + `domainPath` + "`" + ` field contains the Git clone URL domain/path part. The ` + "`" + `fetch` + "`" + ` field contains the custom git fetch command.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["domainPath", "fetch"],
+            "properties": {
+              "domainPath": {
+                "description": "Git clone URL domain/path",
+                "type": "string"
+              },
+              "fetch": {
+                "description": "Git fetch command",
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "examples": [
+            [
+              {
+                "domainPath": "somecodehost.com/path/to/repo",
+                "fetch": "customgitbinary someflag"
+              },
+              {
+                "domainPath": "somecodehost.com/path/to/anotherrepo",
+                "fetch": "customgitbinary someflag anotherflag"
+              }
+            ]
+          ]
+        },
+        "versionContexts": {
+          "description": "JSON array of version context configuration",
+          "type": "array",
+          "items": {
+            "title": "VersionContext",
+            "description": "Configuration of the version context",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "revisions"],
+            "properties": {
+              "name": {
+                "description": "Name of the version context, it must be unique.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 14
+              },
+              "revisions": {
+                "description": "List of repositories of the version context",
+                "type": "array",
+                "items": {
+                  "title": "VersionContextRevision",
+                  "description": "Description of the chosen repository and revision",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repo", "rev"],
+                  "properties": {
+                    "repo": {
+                      "description": "Repository name",
+                      "type": "string"
+                    },
+                    "rev": {
+                      "description": "Branch, tag, or commit hash",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "description": {
+                "description": "Description of the version context",
+                "type": "string"
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Release foo",
+              "revisions": [
+                {
+                  "repo": "github.com/sourcegraph/sourcegraph",
+                  "rev": "3.15"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib1",
+                  "rev": "23edr233r"
+                },
+                {
+                  "repo": "github.com/sourcegraph/lib2",
+                  "rev": "2.4"
+                }
+              ]
+            }
+          ]
         }
       },
-      "group": "Experimental",
-      "hide": true
+      "examples": [
+        {
+          "customGitFetch": [
+            {
+              "domainPath": "somecodehost.com/path/to/repo",
+              "fetch": "customgitbinary someflag"
+            },
+            {
+              "domainPath": "somecodehost.com/path/to/anotherrepo",
+              "fetch": "customgitbinary someflag anotherflag"
+            }
+          ]
+        }
+      ],
+      "group": "Experimental"
     },
     "automation.readAccess.enabled": {
-      "description": "Enables read-only access to Automation campaigns for non-site-admin users. This is a setting for the experimental feature Automation. These will only have an effect when Automation is enabled under experimentalFeatures",
+      "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
       "type": "boolean",
       "!go": { "pointer": true },
-      "group": "Automation"
+      "group": "Campaigns"
+    },
+    "campaigns.readAccess.enabled": {
+      "description": "Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with ` + "`" + `{\"experimentalFeatures\": {\"automation\": \"enabled\"}}` + "`" + `.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns"
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
@@ -124,6 +261,12 @@ const SiteSchemaJSON = `{
       "type": "boolean",
       "default": false,
       "group": "Security"
+    },
+    "disableNonCriticalTelemetry": {
+      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
@@ -159,13 +302,13 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "githubClientID": {
-      "description": "Client ID for GitHub.",
+      "description": "Client ID for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
     },
     "githubClientSecret": {
-      "description": "Client secret for GitHub.",
+      "description": "Client secret for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
@@ -245,6 +388,23 @@ const SiteSchemaJSON = `{
         "bindID": "email"
       },
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "group": "Security"
+    },
+    "permissions.backgroundSync": {
+      "description": "Sync code host repository and user permissions in the background.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether syncing permissions in the background is enabled.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {
+        "enabled": true
+      },
+      "examples": [{ "enabled": true }],
       "group": "Security"
     },
     "branding": {
@@ -334,42 +494,6 @@ const SiteSchemaJSON = `{
       ],
       "group": "Email"
     },
-    "email.imap": {
-      "title": "IMAPServerConfig",
-      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "port"],
-      "properties": {
-        "host": {
-          "description": "The IMAP server host.",
-          "type": "string"
-        },
-        "port": {
-          "description": "The IMAP server port.",
-          "type": "integer"
-        },
-        "username": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        },
-        "password": {
-          "description": "The username to use when communicating with the IMAP server.",
-          "type": "string"
-        }
-      },
-      "default": null,
-      "examples": [
-        {
-          "host": "imap.example.com",
-          "port": 993,
-          "username": "alice",
-          "password": "mypassword"
-        }
-      ],
-      "group": "Email",
-      "hide": true
-    },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
       "type": "string",
@@ -413,25 +537,6 @@ const SiteSchemaJSON = `{
       ],
       "group": "Extensions"
     },
-    "discussions": {
-      "description": "Configures Sourcegraph code discussions.",
-      "type": "object",
-      "properties": {
-        "abuseProtection": {
-          "description": "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
-          "type": "boolean",
-          "default": false
-        },
-        "abuseEmails": {
-          "description": "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
-          "type": "array",
-          "items": { "type": "string" },
-          "default": []
-        }
-      },
-      "group": "Experimental",
-      "hide": true
-    },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form ` + "`" + `{\"*\": [\"org1\", \"org2\"]}` + "`" + `, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is ` + "`" + `\"*\"` + "`" + `.",
       "type": "object",
@@ -466,25 +571,54 @@ const SiteSchemaJSON = `{
       "group": "Misc."
     },
     "externalURL": {
-      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
+      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
     "lightstepAccessToken": {
-      "description": "Access token for sending traces to LightStep.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "group": "Misc."
     },
     "lightstepProject": {
-      "description": "The project ID on LightStep that corresponds to the ` + "`" + `lightstepAccessToken` + "`" + `, only for generating links to traces. For example, if ` + "`" + `lightstepProject` + "`" + ` is ` + "`" + `mycompany-prod` + "`" + `, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form ` + "`" + `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...` + "`" + `.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "examples": ["myproject"],
       "group": "Misc."
     },
     "useJaeger": {
-      "description": "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, ` + "`" + `kubectl get pods` + "`" + `\nshould display pods prefixed with ` + "`" + `jaeger-cassandra` + "`" + `,\n` + "`" + `jaeger-collector` + "`" + `, and ` + "`" + `jaeger-query` + "`" + `. ` + "`" + `jaeger-collector` + "`" + ` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [` + "`" + `cqlsh` + "`" + `](https://pypi.python.org/pypi/cqlsh).\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042` + "`" + `\n1. ` + "`" + `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh` + "`" + `\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686` + "`" + `\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
+      "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
       "type": "boolean",
       "group": "Misc."
+    },
+    "observability.tracing": {
+      "description": "Controls the settings for distributed tracing.",
+      "type": "object",
+      "properties": {
+        "sampling": {
+          "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever ` + "`" + `?trace=1` + "`" + ` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
+          "type": "string",
+          "enum": ["selective", "all", "none"],
+          "default": "selective"
+        },
+        "debug": {
+          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "observability.logSlowSearches": {
+      "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
+    },
+    "observability.logSlowGraphQLRequests": {
+      "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
@@ -553,7 +687,14 @@ const SiteSchemaJSON = `{
     "auth.enableUsernameChanges": {
       "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "group": "Authentication"
+    },
+    "auth.minPasswordLength": {
+      "description": "The minimum number of Unicode code points that a password must contain.",
+      "type": "integer",
+      "default": 12,
+      "group": "Authentication"
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",

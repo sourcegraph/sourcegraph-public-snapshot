@@ -6,9 +6,10 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// NewCodeIntelResolver will be set by enterprise
+// NewCodeIntelResolver will be set by enterprise.
 var NewCodeIntelResolver func() CodeIntelResolver
 
 type CodeIntelResolver interface {
@@ -16,6 +17,31 @@ type CodeIntelResolver interface {
 	LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
+}
+
+var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
+
+type defaultCodeIntelResolver struct{}
+
+func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	// We need to override the embedded method here as it takes slightly different arguments
+	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -36,12 +62,14 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	InputCommit() string
 	InputRoot() string
+	InputIndexer() string
 	State() string
 	UploadedAt() DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	Failure() LSIFUploadFailureReasonResolver
 	IsLatestForRepo() bool
+	PlaceInQueue() *int32
 }
 
 type LSIFUploadFailureReasonResolver interface {
@@ -56,7 +84,6 @@ type LSIFUploadConnectionResolver interface {
 }
 
 type LSIFQueryResolver interface {
-	Commit(ctx context.Context) (*GitCommitResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
@@ -64,7 +91,7 @@ type LSIFQueryResolver interface {
 
 type LSIFQueryArgs struct {
 	Repository *RepositoryResolver
-	Commit     GitObjectID
+	Commit     api.CommitID
 	Path       string
 	UploadID   int64
 }
@@ -88,13 +115,4 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() MarkdownResolver
 	Range() RangeResolver
-}
-
-var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
-
-func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
 }

@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -14,10 +14,11 @@ import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtRoots } from './api/roots'
+import { ExtWorkspace } from './api/workspace'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { registerComlinkTransferHandlers } from '../util'
 
 /**
  * Required information when initializing an extension host.
@@ -38,7 +39,7 @@ export interface InitData {
  * It expects to receive a message containing {@link InitData} from the client application as the
  * first message.
  *
- * @param transports The message reader and writer to use for communication with the client.
+ * @param endpoints The endpoints to the client.
  * @returns An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
@@ -76,7 +77,7 @@ export function startExtensionHost(
  * The extension API is made globally available to all requires/imports of the "sourcegraph" module
  * by other scripts running in the same JavaScript context.
  *
- * @param connection The connection used to communicate with the client.
+ * @param endpoints The endpoints to the client.
  * @param initData The information to initialize this extension host.
  * @returns An unsubscribable to terminate the extension host.
  */
@@ -90,20 +91,20 @@ function initializeExtensionHost(
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
-    ;(global as any).require = (modulePath: string): any => {
+    globalThis.require = ((modulePath: string): any => {
         if (modulePath === 'sourcegraph') {
             return extensionAPI
         }
         // All other requires/imports in the extension's code should not reach here because their JS
         // bundler should have resolved them locally.
         throw new Error(`require: module not found: ${modulePath}`)
-    }
+    }) as any
     subscription.add(() => {
-        ;(global as any).require = () => {
+        globalThis.require = (() => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
             throw new Error('require: Sourcegraph extension API was unsubscribed')
-        }
+        }) as any
     })
 
     return { subscription, extensionAPI, extensionHostAPI }
@@ -117,8 +118,12 @@ function createExtensionAPI(
 
     // EXTENSION HOST WORKER
 
+    registerComlinkTransferHandlers()
+
     /** Proxy to main thread */
-    const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
+    const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
+    ;(endpoints.proxy as any).role = 'proxy'
+    ;(endpoints.proxy as any).side = 'ext-host'
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
@@ -130,7 +135,7 @@ function createExtensionAPI(
     const extensions = new ExtExtensions()
     subscription.add(extensions)
 
-    const roots = new ExtRoots()
+    const workspace = new ExtWorkspace()
     const windows = new ExtWindows(proxy, documents)
     const views = new ExtViews(proxy.views)
     const configuration = new ExtConfiguration<any>(proxy.configuration)
@@ -141,17 +146,20 @@ function createExtensionAPI(
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
-        [comlink.proxyValueSymbol]: true,
+        [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
         configuration,
         documents,
         extensions,
-        roots,
+        workspace,
         windows,
     }
 
     // Expose the extension API to extensions
+    // "redefines" everything instead of exposing internal Ext* classes directly so as to:
+    // - Avoid exposing private methods to extensions
+    // - Avoid exposing proxy.* to extensions, which gives access to the main thread
     const extensionAPI: typeof sourcegraph & {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
@@ -177,6 +185,7 @@ function createExtensionAPI(
             },
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
+            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
         workspace: {
@@ -186,16 +195,19 @@ function createExtensionAPI(
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
             get roots(): readonly sourcegraph.WorkspaceRoot[] {
-                return roots.getAll()
+                return workspace.getAllRoots()
             },
-            onDidChangeRoots: roots.changes,
-            rootChanges: roots.changes,
+            onDidChangeRoots: workspace.rootChanges,
+            rootChanges: workspace.rootChanges,
+            get versionContext(): string | undefined {
+                return workspace.versionContextChanges.value
+            },
+            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
-        configuration: {
+        configuration: Object.assign(configuration.changes.asObservable(), {
             get: () => configuration.get(),
-            subscribe: (next: () => void) => configuration.subscribe(next),
-        },
+        }),
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>

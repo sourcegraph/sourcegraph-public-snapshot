@@ -12,9 +12,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

@@ -3,10 +3,20 @@
   "references": [{ "path": "../shared" }, { "path": "../schema" }],
   "compilerOptions": {
     "module": "commonjs",
-    "typeRoots": ["../shared/src/types", "../node_modules/@types", "src/types"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "../shared/src/types/*", "*"],
+    },
     "jsx": "react",
     "rootDir": ".",
     "outDir": "out",
+    "plugins": [
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "../cmd/frontend/graphqlbackend/schema.graphql",
+        "tag": "gql",
+      },
+    ],
   },
   "include": ["./**/*"],
   "exclude": ["../node_modules", "./node_modules", "./out", "src/e2e", "src/regression"],

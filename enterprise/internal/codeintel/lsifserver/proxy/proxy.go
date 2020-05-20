@@ -2,93 +2,85 @@ package proxy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {
-	url, err := url.Parse(lsifserver.ServerURLFromEnv)
-	if err != nil {
-		return nil, err
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
-
 	return &httpapi.LSIFServerProxy{
-		UploadHandler: http.HandlerFunc(uploadProxyHandler(proxy)),
+		UploadHandler: http.HandlerFunc(uploadProxyHandler()),
 	}, nil
 }
 
-func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
 		commit := q.Get("commit")
-		root := q.Get("root")
 		ctx := r.Context()
 
-		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
-		if !ok {
-			return
+		// We only need to translate the repository id and check for auth on the first
+		// upload request. If there is an upload identifier, this check has already
+		// been performed (or someone is uploading to an unknown identifier, which will
+		// naturally result in an error response).
+		if q.Get("uploadId") == "" {
+			repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+			if !ok {
+				return
+			}
+
+			// translate repository id to something that the precise-code-intel-api-server
+			// can reconcile in the database
+			q.Del("repository")
+			q.Set("repositoryId", fmt.Sprintf("%d", repo.ID))
+
+			// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
+			// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
+			// token proving contributor access to the repository.
+			if conf.Get().LsifEnforceAuth {
+				if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
+					if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
+						return
+					}
+				}
+			}
 		}
 
-		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
-		// endpoint. This endpoint is unprotected, so we need to make sure the user
-		// provides a valid token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth && !enforceAuth(ctx, w, r, repoName) {
-			return
-		}
-
-		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
-			RepoID   api.RepoID
-			Commit   graphqlbackend.GitObjectID
-			Root     string
-			Blocking *bool
-			MaxWait  *int32
-			Body     io.ReadCloser
-		}{
-			RepoID: repo.ID,
-			Commit: graphqlbackend.GitObjectID(commit),
-			Root:   root,
-			Body:   r.Body,
-		})
-
+		host, err := client.SelectRandomHost()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Return id as a string to maintain backwards compatibility with src-cli
-		payload, err := json.Marshal(map[string]string{"id": strconv.FormatInt(uploadID, 10)})
+		proxyReq, err := makeUploadRequest(host, q, r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if queued {
-			w.WriteHeader(http.StatusAccepted)
-		} else {
-			w.WriteHeader(http.StatusOK)
+		proxyResp, err := client.DefaultClient.RawRequest(ctx, proxyReq)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		defer proxyResp.Body.Close()
 
-		_, _ = w.Write(payload)
+		w.WriteHeader(proxyResp.StatusCode)
+		_, _ = io.Copy(w, proxyResp.Body)
 	}
 }
 
@@ -117,6 +109,20 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	return repo, true
 }
 
+func isSiteAdmin(ctx context.Context) bool {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+			return false
+		}
+
+		log15.Error("precise-code-intel proxy: failed to get up current user", "error", err)
+		return false
+	}
+
+	return user != nil && user.SiteAdmin
+}
+
 func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {
 	validatorByCodeHost := map[string]func(context.Context, http.ResponseWriter, *http.Request, string) (int, error){
 		"github.com": enforceAuthGithub,
@@ -135,4 +141,14 @@ func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, re
 
 	http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
 	return false
+}
+
+func makeUploadRequest(host string, q url.Values, body io.Reader) (*http.Request, error) {
+	url, err := url.Parse(fmt.Sprintf("%s/upload", host))
+	if err != nil {
+		return nil, err
+	}
+	url.RawQuery = q.Encode()
+
+	return http.NewRequest("POST", url.String(), body)
 }

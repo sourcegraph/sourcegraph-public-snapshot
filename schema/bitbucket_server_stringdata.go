@@ -27,6 +27,29 @@ const BitbucketServerSchemaJSON = `{
     }
   ],
   "properties": {
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to BitbucketServer.",
+      "title": "BitbucketServerRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 28800,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 28800
+      }
+    },
     "url": {
       "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com.",
       "type": "string",
@@ -65,13 +88,38 @@ const BitbucketServerSchemaJSON = `{
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
     },
     "webhooks": {
-      "description": "Configuration for Bitbucket Server Sourcegraph plugin webhooks",
+      "description": "DEPRECATED: Switch to \"plugin.webhooks\"",
       "type": "object",
       "properties": {
         "secret": {
           "description": "Secret for authenticating incoming webhook payloads",
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "plugin": {
+      "title": "BitbucketServerPlugin",
+      "description": "Configuration for Bitbucket Server Sourcegraph plugin",
+      "type": "object",
+      "properties": {
+        "webhooks": {
+          "title": "BitbucketServerPluginWebhooks",
+          "type": "object",
+          "required": ["secret"],
+          "properties": {
+            "secret": {
+              "description": "Secret for authenticating incoming webhook payloads",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "permissions": {
+          "description": "Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },

@@ -1,6 +1,6 @@
 # Local development (sideloading)
 
-When developing an extension, you can sideload it from your local development machine's Parcel dev server (instead of re-publishing it after each code change). This speeds up the development cycle and avoids breaking the published version of your extension.
+When developing an extension, you can sideload it from your local development machine's Parcel dev server (instead of re-publishing it after each code change). This speeds up the development cycle and avoids breaking the published version of your extension. This works on [Sourcegraph.com](https://sourcegraph.com/search) and self-hosted instances.
 
 To set this up:
 
@@ -22,13 +22,13 @@ When you're done, clear the sideload URL from the extensions debug menu.
 1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
 2. Add the following npm script to your `package.json`:
 
-    ```json
+    ```
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
     ```
 
 3. Edit the `serve` npm script to run `symlink-package`:
 
-    ```json
+    ```
     "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
     ```
 

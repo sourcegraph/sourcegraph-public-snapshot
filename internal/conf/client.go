@@ -16,17 +16,27 @@ import (
 )
 
 type client struct {
-	store       *Store
+	store       *store
 	passthrough ConfigurationSource
 	watchersMu  sync.Mutex
 	watchers    []chan struct{}
 }
 
-var defaultClient *client
+var (
+	defaultClientOnce sync.Once
+	defaultClientVal  *client
+)
+
+func defaultClient() *client {
+	defaultClientOnce.Do(func() {
+		defaultClientVal = initDefaultClient()
+	})
+	return defaultClientVal
+}
 
 // Raw returns a copy of the raw configuration.
 func Raw() conftypes.RawUnified {
-	return defaultClient.Raw()
+	return defaultClient().Raw()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -45,7 +55,7 @@ func Raw() conftypes.RawUnified {
 //
 // Get is a wrapper around client.Get.
 func Get() *Unified {
-	return defaultClient.Get()
+	return defaultClient().Get()
 }
 
 // Raw returns a copy of the raw configuration.
@@ -74,7 +84,7 @@ func (c *client) Get() *Unified {
 //
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *Unified) {
-	defaultClient.Mock(mockery)
+	defaultClient().Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
@@ -92,7 +102,7 @@ func (c *client) Mock(mockery *Unified) {
 // IMPORTANT: Watch will block on config initialization. It therefore should *never* be called
 // synchronously in `init` functions.
 func Watch(f func()) {
-	defaultClient.Watch(f)
+	defaultClient().Watch(f)
 }
 
 // Cached will return a wrapper around f which caches the response. The value
@@ -100,7 +110,7 @@ func Watch(f func()) {
 //
 // IMPORTANT: The first call to wrapped will block on config initialization.
 func Cached(f func() interface{}) (wrapped func() interface{}) {
-	return defaultClient.Cached(f)
+	return defaultClient().Cached(f)
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -216,6 +226,10 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			if time.Since(start) > opt.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
 				opt.log("received error during background config update, err: %s", err)
 			}
+		} else {
+			// We successfully fetched the config, we reset the timer to give
+			// frontend time if it needs to restart
+			start = time.Now()
 		}
 
 		opt.sleep()

@@ -1,23 +1,22 @@
 import { from, Observable } from 'rxjs'
-import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
+import { delay, filter, map, retryWhen } from 'rxjs/operators'
 import {
-    AggregateError,
     CloneInProgressError,
-    ECLONEINPROGESS,
     RepoNotFoundError,
     RevNotFoundError,
+    isCloneInProgressErrorLike,
 } from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 /**
  * @returns Observable that emits if the repo exists on the instance.
- *         Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
- *         Errors with a `RepoNotFoundError` if the repo is not found
+ * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
+ * Errors with a `RepoNotFoundError` if the repo is not found.
  */
 export const resolveRepo = memoizeObservable(
     ({ rawRepoName, requestGraphQL }: RawRepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
@@ -34,22 +33,18 @@ export const resolveRepo = memoizeObservable(
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
-            map(
-                ({ repository }) => {
-                    if (!repository || !repository.name) {
-                        throw new RepoNotFoundError(rawRepoName)
-                    }
-                    return repository.name
-                },
-                catchError((err, caught) => caught)
-            )
+            map(({ repository }) => {
+                if (!repository?.name) {
+                    throw new RepoNotFoundError(rawRepoName)
+                }
+                return repository.name
+            })
         ),
     ({ rawRepoName }) => rawRepoName
 )
 
 /**
- * @returns Observable that emits the commit ID
- *         Errors with a `CloneInProgressError` if the repo is still being cloned.
+ * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
     ({
@@ -97,7 +92,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
             retryWhen(errors =>
                 errors.pipe(
                     filter(err => {
-                        if (isErrorLike(err) && err.code === ECLONEINPROGESS) {
+                        if (isCloneInProgressErrorLike(err)) {
                             return true
                         }
 
@@ -154,7 +149,7 @@ export const fetchBlobContentLines = memoizeObservable(
                             return []
                         }
                     }
-                    throw new AggregateError(errors)
+                    throw createAggregateError(errors)
                 }
                 const { repository } = data
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {

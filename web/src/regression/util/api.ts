@@ -6,13 +6,17 @@ import {
     gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
-    isGraphQLError,
+    isErrorGraphQLResult,
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
-import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND } from '../../../../shared/src/backend/errors'
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
 import { Config } from '../../../../shared/src/e2e/config'
@@ -87,7 +91,7 @@ export function waitForRepo(
         ? request.pipe(
               map(result => {
                   // map to true if repo is not found, false if repo is found, throw other errors
-                  if (isGraphQLError(result) && result.errors.some(err => err.code === EREPONOTFOUND)) {
+                  if (isErrorGraphQLResult(result) && result.errors.some(isRepoNotFoundErrorLike)) {
                       return undefined
                   }
                   const { repository } = dataOrThrowErrors(result)
@@ -104,8 +108,9 @@ export function waitForRepo(
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
                                       console.log(
-                                          `Waiting for ${repoName} to be removed (attempt ${retryCount +
-                                              1} of ${numRetries})`
+                                          `Waiting for ${repoName} to be removed (attempt ${
+                                              retryCount + 1
+                                          } of ${numRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)
@@ -137,12 +142,13 @@ export function waitForRepo(
                   concat(
                       errors.pipe(
                           delayWhen((error, retryCount) => {
-                              if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
+                              if (isCloneInProgressErrorLike(error)) {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
                                       console.log(
-                                          `Waiting for ${repoName} to finish cloning (attempt ${retryCount +
-                                              1} of ${numRetries})`
+                                          `Waiting for ${repoName} to finish cloning (attempt ${
+                                              retryCount + 1
+                                          } of ${numRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)

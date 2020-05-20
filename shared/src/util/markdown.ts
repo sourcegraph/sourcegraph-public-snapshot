@@ -1,9 +1,10 @@
-import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
+import { highlight, highlightAuto } from 'highlight.js/lib/core'
 import { without } from 'lodash'
 // This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
 // eslint-disable-next-line no-restricted-imports
 import marked from 'marked'
 import sanitize from 'sanitize-html'
+import { Overwrite } from 'utility-types'
 
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
@@ -38,6 +39,9 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
     }
 }
 
+const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
+const ALL_VALUES_ALLOWED = [/.*/]
+
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
@@ -48,39 +52,106 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 export const renderMarkdown = (
     markdown: string,
     options: {
-        /** Strip off any HTML and return a plain text string, useful for previews */
+        /** Whether to render line breaks as HTML `<br>`s */
+        breaks?: boolean
+    } & (
+        | {
+              /** Strip off any HTML and return a plain text string, useful for previews */
+              plainText: true
+          }
+        | {
+              /** Following options apply to non-plaintext output only. */
+              plainText?: false
 
-        plainText?: boolean
-    } = {}
+              /** Allow links to data: URIs and that download files. */
+              allowDataUriLinksAndDownloads?: boolean
+          }
+    ) = {}
 ): string => {
     const rendered = marked(markdown, {
         gfm: true,
-        breaks: true,
+        breaks: options.breaks,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
-    return sanitize(
-        rendered,
-        options.plainText
-            ? { allowedTags: [], allowedAttributes: {} }
-            : {
-                  // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
 
-                  // Allow highligh.js styles, e.g.
-                  // <span class="hljs-keyword">
-                  // <code class="language-javascript">
-                  allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
-                  allowedAttributes: {
-                      ...sanitize.defaults.allowedAttributes,
-                      span: ['class'],
-                      code: ['class'],
-                      h1: ['id'],
-                      h2: ['id'],
-                      h3: ['id'],
-                      h4: ['id'],
-                      h5: ['id'],
-                      h6: ['id'],
-                  },
-              }
-    )
+    let opt: Overwrite<sanitize.IOptions, sanitize.IDefaults>
+    if (options.plainText) {
+        opt = { allowedAttributes: {}, allowedSchemes: [], allowedSchemesByTag: {}, allowedTags: [], selfClosing: [] }
+    } else {
+        opt = {
+            ...sanitize.defaults,
+            // Ensure <object> must have type attribute set
+            exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
+
+            allowedTags: [
+                ...without(sanitize.defaults.allowedTags, 'iframe'),
+                'h1',
+                'h2',
+                'span',
+                'img',
+                'picture',
+                'source',
+                'object',
+                'svg',
+                'rect',
+                'defs',
+                'pattern',
+                'mask',
+                'circle',
+                'path',
+                'title',
+            ],
+            allowedAttributes: {
+                ...sanitize.defaults.allowedAttributes,
+                a: [
+                    ...sanitize.defaults.allowedAttributes.a,
+                    'title',
+                    'data-tooltip', // TODO support fancy tooltips through native titles
+                ],
+                img: [...sanitize.defaults.allowedAttributes.img, 'alt'],
+                // Support different images depending on media queries (e.g. color theme, reduced motion)
+                source: ['srcset', 'media'],
+                // Support SVGs for code insights.
+                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
+                svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
+                rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
+                path: ['d', ...svgPresentationAttributes],
+                circle: ['cx', 'cy', ...svgPresentationAttributes],
+                pattern: ['id', 'width', 'height', 'patternunits', 'patterntransform'],
+                mask: ['id'],
+                // Allow highligh.js styles, e.g.
+                // <span class="hljs-keyword">
+                // <code class="language-javascript">
+                span: ['class'],
+                code: ['class'],
+                // Support deep-linking
+                h1: ['id'],
+                h2: ['id'],
+                h3: ['id'],
+                h4: ['id'],
+                h5: ['id'],
+                h6: ['id'],
+            },
+            allowedStyles: {
+                // SVGs are usually for charts in code insights.
+                // Allow them to be responsive.
+                svg: {
+                    flex: ALL_VALUES_ALLOWED,
+                    'flex-grow': ALL_VALUES_ALLOWED,
+                    'flex-shrink': ALL_VALUES_ALLOWED,
+                    'flex-basis': ALL_VALUES_ALLOWED,
+                },
+            },
+        }
+        if (options.allowDataUriLinksAndDownloads) {
+            opt.allowedAttributes.a = [...opt.allowedAttributes.a, 'download']
+            opt.allowedSchemesByTag = {
+                ...opt.allowedSchemesByTag,
+                a: [...(opt.allowedSchemesByTag.a || opt.allowedSchemes), 'data'],
+            }
+        }
+    }
+
+    return sanitize(rendered, opt)
 }

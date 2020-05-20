@@ -9,10 +9,10 @@
 
 **Features**
 
-- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
-- Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension)
-- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions)
+- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
+- Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
+- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
+- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions).
 
 ## Try it yourself
 
@@ -46,26 +46,27 @@ To use Sourcegraph OSS:
 
 1.  [Ensure Docker is running](doc/dev/local_development.md#step-3-macos-start-docker)
 1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-2-initialize-your-database)
+1.  [Configure the HTTPS reverse proxy](doc/dev/local_development.md#step-5-configure-https-reverse-proxy)
 1.  Start the development server
 
     ```
     ./dev/start.sh
     ```
 
-Sourcegraph should now be running at http://localhost:3080.
+Sourcegraph should now be running at https://sourcegraph.test:3443.
 
 For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/local_development.md).
 
 ### Documentation
 
-The `docs` folder has additional documentation for developing and understanding Sourcegraph:
+The `doc` directory has additional documentation for developing and understanding Sourcegraph:
 
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/postgresql.md): database setup and best practices
-- [General style guide](./doc/team/style_guide.md)
-- [Go style guide](./doc/dev/go_style_guide.md)
-- [Documentation style guide](./team/product-dev/documentation/style_guide.md)
+- [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
+- [Go style guide](https://about.sourcegraph.com/handbook/engineering/go_style_guide)
+- [Documentation style guide](https://about.sourcegraph.com/handbook/documentation)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 

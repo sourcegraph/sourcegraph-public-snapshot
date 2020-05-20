@@ -5,13 +5,14 @@ import (
 	"net/url"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -53,7 +54,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 		return gitserver.Repo{Name: repo.Name}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.Name}, repoupdater.ErrNotFound
+		return gitserver.Repo{Name: repo.Name}, &repoupdater.ErrNotFound{Repo: repo.Name, IsNotFound: true}
 	}
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
@@ -202,18 +203,17 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
-	err = errors.Cause(err)
-	return err == repoupdater.ErrNotFound || err == repoupdater.ErrUnauthorized || err == repoupdater.ErrTemporarilyUnavailable
+	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) || errcode.IsTemporary(err)
 }
 
 func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
 	var msg string
-	switch c := errors.Cause(err); c {
-	case repoupdater.ErrNotFound:
+	switch {
+	case errcode.IsNotFound(err):
 		msg = "Repository host reported a repository as not found. If this repository was deleted on its origin, the site admin must explicitly delete it on Sourcegraph."
-	case repoupdater.ErrUnauthorized:
+	case errcode.IsUnauthorized(err):
 		msg = "Repository host rejected as unauthorized an attempt to retrieve a repository's metadata. Check the repository host credentials in site configuration."
-	case repoupdater.ErrTemporarilyUnavailable:
+	case errcode.IsTemporary(err):
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {

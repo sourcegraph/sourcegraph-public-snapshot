@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var descriptions = make(map[string]string)

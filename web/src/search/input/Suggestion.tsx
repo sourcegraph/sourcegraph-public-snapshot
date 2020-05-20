@@ -6,41 +6,44 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
+import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
+import { appendSubtreeQueryParam } from '../../../../shared/src/util/url'
 
-export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
-    r: SuggestionTypes.repo,
-    g: SuggestionTypes.repogroup,
-    f: SuggestionTypes.file,
-    l: SuggestionTypes.lang,
-    language: SuggestionTypes.lang,
+export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
+    r: FilterType.repo,
+    g: FilterType.repogroup,
+    f: FilterType.file,
+    l: FilterType.lang,
+    language: FilterType.lang,
 }
 
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
-export const fuzzySearchFilters = [
-    SuggestionTypes.repo,
-    SuggestionTypes.repogroup,
-    SuggestionTypes.file,
-    SuggestionTypes.repohasfile,
+export const fuzzySearchFilters: FilterSuggestionTypes[] = [
+    FilterType.repo,
+    FilterType.repogroup,
+    FilterType.file,
+    FilterType.repohasfile,
 ]
 
 /**
  * Some filter types should have their suggestions searched without influence
  * from the rest of the query, as they will then influence the scope of other filters.
  */
-export const isolatedFuzzySearchFilters = [SuggestionTypes.repo, SuggestionTypes.repogroup]
+export const isolatedFuzzySearchFilters: FilterSuggestionTypes[] = [FilterType.repo, FilterType.repogroup]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
  * but are not filter types: /web/src/search/searchFilterSuggestions.ts
  */
-export type FiltersSuggestionTypes = Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>
+export type FilterSuggestionTypes = FilterType | 'filters'
 
 export interface Suggestion {
-    type: SuggestionTypes
+    type: SuggestionType
     /** The value to be suggested and that will be added to queries */
     value: string
     /**
@@ -70,11 +73,11 @@ interface SuggestionIconProps {
  */
 const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
+export function createSuggestion(item: SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
-                type: SuggestionTypes.repo,
+                type: FilterType.repo,
                 // Add "regex start and end boundaries" to
                 // correctly scope additional suggestions
                 value: formatRegExp(item.name),
@@ -92,25 +95,25 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
-                    type: SuggestionTypes.dir,
+                    type: NonFilterSuggestionType.dir,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
-                    url: `${item.url}?suggestion`,
+                    url: appendSubtreeQueryParam(item.url),
                     label: 'go to dir',
                 }
             }
             return {
-                type: SuggestionTypes.file,
+                type: FilterType.file,
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?suggestion`,
+                url: appendSubtreeQueryParam(item.url),
                 label: 'go to file',
             }
         }
         case 'Symbol': {
             return {
-                type: SuggestionTypes.symbol,
+                type: NonFilterSuggestionType.symbol,
                 symbolKind: item.kind,
                 value: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
@@ -120,6 +123,11 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 label: 'go to definition',
             }
         }
+        case 'RepoGroup':
+            return {
+                type: FilterType.repogroup,
+                value: item.name,
+            }
         default:
             return undefined
     }
@@ -127,15 +135,16 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
-        case SuggestionTypes.filters:
+        case NonFilterSuggestionType.filters:
             return <FilterIcon {...props} />
-        case SuggestionTypes.repo:
+        case FilterType.repo:
+        case FilterType.repogroup:
             return <SourceRepositoryIcon {...props} />
-        case SuggestionTypes.file:
+        case FilterType.file:
             return <FileIcon {...props} />
-        case SuggestionTypes.lang:
+        case FilterType.lang:
             return <LanguageIcon {...props} language={suggestion.value} {...props} />
-        case SuggestionTypes.symbol:
+        case NonFilterSuggestionType.symbol:
             if (!suggestion.symbolKind) {
                 return null
             }

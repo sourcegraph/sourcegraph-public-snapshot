@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
+	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -25,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
@@ -33,7 +34,8 @@ var (
 	// Only use this after a call to ConnectToDB.
 	Global *sql.DB
 
-	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
 // ConnectToDB connects to the given DB and stores the handle globally.
@@ -42,10 +44,6 @@ var (
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func ConnectToDB(dataSource string) error {
-	if dataSource == "" {
-		dataSource = defaultDataSource
-	}
-
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
@@ -54,22 +52,27 @@ func ConnectToDB(dataSource string) error {
 		return errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
+	connectionString := buildConnectionString(dataSource)
+
 	var err error
-	Global, err = openDBWithStartupWait(dataSource)
+	Global, err = openDBWithStartupWait(connectionString)
 	if err != nil {
 		return errors.Wrap(err, "DB not available")
 	}
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	m, err := dbutil.NewMigrate(Global, dataSource)
+	return nil
+}
+
+func MigrateDB(db *sql.DB, dataSource string) error {
+	m, err := dbutil.NewMigrate(db, dataSource)
 	if err != nil {
 		return err
 	}
 	if err := dbutil.DoMigrate(m); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
-
 	return nil
 }
 
@@ -81,6 +84,25 @@ var startupTimeout = func() time.Duration {
 	}
 	return d
 }()
+
+// buildConnectionString takes either a Postgres connection string or connection URI,
+// normalizes it, and returns a connection string with parameters appended.
+func buildConnectionString(dataSource string) string {
+	if dataSource == "" {
+		dataSource = defaultDataSource
+	}
+
+	connectionString, err := pq.ParseURL(dataSource)
+	if err != nil {
+		// Assume dataSource is either malformed or a connection string rather than a URI.
+		connectionString = dataSource
+	}
+
+	if strings.Contains(connectionString, "fallback_application_name") {
+		return connectionString
+	}
+	return fmt.Sprintf("%s fallback_application_name=%s", connectionString, defaultApplicationName)
+}
 
 func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
@@ -141,38 +163,33 @@ type hook struct{}
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	parent := opentracing.SpanFromContext(ctx)
-	if parent == nil {
-		return ctx, nil
+	tr, ctx := trace.New(ctx, "sql", query)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		ext.SpanKindRPCClient.Set(span)
+		ext.DBType.Set(span, "sql")
 	}
-	span := opentracing.StartSpan("sql",
-		opentracing.ChildOf(parent.Context()),
-		ext.SpanKindRPCClient)
-	ext.DBStatement.Set(span, query)
-	ext.DBType.Set(span, "sql")
-	span.LogFields(
-		otlog.Object("args", args),
-	)
+	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
+		for i, arg := range args {
+			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))
+		}
+	}))
 
-	return opentracing.ContextWithSpan(ctx, span), nil
+	return ctx, nil
 }
 
 // After implements sqlhooks.Hooks
 func (h *hook) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	span := opentracing.SpanFromContext(ctx)
-	if span != nil {
-		span.Finish()
+	if tr := trace.TraceFromContext(ctx); tr != nil {
+		tr.Finish()
 	}
 	return ctx, nil
 }
 
 // After implements sqlhooks.OnErroer
 func (h *hook) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
-	span := opentracing.SpanFromContext(ctx)
-	if span != nil {
-		ext.Error.Set(span, true)
-		span.LogFields(otlog.Error(err))
-		span.Finish()
+	if tr := trace.TraceFromContext(ctx); tr != nil {
+		tr.SetError(err)
+		tr.Finish()
 	}
 	return err
 }

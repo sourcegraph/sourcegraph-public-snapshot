@@ -49,7 +49,7 @@ export class ScreenshotVerifier {
         if (waitForSelectorToBeVisibleTimeout > 0) {
             await this.driver.page.waitForFunction(
                 selector => {
-                    const element = document.querySelector(selector)
+                    const element = document.querySelector<Element>(selector)
                     if (!element) {
                         return false
                     }
@@ -62,7 +62,7 @@ export class ScreenshotVerifier {
         }
 
         const clip: BoundingBox | undefined = await this.driver.page.evaluate(selector => {
-            const element = document.querySelector(selector)
+            const element = document.querySelector<Element>(selector)
             if (!element) {
                 throw new Error(`element with selector ${JSON.stringify(selector)} not found`)
             }

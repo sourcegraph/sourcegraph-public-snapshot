@@ -6,8 +6,8 @@ import (
 	"html"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewPreCreateUserHook returns a PreCreateUserHook closure with
@@ -39,7 +39,7 @@ func NewPreCreateUserHook(s UsersStore) func(context.Context) error {
 			} else {
 				message := "Unable to create user account: "
 				if info == nil {
-					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users (this instance now has %d users). Contact Sourcegraph to learn more at https://about.sourcegraph.com/contact/sales.", NoLicenseMaximumAllowedUserCount, userCount)
+					message += fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users (this instance now has %d users). Contact Sourcegraph to learn more at https://about.sourcegraph.com/contact/sales.", NoLicenseMaximumAllowedUserCount, userCount)
 				} else {
 					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Contact Sourcegraph at https://about.sourcegraph.com/contact/sales."
 				}

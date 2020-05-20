@@ -48,10 +48,10 @@ export interface TreeNode {
 }
 
 /**
- *  Gets the next child in the file tree given a node and index.
- *  index represents the number of children of node that we have already traversed.
- *  If node does not have any children or any more children or to traverse, we call
- *  nextChild recursively, passing in node's parent to get any siblings of the current node.
+ * Gets the next child in the file tree given a node and index.
+ * index represents the number of children of node that we have already traversed.
+ * If node does not have any children or any more children or to traverse, we call
+ * nextChild recursively, passing in node's parent to get any siblings of the current node.
  */
 const nextChild = (node: TreeNode, index: number): TreeNode => {
     const nextChildNode = node.childNodes[index]
@@ -66,10 +66,10 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
 }
 
 /**
- *  Helper for prevChild, this gets the deepest avialable descendant of a given node.
- *  For a given node, a sibling node can have an arbitrary number of expanded directories.
- *  In order to get the previous item in the tree, we need the absolute last
- *  available descendent of a the previous sibling node.
+ * Helper for prevChild, this gets the deepest available descendant of a given node.
+ * For a given node, a sibling node can have an arbitrary number of expanded directories.
+ * In order to get the previous item in the tree, we need the absolute last
+ * available descendent of a the previous sibling node.
  */
 const getDeepestDescendant = (node: TreeNode): TreeNode => {
     while (node && node.childNodes.length > 0) {
@@ -79,9 +79,9 @@ const getDeepestDescendant = (node: TreeNode): TreeNode => {
 }
 
 /**
- *  Gets the previous child in the file tree given a node and index.
- *  To get the previous child, we check node's parent's child nodes, and get the
- *  child node at index - 1. If we are at index 0, return the parent.
+ * Gets the previous child in the file tree given a node and index.
+ * To get the previous child, we check node's parent's child nodes, and get the
+ * child node at index - 1. If we are at index 0, return the parent.
  */
 const prevChild = (node: TreeNode, index: number): TreeNode => {
     // Only occurs on initial load of Tree, when there is no selected or active node.
@@ -224,7 +224,7 @@ export class Tree extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.expandDirectoryChanges.subscribe(({ path, expanded, node }) => {
-                this.setState((prevState, props) => ({
+                this.setState(prevState => ({
                     resolveTo: expanded ? [...prevState.resolveTo, path] : prevState.resolveTo.filter(p => p !== path),
                 }))
                 if (!expanded) {
@@ -243,9 +243,12 @@ export class Tree extends React.PureComponent<Props, State> {
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     const queryParams = new URLSearchParams(this.props.history.location.search)
-                    // If we're updating due to a file or directory suggestion, load the relevant partial tree and jump to the file.
+                    const queryParamsHasSubtree = queryParams.get('subtree') === 'true'
+
+                    // If we're updating due to a file/directory suggestion or code intel action,
+                    // load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
-                    if (queryParams.has('suggestion') && dotPathAsUndefined(newParentPath)) {
+                    if (queryParamsHasSubtree && !queryParams.has('tab') && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
                             resolveTo: [newParentPath],
@@ -265,10 +268,13 @@ export class Tree extends React.PureComponent<Props, State> {
                         })
                     }
 
-                    // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
-                    if (queryParams.has('suggestion')) {
-                        queryParams.delete('suggestion')
-                        this.props.history.replace({ search: queryParams.toString() })
+                    // Strip the ?subtree query param. Handle both when going from ancestor -> child and child -> ancestor.
+                    queryParams.delete('subtree')
+                    if (queryParamsHasSubtree && !queryParams.has('tab')) {
+                        this.props.history.replace({
+                            search: queryParams.toString(),
+                            hash: this.props.history.location.hash,
+                        })
                     }
                 })
         )

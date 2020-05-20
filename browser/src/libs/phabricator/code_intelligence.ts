@@ -10,6 +10,7 @@ import { ViewResolver } from '../code_intelligence/views'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped
@@ -83,7 +84,7 @@ export const commitCodeView = {
     resolveFileInfo: resolveRevisionFileInfo,
     getPositionAdjuster,
     getToolbarMount: (codeView: HTMLElement): HTMLElement => {
-        let mount = codeView.querySelector<HTMLElement>('.sourcegraph-app-annotator')
+        let mount = codeView.querySelector<HTMLElement>('.sourcegraph-phabricator-code-view-toolbar-mount')
         if (mount) {
             return mount
         }
@@ -94,7 +95,7 @@ export const commitCodeView = {
 
         mount = document.createElement('div')
         mount.style.display = 'inline-block'
-        mount.classList.add('sourcegraph-app-annotator')
+        mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
         actions.insertAdjacentElement('afterbegin', mount)
 
@@ -108,7 +109,7 @@ export const diffCodeView = {
     resolveFileInfo: resolveDiffFileInfo,
     getPositionAdjuster,
     getToolbarMount: (codeView: HTMLElement): HTMLElement => {
-        const className = 'sourcegraph-app-annotator'
+        const className = 'sourcegraph-phabricator-code-view-toolbar-mount'
         const existingMount = codeView.querySelector<HTMLElement>('.' + className)
         if (existingMount) {
             return existingMount
@@ -151,7 +152,7 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
 
         const mount = document.createElement('div')
         mount.style.display = 'inline-block'
-        mount.classList.add('sourcegraph-app-annotator')
+        mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
         actions.insertAdjacentElement('afterbegin', mount)
 
@@ -183,6 +184,13 @@ export const phabricatorCodeHost: CodeHost = {
     codeViewToolbarClassProps: {
         actionItemClass: 'button grey action-item--phabricator',
         actionItemIconClass: 'action-item__icon--phabricator',
+    },
+    notificationClassNames: {
+        [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',
+        [NotificationType.Success]: 'phui-info-view phui-info-severity-success',
+        [NotificationType.Info]: 'phui-info-view phui-info-severity-notice',
+        [NotificationType.Warning]: 'phui-info-view phui-info-severity-warning',
+        [NotificationType.Error]: 'phui-info-view phui-info-severity-error',
     },
     hoverOverlayClassProps: {
         className: 'aphront-dialog-view hover-overlay--phabricator',

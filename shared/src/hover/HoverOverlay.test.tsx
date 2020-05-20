@@ -1,6 +1,6 @@
 import { HoverAttachment } from '@sourcegraph/codeintellify/lib/types'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { registerLanguage } from 'highlight.js/lib/highlight'
+import { registerLanguage } from 'highlight.js/lib/core'
 import * as H from 'history'
 import { castArray } from 'lodash'
 import React from 'react'
@@ -169,13 +169,13 @@ describe('HoverOverlay', () => {
 
     test('actions error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
     test('hover error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
@@ -184,8 +184,8 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm1', code: 'c1' }}
-                    hoverOrError={{ message: 'm2', code: 'c2' }}
+                    actionsOrError={{ message: 'm1', name: 'c1' }}
+                    hoverOrError={{ message: 'm2', name: 'c2' }}
                 />
             )
         ).toMatchSnapshot()
@@ -196,7 +196,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm', code: 'c' }}
+                    actionsOrError={{ message: 'm', name: 'c' }}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             )
@@ -209,7 +209,7 @@ describe('HoverOverlay', () => {
                 <HoverOverlay
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
-                    hoverOrError={{ message: 'm', code: 'c' }}
+                    hoverOrError={{ message: 'm', name: 'c' }}
                 />
             )
         ).toMatchSnapshot()
@@ -248,10 +248,7 @@ describe('HoverOverlay', () => {
                     }
                     // Grab badged content in the grand-child level
                     if (c.props && c.props.className && c.props.className.includes('e2e-tooltip-badged-content')) {
-                        return castArray(c.props.children)
-                            .map(grabContent)
-                            .join('')
-                            .trim()
+                        return castArray(c.props.children).map(grabContent).join('').trim()
                     }
                     return ''
                 })

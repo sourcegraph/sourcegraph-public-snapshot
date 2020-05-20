@@ -3,7 +3,9 @@
 package ci
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -17,19 +19,45 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Common build env
-	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
-		bk.Env("GO111MODULE", "on"),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
-		bk.Env("FORCE_COLOR", "3"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("COMMIT_SHA", c.commit),
-		bk.Env("DATE", c.now.Format(time.RFC3339)),
+	env := map[string]string{
+		"GO111MODULE":                      "on",
+		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+		"FORCE_COLOR":                      "3",
+		"ENTERPRISE":                       "1",
+		"COMMIT_SHA":                       c.commit,
+		"DATE":                             c.now.Format(time.RFC3339),
+		"VERSION":                          c.version,
 		// For Bundlesize
-		bk.Env("CI_REPO_OWNER", "sourcegraph"),
-		bk.Env("CI_REPO_NAME", "sourcegraph"),
-		bk.Env("CI_COMMIT_SHA", os.Getenv("BUILDKITE_COMMIT")),
-		bk.Env("CI_COMMIT_MESSAGE", os.Getenv("BUILDKITE_MESSAGE")),
-	)
+		"CI_REPO_OWNER":     "sourcegraph",
+		"CI_REPO_NAME":      "sourcegraph",
+		"CI_COMMIT_SHA":     os.Getenv("BUILDKITE_COMMIT"),
+		"CI_COMMIT_MESSAGE": os.Getenv("BUILDKITE_MESSAGE"),
+
+		// Add debug flags for scripts to consume
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
+	}
+
+	// On release branches Percy must compare to the previous commit of the release branch, not master.
+	if c.releaseBranch {
+		env["PERCY_TARGET_BRANCH"] = c.branch
+	}
+
+	for k, v := range env {
+		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
+	}
+
+	if c.profilingEnabled {
+		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+			// wrap "time -v" around each command for CPU/RAM utilization information
+
+			var prefixed []string
+			for _, cmd := range s.Command {
+				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
+			}
+
+			s.Command = prefixed
+		})
+	}
 
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	var pipelineOperations []func(*bk.Pipeline)
@@ -42,10 +70,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
-		pipelineOperations = append(pipelineOperations,
-			addCanidateDockerImage(c, app),
+		pipelineOperations = []func(*bk.Pipeline){
+			addCandidateDockerImage(c, app),
+			wait,
 			addFinalDockerImage(c, app, false),
-		)
+		}
 
 	case c.isBextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -55,8 +84,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addSharedTests,
 			wait,
-			addCodeCov,
 			addBrowserExtensionReleaseSteps,
+		}
+
+	case c.isBextNightly:
+		// If this is a browser extension nightly build, run the browser-extension tests and
+		// e2e tests.
+		pipelineOperations = []func(*bk.Pipeline){
+			addLint,
+			addBrowserExt,
+			addSharedTests,
+			wait,
+			addBrowserExtensionE2ESteps,
 		}
 
 	case c.isQuick:
@@ -66,13 +105,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
-			addLSIFServer,
 			addSharedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
-			wait,
-			addCodeCov,
 		}
 
 	default:
@@ -83,20 +119,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerE2E(c),
-			addLint,    // ~5m
-			addWebApp,  // ~3m
-			addGoTests, // ~2m
-			addGoBuild, // ~2m
-			addCheck,   // ~2m
-			addBrowserExt,
-			addLSIFServer,
-			addSharedTests,
-			addPostgresBackcompat,
-			addDockerfileLint,
+			triggerE2E(c, env),
+			addLint,               // ~3.5m
+			addWebApp,             // ~3m
+			addSharedTests,        // ~3m
+			addBrowserExt,         // ~2m
+			addGoTests,            // ~1.5m
+			addCheck,              // ~1m
+			addGoBuild,            // ~0.5m
+			addPostgresBackcompat, // ~0.25m
+			addDockerfileLint,     // ~0.2m
 			addDockerImages(c, false),
 			wait,
-			addCodeCov,
 			addDockerImages(c, true),
 		}
 	}

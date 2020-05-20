@@ -29,7 +29,6 @@
       },
       "id": 9,
       "mode": "html",
-      "options": {},
       "timeFrom": null,
       "timeShift": null,
       "title": "",
@@ -49,6 +48,7 @@
         "x": 0,
         "y": 6
       },
+      "hiddenSeries": false,
       "id": 5,
       "legend": {
         "avg": false,
@@ -75,7 +75,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (service_name)(alert_count{level=\"critical\"})",
+          "expr": "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"critical\"}))",
+          "interval": "",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -136,6 +137,7 @@
         "x": 0,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 4,
       "legend": {
         "avg": false,
@@ -162,7 +164,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (service_name)(alert_count{level=\"warning\"})",
+          "expr": "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"warning\"}))",
+          "interval": "",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -246,7 +249,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "6.4.4",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -272,12 +274,9 @@
         {
           "expr": "count(sum(alert_count{name!=\"\"}) by (level,description))",
           "instant": true,
+          "interval": "",
           "legendFormat": "",
           "refId": "A"
-        },
-        {
-          "expr": "",
-          "refId": "B"
         }
       ],
       "thresholds": "",
@@ -302,24 +301,24 @@
       "description": "",
       "fontSize": "100%",
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 19,
         "x": 5,
         "y": 16
       },
       "id": 11,
       "links": [],
-      "options": {},
       "pageSize": null,
       "pluginVersion": "6.4.4",
       "showHeader": true,
       "sort": {
         "col": 4,
-        "desc": false
+        "desc": true
       },
       "styles": [
         {
           "alias": "",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -332,6 +331,7 @@
         },
         {
           "alias": "firing?",
+          "align": "auto",
           "colorMode": "row",
           "colors": ["rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -354,6 +354,7 @@
         },
         {
           "alias": "",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -366,6 +367,7 @@
         },
         {
           "alias": "level",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -379,9 +381,10 @@
       ],
       "targets": [
         {
-          "expr": "label_replace(sum(alert_count{name!=\"\"}) by (level,description), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
+          "expr": "label_replace(sum by (level,description)(max by (level,service_name,name,description)(alert_count{name!=\"\"})), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
           "format": "table",
           "instant": true,
+          "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
@@ -407,7 +410,7 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 5,
         "x": 0,
         "y": 19
@@ -429,7 +432,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -454,6 +456,8 @@
         {
           "expr": "count(sum(alert_count{name!=\"\"}) by (service_name))",
           "instant": true,
+          "interval": "",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -473,7 +477,7 @@
       "valueName": "avg"
     }
   ],
-  "schemaVersion": 20,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -489,5 +493,8 @@
   "timezone": "utc",
   "title": "Overview",
   "uid": "overview",
+  "variables": {
+    "list": []
+  },
   "version": 1
 }

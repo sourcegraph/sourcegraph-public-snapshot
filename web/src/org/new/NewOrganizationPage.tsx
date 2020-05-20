@@ -57,7 +57,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         eventLogger.log('CreateNewOrgClicked')
                     }),
                     filter(event => event.currentTarget.checkValidity()),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         createOrganization(this.state).pipe(
                             catchError(error => {
                                 console.error(error)
@@ -89,7 +89,9 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
                         configuring organizations.
                     </p>
-                    {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                    {this.state.error && (
+                        <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                    )}
                     <div className="form-group">
                         <label htmlFor="new-org-page__form-name">Organization name</label>
                         <input

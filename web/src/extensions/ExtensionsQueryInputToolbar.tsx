@@ -47,11 +47,7 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                         ))}
                     </DropdownMenu>
                 </ButtonDropdown>{' '}
-                <ButtonDropdown
-                    isOpen={this.state.open === 'options'}
-                    // eslint-disable-next-line react/jsx-no-bind
-                    toggle={this.toggleOptions}
-                >
+                <ButtonDropdown isOpen={this.state.open === 'options'} toggle={this.toggleOptions}>
                     <DropdownToggle caret={true}>Options</DropdownToggle>
                     <DropdownMenu right={true}>
                         <DropdownItem

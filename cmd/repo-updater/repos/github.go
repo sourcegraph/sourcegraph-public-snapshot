@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"golang.org/x/time/rate"
 )
 
 // A GithubSource yields repositories from a single Github connection configured
@@ -28,8 +28,9 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
+	exclude         excludeFunc
+	excludeArchived bool
+	excludeForks    bool
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
@@ -40,18 +41,24 @@ type GithubSource struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+
+	// rateLimiter should be used to limit requests made to the external service
+	rateLimiter *rate.Limiter
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	if rl == nil {
+		rl = rate.NewLimiter(rate.Inf, 0)
+	}
+	return newGithubSource(svc, &c, cf, rl)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -80,36 +87,43 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var (
+		eb              excludeBuilder
+		excludeArchived bool
+		excludeForks    bool
+	)
+
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
+		eb.Pattern(r.Pattern)
+
+		if r.Archived {
+			excludeArchived = true
 		}
 
-		if r.Id != "" {
-			exclude[r.Id] = true
+		if r.Forks {
+			excludeForks = true
 		}
+	}
 
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		excludePatterns:  excludePatterns,
+		excludeArchived:  excludeArchived,
+		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
 		searchClient:     github.NewClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
+		rateLimiter:      rl,
 	}, nil
 }
 
@@ -152,6 +166,10 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return false, errors.Wrap(err, "waiting for rate limiter")
+	}
+
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
 		RepositoryID: repo.ID,
 		Title:        c.Title,
@@ -175,21 +193,24 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 		exists = true
 	}
 
-	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
-	c.Changeset.ExternalServiceType = github.ServiceType
+	if err := c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
 
 	return exists, nil
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *a8n.Changeset to the newly closed pull request.
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
 func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
@@ -216,13 +237,21 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		}
 	}
 
+	// Each LoadPullRequest call uses 3 tokens. This was calculated by manually calling the query
+	// and asking for the cost as described here:
+	// https://developer.github.com/v4/guides/resource-limitations/#returning-a-calls-rate-limit-status
+	if err := s.rateLimiter.WaitN(ctx, len(prs)*3); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.LoadPullRequests(ctx, prs...)
 	if err != nil {
 		return err
 	}
 
 	for i := range cs {
-		cs[i].Changeset.Metadata = prs[i]
+		if err := cs[i].SetMetadata(prs[i]); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
 	}
 
 	return nil
@@ -235,6 +264,9 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
@@ -278,6 +310,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Private:      r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -309,15 +342,18 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(r.NameWithOwner) {
-			return true
-		}
+	if s.excludeArchived && r.IsArchived {
+		return true
 	}
+
+	if s.excludeForks && r.IsFork {
+		return true
+	}
+
 	return false
 }
 
@@ -524,7 +560,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListAffiliatedRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
 	})
 }
 
@@ -680,7 +716,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		log15.Debug("github sync: GetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}

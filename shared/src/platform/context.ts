@@ -1,21 +1,51 @@
-import { Endpoint, isEndpoint } from '@sourcegraph/comlink'
+import { Endpoint } from 'comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { isObject } from 'lodash'
+import { hasProperty } from '../util/types'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
-    proxy: Endpoint & Pick<MessagePort, 'start'>
+    proxy: Endpoint
 
     /** The endpoint to expose the API of this thread to */
-    expose: Endpoint & Pick<MessagePort, 'start'>
+    expose: Endpoint
 }
-export const isEndpointPair = (val: any): val is EndpointPair =>
-    typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)
+
+const isEndpoint = (value: unknown): value is Endpoint =>
+    isObject(value) &&
+    hasProperty('addEventListener')(value) &&
+    hasProperty('removeEventListener')(value) &&
+    hasProperty('postMessage')(value) &&
+    typeof value.addEventListener === 'function' &&
+    typeof value.removeEventListener === 'function' &&
+    typeof value.postMessage === 'function'
+
+export const isEndpointPair = (value: unknown): value is EndpointPair =>
+    isObject(value) &&
+    hasProperty('proxy')(value) &&
+    hasProperty('expose')(value) &&
+    isEndpoint(value.proxy) &&
+    isEndpoint(value.expose)
+
+/**
+ * Context information of an invocation of `urlToFile`
+ */
+export interface URLToFileContext {
+    /**
+     * If `urlToFile` is called because of a go to definition invocation on a diff,
+     * the part of the diff it was invoked on.
+     */
+    part: DiffPart | undefined
+
+    isWebURL?: boolean
+}
 
 /**
  * Platform-specific data and methods shared by multiple Sourcegraph components.
@@ -104,11 +134,13 @@ export interface PlatformContext {
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
      *
-     * @param location The specific repository, revision, file, position, and view state to generate the URL for.
+     * @param target The specific repository, revision, file, position, and view state to generate the URL for.
+     * @param context Contextual information about the context of this invocation.
      * @returns The URL to the file with the specified options.
      */
     urlToFile(
-        location: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>
+        target: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        context: URLToFileContext
     ): string
 
     /**

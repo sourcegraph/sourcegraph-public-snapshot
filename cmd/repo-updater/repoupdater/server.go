@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Server is a repoupdater server.
@@ -37,11 +38,29 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id uint32, name api.RepoName, url string)
-		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
+	}
+	ChangesetSyncRegistry interface {
+		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
+		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// the registry can start or stop the syncer associated with the service
+		HandleExternalServiceSync(es api.ExternalService)
+	}
+	RateLimiterRegistry interface {
+		// SyncRateLimiters should be called when an external service changes so that
+		// our internal rate limiter are kept in sync
+		SyncRateLimiters(ctx context.Context) error
+	}
+	PermsSyncer interface {
+		// ScheduleUsers schedules new permissions syncing requests for given users.
+		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		// ScheduleRepos schedules new permissions syncing requests for given repositories.
+		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -59,6 +78,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
+	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
+	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
 	return mux
 }
 
@@ -71,7 +92,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -114,7 +135,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -262,7 +283,11 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	defer func() {
 		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
 		if resp != nil {
-			tr.LazyPrintf("response: %s", resp)
+			tr.LogFields(
+				otlog.Int32("resp.id", int32(resp.ID)),
+				otlog.String("resp.name", resp.Name),
+				otlog.String("resp.url", resp.URL),
+			)
 		}
 		tr.SetError(err)
 		tr.Finish()
@@ -320,6 +345,16 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		respond(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	if s.RateLimiterRegistry != nil {
+		err = s.RateLimiterRegistry.SyncRateLimiters(ctx)
+		if err != nil {
+			log15.Warn("Handling rate limiter sync", "err", err)
+		}
+	}
+	if s.ChangesetSyncRegistry != nil {
+		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -559,6 +594,53 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	return notCloned, nil
 }
 
+func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
+	if s.ChangesetSyncRegistry == nil {
+		log15.Warn("ChangesetSyncer is nil")
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.ChangesetSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		return
+	}
+	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	if err != nil {
+		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
+		respond(w, http.StatusInternalServerError, resp)
+		return
+	}
+	respond(w, http.StatusOK, nil)
+}
+
+func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
+	if s.PermsSyncer == nil {
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.PermsSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
+		return
+	}
+
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
+
+	respond(w, http.StatusOK, nil)
+}
+
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
@@ -570,6 +652,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,
+		Private:      r.Private,
 		VCS:          protocol.VCSInfo{URL: urls[0]},
 		ExternalRepo: r.ExternalRepo,
 	}

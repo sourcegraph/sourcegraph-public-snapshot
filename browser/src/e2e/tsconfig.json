@@ -2,10 +2,17 @@
   "extends": "../../tsconfig.json",
   "references": [{ "path": "../.." }, { "path": "../../../shared/src/e2e" }],
   "compilerOptions": {
-    "types": ["mocha", "node", "web-ext", "puppeteer-firefox"],
+    "types": ["mocha", "node"],
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "../../out/src/e2e",
+    "plugins": [
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "../../../cmd/frontend/graphqlbackend/schema.graphql",
+        "tag": "gql",
+      },
+    ],
   },
   "include": ["**/*"],
   "exclude": [],

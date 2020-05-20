@@ -13,7 +13,7 @@ type RepoUpdateSchedulerInfoArgs struct {
 	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
 	RepoName api.RepoName
 	// The ID of the repo to lookup the schedule for.
-	ID uint32
+	ID api.RepoID
 }
 
 type RepoUpdateSchedulerInfoResult struct {
@@ -38,7 +38,7 @@ type RepoQueueState struct {
 // associated with a repository.
 type RepoExternalServicesRequest struct {
 	// ID of the repository being queried.
-	ID uint32
+	ID api.RepoID
 }
 
 // RepoExternalServicesResponse is returned in response to an
@@ -51,7 +51,7 @@ type RepoExternalServicesResponse struct {
 // being mirrored from any external service of its kind.
 type ExcludeRepoRequest struct {
 	// ID of the repository to be excluded.
-	ID uint32
+	ID api.RepoID
 }
 
 // ExcludeRepoResponse is returned in response to an ExcludeRepoRequest.
@@ -107,6 +107,7 @@ type RepoInfo struct {
 	Description string // repository description (from the external service)
 	Fork        bool   // whether this repository is a fork of another repository (from the external service)
 	Archived    bool   // whether this repository is archived (from the external service)
+	Private     bool   // whether this repository is private (from the external service)
 
 	VCS VCSInfo // VCS-related information (for cloning/updating)
 
@@ -152,11 +153,32 @@ func (a *RepoUpdateRequest) String() string {
 // RepoUpdateResponse is a response type to a RepoUpdateRequest.
 type RepoUpdateResponse struct {
 	// ID of the repo that got an update request.
-	ID uint32 `json:"id"`
+	ID api.RepoID `json:"id"`
 	// Name of the repo that got an update request.
 	Name string `json:"name"`
 	// URL of the repo that got an update request.
 	URL string `json:"url"`
+}
+
+// ChangesetSyncRequest is a request to sync a number of changesets
+type ChangesetSyncRequest struct {
+	IDs []int64
+}
+
+// ChangesetSyncResponse is a response to sync a number of changesets
+type ChangesetSyncResponse struct {
+	Error string
+}
+
+// PermsSyncRequest is a request to sync permissions.
+type PermsSyncRequest struct {
+	UserIDs []int32      `json:"user_ids"`
+	RepoIDs []api.RepoID `json:"repo_ids"`
+}
+
+// PermsSyncResponse is a response to sync permissions.
+type PermsSyncResponse struct {
+	Error string
 }
 
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.

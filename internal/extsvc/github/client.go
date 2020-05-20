@@ -15,16 +15,15 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
@@ -55,25 +54,17 @@ type Client struct {
 	// githubDotCom is true if this client connects to github.com.
 	githubDotCom bool
 
-	// defaultToken is the personal access token used to authenticate requests if none is specified
-	// explicitly in a method call. May be empty, in which case the default behavior is to make
-	// unauthenticated requests.
-	defaultToken string
+	// token is the personal access token used to authenticate requests. May be empty, in which case
+	// the default behavior is to make unauthenticated requests.
+	// 🚨 SECURITY: Should not be changed after client creation to prevent unauthorized access to the
+	// repository cache. Use `WithToken` to create a new client with a different token instead.
+	token string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// repoCache is a map of rcache.Cache instances keyed by auth token.
-	repoCache   map[string]*rcache.Cache
-	repoCacheMu sync.RWMutex
-
-	// repoCachePrefix is the cache key prefix used when constructing a new rcache.Cache instance
-	// for repoCache. It should normally be left empty. It is only used in tests. Specifying a
-	// non-empty value will result in different Redis key values.
-	repoCachePrefix string
-
-	// repoCacheTTL is the TTL of cache entries.
-	repoCacheTTL time.Duration
+	// repoCache is the repository cache associated with the token.
+	repoCache *rcache.Cache
 
 	// RateLimit is the API rate limit monitor.
 	RateLimit *ratelimit.Monitor
@@ -106,32 +97,28 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-// NewRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis. A
-// checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
-// with caches for different tokens and API URLs. An optional keyPrefix may also be specified,
-// typically used in tests.
-func NewRepoCache(apiURL *url.URL, token, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
-	if keyPrefix == "" {
-		keyPrefix = "gh_repo:"
+// newRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis.
+// A checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
+// with caches for different tokens and API URLs.
+func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+	apiURL = canonicalizedURL(apiURL)
+
+	var cacheTTL time.Duration
+	if urlIsGitHubDotCom(apiURL) {
+		cacheTTL = 10 * time.Minute
+	} else {
+		// GitHub Enterprise
+		cacheTTL = 30 * time.Second
 	}
 
-	apiURL = canonicalizedURL(apiURL)
-	if cacheTTL == 0 {
-		if urlIsGitHubDotCom(apiURL) {
-			cacheTTL = 10 * time.Minute
-		} else {
-			// GitHub Enterprise
-			cacheTTL = 30 * time.Second
-		}
-	}
 	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	return rcache.NewWithTTL(keyPrefix+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
+	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 }
 
 // NewClient creates a new GitHub API client with an optional default personal access token.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
+func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -154,51 +141,29 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 	return &Client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
-		defaultToken: defaultToken,
+		token:        token,
 		httpClient:   cli,
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    map[string]*rcache.Cache{},
+		repoCache:    newRepoCache(apiURL, token),
 	}
 }
 
-// cache returns the cache associated with the token (which can be empty, in which case the default
-// token will be used). Accessors of the caches should use this method rather than referencing
-// repoCache directly.
-func (c *Client) cache(explicitToken string) *rcache.Cache {
-	token := firstNonEmpty(explicitToken, c.defaultToken)
-
-	c.repoCacheMu.RLock()
-	if cache, ok := c.repoCache[token]; ok {
-		c.repoCacheMu.RUnlock()
-		return cache
-	}
-	c.repoCacheMu.RUnlock()
-
-	c.repoCacheMu.Lock()
-	// Recheck that the cache item exists once we acquire the write-lock in case it has been
-	// populated.
-	defer c.repoCacheMu.Unlock()
-	if cache, ok := c.repoCache[token]; ok {
-		return cache
-	}
-	// BUG?
-	c.repoCache[token] = NewRepoCache(c.apiURL, token, c.repoCachePrefix, c.repoCacheTTL)
-	return c.repoCache[token]
+// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
+func (c *Client) WithToken(token string) *Client {
+	return NewClient(c.apiURL, token, c.httpClient)
 }
 
-func (c *Client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if token != "" {
-		req.Header.Set("Authorization", "bearer "+token)
-	} else if c.defaultToken != "" {
-		req.Header.Set("Authorization", "bearer "+c.defaultToken)
+	if c.token != "" {
+		req.Header.Set("Authorization", "bearer "+c.token)
 	}
 
 	var resp *http.Response
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {
@@ -241,7 +206,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 // - /user/repos
 func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
-	if err := c.requestGet(ctx, "", requestURI, &restRepos); err != nil {
+	if err := c.requestGet(ctx, requestURI, &restRepos); err != nil {
 		return nil, err
 	}
 	repos := make([]*Repository, 0, len(restRepos))
@@ -258,7 +223,7 @@ func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repositor
 		Repositories []restRepository `json:"repositories"`
 	}
 	var resp response
-	if err := c.requestGet(ctx, "", "installation/repositories", &resp); err != nil {
+	if err := c.requestGet(ctx, "installation/repositories", &resp); err != nil {
 		return nil, err
 	}
 	repos := make([]*Repository, 0, len(resp.Repositories))
@@ -268,7 +233,7 @@ func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repositor
 	return repos, nil
 }
 
-func (c *Client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
+func (c *Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
@@ -285,10 +250,10 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
-	return c.do(ctx, token, req, result)
+	return c.do(ctx, req, result)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
@@ -310,11 +275,15 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 	if err != nil {
 		return err
 	}
+
+	// Enable Checks API
+	// https://developer.github.com/v4/previews/#checks
+	req.Header.Add("Accept", "application/vnd.github.antiope-preview+json")
 	var respBody struct {
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`
 	}
-	if err := c.do(ctx, token, req, &respBody); err != nil {
+	if err := c.do(ctx, req, &respBody); err != nil {
 		return err
 	}
 

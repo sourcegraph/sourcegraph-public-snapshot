@@ -1,3 +1,4 @@
+/* eslint rxjs/no-ignored-subscription: warn */
 import { Subject, Observable } from 'rxjs'
 import {
     debounceTime,
@@ -15,6 +16,7 @@ import {
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
+import { isDefined } from '../../../../shared/src/util/types'
 
 interface BaseSuggestion {
     title: string
@@ -56,12 +58,7 @@ export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | Di
  * Returns all but the last element of path, or "." if that would be the empty path.
  */
 function dirname(path: string): string | undefined {
-    return (
-        path
-            .split('/')
-            .slice(0, -1)
-            .join('/') || '.'
-    )
+    return path.split('/').slice(0, -1).join('/') || '.'
 }
 
 /**
@@ -209,7 +206,7 @@ export const createSuggestionFetcher = (
                     take(first),
                     map(createSuggestion),
                     // createSuggestion will return null if we get a type we don't recognize
-                    filter((f): f is Suggestion => !!f),
+                    filter(isDefined),
                     toArray(),
                     map((suggestions: Suggestion[]) => ({
                         suggestions,

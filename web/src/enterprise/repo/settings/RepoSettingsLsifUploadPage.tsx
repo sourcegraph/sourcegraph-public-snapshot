@@ -2,21 +2,36 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
-import React, { FunctionComponent, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { catchError } from 'rxjs/operators'
+import { catchError, takeWhile, concatMap } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifUpload } from './backend'
+import { fetchLsifUpload, deleteLsifUpload } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { useObservable } from '../../../util/useObservable'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import DeleteIcon from 'mdi-react/DeleteIcon'
+import { SchedulerLike, timer } from 'rxjs'
+import * as H from 'history'
+
+const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
     repo: GQL.IRepository
+
+    /** Scheduler for the refresh timer */
+    scheduler?: SchedulerLike
+    history: H.History
+}
+
+const terminalStates = [GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED]
+
+function shouldReload(v: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+    return !isErrorLike(v) && !(v && terminalStates.includes(v.state))
 }
 
 /**
@@ -24,23 +39,60 @@ interface Props extends RouteComponentProps<{ id: string }> {
  */
 export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     repo,
+    scheduler,
     match: {
         params: { id },
     },
+    history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
 
+    const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
+
     const uploadOrError = useObservable(
-        useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
+        useMemo(
+            () =>
+                timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
+                    concatMap(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))),
+                    takeWhile(shouldReload, true)
+                ),
+            [id, scheduler]
+        )
     )
 
-    return (
+    const deleteUpload = async (): Promise<void> => {
+        if (!uploadOrError || isErrorLike(uploadOrError)) {
+            return
+        }
+
+        let description = `commit ${uploadOrError.inputCommit.substring(0, 7)}`
+        if (uploadOrError.inputRoot) {
+            description += ` rooted at ${uploadOrError.inputRoot}`
+        }
+
+        if (!window.confirm(`Delete upload for commit ${description}?`)) {
+            return
+        }
+
+        setDeletionOrError('loading')
+
+        try {
+            await deleteLsifUpload({ id }).toPromise()
+            setDeletionOrError('deleted')
+        } catch (err) {
+            setDeletionOrError(err)
+        }
+    }
+
+    return deletionOrError === 'deleted' ? (
+        <Redirect to=".." />
+    ) : isErrorLike(deletionOrError) ? (
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
+    ) : (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {isErrorLike(uploadOrError) ? (
-                <div className="alert alert-danger">
-                    <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
-                </div>
+                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
@@ -50,15 +102,18 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             Upload for commit{' '}
                             {uploadOrError.projectRoot
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                : uploadOrError.inputCommit.substring(0, 7)}
-                            {uploadOrError.inputRoot !== '' &&
-                                ` rooted at ${
-                                    uploadOrError.projectRoot ? uploadOrError.projectRoot.path : uploadOrError.inputRoot
-                                }`}
+                                : uploadOrError.inputCommit.substring(0, 7)}{' '}
+                            indexed by {uploadOrError.inputIndexer} rooted at{' '}
+                            {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
                         </h2>
                     </div>
 
-                    {uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
+                    {uploadOrError.state === GQL.LSIFUploadState.UPLOADING ? (
+                        <div className="alert alert-primary mb-4 mt-3">
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">Still uploading...</span>
+                        </div>
+                    ) : uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span className="e2e-upload-state">Upload is currently being processed...</span>
@@ -77,7 +132,9 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is queued.</span>
+                            <span className="e2e-upload-state">
+                                Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
+                            </span>
                         </div>
                     )}
 
@@ -120,6 +177,11 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                         uploadOrError.inputRoot || '/'
                                     )}
                                 </td>
+                            </tr>
+
+                            <tr>
+                                <td>Indexer</td>
+                                <td>{uploadOrError.inputIndexer}</td>
                             </tr>
 
                             <tr>
@@ -170,6 +232,29 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             </tr>
                         </tbody>
                     </table>
+
+                    <div className="action-container">
+                        <div className="action-container__row">
+                            <div className="action-container__description">
+                                <h4 className="action-container__title">Delete this upload</h4>
+                                <div>
+                                    Deleting this upload make it immediately unavailable to answer code intelligence
+                                    queries.
+                                </div>
+                            </div>
+                            <div className="action-container__btn-container">
+                                <button
+                                    type="button"
+                                    className="btn btn-danger action-container__btn"
+                                    onClick={deleteUpload}
+                                    disabled={deletionOrError === 'loading'}
+                                    data-tooltip="Delete upload"
+                                >
+                                    <DeleteIcon className="icon-inline" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
         </div>

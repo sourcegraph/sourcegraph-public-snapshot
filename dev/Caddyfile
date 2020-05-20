@@ -1,0 +1,6 @@
+{
+  http_port 3088
+}
+{$SOURCEGRAPH_HTTPS_DOMAIN}:{$SOURCEGRAPH_HTTPS_PORT}
+tls internal
+reverse_proxy localhost:3080

@@ -41,7 +41,7 @@ describe('Site config test suite', () => {
     afterEach(async () => {
         await resourceManager.destroyAll()
     })
-    test('htmlBodyTop', async function() {
+    test('htmlBodyTop', async function () {
         this.timeout(10 * 1000)
         resourceManager.add(
             'Configuration',
@@ -66,7 +66,7 @@ describe('Site config test suite', () => {
         )
     })
 
-    test('builtin auth provider: allowSignup', async function() {
+    test('builtin auth provider: allowSignup', async function () {
         this.timeout(20 * 1000)
         const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
         const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)

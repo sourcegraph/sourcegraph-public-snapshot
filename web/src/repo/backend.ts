@@ -21,20 +21,25 @@ export const fetchRepository = memoizeObservable(
     (args: { repoName: string }): Observable<GQL.IRepository> =>
         queryGraphQL(
             gql`
-                query Repository($repoName: String!) {
-                    repository(name: $repoName) {
-                        id
-                        name
-                        url
-                        externalURLs {
+                query RepositoryRedirect($repoName: String!) {
+                    repositoryRedirect(name: $repoName) {
+                        __typename
+                        ... on Repository {
+                            id
+                            name
                             url
-                            serviceType
+                            externalURLs {
+                                url
+                                serviceType
+                            }
+                            description
+                            viewerCanAdminister
+                            defaultBranch {
+                                displayName
+                            }
                         }
-                        description
-                        viewerCanAdminister
-                        redirectURL
-                        defaultBranch {
-                            displayName
+                        ... on Redirect {
+                            url
                         }
                     }
                 }
@@ -45,13 +50,13 @@ export const fetchRepository = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
-                }
-                if (!data.repository) {
+                if (!data.repositoryRedirect) {
                     throw new RepoNotFoundError(args.repoName)
                 }
-                return data.repository
+                if (data.repositoryRedirect.__typename === 'Redirect') {
+                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
+                }
+                return data.repositoryRedirect
             })
         ),
     makeRepoURI
@@ -68,30 +73,34 @@ export interface ResolvedRev {
 /**
  * When `rev` is undefined, the default branch is resolved.
  *
- * @returns Observable that emits the commit ID
- *         Errors with a `CloneInProgressError` if the repo is still being cloned.
+ * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
     (ctx: { repoName: string; rev?: string }): Observable<ResolvedRev> =>
         queryGraphQL(
             gql`
                 query ResolveRev($repoName: String!, $rev: String!) {
-                    repository(name: $repoName) {
-                        mirrorInfo {
-                            cloneInProgress
-                            cloneProgress
-                            cloned
-                        }
-                        commit(rev: $rev) {
-                            oid
-                            tree(path: "") {
-                                url
+                    repositoryRedirect(name: $repoName) {
+                        __typename
+                        ... on Repository {
+                            mirrorInfo {
+                                cloneInProgress
+                                cloneProgress
+                                cloned
+                            }
+                            commit(rev: $rev) {
+                                oid
+                                tree(path: "") {
+                                    url
+                                }
+                            }
+                            defaultBranch {
+                                abbrevName
                             }
                         }
-                        defaultBranch {
-                            abbrevName
+                        ... on Redirect {
+                            url
                         }
-                        redirectURL
                     }
                 }
             `,
@@ -101,28 +110,31 @@ export const resolveRev = memoizeObservable(
                 if (!data) {
                     throw createAggregateError(errors)
                 }
-                if (data.repository && data.repository.redirectURL) {
-                    throw new RepoSeeOtherError(data.repository.redirectURL)
-                }
-                if (!data.repository) {
+                if (!data.repositoryRedirect) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
-                if (data.repository.mirrorInfo.cloneInProgress) {
-                    throw new CloneInProgressError(ctx.repoName, data.repository.mirrorInfo.cloneProgress || undefined)
+                if (data.repositoryRedirect.__typename === 'Redirect') {
+                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
                 }
-                if (!data.repository.mirrorInfo.cloned) {
+                if (data.repositoryRedirect.mirrorInfo.cloneInProgress) {
+                    throw new CloneInProgressError(
+                        ctx.repoName,
+                        data.repositoryRedirect.mirrorInfo.cloneProgress || undefined
+                    )
+                }
+                if (!data.repositoryRedirect.mirrorInfo.cloned) {
                     throw new CloneInProgressError(ctx.repoName, 'queued for cloning')
                 }
-                if (!data.repository.commit) {
+                if (!data.repositoryRedirect.commit) {
                     throw new RevNotFoundError(ctx.rev)
                 }
-                if (!data.repository.defaultBranch || !data.repository.commit.tree) {
+                if (!data.repositoryRedirect.defaultBranch || !data.repositoryRedirect.commit.tree) {
                     throw new RevNotFoundError('HEAD')
                 }
                 return {
-                    commitID: data.repository.commit.oid,
-                    defaultBranch: data.repository.defaultBranch.abbrevName,
-                    rootTreeURL: data.repository.commit.tree.url,
+                    commitID: data.repositoryRedirect.commit.oid,
+                    defaultBranch: data.repositoryRedirect.defaultBranch.abbrevName,
+                    rootTreeURL: data.repositoryRedirect.commit.tree.url,
                 }
             })
         ),
@@ -170,7 +182,7 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}&sisLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?disableTimeout=${String(ctx.disableTimeout)}&isLightTheme=${String(ctx.isLightTheme)}`
 )
 
 /**
@@ -192,7 +204,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 return rows
             })
         ),
-    ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?isLightTheme=${String(ctx.isLightTheme)}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
@@ -224,47 +236,22 @@ export const fetchFileExternalLinks = memoizeObservable(
     makeRepoURI
 )
 
-export const fetchTree = memoizeObservable(
+export const fetchTreeEntries = memoizeObservable(
     (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
+                query TreeEntries(
+                    $repoName: String!
+                    $rev: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $first: Int
+                ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
                                 url
-                                entries(first: $first) {
-                                    name
-                                    path
-                                    isDirectory
-                                    url
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (errors || !data?.repository?.commit?.tree) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree
-            })
-        ),
-    makeRepoURI
-)
-
-export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
-        queryGraphQL(
-            gql`
-                query Tree($repoName: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID, inputRevspec: $rev) {
-                            tree(path: $filePath) {
                                 entries(first: $first, recursiveSingleChild: true) {
                                     name
                                     path
@@ -290,5 +277,5 @@ export const fetchTreeEntries = memoizeObservable(
                 return data.repository.commit.tree
             })
         ),
-    makeRepoURI
+    ({ first, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
 )

@@ -2,11 +2,12 @@ package httpapi
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/download"
@@ -32,8 +33,14 @@ func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	target := path.Join(srcCliDownloadsURL, srcCliVersion(), filename)
-	http.Redirect(w, r, target, http.StatusFound)
+	u, err := url.Parse(srcCliDownloadsURL)
+	if err != nil {
+		log15.Error("Illegal base src-cli download URL", "url", srcCliDownloadsURL, "err", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return nil
+	}
+	u.Path = path.Join(u.Path, srcCliVersion(), filename)
+	http.Redirect(w, r, u.String(), http.StatusFound)
 	return nil
 }
 

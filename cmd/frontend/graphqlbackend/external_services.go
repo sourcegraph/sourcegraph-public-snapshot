@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -149,6 +149,8 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
+	now := time.Now()
+	externalService.DeletedAt = &now
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.

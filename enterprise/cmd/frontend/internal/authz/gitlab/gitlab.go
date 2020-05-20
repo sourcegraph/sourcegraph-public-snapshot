@@ -78,9 +78,20 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			return nil, fmt.Errorf("Did not find authentication provider matching %q. Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", instanceURL, instanceURL)
 		}
 
-		return NewOAuthProvider(OAuthAuthzProviderOp{
-			BaseURL:  glURL,
-			CacheTTL: ttl,
+		minBatchThreshold := 200
+		if idp.Oauth.MinBatchingThreshold > 0 {
+			minBatchThreshold = idp.Oauth.MinBatchingThreshold
+		}
+		maxBatchRequests := 300
+		if idp.Oauth.MaxBatchRequests > 0 {
+			maxBatchRequests = idp.Oauth.MaxBatchRequests
+		}
+		return NewOAuthProvider(OAuthProviderOp{
+			BaseURL:           glURL,
+			Token:             token,
+			CacheTTL:          ttl,
+			MinBatchThreshold: minBatchThreshold,
+			MaxBatchRequests:  maxBatchRequests,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
@@ -116,14 +127,14 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 	}
 }
 
-// NewOAuthProvider is a mockable constructor for new OAuthAuthzProvider instances.
-var NewOAuthProvider = func(op OAuthAuthzProviderOp) authz.Provider {
-	return newOAuthProvider(op)
+// NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
+var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
+	return newOAuthProvider(op, nil)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.
 var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
-	return newSudoProvider(op)
+	return newSudoProvider(op, nil)
 }
 
 // ValidateAuthz validates the authorization fields of the given GitLab external

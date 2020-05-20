@@ -4,20 +4,18 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
-// A Query is the typechecked representation of a search query.
-type Query struct {
-	ParseTree syntax.ParseTree    // the query parse tree
-	Fields    map[string][]*Value // map of field name -> values
-}
+// Map of field name -> values
+type Fields map[string][]*Value
 
-func (q *Query) String() string {
+func (f *Fields) String() string {
 	fields := []string{}
-	for key, values := range q.Fields {
+	for key, values := range *f {
 		for _, v := range values {
 			switch s := v.Value().(type) {
 			case string:
@@ -56,7 +54,10 @@ type Value struct {
 
 // Not returns whether the value is negated in the query (e.g., -value or -field:value).
 func (v *Value) Not() bool {
-	return v.syntax.Not
+	if v.syntax != nil {
+		return v.syntax.Not
+	}
+	return false
 }
 
 // Value returns the value as an interface{}.
@@ -70,5 +71,18 @@ func (v *Value) Value() interface{} {
 		return *v.Bool
 	default:
 		panic("no value")
+	}
+}
+
+func (v *Value) ToString() string {
+	switch {
+	case v.String != nil:
+		return *v.String
+	case v.Regexp != nil:
+		return v.Regexp.String()
+	case v.Bool != nil:
+		return strconv.FormatBool(*v.Bool)
+	default:
+		return "<unable to get querytypes.Value as string>"
 	}
 }

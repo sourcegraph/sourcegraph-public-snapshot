@@ -11,6 +11,7 @@
   "fromRef": {
    "id": "",
    "repository": {
+    "id": 0,
     "slug": "",
     "project": {
      "key": ""
@@ -20,6 +21,7 @@
   "toRef": {
    "id": "",
    "repository": {
+    "id": 0,
     "slug": "vegeta",
     "project": {
      "key": "SOUR"

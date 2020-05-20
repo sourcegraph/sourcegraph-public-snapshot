@@ -53,12 +53,12 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN      *string `json:"sentryDSN"`
-	SiteID         string  `json:"siteID"`
-	SiteGQLID      string  `json:"siteGQLID"`
-	Debug          bool    `json:"debug"`
-	ShowOnboarding bool    `json:"showOnboarding"`
-	EmailEnabled   bool    `json:"emailEnabled"`
+	SentryDSN     *string `json:"sentryDSN"`
+	SiteID        string  `json:"siteID"`
+	SiteGQLID     string  `json:"siteGQLID"`
+	Debug         bool    `json:"debug"`
+	NeedsSiteInit bool    `json:"needsSiteInit"`
+	EmailEnabled  bool    `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -91,13 +91,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
-	// -- currently we don't associate XHR calls with the parent page's span --
-	// if span := opentracing.SpanFromContext(req.Context()); span != nil {
-	// 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
-	// 		return JSContext{}, err
-	// 	}
-	// }
-
 	// Propagate Cache-Control no-cache and max-age=0 directives
 	// to the requests made by our client-side JavaScript. This is
 	// not a perfect parser, but it catches the important cases.
@@ -112,7 +105,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	// Show the site init screen?
 	globalState, err := globalstatedb.Get(req.Context())
-	showOnboarding := err == nil && !globalState.Initialized
+	needsSiteInit := err == nil && !globalState.Initialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
@@ -152,7 +145,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
-		ShowOnboarding:    showOnboarding,
+		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),
@@ -188,9 +181,10 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AutomationReadAccessEnabled: c.AutomationReadAccessEnabled,
-		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
+		AuthPublic:                 c.AuthPublic,
+		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
+		PermissionsBackgroundSync:  c.PermissionsBackgroundSync,
+		UpdateChannel:              updateChannel,
 	}
 }
 

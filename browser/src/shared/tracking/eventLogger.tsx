@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import { Observable, ReplaySubject } from 'rxjs'
 import { take } from 'rxjs/operators'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
@@ -24,6 +24,7 @@ export class EventLogger implements TelemetryService {
         const replaySubject = new ReplaySubject<string>(1)
         this.sourcegraphURLs = replaySubject.asObservable()
         // TODO pass this Observable as a parameter
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         observeSourcegraphURL(isExtension).subscribe(replaySubject)
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)

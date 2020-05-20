@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -17,12 +16,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -63,10 +61,64 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
+type tlsConfig struct {
+	// Whether to not verify the SSL certificate when fetching or pushing over
+	// HTTPS.
+	//
+	// https://git-scm.com/docs/git-config#Documentation/git-config.txt-httpsslVerify
+	SSLNoVerify bool
+
+	// File containing the certificates to verify the peer with when fetching
+	// or pushing over HTTPS.
+	//
+	// https://git-scm.com/docs/git-config#Documentation/git-config.txt-httpsslCAInfo
+	SSLCAInfo string
+}
+
+var tlsExternal = conf.Cached(func() interface{} {
+	c := conf.Get().ExperimentalFeatures.TlsExternal
+
+	if c == nil {
+		return &tlsConfig{}
+	}
+
+	sslCAInfo := ""
+	if len(c.Certificates) > 0 {
+		var b bytes.Buffer
+		for _, cert := range c.Certificates {
+			b.WriteString(cert)
+			b.WriteString("\n")
+		}
+		// We don't clean up the file since it has a process life time.
+		p, err := writeTempFile("gitserver*.crt", b.Bytes())
+		if err != nil {
+			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+		} else {
+			sslCAInfo = p
+		}
+	}
+
+	return &tlsConfig{
+		SSLNoVerify: c.InsecureSkipVerify,
+		SSLCAInfo:   sslCAInfo,
+	}
+})
+
+func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
+	return runWith(ctx, cmd, true, progress)
+}
+
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureRemoteGitCommand(cmd, conf.Get().ExperimentalFeatures.TlsExternal)
+func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	if configRemoteOpts {
+		// Inherit process environment. This allows admins to configure
+		// variables like http_proxy/etc.
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+	}
 
 	var b interface {
 		Bytes() []byte
@@ -96,7 +148,7 @@ func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) (
 	return b.Bytes(), err
 }
 
-func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *schema.TlsExternal) {
+func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	if cmd.Args[0] != "git" {
 		panic("Only git commands are supported")
 	}
@@ -109,10 +161,11 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *schema.TlsExternal) {
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
 
-	if tlsConf != nil {
-		if tlsConf.InsecureSkipVerify {
-			cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
-		}
+	if tlsConf.SSLNoVerify {
+		cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
+	}
+	if tlsConf.SSLCAInfo != "" {
+		cmd.Env = append(cmd.Env, "GIT_SSL_CAINFO="+tlsConf.SSLCAInfo)
 	}
 
 	extraArgs := []string{
@@ -127,6 +180,33 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *schema.TlsExternal) {
 	}
 
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+}
+
+// writeTempFile writes data to the TempFile with pattern. Returns the path of
+// the tempfile.
+func writeTempFile(pattern string, data []byte) (path string, err error) {
+	f, err := ioutil.TempFile("", pattern)
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		if err1 := f.Close(); err == nil {
+			err = err1
+		}
+		// Cleanup if we fail to write
+		if err != nil {
+			path = ""
+			os.Remove(f.Name())
+		}
+	}()
+
+	n, err := f.Write(data)
+	if err == nil && n < len(data) {
+		return "", io.ErrShortWrite
+	}
+
+	return f.Name(), err
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
@@ -197,6 +277,49 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 		return "", fmt.Errorf("no remote URL for repo %s", dir)
 	}
 	return remoteURLs[0], nil
+}
+
+// repoRemoteRefs returns a map containing ref + commit pairs from the
+// remote Git repository starting with the specified prefix.
+//
+// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// refs.
+var repoRemoteRefs = func(ctx context.Context, url, prefix string) (map[string]string, error) {
+	// The expected output of this git command is a list of:
+	// <commit hash> <ref name>
+	cmd := exec.Command("git", "ls-remote", url, prefix+"*")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_, err := runCommand(ctx, cmd)
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return nil, fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+
+	refs := make(map[string]string)
+	raw := stdout.String()
+	for _, line := range strings.Split(raw, "\n") {
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, fmt.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
+		}
+
+		split := strings.SplitN(fields[1], "/", 3)
+		if len(split) != 3 {
+			return nil, fmt.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
+		}
+
+		refs[split[2]] = fields[0]
+	}
+	return refs, nil
 }
 
 // writeCounter wraps an io.Writer and keeps track of bytes written.
@@ -444,7 +567,7 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	}
 
 	// fsync to ensure the disk contents are written. This is important, since
-	// we are not gaurenteed that os.Rename is recorded to disk after f's
+	// we are not guaranteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
 		f.Close()
@@ -502,19 +625,4 @@ func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) erro
 
 		return walkFn(path, info)
 	})
-}
-
-func logErrors(printf func(format string, v ...interface{}), repo api.RepoName, stderr []byte) {
-	for len(stderr) > 0 {
-		advance, line, err := bufio.ScanLines(stderr, true)
-		if err != nil {
-			// bufio.ScanLines should never return an error (go1.13)
-			panic("bufio.ScanLines returned an error: " + err.Error())
-		}
-		stderr = stderr[advance:]
-
-		if bytes.HasPrefix(line, []byte("error: ")) {
-			printf("%s %s\n", repo, line)
-		}
-	}
 }

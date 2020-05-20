@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -27,8 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchSymbolResult is a result from symbol search.
@@ -97,11 +97,16 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	index, _ := args.Query.StringValues(query.FieldIndex)
 	if len(index) > 0 {
 		index := index[len(index)-1]
+		tr.LogFields(
+			otlog.String("index-field", index),
+			otlog.Int("before-indexed-repos", len(zoektRepos)),
+			otlog.Int("before-unindexed-repos", len(searcherRepos)),
+		)
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
 			if args.Zoekt.Enabled() {
-				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+				tr.LogFields(otlog.Int("indexed-repos", len(zoektRepos)), otlog.Int("unindexed-repos", len(searcherRepos)))
 			}
 		case Only:
 			if !args.Zoekt.Enabled() {
@@ -111,15 +116,17 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			for i, r := range searcherRepos {
 				common.missing[i] = r.Repo
 			}
-			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
 		case No, False:
-			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
 			searcherRepos = append(searcherRepos, zoektRepos...)
 			zoektRepos = nil
 		default:
 			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
+		tr.LogFields(
+			otlog.Int("after-indexed-repos", len(zoektRepos)),
+			otlog.Int("after-unindexed-repos", len(searcherRepos)),
+		)
 	}
 
 	var (
@@ -244,8 +251,8 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, query query.QueryInfo, limit int) (res []*FileMatchResolver, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

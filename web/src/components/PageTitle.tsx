@@ -4,14 +4,14 @@ interface Props {
     title?: string
 }
 
-let titleSet = false
-
 export class PageTitle extends React.Component<Props, {}> {
+    public static titleSet = false
+
     public componentDidMount(): void {
-        if (titleSet) {
+        if (PageTitle.titleSet) {
             console.error('more than one PageTitle used at the same time')
         }
-        titleSet = true
+        PageTitle.titleSet = true
         this.updateTitle(this.props.title)
     }
 
@@ -20,7 +20,7 @@ export class PageTitle extends React.Component<Props, {}> {
     }
 
     public componentWillUnmount(): void {
-        titleSet = false
+        PageTitle.titleSet = false
         document.title = this.brandName()
     }
 

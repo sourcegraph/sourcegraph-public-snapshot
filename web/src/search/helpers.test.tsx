@@ -28,7 +28,7 @@ describe('search/helpers', () => {
         })
     })
 
-    const searchTypes: SearchType[] = ['diff', 'commit', 'symbol', 'repo', 'path']
+    const searchTypes: NonNullable<SearchType>[] = ['diff', 'commit', 'symbol', 'repo', 'path']
 
     describe('getSearchTypeFromQuery()', () => {
         test('parses the search type in simple queries', () => {
@@ -231,7 +231,7 @@ describe('search/helpers', () => {
         })
         it('replaces filter being typed with its `filterAliasForSearch`', () => {
             expect(Object.keys(filterAliasForSearch).map(formatForSearchWithFilter)).toStrictEqual(
-                Object.values(filterAliasForSearch).map(alias => `archived:Yes ${alias}:value Props`)
+                Object.values(filterAliasForSearch).map(alias => `archived:Yes ${alias!}:value Props`)
             )
         })
         it('return absolute filter if filter being typed is negated (e.g: `-file`)', () => {

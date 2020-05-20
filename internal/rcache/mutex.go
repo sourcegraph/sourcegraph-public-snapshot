@@ -53,13 +53,13 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 			select {
 			case <-ctx.Done():
 				// TODO handle error
-				mu.Unlock()
+				_, _ = mu.Unlock()
 				ticker.Stop()
 				close(unlockedC)
 				return
 			case <-ticker.C:
 				// TODO simple retry
-				if !mu.Extend() {
+				if ok, err := mu.Extend(); !ok || err != nil {
 					cancel()
 				}
 			}

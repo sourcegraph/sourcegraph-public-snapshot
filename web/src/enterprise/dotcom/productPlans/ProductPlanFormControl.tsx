@@ -1,14 +1,15 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as React from 'react'
-import { Observable, Subscription } from 'rxjs'
+import React, { useCallback, useMemo } from 'react'
+import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductPlanPrice } from './ProductPlanPrice'
-import { ProductPlanTiered } from './ProductPlanTiered'
 import { ErrorAlert } from '../../../components/alerts'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -19,107 +20,97 @@ interface Props {
 
     disabled?: boolean
     className?: string
+    history: H.History
+
+    /** For mocking in tests only. */
+    _queryProductPlans?: typeof queryProductPlans
 }
 
-const LOADING: 'loading' = 'loading'
-
-interface State {
-    /**
-     * The list of all possible product plans.
-     */
-    plansOrError: GQL.IProductPlan[] | typeof LOADING | ErrorLike
-}
+const LOADING = 'loading' as const
 
 /**
  * Displays a form group for selecting a product plan.
  */
-export class ProductPlanFormControl extends React.Component<Props, State> {
-    public state: State = {
-        plansOrError: LOADING,
-    }
+export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
+    value,
+    onChange,
+    disabled,
+    className = '',
+    history,
+    _queryProductPlans = queryProductPlans,
+}) => {
+    const noPlanSelected = value === null // don't recompute observable below on every value change
 
-    private subscriptions = new Subscription()
+    /**
+     * The list of all possible product plans, loading, or an error.
+     */
+    const plans =
+        useObservable(
+            useMemo(
+                () =>
+                    _queryProductPlans().pipe(
+                        tap(plans => {
+                            // If no plan is selected, select the 1st plan when the plans have loaded.
+                            if (plans.length > 0 && noPlanSelected) {
+                                onChange(plans[0].billingPlanID)
+                            }
+                        }),
+                        catchError(err => [asError(err)]),
+                        startWith(LOADING)
+                    ),
+                [_queryProductPlans, onChange, noPlanSelected]
+            )
+        ) || LOADING
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            queryProductPlans()
-                .pipe(
-                    tap(plans => {
-                        // If no plan is selected, select the 1st plan when the plans have loaded.
-                        if (plans.length > 0 && this.props.value === null) {
-                            this.props.onChange(plans[0].billingPlanID)
-                        }
-                    }),
-                    catchError(err => [asError(err)]),
-                    startWith(LOADING),
-                    map(c => ({ plansOrError: c }))
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
-        )
-    }
+    const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => {
+            onChange(e.currentTarget.value)
+        },
+        [onChange]
+    )
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    const disableInputs = disabled || plans === LOADING || isErrorLike(plans)
 
-    public render(): JSX.Element | null {
-        const disableInputs =
-            this.props.disabled || this.state.plansOrError === LOADING || isErrorLike(this.state.plansOrError)
-
-        return (
-            <div className={`product-plan-form-control ${this.props.className || ''}`}>
-                {this.state.plansOrError === LOADING ? (
-                    <LoadingSpinner className="icon-inline" />
-                ) : isErrorLike(this.state.plansOrError) ? (
-                    <ErrorAlert error={this.state.plansOrError.message} />
-                ) : (
-                    <>
-                        <div className="list-group">
-                            {this.state.plansOrError.map((plan, i) => (
-                                <div key={i} className="list-group-item p-0">
-                                    <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${i}`}>
-                                        <input
-                                            type="radio"
-                                            name="product-plan-form-control__plan"
-                                            className="mr-2"
-                                            id={`product-plan-form-control__plan${i}`}
-                                            value={plan.billingPlanID}
-                                            onChange={this.onPlanChange}
-                                            required={true}
-                                            disabled={disableInputs}
-                                            checked={plan.billingPlanID === this.props.value}
-                                        />
-                                        <div>
-                                            <strong>{plan.name}</strong>
-                                            <div className="text-muted">
-                                                {plan.planTiers.length > 0 ? (
-                                                    <ProductPlanTiered
-                                                        planTiers={plan.planTiers}
-                                                        tierMode={plan.tiersMode}
-                                                        minQuantity={plan.minQuantity}
-                                                    />
-                                                ) : (
-                                                    <ProductPlanPrice pricePerUserPerYear={plan.pricePerUserPerYear} />
-                                                )}
-                                            </div>
+    return (
+        <div className={`product-plan-form-control ${className}`}>
+            {plans === LOADING ? (
+                <LoadingSpinner className="icon-inline" />
+            ) : isErrorLike(plans) ? (
+                <ErrorAlert error={plans.message} history={history} />
+            ) : (
+                <>
+                    <div className="list-group">
+                        {plans.map((plan, i) => (
+                            <div key={plan.billingPlanID} className="list-group-item p-0">
+                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${i}`}>
+                                    <input
+                                        type="radio"
+                                        name="product-plan-form-control__plan"
+                                        className="mr-2"
+                                        id={`product-plan-form-control__plan${i}`}
+                                        value={plan.billingPlanID}
+                                        onChange={onPlanChange}
+                                        required={true}
+                                        disabled={disableInputs}
+                                        checked={plan.billingPlanID === value}
+                                    />
+                                    <div>
+                                        <strong>{plan.name}</strong>
+                                        <div className="text-muted">
+                                            <ProductPlanPrice plan={plan} />
                                         </div>
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
-                        {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                        <a href="https://about.sourcegraph.com/pricing" target="_blank" className="small">
-                            Compare plans
-                        </a>
-                    </>
-                )}
-            </div>
-        )
-    }
-
-    private onPlanChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.props.onChange(e.currentTarget.value)
-    }
+                                    </div>
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                    <a href="https://about.sourcegraph.com/pricing" className="small">
+                        Compare plans
+                    </a>
+                </>
+            )}
+        </div>
+    )
 }
 
 function queryProductPlans(): Observable<GQL.IProductPlan[]> {
@@ -133,6 +124,7 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
                         name
                         pricePerUserPerYear
                         minQuantity
+                        maxQuantity
                         tiersMode
                         planTiers {
                             unitAmount

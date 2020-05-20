@@ -10,15 +10,16 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -59,6 +60,12 @@ type Params struct {
 	// Whether or not the light theme should be used to highlight the code.
 	IsLightTheme bool
 
+	// HighlightLongLines, if true, highlighting lines which are greater than
+	// 2000 bytes is enabled. This may produce a significant amount of HTML
+	// which some browsers (such as Chrome, but not Firefox) may have trouble
+	// rendering efficiently.
+	HighlightLongLines bool
+
 	// Whether or not to simulate the syntax highlighter taking too long to
 	// respond.
 	SimulateTimeout bool
@@ -78,13 +85,21 @@ type Metadata struct {
 	Revision string
 }
 
+// ErrBinary is returned when a binary file was attempted to be highlighted.
+var ErrBinary = errors.New("cannot render binary file")
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
+//
+// In the event the input content is binary, ErrBinary is returned.
 func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	if Mocks.Code != nil {
+		return Mocks.Code(p)
+	}
 	var prometheusStatus string
 	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
@@ -110,7 +125,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", false, errors.New("cannot render binary file")
+		return "", false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -152,6 +167,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		Filepath:         p.Filepath,
 		Theme:            themechoice,
 		StabilizeTimeout: stabilizeTimeout,
+		Tracer:           ot.GetTracer(ctx),
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -204,14 +220,22 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	if err != nil {
 		return "", false, err
 	}
+	if !p.HighlightLongLines {
+		// This number was arbitrarily chosen. We don't want long lines in general to be unhighlighted,
+		// but if there are super long lines OR many lines of near this length we don't want it to slow
+		// down the browser's rendering.
+		maxLineLength := 2000
+		table, err = unhighlightLongLines(table, maxLineLength)
+		if err != nil {
+			return "", false, err
+		}
+	}
 	return template.HTML(table), false, nil
 }
 
 var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "syntax_highlighting",
-	Name:      "requests",
-	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+	Name: "src_syntax_highlighting_requests",
+	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
 }, []string{"status"})
 
 func init() {
@@ -220,10 +244,10 @@ func init() {
 
 func firstCharacters(s string, n int) string {
 	v := []rune(s)
-	if len(v) < 10 {
+	if len(v) < n {
 		return string(v)
 	}
-	return string(v[:10])
+	return string(v[:n])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:
@@ -371,4 +395,112 @@ func generatePlainTable(code string) (template.HTML, error) {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
+}
+
+// unhighlightLongLines takes highlighted HTML and unhighlights lines which are
+// longer than N bytes in (plaintext) length, making them easier for some
+// browsers such as Chrome to render.
+//
+// And the returned HTML has all <span> tags removed from lines whose length
+// are > N bytes.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/6489
+func unhighlightLongLines(h string, n int) (string, error) {
+	doc, err := html.Parse(strings.NewReader(h))
+	if err != nil {
+		return "", err
+	}
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return "", fmt.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and check length
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // tr > td > div
+		span := div.FirstChild         // div > span
+		for span != nil {
+			node := span.FirstChild
+			for node != nil {
+				buf.WriteString(node.Data)
+				node = node.NextSibling
+			}
+			span = span.NextSibling
+		}
+
+		// Length exceeds the limit, replace existing child with plain text
+		if buf.Len() > n {
+			span := &html.Node{
+				Type:     html.ElementNode,
+				DataAtom: atom.Span,
+				Data:     atom.Span.String(),
+			}
+			span.AppendChild(&html.Node{
+				Type: html.TextNode,
+				Data: buf.String(),
+			})
+			div.FirstChild = span
+		}
+
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	buf.Reset()
+	// NOTE: The result of html.Parse has parent nodes like "<html><head><body><table>..."
+	// to be a valid HTML, but what we want to return is just the <table> section.
+	if err := html.Render(&buf, table); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// CodeAsLines highlights the file and returns a list of highlighted lines.
+// The returned boolean represents whether or not highlighting was aborted due
+// to timeout.
+//
+// In the event the input content is binary, ErrBinary is returned.
+func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
+	html, aborted, err := Code(ctx, p)
+	if err != nil {
+		return nil, aborted, err
+	}
+	lines, err := splitHighlightedLines(html)
+	return lines, aborted, err
+}
+
+// splitHighlightedLines takes the highlighted HTML table and returns a slice
+// of highlighted strings, where each string corresponds a single line in the
+// original, highlighted file.
+func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
+	doc, err := html.Parse(strings.NewReader(string(input)))
+	if err != nil {
+		return nil, err
+	}
+
+	lines := make([]template.HTML, 0)
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return nil, fmt.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and extract content
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // tr > td > div
+		err = html.Render(&buf, div)
+		if err != nil {
+			return nil, err
+		}
+		lines = append(lines, template.HTML(buf.String()))
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	return lines, nil
 }

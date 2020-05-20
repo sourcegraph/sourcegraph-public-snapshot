@@ -9,15 +9,12 @@ describe('content (integration)', () => {
         // Register the provider and call it.
         extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
             provideLinkPreview: url => ({
-                content: { value: `xyz ${url.toString()}`, kind: MarkupKind.PlainText },
+                content: { value: `xyz ${url.href}`, kind: MarkupKind.PlainText },
             }),
         })
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews
-                .provideLinkPreview('http://example.com/foo')
-                .pipe(take(1))
-                .toPromise()
+            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
         ).toEqual({
             content: [{ value: 'xyz http://example.com/foo', kind: MarkupKind.PlainText }],
             hover: [],
@@ -37,10 +34,7 @@ describe('content (integration)', () => {
         subscription.unsubscribe()
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews
-                .provideLinkPreview('http://example.com/foo')
-                .pipe(take(1))
-                .toPromise()
+            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
         ).toEqual(null)
     })
 
@@ -56,10 +50,7 @@ describe('content (integration)', () => {
         })
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews
-                .provideLinkPreview('http://example.com/foo')
-                .pipe(take(1))
-                .toPromise()
+            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
         ).toEqual({
             content: [
                 { value: 'qux', kind: MarkupKind.PlainText },

@@ -9,6 +9,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchCursor represents a decoded search pagination cursor. From an API
@@ -161,7 +161,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 
-	resultTypes, _ := r.determineResultTypes(args, "")
+	resultTypes := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	if len(resultTypes) != 1 || resultTypes[0] != "file" {
@@ -192,7 +192,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",

@@ -124,3 +124,15 @@ docker-images/prometheus/config/prometheus_targets.yml
 comment.txt
 
 .eslintcache
+storybook-static/
+
+# Certificates
+*.pem
+*.crt
+
+# Custom dev-specific nginx config
+/dev/*.nginx.conf
+
+# tilt files
+/dev/tilt/generated-cluster
+/dev/tilt/tilt-watch-targets

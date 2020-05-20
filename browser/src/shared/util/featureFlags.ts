@@ -66,7 +66,7 @@ const inPageFeatureFlags = createFeatureFlagStorage({
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     set: async (key, val) => {
-        localStorage.setItem(key, val.toString())
+        localStorage.setItem(key, String(val))
     },
 })
 

@@ -2,15 +2,12 @@
 
 Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (GitLab.com and GitLab CE/EE) with Sourcegraph so that users can search and navigate the repositories.
 
-To set this up, add GitLab as an external service to Sourcegraph:
+To connect GitLab to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Enter a **Display name** (using "GitLab" is OK if you only have one GitLab instance).
-1. In the **Kind** menu, select **GitLab**.
-1. Configure the connection to GitLab in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **GitLab**.
+1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Supported versions
 
@@ -46,6 +43,14 @@ permissions](../repo/permissions.md#gitlab)".
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
+## Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab. 
+
+If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
+
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/gitlab.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/gitlab) to see rendered content.</div>
@@ -73,7 +78,7 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 
 | Request Type | Required GitLab scope | Sourcegraph usage |
 |--------------|-----------------------|-------------------|
-| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` | (1) For repository discovery when specifying `projectQuery` in external service configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
+| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` | (1) For repository discovery when specifying `projectQuery` in code host configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
 | [`GET /users`](https://docs.gitlab.com/ee/api/users.html#list-users) | `read_user` or `api` | If you are using an `external` identity provider type, used to discover user accounts. |
 | [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user` or `api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
 | [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |

@@ -11,25 +11,28 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { NavLinks } from '../../../nav/NavLinks'
 import { showDotComMarketing } from '../../../util/features'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    FilterTypes,
-    negatedFilters,
-    isNegatedFilter,
-    resolveNegatedFilter,
-} from '../../../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
+import {
+    parseSearchURLQuery,
+    InteractiveSearchProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+} from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
-import { isFiniteFilter } from './filters'
+import { convertPlainTextToInteractiveQuery } from '../helpers'
+import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContext } from '../../../schema/site.schema'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -42,17 +45,24 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
+        CopyQueryButtonProps,
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
+    /** Whether to hide the selected filters and add filter rows. */
+    lowProfile: boolean
 
     // For NavLinks
     authRequired?: boolean
     authenticatedUser: GQL.IUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 interface InteractiveModeState {
@@ -65,28 +75,13 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         super(props)
 
         const searchParams = new URLSearchParams(props.location.search)
-        const filtersInQuery: FiltersToTypeAndValue = {}
+        let filtersInQuery: FiltersToTypeAndValue = {}
 
-        const allFilters = [...filterTypeKeys, ...negatedFilters]
-        for (const filter of allFilters.filter(key => key !== FilterTypes.case)) {
-            const itemsOfType = searchParams.getAll(filter)
-            for (const item of itemsOfType) {
-                if (isNegatedFilter(filter)) {
-                    filtersInQuery[uniqueId(resolveNegatedFilter(filter))] = {
-                        type: resolveNegatedFilter(filter),
-                        value: item,
-                        editable: false,
-                        negated: true,
-                    }
-                } else {
-                    filtersInQuery[isFiniteFilter(filter) ? filter : uniqueId(filter)] = {
-                        type: filter,
-                        value: item,
-                        editable: false,
-                        negated: false,
-                    }
-                }
-            }
+        const query = searchParams.get('q')
+        if (query !== null && query.length > 0) {
+            const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
+            filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+            this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
@@ -95,11 +90,11 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     /**
      * Adds a new filter to the top-level filtersInQuery state field.
      */
-    private addNewFilter = (filterType: FilterTypes): void => {
+    private addNewFilter = (filterType: FilterType): void => {
         let filterKey: string = uniqueId(filterType)
-        if (isFiniteFilter(filterType)) {
+        if (isSingularFilter(filterType)) {
             filterKey = filterType
-            // We only allow finite-option filters to be specified once per query,
+            // Singular filters can only be specified at most once per query,
             // so we don't need to append a uniqueId.
             if (this.props.filtersInQuery[filterKey]) {
                 // If the finite filter already exists in the query, just make the
@@ -136,15 +131,12 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
 
         // Submit a search with the new values
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            this.props.caseSensitive,
-            undefined,
-            newFiltersInQuery
-        )
+        submitSearch({
+            ...this.props,
+            source: 'nav',
+            query: this.props.navbarSearchState.query,
+            filtersInQuery: newFiltersInQuery,
+        })
     }
 
     private onFilterDeleted = (filterKey: string): void => {
@@ -157,15 +149,12 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
         if (!filterWasEmpty) {
             // Submit a search with the new values
-            submitSearch(
-                this.props.history,
-                this.props.navbarSearchState.query,
-                'nav',
-                this.props.patternType,
-                this.props.caseSensitive,
-                undefined,
-                newFiltersInQuery
-            )
+            submitSearch({
+                ...this.props,
+                source: 'nav',
+                query: this.props.navbarSearchState.query,
+                filtersInQuery: newFiltersInQuery,
+            })
         }
     }
 
@@ -196,21 +185,16 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
     private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
-
-        submitSearch(
-            this.props.history,
-            this.props.navbarSearchState.query,
-            'nav',
-            this.props.patternType,
-            this.props.caseSensitive,
-            undefined,
-            this.props.filtersInQuery
-        )
+        submitSearch({
+            ...this.props,
+            source: 'nav',
+            query: this.props.navbarSearchState.query,
+        })
     }
 
     public render(): JSX.Element | null {
         const isSearchHomepage =
-            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
+            this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
 
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
@@ -250,6 +234,15 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <VersionContextDropdown
+                                    history={this.props.history}
+                                    navbarSearchQuery={this.props.navbarSearchState.query}
+                                    caseSensitive={this.props.caseSensitive}
+                                    patternType={this.props.patternType}
+                                    versionContext={this.props.versionContext}
+                                    setVersionContext={this.props.setVersionContext}
+                                    availableVersionContexts={this.props.availableVersionContexts}
+                                />
                                 <QueryInput
                                     {...this.props}
                                     location={this.props.location}
@@ -262,9 +255,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     caseSensitive={this.props.caseSensitive}
                                     setCaseSensitivity={this.props.setCaseSensitivity}
                                     autoFocus={true}
-                                    filterQuery={this.props.filtersInQuery}
+                                    filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
+                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                                 />
                                 <SearchButton noHelp={true} />
                             </div>
@@ -274,19 +268,21 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
-                <div>
-                    <SelectedFiltersRow
-                        filtersInQuery={this.props.filtersInQuery}
-                        navbarQuery={this.props.navbarSearchState}
-                        onSubmit={this.onSubmit}
-                        onFilterEdited={this.onFilterEdited}
-                        onFilterDeleted={this.onFilterDeleted}
-                        toggleFilterEditable={this.toggleFilterEditable}
-                        toggleFilterNegated={this.toggleFilterNegated}
-                        isHomepage={isSearchHomepage}
-                    />
-                    <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
-                </div>
+                {!this.props.lowProfile && (
+                    <div>
+                        <SelectedFiltersRow
+                            filtersInQuery={this.props.filtersInQuery}
+                            navbarQuery={this.props.navbarSearchState}
+                            onSubmit={this.onSubmit}
+                            onFilterEdited={this.onFilterEdited}
+                            onFilterDeleted={this.onFilterDeleted}
+                            toggleFilterEditable={this.toggleFilterEditable}
+                            toggleFilterNegated={this.toggleFilterNegated}
+                            isHomepage={isSearchHomepage}
+                        />
+                        <AddFilterRow onAddNewFilter={this.addNewFilter} isHomepage={isSearchHomepage} />
+                    </div>
+                )}
             </div>
         )
     }

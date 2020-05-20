@@ -40,9 +40,9 @@ describe('validateFilter()', () => {
             token: { type: 'literal', value: 'yes' },
         },
         {
-            description: 'Invalid quoted value for case filter',
+            description: 'Valid quoted value for case filter',
             filterType: 'case',
-            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no.' },
+            expected: { valid: true },
             token: { type: 'quoted', quotedValue: 'yes' },
         },
         {

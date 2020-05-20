@@ -2,7 +2,7 @@
 
 ## How do I set up redirect URLs in Sourcegraph?
 
-Sometimes URLs in Sourcegraph may change. For example, if an external service configuration is
+Sometimes URLs in Sourcegraph may change. For example, if a code host configuration is
 updated to use a different `repositoryPathPattern`, this will change the repository URLs on
 Sourcegraph. Users may wish to preserve links to the old URLs, and this requires adding redirects.
 

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,10 +11,30 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
+
+func BenchmarkPrometheusFieldName(b *testing.B) {
+	tests := [][3]string{
+		{"Query", "settingsSubject", "settingsSubject"},
+		{"SearchResultMatch", "highlights", "highlights"},
+		{"TreeEntry", "isSingleChild", "isSingleChild"},
+		{"NoMatch", "NotMatch", "other"},
+	}
+	for i, t := range tests {
+		typeName, fieldName, want := t[0], t[1], t[2]
+		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				got := prometheusFieldName(typeName, fieldName)
+				if got != want {
+					b.Fatalf("got %q want %q", got, want)
+				}
+			}
+		})
+	}
+}
 
 func TestRepository(t *testing.T) {
 	resetMocks()
@@ -56,6 +77,7 @@ func TestResolverTo(t *testing.T) {
 		&searchSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{},
+		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)

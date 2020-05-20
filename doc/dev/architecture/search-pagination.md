@@ -20,7 +20,7 @@ Next, the actual pagination begins when `paginatedResults` is called: https://so
 
 For the purposes of clarity in this document, we will use the following terms:
 
-#### "search backend"
+### "search backend"
 
 We use the term "search backend" to describe a function which performs a search for a specific result `type:`. The function can perform an indexed (e.g. zoekt text search or symbol search) or unindexed (e.g. commit/diff search). The list of these at the time of writing are:
 
@@ -31,7 +31,7 @@ We use the term "search backend" to describe a function which performs a search 
 - `searchCommitLogInRepos` for finding `type:commit` results.
 - `performCodemod` for code modification find/replace (read-only) results.
 
-#### "cursor"
+### "cursor"
 
 The cursor is a base64 opaque string from a clients point of view. It contains metadata that is passed back and forth between the client and the server in order for the server to know where the client left off and where the server should begin looking for more results. Its actual definition in code is [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph+type+searchCursor+struct).
 
@@ -42,7 +42,7 @@ Our cursors are considered to be:
 
 Note: "cursor-based pagination" is an established concept and you can find resources describing different cursor-based pagination approaches elsewhere online.
 
-# How search pagination works
+## How search pagination works
 
 ### Shared backends
 

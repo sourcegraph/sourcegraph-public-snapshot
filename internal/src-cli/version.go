@@ -101,6 +101,10 @@ func releaseVersionsPage(url string) ([]*semver.Version, string, error) {
 		return nil, "", err
 	}
 
+	if resp.StatusCode >= 400 {
+		return nil, "", errors.Errorf("Invalid response from GitHub: %s", respContent)
+	}
+
 	var releases []releaseMeta
 	if err := json.Unmarshal(respContent, &releases); err != nil {
 		return nil, "", err

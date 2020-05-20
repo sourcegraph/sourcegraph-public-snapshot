@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -15,18 +16,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 type Resolver struct {
-	store *edb.PermsStore
+	store             *edb.PermsStore
+	repoupdaterClient interface {
+		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
+	}
 }
 
 func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		store: edb.NewPermsStore(db, clock),
+		store:             edb.NewPermsStore(db, clock),
+		repoupdaterClient: repoupdater.DefaultClient,
 	}
 }
 
@@ -60,11 +68,10 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		bindIDSet[bindIDs[i]] = struct{}{}
 	}
 
-	p := &iauthz.RepoPermissions{
-		RepoID:   int32(repoID),
-		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs:  roaring.NewBitmap(),
-		Provider: authz.ProviderSourcegraph,
+	p := &authz.RepoPermissions{
+		RepoID:  int32(repoID),
+		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+		UserIDs: roaring.NewBitmap(),
 	}
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
@@ -99,17 +106,64 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		pendingBindIDs = append(pendingBindIDs, id)
 	}
 
-	// Note: We're not wrapping these two operations in a transaction because PostgreSQL 9.6 (the minimal version
-	// we support) does not support nested transactions. Besides, these two operations will acquire row-level locks
-	// over 4 tables, which could greatly increase chances of causing deadlocks with other methods. Practically,
-	// the result of SetRepoPermissions is much more important because it takes effect immediately. If the call of
-	// the SetRepoPendingPermissions method failed, a retry from client won't hurt.
-	if err = r.store.SetRepoPermissions(ctx, p); err != nil {
-		return nil, err
-	} else if err = r.store.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
+	txs, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
+	accounts := &extsvc.Accounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		AccountIDs:  pendingBindIDs,
+	}
+
+	if err = txs.SetRepoPermissions(ctx, p); err != nil {
+		return nil, errors.Wrap(err, "set repository permissions")
+	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
+		return nil, errors.Wrap(err, "set repository pending permissions")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repoID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserIDArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{userID},
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -140,28 +194,29 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 	var ids *roaring.Bitmap
 	if user != nil {
-		p := &iauthz.UserPermissions{
-			UserID:   user.ID,
-			Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderSourcegraph,
+		p := &authz.UserPermissions{
+			UserID: user.ID,
+			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+			Type:   authz.PermRepos,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
 		ids = p.IDs
 	} else {
-		p := &iauthz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   authz.PermRepos,
+		p := &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      bindID,
+			Perm:        authz.Read, // Note: We currently only support read for repository permissions.
+			Type:        authz.PermRepos,
 		}
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
 	}
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		ids = roaring.NewBitmap()
 	}
 
@@ -178,7 +233,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 		return nil, err
 	}
 
-	return r.store.ListPendingUsers(ctx)
+	return r.store.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
 }
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
@@ -196,17 +251,16 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 
-	p := &iauthz.RepoPermissions{
-		RepoID:   int32(repoID),
-		Perm:     authz.Read, // Note: We currently only support read for repository permissions.
-		Provider: authz.ProviderSourcegraph,
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 	}
 	err = r.store.LoadRepoPermissions(ctx, p)
-	if err != nil && err != edb.ErrPermsNotFound {
+	if err != nil && err != authz.ErrPermsNotFound {
 		return nil, err
 	}
 	// If no row is found, we return an empty list to the consumer.
-	if err == edb.ErrPermsNotFound {
+	if err == authz.ErrPermsNotFound {
 		p.UserIDs = roaring.NewBitmap()
 	}
 
@@ -214,5 +268,97 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
+	}, nil
+}
+
+type permissionsInfoResolver struct {
+	perms     authz.Perms
+	syncedAt  time.Time
+	updatedAt time.Time
+}
+
+func (r *permissionsInfoResolver) Permissions() []string {
+	return strings.Split(strings.ToUpper(r.perms.String()), ",")
+}
+
+func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
+	if r.syncedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.syncedAt}
+}
+
+func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.updatedAt}
+}
+
+func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the repo ID is valid and not soft-deleted.
+	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+	}
+	err = r.store.LoadRepoPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return nil, err
+	}
+
+	if err == authz.ErrPermsNotFound {
+		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	}
+
+	return &permissionsInfoResolver{
+		perms:     p.Perm,
+		syncedAt:  p.SyncedAt,
+		updatedAt: p.UpdatedAt,
+	}, nil
+}
+
+func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can query user permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	userID, err := graphqlbackend.UnmarshalUserID(id)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the user ID is valid and not soft-deleted.
+	if _, err = db.Users.GetByID(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	p := &authz.UserPermissions{
+		UserID: userID,
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+		Type:   authz.PermRepos,
+	}
+	err = r.store.LoadUserPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return nil, err
+	}
+
+	if err == authz.ErrPermsNotFound {
+		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	}
+
+	return &permissionsInfoResolver{
+		perms:     p.Perm,
+		syncedAt:  p.SyncedAt,
+		updatedAt: p.UpdatedAt,
 	}, nil
 }

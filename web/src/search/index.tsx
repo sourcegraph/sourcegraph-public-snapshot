@@ -1,11 +1,10 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    FilterTypes,
-    negatedFilters,
-} from '../../../shared/src/search/interactive/util'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
+import { replaceRange } from '../../../shared/src/util/strings'
+import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { VersionContext } from '../schema/site.schema'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -18,49 +17,9 @@ import {
  * URL query parameter, as this represents the query that appears in the main query input in both modes.
  *
  */
-export function parseSearchURLQuery(
-    query: string,
-    interactiveMode: boolean,
-    navbarQueryOnly?: boolean
-): string | undefined {
-    if (!interactiveMode || navbarQueryOnly) {
-        const searchParams = new URLSearchParams(query)
-        return searchParams.get('q') || undefined
-    }
-
-    return interactiveParseSearchURLQuery(query)
-}
-
-/**
- * Parses the query out of the URL search params for interactive mode. This will parse
- * each individual filter's query parameter (for example, `file=` or `repo=`) in addition
- * to the raw query parameter (`q=`)
- *
- * @param query the URL query parameters
- */
-export function interactiveParseSearchURLQuery(query: string): string | undefined {
+export function parseSearchURLQuery(query: string): string | undefined {
     const searchParams = new URLSearchParams(query)
-    const finalQueryParts = []
-    for (const filterType of [...filterTypeKeys, ...negatedFilters].filter(key => key !== FilterTypes.case)) {
-        // Ignore `case:` filter, since SearchResults and SourcegraphWebApp components will
-        // call `searchURLISCaseSensitive` to check for case sensitivity in both interactive
-        // and non-interacive modes.
-        for (const filterValue of searchParams.getAll(filterType)) {
-            finalQueryParts.push(`${filterType}:${filterValue}`)
-        }
-    }
-
-    const querySearchParams = searchParams.get('q')
-
-    if (querySearchParams) {
-        finalQueryParts.push(querySearchParams)
-    }
-
-    if (finalQueryParts.length > 0) {
-        return finalQueryParts.join(' ')
-    }
-
-    return undefined
+    return searchParams.get('q') || undefined
 }
 
 /**
@@ -80,14 +39,81 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
+/**
+ * Parses the version context out of the URL search params (the 'c' parameter). If the version context
+ * is not present, return undefined.
+ */
+export function parseSearchURLVersionContext(query: string): string | undefined {
+    const searchParams = new URLSearchParams(query)
+    const context = searchParams.get('c')
+    return context ?? undefined
+}
+
 export function searchURLIsCaseSensitive(query: string): boolean {
+    const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
+    if (queryCaseSensitivity) {
+        // if `case:` filter exists in the query, override the existing case: query param
+        return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
+    }
     const searchParams = new URLSearchParams(query)
     const caseSensitive = searchParams.get('case')
-    return caseSensitive === 'yes'
+    return discreteValueAliases.yes.includes(caseSensitive || '')
+}
+
+/**
+ * parseSearchURL takes a URL's search querystring and returns
+ * an object containing:
+ * - the canonical, user-visible query (with `patternType` and `case` filters excluded),
+ * - the effective pattern type, and
+ * - the effective case sensitivity of the query.
+ *
+ * @param urlSearchQuery a URL's query string.
+ */
+export function parseSearchURL(
+    urlSearchQuery: string
+): {
+    query: string | undefined
+    patternType: SearchPatternType | undefined
+    caseSensitive: boolean
+    versionContext: string | undefined
+} {
+    let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
+    let patternType = parseSearchURLPatternType(urlSearchQuery)
+    let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+
+    const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
+    if (patternTypeInQuery) {
+        // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
+        finalQuery = replaceRange(finalQuery, patternTypeInQuery.range)
+        patternType = patternTypeInQuery.value as SearchPatternType
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
+    if (caseInQuery) {
+        // Any `case:` filter in the query should override the case= URL query parameter if it exists.
+        finalQuery = replaceRange(finalQuery, caseInQuery.range)
+
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+            caseSensitive = true
+        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
+            caseSensitive = false
+        }
+    }
+
+    return {
+        query: finalQuery,
+        patternType,
+        caseSensitive,
+        versionContext: parseSearchURLVersionContext(urlSearchQuery),
+    }
+}
+
+export function repoFilterForRepoRev(repoName: string, rev?: string): string {
+    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)}`
 }
 
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+    return `repo:${repoFilterForRepoRev(repoName, rev)} `
 }
 
 function abbreviateOID(oid: string): string {
@@ -124,4 +150,36 @@ export interface InteractiveSearchProps {
 
 export interface SmartSearchFieldProps {
     smartSearchField: boolean
+}
+
+export interface CopyQueryButtonProps {
+    copyQueryButton: boolean
+}
+
+/**
+ * Verifies whether a version context exists on an instance.
+ *
+ * For URLs that have a `c=$X` parameter, we must check that
+ * the version $X actually exists before trying to search with it.
+ *
+ * If the version context doesn't exist or there are no available version contexts, return undefined to
+ * use the default context.
+ *
+ * @param versionContext The version context to verify.
+ * @param availableVersionContexts A list of all version contexts defined in site configuration.
+ */
+export function resolveVersionContext(
+    versionContext: string | undefined,
+    availableVersionContexts: VersionContext[] | undefined
+): string | undefined {
+    if (
+        !versionContext ||
+        !availableVersionContexts ||
+        !availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext) ||
+        versionContext === 'default'
+    ) {
+        return undefined
+    }
+
+    return versionContext
 }

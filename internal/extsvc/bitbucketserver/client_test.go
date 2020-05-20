@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -326,9 +326,6 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	cli, save := NewTestClient(t, "PullRequests", *update)
-	defer save()
-
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
@@ -389,6 +386,10 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			name := "PullRequests-" + strings.Replace(tc.name, " ", "-", -1)
+			cli, save := NewTestClient(t, name, *update)
+			defer save()
+
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
 			}
@@ -603,8 +604,8 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 			name: "success",
 			pr: func() *PullRequest {
 				pr := *pr
-				pr.ID = 32
-				pr.Version = 0
+				pr.ID = 63
+				pr.Version = 2
 				return &pr
 			},
 		},
@@ -711,6 +712,22 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 			checkGolden(t, "LoadPullRequestActivities-"+strings.Replace(tc.name, " ", "-", -1), pr)
 		})
 	}
+}
+
+// NOTE: This test validates that correct repository IDs are returned from the
+// roaring bitmap permissions endpoint. Therefore, the expected results are
+// dependent on the user token supplied. The current golden files are generated
+// from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
+func TestClient_RepoIDs(t *testing.T) {
+	cli, save := NewTestClient(t, "RepoIDs", *update)
+	defer save()
+
+	ids, err := cli.RepoIDs(context.Background(), "READ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checkGolden(t, "RepoIDs", ids)
 }
 
 func checkGolden(t *testing.T, name string, got interface{}) {

@@ -12,7 +12,7 @@ Our minimum supported version is `9.6` which means you must use that for develop
 For Ubuntu 18.04, you will need to add a repository source. Use the
 [PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)
 
-# Initializing PostgreSQL
+## Initializing PostgreSQL
 
 Sourcegraph assumes it has a dedicated PostgreSQL server, or at least that you
 can make global configuration changes, such as changing the timezone. If you
@@ -40,7 +40,7 @@ timezone = 'UTC'
 Finally, restart your database server (mac: `brew services restart postgresql`, recent linux
 probably `service postgresql restart`)
 
-# Configuring PostgreSQL
+## Configuring PostgreSQL
 
 The Sourcegraph server reads PostgreSQL connection configuration from
 the
@@ -73,17 +73,17 @@ on local sockets, which provides reliable identification but must
 be specially configured to authenticate you as a user with a name
 different from your account name.)
 
-# Migrations
+## Migrations
 
 Migrations get applied automatically at application startup - you
 shouldn't need to run anything by hand. For full documentation see
 [migrations/README.md](https://github.com/sourcegraph/sourcegraph/blob/master/migrations/README.md)
 
-# Style guide
+## Style guide
 
 Here is the preferred style going forward. Existing tables may be inconsistent with this style.
 
-## Avoiding nullable columns
+### Avoiding nullable columns
 
 Use a `NOT NULL` constraint whenever possible to enforce having a value on every column. `NULL` values can easily introduce errors when not handled correctly, and for many fields it makes sense to always have a value anyways.
 
@@ -103,7 +103,7 @@ if s.Valid {
 }
 ```
 
-## Recommended columns for all tables
+### Recommended columns for all tables
 
 - `id` auto increment primary key.
 - `created_at` not null default `now()` set when a row is first inserted and never updated after that.
@@ -124,7 +124,7 @@ CREATE TABLE "widgets" (
 );
 ```
 
-## Hard vs soft deletes
+### Hard vs soft deletes
 
 Definitions:
 
@@ -185,7 +185,7 @@ Alternatively, we could remove the unique constraint on `user_id` and `org_id` a
 
 The decision here can be made on a table by table basis.
 
-## Use foreign keys
+### Use foreign keys
 
 If you have a column that references another column in the database, add a foreign key constraint.
 
@@ -201,17 +201,17 @@ Foreign key constraints should not cascade deletes for a few reasons:
 
 Instead of cascading deletes, applications should explicitly delete the rows that would otherwise get deleted if cascading deletes were enabled.
 
-## Table names
+### Table names
 
 Tables are plural (e.g. repositories, users, comments, etc.).
 
 Join tables should be named based on the two tables being joined (e.g. `foo_bar` joins `foo` and `bar`).
 
-## Validation
+### Validation
 
 To the extent that certain fields require validation (e.g. username) we should perform that validation in client AND EITHER the database when possible, OR the graphql api. This results in the best experience for the client, and protects us from corrupt data.
 
-## Triggers
+### Triggers
 
 Because a trigger resides in the database and anyone who has the required privilege can use it, a trigger lets you write a set of SQL statements that multiple applications can use. It lets you avoid redundant code when multiple programs need to perform the same database operation.
 
@@ -232,4 +232,3 @@ A test like this ought to exercise your data access module, regardless of the de
 Here's an example of how you could [structure such tests](https://github.com/sourcegraph/sourcegraph/blob/da3743ece358fbe6709f07e95d5fd97bd554e047/cmd/repo-updater/repos/integration_test.go#L17).
 
 If you're uncertain about using triggers as part of your work, do some research before committing to a solution and don't hesitate to discuss it with your peers.
-

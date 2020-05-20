@@ -29,6 +29,29 @@ const GitLabSchemaJSON = `{
       "type": "string",
       "minLength": 1
     },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to GitLab.",
+      "title": "GitLabRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 36000,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 36000
+      }
+    },
     "gitURLType": {
       "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
       "type": "string",
@@ -54,7 +77,7 @@ const GitLabSchemaJSON = `{
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to mirror.",
             "type": "string",
-            "pattern": "^[\\w-]+(/[\\w.-]+)+$"
+            "pattern": "^[\\w.-]+(/[\\w.-]+)+$"
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
@@ -79,7 +102,7 @@ const GitLabSchemaJSON = `{
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
             "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
+            "pattern": "^[\\w.-]+(/[\\w.-]+)+$"
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to exclude from mirroring.",
@@ -174,6 +197,16 @@ const GitLabSchemaJSON = `{
         "type": {
           "type": "string",
           "const": "oauth"
+        },
+        "minBatchingThreshold": {
+          "description": "The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 200
+        },
+        "maxBatchRequests": {
+          "description": "The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 300
         }
       }
     },

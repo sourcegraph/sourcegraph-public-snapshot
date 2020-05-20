@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -44,6 +45,39 @@ type Review struct {
 	SubmittedAt time.Time
 }
 
+// CheckSuite represents the status of a checksuite
+type CheckSuite struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+	ReceivedAt time.Time
+	// When the suite was received via a webhook
+	CheckRuns struct{ Nodes []CheckRun }
+}
+
+func (c *CheckSuite) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
+}
+
+// CheckRun represents the status of a checkrun
+type CheckRun struct {
+	ID string
+	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
+	Status string
+	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
+	Conclusion string
+	// When the run was received via a webhook
+	ReceivedAt time.Time
+}
+
+func (c *CheckRun) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
+	return strconv.FormatUint(fnv1.HashString64(key), 16)
+}
+
 // A Commit in a Repository.
 type Commit struct {
 	OID             string
@@ -57,19 +91,37 @@ type Commit struct {
 
 // A Status represents a Commit status.
 type Status struct {
-	Contexts []StatusContext // The individual status contexts for this commit.
-	State    string          // The combined commit status.
+	State    string
+	Contexts []Context
 }
 
-// A StatusContext represents an individual commit status context
-type StatusContext struct {
-	AvatarURL   string
+// CommitStatus represents the state of a commit context received
+// via the StatusEvent webhook
+type CommitStatus struct {
+	SHA        string
+	Context    string
+	State      string
+	ReceivedAt time.Time
+}
+
+func (c *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
+}
+
+// Context represent the individual commit status context
+type Context struct {
+	ID          string
 	Context     string
 	Description string
 	State       string
-	TargetURL   string
-	CreatedAt   time.Time
-	Creator     Actor
+}
+
+type Label struct {
+	ID          string
+	Color       string
+	Description string
+	Name        string
 }
 
 // PullRequest is a GitHub pull request.
@@ -87,7 +139,9 @@ type PullRequest struct {
 	Number        int64
 	Author        Actor
 	Participants  []Actor
+	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
+	Commits       struct{ Nodes []CommitWithChecks }
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -190,6 +244,25 @@ type PullRequestReviewThread struct {
 	Comments []*PullRequestReviewComment
 }
 
+type PullRequestCommit struct {
+	Commit Commit
+}
+
+func (p PullRequestCommit) Key() string {
+	return p.Commit.OID
+}
+
+// CommitWithChecks represents check/build status of a commit. When we load the PR
+// from GitHub we fetch the most recent commit into this type to check build status.
+type CommitWithChecks struct {
+	Commit struct {
+		OID           string
+		CheckSuites   struct{ Nodes []CheckSuite }
+		Status        Status
+		CommittedDate time.Time
+	}
+}
+
 // PullRequestReviewComment represents a review comment on a given pull request.
 type PullRequestReviewComment struct {
 	DatabaseID          int64
@@ -277,6 +350,13 @@ func (e ReviewRequestedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
 }
 
+// ReviewerDeleted returns true if both RequestedReviewer and RequestedTeam are
+// blank, indicating that one or the other has been deleted.
+// We use it to drop the event.
+func (e ReviewRequestedEvent) ReviewerDeleted() bool {
+	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor
@@ -287,6 +367,23 @@ type UnassignedEvent struct {
 // Key is a unique key identifying this event in the context of its pull request.
 func (e UnassignedEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
+}
+
+// LabelEvent represents a label being added or removed from a pull request
+type LabelEvent struct {
+	Actor     Actor
+	Label     Label
+	CreatedAt time.Time
+	// Will be true if we had an "unlabeled" event
+	Removed bool
+}
+
+func (e LabelEvent) Key() string {
+	action := "add"
+	if e.Removed {
+		action = "delete"
+	}
+	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
 }
 
 // TimelineItem is a union type of all supported pull request timeline items.
@@ -328,6 +425,8 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(PullRequestReviewComment)
 	case "PullRequestReviewThread":
 		i.Item = new(PullRequestReviewThread)
+	case "PullRequestCommit":
+		i.Item = new(PullRequestCommit)
 	case "ReopenedEvent":
 		i.Item = new(ReopenedEvent)
 	case "ReviewDismissedEvent":
@@ -338,12 +437,16 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(ReviewRequestedEvent)
 	case "UnassignedEvent":
 		i.Item = new(UnassignedEvent)
+	case "LabeledEvent":
+		i.Item = new(LabelEvent)
+	case "UnlabeledEvent":
+		i.Item = &LabelEvent{Removed: true}
 	default:
 		return errors.Errorf("unknown timeline item type %q", i.Type)
 	}
 
 	if len(v.Item) > 0 {
-		data = []byte(v.Item)
+		data = v.Item
 	}
 
 	return json.Unmarshal(data, i.Item)
@@ -386,7 +489,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -438,7 +541,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -480,7 +583,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -562,7 +665,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		TimelineItems struct{ Nodes []TimelineItem }
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return err
 	}
@@ -590,10 +693,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
 		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
 	))
-	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
-	q.WriteString("}\n")
-	q.WriteString("}\n")
-	q.WriteString("}")
+	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
 	var results struct {
 		Repository struct {
@@ -607,7 +707,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		}
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -622,138 +722,282 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	return &pr, nil
 }
 
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
 const pullRequestFragments = `
-fragment actor on Actor { avatarUrl, login, url }
+fragment actor on Actor {
+  avatarUrl
+  login
+  url
+}
+
+fragment label on Label {
+  name
+  color
+  description
+  id
+}
+
 fragment commit on Commit {
-	oid, message, messageHeadline, committedDate, pushedDate, url
-	committer {
-	avatarUrl, email, name
-	user { ...actor }
-	}
+  oid
+  message
+  messageHeadline
+  committedDate
+  pushedDate
+  url
+  committer {
+    avatarUrl
+    email
+    name
+    user {
+      ...actor
+    }
+  }
 }
+
+fragment commitWithChecks on Commit {
+  oid
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
+  checkSuites(last: 20){
+    nodes {
+      id
+      status
+      conclusion
+      checkRuns(last: 20){
+        nodes{
+          id
+          status
+          conclusion
+        }
+      }
+    }
+  }
+  committedDate
+}
+
+fragment prCommit on PullRequestCommit {
+  commit {
+    ...commitWithChecks
+  }
+}
+
 fragment review on PullRequestReview {
-	databaseId
-	author { ...actor }
-	authorAssociation
-	body
-	state
-	url
-	createdAt
-	updatedAt
-	commit { ...commit }
-	includesCreatedEdit
+  databaseId
+  author {
+    ...actor
+  }
+  authorAssociation
+  body
+  state
+  url
+  createdAt
+  updatedAt
+  commit {
+    ...commit
+  }
+  includesCreatedEdit
 }
+
 fragment pr on PullRequest {
-	id, title, body, state, url, number, createdAt, updatedAt
-	headRefOid, baseRefOid, headRefName, baseRefName
-	author { ...actor }
-	participants(first: 100) { nodes { ...actor } }
-	timelineItems(
-	first: 250
-	itemTypes: [
-		ASSIGNED_EVENT
-		CLOSED_EVENT
-		ISSUE_COMMENT
-		RENAMED_TITLE_EVENT
-		MERGED_EVENT
-		PULL_REQUEST_REVIEW
-		PULL_REQUEST_REVIEW_THREAD
-		REOPENED_EVENT
-		REVIEW_DISMISSED_EVENT
-		REVIEW_REQUEST_REMOVED_EVENT
-		REVIEW_REQUESTED_EVENT
-		UNASSIGNED_EVENT
-	]
-	) {
-	nodes {
-		__typename
-		... on AssignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-		... on ClosedEvent {
-		actor { ...actor }
-		createdAt
-		url
-		}
-		... on IssueComment {
-		databaseId
-		author { ...actor }
-		authorAssociation
-		body
-		createdAt
-		editor { ...actor }
-		url
-		updatedAt
-		includesCreatedEdit
-		publishedAt
-		}
-		... on RenamedTitleEvent {
-		actor { ...actor }
-		previousTitle
-		currentTitle
-		createdAt
-		}
-		... on MergedEvent {
-		actor { ...actor }
-		mergeRefName
-		url
-		commit { ...commit }
-		createdAt
-		}
-		... on PullRequestReview {
-		...review
-		}
-		... on PullRequestReviewThread {
-		comments(last: 100) {
-			nodes {
-			databaseId
-			author { ...actor }
-			authorAssociation
-			editor { ...actor }
-			commit { ...commit }
-			body
-			state
-			url
-			createdAt
-			updatedAt
-			includesCreatedEdit
-			}
-		}
-		}
-		... on ReopenedEvent {
-		actor { ...actor }
-		createdAt
-		}
-		... on ReviewDismissedEvent {
-		actor { ...actor }
-		review { ...review }
-		dismissalMessage
-		createdAt
-		}
-		... on ReviewRequestRemovedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on ReviewRequestedEvent {
-		actor { ...actor }
-		requestedReviewer { ...actor }
-		requestedTeam: requestedReviewer {
-			... on Team { name url avatarUrl }
-		}
-		createdAt
-		}
-		... on UnassignedEvent {
-		actor { ...actor }
-		assignee { ...actor }
-		createdAt
-		}
-	}
-	}
+  id
+  title
+  body
+  state
+  url
+  number
+  createdAt
+  updatedAt
+  headRefOid
+  baseRefOid
+  headRefName
+  baseRefName
+  author {
+    ...actor
+  }
+  participants(first: 100) {
+    nodes {
+      ...actor
+    }
+  }
+  labels(first: 100) {
+    nodes {
+      ...label
+    }
+  }
+  commits(last: 1) {
+    nodes {
+      ...prCommit
+    }
+  }
+  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+    nodes {
+      __typename
+      ... on AssignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ClosedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+        url
+      }
+      ... on IssueComment {
+        databaseId
+        author {
+          ...actor
+        }
+        authorAssociation
+        body
+        createdAt
+        editor {
+          ...actor
+        }
+        url
+        updatedAt
+        includesCreatedEdit
+        publishedAt
+      }
+      ... on RenamedTitleEvent {
+        actor {
+          ...actor
+        }
+        previousTitle
+        currentTitle
+        createdAt
+      }
+      ... on MergedEvent {
+        actor {
+          ...actor
+        }
+        mergeRefName
+        url
+        commit {
+          ...commit
+        }
+        createdAt
+      }
+      ... on PullRequestReview {
+        ...review
+      }
+      ... on PullRequestReviewThread {
+        comments(last: 100) {
+          nodes {
+            databaseId
+            author {
+              ...actor
+            }
+            authorAssociation
+            editor {
+              ...actor
+            }
+            commit {
+              ...commit
+            }
+            body
+            state
+            url
+            createdAt
+            updatedAt
+            includesCreatedEdit
+          }
+        }
+      }
+      ... on ReopenedEvent {
+        actor {
+          ...actor
+        }
+        createdAt
+      }
+      ... on ReviewDismissedEvent {
+        actor {
+          ...actor
+        }
+        review {
+          ...review
+        }
+        dismissalMessage
+        createdAt
+      }
+      ... on ReviewRequestRemovedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on ReviewRequestedEvent {
+        actor {
+          ...actor
+        }
+        requestedReviewer {
+          ...actor
+        }
+        requestedTeam: requestedReviewer {
+          ... on Team {
+            name
+            url
+            avatarUrl
+          }
+        }
+        createdAt
+      }
+      ... on UnassignedEvent {
+        actor {
+          ...actor
+        }
+        assignee {
+          ...actor
+        }
+        createdAt
+      }
+      ... on LabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+      ... on UnlabeledEvent {
+        actor {
+          ...actor
+        }
+        label {
+          ...label
+        }
+        createdAt
+      }
+      ... on PullRequestCommit {
+        commit {
+          ...commit
+        }
+      }
+    }
+  }
 }
 `

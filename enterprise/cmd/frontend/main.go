@@ -20,17 +20,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
-	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
 
 func main() {
@@ -39,17 +40,21 @@ func main() {
 	initLSIFEndpoints()
 
 	// Connect to the database.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if err := shared.InitDB(); err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
-	initAuthz(dbconn.Global)
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	eauthz.Init(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				authzProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -61,19 +66,37 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
 
-	a8nStore := a8n.NewStoreWithClock(dbconn.Global, clock)
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
+
+	// Migrate all patches in the database to cache their diff stats.
+	// Since we validate each Patch's diff before we store it in the database,
+	// this migration should never fail, except in exceptional circumstances
+	// (database not reachable), in which case it's okay to exit.
+	//
+	// This can be removed in 3.19.
+	err = campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore)
+	if err != nil {
+		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
+	}
+
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	githubWebhook := a8n.NewGitHubWebhook(a8nStore, repositories, clock)
-	bitbucketServerWebhook := a8n.NewBitbucketServerWebhook(a8nStore, repositories, clock)
+	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
 
-	go bitbucketServerWebhook.Upsert(30 * time.Second)
+	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		clock,
+		bitbucketWebhookName,
+	)
 
-	go a8n.RunChangesetJobs(ctx, a8nStore, clock, gitserver.DefaultClient, 5*time.Second)
+	go bitbucketServerWebhook.SyncWebhooks(1 * time.Minute)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
@@ -114,7 +137,7 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
 	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
 		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {

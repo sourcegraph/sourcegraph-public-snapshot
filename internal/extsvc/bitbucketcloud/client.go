@@ -9,15 +9,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/time/rate"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
@@ -36,6 +37,13 @@ const (
 	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
 	RateLimitMaxBurstRequests  = 500
 )
+
+// Global limiter cache so that we reuse the same rate limiter for
+// the same code host, even between config changes.
+// This is a failsafe to protect bitbucket as they do not impose their own
+// rate limiting.
+var limiterMu sync.Mutex
+var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
 type Client struct {
@@ -71,10 +79,19 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	l, ok := limiterCache[apiURL.String()]
+	if !ok {
+		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
+		limiterCache[apiURL.String()] = l
+	}
+
 	return &Client{
 		httpClient: httpClient,
 		URL:        apiURL,
-		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
+		RateLimit:  l,
 	}
 }
 
@@ -140,7 +157,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Cloud"),
 		nethttp.ClientTrace(false))

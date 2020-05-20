@@ -193,13 +193,17 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     </button>
                     <Link
                         className="btn btn-secondary ml-1 e2e-create-access-token-cancel"
-                        to={`${this.props.match.url.replace(/\/new$/, '')}}`}
+                        to={this.props.match.url.replace(/\/new$/, '')}
                     >
                         Cancel
                     </Link>
                 </Form>
                 {isErrorLike(this.state.creationOrError) && (
-                    <ErrorAlert className="invite-form__alert" error={this.state.creationOrError} />
+                    <ErrorAlert
+                        className="invite-form__alert"
+                        error={this.state.creationOrError}
+                        history={this.props.history}
+                    />
                 )}
             </div>
         )

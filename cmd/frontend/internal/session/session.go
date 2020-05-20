@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/boj/redistore"
 	"github.com/gorilla/sessions"
@@ -63,9 +63,9 @@ func SetSessionStore(s sessions.Store) {
 	sessionStore = s
 }
 
-// sessionsStore wraps another sessions.Store to dynamically set the value
-// of a session.Options.Secure field to what is returned by the secure
-// closure at invocation time.
+// sessionsStore wraps another sessions.Store to dynamically set the values
+// of the session.Options.Secure and session.Options.SameSite fields to what
+// is returned by the secure closure at invocation time.
 type sessionsStore struct {
 	sessions.Store
 	secure func() bool
@@ -73,23 +73,24 @@ type sessionsStore struct {
 
 // Get returns a cached session, setting the secure cookie option dynamically.
 func (st *sessionsStore) Get(r *http.Request, name string) (s *sessions.Session, err error) {
-	defer st.setSecureOption(s)
+	defer st.setSecureOptions(s)
 	return st.Store.Get(r, name)
 }
 
 // New creates and returns a new session with the secure cookie setting option set
 // dynamically.
 func (st *sessionsStore) New(r *http.Request, name string) (s *sessions.Session, err error) {
-	defer st.setSecureOption(s)
+	defer st.setSecureOptions(s)
 	return st.Store.New(r, name)
 }
 
-func (st *sessionsStore) setSecureOption(s *sessions.Session) {
+func (st *sessionsStore) setSecureOptions(s *sessions.Session) {
 	if s != nil {
 		if s.Options == nil {
 			s.Options = new(sessions.Options)
 		}
-		s.Options.Secure = st.secure()
+
+		setSessionSecureOptions(s.Options, st.secure())
 	}
 }
 
@@ -101,13 +102,33 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	}
 
 	rstore.Options.Path = "/"
-	rstore.Options.Secure = secureCookie()
 	rstore.Options.HttpOnly = true
 
+	setSessionSecureOptions(rstore.Options, secureCookie())
 	return &sessionsStore{
 		Store:  rstore,
 		secure: secureCookie,
 	}
+}
+
+// setSessionSecureOptions set the values of the session.Options.Secure
+// and session.Options.SameSite fields depending on the value of the
+// secure field.
+func setSessionSecureOptions(opts *sessions.Options, secure bool) {
+	// if Sourcegraph is running via:
+	//  * HTTP:  set "SameSite=Lax" in session cookie - users can sign in, but won't be able to use the
+	// 			 browser extension. Note that users will be able to use the browser extension once they
+	// 			 configure their instance to use HTTPS.
+	// 	* HTTPS: set "SameSite=None" in session cookie - users can sign in, and will be able to use the
+	// 			 browser extension.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6167 for more information.
+	opts.SameSite = http.SameSiteLaxMode
+	if secure {
+		opts.SameSite = http.SameSiteNoneMode
+	}
+
+	opts.Secure = secure
 }
 
 // Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be
@@ -260,7 +281,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // - The request originates from the same origin. -OR-
 //
 // - The request is cross-origin but passed the CORS preflight check (because otherwise the
-//   preflight OPTIONS reponse from secureHeadersMiddleware would have caused the browser to refuse
+//   preflight OPTIONS response from secureHeadersMiddleware would have caused the browser to refuse
 //   to send this HTTP request).
 //
 // To determine if it's a non-simple CORS request, it checks for the presence of either

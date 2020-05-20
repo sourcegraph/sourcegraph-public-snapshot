@@ -1,8 +1,9 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { of, queueScheduler, Observable } from 'rxjs'
+import { of, Observable } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { createMemoryHistory } from 'history'
 
 jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
 jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
@@ -12,7 +13,15 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
-            renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
+            renderer
+                .create(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={false}
+                        history={createMemoryHistory()}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -26,7 +35,13 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
                     .toJSON()
             ).toMatchSnapshot()
         })
@@ -36,9 +51,9 @@ describe('StatusMessagesNavItem', () => {
                 renderer
                     .create(
                         <StatusMessagesNavItem
-                            scheduler={queueScheduler}
                             fetchMessages={fetchMessages}
                             isSiteAdmin={true}
+                            history={createMemoryHistory()}
                         />
                     )
                     .toJSON()
@@ -56,8 +71,9 @@ describe('StatusMessagesNavItem', () => {
                 displayName: 'GitHub.com',
                 kind: GQL.ExternalServiceKind.GITHUB,
                 config: '{}',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                webhookURL: null,
                 warning: '',
             },
         }
@@ -66,7 +82,13 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
                     .toJSON()
             ).toMatchSnapshot()
         })
@@ -76,9 +98,9 @@ describe('StatusMessagesNavItem', () => {
                 renderer
                     .create(
                         <StatusMessagesNavItem
-                            scheduler={queueScheduler}
                             fetchMessages={fetchMessages}
                             isSiteAdmin={true}
+                            history={createMemoryHistory()}
                         />
                     )
                     .toJSON()
@@ -96,7 +118,13 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
                     .toJSON()
             ).toMatchSnapshot()
         })
@@ -106,9 +134,9 @@ describe('StatusMessagesNavItem', () => {
                 renderer
                     .create(
                         <StatusMessagesNavItem
-                            scheduler={queueScheduler}
                             fetchMessages={fetchMessages}
                             isSiteAdmin={true}
+                            history={createMemoryHistory()}
                         />
                     )
                     .toJSON()

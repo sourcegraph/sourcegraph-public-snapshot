@@ -53,9 +53,7 @@ export function createSettingsService<S extends Settings = Settings>({
     return {
         data: data as Subscribable<SettingsCascadeOrError<S>>, // cast to add type parameter S
         update: async edit => {
-            const settings = await from(data)
-                .pipe(first())
-                .toPromise()
+            const settings = await from(data).pipe(first()).toPromise()
             if (!isSettingsValid(settings)) {
                 throw new Error('invalid settings (internal error)')
             }

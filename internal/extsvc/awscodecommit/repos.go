@@ -22,8 +22,8 @@ type Repository struct {
 	LastModified *time.Time // the last modified date of the repository
 }
 
-func (c *Client) repositoryCacheKey(arn string) (string, error) {
-	key, err := c.cacheKeyPrefix()
+func (c *Client) repositoryCacheKey(ctx context.Context, arn string) (string, error) {
+	key, err := c.cacheKeyPrefix(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func (c *Client) GetRepository(ctx context.Context, arn string) (*Repository, er
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
 func (c *Client) cachedGetRepository(ctx context.Context, arn string) (*Repository, error) {
-	key, err := c.repositoryCacheKey(arn)
+	key, err := c.repositoryCacheKey(ctx, arn)
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +81,8 @@ func (c *Client) cachedGetRepository(ctx context.Context, arn string) (*Reposito
 }
 
 var reposCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "awscodecommit_cache_hit",
-	Help:      "Counts cache hits and misses for AWS CodeCommit repo metadata.",
+	Name: "src_repos_awscodecommit_cache_hit",
+	Help: "Counts cache hits and misses for AWS CodeCommit repo metadata.",
 }, []string{"type"})
 
 func init() {
@@ -211,7 +209,7 @@ func (c *Client) getRepositories(ctx context.Context, svc *codecommit.Client, re
 	for i, repo := range getResult.Repositories {
 		repos[i] = fromRepoMetadata(&repo)
 
-		key, err := c.repositoryCacheKey(*repo.Arn)
+		key, err := c.repositoryCacheKey(ctx, *repo.Arn)
 		if err != nil {
 			return nil, err
 		}

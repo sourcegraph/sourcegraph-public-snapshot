@@ -18,12 +18,14 @@ import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 interface Props extends OrgAreaPageProps {
     authenticatedUser: GQL.IUser
 
     /** Called when the viewer responds to the invitation. */
     onDidRespondToInvitation: () => void
+    history: H.History
 }
 
 interface State {
@@ -157,7 +159,11 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     </button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
-                                    <ErrorAlert className="my-2" error={this.state.submissionOrError} />
+                                    <ErrorAlert
+                                        className="my-2"
+                                        error={this.state.submissionOrError}
+                                        history={this.props.history}
+                                    />
                                 )}
                                 {this.state.submissionOrError === 'loading' && (
                                     <LoadingSpinner className="icon-inline" />

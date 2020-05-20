@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {

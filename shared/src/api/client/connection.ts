@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
@@ -13,7 +13,7 @@ import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientRoots } from './api/roots'
+import { ClientWorkspace } from './api/workspace'
 import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
@@ -25,7 +25,8 @@ import {
     ShowNotificationParams,
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
-import { EditorUpdate } from './services/editorService'
+import { ViewerUpdate } from './services/viewerService'
+import { registerComlinkTransferHandlers } from '../util'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -50,7 +51,7 @@ export interface ActivatedExtension {
 }
 
 /**
- * @param endpoint The Worker object to communicate with
+ * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
@@ -61,8 +62,10 @@ export async function createExtensionHostClientConnection(
 
     // MAIN THREAD
 
+    registerComlinkTransferHandlers()
+
     /** Proxy to the exposed extension host API */
-    const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
+    const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
     const proxy = await initializeExtensionHost(initData)
 
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
@@ -71,14 +74,10 @@ export async function createExtensionHostClientConnection(
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
-    // Sync models and editors to the extension host
+    // Sync models and viewers to the extension host
     subscription.add(
         merge(
-            of(
-                [...services.model.models.entries()].map(
-                    ([uri, model]): TextModelUpdate => ({ type: 'added', uri, ...model })
-                )
-            ),
+            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
             from(services.model.modelUpdates)
         )
             .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
@@ -87,17 +86,17 @@ export async function createExtensionHostClientConnection(
     subscription.add(
         merge(
             of(
-                [...services.editor.editors.entries()].map(
-                    ([editorId, editorData]): EditorUpdate => ({
+                [...services.viewer.viewers.entries()].map(
+                    ([viewerId, viewerData]): ViewerUpdate => ({
                         type: 'added',
-                        editorId,
-                        editorData,
+                        viewerId,
+                        viewerData,
                     })
                 )
             ),
-            from(services.editor.editorUpdates)
+            from(services.viewer.viewerUpdates)
         )
-            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
+            .pipe(concatMap(viewerUpdates => proxy.windows.$acceptWindowData(viewerUpdates)))
             .subscribe()
     )
 
@@ -118,7 +117,12 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
+    const clientViews = new ClientViews(
+        services.panelViews,
+        services.textDocumentLocations,
+        services.viewer,
+        services.view
+    )
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)
@@ -132,8 +136,8 @@ export async function createExtensionHostClientConnection(
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
-    subscription.add(new ClientRoots(proxy.roots, services.workspace))
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
+    subscription.add(new ClientWorkspace(proxy.workspace, services.workspace))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 

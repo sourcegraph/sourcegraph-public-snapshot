@@ -4,6 +4,7 @@ import * as util from 'util'
 import terminalSize from 'term-size'
 import stringWidth from 'string-width'
 import { identity } from 'lodash'
+import { asError } from '../util/errors'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -50,18 +51,19 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                             try {
                                 const json = await (
                                     await argHandle.evaluateHandle(value =>
-                                        JSON.stringify(value, (key, value) => {
+                                        JSON.stringify(value, (key, value: unknown) => {
                                             // Check if value is error, because Errors are not serializable but commonly logged
-                                            if (Object.prototype.toString.call(value) === '[object Error]') {
+                                            if (value instanceof Error) {
                                                 return value.stack
                                             }
                                             return value
                                         })
                                     )
                                 ).jsonValue()
-                                return JSON.parse(json)
+                                const parsed: unknown = JSON.parse(json)
+                                return parsed
                             } catch (err) {
-                                return chalk.italic(`[Could not serialize: ${err.message}]`)
+                                return chalk.italic(`[Could not serialize: ${asError(err).message}]`)
                             }
                         })
                     )

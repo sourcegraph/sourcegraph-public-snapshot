@@ -5,41 +5,36 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
 type HandlerMetrics struct {
-	ServeHTTP *repos.OperationMetrics
+	ServeHTTP *metrics.OperationMetrics
 }
 
 // NewHandlerMetrics returns HandlerMetrics that need to be registered
 // in a Prometheus registry.
 func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
-		ServeHTTP: &repos.OperationMetrics{
+		ServeHTTP: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_duration_seconds",
-				Help:      "Time spent handling an HTTP request",
+				Name: "src_repoupdater_http_handler_duration_seconds",
+				Help: "Time spent handling an HTTP request",
 			}, []string{"path", "code"}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_requests_total",
-				Help:      "Total number of HTTP requests",
+				Name: "src_repoupdater_http_handler_requests_total",
+				Help: "Total number of HTTP requests",
 			}, []string{"path", "code"}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_errors_total",
-				Help:      "Total number of HTTP error responses (code >= 400)",
+				Name: "src_repoupdater_http_handler_errors_total",
+				Help: "Total number of HTTP error responses (code >= 400)",
 			}, []string{"path", "code"}),
 		},
 	}
@@ -53,12 +48,11 @@ func ObservedHandler(
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return nethttp.Middleware(tr,
+		return ot.MiddlewareWithTracer(tr,
 			&observedHandler{
 				next:    next,
 				log:     log,
 				metrics: m,
-				tracer:  tr,
 			},
 			nethttp.OperationNameFunc(func(r *http.Request) string {
 				return "HTTP " + r.Method + ":" + r.URL.Path
@@ -75,7 +69,6 @@ type observedHandler struct {
 	next    http.Handler
 	log     log15.Logger
 	metrics HandlerMetrics
-	tracer  opentracing.Tracer
 }
 
 func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

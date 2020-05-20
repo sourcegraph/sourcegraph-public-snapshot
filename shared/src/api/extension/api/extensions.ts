@@ -1,10 +1,10 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
-export interface ExtExtensionsAPI extends ProxyValue {
+export interface ExtExtensionsAPI extends ProxyMarked {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }
@@ -13,8 +13,8 @@ export interface ExtExtensionsAPI extends ProxyValue {
 declare const self: any
 
 /** @internal */
-export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     /** Extensions' deactivate functions. */
     private extensionDeactivate = new Map<string, () => void | Promise<void>>()
@@ -35,14 +35,15 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
         // Load the extension bundle and retrieve the extension entrypoint module's exports on
         // the global `module` property.
         try {
-            self.exports = {}
-            self.module = {}
+            const exports = {}
+            self.exports = exports
+            self.module = { exports }
             self.importScripts(bundleURL)
         } catch (err) {
             throw new Error(
                 `error thrown while executing extension ${JSON.stringify(
                     extensionID
-                )} bundle (in importScripts of ${bundleURL}): ${err}`
+                )} bundle (in importScripts of ${bundleURL}): ${String(err)}`
             )
         }
         const extensionExports = self.module.exports
@@ -82,8 +83,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
                 error = asError(error)
                 throw Object.assign(
                     new Error(
-                        `error during extension ${JSON.stringify(extensionID)} activate function: ${error.stack ||
-                            error}`
+                        `error during extension ${JSON.stringify(extensionID)} activate function: ${String(
+                            error.stack || error
+                        )}`
                     ),
                     { error }
                 )

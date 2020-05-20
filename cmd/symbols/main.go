@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -15,10 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
@@ -26,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -43,7 +41,7 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init()
 
-	symbols.MustRegisterSqlite3WithPcre()
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	go debugserver.Start()
 
@@ -51,14 +49,8 @@ func main() {
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
-		NewParser: func() (ctags.Parser, error) {
-			parser, err := ctags.NewParser(ctags.GetCommand())
-			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("command: %s", ctags.GetCommand()))
-			}
-			return parser, nil
-		},
-		Path: cacheDir,
+		NewParser: ctags.New,
+		Path:      cacheDir,
 	}
 	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
 		log.Fatalf("Invalid SYMBOLS_CACHE_SIZE_MB: %s", err)
@@ -73,7 +65,7 @@ func main() {
 	if err := service.Start(); err != nil {
 		log.Fatalln("Start:", err)
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service.Handler())
+	handler := ot.Middleware(service.Handler())
 
 	host := ""
 	if env.InsecureDev {

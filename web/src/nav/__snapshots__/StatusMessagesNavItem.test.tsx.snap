@@ -27,17 +27,21 @@ exports[`StatusMessagesNavItem no messages 1`] = `
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudCheckIcon
-          className="icon-inline mr-1"
-        />
-        Repositories up to date
-      </h4>
-      <p>
-        All repositories hosted on the configured code hosts are synced.
-      </p>
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+      >
+        <h4>
+          <CloudCheckIcon
+            className="icon-inline mr-1"
+          />
+          Repositories up to date
+        </h4>
+        <p>
+          All repositories hosted on the configured code hosts are synced.
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -70,17 +74,21 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudSyncIcon
-          className="icon-inline mr-1"
-        />
-        Repositories cloning
-      </h4>
-      <p>
-        Currently cloning repositories...
-      </p>
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
+      >
+        <h4>
+          <CloudSyncIcon
+            className="icon-inline mr-1"
+          />
+          Repositories cloning
+        </h4>
+        <p>
+          Currently cloning repositories...
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -113,27 +121,31 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudSyncIcon
-          className="icon-inline mr-1"
-        />
-        Repositories cloning
-      </h4>
-      <p>
-        Currently cloning repositories...
-      </p>
-      <p
-        className="status-messages-nav-item__entry-link"
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
       >
-        <a
-          href="/site-admin/external-services"
-          onClick={[Function]}
+        <h4>
+          <CloudSyncIcon
+            className="icon-inline mr-1"
+          />
+          Repositories cloning
+        </h4>
+        <p>
+          Currently cloning repositories...
+        </p>
+        <p
+          className="status-messages-nav-item__entry-link"
         >
-          Configure synced repositories
-        </a>
-      </p>
+          <a
+            href="/site-admin/external-services"
+            onClick={[Function]}
+          >
+            Configure synced repositories
+          </a>
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -166,17 +178,21 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudAlertIcon
-          className="icon-inline mr-1"
-        />
-        Syncing repositories from external service "GitHub.com" failed:
-      </h4>
-      <p>
-        failed to list organization kubernetes repos: request returned status 404: Not Found
-      </p>
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      >
+        <h4>
+          <CloudAlertIcon
+            className="icon-inline mr-1"
+          />
+          Syncing repositories from external service "GitHub.com" failed:
+        </h4>
+        <p>
+          failed to list organization kubernetes repos: request returned status 404: Not Found
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -209,27 +225,31 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudAlertIcon
-          className="icon-inline mr-1"
-        />
-        Syncing repositories from external service "GitHub.com" failed:
-      </h4>
-      <p>
-        failed to list organization kubernetes repos: request returned status 404: Not Found
-      </p>
-      <p
-        className="status-messages-nav-item__entry-link"
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
       >
-        <a
-          href="/site-admin/external-services/abcd"
-          onClick={[Function]}
+        <h4>
+          <CloudAlertIcon
+            className="icon-inline mr-1"
+          />
+          Syncing repositories from external service "GitHub.com" failed:
+        </h4>
+        <p>
+          failed to list organization kubernetes repos: request returned status 404: Not Found
+        </p>
+        <p
+          className="status-messages-nav-item__entry-link"
         >
-          Edit "GitHub.com"
-        </a>
-      </p>
+          <a
+            href="/site-admin/external-services/abcd"
+            onClick={[Function]}
+          >
+            Edit "GitHub.com"
+          </a>
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -262,17 +282,21 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudAlertIcon
-          className="icon-inline mr-1"
-        />
-        Syncing repositories failed:
-      </h4>
-      <p>
-        syncer.sync.store.upsert-repos: pg: unique constraint foobar
-      </p>
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      >
+        <h4>
+          <CloudAlertIcon
+            className="icon-inline mr-1"
+          />
+          Syncing repositories failed:
+        </h4>
+        <p>
+          syncer.sync.store.upsert-repos: pg: unique constraint foobar
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -305,27 +329,31 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
       Code host status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+      className="status-messages-nav-item__dropdown-menu-content"
     >
-      <h4>
-        <CloudAlertIcon
-          className="icon-inline mr-1"
-        />
-        Syncing repositories failed:
-      </h4>
-      <p>
-        syncer.sync.store.upsert-repos: pg: unique constraint foobar
-      </p>
-      <p
-        className="status-messages-nav-item__entry-link"
+      <div
+        className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
       >
-        <a
-          href="/site-admin/external-services"
-          onClick={[Function]}
+        <h4>
+          <CloudAlertIcon
+            className="icon-inline mr-1"
+          />
+          Syncing repositories failed:
+        </h4>
+        <p>
+          syncer.sync.store.upsert-repos: pg: unique constraint foobar
+        </p>
+        <p
+          className="status-messages-nav-item__entry-link"
         >
-          Configure synced repositories
-        </a>
-      </p>
+          <a
+            href="/site-admin/external-services"
+            onClick={[Function]}
+          >
+            Configure synced repositories
+          </a>
+        </p>
+      </div>
     </div>
   </div>
 </div>

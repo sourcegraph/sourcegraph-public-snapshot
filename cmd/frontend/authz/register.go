@@ -11,7 +11,7 @@ var (
 	// not matched by any authz provider. The default value is true. It is only set to false in
 	// error modes (when the configuration is in a state where interpreting it literally could lead
 	// to leakage of private repositories).
-	allowAccessByDefault bool = true
+	allowAccessByDefault = true
 
 	// authzProvidersReady and authzProvidersReadyOnce together indicate when
 	// GetProviders should no longer block. It should block until SetProviders

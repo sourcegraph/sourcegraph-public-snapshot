@@ -1,19 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignBurndownChart renders an alert when data for less than 2 days is present 1`] = `
-<div
-  className="alert alert-info"
->
-  Burndown chart will be shown when there is more than 1 day of data.
-</div>
+<p>
+  <em>
+    Burndown chart will be shown when there is more than 1 day of data.
+  </em>
+</p>
 `;
 
 exports[`CampaignBurndownChart renders an alert when no datapoints are in a set of more than 1 day of data 1`] = `
-<div
-  className="alert alert-info"
->
-  Burndown chart will be shown when data is available.
-</div>
+<p>
+  <em>
+    Burndown chart will be shown when data is available.
+  </em>
+</p>
 `;
 
 exports[`CampaignBurndownChart renders the chart 1`] = `
@@ -254,8 +254,8 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
               x1={59}
               x2={65}
               y={5}
-              y1={91.66666666666669}
-              y2={91.66666666666669}
+              y1={91.66666666666667}
+              y2={91.66666666666667}
             />
             <text
               className="recharts-text recharts-cartesian-axis-tick-value"
@@ -265,7 +265,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
               textAnchor="end"
               width={60}
               x={57}
-              y={91.66666666666669}
+              y={91.66666666666667}
             >
               <tspan
                 dy="0.355em"
@@ -320,7 +320,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,236.11111111111111L65,236.11111111111111L495,236.11111111111111L495,265L65,265L65,265Z"
+            d="M65,236.1111111111111L65,236.1111111111111L495,236.1111111111111L495,265L65,265L65,265Z"
             fill="var(--warning)"
             fillOpacity={0.6}
             height={260}
@@ -330,7 +330,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,236.11111111111111L65,236.11111111111111L495,236.11111111111111"
+            d="M65,236.1111111111111L65,236.1111111111111L495,236.1111111111111"
             fill="none"
             fillOpacity={0.6}
             height={260}
@@ -349,7 +349,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,207.22222222222223L65,207.22222222222223L495,207.22222222222223L495,236.11111111111111L65,236.11111111111111L65,236.11111111111111Z"
+            d="M65,207.22222222222223L65,207.22222222222223L495,207.22222222222223L495,236.1111111111111L65,236.1111111111111L65,236.1111111111111Z"
             fill="var(--danger)"
             fillOpacity={0.6}
             height={260}

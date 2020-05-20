@@ -4,12 +4,25 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"gopkg.in/inconshreveable/log15.v2"
 )
+
+type testRegisterer struct{}
+
+func (testRegisterer) Register(prometheus.Collector) error  { return nil }
+func (testRegisterer) MustRegister(...prometheus.Collector) {}
+func (testRegisterer) Unregister(prometheus.Collector) bool { return true }
+
+// TestRegisterer is a behaviorless Prometheus Registerer usable for unit tests.
+var TestRegisterer prometheus.Registerer = testRegisterer{}
+
+// registerer exists so we can override it in tests
+var registerer = prometheus.DefaultRegisterer
 
 // RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
 // http.RoundTrippers.
@@ -27,7 +40,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Name:      "requests_total",
 		Help:      help,
 	}, []string{"category", "code", "host"})
-	prometheus.MustRegister(requestCounter)
+	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
 	// A prometheus histogram has a request counter built in.
@@ -40,7 +53,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Help:      "Time (in seconds) spent on request.",
 		Buckets:   prometheus.DefBuckets,
 	}, []string{"category", "code", "host"})
-	prometheus.MustRegister(requestDuration)
+	registerer.MustRegister(requestDuration)
 
 	return &RequestMeter{counter: requestCounter, duration: requestDuration, subsystem: subsystem}
 }
@@ -98,4 +111,42 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 
 func (t *requestCounterMiddleware) Do(req *http.Request) (*http.Response, error) {
 	return t.RoundTrip(req)
+}
+
+// MustRegisterDiskMonitor exports two prometheus metrics
+// "src_disk_space_available_bytes{path=$path}" and
+// "src_disk_space_total_bytes{path=$path}". The values exported are for the
+// filesystem that path is on.
+//
+// It is safe to call this function more than once for the same path.
+func MustRegisterDiskMonitor(path string) {
+	mustRegisterOnce(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name:        "src_disk_space_available_bytes",
+		Help:        "Amount of free space disk space.",
+		ConstLabels: prometheus.Labels{"path": path},
+	}, func() float64 {
+		var stat syscall.Statfs_t
+		_ = syscall.Statfs(path, &stat)
+		return float64(stat.Bavail * uint64(stat.Bsize))
+	}))
+
+	mustRegisterOnce(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name:        "src_disk_space_total_bytes",
+		Help:        "Amount of total disk space.",
+		ConstLabels: prometheus.Labels{"path": path},
+	}, func() float64 {
+		var stat syscall.Statfs_t
+		_ = syscall.Statfs(path, &stat)
+		return float64(stat.Blocks * uint64(stat.Bsize))
+	}))
+}
+
+func mustRegisterOnce(c prometheus.Collector) {
+	err := registerer.Register(c)
+	if err != nil {
+		if _, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return
+		}
+		panic(err)
+	}
 }

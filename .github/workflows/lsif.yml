@@ -2,18 +2,66 @@ name: LSIF
 on:
   - push
 jobs:
-  build:
+  lsif-go:
     runs-on: ubuntu-latest
+    container: sourcegraph/lsif-go
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
-        with:
-          project_root: cmd/
-          file: cmd/dump.lsif
-          verbose: "true"
+        run: lsif-go
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          file: cmd/dump.lsif
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-web:
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Generate LSIF data
+        working-directory: web/
+        run: lsif-tsc -p .
+      - name: Upload LSIF data
+        working-directory: web/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-shared:
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Generate LSIF data
+        working-directory: shared/
+        run: lsif-tsc -p .
+      - name: Upload LSIF data
+        working-directory: shared/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+
+  lsif-browser:
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Generate LSIF data
+        working-directory: browser/
+        run: lsif-tsc -p .
+      - name: Upload LSIF data
+        working-directory: browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}

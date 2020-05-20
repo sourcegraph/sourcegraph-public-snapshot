@@ -1,19 +1,15 @@
 import * as H from 'history'
-import {
-    IExternalChangeset,
-    IChangesetPlan,
-    ChangesetReviewState,
-    IFileDiff,
-    IPreviewFileDiff,
-    ChangesetState,
-} from '../../../../../../shared/src/graphql/schema'
-import React, { useState } from 'react'
+import { IExternalChangeset, ChangesetState, ChangesetCheckState } from '../../../../../../shared/src/graphql/schema'
+import React, { useCallback } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
     changesetStageLabels,
     changesetStatusColorClasses,
     changesetStateIcons,
+    changesetCheckStateIcons,
+    changesetCheckStateColors,
+    changesetCheckStateTooltips,
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -21,21 +17,28 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Collapsible } from '../../../../components/Collapsible'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { Markdown } from '../../../../../../shared/src/components/Markdown'
-import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
-import { publishChangeset as _publishChangeset } from '../backend'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Subject } from 'rxjs'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import { asError } from '../../../../../../shared/src/util/errors'
+import { publishChangeset as _publishChangeset, queryExternalChangesetFileDiffs } from '../backend'
+import { Observer } from 'rxjs'
+import { ChangesetLabel } from './ChangesetLabel'
+import classNames from 'classnames'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../../shared/src/util/url'
+import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
+import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
+import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
+import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { ChangesetLastSynced } from './ChangesetLastSynced'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 export interface ChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset | IChangesetPlan
-    campaignUpdates: Subject<void>
+    node: IExternalChangeset
+    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
-    /** Shows the publish button for ChangesetPlans */
-    enablePublishing: boolean
+    extensionInfo?: {
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
@@ -44,64 +47,29 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     isLightTheme,
     history,
     location,
-    enablePublishing,
+    extensionInfo,
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [publishError, setPublishError] = useState<Error>()
-    const publishChangeset: React.MouseEventHandler = async () => {
-        try {
-            setPublishError(undefined)
-            setIsLoading(true)
-            await _publishChangeset(node.id)
-            campaignUpdates.next()
-        } catch (error) {
-            setPublishError(asError(error))
-        } finally {
-            setIsLoading(false)
-        }
-    }
     const fileDiffs = node.diff?.fileDiffs
-    const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
-    const ChangesetStateIcon =
-        node.__typename === 'ExternalChangeset'
-            ? changesetStateIcons[node.state]
-            : changesetStateIcons[ChangesetState.OPEN]
-    const ReviewStateIcon =
-        node.__typename === 'ExternalChangeset'
-            ? changesetReviewStateIcons[node.reviewState]
-            : changesetReviewStateIcons[ChangesetReviewState.PENDING]
-    const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
+    const ChangesetStateIcon = changesetStateIcons[node.state]
+    const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
+    const ChangesetCheckStateIcon = node.checkState
+        ? changesetCheckStateIcons[node.checkState]
+        : changesetCheckStateIcons[ChangesetCheckState.PENDING]
+    const changesetState = node.state
+
     const changesetNodeRow = (
-        <div className="d-flex align-items-center m-1">
-            <div className="flex-shrink-0 flex-grow-0 my-1 mr-1">
-                <ChangesetStateIcon
-                    className={`text-${changesetStatusColorClasses[changesetState]}`}
-                    data-tooltip={changesetStageLabels[changesetState]}
-                ></ChangesetStateIcon>
-            </div>
-            {node.__typename === 'ExternalChangeset' && (
-                <div className="flex-shrink-0 flex-grow-0 ml-1 mr-3">
-                    <ReviewStateIcon
-                        className={
-                            node.state === ChangesetState.DELETED
-                                ? 'text-muted'
-                                : `text-${changesetReviewStateColors[node.reviewState]}`
-                        }
-                        data-tooltip={changesetStageLabels[node.reviewState]}
-                    />
-                </div>
-            )}
+        <div className="d-flex align-items-start m-1 ml-2">
             <div className="changeset-node__content flex-fill">
-                <h3 className="m-0">
-                    <Link to={node.repository.url} className="text-muted" target="_blank" rel="noopener noreferrer">
-                        {node.repository.name}
-                    </Link>{' '}
-                    {node.__typename === 'ChangesetPlan' && enablePublishing && (
-                        <span className="badge badge-light">{node.publicationEnqueued ? 'Publishing' : 'Draft'}</span>
-                    )}
-                    <span className="mx-1"></span>{' '}
-                    {node.__typename === 'ExternalChangeset' && (
-                        <>
+                <div className="d-flex flex-column">
+                    <div className="m-0 mb-2">
+                        <h3 className="m-0 d-inline">
+                            <ChangesetStateIcon
+                                className={classNames(
+                                    'mr-1 icon-inline',
+                                    `text-${changesetStatusColorClasses[changesetState]}`
+                                )}
+                                data-tooltip={changesetStageLabels[changesetState]}
+                            />
                             <LinkOrSpan
                                 /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                 to={
@@ -112,57 +80,111 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                {node.title}
+                                {node.title} (#{node.externalID}){' '}
+                                {node.externalURL && node.state !== ChangesetState.DELETED && (
+                                    <ExternalLinkIcon size="1rem" />
+                                )}
                             </LinkOrSpan>
-                        </>
-                    )}
-                </h3>
-                {node.__typename === 'ExternalChangeset' && (
-                    <Markdown
-                        className="text-truncate"
-                        dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
-                    ></Markdown>
-                )}
+                        </h3>
+                        {node.checkState && (
+                            <small>
+                                <ChangesetCheckStateIcon
+                                    className={classNames(
+                                        'ml-1 changeset-node__check-state',
+                                        changesetCheckStateColors[node.checkState]
+                                    )}
+                                    data-tooltip={changesetCheckStateTooltips[node.checkState]}
+                                />
+                            </small>
+                        )}
+                        {node.labels.length > 0 && (
+                            <span className="ml-2">
+                                {node.labels.map(label => (
+                                    <ChangesetLabel label={label} key={label.text} />
+                                ))}
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <strong>
+                            <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
+                                {node.repository.name}
+                            </Link>
+                        </strong>
+                        <ChangesetLastSynced changeset={node} campaignUpdates={campaignUpdates} />
+                    </div>
+                </div>
             </div>
-            {fileDiffs && (
-                <span className="flex-shrink-0 flex-grow-0">
-                    <DiffStat {...fileDiffs.diffStat} expandedCounts={true}></DiffStat>
-                </span>
-            )}
-            {enablePublishing && node.__typename === 'ChangesetPlan' && !node.publicationEnqueued && (
-                <>
-                    {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
-                    <button
-                        type="button"
-                        className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
-                        disabled={isLoading}
-                        onClick={publishChangeset}
-                    >
-                        {isLoading && <LoadingSpinner className="mr-1 icon-inline"></LoadingSpinner>} Publish
-                    </button>
-                </>
-            )}
+            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
+                {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
+            </div>
+            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
+                <ReviewStateIcon
+                    className={
+                        node.state === ChangesetState.DELETED
+                            ? 'text-muted'
+                            : `text-${changesetReviewStateColors[node.reviewState]}`
+                    }
+                    data-tooltip={changesetStageLabels[node.reviewState]}
+                />
+            </div>
         </div>
     )
+
+    /** Fetches the file diffs for the changeset */
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArgs) => queryExternalChangesetFileDiffs(node.id, { ...args, isLightTheme }),
+        [node.id, isLightTheme]
+    )
+
     return (
         <li className="list-group-item e2e-changeset-node">
-            {fileDiffNodes ? (
+            {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
+                    expandedButtonClassName="mb-3"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
-                    {fileDiffNodes.map((fileDiffNode, i) => (
-                        <FileDiffNode
-                            isLightTheme={isLightTheme}
-                            node={fileDiffNode}
-                            lineNumbers={true}
-                            location={location}
-                            history={history}
-                            persistLines={node.__typename === 'ExternalChangeset'}
-                            key={i}
-                        ></FileDiffNode>
-                    ))}
+                    <FileDiffConnection
+                        listClassName="list-group list-group-flush"
+                        noun="changed file"
+                        pluralNoun="changed files"
+                        queryConnection={queryFileDiffs}
+                        nodeComponent={FileDiffNode}
+                        nodeComponentProps={{
+                            history,
+                            location,
+                            isLightTheme,
+                            persistLines: true,
+                            extensionInfo: extensionInfo
+                                ? {
+                                      ...extensionInfo,
+                                      head: {
+                                          commitID: node.head.target.oid,
+                                          repoID: node.repository.id,
+                                          repoName: node.repository.name,
+                                          rev: node.head.target.oid,
+                                      },
+                                      base: {
+                                          commitID: node.base.target.oid,
+                                          repoID: node.repository.id,
+                                          repoName: node.repository.name,
+                                          rev: node.base.target.oid,
+                                      },
+                                  }
+                                : undefined,
+                            lineNumbers: true,
+                        }}
+                        updateOnChange={node.repository.id}
+                        defaultFirst={15}
+                        hideSearch={true}
+                        noSummaryIfAllNodesVisible={true}
+                        history={history}
+                        location={location}
+                        useURLQuery={false}
+                        cursorPaging={true}
+                    />
                 </Collapsible>
             ) : (
                 <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">

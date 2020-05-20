@@ -15,7 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 const combyPath = "comby"
@@ -59,7 +59,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	case DirPath:
 		rawArgs = append(rawArgs, "-directory", string(i))
 	default:
-		log15.Error("unrecognized input type: %T", i)
+		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
 	}
 
@@ -174,13 +174,13 @@ func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
 		b := scanner.Bytes()
 		if err := scanner.Err(); err != nil {
 			// warn on scanner errors and skip
-			log15.Warn("comby error: skipping scanner error line: %v", err)
+			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
 			continue
 		}
 		var m *FileMatch
 		if err := json.Unmarshal(b, &m); err != nil {
 			// warn on decode errors and skip
-			log15.Warn("comby error: skipping unmarshaling error: %v", err)
+			log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
 			continue
 		}
 		matches = append(matches, *m)

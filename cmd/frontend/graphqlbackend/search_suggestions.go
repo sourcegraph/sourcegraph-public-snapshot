@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const maxSearchSuggestions = 100
@@ -46,7 +46,7 @@ var (
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.query.ParseTree) == 0 {
+	if len(r.query.ParseTree()) == 0 {
 		return nil, nil
 	}
 
@@ -69,9 +69,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(query.FieldDefault)[0]))
-		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
+		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields()) == 1 || (len(r.query.Fields()) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
+		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields()) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields()) == 1)) {
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
 
@@ -90,7 +90,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
-				resolvers = append(resolvers, newSearchResultResolver(
+				resolvers = append(resolvers, newSearchSuggestionResolver(
 					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
 				))
@@ -110,7 +110,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file
 		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
-		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
+		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields()) == 1
 		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
 		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
@@ -178,7 +178,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
-			resolvers = append(resolvers, newSearchResultResolver(
+			resolvers = append(resolvers, newSearchSuggestionResolver(
 				&languageResolver{name: strings.ToLower(l.Name)},
 				math.MaxInt32,
 			))
@@ -236,7 +236,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				results = append(results, newSearchResultResolver(sr, score))
+				results = append(results, newSearchSuggestionResolver(sr, score))
 			}
 		}
 
@@ -275,7 +275,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.SearchResults)-i))
+						suggestions = append(suggestions, newSearchSuggestionResolver(entryResolver, len(results.SearchResults)-i))
 					}
 				}
 			}
@@ -341,7 +341,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			k.repoName = s.repo.Name
 		case *GitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name
-			// We explicitely do not use GitCommitResolver.OID() to get the OID here
+			// We explicitly do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
 			// computing this commit for each suggestion, which could be heavy.

@@ -9,10 +9,13 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { queryGraphQL } from '../../../backend/graphql'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
-interface Props {}
+interface Props {
+    history: H.History
+}
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The extensions, loading, or an error. */
@@ -66,7 +69,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
             <div className="card">
                 <h3 className="card-header">Top Sourcegraph extensions</h3>
                 {isErrorLike(extensionsOrError) ? (
-                    <ErrorAlert error={extensionsOrError} />
+                    <ErrorAlert error={extensionsOrError} history={this.props.history} />
                 ) : extensionsOrError.length === 0 ? (
                     <p>No extensions are available.</p>
                 ) : (
@@ -74,7 +77,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                         {extensionsOrError
                             .slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST)
                             .filter((e): e is GQL.IRegistryExtension => e !== LOADING)
-                            .map((extension, i) => (
+                            .map(extension => (
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
                                     extensionID={extension.extensionIDWithoutRegistry}

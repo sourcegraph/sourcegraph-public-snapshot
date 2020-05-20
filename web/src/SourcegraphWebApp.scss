@@ -25,9 +25,6 @@ $grid-gutter-width: 1.5rem;
 
 // No max width except for xl.
 $container-max-widths: (
-    sm: null,
-    md: null,
-    lg: null,
     xl: 1140px,
 );
 
@@ -67,6 +64,10 @@ $alert-padding-x: 0.75rem;
 
 $input-btn-focus-width: 2px;
 $input-focus-border-color: $primary;
+// The default focus ring for buttons is very hard to see, raise opacity.
+// We only show the focus ring when using the keyboard, when the focus ring
+// should be clearly visible.
+$btn-focus-box-shadow: 0 0 0 $input-btn-focus-width rgba($primary, 0.8);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here
@@ -191,6 +192,15 @@ body,
     flex: 1;
 }
 
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
 .popover-inner {
@@ -212,19 +222,17 @@ body,
 // Pages
 @import './Layout';
 @import './api/APIConsole';
-@import './discussions/DiscussionsPage';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './global/Notices';
 @import './savedSearches/index';
-@import './search/input/ScopePage';
 @import './search/input/SearchPage';
 @import './search/queryBuilder/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';
-@import './site-admin/SiteInitPage';
+@import './site-admin/init/SiteInitPage';
 @import './site-admin/SiteAdmin';
 @import './tree/Tree';
 @import './nav/GlobalNavbar';
@@ -255,10 +263,15 @@ body,
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
-@import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';
+
+:root {
+    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
+    --reach-menu-button: 1;
+    --reach-accordion: 1;
+}

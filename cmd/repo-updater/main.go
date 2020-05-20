@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	shared.Main(nil, nil)
+	shared.Main(nil)
 }

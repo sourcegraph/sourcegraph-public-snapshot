@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -89,19 +91,78 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 }
 
-func TestUsers_LimitPasswordLength(t *testing.T) {
+func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	longPassword := strings.Repeat("x", maxPasswordRunes+1)
-	expectedErr := "Passwords may not be more than 256 characters."
+	minPasswordRunes := conf.AuthMinPasswordLength()
+	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	tests := []struct {
+		name     string
+		username string
+		password string
+		enforce  bool
+		expErr   string
+	}{
+		{
+			name:     "below minimum",
+			username: "user1",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  true,
+			expErr:   expErr,
+		},
+		{
+			name:     "exceeds maximum",
+			username: "user2",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  true,
+			expErr:   expErr,
+		},
 
-	_, err := Users.Create(ctx, NewUser{Username: "test", Password: longPassword})
-	if pm := errcode.PresentationMessage(err); pm != expectedErr {
-		t.Fatalf("expected error %q; got %q", expectedErr, pm)
+		{
+			name:     "no problem at exact minimum",
+			username: "user3",
+			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+		{
+			name:     "no problem at exact maximum",
+			username: "user4",
+			password: strings.Repeat("x", maxPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+
+		{
+			name:     "does not enforce and below minimum",
+			username: "user5",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  false,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce and exceeds maximum",
+			username: "user6",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  false,
+			expErr:   "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := Users.Create(ctx, NewUser{
+				Username:              test.username,
+				Password:              test.password,
+				EnforcePasswordLength: test.enforce,
+			})
+			if pm := errcode.PresentationMessage(err); pm != test.expErr {
+				t.Fatalf("err: want %q but got %q", test.expErr, pm)
+			}
+		})
 	}
 }
 
@@ -484,35 +545,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-				t.Fatal(err)
-			}
-			repo, err := Repos.GetByName(ctx, "myrepo")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Create a discussion thread to confirm that deletion properly removes
-			// threads and their associated comments.
-			newThread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
-				AuthorUserID: user.ID,
-				Title:        "Hello world",
-				TargetRepo: &types.DiscussionThreadTargetRepo{
-					RepoID:   repo.ID,
-					Path:     strPtr("foo/bar/mux.go"),
-					Branch:   strPtr("master"),
-					Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-				},
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			newComment, err := DiscussionComments.Create(ctx, &types.DiscussionComment{
-				ThreadID:     newThread.ID,
-				AuthorUserID: user.ID,
-				Contents:     "Thread contents",
-			})
-			if err != nil {
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -559,16 +592,6 @@ func TestUsers_Delete(t *testing.T) {
 			err = Users.Delete(ctx, user.ID)
 			if !errcode.IsNotFound(err) {
 				t.Errorf("got error %v, want ErrUserNotFound", err)
-			}
-
-			// Confirm discussion thread/comment no longer exists.
-			_, err = DiscussionThreads.Get(ctx, newThread.ID)
-			if _, ok := err.(*ErrThreadNotFound); !ok {
-				t.Fatal("expected ErrThreadNotFound")
-			}
-			_, err = DiscussionComments.Get(ctx, newComment.ID)
-			if _, ok := err.(*ErrCommentNotFound); !ok {
-				t.Fatal("expected ErrCommentNotFound")
 			}
 		})
 	}

@@ -182,7 +182,7 @@ export const diffusionDOMFns: DOMFunctions = {
         }
         const lineNumber = parseInt(lineAnchor.textContent || '', 10)
         if (isNaN(lineNumber)) {
-            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${lineAnchor.textContent}`)
+            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${String(lineAnchor.textContent)}`)
         }
         return lineNumber
     },

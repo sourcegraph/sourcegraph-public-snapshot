@@ -58,7 +58,7 @@ function isDocumentFilter(value: any): value is DocumentFilter {
 }
 
 function match1(selector: DocumentSelector, document: Pick<TextDocument, 'uri' | 'languageId'>): boolean {
-    return score(selector, document.uri, document.languageId) !== 0
+    return score(selector, new URL(document.uri), document.languageId) !== 0
 }
 
 /**
@@ -72,7 +72,7 @@ function match1(selector: DocumentSelector, document: Pick<TextDocument, 'uri' |
  * Taken from
  * https://github.com/Microsoft/vscode/blob/3d35801127f0a62d58d752bc613506e836c5d120/src/vs/editor/common/modes/languageSelector.ts#L24.
  */
-export function score(selector: DocumentSelector, candidateUri: string, candidateLanguage: string): number {
+export function score(selector: DocumentSelector, candidateUri: URL, candidateLanguage: string): number {
     // array -> take max individual value
     let ret = 0
     for (const filter of selector) {
@@ -87,7 +87,7 @@ export function score(selector: DocumentSelector, candidateUri: string, candidat
     return ret
 }
 
-function score1(selector: DocumentSelector[0], candidateUri: string, candidateLanguage: string): number {
+function score1(selector: DocumentSelector[0], candidateUri: URL, candidateLanguage: string): number {
     if (typeof selector === 'string') {
         // Shorthand notation: "mylang" -> {language: "mylang"}, "*" -> {language: "*""}.
         if (selector === '*') {
@@ -99,16 +99,23 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
         return 0
     }
 
-    const { language, scheme, pattern } = selector
+    const { language, scheme, pattern, baseUri } = selector
     if (!language && !scheme && !pattern) {
         // `{}` was passed as a document filter, treat it like a wildcard
         return 5
     }
     let ret = 0
     if (scheme) {
-        if (candidateUri.startsWith(scheme + ':')) {
+        if (candidateUri.protocol === scheme + ':') {
             ret = 10
         } else if (scheme === '*') {
+            ret = 5
+        } else {
+            return 0
+        }
+    }
+    if (baseUri) {
+        if (candidateUri.href.startsWith(baseUri.toString())) {
             ret = 5
         } else {
             return 0
@@ -124,9 +131,12 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
         }
     }
     if (pattern) {
-        if (pattern === candidateUri || candidateUri.endsWith(pattern) || minimatch(candidateUri, pattern)) {
+        const filePath = decodeURIComponent(
+            candidateUri.protocol === 'git:' ? candidateUri.hash.slice(1) : candidateUri.pathname.replace(/^\//, '')
+        )
+        if (filePath.endsWith(pattern) || minimatch(filePath, pattern)) {
             ret = 10
-        } else if (minimatch(candidateUri, '**/' + pattern, { dot: true })) {
+        } else if (filePath && minimatch(filePath, pattern, { dot: true, matchBase: true })) {
             ret = 5
         } else {
             return 0

@@ -2,6 +2,7 @@ package httpcli
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"net/http"
 	"reflect"
 	"sync"
@@ -44,6 +45,22 @@ func (t *externalTransport) update() *http.Transport {
 	}
 
 	effective.TLSClientConfig.InsecureSkipVerify = config.InsecureSkipVerify
+
+	for _, cert := range config.Certificates {
+		// There is no exposed Clone function for CertPools. So if a certificate
+		// is removed it will continue to be accepted since we are mutating base's
+		// RootCAs. This is an acceptable tradeoff since it would be quite tricky
+		// to avoid this.
+		if effective.TLSClientConfig.RootCAs == nil {
+			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
+			if err != nil {
+				pool = x509.NewCertPool()
+			}
+			effective.TLSClientConfig.RootCAs = pool
+		}
+		// TODO(keegancsmith) ensure we validate these certs somewhere
+		effective.TLSClientConfig.RootCAs.AppendCertsFromPEM([]byte(cert))
+	}
 
 	t.config = config
 	t.effective = effective

@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/shurcooL/githubv4"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var (
@@ -19,61 +21,77 @@ var (
 	update        = flag.Bool("update", false, "update testdata golden")
 )
 
-func TestGenerate(t *testing.T) {
-	milestone := "3.13"
-	issues := getIssuesFixture(t, "sourcegraph", milestone, []string{"team/core-services"})
-	got := generate(issues, milestone)
+func TestIntegration(t *testing.T) {
+	ti := &TrackingIssue{
+		Issue: &Issue{
+			Number:    9917,
+			Milestone: "3.16",
+			Labels:    []string{"tracking", "team/code-intelligence"},
+		},
+	}
+
+	loadTrackingIssueFixtures(t, "sourcegraph", ti)
+
+	got := ti.Workloads().Markdown(ti.LabelWhitelist)
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }
 
-func getIssuesFixture(t testing.TB, org, milestone string, labels []string) []*Issue {
-	path := filepath.Join("testdata", "issues.json")
+func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
+	path := filepath.Join("testdata", "fixtures.json")
+
 	if *updateFixture {
 		ctx := context.Background()
-		cli := githubv4.NewClient(
-			oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		cli := graphql.NewClient(
+			"https://api.github.com/graphql",
+			graphql.WithHTTPClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 				&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
-			)),
+			))),
 		)
-		issues, err := listIssues(ctx, cli, org, milestone, labels)
+
+		var q strings.Builder
+		fmt.Fprintf(&q, "org:sourcegraph milestone:%s", issue.Milestone)
+		for _, label := range issue.Labels {
+			fmt.Fprintf(&q, " label:%s", label)
+		}
+
+		tracking, err := listTrackingIssues(ctx, cli, q.String())
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, issue := range issues {
-			if issue.Private {
-				// Whitelist of fields to prevent leaking data in fixture.
-				labels := issue.Labels[:0]
-				for _, label := range issue.Labels {
-					if strings.HasPrefix(label, "estimate/") || strings.HasPrefix(label, "planned/") {
-						labels = append(labels, label)
-					}
-				}
-				*issue = Issue{
-					Title:      "REDACTED",
-					Private:    true,
-					Labels:     labels,
-					Number:     issue.Number,
-					URL:        issue.URL,
-					State:      issue.State,
-					Repository: issue.Repository,
-					Assignees:  issue.Assignees,
-					Milestone:  issue.Milestone,
-				}
+
+		for _, ti := range tracking {
+			if ti.Number == issue.Number {
+				issue = ti
+				break
 			}
 		}
-		testutil.AssertGolden(t, path, true, issues)
+
+		err = loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, issue := range issue.Issues {
+			issue.Redact()
+		}
+
+		for _, pr := range issue.PRs {
+			pr.Redact()
+		}
+
+		testutil.AssertGolden(t, path, true, issue)
 	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
 
-	var issues []*Issue
-	if err := json.NewDecoder(f).Decode(&issues); err != nil {
+	if err := json.NewDecoder(f).Decode(issue); err != nil {
 		t.Fatal(err)
 	}
 
-	return issues
+	issue.FillLabelWhitelist()
 }

@@ -10,10 +10,6 @@ import (
 // The parse tree for search input. It is a list of expressions.
 type ParseTree []*Expr
 
-func (p ParseTree) String() string {
-	return ExprString(p)
-}
-
 // Values returns the raw string values associated with a field.
 func (p ParseTree) Values(field string) []string {
 	var v []string
@@ -33,6 +29,31 @@ func (p ParseTree) WithErrorsQuoted() ParseTree {
 		p2 = append(p2, &e2)
 	}
 	return p2
+}
+
+// Map builds a new parse tree by running a function f on each expression in an
+// existing parse tree and substituting the resulting expression. If f returns
+// nil, the expression is removed in the new parse tree.
+func Map(p ParseTree, f func(e Expr) *Expr) ParseTree {
+	p2 := make(ParseTree, 0, len(p))
+	for _, e := range p {
+		cpy := *e
+		e = &cpy
+		if result := f(*e); result != nil {
+			p2 = append(p2, result)
+		}
+	}
+	return p2
+}
+
+// String returns a string that parses to the parse tree, where expressions are
+// separated by a single space.
+func (p ParseTree) String() string {
+	s := make([]string, len(p))
+	for i, e := range p {
+		s[i] = e.String()
+	}
+	return strings.Join(s, " ")
 }
 
 // An Expr describes an expression in the parse tree.
@@ -84,13 +105,4 @@ func (e Expr) WithErrorsQuoted() Expr {
 		e2.ValueType = TokenQuoted
 	}
 	return e2
-}
-
-// ExprString returns the string that parses to expr.
-func ExprString(expr []*Expr) string {
-	s := make([]string, len(expr))
-	for i, e := range expr {
-		s[i] = e.String()
-	}
-	return strings.Join(s, " ")
 }

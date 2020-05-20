@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A store of UserPermissions safe for concurrent use.
@@ -51,7 +51,7 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) 
 
 // DefaultHardTTL is the default hard TTL used in the permissions store, after which
 // cached permissions for a given user MUST be updated, and previously cached permissions
-// can no longer be used, resulting in a call to LoadPermissions returning a StalePermissionsError.
+// can no longer be used, resulting in a call to LoadPermissions returning a ErrStalePermissions.
 const DefaultHardTTL = 3 * 24 * time.Hour
 
 // PermissionsUpdateFunc fetches updated permissions from a source of truth,
@@ -118,7 +118,11 @@ func (s *store) UpdatePermissions(
 
 		// No valid permissions available yet or hard TTL expired.
 		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{UserPermissions: p}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 
 		return nil
@@ -129,7 +133,11 @@ func (s *store) UpdatePermissions(
 	case err == nil:
 	case err == errLockNotAvailable:
 		if p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{UserPermissions: p}
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 	default:
 		return err
@@ -137,19 +145,6 @@ func (s *store) UpdatePermissions(
 
 	*p = expired
 	return nil
-}
-
-// StalePermissionsError is returned by LoadPermissions when the stored
-// permissions are stale (e.g. the first time a user needs them and they haven't
-// been fetched yet). Callers should pass this error up to the user and show it
-// in the UI.
-type StalePermissionsError struct {
-	*authz.UserPermissions
-}
-
-// Error implements the error interface.
-func (e StalePermissionsError) Error() string {
-	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
 }
 
 var errLockNotAvailable = errors.New("lock not available")
@@ -249,6 +244,10 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	if externalIDs == nil {
+		externalIDs = []uint32{}
+	}
+
 	ids, err := json.Marshal(externalIDs)
 	if err != nil {
 		return nil, err
@@ -319,7 +318,6 @@ func loadQuery(p *authz.UserPermissions) *sqlf.Query {
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		p.Provider,
 	)
 }
 
@@ -330,7 +328,6 @@ FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
 AND object_type = %s
-AND provider = %s
 `
 
 func (s *store) update(ctx context.Context, p *authz.UserPermissions, update PermissionsUpdateFunc) (err error) {
@@ -452,7 +449,6 @@ func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 		p.Perm.String(),
 		p.Type,
 		ids,
-		p.Provider,
 		p.UpdatedAt.UTC(),
 	), nil
 }
@@ -460,11 +456,11 @@ func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 const upsertQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
+  (user_id, permission, object_type, object_ids, updated_at)
 VALUES
-  (%s, %s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
+  user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at

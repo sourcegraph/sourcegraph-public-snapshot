@@ -10,17 +10,18 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/felixge/httpsnoop"
 	raven "github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -32,6 +33,7 @@ const (
 	requestErrorCauseKey
 	graphQLRequestNameKey
 	originKey
+	sourceKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -42,18 +44,14 @@ var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "request_duration_seconds",
-	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   UserLatencyBuckets,
+	Name:    "src_http_request_duration_seconds",
+	Help:    "The HTTP request latencies in seconds.",
+	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_last_timestamp_unixtime",
-	Help:      "Last time a request finished for a http endpoint.",
+	Name: "src_http_requests_last_timestamp_unixtime",
+	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
 func init() {
@@ -122,15 +120,40 @@ func WithRequestOrigin(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, originKey, name)
 }
 
+// SourceType indicates the type of source that likely created the request.
+type SourceType string
+
+const (
+	// SourceBrowser indicates the request likely came from a web browser.
+	SourceBrowser SourceType = "browser"
+
+	// SourceOther indicates the request likely came from a non-browser HTTP client.
+	SourceOther SourceType = "other"
+)
+
+// WithRequestSource sets the request source type in the context.
+func WithRequestSource(ctx context.Context, source SourceType) context.Context {
+	return context.WithValue(ctx, sourceKey, source)
+}
+
+// RequestSource returns the request source constant for a request context.
+func RequestSource(ctx context.Context) SourceType {
+	v := ctx.Value(sourceKey)
+	if v == nil {
+		return SourceOther
+	}
+	return v.(SourceType)
+}
+
 // Middleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func Middleware(next http.Handler) http.Handler {
+func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	return raven.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		wireContext, err := opentracing.GlobalTracer().Extract(
+		wireContext, err := ot.GetTracer(ctx).Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
@@ -138,7 +161,7 @@ func Middleware(next http.Handler) http.Handler {
 		}
 
 		// start new span
-		span := opentracing.StartSpan("", ext.RPCServerOption(wireContext))
+		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))

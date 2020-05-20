@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 set -exuo pipefail
-cd $(dirname "${BASH_SOURCE[0]}")/../../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
 parallel_run() {
-    ./dev/ci/parallel_run.sh "$@"
+  ./dev/ci/parallel_run.sh "$@"
 }
 
 echo "--- yarn root"
@@ -13,14 +13,19 @@ echo "--- yarn root"
 # TODO: This is no longer needed since the management console was removed.
 yarn --mutex network --frozen-lockfile --network-timeout 60000
 
+MAYBE_TIME_PREFIX=""
+if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+  MAYBE_TIME_PREFIX="env time -v"
+fi
+
 build_browser() {
-    echo "--- yarn browser"
-    (cd browser && TARGETS=phabricator yarn build)
+  echo "--- yarn browser"
+  (cd browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} yarn build")
 }
 
 build_web() {
-    echo "--- yarn web"
-    (cd web && NODE_ENV=production yarn -s run build --color)
+  echo "--- yarn web"
+  (cd web && NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn -s run build --color")
 }
 
 export -f build_browser

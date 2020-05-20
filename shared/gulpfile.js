@@ -28,7 +28,11 @@ async function graphQLTypes() {
 
   const formatOptions = await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' })
   const typings =
-    'export type ID = string\n\n' +
+    'export type ID = string\n' +
+    'export type GitObjectID = string\n' +
+    'export type DateTime = string\n' +
+    'export type JSONCString = string\n' +
+    '\n' +
     generateNamespace(
       '',
       result,
@@ -36,6 +40,9 @@ async function graphQLTypes() {
         typeMap: {
           ...DEFAULT_TYPE_MAP,
           ID: 'ID',
+          GitObjectID: 'GitObjectID',
+          DateTime: 'DateTime',
+          JSONCString: 'JSONCString',
         },
       },
       {

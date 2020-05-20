@@ -11,8 +11,12 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUser } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
+import * as H from 'history'
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props extends RouteComponentProps<{}> {
+    history: H.History
+}
 
 interface State {
     errorDescription?: string
@@ -61,7 +65,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                                 this.setState({
                                     createUserResult: undefined,
                                     loading: false,
-                                    errorDescription: error.message,
+                                    errorDescription: asError(error).message,
                                 })
                                 return []
                             })
@@ -152,7 +156,11 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             </small>
                         </div>
                         {this.state.errorDescription && (
-                            <ErrorAlert className="my-2" error={this.state.errorDescription} />
+                            <ErrorAlert
+                                className="my-2"
+                                error={this.state.errorDescription}
+                                history={this.props.history}
+                            />
                         )}
                         <button className="btn btn-primary" disabled={this.state.loading} type="submit">
                             {window.context.resetPasswordEnabled

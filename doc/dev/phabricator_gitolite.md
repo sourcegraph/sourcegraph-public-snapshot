@@ -151,23 +151,23 @@ will be `/opt/bitnami/phabricator`.
 
 3. Ensure `.arcconfig` has been added
 
-```json
-  {
-    "phabricator.uri" : "https://<your phabricator host>/"
-  }
-```
+    ```
+      {
+        "phabricator.uri" : "https://<your phabricator host>/"
+      }
+    ```
 
 4. Make some changes and push the diff to Phabricator's
 
     Use `arc` to create a new branch
 
-    ```shell
+    ```
     arc branch my-branch
     ```
 
     Make some changes, commit them, and upload the diff to Phabricator. DO NOT PUSH them to the git remote. If you push the changes to the git remote, we no longer are testing a critical feature of the Sourcegraph Phabricator integration, which is that it uses staging areas if configured or attempts to apply patchsets.
 
-    ```shell
+    ```
     git add . git commit -m "some changes" arc diff
     ```
 
@@ -183,7 +183,7 @@ will be `/opt/bitnami/phabricator`.
 #### Browser Extension
 
 1. Verify [`sourcegraph.enabled`](https://phabricator.sgdev.org/config/edit/sourcegraph.enabled/) is set to `true`
-2. Point your browser extension to a Sourcegraph instance with the following external service:
+2. Point your browser extension to a Sourcegraph instance with the following code host:
     ```
     {
       "prefix": "gitolite.sgdev.org/",
@@ -202,7 +202,7 @@ will be `/opt/bitnami/phabricator`.
 
 1. Run a local Sourcegraph dev instance tunnelled through ngrok
 2. Set `corsOrigin` to `"https://phabricator.sgdev.org"` in your site config
-3. Add the following Gitolite external service:
+3. Add the following Gitolite code host:
     ```
     {
       "prefix": "gitolite.sgdev.org/",

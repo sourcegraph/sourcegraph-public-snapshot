@@ -4,9 +4,9 @@
     <title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
     <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
     <link rel="stylesheet" href="{{asset "bootstrap.min.css"}}?4.3.1" />
-    <link rel="stylesheet" href="{{asset "layout.css"}}?14" />
-    <link rel="stylesheet" href="{{asset "search.css"}}?14" />
-    <link rel="stylesheet" href="{{asset "content.css"}}?14" />
+    <link rel="stylesheet" href="{{asset "layout.css"}}?19" />
+    <link rel="stylesheet" href="{{asset "search.css"}}?19" />
+    <link rel="stylesheet" href="{{asset "content.css"}}?19" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     {{block "head" .}}{{end}}
 </head>
@@ -36,6 +36,7 @@
                     </form>
                 </div>
             </div>
+            {{block "breadcrumb" .}}{{end}}
         </div>
     </div>
     {{block "content" .}}{{end}}
@@ -66,7 +67,7 @@
                             <ul class="nav flex-column">
                                 <li class="nav-item"><a href="https://about.sourcegraph.com/product/code-search-navigation">Code search</a></li>
                                 <li class="nav-item"><a href="https://about.sourcegraph.com/product/code-review">Code review</a></li>
-                                <li class="nav-item"><a href="https://about.sourcegraph.com/product/code-alerts-automation">Code alerts &amp; automation</a></li>
+                                <li class="nav-item"><a href="https://about.sourcegraph.com/product/code-change-management">Code change management</a></li>
                             </ul>
                         </div>
                         <div class="col-sm-6 col-md-3 col-lg-2 mb-3">

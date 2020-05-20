@@ -1,9 +1,10 @@
-$code-font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
+$code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
 $code-font-size: 12px;
 
-code {
+code,
+.code {
     font-family: $code-font-family;
-    font-size: 12px;
+    font-size: $code-font-size;
     line-height: 16px;
     white-space: pre;
 }

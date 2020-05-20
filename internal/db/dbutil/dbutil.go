@@ -12,17 +12,17 @@ import (
 	"time"
 
 	// Register driver
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	multierror "github.com/hashicorp/go-multierror"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/migrations"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -38,7 +38,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 		err = tx.Commit()
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Transaction")
+	span, ctx := ot.StartSpanFromContext(ctx, "Transaction")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -170,6 +170,11 @@ func (stdoutLogger) Printf(format string, v ...interface{}) {
 }
 func (logger stdoutLogger) Verbose() bool {
 	return true
+}
+
+func IsPostgresError(err error, codename string) bool {
+	e, ok := errors.Cause(err).(*pq.Error)
+	return ok && e.Code.Name() == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the

@@ -8,6 +8,7 @@ import { mutateGraphQL } from '../../../backend/graphql'
 import { Form } from '../../../components/Form'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
 interface Props {
     /** The GraphQL ID of the user with whom the new emails are associated. */
@@ -17,6 +18,7 @@ interface Props {
     onDidAdd: () => void
 
     className?: string
+    history: H.History
 }
 
 interface State {
@@ -40,7 +42,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                             of<Pick<State, 'error'>>({ error: undefined }),
                             this.addUserEmail(this.state.email).pipe(
                                 tap(() => this.props.onDidAdd()),
-                                map(c => ({ error: null, email: '' })),
+                                map(() => ({ error: null, email: '' })),
                                 catchError(error => [{ error, email: this.state.email }])
                             )
                         )
@@ -85,7 +87,9 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         {loading ? 'Adding...' : 'Add'}
                     </button>
                 </Form>
-                {this.state.error && <ErrorAlert className="mt-2" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="mt-2" error={this.state.error} history={this.props.history} />
+                )}
             </div>
         )
     }

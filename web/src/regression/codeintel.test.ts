@@ -6,6 +6,7 @@ import { ElementHandle } from 'puppeteer'
 import { map } from 'rxjs/operators'
 import * as child_process from 'mz/child_process'
 import { applyEdits } from '@sqs/jsonc-parser'
+import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { getTestTools } from './util/init'
 import { GraphQLClient } from './util/GraphQLClient'
@@ -18,6 +19,7 @@ import { Config, getConfig } from '../../../shared/src/e2e/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { asError } from '../../../shared/src/util/errors'
 
 describe('Code intelligence regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
@@ -100,7 +102,7 @@ describe('Code intelligence regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let outerResourceManager: TestResourceManager
-    before(async function() {
+    before(async function () {
         // sourcegraph/sourcegraph takes a while to clone
         this.timeout(30 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
@@ -137,6 +139,9 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+
+        outerResourceManager.add('Global setting', 'showBadgeAttachments', await enableBadgeAttachments(gqlClient))
+        outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })
 
     saveScreenshotsUponFailures(() => driver.page)
@@ -170,11 +175,11 @@ describe('Code intelligence regression test suite', () => {
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 expectedDefinition: [
                     {
-                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
+                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L78:1`,
                         precise: false,
                     },
                     {
-                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go#L7:1`,
+                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:1`,
                         precise: false,
                     },
                 ],
@@ -223,9 +228,7 @@ describe('Code intelligence regression test suite', () => {
                     const sidebar = document.querySelector<HTMLElement>('.e2e-repo-rev-sidebar')
                     return sidebar && !sidebar.innerText.includes('backgroundEntry')
                 },
-                {
-                    timeout: 2 * 1000,
-                }
+                { timeout: 2 * 1000 }
             )
             await driver.findElementWithText('buildEntry', {
                 action: 'click',
@@ -241,7 +244,7 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Precise code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        before(async function() {
+        before(async function () {
             this.timeout(30 * 1000)
 
             const repoCommits = [
@@ -251,7 +254,7 @@ describe('Code intelligence regression test suite', () => {
 
             for (const { repository } of repoCommits) {
                 // First, remove all existing uploads for the repository
-                await clearUploads(gqlClient, repository)
+                await clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
             }
 
             const uploadUrls = []
@@ -270,7 +273,7 @@ describe('Code intelligence regression test suite', () => {
                 )
 
                 innerResourceManager.add('LSIF upload', `${repository} upload`, () =>
-                    clearUploads(gqlClient, repository)
+                    clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
                 )
             }
 
@@ -296,23 +299,27 @@ describe('Code intelligence regression test suite', () => {
          *
          * All of these tests deal with the same SamplePair struct.
          */
-        const makeTestCase = (page: string, line: number): CodeNavigationTestCase => {
-            const prometheusCommonPrefix = `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/`
+        const makeTestCase = (
+            page: string,
+            line: number,
+            commonCommit: string = prometheusCommonLSIFCommit
+        ): CodeNavigationTestCase => {
+            const prometheusCommonPrefix = `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/`
             const prometheusCommonLocations = prometheusCommonSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusCommonPrefix}${path}#L${line}:${character}`,
+                url: `${prometheusCommonPrefix}${path}?subtree=true#L${line}:${character}`,
                 precise: true,
             }))
 
             const prometheusClientPrefix = `/github.com/sourcegraph-testing/prometheus-client-golang@${prometheusClientHeadCommit}/-/blob/`
             const prometheusClientLocations = prometheusClientSamplePairLocations.map(({ path, line, character }) => ({
-                url: `${prometheusClientPrefix}${path}#L${line}:${character}`,
+                url: `${prometheusClientPrefix}${path}?subtree=true#L${line}:${character}`,
                 precise: true,
             }))
 
             const prometheusRedefinitionPrefix = `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/`
             const prometheusRedefinitionLocations = prometheusRedefinitionSamplePairLocations.map(
                 ({ path, line, character }) => ({
-                    url: `${prometheusRedefinitionPrefix}${path}#L${line}:${character}`,
+                    url: `${prometheusRedefinitionPrefix}${path}?subtree=true#L${line}:${character}`,
                     precise: false,
                 })
             )
@@ -324,7 +331,7 @@ describe('Code intelligence regression test suite', () => {
                 precise: true,
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 expectedDefinition: {
-                    url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonLSIFCommit}/-/blob/model/value.go#L78:6`,
+                    url: `/github.com/sourcegraph-testing/prometheus-common@${commonCommit}/-/blob/model/value.go?subtree=true#L78:6`,
                     precise: true,
                 },
                 expectedReferences: prometheusCommonLocations
@@ -372,7 +379,8 @@ describe('Code intelligence regression test suite', () => {
                 config,
                 makeTestCase(
                     `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonFallbackCommit}/-/blob/model/value.go`,
-                    31
+                    31,
+                    prometheusCommonFallbackCommit
                 )
             )
         })
@@ -506,6 +514,8 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
+    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
+
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
         return new Set(await collectVisibleLinks(driver))
@@ -617,17 +627,29 @@ function normalizeWhitespace(s: string): string {
 //
 // LSIF utilities
 
+/** Show badge attachments in the UI to distinguish precise and search-based results. */
+async function enableBadgeAttachments(gqlClient: GraphQLClient): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['experimentalFeatures', 'showBadgeAttachments'], true)
+}
+
+/** Replace the codeIntel.includeForks setting with the given value. */
+async function setIncludeForks(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['basicCodeIntel.includeForks'], enabled)
+}
+/** Replace the codeIntel.lsif setting with the given value. */
+async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['codeIntel.lsif'], enabled)
+}
+
 /**
- * Replace the codeIntel.lsif setting with the given value.
- *
  * Return a promise that updates the global settings to their original value. This return value
  * is suitable for use with the resource manager's destroy queue.
  */
-async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unknown): Promise<() => Promise<void>> {
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, ['codeIntel.lsif'], enabled, {
+        setProperty(oldContents, path, value, {
             eol: '\n',
             insertSpaces: true,
             tabSize: 2,
@@ -676,7 +698,9 @@ async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise
 
     const indices = range(nodes.length)
     const args: { [k: string]: string } = {}
-    indices.forEach(i => (args[`upload${i}`] = nodes[i].id))
+    for (const i of indices) {
+        args[`upload${i}`] = nodes[i].id
+    }
 
     await gqlClient
         .mutateGraphQL(
@@ -722,7 +746,7 @@ async function performUpload(
         const tarCommand = ['tar', '-xzf', `${path.basename(filename)}.gz`].join(' ')
         await child_process.exec(tarCommand, { cwd })
     } catch (error) {
-        throw new Error(`Failed to untar test data: ${error}`)
+        throw new Error(`Failed to untar test data: ${asError(error).message}`)
     }
 
     let out!: string
@@ -745,11 +769,13 @@ async function performUpload(
             throw new Error('src-cli is not available on PATH')
         }
 
-        throw new Error(`Failed to upload LSIF data: ${error.stderr || error.stdout || '(no output)'}`)
+        throw new Error(
+            `Failed to upload LSIF data: ${(error.stderr as string) || (error.stdout as string) || '(no output)'}`
+        )
     }
 
     // Extract the status URL
-    const match = out.match(/To check the status, visit (.+).\n$/)
+    const match = out.match(/View processing status at (.+).\n$/)
     if (!match) {
         throw new Error(`Unexpected output from Sourcegraph cli: ${out}`)
     }
@@ -758,27 +784,15 @@ async function performUpload(
 }
 
 /**
- * Refresh the upload page until it has finished processing. Then, navigate to the
- * list of uploads for that repository and ensure that it's visible in the list of
- * uploads visible at the tip of the default branch.
+ * Wait on the upload page until it has finished processing and ensure that it's
+ * visible at the tip of the default branch.
  */
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
-    const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-
     await driver.page.goto(uploadUrl)
-    while (true) {
-        // Keep reloading upload page until the upload is terminal (not queued, not processed)
-        const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-        if (!pendingUploadStateMessages.includes(text || '')) {
-            break
-        }
 
-        await driver.page.reload()
-    }
-
-    // Ensure upload is successful
-    const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-    expect(stateText).toEqual('Upload processed successfully.')
+    await driver.page.waitFor(
+        () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
+    )
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent

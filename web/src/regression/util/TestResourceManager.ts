@@ -1,3 +1,5 @@
+import { asError } from '../../../../shared/src/util/errors'
+
 export type ResourceDestructor = () => Promise<void>
 
 interface Resource {
@@ -62,7 +64,9 @@ export class TestResourceManager {
                 await resource.destroy()
             } catch (err) {
                 console.error(
-                    `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${err.message}`
+                    `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${
+                        asError(err).message
+                    }`
                 )
                 continue
             }

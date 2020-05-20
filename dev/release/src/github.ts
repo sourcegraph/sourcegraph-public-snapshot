@@ -1,6 +1,5 @@
 import Octokit from '@octokit/rest'
 import { readLine } from './util'
-import { readFile } from 'mz/fs'
 import { promisify } from 'util'
 import * as semver from 'semver'
 import { mkdtemp as original_mkdtemp } from 'fs'
@@ -29,10 +28,11 @@ export async function ensureTrackingIssue({
     fiveWorkingDaysBeforeRelease: Date
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const releaseIssueTemplate = await readFile(
-        '../../../about/handbook/engineering/releases/release_issue_template.md',
-        { encoding: 'utf8' }
-    )
+    const releaseIssueTemplate = await getContent(octokit, {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/release_issue_template.md',
+    })
     const releaseIssueBody = releaseIssueTemplate
         .replace(/\$MAJOR/g, majorVersion)
         .replace(/\$MINOR/g, minorVersion)
@@ -75,10 +75,11 @@ export async function ensurePatchReleaseIssue({
     assignees: string[]
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const issueTemplate = await readFile(
-        '../../../about/handbook/engineering/releases/patch_release_issue_template.md',
-        { encoding: 'utf8' }
-    )
+    const issueTemplate = await getContent(octokit, {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/patch_release_issue_template.md',
+    })
     const issueBody = issueTemplate
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
@@ -90,6 +91,21 @@ export async function ensurePatchReleaseIssue({
         assignees,
         body: issueBody,
     })
+}
+
+async function getContent(
+    octokit: Octokit,
+    params: {
+        owner: string
+        repo: string
+        path: string
+    }
+): Promise<string> {
+    const resp = await octokit.repos.getContents(params)
+    if (Array.isArray(resp.data)) {
+        throw new Error(`${params.path} is a directory`)
+    }
+    return Buffer.from(resp.data.content as string, 'base64').toString()
 }
 
 async function ensureIssue(
@@ -141,7 +157,8 @@ export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
         'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
         '.secrets/github.txt'
     )
-    return new Octokit({ auth: githubPAT })
+    const trimmedGithubPAT = githubPAT.trim()
+    return new Octokit({ auth: trimmedGithubPAT })
 }
 
 export async function getIssueByTitle(octokit: Octokit, title: string): Promise<string | null> {

@@ -22,17 +22,21 @@ interface Props extends RouteComponentProps<{}> {
 /**
  * Sidebar for repository settings pages.
  */
-export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props) =>
-    props.repo ? (
-        <div className={`repo-settings-sidebar ${props.className || ''}`}>
+export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
+    repo,
+    className,
+    repoSettingsSidebarItems,
+}: Props) =>
+    repo ? (
+        <div className={`repo-settings-sidebar ${className || ''}`}>
             <div className={SIDEBAR_CARD_CLASS}>
                 <div className="card-header">Settings</div>
                 <div className="list-group list-group-flush">
-                    {props.repoSettingsSidebarItems.map(
+                    {repoSettingsSidebarItems.map(
                         ({ label, to, exact, condition = () => true }) =>
                             condition({}) && (
                                 <NavLink
-                                    to={`/${props.repo && props.repo.name}/-/settings${to}`}
+                                    to={`/${repo?.name}/-/settings${to}`}
                                     exact={exact}
                                     key={label}
                                     className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
@@ -49,5 +53,5 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props
             </Link>
         </div>
     ) : (
-        <div className={`repo-settings-sidebar ${props.className || ''}`} />
+        <div className={`repo-settings-sidebar ${className || ''}`} />
     )

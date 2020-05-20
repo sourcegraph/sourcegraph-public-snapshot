@@ -1,36 +1,36 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
-import CircularProgressbar from 'react-circular-progressbar'
+import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
-import { ActivationChecklistItem } from './ActivationChecklist'
-import { Link } from '../Link'
+import { ActivationChecklist } from './ActivationChecklist'
+import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
+import classNames from 'classnames'
 
-interface Props {
+export interface ActivationDropdownProps extends Pick<MenuPopoverProps, 'portal'> {
     history: H.History
     activation: Activation
+    /**
+     * Forces display of the activation dropdown button. Used for Storybook testing.
+     */
+    alwaysShow?: boolean
 }
 
 interface State {
     displayEvenIfFullyCompleted: boolean
-    isOpen: boolean
     animate: boolean
 }
 
 const animationDurationMillis = 3260
-
 /**
  * Renders the activation status navlink item, a dropdown button that shows activation
  * status in the navbar.
  */
-export class ActivationDropdown extends React.PureComponent<Props, State> {
-    public state: State = { isOpen: false, animate: false, displayEvenIfFullyCompleted: false }
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
-    private componentUpdates = new Subject<Props>()
+export class ActivationDropdown extends React.PureComponent<ActivationDropdownProps, State> {
+    public state: State = { animate: false, displayEvenIfFullyCompleted: false }
+    private componentUpdates = new Subject<ActivationDropdownProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -65,11 +65,16 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element {
+    public render(): JSX.Element | null {
         const show =
+            this.props.alwaysShow ||
             this.state.displayEvenIfFullyCompleted ||
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
+        if (!show) {
+            return null
+        }
+
         const confettiConfig = {
             spread: 68,
             startVelocity: 12,
@@ -77,76 +82,70 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             dragFriction: 0.09,
             duration: animationDurationMillis,
             delay: 20,
-            width: 10,
-            height: 10,
             colors: ['#a864fd', '#29cdff', '#78ff44', '#ff718d', '#fdff6a'],
         }
         return (
-            <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
-                className={`${show ? '' : 'activation-dropdown-button--hidden'} nav-link p-0`}
-            >
-                <DropdownToggle
-                    caret={false}
-                    className={`${
-                        this.state.animate ? 'animate' : ''
-                    } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle`}
-                    nav={true}
-                >
-                    <Confetti
-                        active={this.state.animate}
-                        config={{
-                            angle: 210,
-                            ...confettiConfig,
-                        }}
-                    />
-                    Get started
-                    <Confetti
-                        active={this.state.animate}
-                        config={{
-                            angle: 330,
-                            ...confettiConfig,
-                        }}
-                    />
-                    <span className="activation-dropdown-button__progress-bar-container">
-                        <CircularProgressbar
-                            className="activation-dropdown-button__circular-progress-bar"
-                            strokeWidth={12}
-                            percentage={percentageDone(this.props.activation.completed)}
-                        />
-                    </span>
-                </DropdownToggle>
-                <DropdownMenu className="activation-dropdown" right={true}>
-                    <Link to="/onboard/guide" className="dropdown-item-text activation-dropdown-header">
-                        <h3>Welcome to Sourcegraph</h3>
-                        <p className="mb-1">Complete the steps below to finish onboarding!</p>
-                    </Link>
-                    <DropdownItem divider={true} />
-                    {this.props.activation && this.props.activation.completed ? (
-                        this.props.activation.steps.map(step => (
-                            <div
-                                key={step.id}
-                                className="activation-dropdown-item dropdown-item"
-                                onClick={this.toggleIsOpen}
-                            >
-                                <ActivationChecklistItem
-                                    {...step}
-                                    history={this.props.history}
-                                    done={
-                                        (this.props.activation.completed && this.props.activation.completed[step.id]) ||
-                                        false
-                                    }
+            <Menu>
+                {({ isExpanded }) => (
+                    <>
+                        <MenuButton
+                            className={classNames(
+                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
+                                { animate: this.state.animate }
+                            )}
+                        >
+                            <div className="activation-dropdown-button__confetti">
+                                <Confetti
+                                    active={this.state.animate}
+                                    config={{
+                                        angle: 210,
+                                        ...confettiConfig,
+                                    }}
                                 />
                             </div>
-                        ))
-                    ) : (
-                        <div className="activation-dropdown-button__loader">
-                            <LoadingSpinner className="icon-inline" />
-                        </div>
-                    )}
-                </DropdownMenu>
-            </ButtonDropdown>
+                            Get started
+                            <div className="activation-dropdown-button__confetti">
+                                <Confetti
+                                    active={this.state.animate}
+                                    config={{
+                                        angle: 330,
+                                        ...confettiConfig,
+                                    }}
+                                />
+                            </div>
+                            <span className="activation-dropdown-button__progress-bar-container">
+                                <CircularProgressbar
+                                    className="activation-dropdown-button__circular-progress-bar"
+                                    strokeWidth={12}
+                                    value={percentageDone(this.props.activation.completed)}
+                                />
+                            </span>
+                        </MenuButton>
+                        <MenuPopover
+                            className={classNames('activation-dropdown', 'dropdown-menu', {
+                                show: isExpanded || this.props.alwaysShow,
+                            })}
+                            hidden={!(isExpanded || this.props.alwaysShow)}
+                            portal={this.props.portal}
+                        >
+                            <div className="dropdown-item-text activation-dropdown-header">
+                                <h3 className="mb-0">
+                                    {percentageDone(this.props.activation.completed) > 0
+                                        ? 'Almost there!'
+                                        : 'Welcome to Sourcegraph'}
+                                </h3>
+                                <p className="mb-2">Complete the steps below to finish onboarding!</p>
+                            </div>
+                            <ActivationChecklist
+                                {...this.props}
+                                steps={this.props.activation.steps}
+                                completed={this.props.activation.completed}
+                                className="activation-dropdown__checklist"
+                            />
+                        </MenuPopover>
+                    </>
+                )}
+            </Menu>
         )
     }
 }

@@ -3,13 +3,13 @@ package auth
 import (
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
@@ -41,7 +41,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 					Email:           username + "+override@example.com",
 					EmailIsVerified: true,
 				},
-				ExternalAccount: extsvc.ExternalAccountSpec{
+				ExternalAccount: extsvc.AccountSpec{
 					ServiceType: "override",
 					AccountID:   username,
 				},

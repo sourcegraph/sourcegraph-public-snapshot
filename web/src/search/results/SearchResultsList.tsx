@@ -20,7 +20,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, hasProperty } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
@@ -30,8 +30,10 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
-const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
+const isSearchResults = (val: unknown): val is GQL.ISearchResults =>
+    typeof val === 'object' && val !== null && hasProperty('__typename')(val) && val.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -41,7 +43,8 @@ export interface SearchResultsListProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -86,7 +89,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** Emits with the index of the first visible result on the page */
     private firstVisibleItems = new Subject<number>()
 
-    /** Refrence to the current scrollable list element */
+    /** Reference to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
     private setScrollableElementRef = (ref: HTMLElement | null): void => {
         this.scrollableElementRef = ref
@@ -119,7 +122,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.subscriptions.add(
             this.visibleItemChanges
                 .pipe(filter(({ isVisible, index }) => isVisible && !this.state.visibleItems.has(index)))
-                .subscribe(({ isVisible, index }) => {
+                .subscribe(({ index }) => {
                     this.setState(({ visibleItems }) => {
                         visibleItems.add(index)
 
@@ -305,7 +308,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public render(): React.ReactNode {
-        const parsedQuery = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
+        const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
             <>
@@ -344,6 +347,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             className="m-2"
                             data-testid="search-results-list-error"
                             error={this.props.resultsOrError}
+                            history={this.props.history}
                         />
                     ) : (
                         (() => {
@@ -372,7 +376,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
                                         items={results.results
-                                            .map((result, i) => this.renderResult(result, i <= 15))
+                                            .map(result => this.renderResult(result))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
@@ -423,6 +427,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                             proposedQuery.query,
                                                                             this.props.patternType,
                                                                             this.props.caseSensitive,
+                                                                            this.props.versionContext,
                                                                             this.props.filtersInQuery
                                                                         )
                                                                     }
@@ -441,11 +446,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
                                                 this.renderRecommendations(
-                                                    window.context.deployType !== 'cluster'
+                                                    ['dev', 'docker-container'].includes(window.context.deployType)
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
-                                                                  scalable Kubernetes cluster deployment option.
+                                                                  scalable Docker Compose or Kubernetes cluster
+                                                                  deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
@@ -471,7 +477,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
                         <Link className="mb-4 p-3" to="/help/user/search">
-                            Not seeing expected results?
+                            Learn more about our search syntax.
                         </Link>
                     )}
                 </div>
@@ -498,10 +504,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(
-        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
-        expanded: boolean
-    ): JSX.Element | undefined {
+    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
@@ -521,7 +524,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )
         }
-        return <SearchResult key={result.url} result={result} isLightTheme={this.props.isLightTheme} />
+        return (
+            <SearchResult
+                key={result.url}
+                result={result}
+                isLightTheme={this.props.isLightTheme}
+                history={this.props.history}
+            />
+        )
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

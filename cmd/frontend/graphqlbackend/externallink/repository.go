@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Repository returns the external links for a repository.
@@ -104,7 +104,7 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 // It logs errors to the trace but does not return errors, because external links are not worth
 // failing any request for.
 func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
+	span, ctx := ot.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
 	span.SetTag("Repo", repo.Name)
 	span.SetTag("ExternalRepo", repo.ExternalRepo)
@@ -135,10 +135,8 @@ func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.
 }
 
 var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "links_for_repository_failed_total",
-	Help:      "The total number of times the GraphQL field LinksForRepository failed.",
+	Name: "src_graphql_links_for_repository_failed_total",
+	Help: "The total number of times the GraphQL field LinksForRepository failed.",
 })
 
 func init() {

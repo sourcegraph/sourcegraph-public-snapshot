@@ -4,55 +4,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // Feature is a product feature that is selectively activated based on the current license key.
 type Feature string
-
-// The list of features. For each feature, add a new const here and the checking logic in
-// isFeatureEnabled below.
-const (
-	// FeatureACLs is whether ACLs may be used, such as GitHub or GitLab repository permissions and
-	// integration with GitHub/GitLab for user authentication.
-	FeatureACLs Feature = "acls"
-
-	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance is
-	// allowed. If not, then extensions must be published to Sourcegraph.com. All instances may use
-	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry Feature = "private-extension-registry"
-
-	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explictly specify a list
-	// of allowed remote extensions and prevent any other remote extensions from being used. It does
-	// not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow = "remote-extensions-allow-disallow"
-)
-
-func isFeatureEnabled(info license.Info, feature Feature) bool {
-	// Allow features to be explicitly enabled/disabled in the license tags.
-	if info.HasTag(string(feature)) {
-		return true
-	}
-	if info.HasTag("no-" + string(feature)) {
-		return false
-	}
-
-	// Add feature-specific logic here.
-	switch feature {
-	case FeatureACLs:
-		// Enterprise Starter does not support ACLs.
-		return !info.HasTag(EnterpriseStarterTag)
-	case FeatureExtensionRegistry:
-		// Enterprise Starter does not support a local extension registry.
-		return !info.HasTag(EnterpriseStarterTag)
-	case FeatureRemoteExtensionsAllowDisallow:
-		// Enterprise Starter does not support explictly allowing/disallowing remote extensions by
-		// extension ID.
-		return !info.HasTag(EnterpriseStarterTag)
-	}
-	return false
-}
 
 // CheckFeature checks whether the feature is activated based on the current license. If it is
 // disabled, it returns a non-nil error.
@@ -60,17 +16,37 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 // The returned error may implement errcode.PresentationError to indicate that it can be displayed
 // directly to the user. Use IsFeatureNotActivated to distinguish between the error reasons.
 func CheckFeature(feature Feature) error {
+	if MockCheckFeature != nil {
+		return MockCheckFeature(feature)
+	}
+
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
+	return checkFeature(info, feature)
+}
+
+func checkFeature(info *Info, feature Feature) error {
 	if info == nil {
 		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature))
 	}
-	if !isFeatureEnabled(*info, feature) {
-		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated for Sourcegraph Enterprise Starter. Upgrade to Sourcegraph Enterprise to use this feature.", feature))
+	if !info.Plan().HasFeature(feature) {
+		return newFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature))
 	}
 	return nil // feature is activated for current license
+}
+
+// MockCheckFeature is for mocking CheckFeature in tests.
+var MockCheckFeature func(feature Feature) error
+
+// TestingSkipFeatureChecks is for tests that want to mock CheckFeature to always return nil (i.e.,
+// behave as though the current license enables all features).
+//
+// It returns a cleanup func so callers can use `defer TestingSkipFeatureChecks()()` in a test body.
+func TestingSkipFeatureChecks() func() {
+	MockCheckFeature = func(Feature) error { return nil }
+	return func() { MockCheckFeature = nil }
 }
 
 func newFeatureNotActivatedError(message string) featureNotActivatedError {

@@ -4,11 +4,11 @@
 
 > Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
-> For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
-
 ## Getting started
 
-Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](lsif_in_ci.md), or using [GitHub Actions](lsif_on_github.md).
+First check if we've created any [language-specific guides](languages/index.md) that fit your needs. Otherwise, follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can follow our [continuous integration guide](adding_lsif_to_workflows.md#lsif-in-continuous-integration) to automate that process for new commits.
+
+LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 
 ## Enabling LSIF on your Sourcegraph instance
 
@@ -26,18 +26,14 @@ You may occasionally see results from [basic code intelligence](basic_code_intel
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
-- The current file doesn't exist in the nearest LSIF dump or has been changed between the LSIF dump and the browsing commit.
+- The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
 
-## Data retention policy
+## Cross-repository code intelligence
 
-The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of disk space falls above a threshold. This value can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable. The default value of this variable is `10737418240`, which is `1024 * 1024 * 1024 * 10` bytes, or `10` gigabytes.
+Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, the missing precise results will be supplemented with imprecise search-based code intelligence.
 
-## Warning about uploading too much data
-
-Global find-references is a resource-intensive operation that's sensitive to the number of packages for which you have uploaded LSIF data into your Sourcegraph instance. Improvements to this are planned for Sourcegraph 3.10 (see the [RFC](https://docs.google.com/document/d/1VZB0Y4tWKeOUN1JvdDgo4LHwQn875MPOI9xztzqoSRc/edit#)).
-
-**Do not upload more than 10-40 LSIF dumps to your Sourcegraph instance or you risk harming other parts of Sourcegraph. We are working to validate its performance at scale and eliminate this concern.**
+## Size of upload data
 
 The following table gives a rough estimate for the space and time requirements for indexing and conversion. These repositories are a representative sample of public Go repositories available on GitHub. The working tree size is the size of the clone at the given commit (without git history), the number of files indexed, and the number of lines of Go code in the repository. The index size gives the size of the uncompressed LSIF output of the indexer. The conversion size gives the total amount of disk space occupied after uploading the dump to a Sourcegraph instance.
 
@@ -51,14 +47,9 @@ The following table gives a rough estimate for the space and time requirements f
 | [kubernetes](https://github.com/kubernetes/kubernetes/tree/e680ad7) | 301MB, 4577 files,   1.550m loc |  1.21m | 910MB |  80.06s | 162MB |
 | [aws-sdk-go](https://github.com/aws/aws-sdk-go/tree/18a2d30)        | 119MB, 1759 files,   1.067m loc |  8.20m | 1.3GB | 155.82s | 358MB |
 
+## Data retention policy
 
-
-
-
-
-## Cross-repository code intelligence
-
-Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, there will be no code intelligence results (we're working on fallback to fuzzy code intelligence for 3.10).
+The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of used disk space exceeds a configurable threshold. This value defaults to 10 GiB (10⨉2^30 = 10737418240  bytes), and can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable.
 
 ## More about LSIF
 

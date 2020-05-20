@@ -1,15 +1,12 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
-import {
-    FiltersToTypeAndValue,
-    filterTypeKeys,
-    negatedFilters,
-    NegatedFilters,
-    isNegatableFilter,
-} from '../search/interactive/util'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
+import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
+import { tryCatch } from './errors'
 
 export interface RepoSpec {
     /**
@@ -61,18 +58,39 @@ interface ComparisonSpec {
     commitRange: string
 }
 
-export interface PositionSpec {
-    /**
-     * a 1-indexed point in the blob
-     */
-    position: Position
+/**
+ * 1-indexed position in a blob.
+ * Positions in URLs are 1-indexed.
+ */
+interface UIPosition {
+    /** 1-indexed line number */
+    line: number
+
+    /** 1-indexed character number */
+    character: number
 }
 
-interface RangeSpec {
+/**
+ * 1-indexed range in a blob.
+ * Ranges in URLs are 1-indexed.
+ */
+interface UIRange {
+    start: UIPosition
+    end: UIPosition
+}
+
+export interface UIPositionSpec {
     /**
-     * a 1-indexed range in the blob
+     * A 1-indexed point in the blob
      */
-    range: Range
+    position: UIPosition
+}
+
+export interface UIRangeSpec {
+    /**
+     * A 1-indexed range in the blob
+     */
+    range: UIRange
 }
 
 /**
@@ -83,7 +101,7 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -99,7 +117,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-interface RenderModeSpec {
+export interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -115,17 +133,17 @@ export interface ParsedRepoURI
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
-        Partial<PositionSpec>,
-        Partial<RangeSpec> {}
+        Partial<UIPositionSpec>,
+        Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
- *   - the repository itself: `git://github.com/gorilla/mux`
- *   - the repository at a particular revision: `git://github.com/gorilla/mux?rev`
- *   - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
- *   - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
- *   - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
- *   - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
+ * - the repository itself: `git://github.com/gorilla/mux`
+ * - the repository at a particular revision: `git://github.com/gorilla/mux?rev`
+ * - a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go
+ * - a line in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3
+ * - a character position in a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5
+ * - a rangein a file in a repository at an immutable revision: `git://github.com/gorilla/mux?SHA#path/to/file.go:3,5-4,9
  */
 type RepoURI = string
 
@@ -157,13 +175,10 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     if (rev?.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash
-        .substr('#'.length)
-        .split(':')
-        .map(decodeURIComponent)
+    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
-    let position: Position | undefined
-    let range: Range | undefined
+    let position: UIPosition | undefined
+    let range: UIRange | undefined
     if (fragmentSplit.length === 1) {
         filePath = fragmentSplit[0]
     }
@@ -222,7 +237,7 @@ export interface AbsoluteRepoFilePosition
         RevSpec,
         ResolvedRevSpec,
         FileSpec,
-        PositionSpec,
+        UIPositionSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -331,8 +346,7 @@ export function isLegacyFragment(hash: string): boolean {
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
  *
- * @template V The type that describes the view state (typically a union of string constants). There is no runtime
- *             check that the return value satisfies V.
+ * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
     if (hash.startsWith('#')) {
@@ -452,16 +466,37 @@ function parseLineOrPosition(
 }
 
 /** Encodes a repository at a revspec for use in a URL. */
-export function encodeRepoRev(repo: string, rev?: string): string {
-    return rev ? `${repo}@${escapeRevspecForURL(rev)}` : repo
+export function encodeRepoRev({ repoName, rev }: RepoSpec & Partial<RevSpec>): string {
+    return rev ? `${repoName}@${escapeRevspecForURL(rev)}` : repoName
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
+    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
-        ctx
-    )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
+    return `/${encodeRepoRev({ repoName: target.repoName, rev: target.rev })}/-/blob/${
+        target.filePath
+    }${toRenderModeQuery(target)}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+}
+
+/**
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    ctx: RepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(ctx)}`
+}
+
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+export function toRepoURL(target: RepoSpec & Partial<RevSpec>): string {
+    return '/' + encodeRepoRev(target)
 }
 
 /**
@@ -525,6 +560,8 @@ export function withWorkspaceRootInputRevision(
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
+ * @param versionContext (optional): the version context to search in. If undefined, we interpret
+ * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  * @param filtersInQuery filters in an interactive mode query. For callers of
  * this function requiring correct behavior in interactive mode, this param
@@ -535,34 +572,34 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
+    versionContext?: string,
     filtersInQuery?: FiltersToTypeAndValue
 ): string {
-    let searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams()
+    let fullQuery = query
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const newQuery = query.replace(
-            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
-            ''
-        )
-        searchParams.set('q', newQuery)
+        const { start, end } = patternTypeInQuery.range
+        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
-        query = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(query)
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        const newQuery = query.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
-        searchParams.set('q', newQuery)
+        fullQuery = replaceRange(fullQuery, caseInQuery.range)
+        searchParams.set('q', fullQuery)
 
-        if (caseInQuery.value === 'yes') {
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+            fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
@@ -571,10 +608,8 @@ export function buildSearchURLQuery(
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
             searchParams.delete('case')
         }
-
-        query = newQuery
     } else {
-        searchParams.set('q', query)
+        searchParams.set('q', fullQuery)
         if (caseSensitive) {
             searchParams.set('case', 'yes')
         } else {
@@ -586,40 +621,26 @@ export function buildSearchURLQuery(
         }
     }
 
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
+    if (versionContext) {
+        searchParams.set('c', versionContext)
+    }
+
+    return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
 /**
- * Builds a URL query for a given interactive mode query (without leading `?`).
- * Returns a URLSearchParams object containing the filters and values in the
- * search query.
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
  *
- * @param filtersInQuery the map representing the filters added to the query
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
-export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
-    const searchParams = new URLSearchParams()
-
-    for (const searchType of [...filterTypeKeys, ...negatedFilters]) {
-        for (const [, filterValue] of Object.entries(filtersInQuery)) {
-            if (filterValue.type === searchType) {
-                if (filterValue.negated) {
-                    if (isNegatableFilter(searchType)) {
-                        searchParams.append(NegatedFilters[searchType], filterValue.value)
-                    }
-                    continue
-                }
-                searchParams.append(searchType, filterValue.value)
-            }
-        }
-    }
-
-    return searchParams
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    return Object.values(filtersInQuery)
+        .filter(filter => filter.value.trim().length > 0)
+        .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
+        .join(' ')
 }
 
-function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
@@ -640,7 +661,7 @@ function parsePatternTypeFromQuery(query: string): { range: CharacterRange; valu
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
@@ -654,4 +675,19 @@ function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; 
         }
     }
     return undefined
+}
+
+/**
+ * Returns true if the given URL points outside the current site.
+ */
+export const isExternalLink = (url: string): boolean =>
+    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+
+/**
+ * Appends the query parameter subtree=true to URLs.
+ */
+export const appendSubtreeQueryParam = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('subtree', 'true')
+    return newUrl.pathname + newUrl.search + newUrl.hash
 }

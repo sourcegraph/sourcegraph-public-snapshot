@@ -12,7 +12,6 @@ export const extensionAreaRoutes: readonly ExtensionAreaRoute[] = [
     {
         path: '',
         exact: true,
-        // eslint-disable-next-line react/jsx-no-bind
         render: props => <RegistryExtensionOverviewPage eventLogger={eventLogger} {...props} />,
     },
     {

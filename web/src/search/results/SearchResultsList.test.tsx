@@ -122,6 +122,7 @@ describe('SearchResultsList', () => {
         toggleSearchMode: sinon.fake(),
         onFiltersInQueryChange: sinon.fake(),
         splitSearchModes: false,
+        versionContext: undefined,
     }
 
     it('displays loading text when results is undefined', () => {
@@ -137,7 +138,7 @@ describe('SearchResultsList', () => {
     it('shows error message when the search GraphQL request returns an error', () => {
         const { container } = render(
             <BrowserRouter>
-                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', code: 'error' }} />
+                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', name: 'TestError' }} />
             </BrowserRouter>
         )
         expect(getByTestId(container, 'search-results-list-error')).toBeTruthy()

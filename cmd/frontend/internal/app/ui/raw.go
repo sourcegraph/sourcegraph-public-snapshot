@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"io"
@@ -8,11 +9,13 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
@@ -55,11 +58,8 @@ import (
 // - This route would ideally be using strict slashes, in order for us to support symlinks via HTTP redirects.
 //
 
-func serveRaw(w http.ResponseWriter, r *http.Request) error {
-	var (
-		common *Common
-		err    error
-	)
+func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
+	var common *Common
 	for {
 		// newCommon provides various repository handling features that we want, so
 		// we use it but discard the resulting structure. It provides:
@@ -119,6 +119,29 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		contentType = applicationXTar
 	}
 
+	// Instrument to understand duration and errors
+	var (
+		start       = time.Now()
+		requestType = "unknown"
+		size        int64
+	)
+	defer func() {
+		duration := time.Since(start)
+		log15.Debug("raw endpoint", "repo", common.Repo.Name, "commit", common.CommitID, "contentType", contentType, "type", requestType, "path", requestedPath, "size", size, "duration", duration, "error", err)
+		var errorS string
+		switch {
+		case err == nil:
+			errorS = "nil"
+		case r.Context().Err() == context.Canceled:
+			errorS = "canceled"
+		case r.Context().Err() == context.DeadlineExceeded:
+			errorS = "timeout"
+		default:
+			errorS = "error"
+		}
+		metricRawDuration.WithLabelValues(contentType, requestType, errorS).Observe(duration.Seconds())
+	}()
+
 	switch contentType {
 	case applicationZip, applicationXTar:
 		// Set the proper filename field, so that downloading "/github.com/gorilla/mux/-/raw"
@@ -141,7 +164,17 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			relativePath = "."
 		}
 
-		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
+		if relativePath == "." {
+			requestType = "rootarchive"
+		} else {
+			requestType = "patharchive"
+		}
+
+		metricRunning := metricRawArchiveRunning.WithLabelValues(string(format))
+		metricRunning.Inc()
+		defer metricRunning.Dec()
+
+		f, err := openArchiveReader(r.Context(), vfsutil.ArchiveOpts{
 			Repo:         common.Repo.Name,
 			Commit:       common.CommitID,
 			Format:       format,
@@ -151,11 +184,6 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		defer f.Close()
-		fi, err := f.Stat()
-		if err != nil {
-			return err
-		}
-		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
 
 		_, err = io.Copy(w, f)
 		return err
@@ -207,16 +235,19 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
 		if err != nil {
 			if os.IsNotExist(err) {
+				requestType = "404"
 				http.Error(w, html.EscapeString(err.Error()), http.StatusNotFound)
 				return nil // request handled
 			}
 			return err
 		}
 		if fi.IsDir() {
+			requestType = "dir"
 			infos, err := archiveFS.ReadDir(r.Context(), requestedPath)
 			if err != nil {
 				return err
 			}
+			size = int64(len(infos))
 			var names []string
 			for _, info := range infos {
 				name := info.Name()
@@ -231,6 +262,8 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// File
+		requestType = "file"
+		size = fi.Size()
 		f, err := archiveFS.Open(r.Context(), requestedPath)
 		if err != nil {
 			return err
@@ -240,3 +273,23 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 }
+
+// openArchiveReader runs git archive and streams the output. Note: we do not
+// use vfsutil since most archives are just streamed once so caching locally
+// is not useful. Additionally we transfer the output over the internet, so we
+// use default compression levels on zips (instead of no compression).
+func openArchiveReader(ctx context.Context, opts vfsutil.ArchiveOpts) (io.ReadCloser, error) {
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(opts.Format), string(opts.Commit), opts.RelativePath)
+	cmd.Repo = gitserver.Repo{Name: opts.Repo}
+	return gitserver.StdoutReader(ctx, cmd)
+}
+
+var metricRawDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_frontend_http_raw_duration_seconds",
+	Help:    "A histogram of latencies for the raw endpoint.",
+	Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
+}, []string{"content", "type", "error"})
+var metricRawArchiveRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "src_frontend_http_raw_archive_running",
+	Help: "The number of concurrent raw archives being fetched.",
+}, []string{"format"})

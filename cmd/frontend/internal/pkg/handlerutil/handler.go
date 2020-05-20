@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/gorilla/schema"
 	"github.com/pkg/errors"

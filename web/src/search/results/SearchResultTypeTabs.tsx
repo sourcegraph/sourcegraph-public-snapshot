@@ -1,18 +1,21 @@
 import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
+interface Props
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     query: string
-    filtersInQuery: FiltersToTypeAndValue
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
-    <div className="search-result-type-tabs e2e-search-result-type-tabs border-bottom">
+    <div className="mt-2 border-bottom e2e-search-result-type-tabs">
         <ul className="nav nav-tabs border-bottom-0">
             <SearchResultTabHeader {...props} type={null} />
             <SearchResultTabHeader {...props} type="diff" />

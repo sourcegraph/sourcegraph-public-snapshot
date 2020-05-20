@@ -1,10 +1,11 @@
-import { Suggestion, FiltersSuggestionTypes } from './input/Suggestion'
+import { Suggestion, FilterSuggestionTypes } from './input/Suggestion'
 import { assign } from 'lodash/fp'
 import { languageIcons } from '../../../shared/src/components/languageIcons'
-import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
+import { FilterType } from '../../../shared/src/search/interactive/util'
 
 export type SearchFilterSuggestions = Record<
-    FiltersSuggestionTypes,
+    FilterSuggestionTypes,
     {
         default?: string
         values: Suggestion[]
@@ -78,17 +79,36 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'timeout:',
                 description: '"string specifying time duration" (duration before timeout)',
             },
+            {
+                value: 'after:',
+                description: '"string specifying time frame" (time frame to match commits after)',
+            },
+            {
+                value: 'before:',
+                description: '"string specifying time frame" (time frame to match commits before)',
+            },
+            {
+                value: 'message:',
+                description: 'commit message contents',
+            },
+            {
+                value: 'content:',
+                description: 'override the search pattern',
+            },
+            {
+                value: 'visibility:',
+                description: 'any | public | private',
+            },
         ].map(
             assign({
-                type: SuggestionTypes.filters,
+                type: NonFilterSuggestionType.filters,
             })
         ),
     },
     type: {
-        default: 'code',
-        values: [{ value: 'code' }, { value: 'diff' }, { value: 'commit' }, { value: 'symbol' }].map(
+        values: [{ value: 'diff' }, { value: 'commit' }, { value: 'symbol' }, { value: 'file' }, { value: 'path' }].map(
             assign({
-                type: SuggestionTypes.type,
+                type: FilterType.type,
             })
         ),
     },
@@ -96,7 +116,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'no',
         values: [{ value: 'yes' }, { value: 'no' }].map(
             assign({
-                type: SuggestionTypes.case,
+                type: FilterType.case,
             })
         ),
     },
@@ -104,7 +124,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterType.fork,
             })
         ),
     },
@@ -112,7 +132,15 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         default: 'yes',
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
-                type: SuggestionTypes.archived,
+                type: FilterType.archived,
+            })
+        ),
+    },
+    visibility: {
+        default: 'any',
+        values: [{ value: 'any' }, { value: 'private' }, { value: 'public' }].map(
+            assign({
+                type: FilterType.visibility,
             })
         ),
     },
@@ -123,11 +151,11 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ].map(suggestion => ({
             ...suggestion,
             description: suggestion.value,
-            type: SuggestionTypes.file,
+            type: FilterType.file,
         })),
     },
     lang: {
-        values: Object.keys(languageIcons).map(value => ({ type: SuggestionTypes.lang, value })),
+        values: Object.keys(languageIcons).map(value => ({ type: FilterType.lang, value })),
     },
     repogroup: {
         values: [],
@@ -141,21 +169,53 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     repohascommitafter: {
         values: [{ value: "'1 week ago'" }, { value: "'1 month ago'" }].map(
             assign({
-                type: SuggestionTypes.repohascommitafter,
+                type: FilterType.repohascommitafter,
             })
         ),
     },
     count: {
         values: [{ value: '100' }, { value: '1000' }].map(
             assign({
-                type: SuggestionTypes.count,
+                type: FilterType.count,
             })
         ),
     },
     timeout: {
         values: [{ value: '10s' }, { value: '30s' }].map(
             assign({
-                type: SuggestionTypes.timeout,
+                type: FilterType.timeout,
+            })
+        ),
+    },
+    author: {
+        values: [],
+    },
+    message: {
+        values: [],
+    },
+    before: {
+        values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
+            assign({ type: FilterType.before })
+        ),
+    },
+    after: {
+        values: [{ value: '"1 week ago"' }, { value: '"1 day ago"' }, { value: '"last thursday"' }].map(
+            assign({ type: FilterType.after })
+        ),
+    },
+    content: {
+        values: [],
+    },
+    patterntype: {
+        values: [{ value: 'literal' }, { value: 'structural' }, { value: 'regexp' }].map(
+            assign({ type: FilterType.patterntype })
+        ),
+    },
+    index: {
+        default: 'yes',
+        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.index,
             })
         ),
     },

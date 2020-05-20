@@ -4,8 +4,15 @@ import * as H from 'history'
 import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
-import './ActionItem.scss'
 import { NEVER } from 'rxjs'
+import webStyles from '../../../web/src/SourcegraphWebApp.scss'
+
+const { add } = storiesOf('ActionItem', module).addDecorator(story => (
+    <>
+        <style>{webStyles}</style>
+        <div className="p-4">{story()}</div>
+    </>
+))
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -22,8 +29,6 @@ const ICON_URL =
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=='
 
 const onDidExecute = action('onDidExecute')
-
-const { add } = storiesOf('ActionItem', module)
 
 add('noop action', () => (
     <ActionItem

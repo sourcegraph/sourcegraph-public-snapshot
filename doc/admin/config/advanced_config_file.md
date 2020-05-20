@@ -2,7 +2,7 @@
 
 Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin UI.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), [external services configuration](../external_service/index.md), and global settings.
+As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), [code host configuration](../external_service/index.md), and global settings.
 
 ## Benefits
 
@@ -32,7 +32,7 @@ SITE_CONFIG_FILE=site.json
 
 If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. **Note** that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
-## External services configuration
+## Code host configuration
 
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
@@ -40,27 +40,27 @@ Set the environment variable below on all `frontend` containers (cluster deploym
 EXTSVC_CONFIG_FILE=extsvc.json
 ```
 
-`extsvc.json` contains a JSON object that specifies _all_ of your external services in a single JSONC file:
+`extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:
 
 ```jsonc
 
 {
   "GITHUB": [
     {
-      // First GitHub external service configuration: literally the JSON object from the external service config editor.
+      // First GitHub code host configuration: literally the JSON object from the code host config editor.
       "authorization": {},
       "url": "https://github.com",
       "token": "...",
       "repositoryQuery": ["affiliated"]
     },
     {
-      // Second GitHub external service configuration: literally the JSON object from the external service config editor.
+      // Second GitHub code host configuration: literally the JSON object from the code host config editor.
       ...
     },
   ],
   "PHABRICATOR": [
     {
-      // First Phabricator external service configuration: literally the JSON object from the external service config editor.
+      // First Phabricator code host configuration: literally the JSON object from the code host config editor.
       ...
     },
   ]
@@ -92,7 +92,7 @@ It will still perform such migrations on the configuration loaded from file, it 
 When you upgrade Sourcegraph, you should do the following to ensure your configurations do not become invalid:
 
 1. Upgrade Sourcegraph to the new version
-1. Visit each configuration page in the web UI (management console, site configuration, each external service)
+1. Visit each configuration page in the web UI (management console, site configuration, each code host)
 1. Copy the (now migrated) configuration from those pages into your JSON files.
 
 It is essential to follow the above steps after **every** Sourcegraph version update, because we only guarantee migrations remain valid across two minor versions. If you fail to apply a migration and later upgrade Sourcegraph twice more, you may effectively "skip" an important migration.

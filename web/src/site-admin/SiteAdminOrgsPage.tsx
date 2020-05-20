@@ -14,6 +14,8 @@ import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { deleteOrganization, fetchAllOrganizations } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
+import * as H from 'history'
 
 interface OrgNodeProps {
     /**
@@ -25,6 +27,7 @@ interface OrgNodeProps {
      * Called when the org is updated by an action in this list item.
      */
     onDidUpdate?: () => void
+    history: H.History
 }
 
 interface OrgNodeState {
@@ -80,7 +83,9 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         </button>
                     </div>
                 </div>
-                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
+                {this.state.errorDescription && (
+                    <ErrorAlert className="mt-2" error={this.state.errorDescription} history={this.props.history} />
+                )}
             </li>
         )
     }
@@ -104,19 +109,19 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 }
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props extends RouteComponentProps<{}> {
+    history: H.History
+}
 
 interface State {
     orgs?: GQL.IOrg[]
     totalCount?: number
 }
-
-class FilteredOrgConnection extends FilteredConnection<GQL.IOrg, Pick<OrgNodeProps, 'onDidUpdate'>> {}
 
 /**
  * A page displaying the orgs on this site.
@@ -136,8 +141,9 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<OrgNodeProps, 'onDidUpdate'> = {
+        const nodeProps: Omit<OrgNodeProps, 'node'> = {
             onDidUpdate: this.onDidUpdateOrg,
+            history: this.props.history,
         }
 
         return (
@@ -154,7 +160,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
                     <Link to="/help/user/organizations">Sourcegraph documentation</Link> for information about
                     configuring organizations.
                 </p>
-                <FilteredOrgConnection
+                <FilteredConnection<GQL.IOrg, Omit<OrgNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="organization"
                     pluralNoun="organizations"

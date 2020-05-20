@@ -21,7 +21,7 @@ interface ImmutableUser {
     readonly UID: number
 }
 
-type DeployType = 'cluster' | 'docker-container' | 'dev'
+type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
@@ -63,9 +63,9 @@ interface SourcegraphContext
     siteGQLID: GQL.ID
 
     /**
-     * Status of onboarding
+     * Whether the site needs to be initialized.
      */
-    showOnboarding: boolean
+    needsSiteInit: boolean
 
     /**
      * Emails support enabled
@@ -77,7 +77,11 @@ interface SourcegraphContext
      */
     site: Pick<
         import('./schema/site.schema').SiteConfiguration,
-        'auth.public' | 'update.channel' | 'automation.readAccess.enabled'
+        | 'auth.public'
+        | 'update.channel'
+        | 'campaigns.readAccess.enabled'
+        | 'disableNonCriticalTelemetry'
+        | 'permissions.backgroundSync'
     >
 
     /** Whether access tokens are enabled. */
@@ -127,6 +131,9 @@ interface SourcegraphContext
 
         brandName: string
     }
+
+    /** The publishable key for the billing service (Stripe). */
+    billingPublishableKey?: string
 }
 
 interface BrandAssets {
@@ -146,4 +153,9 @@ declare module 'worker-loader?*' {
         constructor()
     }
     export default WebpackWorker
+}
+
+declare module '*.scss' {
+    const cssModule: string
+    export default cssModule
 }

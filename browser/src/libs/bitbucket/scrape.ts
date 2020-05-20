@@ -49,7 +49,9 @@ const getFileInfoFromLinkInSingleFileView = (
             // Looks like 'refs/heads/<rev>'
             const at = url.searchParams.get('at')
             if (!at) {
-                throw new Error(`href of link matching selector ${selector} did not have 'at' search param: ${url}`)
+                throw new Error(
+                    `href of link matching selector ${selector} did not have 'at' search param: ${url.href}`
+                )
             }
 
             const atMatch = at.match(/refs\/heads\/(.*?)$/)
@@ -215,12 +217,15 @@ const getBaseFilePathForDiffCodeView = ({
             const renameRegexp = /Renamed from '(.+)'/
             const match = tooltipText.match(renameRegexp)
             if (!match) {
-                throw new Error(`Rename change type badge content did not match ${renameRegexp}: "${tooltipText}"`)
+                throw new Error(
+                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                    `Rename change type badge content did not match ${renameRegexp.toString()}: "${tooltipText}"`
+                )
             }
             return path.join(path.dirname(filePath), match[1])
         }
     }
-    throw new Error(`Unexpected change type "${changeType}"`)
+    throw new Error(`Unexpected change type "${changeType as string}"`)
 }
 
 /**

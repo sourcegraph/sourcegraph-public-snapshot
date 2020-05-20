@@ -6,17 +6,18 @@ import {
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
-    interactiveBuildSearchURLQuery,
+    isExternalLink,
+    toAbsoluteBlobURL,
+    appendSubtreeQueryParam,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
-import { FilterTypes } from '../search/interactive/util'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
-function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
+function assertDeepStrictEqual(actual: any, expected: any): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
     expect(actual).toEqual(expected)
@@ -255,6 +256,34 @@ describe('util/url', () => {
             )
         })
     })
+
+    describe('toAbsoluteBlobURL', () => {
+        const target = {
+            repoName: 'github.com/gorilla/mux',
+            rev: '',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            filePath: 'mux.go',
+        }
+        const sourcegraphUrl = 'https://sourcegraph.com'
+
+        test('default sourcegraph URL, default context', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, target)).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, specified rev', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, rev: 'branch' })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, with position', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, position: { line: 1, character: 1 } })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go#L1:1'
+            )
+        })
+    })
 })
 
 describe('withWorkspaceRootInputRevision', () => {
@@ -289,31 +318,59 @@ describe('withWorkspaceRootInputRevision', () => {
 
 describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false)).toBe('q=foo&patternType=regexp'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false)).toBe('q=foo&patternType=literal'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, undefined)).toBe(
+            'q=foo&patternType=literal'
+        ))
     it('handles an empty query', () =>
-        expect(buildSearchURLQuery('', SearchPatternType.regexp, false)).toBe('q=&patternType=regexp'))
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false)).toBe(
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toBe(
             'q=foo+bar%25baz&patternType=regexp'
         ))
     it('preserves / and : for readability', () =>
-        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false)).toBe(
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toBe(
             'q=repo:foo/bar&patternType=regexp'
         ))
-    it('overrides the patternType parameter if a patternType field exists in the query', () =>
-        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false)).toBe(
-            'q=foo+&patternType=literal'
-        ))
+    describe('removal of patternType parameter', () => {
+        it('overrides the patternType parameter at the end', () => {
+            expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)).toBe(
+                'q=foo&patternType=literal'
+            )
+        })
+        it('overrides the patternType parameter at the beginning', () => {
+            expect(
+                buildSearchURLQuery('patternType:literal foo type:diff', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=foo+type:diff&patternType=literal')
+        })
+        it('overrides the patternType parameter at the end with another operator', () => {
+            expect(
+                buildSearchURLQuery('type:diff foo patternType:literal', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=type:diff+foo&patternType=literal')
+        })
+        it('overrides the patternType parameter in the middle', () => {
+            expect(
+                buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=type:diff+foo&patternType=literal')
+        })
+    })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true)).toBe('q=foo&patternType=literal&case=yes'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
+            'q=foo&patternType=literal&case=yes'
+        ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
-        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false)).toBe(
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
             'q=foo+&patternType=literal&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true)).toBe('q=foo+&patternType=literal'))
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
+            'q=foo+&patternType=literal'
+        ))
+    it('builds url query with a version context', () =>
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, '3.15')).toBe(
+            'q=foo+&patternType=literal&c=3.15'
+        ))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {
@@ -439,48 +496,35 @@ describe('lprToSelectionsZeroIndexed', () => {
     })
 })
 
-describe('interactiveBuildSearchURLQuery', () => {
-    test('builds search URL query correctly with no filter inputs', () => {
-        const result = new URLSearchParams()
-        expect(interactiveBuildSearchURLQuery({}).toString()).toBe(result.toString())
+describe('isExternalLink', () => {
+    it('returns false for the same site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://github.com/there')).toBe(false)
     })
-
-    test('builds search URL query correctly with a repo filter input', () => {
-        const result = new URLSearchParams('repo=gorilla/mux')
-        expect(
-            interactiveBuildSearchURLQuery({
-                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
-            }).toString()
-        ).toBe(result.toString())
+    it('returns false for relative links', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('/there')).toBe(false)
     })
+    it('returns false for invalid URLs', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
 
-    test('builds search URL query correctly with multiple repo filter inputs', () => {
-        const result = new URLSearchParams('repo=gorilla/mux&repo=gorilla/muxy')
-        expect(
-            interactiveBuildSearchURLQuery({
-                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
-                'repo 2': { type: FilterTypes.repo, value: 'gorilla/muxy', editable: false },
-            }).toString()
-        ).toBe(result.toString())
+        expect(isExternalLink(' ')).toBe(false)
     })
-
-    test('builds search URL query correctly with repo and file filter inputs', () => {
-        const result = new URLSearchParams('repo=gorilla/mux&file=test')
-        expect(
-            interactiveBuildSearchURLQuery({
-                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
-            }).toString()
-        ).toBe(result.toString())
+    it('returns true for a different site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
     })
+})
 
-    test('builds search URL query correctly with repo and file filter inputs, and a repo filter in the navbar query', () => {
-        const result = new URLSearchParams('repo=gorilla/mux&file=test')
+describe('appendSubtreeQueryParam', () => {
+    it('appends subtree=true to urls', () => {
+        expect(appendSubtreeQueryParam('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes#L2:24')).toBe(
+            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?subtree=true#L2:24'
+        )
+    })
+    it('appends subtree=true to urls with other query params', () => {
         expect(
-            interactiveBuildSearchURLQuery({
-                'repo 1': { type: FilterTypes.repo, value: 'gorilla/mux', editable: false },
-                'file 2': { type: FilterTypes.file, value: 'test', editable: false },
-            }).toString()
-        ).toBe(result.toString())
+            appendSubtreeQueryParam('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test#L2:24')
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&subtree=true#L2:24')
     })
 })

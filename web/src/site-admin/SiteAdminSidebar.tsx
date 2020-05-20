@@ -45,8 +45,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
         )}
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-            <ConsoleIcon className="icon-inline" />
-            API console
+            <ConsoleIcon className="icon-inline" /> API console
         </Link>
         <a href="/-/debug/" className={SIDEBAR_BUTTON_CLASS}>
             Instrumentation

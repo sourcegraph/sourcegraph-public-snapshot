@@ -4,14 +4,19 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
-export OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
+# Fail early if env vars are not set
+[ -n "$VERSION" ]
+[ -n "$IMAGE" ]
+
+OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
+export OUTPUT
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
 parallel_run() {
-    ./dev/ci/parallel_run.sh "$@"
+  ./dev/ci/parallel_run.sh "$@"
 }
 export -f parallel_run
 
@@ -23,66 +28,63 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/repo-updater}
+additional_images=()
+if [ $# -eq 0 ]; then
+  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/repo-updater")
+else
+  additional_images+=("$@")
+fi
+export additional_images
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
-export bindir="$OUTPUT/usr/local/bin"
-mkdir -p "$bindir"
+export BINDIR="$OUTPUT/usr/local/bin"
+mkdir -p "$BINDIR"
 
 go_build() {
-    package="$1"
+  local package="$1"
 
-    go build \
-      -trimpath \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-      -buildmode exe \
-      -installsuffix netgo \
-      -tags "dist netgo" \
-      -o "$bindir/$(basename "$package")" "$package"
+  if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+    env time -v ./cmd/server/go-build.sh "$package"
+  else
+    ./cmd/server/go-build.sh "$package"
+  fi
 }
 export -f go_build
 
-echo "--- build go, symbols, and lsif concurrently"
+echo "--- go build"
 
-build_go_packages(){
-   echo "--- go build"
+PACKAGES=(
+  github.com/sourcegraph/sourcegraph/cmd/github-proxy
+  github.com/sourcegraph/sourcegraph/cmd/gitserver
+  github.com/sourcegraph/sourcegraph/cmd/query-runner
+  github.com/sourcegraph/sourcegraph/cmd/replacer
+  github.com/sourcegraph/sourcegraph/cmd/searcher
+  github.com/sourcegraph/sourcegraph/cmd/symbols
+  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server
+  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
+  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager
+  github.com/google/zoekt/cmd/zoekt-archive-index
+  github.com/google/zoekt/cmd/zoekt-git-index
+  github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+  github.com/google/zoekt/cmd/zoekt-webserver
+)
 
-   PACKAGES=(
-    github.com/sourcegraph/sourcegraph/cmd/github-proxy \
-    github.com/sourcegraph/sourcegraph/cmd/gitserver \
-    github.com/sourcegraph/sourcegraph/cmd/query-runner \
-    github.com/sourcegraph/sourcegraph/cmd/replacer \
-    github.com/sourcegraph/sourcegraph/cmd/searcher \
-    $additional_images
-    \
-    github.com/google/zoekt/cmd/zoekt-archive-index \
-    github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver \
-    \
-    $server_pkg
-   )
+PACKAGES+=("${additional_images[@]}")
+PACKAGES+=("$server_pkg")
 
-   parallel_run go_build {} ::: "${PACKAGES[@]}"
-}
-export -f build_go_packages
+parallel_run go_build {} ::: "${PACKAGES[@]}"
 
-build_symbols() {
-    echo "--- build sqlite for symbols"
-    env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
-}
-export -f build_symbols
+echo "--- ctags"
+cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
+cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
+cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
-build_lsif() {
-    echo "--- build lsif-server"
-    IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
-}
-export -f build_lsif
-
-parallel_run {} ::: build_lsif build_symbols build_go_packages
+echo "--- monitoring generation"
+pushd monitoring && go generate && popd
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
@@ -93,9 +95,12 @@ echo "--- grafana config"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
+echo "--- jaeger-all-in-one binary"
+cmd/server/jaeger.sh
+
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

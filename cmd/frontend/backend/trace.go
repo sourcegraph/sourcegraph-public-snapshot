@@ -6,28 +6,24 @@ import (
 	"strconv"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var metricLabels = []string{"method", "success"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "backend",
-	Name:      "client_request_duration_seconds",
-	Help:      "Total time spent on backend endpoints.",
-	Buckets:   tracepkg.UserLatencyBuckets,
+	Name:    "src_backend_client_request_duration_seconds",
+	Help:    "Total time spent on backend endpoints.",
+	Buckets: tracepkg.UserLatencyBuckets,
 }, metricLabels)
 
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "backend",
-	Name:      "client_requests",
-	Help:      "Current number of requests running for a method.",
+	Name: "src_backend_client_requests",
+	Help: "Current number of requests running for a method.",
 }, []string{"method"})
 
 func init() {
@@ -38,7 +34,7 @@ func init() {
 func trace(ctx context.Context, server, method string, arg interface{}, err *error) (context.Context, func()) {
 	requestGauge.WithLabelValues(server + "." + method).Inc()
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, server+"."+method)
+	span, ctx := ot.StartSpanFromContext(ctx, server+"."+method)
 	span.SetTag("Server", server)
 	span.SetTag("Method", method)
 	span.SetTag("Argument", fmt.Sprintf("%#v", arg))

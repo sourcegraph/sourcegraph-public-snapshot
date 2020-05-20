@@ -1,6 +1,7 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
-import { Observable, Subject } from 'rxjs'
-import { map, mergeMap, startWith, tap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { map, tap, mapTo } from 'rxjs/operators'
+import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
@@ -153,18 +154,15 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
 export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     args: RepositoryArgs
 ): Observable<GQL.IRepositoryConnection> {
-    // Poll if there are repositories that are being cloned or the list is empty.
-    //
-    // TODO(sqs): This is hacky, but I couldn't figure out a better way.
-    const subject = new Subject<null>()
-    return subject.pipe(
-        startWith(null),
-        mergeMap(() => fetchAllRepositories(args)),
-        tap(result => {
-            if (result.nodes && (result.nodes.length === 0 || result.nodes.some(n => !n.mirrorInfo.cloned))) {
-                setTimeout(() => subject.next(), 5000)
-            }
-        })
+    return fetchAllRepositories(args).pipe(
+        // Poll every 5000ms if repositories are being cloned or the list is empty.
+        repeatUntil(
+            result =>
+                result.nodes &&
+                result.nodes.length > 0 &&
+                result.nodes.every(n => !n.mirrorInfo.cloneInProgress && n.mirrorInfo.cloned),
+            { delay: 5000 }
+        )
     )
 }
 
@@ -207,6 +205,40 @@ export function checkMirrorRepositoryConnection(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
+    )
+}
+
+export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
+                scheduleRepositoryPermissionsSync(repository: $repository) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
+    )
+}
+
+export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleUserPermissionsSync($user: ID!) {
+                scheduleUserPermissionsSync(user: $user) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
     )
 }
 
@@ -293,6 +325,7 @@ export function fetchSite(): Observable<GQL.ISite> {
         query Site {
             site {
                 id
+                canReloadSite
                 configuration {
                     id
                     effectiveContents
@@ -386,7 +419,7 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
                 ExternalServiceConfig[]
             >> = data.externalServices.nodes
                 .filter(svc => svc.config)
-                .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
+                .map(svc => [svc.kind, parseJSONC(svc.config) as ExternalServiceConfig] as const)
                 .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
                     (externalServicesByKind, [kind, config]) => {
                         let services = externalServicesByKind[kind]

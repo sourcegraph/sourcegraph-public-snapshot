@@ -3,13 +3,16 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
-import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 
-export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observable<GQL.ICampaignConnection> =>
+export const queryCampaigns = ({
+    first,
+    state,
+    hasPatchSet,
+}: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
     queryGraphQL(
         gql`
-            query Campaigns($first: Int) {
-                campaigns(first: $first) {
+            query Campaigns($first: Int, $state: CampaignState, $hasPatchSet: Boolean) {
+                campaigns(first: $first, state: $state, hasPatchSet: $hasPatchSet) {
                     nodes {
                         id
                         name
@@ -17,13 +20,14 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                         url
                         createdAt
                         closedAt
+                        publishedAt
                         changesets {
                             totalCount
                             nodes {
                                 state
                             }
                         }
-                        changesetPlans {
+                        patches {
                             totalCount
                         }
                     }
@@ -31,8 +35,22 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                 }
             }
         `,
-        { first }
+        { first, state, hasPatchSet }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)
+    )
+
+export const queryCampaignsCount = (): Observable<number> =>
+    queryGraphQL(
+        gql`
+            query Campaigns {
+                campaigns(first: 1) {
+                    totalCount
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.campaigns.totalCount)
     )

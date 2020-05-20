@@ -10,7 +10,7 @@ export interface GraphQLClient {
     /**
      * mimics the `mutateGraphQL` function used by the Sourcegraph backend, but substitutes
      * in CLI-read HTTP headers rather than use the ones in the browser context (which doesn't
-     *  exist).
+     * exist).
      */
     mutateGraphQL(request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>>
 

@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
@@ -108,7 +108,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 	}
 }
 
-func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
+func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -118,31 +118,41 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cases := map[string]*schema.BitbucketCloudConnection{
-		"simple": {
-			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-		},
-		"ssh": {
-			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-			GitURLType:  "ssh",
-		},
-		"path-pattern": {
-			Url:                   "https://bitbucket.org",
-			Username:              "alice",
-			AppPassword:           "secret",
-			RepositoryPathPattern: "bb/{nameWithOwner}",
-		},
-	}
-
 	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
 
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, config, nil)
+	tests := []struct {
+		name   string
+		schmea *schema.BitbucketCloudConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    "alice",
+				AppPassword: "secret",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    "alice",
+				AppPassword: "secret",
+				GitURLType:  "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:                   "https://bitbucket.org",
+				Username:              "alice",
+				AppPassword:           "secret",
+				RepositoryPathPattern: "bb/{nameWithOwner}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "BitbucketCloudSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			s, err := newBitbucketCloudSource(&svc, test.schmea, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -151,8 +161,8 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
-			path := filepath.Join("testdata", "bitbucketcloud-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }

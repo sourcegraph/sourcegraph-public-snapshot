@@ -24,13 +24,14 @@ describe('Windows (integration)', () => {
     })
 
     describe('app.activeWindowChanges', () => {
-        test('reflects changes to the active window', async () => {
+        // Skipped, as sourcegraph.app.activeWindow is always defined.
+        test.skip('reflects changes to the active window', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
             } = await integrationTestContext(undefined, {
                 roots: [],
-                editors: [],
+                viewers: [],
             })
             expect(extensionAPI.app.activeWindow).toBeUndefined()
             modelService.addModel({
@@ -38,15 +39,13 @@ describe('Windows (integration)', () => {
                 languageId: 'l',
                 text: 't',
             })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             })
-            await from(extensionAPI.app.activeWindowChanges)
-                .pipe(filter(isDefined), first())
-                .toPromise()
+            await from(extensionAPI.app.activeWindowChanges).pipe(filter(isDefined), first()).toPromise()
             expect(extensionAPI.app.activeWindow).toBeTruthy()
         })
     })
@@ -70,12 +69,12 @@ describe('Windows (integration)', () => {
 
         test('adds new text documents', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
-            } = await integrationTestContext(undefined, { editors: [], roots: [] })
+            } = await integrationTestContext(undefined, { viewers: [], roots: [] })
 
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'file:///f2',
                 selections: [],
@@ -108,7 +107,7 @@ describe('Windows (integration)', () => {
     describe('Window', () => {
         test('Window#visibleViewComponents', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
             } = await integrationTestContext()
 
@@ -117,7 +116,7 @@ describe('Windows (integration)', () => {
                 languageId: 'l2',
                 text: 't2',
             })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u2',
                 selections: [],
@@ -147,7 +146,7 @@ describe('Windows (integration)', () => {
         describe('Window#activeViewComponent', () => {
             test('ignores inactive components', async () => {
                 const {
-                    services: { editor: editorService, model: modelService },
+                    services: { viewer: viewerService, model: modelService },
                     extensionAPI,
                 } = await integrationTestContext()
 
@@ -156,7 +155,7 @@ describe('Windows (integration)', () => {
                     languageId: 'inactive',
                     text: 'inactive',
                 })
-                editorService.addEditor({
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'file:///inactive',
                     selections: [],
@@ -171,24 +170,25 @@ describe('Windows (integration)', () => {
         })
 
         describe('Window#activeViewComponentChanges', () => {
-            test('reflects changes to the active window', async () => {
+            // Skipped, as sourcegraph.app.activeWindow is always defined.
+            test.skip('reflects changes to the active window', async () => {
                 const {
-                    services: { editor: editorService, model: modelService },
+                    services: { viewer: viewerService, model: modelService },
                     extensionAPI,
                 } = await integrationTestContext(undefined, {
                     roots: [],
-                    editors: [],
+                    viewers: [],
                 })
                 modelService.addModel({ uri: 'foo', languageId: 'l1', text: 't1' })
                 modelService.addModel({ uri: 'bar', languageId: 'l2', text: 't2' })
-                editorService.addEditor({
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'foo',
                     selections: [],
                     isActive: true,
                 })
-                editorService.removeAllEditors()
-                editorService.addEditor({
+                viewerService.removeAllViewers()
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'bar',
                     selections: [],
@@ -202,7 +202,7 @@ describe('Windows (integration)', () => {
                     )
                     .toPromise()
                 assertToJSON(
-                    values.map(c => (c ? c.document.uri : null)),
+                    values.map(c => (c && c.type === 'CodeEditor' ? c.document.uri : null)),
                     [null, 'foo', null, 'bar']
                 )
             })

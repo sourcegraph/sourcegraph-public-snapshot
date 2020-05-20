@@ -68,11 +68,11 @@ type externalAccountConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once             sync.Once
-	externalAccounts []*extsvc.ExternalAccount
+	externalAccounts []*extsvc.Account
 	err              error
 }
 
-func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*extsvc.ExternalAccount, error) {
+func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*extsvc.Account, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {

@@ -15,7 +15,7 @@ This code is copied from https://sourcegraph.com/github.com/dghubble/gologin/-/b
 // properties (name, max-age, etc.).
 //
 // The MaxAge field is used to determine whether an Expires field should be
-// added for Internet Explorer compatability and what its value should be.
+// added for Internet Explorer compatibility and what its value should be.
 func NewCookie(config gologin.CookieConfig, value string) *http.Cookie {
 	cookie := &http.Cookie{
 		Name:     config.Name,

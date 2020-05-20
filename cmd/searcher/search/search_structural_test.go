@@ -8,6 +8,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -132,6 +133,49 @@ func foo(real string) {}
 	}
 }
 
+func TestRecordMetrics(t *testing.T) {
+	cases := []struct {
+		name            string
+		matcher         string
+		includePatterns *[]string
+		want            string
+	}{
+		{
+			name:            "Empty values",
+			matcher:         "",
+			includePatterns: &[]string{},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns no extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo", "bar.go"},
+			want:            "inferred:.generic",
+		},
+		{
+			name:            "Include patterns first extension",
+			matcher:         "",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            "inferred:.c",
+		},
+		{
+			name:            "Non-empty matcher",
+			matcher:         ".xml",
+			includePatterns: &[]string{"foo.c", "bar.go"},
+			want:            ".xml",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := languageMetric(tt.matcher, tt.includePatterns)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 // Tests that includePatterns works. includePatterns serve a similar role in
 // structural search compared to regex search, but is interpreted _differently_.
 // includePatterns cannot be a regex expression (as in traditional search), but
@@ -232,6 +276,7 @@ func TestRule(t *testing.T) {
 					Preview:          "func foo(success)",
 				},
 			},
+			MatchCount: 1,
 		},
 	}
 
@@ -334,4 +379,51 @@ func TestHighlightMultipleLines(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMatchCountForMultilineMatches(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"main.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+	}
+
+	wantMatchCount := 2
+
+	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+
+	zipData, err := testutil.CreateZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	t.Run("Strutural search match count", func(t *testing.T) {
+		matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo_foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var gotMatchCount int
+		for _, fileMatches := range matches {
+			gotMatchCount += fileMatches.MatchCount
+		}
+		if gotMatchCount != wantMatchCount {
+			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
+		}
+	})
 }

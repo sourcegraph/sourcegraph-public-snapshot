@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 # Skip on non-master branches to avoid preventing us from building historical commits (eg when
 # backporting fixes).
 if [ "$BUILDKITE_BRANCH" != "master" ]; then
-	exit 0
+    exit 0
 fi
 
 URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
@@ -18,7 +19,7 @@ for url in $URL_MATCHES; do
     fi
 done
 
-if [ ! -z "$BAD_URLS" ]; then
+if [ -n "$BAD_URLS" ]; then
     echo
     echo "Error: Found broken about.sourcegraph.com URLs:"
     echo "$BAD_URLS" | sed 's/ /\n/g' | sed 's/^/  /'
@@ -29,5 +30,5 @@ If the URL is really valid, add the string "CI:URL_OK" (in a comment) to the lin
 
 EOF
 
-    exit 1;
+    exit 1
 fi

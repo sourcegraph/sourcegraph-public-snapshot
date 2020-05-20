@@ -20,6 +20,12 @@ const SettingsSchemaJSON = `{
         "splitSearchModes": {
           "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
           "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "codeInsights": {
+          "description": "Enables code insights on directory pages.",
+          "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
         },
@@ -37,6 +43,12 @@ const SettingsSchemaJSON = `{
         },
         "smartSearchField": {
           "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "copyQueryButton": {
+          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -105,6 +117,18 @@ const SettingsSchemaJSON = `{
       "type": "string",
       "pattern": "literal|regexp"
     },
+    "search.includeForks": {
+      "description": "Whether searches should include searching forked repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
+    "search.includeArchived": {
+      "description": "Whether searches should include searching archived repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
       "type": "array",
@@ -164,6 +188,12 @@ const SettingsSchemaJSON = `{
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",
       "default": false
+    },
+    "search.uppercase": {
+      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
     }
   },
   "definitions": {

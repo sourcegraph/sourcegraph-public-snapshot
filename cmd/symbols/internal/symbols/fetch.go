@@ -7,11 +7,11 @@ import (
 	"io"
 	"path"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type parseRequest struct {
@@ -25,7 +25,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 	fetchQueueSize.Dec()
 
 	fetching.Inc()
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commitID)
@@ -135,22 +135,16 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 
 var (
 	fetching = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetching",
-		Help:      "The number of fetches currently running.",
+		Name: "symbols_store_fetching",
+		Help: "The number of fetches currently running.",
 	})
 	fetchQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetch_queue_size",
-		Help:      "The number of fetch jobs enqueued.",
+		Name: "symbols_store_fetch_queue_size",
+		Help: "The number of fetch jobs enqueued.",
 	})
 	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetch_failed",
-		Help:      "The total number of archive fetches that failed.",
+		Name: "symbols_store_fetch_failed",
+		Help: "The total number of archive fetches that failed.",
 	})
 )
 

@@ -7,6 +7,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": false,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -44,7 +45,7 @@
       ]
      }
     },
-    "public": false,
+    "public": true,
     "links": {
      "clone": [
       {
@@ -72,6 +73,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -137,6 +139,7 @@
    "Language": "",
    "Fork": true,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -243,6 +246,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
@@ -308,6 +312,7 @@
    "Language": "",
    "Fork": false,
    "Archived": false,
+   "Private": true,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",

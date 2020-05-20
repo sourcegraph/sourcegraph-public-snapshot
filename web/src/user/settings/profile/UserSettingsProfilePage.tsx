@@ -118,7 +118,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         updateUser(this.props.user.id, {
                             username: this.state.username === undefined ? null : this.state.username,
                             displayName: this.state.displayName === undefined ? null : this.state.displayName,
@@ -177,8 +177,10 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
 
-                {isErrorLike(this.state.userOrError) && <ErrorAlert error={this.state.userOrError.message} />}
-                {this.state.error && <ErrorAlert error={this.state.error.message} />}
+                {isErrorLike(this.state.userOrError) && (
+                    <ErrorAlert error={this.state.userOrError.message} history={this.props.history} />
+                )}
+                {this.state.error && <ErrorAlert error={this.state.error.message} history={this.props.history} />}
                 {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
                     <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                         <div className="form-group">

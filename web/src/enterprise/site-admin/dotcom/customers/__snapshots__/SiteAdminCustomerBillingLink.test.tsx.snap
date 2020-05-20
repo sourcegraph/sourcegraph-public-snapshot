@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SiteAdminCustomerBillingLink linked billing account 1`] = `
+<div
+  className="site-admin-customer-billing-link"
+>
+  <div
+    className="d-flex align-items-center"
+  >
+    <a
+      className="mr-2 d-flex align-items-center"
+      href="https://example.com"
+    >
+      View customer account 
+      <ExternalLinkIcon
+        className="icon-inline ml-1"
+      />
+    </a>
+    <button
+      className="btn btn-secondary"
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Unlink
+    </button>
+  </div>
+</div>
+`;
+
+exports[`SiteAdminCustomerBillingLink no linked billing account 1`] = `
+<div
+  className="site-admin-customer-billing-link"
+>
+  <div
+    className="d-flex align-items-center"
+  >
+    <button
+      className="btn btn-secondary"
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Link billing customer
+    </button>
+  </div>
+</div>
+`;

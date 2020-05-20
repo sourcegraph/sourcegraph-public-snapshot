@@ -7,17 +7,13 @@ import (
 
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIsRemoteExtensionAllowed(t *testing.T) {
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+	defer licensing.TestingSkipFeatureChecks()()
 	defer conf.Mock(nil)
 
 	if !frontendregistry.IsRemoteExtensionAllowed("a") {
@@ -58,10 +54,7 @@ func sameElements(a, b []string) bool {
 }
 
 func TestFilterRemoteExtensions(t *testing.T) {
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+	defer licensing.TestingSkipFeatureChecks()()
 
 	run := func(allowRemoteExtensions *[]string, extensions []string, want []string) {
 		t.Helper()

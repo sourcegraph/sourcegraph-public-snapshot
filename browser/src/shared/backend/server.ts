@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -19,8 +19,5 @@ export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Ob
         mightContainPrivateInfo: false,
     }).pipe(
         map(dataOrThrowErrors),
-        map(
-            ({ site }) => site,
-            catchError((err, caught) => caught)
-        )
+        map(({ site }) => site)
     )

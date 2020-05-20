@@ -8,20 +8,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -52,20 +50,19 @@ func main() {
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
-		StderrErrorLog:          maybeCreateStderrErrorLog(),
 	}
 	gitserver.RegisterMetrics()
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else {
-		// Additionally set TMP_DIR so other temporary files we may accidently
+		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		os.Setenv("TMP_DIR", tmpDir)
 	}
 
 	// Create Handler now since it also initializes state
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
+	handler := ot.Middleware(gitserver.Handler())
 
 	go debugserver.Start()
 
@@ -126,21 +123,4 @@ func parsePercent(s string) (int, error) {
 		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
-}
-
-// TODO(keegancsmith) remove! Temporary logging to understand errors in
-// production. https://github.com/sourcegraph/sourcegraph/issues/6676
-func maybeCreateStderrErrorLog() *log.Logger {
-	// HACK runRepoCleanup is only set for sourcegraph.com
-	if !runRepoCleanup {
-		return nil
-	}
-	path := filepath.Join(reposDir, "git-stderr-error.log")
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Printf("WARN failed to open stderrErrorLog.log: %v", err)
-		return nil
-	}
-
-	return log.New(f, "", log.LstdFlags)
 }

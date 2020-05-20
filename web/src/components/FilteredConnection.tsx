@@ -24,9 +24,11 @@ import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
+import { hasProperty } from '../../../shared/src/util/types'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
+const hasID = (value: unknown): value is { id: GQL.ID } =>
+    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
 interface FilterProps {
     /** All filters. */
@@ -87,6 +89,8 @@ interface ConnectionDisplayProps {
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
 
+    /** The component displayed when all nodes have been fetched. */
+    totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
      * there is a subsequent page of results. This will request the next page of results and append
@@ -99,8 +103,7 @@ interface ConnectionDisplayProps {
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
  *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if the connection is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
  */
 interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
@@ -159,9 +162,10 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const ListComponent = this.props.listComponent || 'ul'
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
+        const TotalCountSummaryComponent = this.props.totalCountSummaryComponent
 
         const hasNextPage = this.props.connection
             ? this.props.connection.pageInfo
@@ -191,12 +195,13 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 
         let summary: React.ReactFragment | undefined
         if (
-            !this.props.loading &&
             this.props.connection &&
             (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage)
         ) {
             if (totalCount !== null && totalCount > 0) {
-                summary = (
+                summary = TotalCountSummaryComponent ? (
+                    <TotalCountSummaryComponent totalCount={totalCount} />
+                ) : (
                     <p className="filtered-connection__summary">
                         <small>
                             <span>
@@ -251,8 +256,9 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
                     <button
                         type="button"
-                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
-                            .showMoreClassName || ''}`}
+                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${
+                            this.props.showMoreClassName || ''
+                        }`}
                         onClick={this.onClickShowMore}
                     >
                         Show more
@@ -551,10 +557,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         return (shouldRefresh
                             ? merge(
                                   result,
-                                  of({ connectionOrError: undefined, loading: true }).pipe(
-                                      delay(250),
-                                      takeUntil(result)
-                                  )
+                                  of({
+                                      connectionOrError: undefined,
+                                      loading: true,
+                                  }).pipe(delay(250), takeUntil(result))
                               )
                             : result
                         ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
@@ -629,7 +635,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         if (this.props.updates) {
             this.subscriptions.add(
-                this.props.updates.subscribe(c => {
+                this.props.updates.subscribe(() => {
                     this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
                 })
             )
@@ -639,7 +645,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange),
-                    filter(({ updateOnChange }) => updateOnChange !== undefined)
+                    filter(({ updateOnChange }) => updateOnChange !== undefined),
+                    // Skip the very first emission as the FilteredConnection already fetches on component creation.
+                    // Otherwise, 2 requests would be triggered immediately.
+                    skip(1)
                 )
                 .subscribe(() => {
                     this.setState({ loading: true, connectionOrError: undefined }, () =>
@@ -722,8 +731,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${this.props.className ||
-                    ''}`}
+                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                    this.props.className || ''
+                }`}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <Form className="filtered-connection__form" onSubmit={this.onSubmit}>
@@ -760,7 +770,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     <div className="alert alert-danger filtered-connection__error">
                         {errors.map((error, i) => (
                             <React.Fragment key={i}>
-                                <ErrorMessage error={error} />
+                                <ErrorMessage error={error} history={this.props.history} />
                             </React.Fragment>
                         ))}
                     </div>
@@ -786,6 +796,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         onShowMore={this.onClickShowMore}
                         location={this.props.location}
                         emptyElement={this.props.emptyElement}
+                        totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
                 )}
                 {this.state.loading && (

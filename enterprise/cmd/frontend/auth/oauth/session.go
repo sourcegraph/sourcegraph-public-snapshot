@@ -6,12 +6,12 @@ import (
 	"time"
 
 	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/oauth2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type SessionData struct {

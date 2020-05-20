@@ -2,16 +2,20 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func Test_projectQueryToURL(t *testing.T) {
@@ -149,6 +153,62 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			if tc.assert != nil {
 				tc.assert(t, repo)
 			}
+		})
+	}
+}
+
+func TestGitLabSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*gitlab.Project
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	svc := ExternalService{ID: 1, Kind: "GITLAB"}
+
+	tests := []struct {
+		name   string
+		schmea *schema.GitLabConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.GitLabConnection{
+				Url:        "https://gitlab.com",
+				GitURLType: "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.GitLabConnection{
+				Url:                   "https://gitlab.com",
+				RepositoryPathPattern: "gl/{pathWithNamespace}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "GitLabSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			s, err := newGitLabSource(&svc, test.schmea, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }

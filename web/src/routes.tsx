@@ -35,8 +35,8 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: (props: any) =>
-            window.context.sourcegraphDotComMode && !props.user ? (
+        render: props =>
+            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
                 <Redirect to="https://about.sourcegraph.com" />
             ) : (
                 <Redirect to="/search" />
@@ -46,7 +46,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search',
         render: props =>
-            parseSearchURLQuery(props.location.search, props.interactiveSearchMode) ? (
+            parseSearchURLQuery(props.location.search) ? (
                 <SearchResults {...props} deployType={window.context.deployType} />
             ) : (
                 <SearchPage {...props} />
@@ -88,7 +88,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
+        render: lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage'),
     },
     {
         path: '/site-admin',
@@ -112,13 +112,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/discussions',
-        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
-        exact: true,
-    },
-    {
         path: '/search/scope/:id',
-        render: lazyComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
+        render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {
@@ -151,6 +146,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
+    },
+    {
+        path: '/views',
+        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
     },
     {
         path: '/:repoRevAndRest+',

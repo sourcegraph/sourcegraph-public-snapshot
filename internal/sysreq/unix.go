@@ -23,7 +23,7 @@ func rlimitCheck(ctx context.Context) (problem, fix string, err error) {
 	if limit.Cur < minLimit {
 		fix := fmt.Sprintf(`Please increase the open file limit by running "ulimit -n %d".`, minLimit)
 
-		if conf.IsDeployTypeDockerContainer(conf.DeployType()) {
+		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 			fix = fmt.Sprintf("Add --ulimit nofile=%d:%d to the docker run command", minLimit, minLimit)
 		}
 

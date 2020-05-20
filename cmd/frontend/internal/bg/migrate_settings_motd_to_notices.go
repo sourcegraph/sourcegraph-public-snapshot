@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -12,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // MigrateAllSettingsMOTDToNotices migrates the deprecated "motd" settings property to the new

@@ -1,18 +1,33 @@
+FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
+
+COPY monitoring /go/src/monitoring-generator
+WORKDIR /go/src/monitoring-generator
+RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
+RUN mkdir -p /generated/prometheus
+RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
+
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.
 #
 # When upgrading prometheus, be sure to check https://github.com/prometheus/prometheus/blob/master/Dockerfile
 # (replacing master with the version number) to see if any changes (added/removed files, etc.) need to be
 # synchronized with this derivative Dockerfile.
-FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS upstream
+FROM prom/prometheus:v2.16.0@sha256:e4ca62c0d62f3e886e684806dfe9d4e0cda60d54986898173c1083856cfda0f4 AS upstream
 
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:0c38f63cbe19e40123668a48c36466ef72b195e723cbfcbe01e9657a5f14cec6
 
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
-LABEL com.sourcegraph.prometheus.version=v2.15.2
+LABEL com.sourcegraph.prometheus.version=v2.16.0
 
 COPY --from=upstream /bin/prometheus /bin/prometheus
 COPY --from=upstream /bin/promtool /bin/promtoool
@@ -42,6 +57,7 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 USER sourcegraph
 
+COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 

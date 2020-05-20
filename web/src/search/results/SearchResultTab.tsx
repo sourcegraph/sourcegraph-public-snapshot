@@ -3,16 +3,20 @@ import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
+import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
+interface Props
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        VersionContextProps {
     location: H.Location
     type: SearchType
     query: string
-    filtersInQuery: FiltersToTypeAndValue
 }
 
 const typeToProse: Record<Exclude<SearchType, null>, string> = {
@@ -30,16 +34,39 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     filtersInQuery,
     patternType,
     caseSensitive,
+    versionContext,
 }) => {
-    const q = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive, filtersInQuery)
+    const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+    const q = toggleSearchType(fullQuery, type)
+    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive, versionContext)
 
-    const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
+    const currentQuery = parseSearchURLQuery(location.search) || ''
+    const parsedQuery = parseSearchQuery(currentQuery)
+    let typeInQuery: SearchType = null
+
+    if (parsedQuery.type === 'success') {
+        // Parse any `type:` filter that exists in a query so
+        // we can check whether this tab should be active.
+        for (const member of parsedQuery.token.members) {
+            if (
+                member.token.type === 'filter' &&
+                member.token.filterType.token.value === 'type' &&
+                member.token.filterValue
+            ) {
+                typeInQuery =
+                    member.token.filterValue.token.type === 'literal'
+                        ? (member.token.filterValue.token.value as SearchType)
+                        : (member.token.filterValue.token.quotedValue as SearchType)
+            }
+        }
+    }
+
+    const isActiveFunc = constant(typeInQuery === type)
     return (
         <li className="nav-item e2e-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: builtURLQuery }}
-                className={`nav-link e2e-search-result-tab-${type}`}
+                className={`nav-link e2e-search-result-tab-${String(type)}`}
                 activeClassName="active e2e-search-result-tab--active"
                 isActive={isActiveFunc}
             >

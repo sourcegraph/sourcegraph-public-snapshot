@@ -1,12 +1,13 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of } from 'rxjs'
+import { Observable, fromEventPattern, of, combineLatest } from 'rxjs'
 import { parseSearchQuery } from './parser'
-import { map, first, takeUntil, publishReplay, refCount, switchMap } from 'rxjs/operators'
+import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
 import { getMonacoTokens } from './tokens'
 import { getDiagnostics } from './diagnostics'
 import { getCompletionItems } from './completion'
 import { getHoverResult } from './hover'
-import { SearchSuggestion } from '../../graphql/schema'
+import { SearchPatternType } from '../../graphql/schema'
+import { SearchSuggestion } from '../suggestions'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
@@ -31,6 +32,7 @@ const alphabet = 'abcdefghijklmnopqrstuvwxyz'
  */
 export function getProviders(
     searchQueries: Observable<string>,
+    patternTypes: Observable<SearchPatternType>,
     fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>
 ): SearchFieldProviders {
     const parsedQueries = searchQueries.pipe(
@@ -41,6 +43,7 @@ export function getProviders(
         publishReplay(1),
         refCount()
     )
+    const debouncedDynamicSuggestions = searchQueries.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
     return {
         tokens: {
             getInitialState: () => PARSER_STATE,
@@ -72,17 +75,19 @@ export function getProviders(
                 parsedQueries
                     .pipe(
                         first(),
-                        switchMap(({ rawQuery, parsed }) =>
+                        switchMap(({ parsed }) =>
                             parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(rawQuery, parsed.token, position, fetchSuggestions)
+                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
                     .toPromise(),
         },
-        diagnostics: parsedQueries.pipe(
-            map(({ parsed }) => (parsed.type === 'success' ? getDiagnostics(parsed.token) : []))
+        diagnostics: combineLatest([parsedQueries, patternTypes]).pipe(
+            map(([{ parsed }, patternType]) =>
+                parsed.type === 'success' ? getDiagnostics(parsed.token, patternType) : []
+            )
         ),
     }
 }

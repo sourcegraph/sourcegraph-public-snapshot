@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")

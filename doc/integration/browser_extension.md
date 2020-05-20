@@ -16,6 +16,8 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
   </a>
 </p>
 
+>NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
+
 ![Sourcegraph browser extension](https://storage.googleapis.com/sourcegraph-assets/BrowserExtension.gif)
 
 ## Features
@@ -94,12 +96,14 @@ If still experiencing issues, the next step is to inspect the browser extension 
 
 If that still doesn't help, take a screenshot of the console and network activity and attach it [to a new issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=Browser%20extension%20-%20) so we can investigate further.
 
+### Unable to connect to `http://...` Ensure the URL is correct and you are logged in
+
+Since `v3.14.0+`, the Sourcegraph browser extension can only authenticate with Sourcegraph instances that have [HTTPS](../admin/tls_ssl.md) configured.
+
+Previously, the Sourcegraph browser extension was able to authenticate with instances that hadn't enabled tls / ssl. However, modern web browsers have started to adopt and implement [an IETF proposal](https://web.dev/samesite-cookies-explained/) that removes the deprecated logic that allowed this behavior. Please configure [HTTPS](../admin/tls_ssl.md) in order to continue using the browser extension with your private instance.
+
 ## Privacy
 
 Sourcegraph integrations never send any logs, pings, usage statistics, or telemetry to Sourcegraph.com. They will only connect to Sourcegraph.com as required to provide code intelligence or other functionality on public code. As a result, no private code, private repository names, usernames, or any other specific data is sent to Sourcegraph.com.
 
 If connected to a private, self-hosted Sourcegraph instance, Sourcegraph browser extensions will send notifications of usage to that private Sourcegraph instance only. This allows the site admins to see usage statistics.
-
-## Security
-
-[Sourcegraph Firefox Add-on security](firefox_security.md)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -22,6 +23,63 @@ var UserEmails = &userEmails{}
 
 type userEmails struct{}
 
+// checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
+// of other people whom they want to annoy.
+func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason string, err error) {
+	if conf.EmailVerificationRequired() {
+		emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+			UserID: userID,
+		})
+		if err != nil {
+			return false, "", err
+		}
+
+		var verifiedCount, unverifiedCount int
+		for _, email := range emails {
+			if email.VerifiedAt == nil {
+				unverifiedCount++
+			} else {
+				verifiedCount++
+			}
+		}
+
+		// Abuse prevention check 1: Require user to have at least one verified email address
+		// before adding another.
+		//
+		// (We need to also allow users who have zero addresses to add one, or else they could
+		// delete all emails and then get into an unrecoverable state.)
+		//
+		// TODO(sqs): prevent users from deleting their last email, when we have the true notion
+		// of a "primary" email address.)
+		if verifiedCount == 0 && len(emails) != 0 {
+			return true, "a verified email is required before you can add additional email addressed to your account", nil
+		}
+
+		// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using this to
+		// send spam or a high volume of annoying emails.
+		const maxUnverified = 3
+		if unverifiedCount >= maxUnverified {
+			return true, "too many existing unverified email addresses", nil
+		}
+	}
+	if envvar.SourcegraphDotComMode() {
+		// Abuse prevention check 3: Set a quota on Sourcegraph.com users to prevent abuse.
+		//
+		// There is no quota for on-prem instances because we assume they can trust their users
+		// to not abuse adding emails.
+		//
+		// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
+		// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
+		// the name).
+		if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
+			return false, "", err
+		} else if !ok {
+			return true, "email address quota exceeded (contact support to increase the quota)", nil
+		}
+	}
+	return false, "", nil
+}
+
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (userEmails) Add(ctx context.Context, userID int32, email string) error {
@@ -33,56 +91,11 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
-		if conf.EmailVerificationRequired() {
-			emails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
-				UserID: userID,
-			})
-			if err != nil {
-				return err
-			}
-
-			var verifiedCount, unverifiedCount int
-			for _, email := range emails {
-				if email.VerifiedAt == nil {
-					unverifiedCount++
-				} else {
-					verifiedCount++
-				}
-			}
-
-			// Abuse prevention check 1: Require user to have at least one verified email address
-			// before adding another.
-			//
-			// (We need to also allow users who have zero addresses to add one, or else they could
-			// delete all emails and then get into an unrecoverable state.)
-			//
-			// TODO(sqs): prevent users from deleting their last email, when we have the true notion
-			// of a "primary" email address.)
-			if verifiedCount == 0 && len(emails) != 0 {
-				return errors.New("refusing to add additional email address for user without a verified email address")
-			}
-
-			// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using this to
-			// send spam or a high volume of annoying emails.
-			const maxUnverified = 3
-			if unverifiedCount >= maxUnverified {
-				return errors.New("refusing to add email address because the user has too many existing unverified email addresses")
-			}
-		}
-		if envvar.SourcegraphDotComMode() {
-			// Abuse prevention check 3: Set a quota on Sourcegraph.com users to prevent abuse.
-			//
-			// There is no quota for on-prem instances because we assume they can trust their users
-			// to not abuse adding emails.
-			//
-			// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
-			// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
-			// the name).
-			if ok, err := db.Users.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
-				return err
-			} else if !ok {
-				return errors.New("email address quota exceeded (contact support to increase the quota)")
-			}
+		abused, reason, err := checkEmailAbuse(ctx, userID)
+		if err != nil {
+			return err
+		} else if abused {
+			return fmt.Errorf("refusing to add email address because %s", reason)
 		}
 	}
 
@@ -114,6 +127,8 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
+		} else if err = db.UserEmails.SetLastVerificationSentAt(ctx, userID, email); err != nil {
+			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
 

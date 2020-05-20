@@ -1,3 +1,4 @@
+/* eslint rxjs/no-ignored-subscription: warn */
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
 import { observeStorageKey } from '../../browser/storage'

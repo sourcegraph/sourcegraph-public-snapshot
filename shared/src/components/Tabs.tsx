@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { parseHash } from '../util/url'
 import { Link } from './Link'
+import classNames from 'classnames'
 
 /**
  * Describes a tab.
@@ -52,16 +53,22 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
             <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`}>
                 {this.props.tabs
                     .filter(({ hidden }) => !hidden)
-                    .map((tab, i) => (
+                    .map(tab => (
                         <this.props.tabComponent
                             key={tab.id}
                             tab={tab}
-                            className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
-                                'tab-bar__tab--flex-grow'} tab-bar__tab--${
-                                this.props.activeTab !== undefined && this.props.activeTab === tab.id
-                                    ? 'active'
-                                    : 'inactive'
-                            } ${this.props.tabClassName || ''}`}
+                            className={classNames(
+                                'btn',
+                                'btn-link',
+                                'btn-sm',
+                                'tab-bar__tab',
+                                !this.props.endFragment && 'tab-bar__tab--flex-grow',
+                                'tab-bar__tab--' +
+                                    (this.props.activeTab !== undefined && this.props.activeTab === tab.id
+                                        ? 'active'
+                                        : 'inactive'),
+                                this.props.tabClassName
+                            )}
                         />
                     ))}
                 {this.props.endFragment}
@@ -260,10 +267,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         }
         return {
             ...location,
-            hash: hash
-                .toString()
-                .replace(/%3A/g, ':')
-                .replace(/=$/, ''), // remove needless trailing `=` as in `#L12=`,
+            hash: hash.toString().replace(/%3A/g, ':').replace(/=$/, ''), // remove needless trailing `=` as in `#L12=`,
         }
     }
 

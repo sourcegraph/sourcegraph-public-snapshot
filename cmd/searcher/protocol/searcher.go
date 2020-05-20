@@ -112,6 +112,13 @@ func (p *PatternInfo) String() string {
 	if p.IsRegExp {
 		args = append(args, "re")
 	}
+	if p.IsStructuralPat {
+		if p.CombyRule != "" {
+			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
+		} else {
+			args = append(args, "comby")
+		}
+	}
 	if p.IsWordMatch {
 		args = append(args, "word")
 	}
@@ -127,6 +134,9 @@ func (p *PatternInfo) String() string {
 	if p.FileMatchLimit > 0 {
 		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
 	}
+	for _, lang := range p.Languages {
+		args = append(args, fmt.Sprintf("lang:%s", lang))
+	}
 
 	path := "glob"
 	if p.PathPatternsAreRegExps {
@@ -138,10 +148,8 @@ func (p *PatternInfo) String() string {
 	if p.ExcludePattern != "" {
 		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
 	}
-	if incs := p.IncludePatterns; len(incs) > 0 {
-		for _, inc := range incs {
-			args = append(args, fmt.Sprintf("%s:%q", path, inc))
-		}
+	for _, inc := range p.IncludePatterns {
+		args = append(args, fmt.Sprintf("%s:%q", path, inc))
 	}
 
 	return fmt.Sprintf("PatternInfo{%s}", strings.Join(args, ","))
@@ -162,6 +170,8 @@ type Response struct {
 type FileMatch struct {
 	Path        string
 	LineMatches []LineMatch
+	// MatchCount is the number of matches. Different from len(LineMatches), as multiple lines may correspond to one logical match.
+	MatchCount int
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool

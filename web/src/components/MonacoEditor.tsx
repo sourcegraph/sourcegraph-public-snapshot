@@ -1,10 +1,66 @@
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
+import { ThemeProps } from '../../../shared/src/theme'
+import { Subscription, Subject } from 'rxjs'
+import { map, distinctUntilChanged } from 'rxjs/operators'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { Shortcut } from '@slimsag/react-shortcuts'
 
-export type BuiltinTheme = monaco.editor.BuiltinTheme | 'sourcegraph-dark'
+const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 
-interface Props {
+const SOURCEGRAPH_DARK = 'sourcegraph-dark'
+
+monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
+    base: 'vs-dark',
+    inherit: true,
+    colors: {
+        background: '#0E121B',
+        'textLink.activeBackground': '#2a3a51',
+        'editor.background': '#0E121B',
+        'editor.foreground': '#f2f4f8',
+        'editorCursor.foreground': '#ffffff',
+        'editorSuggestWidget.background': '#1c2736',
+        'editorSuggestWidget.foreground': '#F2F4F8',
+        'editorSuggestWidget.highlightForeground': '#569cd6',
+        'editorSuggestWidget.selectedBackground': '#2a3a51',
+        'list.hoverBackground': '#2a3a51',
+        'editorSuggestWidget.border': '#2b3750',
+        'editorHoverWidget.background': '#1c2736',
+        'editorHoverWidget.foreground': '#F2F4F8',
+        'editorHoverWidget.border': '#2b3750',
+    },
+    rules: [
+        { token: 'identifier', foreground: '#f2f4f8' },
+        { token: 'keyword', foreground: '#569cd6' },
+    ],
+})
+
+monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
+    base: 'vs',
+    inherit: true,
+    colors: {
+        background: '#ffffff',
+        'editor.background': '#ffffff',
+        'editor.foreground': '#2b3750',
+        'editorCursor.foreground': '#2b3750',
+        'editorSuggestWidget.background': '#ffffff',
+        'editorSuggestWidget.foreground': '#2b3750',
+        'editorSuggestWidget.border': '#cad2e2',
+        'editorSuggestWidget.highlightForeground': '#268bd2',
+        'editorSuggestWidget.selectedBackground': '#f2f4f8',
+        'list.hoverBackground': '#f2f4f8',
+        'editorHoverWidget.background': '#ffffff',
+        'editorHoverWidget.foreground': '#2b3750',
+        'editorHoverWidget.border': '#cad2e2',
+    },
+    rules: [
+        { token: 'identifier', foreground: '#2b3750' },
+        { token: 'keyword', foreground: '#268bd2' },
+    ],
+})
+
+interface Props extends ThemeProps {
     /** The contents of the document. */
     value?: string
 
@@ -16,9 +72,6 @@ interface Props {
 
     /** The height (in px) of the Monaco editor. */
     height: number
-
-    /** The color theme for the editor. */
-    theme: BuiltinTheme
 
     /** Called when the editor has mounted. */
     editorWillMount: (editor: typeof monaco) => void
@@ -34,11 +87,18 @@ interface Props {
 
     /** Whether to add a border to the Monaco editor. Default: true. */
     border?: boolean
+
+    /** Keyboard shortcut to focus the Monaco editor. */
+    keyboardShortcutForFocus?: KeyboardShortcut
 }
 
 interface State {}
 
 export class MonacoEditor extends React.PureComponent<Props, State> {
+    private subscriptions = new Subscription()
+
+    private componentUpdates = new Subject<Props>()
+
     private editor: monaco.editor.ICodeEditor | undefined
 
     private setRef = (e: HTMLElement | null): void => {
@@ -49,7 +109,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         const editor = monaco.editor.create(e, {
             value: this.props.value,
             language: this.props.language,
-            theme: this.props.theme,
+            theme: this.props.isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK,
             ...this.props.options,
         })
         if (this.props.onEditorCreated) {
@@ -62,9 +122,23 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         if (this.props.value !== prevProps.value && this.editor && this.editor.getValue() !== this.props.value) {
             this.editor.setValue(this.props.value || '')
         }
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ isLightTheme }) => (isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK)),
+                    distinctUntilChanged()
+                )
+                .subscribe(theme => monaco.editor.setTheme(theme))
+        )
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
         if (this.editor) {
             this.editor.dispose()
 
@@ -77,14 +151,30 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{ height: `${this.props.height}px`, position: 'relative' }}
-                ref={this.setRef}
-                id={this.props.id}
-                className={classNames(this.props.className, this.props.border !== false && 'border')}
-            />
+            <>
+                <div
+                    // eslint-disable-next-line react/forbid-dom-props
+                    style={{ height: `${this.props.height}px`, position: 'relative' }}
+                    ref={this.setRef}
+                    id={this.props.id}
+                    className={classNames(this.props.className, this.props.border !== false && 'border')}
+                />
+                {this.props.keyboardShortcutForFocus &&
+                    this.props.keyboardShortcutForFocus.keybindings.map((keybinding, i) => (
+                        <Shortcut key={i} {...keybinding} onMatch={this.focusInput} />
+                    ))}
+            </>
         )
+    }
+
+    private focusInput = (): void => {
+        if (
+            this.editor &&
+            !!document.activeElement &&
+            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+        ) {
+            this.editor.focus()
+        }
     }
 }
 

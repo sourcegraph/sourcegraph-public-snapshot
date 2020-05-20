@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -13,6 +12,9 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { fetchRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSidebar'
 import { RouteDescriptor } from '../../util/contributions'
+import { ErrorMessage } from '../../components/alerts'
+import { asError } from '../../../../shared/src/util/errors'
+import * as H from 'history'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -35,6 +37,7 @@ interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycl
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    history: H.History
 }
 
 interface State {
@@ -62,13 +65,13 @@ export class RepoSettingsArea extends React.Component<Props> {
                 )
                 .subscribe(
                     repo => this.setState({ repo }),
-                    err => this.setState({ error: err.message })
+                    err => this.setState({ error: asError(err).message })
                 )
         )
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -78,7 +81,13 @@ export class RepoSettingsArea extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
+                />
+            )
         }
 
         if (this.state.repo === undefined) {
@@ -116,12 +125,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoSettingsSidebar
-                    className="flex-0 mr-3"
-                    repoSettingsSidebarItems={this.props.repoSettingsSidebarItems}
-                    {...this.props}
-                    {...context}
-                />
+                <RepoSettingsSidebar className="flex-0 mr-3" {...this.props} {...context} />
                 <div className="flex-1">
                     <Switch>
                         {this.props.repoSettingsAreaRoutes.map(

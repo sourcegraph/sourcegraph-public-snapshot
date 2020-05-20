@@ -2,7 +2,7 @@
 @import '../QuickLinks';
 @import './SearchScopes';
 @import './QueryInput';
-@import './MonacoQueryInput';
+@import './LazyMonacoQueryInput';
 @import './InfoDropdown';
 @import './interactive/InteractiveModeInput';
 
@@ -25,11 +25,17 @@
     }
 
     &__container {
-        flex: 0 0 auto;
+        flex: 1 1 auto;
         margin-top: 4rem;
         width: 49rem;
         max-width: 90%;
         position: relative;
+
+        &:hover {
+            .toggle-container__copy-query-button {
+                opacity: 1;
+            }
+        }
     }
 
     &__input-container {

@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -40,7 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -81,7 +80,7 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
-	span, _ := opentracing.StartSpanFromContext(ctx, "runCommand")
+	span, _ := ot.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
 	span.SetTag("dir", cmd.Dir)
@@ -116,10 +115,6 @@ type Server struct {
 
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
-
-	// TODO(keegancsmith) remove! Temporary logging to understand errors in
-	// production. https://github.com/sourcegraph/sourcegraph/issues/6676
-	StderrErrorLog *log.Logger
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -235,6 +230,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
 	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
@@ -242,6 +238,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
+	}))
+
 	return mux
 }
 
@@ -613,17 +614,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if cloneInProgress {
-		status = "clone-in-progress"
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
-		return
-	}
 	if !repoCloned(dir) {
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
 		if req.URL == "" {
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
@@ -688,14 +690,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	if s.StderrErrorLog != nil {
-		logErrors(s.StderrErrorLog.Printf, req.Repo, stderrBuf.Bytes())
-	}
+	stderr := stderrBuf.String()
+	checkMaybeCorruptRepo(req.Repo, dir, stderr)
 
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", stderrBuf.String())
+	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -733,11 +734,12 @@ type cloneOptions struct {
 }
 
 // cloneRepo issues a git clone command for the given repo. It is
-// non-blocking.
+// non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
 	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return "This will never finish cloning", nil
 	}
+	redactor := newURLRedactor(url)
 
 	dir := s.dir(repo)
 
@@ -758,7 +760,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	}
 	defer cancel()
 	if err := s.isCloneable(ctx, url); err != nil {
-		return "", fmt.Errorf("error cloning repo: repo %s (%s) not cloneable: %s", repo, url, err)
+		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -812,14 +814,22 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
-		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		var cmd *exec.Cmd
+		if useRefspecOverrides() {
+			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		}
 		// see issue #7322: skip LFS content in repositories with Git LFS configured
-		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+		cmd.Env = append(os.Environ(), "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go readCloneProgress(url, lock, pr)
+		go readCloneProgress(redactor, lock, pr)
 
 		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -880,10 +890,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
-	redactor := newURLRedactor(url)
 	for scan.Scan() {
 		progress := scan.Text()
 
@@ -916,11 +925,19 @@ func newURLRedactor(rawurl string) *urlRedactor {
 	var sensitive []string
 	parsedURL, _ := url.Parse(rawurl)
 	if parsedURL != nil {
-		if pw, _ := parsedURL.User.Password(); pw != "" {
+		pw, _ := parsedURL.User.Password()
+		u := parsedURL.User.Username()
+		if pw != "" && u != "" {
+			// Only block password if we have both as we can
+			// assume that the username isn't sensitive in this case
 			sensitive = append(sensitive, pw)
-		}
-		if u := parsedURL.User.Username(); u != "" {
-			sensitive = append(sensitive, u)
+		} else {
+			if pw != "" {
+				sensitive = append(sensitive, pw)
+			}
+			if u != "" {
+				sensitive = append(sensitive, u)
+			}
 		}
 	}
 	sensitive = append(sensitive, rawurl)
@@ -995,35 +1012,25 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_running",
-		Help:      "number of gitserver.Command running concurrently.",
+		Name: "src_gitserver_exec_running",
+		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
 	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_duration_seconds",
-		Help:      "gitserver.Command latencies in seconds.",
-		Buckets:   trace.UserLatencyBuckets,
+		Name:    "src_gitserver_exec_duration_seconds",
+		Help:    "gitserver.Command latencies in seconds.",
+		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "clone_queue",
-		Help:      "number of repos waiting to be cloned.",
+		Name: "src_gitserver_clone_queue",
+		Help: "number of repos waiting to be cloned.",
 	})
 	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "lsremote_queue",
-		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
+		Name: "src_gitserver_lsremote_queue",
+		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "repo_cloned",
-		Help:      "number of successful git clones run",
+		Name: "src_gitserver_repo_cloned",
+		Help: "number of successful git clones run",
 	})
 )
 
@@ -1038,7 +1045,7 @@ func init() {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
+	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	span.SetTag("url", url)
 	defer span.Finish()
@@ -1292,7 +1299,16 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	configRemoteOpts := true
+	var cmd *exec.Cmd
+	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+		cmd = customCmd
+		configRemoteOpts = false
+	} else if useRefspecOverrides() {
+		cmd = refspecOverridesFetchCmd(ctx, url)
+	} else {
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+	}
 	cmd.Dir = string(dir)
 
 	// drop temporary pack files after a fetch. this function won't
@@ -1301,7 +1317,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}

@@ -39,3 +39,23 @@ export function sanitizeClass(value: string): string {
 export function dedupeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ')
 }
+
+/**
+ * Checkes whether a given string is quoted.
+ *
+ * @param value string to check against
+ */
+export function isQuoted(value: string): boolean {
+    return value.startsWith('"') && value.endsWith('"') && value !== '"'
+}
+
+/**
+ * Replaces a substring within a string.
+ *
+ * @param s Original string
+ * @param range The range in of the substring to be replaced
+ * @param replacement an optional replacement string
+ */
+export function replaceRange(s: string, { start, end }: { start: number; end: number }, replacement = ''): string {
+    return s.slice(0, start) + replacement + s.slice(end)
+}

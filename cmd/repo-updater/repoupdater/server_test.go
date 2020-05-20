@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
@@ -37,7 +37,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	h := ObservedHandler(
 		log15.Root(),
 		NewHandlerMetrics(),
-		opentracing.GlobalTracer(),
+		opentracing.NoopTracer{},
 	)(s.Handler())
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
@@ -502,7 +502,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		repoID uint32
+		repoID api.RepoID
 		svcs   []api.ExternalService
 		err    string
 	}{{
@@ -860,7 +860,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/a/b"),
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/a/b"), true),
 		},
 		{
 			name: "found - GitHub",
@@ -971,7 +971,7 @@ func TestRepoLookup(t *testing.T) {
 				err: github.ErrNotFound,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -983,7 +983,7 @@ func TestRepoLookup(t *testing.T) {
 				err: &github.APIError{Code: http.StatusUnauthorized},
 			},
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
-			err:    "not authorized",
+			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -995,7 +995,7 @@ func TestRepoLookup(t *testing.T) {
 				err: &github.APIError{Message: "API rate limit exceeded"},
 			},
 			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
-			err:    "repository temporarily unavailable",
+			err:    fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", api.RepoName("github.com/foo/bar"), true),
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
@@ -1061,7 +1061,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    "repository not found",
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"), true),
 		},
 	}
 
@@ -1136,8 +1136,8 @@ func (s *fakeRepoSource) GetRepo(context.Context, string) (*repos.Repo, error) {
 
 type fakeScheduler struct{}
 
-func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
-func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
 }
 
@@ -1147,6 +1147,86 @@ type fakeGitserverClient struct {
 
 func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
 	return g.listClonedResponse, nil
+}
+
+type fakePermsSyncer struct{}
+
+func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
+}
+
+func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+}
+
+func TestServer_handleSchedulePermsSync(t *testing.T) {
+	tests := []struct {
+		name           string
+		permsSyncer    *fakePermsSyncer
+		body           string
+		wantStatusCode int
+		wantBody       string
+	}{
+		{
+			name:           "PermsSyncer not available",
+			wantStatusCode: http.StatusForbidden,
+			wantBody:       "null",
+		},
+		{
+			name:           "bad JSON",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "unexpected EOF",
+		},
+		{
+			name:           "missing ids",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           "{}",
+			wantStatusCode: http.StatusBadRequest,
+			wantBody:       "neither user and repo ids provided",
+		},
+
+		{
+			name:           "successful call with user IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"user_ids": [1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+		{
+			name:           "successful call with repo IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"repo_ids":[1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+		{
+			name:           "successful call with both IDs",
+			permsSyncer:    &fakePermsSyncer{},
+			body:           `{"user_ids": [1], "repo_ids":[1]}`,
+			wantStatusCode: http.StatusOK,
+			wantBody:       "null",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
+			w := httptest.NewRecorder()
+
+			s := &Server{}
+			// NOTE: An interface has nil value is not a nil interface,
+			// so should only assign to the interface when the value is not nil.
+			if test.permsSyncer != nil {
+				s.PermsSyncer = test.permsSyncer
+			}
+			s.handleSchedulePermsSync(w, r)
+
+			if w.Code != test.wantStatusCode {
+				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
+			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
+				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func formatJSON(s string) string {

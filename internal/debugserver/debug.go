@@ -72,6 +72,11 @@ func Start(extra ...Endpoint) {
 		return
 	}
 
+	// we're protected by adminOnly on the front of this
+	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
+		return true, true
+	}
+
 	pp := http.NewServeMux()
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`
@@ -102,9 +107,16 @@ func Start(extra ...Endpoint) {
 	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 	pp.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
 	pp.Handle("/debug/events", http.HandlerFunc(trace.Events))
+
 	pp.Handle("/metrics", promhttp.Handler())
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)
 	}
 	log.Println("warning: could not start debug HTTP server:", http.ListenAndServe(addr, pp))
+}
+
+// Dumper is a service which can dump its state for debugging.
+type Dumper interface {
+	// DebugDump returns a snapshot of the current state.
+	DebugDump() interface{}
 }

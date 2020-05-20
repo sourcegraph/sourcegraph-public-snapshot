@@ -2,7 +2,7 @@
 
 This tutorial shows you how to deploy Sourcegraph to a single node running on Google Cloud.
 
-If you're just starting out, we recommend [installing Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features. If you need scalability and high-availability beyond what a single-server deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
+> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
 
 ---
 
@@ -23,7 +23,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   sudo apt-get install -y docker-ce
   mkdir -p /root/.sourcegraph/config
   mkdir -p /root/.sourcegraph/data
-  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.12.3
+  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.15.1
   ```
 
 - Create your VM, then navigate to its public IP address.

@@ -14,7 +14,6 @@ export interface FeatureFlags {
     /**
      * Allow error reporting.
      *
-     * @duration permanent
      * @todo Since this is not really a feature flag, just unnest it into settings (and potentially get rid of the feature flags abstraction completely)
      */
     allowErrorReporting: boolean

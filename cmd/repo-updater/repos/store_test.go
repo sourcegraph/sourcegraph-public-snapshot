@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestFakeStore(t *testing.T) {
@@ -736,7 +736,7 @@ func hasNoID(r *repos.Repo) bool {
 	return r.ID == 0
 }
 
-func hasID(ids ...uint32) func(r *repos.Repo) bool {
+func hasID(ids ...api.RepoID) func(r *repos.Repo) bool {
 	return func(r *repos.Repo) bool {
 		for _, id := range ids {
 			if r.ID == id {
@@ -779,7 +779,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	gitlab := repos.Repo{
-		Name: "gitlab.com/bar/foo",
+		Name:    "gitlab.com/bar/foo",
+		Private: true,
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
@@ -946,7 +947,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored: repositories,
 		args: func(stored repos.Repos) repos.StoreListReposArgs {
 			return repos.StoreListReposArgs{
-				IDs: []uint32{stored[0].ID, stored[1].ID},
+				IDs: []api.RepoID{stored[0].ID, stored[1].ID},
 			}
 		},
 		repos: repos.Assert.ReposEqual(repositories[:2].Clone()...),
@@ -961,6 +962,17 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			}
 		},
 		repos: repos.Assert.ReposEqual(&github, &gitlab),
+	})
+
+	testCases = append(testCases, testCase{
+		name: "only include private",
+		args: func(repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				PrivateOnly: true,
+			}
+		},
+		stored: repositories,
+		repos:  repos.Assert.ReposEqual(&gitlab),
 	})
 
 	testCases = append(testCases, testCase{

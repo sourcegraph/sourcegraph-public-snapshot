@@ -72,6 +72,7 @@ exports[`util parseURL() tree page 1`] = `
 Object {
   "pageType": "tree",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
+  "revAndFilePath": "master/client",
 }
 `;
 

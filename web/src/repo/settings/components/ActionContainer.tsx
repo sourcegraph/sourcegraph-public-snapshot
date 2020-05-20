@@ -1,5 +1,7 @@
 import * as React from 'react'
 import { ErrorAlert } from '../../../components/alerts'
+import { asError } from '../../../../../shared/src/util/errors'
+import * as H from 'history'
 
 export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment
@@ -32,6 +34,7 @@ interface Props {
     flashText?: string
 
     run: () => Promise<void>
+    history: H.History
 }
 
 interface State {
@@ -93,7 +96,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 details={
                     <>
                         {this.state.error ? (
-                            <ErrorAlert className="mb-0 mt-3" error={this.state.error} />
+                            <ErrorAlert className="mb-0 mt-3" error={this.state.error} history={this.props.history} />
                         ) : (
                             this.props.info
                         )}
@@ -117,7 +120,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 }
                 this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
             },
-            err => this.setState({ loading: false, error: err.message })
+            err => this.setState({ loading: false, error: asError(err).message })
         )
     }
 }

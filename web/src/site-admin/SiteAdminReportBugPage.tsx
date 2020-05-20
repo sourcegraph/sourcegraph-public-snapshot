@@ -14,7 +14,7 @@ import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { useObservable } from '../util/useObservable'
+import { useObservable } from '../../../shared/src/util/useObservable'
 import { mapValues, values } from 'lodash'
 
 /**

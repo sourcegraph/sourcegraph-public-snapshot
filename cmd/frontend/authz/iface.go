@@ -10,7 +10,7 @@ import (
 )
 
 // Provider defines a source of truth of which repositories a user is authorized to view. The
-// user is identified by an ExternalAccount instance. Examples of authz providers include the
+// user is identified by an extsvc.Account instance. Examples of authz providers include the
 // following:
 //
 // * Code host
@@ -40,7 +40,7 @@ type Provider interface {
 	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
 	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
 	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]RepoPerms, error)
+	RepoPerms(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) ([]RepoPerms, error)
 
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the
@@ -53,7 +53,27 @@ type Provider interface {
 	//
 	// The `user` argument should always be non-nil. If no external account can be computed for the
 	// provided user, implementations should return nil, nil.
-	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error)
+	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error)
+
+	// FetchUserPerms returns a list of repository/project IDs (on code host) that the
+	// given account has read access on the code host. The repository ID should be the
+	// same value as it would be used as api.ExternalRepoSpec.ID. The returned list
+	// should only include private repositories/project IDs.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
+	FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error)
+
+	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
+	// the given repository/project on the code host. The user ID should be the same value
+	// as it would be used as extsvc.Account.AccountID. The returned list should
+	// include both direct access and inherited from the group/organization/team membership.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
+	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string

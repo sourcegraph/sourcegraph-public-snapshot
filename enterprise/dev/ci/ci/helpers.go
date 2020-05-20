@@ -27,11 +27,16 @@ type Config struct {
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
+	isBextNightly       bool
 	isRenovateBranch    bool
 	patch               bool
 	patchNoTest         bool
 	isQuick             bool
 	isMasterDryRun      bool
+
+	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
+	// for each command
+	profilingEnabled bool
 }
 
 func ComputeConfig() Config {
@@ -64,6 +69,8 @@ func ComputeConfig() Config {
 
 	isQuick := strings.HasPrefix(branch, "quick/")
 
+	profilingEnabled := strings.HasPrefix(branch, "enable-profiling/")
+
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
 		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
@@ -86,6 +93,8 @@ func ComputeConfig() Config {
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
 		isMasterDryRun:      isMasterDryRun,
+		profilingEnabled:    profilingEnabled,
+		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
 	}
 }
 
@@ -128,7 +137,7 @@ func isDocsOnly() bool {
 		panic(err)
 	}
 	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-		if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
+		if !strings.HasPrefix(line, "doc/") && line != "CHANGELOG.md" {
 			return false
 		}
 	}

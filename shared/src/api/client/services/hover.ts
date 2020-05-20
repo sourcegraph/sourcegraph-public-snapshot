@@ -1,11 +1,14 @@
 import { Hover } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import { from, Observable } from 'rxjs'
+import { Observable, concat } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { fromHoverMerged, HoverMerged } from '../types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
+import { isNot, isExactly } from '../../../util/types'
+import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
+import { finallyReleaseProxy } from '../api/common'
 
 export type ProvideTextDocumentHoverSignature = (
     params: TextDocumentPositionParams
@@ -20,7 +23,7 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
      * hovers. If any provider emits an error, the error is logged and the provider is omitted from the emission of
      * the observable (the observable does not emit the error).
      */
-    public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
+    public getHover(params: TextDocumentPositionParams): Observable<MaybeLoadingResult<HoverMerged | null>> {
         return getHover(this.providersForDocument(params.textDocument), params)
     }
 }
@@ -37,16 +40,19 @@ export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
     params: TextDocumentPositionParams,
     logErrors = true
-): Observable<HoverMerged | null> {
+): Observable<MaybeLoadingResult<HoverMerged | null>> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
-                    from(
+                    concat(
+                        [LOADING],
                         provider(params).pipe(
+                            finallyReleaseProxy(),
+                            defaultIfEmpty<typeof LOADING | Hover | null | undefined>(null),
                             catchError(err => {
                                 if (logErrors) {
-                                    console.error(err)
+                                    console.error('Hover provider errored:', err)
                                 }
                                 return [null]
                             })
@@ -54,8 +60,11 @@ export function getHover(
                     )
                 )
             ).pipe(
-                map(fromHoverMerged),
-                defaultIfEmpty(null as HoverMerged | null),
+                defaultIfEmpty<(typeof LOADING | Hover | null | undefined)[]>([]),
+                map(hoversFromProviders => ({
+                    isLoading: hoversFromProviders.some(hover => hover === LOADING),
+                    result: fromHoverMerged(hoversFromProviders.filter(isNot(isExactly(LOADING)))),
+                })),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )

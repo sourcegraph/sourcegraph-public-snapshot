@@ -13,7 +13,7 @@ import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { useEventObservable } from '../../../../util/useObservable'
+import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface UserCreateSubscriptionNodeProps {
     /**

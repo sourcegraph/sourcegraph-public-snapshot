@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -26,6 +27,10 @@ import { InteractiveModeInput } from '../search/input/interactive/InteractiveMod
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
+import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
+import { VersionContextDropdown } from './VersionContextDropdown'
+import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContext } from '../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -39,13 +44,16 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
+    isSearchRelatedPage: boolean
     showCampaigns: boolean
 
     /**
@@ -60,10 +68,11 @@ interface Props
      */
     lowProfile: boolean
 
-    filtersInQuery: FiltersToTypeAndValue
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
@@ -81,17 +90,20 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        // Reads initial state from the props (i.e. URL parameters).
-        const navbarQuery = parseSearchURLQuery(props.location.search || '', this.props.interactiveSearchMode, true)
-        if (navbarQuery) {
-            props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
-        } else {
-            // If we have no component state, then we may have gotten unmounted during a route change.
-            const query = props.location.state ? props.location.state.query : ''
-            props.onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
+        // In interactive search mode, the InteractiveModeInput component will handle updating the inputs.
+        if (!props.interactiveSearchMode) {
+            // Reads initial state from the props (i.e. URL parameters).
+            const query = parseSearchURLQuery(props.location.search || '')
+            if (query) {
+                props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            } else {
+                // If we have no component state, then we may have gotten unmounted during a route change.
+                const query = props.location.state ? props.location.state.query : ''
+                props.onNavbarQueryChange({
+                    query,
+                    cursorPosition: query.length,
+                })
+            }
         }
     }
 
@@ -100,10 +112,29 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.location !== this.props.location) {
+            if (!this.props.isSearchRelatedPage) {
+                // On a non-search related page or non-repo page, we clear the query in
+                // the main query input and interactive mode UI to avoid misleading users
+                // that the query is relevant in any way on those pages.
+                this.props.onNavbarQueryChange({ query: '', cursorPosition: 0 })
+                this.props.onFiltersInQueryChange({})
+            }
+        }
+
         if (prevProps.location.search !== this.props.location.search) {
-            const navbarQuery = parseSearchURLQuery(this.props.location.search || '', false)
-            if (navbarQuery) {
-                this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+            const query = parseSearchURLQuery(this.props.location.search || '')
+            if (query) {
+                if (this.props.interactiveSearchMode) {
+                    let filtersInQuery: FiltersToTypeAndValue = {}
+                    const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
+                    filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
+                    this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
+
+                    this.props.onFiltersInQueryChange(filtersInQuery)
+                } else {
+                    this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+                }
             }
         }
     }
@@ -170,6 +201,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
+                                    lowProfile={!this.props.isSearchRelatedPage}
+                                    versionContext={this.props.versionContext}
                                 />
                             )
                         ) : (
@@ -183,6 +216,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
+                                        <VersionContextDropdown
+                                            history={this.props.history}
+                                            navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
+                                        />
                                         <SearchNavbarItem
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}

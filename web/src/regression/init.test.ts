@@ -24,7 +24,7 @@ describe('Initialize new instance', () => {
     before(async () => {
         driver = await createAndInitializeDriver(config)
     })
-    ;(config.init ? test : test.skip)('Initialize new Sourcegraph instance', async function() {
+    ;(config.init ? test : test.skip)('Initialize new Sourcegraph instance', async function () {
         this.timeout(30 * 1000)
         await driver.page.goto(config.sourcegraphBaseUrl)
         await driver.page.waitForSelector('input[placeholder="Email"]', { timeout: 5 * 1000 })

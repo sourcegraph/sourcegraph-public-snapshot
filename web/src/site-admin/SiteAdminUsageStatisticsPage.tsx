@@ -11,17 +11,14 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 interface ChartData {
     label: string
     dateFormat: string
 }
 
-interface ChartOptions {
-    daus: ChartData
-    waus: ChartData
-    maus: ChartData
-}
+type ChartOptions = Record<'daus' | 'waus' | 'maus', ChartData>
 
 const chartGeneratorOptions: ChartOptions = {
     daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },
@@ -238,7 +235,19 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
                 <h2>Usage statistics</h2>
-                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                {this.state.error && (
+                    <ErrorAlert className="mb-3" error={this.state.error} history={this.props.history} />
+                )}
+
+                <a
+                    href="/site-admin/usage-statistics/archive"
+                    className="btn btn-secondary"
+                    data-tooltip="Download usage stats archive"
+                    download="true"
+                >
+                    <FileDownloadIcon className="icon-inline" /> Download usage stats archive
+                </a>
+
                 {this.state.stats && (
                     <>
                         <RadioButtons

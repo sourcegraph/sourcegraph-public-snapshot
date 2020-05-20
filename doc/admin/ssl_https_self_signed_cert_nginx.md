@@ -6,11 +6,13 @@ This is for external Sourcegraph instances that need a self-signed certificate b
 
 Configuring NGINX with a self-signed certificate to support SSL requires:
 
-1. [Installing mkcert](#1-installing-mkcert).
-1. [Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
-1. [Configuring NGINX for SSL](#3-adding-ssl-support-to-nginx)
-1. [Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
-1. [Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+- [Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate](#adding-ssl-https-to-sourcegraph-with-a-self-signed-certificate)
+  - [1. Installing mkcert](#1-installing-mkcert)
+  - [2. Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
+  - [3. Adding SSL support to NGINX](#3-adding-ssl-support-to-nginx)
+  - [4. Changing the Sourcegraph container to listen on port 443](#4-changing-the-sourcegraph-container-to-listen-on-port-443)
+  - [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+  - [Next steps](#next-steps)
 
 ## 1. Installing mkcert
 
@@ -89,7 +91,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.12.3
+  sourcegraph/server:3.15.1
 ```
 
 > NOTE: We recommend removing `--publish 7080:7080` as it's not needed and traffic sent to that port is un-encrypted.
@@ -141,7 +143,7 @@ This is largely the same as step 5, except easier. For other developer machines 
 ## Next steps
 
 - [Configure Sourcegraph's `externalURL`](config/site_config.md)
-- [Redirect to external HTTPS URL](nginx.md#redirect-to-external-https-url)
-- [NGINX HTTP Strict Transport Security](nginx.md#redirect-to-external-https-url)
+- [Redirect to external HTTPS URL](http_https_configuration.md#redirect-to-external-https-url)
+- [NGINX HTTP Strict Transport Security](http_https_configuration.md#redirect-to-external-https-url)
 - [NGINX SSL Termination guide](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/)
 - [NGINX HTTPS Servers guide](https://nginx.org/en/docs/http/configuring_https_servers.html).
