@@ -91,7 +91,10 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			prevVal     *model.SampleValue
 		)
 		for _, p := range sample.Values {
-			// don't ignore first
+			// Check for nil so that we don't ignore the first occurrence of an alert - even if the
+			// alert is never >0, we want to be aware that it is at least configured correctly and
+			// being tracked. Otherwise, if the value in this window is the same as in the previous
+			// window just discard it.
 			if prevVal != nil && p.Value == *prevVal {
 				continue
 			}
