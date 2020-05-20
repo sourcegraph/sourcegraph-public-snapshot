@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/enqueuer"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -22,7 +23,7 @@ type Server struct {
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
 	codeIntelAPI        api.CodeIntelAPI
-	enqueuer            *Enqueuer
+	enqueuer            *enqueuer.Enqueuer
 	server              *http.Server
 	once                sync.Once
 }
@@ -41,7 +42,7 @@ func New(
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
 		codeIntelAPI:        codeIntelAPI,
-		enqueuer:            NewEnqueuer(db, bundleManagerClient),
+		enqueuer:            enqueuer.NewEnqueuer(db, bundleManagerClient),
 	}
 
 	s.server = &http.Server{
