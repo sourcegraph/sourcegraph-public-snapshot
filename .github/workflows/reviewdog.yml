@@ -1,16 +1,13 @@
 name: reviewdog
-on: [pull_request]
+on: [push, pull_request]
 jobs:
   golangci-lint:
-    name: runner / golangci-lint
+    name: golangci-lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-      - name: List files
-        run: ls -laht
       - name: golangci-lint
         uses: docker://reviewdog/action-golangci-lint:latest
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          golangci_lint_flags: -v
