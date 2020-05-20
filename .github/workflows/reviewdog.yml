@@ -11,3 +11,5 @@ jobs:
         uses: docker://reviewdog/action-golangci-lint:latest
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter_mode: file
+          reporter: github-pr-review
