@@ -6,10 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: List files
         run: ls -laht
       - name: golangci-lint
+        uses: docker://reviewdog/action-golangci-lint:latest
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-        uses: docker://reviewdog/action-golangci-lint:latest
+          golangci_lint_flags: -v
