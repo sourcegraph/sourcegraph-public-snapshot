@@ -390,18 +390,27 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
-    # Set permissions of a repository with a full set of users by their usernames or emails.
+    # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
+    # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
-        # The repository that the mutation is applied to.
+        # The repository whose permissions to set.
         repository: ID!
-        # A list of usernames or email addresses according to site configuration.
+        # A list of user identifiers, which define the set of users who may view the repository. All
+        # users not included in the list will not be permitted to view the repository on
+        # Sourcegraph. Depending on the bindID option in the permissions.userMapping site
+        # configuration property, the elements of the list are either all usernames (bindID of
+        # "username") or all email addresses (bindID of "email").
         bindIDs: [String!]!
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
-    # Schedule a permissions sync for given repository.
+    # Schedule a permissions sync for given repository. This queries the repository's code host for
+    # all users' permissions associated with the repository, so that the current permissions apply
+    # to all users' operations on that repository on Sourcegraph.
     scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
-    # Schedule a permissions sync for given user.
+    # Schedule a permissions sync for given user. This queries all code hosts for the user's current
+    # repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
+    # the user's operations on Sourcegraph.
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 }
 
