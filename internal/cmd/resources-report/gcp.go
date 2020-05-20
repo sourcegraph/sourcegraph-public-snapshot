@@ -45,7 +45,7 @@ func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) 
 					for _, asset := range page.Results {
 						resources = append(resources, Resource{
 							Platform:   PlatformGCP,
-							Identifier: asset.Name,
+							Identifier: asset.DisplayName,
 							Location:   asset.Location,
 							Owner:      project.ProjectId,
 							Type:       asset.AssetType,
