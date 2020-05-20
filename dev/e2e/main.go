@@ -27,19 +27,28 @@ func main() {
 
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 
-	// TODO(jchen): Find an easy and fast way to determine if the instance has done "Site admin init".
-	client, err := e2eutil.SiteAdminInit(*baseURL, *email, *username, *password)
+	needsSiteInit, err := e2eutil.NeedsSiteInit(*baseURL)
 	if err != nil {
-		log15.Error("Failed to create site admin", "error", err)
+		log15.Error("Failed to check if site needs init", "error", err)
 		os.Exit(1)
 	}
-	log15.Info("Site admin has been created", "username", *username)
-	//client, err := e2eutil.SignIn(*baseURL, *email, *password)
-	//if err != nil {
-	//	log15.Error("Failed to sign in", "err", err)
-	//	os.Exit(1)
-	//}
-	//log15.Info("Site admin authenticated", "username", *username)
+
+	var client *e2eutil.Client
+	if needsSiteInit {
+		client, err = e2eutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		if err != nil {
+			log15.Error("Failed to create site admin", "error", err)
+			os.Exit(1)
+		}
+		log15.Info("Site admin has been created", "username", *username)
+	} else {
+		client, err = e2eutil.SignIn(*baseURL, *email, *password)
+		if err != nil {
+			log15.Error("Failed to sign in", "err", err)
+			os.Exit(1)
+		}
+		log15.Info("Site admin authenticated", "username", *username)
+	}
 
 	// Set up external service
 	err = client.AddExternalService(e2eutil.AddExternalServiceInput{

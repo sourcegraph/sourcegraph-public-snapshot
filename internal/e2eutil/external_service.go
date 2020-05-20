@@ -16,16 +16,27 @@ func (c *Client) AddExternalService(input AddExternalServiceInput) error {
 	mutation addExternalService($input: AddExternalServiceInput!) {
 		addExternalService(input: $input) {
 			id
+			warning
 		}
 	}
 `
 	variables := map[string]interface{}{
 		"input": input,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	var resp struct {
+		Data struct {
+			AddExternalService struct {
+				Warning string `json:"warning"`
+			} `json:"addExternalService"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
 
+	if resp.Data.AddExternalService.Warning != "" {
+		return errors.New(resp.Data.AddExternalService.Warning)
+	}
 	return nil
 }

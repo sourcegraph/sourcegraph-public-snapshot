@@ -7,9 +7,25 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 )
+
+// NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
+func NeedsSiteInit(baseURL string) (bool, error) {
+	resp, err := http.Get(baseURL + "/sign-in")
+	if err != nil {
+		return false, errors.Wrap(err, "get page")
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	p, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, errors.Wrap(err, "read body")
+	}
+	return strings.Contains(string(p), `"needsSiteInit":true`), nil
+}
 
 // SiteAdminInit initializes the instance with given admin account.
 // It returns an authenticated client as the admin for doing e2e testing.
@@ -230,17 +246,36 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		p, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "read response body")
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "read response body")
+	}
+
+	// Try and see unmarshalling to errors
+	var errResp struct {
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors"`
+	}
+	err = jsoniter.Unmarshal(body, &errResp)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal response body to errors")
+	}
+	if len(errResp.Errors) > 0 {
+		var errs *multierror.Error
+		for _, err := range errResp.Errors {
+			errs = multierror.Append(errs, errors.New(err.Message))
 		}
-		return errors.New(string(p))
+		return errs
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(string(body))
 	}
 
 	if target == nil {
 		return nil
 	}
 
-	return jsoniter.NewDecoder(resp.Body).Decode(target)
+	return jsoniter.Unmarshal(body, &target)
 }
