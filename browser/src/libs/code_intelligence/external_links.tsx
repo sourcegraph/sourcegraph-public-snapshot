@@ -3,7 +3,7 @@ import React from 'react'
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../shared/components/Button'
 import { CodeHostContext } from './code_intelligence'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 import { SignInButton } from './SignInButton'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../shared/src/backend/errors'
 import { snakeCase } from 'lodash'
@@ -60,7 +60,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)
-        if (failedWithHTTPStatus(repoExistsOrError, 401)) {
+        if (isHTTPAuthError(repoExistsOrError)) {
             if (showSignInButton) {
                 return <SignInButton {...commonProps} sourcegraphURL={sourcegraphURL} onSignInClose={onSignInClose} />
             }

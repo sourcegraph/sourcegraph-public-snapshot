@@ -56,7 +56,7 @@ func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, reposit
 		return nil
 	}
 
-	newCommits, err := api.gitserverClient.CommitsNear(api.db, repositoryID, commit)
+	newCommits, err := api.gitserverClient.CommitsNear(ctx, api.db, repositoryID, commit)
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.CommitsNear")
 	}
@@ -64,7 +64,7 @@ func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, reposit
 		return errors.Wrap(err, "db.UpdateCommits")
 	}
 
-	tipCommit, err := api.gitserverClient.Head(api.db, repositoryID)
+	tipCommit, err := api.gitserverClient.Head(ctx, api.db, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserverClient.Head")
 	}

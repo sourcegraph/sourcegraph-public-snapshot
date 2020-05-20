@@ -214,7 +214,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
-	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID}
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID, Limit: -1}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
 		return resolvers, err

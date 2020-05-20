@@ -390,10 +390,8 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	repos, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
-		pathPatterns := make([]string, len(repos))
 		for i, repo := range repos {
 			paths[i] = string(repo.Repo.Name)
-			pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 		}
 
 		// See if we can narrow it down by using filters like
@@ -598,7 +596,8 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	return &SearchResultsResolver{alert: alert}, nil
+	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
+	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {

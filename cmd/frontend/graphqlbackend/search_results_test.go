@@ -254,6 +254,19 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
+
+	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
+		for _, v := range searchVersions {
+			r, err := (&schemaResolver{}).Search(&SearchArgs{Query: `repo:*`, Version: v})
+			if err != nil {
+				t.Fatal("Search:", err)
+			}
+			results, err := r.Results(context.Background())
+			if results.start.IsZero() {
+				t.Error("Start value is not set")
+			}
+		}
+	})
 }
 
 func BenchmarkSearchResults(b *testing.B) {
@@ -643,7 +656,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		Repo:  repo,
 	}
 
-	rev := "develop"
+	rev := "develop3.0"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
 		Repo:     repo,
@@ -679,8 +692,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:         "single file match with specified revision",
 			searchResults: []SearchResultResolver{fileMatchRev},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$@develop`: {},
-				`lang:markdown`:           {},
+				`repo:^testRepo$@develop3.0`: {},
+				`lang:markdown`:              {},
 			},
 		},
 		{
@@ -725,8 +738,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				actualDynamicFilterStrs[filter.Value()] = struct{}{}
 			}
 
-			if !reflect.DeepEqual(actualDynamicFilterStrs, test.expectedDynamicFilterStrs) {
-				t.Errorf("actual: %v, expected: %v", actualDynamicFilterStrs, test.expectedDynamicFilterStrs)
+			if diff := cmp.Diff(test.expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}

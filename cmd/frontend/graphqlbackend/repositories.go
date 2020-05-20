@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -40,12 +39,7 @@ func (r *schemaResolver) Repositories(args *struct {
 		}},
 	}
 	if args.Names != nil {
-		// Make an exact-match regexp for each name.
-		patterns := make([]string, len(*args.Names))
-		for i, name := range *args.Names {
-			patterns[i] = regexp.QuoteMeta(name)
-		}
-		opt.IncludePatterns = []string{"^(" + strings.Join(patterns, "|") + ")$"}
+		opt.Names = *args.Names
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query

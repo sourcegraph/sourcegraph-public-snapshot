@@ -242,7 +242,9 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
 		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
 		if rev != "" {
-			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
+			// We don't need to quote rev. The only special characters we interpret
+			// are @ and :, both of which are disallowed in git refs
+			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
 		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
 		// Increment number of matches per repo. Add will override previous entry for uri
