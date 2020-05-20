@@ -10,9 +10,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/enqueuer"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
