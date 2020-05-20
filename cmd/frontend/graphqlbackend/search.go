@@ -352,7 +352,7 @@ const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX
 // archive.
 func exactlyOneRepo(repoFilters []string) bool {
 	if len(repoFilters) == 1 {
-		filter := repoFilters[0]
+		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
 		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
 			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
 			r, err := regexpsyntax.Parse(filter, regexpFlags)
