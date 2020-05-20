@@ -84,7 +84,7 @@ func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state,
 
 	count, _, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(1) FROM lsif_uploads u WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_uploads u WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, 0, err
@@ -151,7 +151,7 @@ func (db *dbImpl) QueueSize(ctx context.Context) (int, error) {
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (db *dbImpl) InsertUpload(ctx context.Context, upload *Upload) (int, error) {
+func (db *dbImpl) InsertUpload(ctx context.Context, upload Upload) (int, error) {
 	if upload.UploadedParts == nil {
 		upload.UploadedParts = []int{}
 	}
