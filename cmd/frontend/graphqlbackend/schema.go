@@ -2487,6 +2487,8 @@ interface TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2553,6 +2555,8 @@ type GitTree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
