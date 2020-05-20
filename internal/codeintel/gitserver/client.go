@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
