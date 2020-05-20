@@ -3364,6 +3364,8 @@ type UpdateCheck {
     errorMessage: String
     # If an update is available, the version string of the updated version.
     updateVersionAvailable: String
+    # An alert message shown to the viewer.
+    alert: Alert
 }
 
 # The possible types of alerts (Alert.type values).
