@@ -47,18 +47,18 @@ func run(opts options) error {
 	// collect resources
 	resources := make([]Resource, 0)
 	if *opts.gcp {
-		r, err := collectGCPResources(ctx, *opts.verbose)
+		rs, err := collectGCPResources(ctx, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("gcp: %w", err)
 		}
-		resources = append(resources, r...)
+		resources = append(resources, rs...)
 	}
 	if *opts.aws {
-		r, err := collectAWSResources(ctx, *opts.verbose)
+		rs, err := collectAWSResources(ctx, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("aws: %w", err)
 		}
-		resources = append(resources, r...)
+		resources = append(resources, rs...)
 	}
 
 	// report results

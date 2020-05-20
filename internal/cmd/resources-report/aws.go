@@ -22,12 +22,12 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	"EC2::Instances": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
 		client := aws_ec2.New(cfg)
 		pager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
-		var r []Resource
+		var rs []Resource
 		for pager.Next(ctx) {
 			page := pager.CurrentPage()
 			for _, reservation := range page.Reservations {
 				for _, instance := range reservation.Instances {
-					r = append(r, Resource{
+					rs = append(rs, Resource{
 						Platform:   PlatformAWS,
 						Identifier: *instance.InstanceId,
 						Location:   *instance.Placement.AvailabilityZone,
@@ -38,17 +38,17 @@ var awsResources = map[string]AWSResourceFetchFunc{
 				}
 			}
 		}
-		return r, pager.Err()
+		return rs, pager.Err()
 	},
 	// fetch kubernetes clusters
 	"EKS::Clusters": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
 		client := aws_eks.New(cfg)
 		pager := aws_eks.NewListClustersPaginator(client.ListClustersRequest(&aws_eks.ListClustersInput{}))
-		var r []Resource
+		var rs []Resource
 		for pager.Next(ctx) {
 			page := pager.CurrentPage()
 			for _, cluster := range page.Clusters {
-				r = append(r, Resource{
+				rs = append(rs, Resource{
 					Platform:   PlatformAWS,
 					Identifier: cluster,
 					Location:   cfg.Region,
@@ -57,7 +57,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 				})
 			}
 		}
-		return r, pager.Err()
+		return rs, pager.Err()
 	},
 }
 
