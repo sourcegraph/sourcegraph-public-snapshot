@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
