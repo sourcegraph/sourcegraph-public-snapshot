@@ -26,49 +26,65 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 		want    []*MonitoringAlert
 		wantErr error
 	}{
-		{"includes alerts with no occurrences", fields{
-			queryValue: model.Matrix{
-				&model.SampleStream{
-					Metric: model.Metric{"name": "hello", "service_name": "world"},
-					Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
+		{
+			name: "includes alerts with no occurrences",
+			fields: fields{
+				queryValue: model.Matrix{
+					&model.SampleStream{
+						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
+				},
 			},
-		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-			NameValue:        "hello",
-			ServiceNameValue: "world",
-			OccurrencesValue: 0,
-		}}, nil},
-		{"includes alerts with occurrences", fields{
-			queryValue: model.Matrix{
-				&model.SampleStream{
-					Metric: model.Metric{"name": "hello", "service_name": "world"},
-					Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(1)}}},
+			want: []*MonitoringAlert{{
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "hello",
+				ServiceNameValue: "world",
+				OccurrencesValue: 0,
+			}},
+			wantErr: nil,
+		}, {
+			name: "includes alerts with occurrences",
+			fields: fields{
+				queryValue: model.Matrix{
+					&model.SampleStream{
+						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(1)}}},
+				},
 			},
-		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-			NameValue:        "hello",
-			ServiceNameValue: "world",
-			OccurrencesValue: 1,
-		}}, nil},
-		{"responds with appropriate error on timeout", fields{
-			queryErr: fmt.Errorf("timed out: %w", context.Canceled),
-		}, nil, errPrometheusUnavailable},
-		{"discards repeated values", fields{
-			queryValue: model.Matrix{
-				&model.SampleStream{
-					Metric: model.Metric{"name": "hello", "service_name": "world"},
-					Values: []model.SamplePair{
-						{Timestamp: sampleT, Value: model.SampleValue(1)},
-						{Timestamp: sampleT.Add(time.Hour), Value: model.SampleValue(1)},
-						{Timestamp: sampleT.Add(2 * time.Hour), Value: model.SampleValue(1)},
-					}},
+			want: []*MonitoringAlert{{
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "hello",
+				ServiceNameValue: "world",
+				OccurrencesValue: 1,
+			}},
+			wantErr: nil}, {
+			name: "responds with appropriate error on timeout",
+			fields: fields{
+				queryErr: fmt.Errorf("timed out: %w", context.Canceled),
 			},
-		}, []*MonitoringAlert{{
-			TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-			NameValue:        "hello",
-			ServiceNameValue: "world",
-			OccurrencesValue: 1,
-		}}, nil},
+			want:    nil,
+			wantErr: errPrometheusUnavailable,
+		}, {
+			name: "discards repeated values",
+			fields: fields{
+				queryValue: model.Matrix{
+					&model.SampleStream{
+						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Values: []model.SamplePair{
+							{Timestamp: sampleT, Value: model.SampleValue(1)},
+							{Timestamp: sampleT.Add(time.Hour), Value: model.SampleValue(1)},
+							{Timestamp: sampleT.Add(2 * time.Hour), Value: model.SampleValue(1)},
+						}},
+				},
+			},
+			want: []*MonitoringAlert{{
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "hello",
+				ServiceNameValue: "world",
+				OccurrencesValue: 1,
+			}},
+			wantErr: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
