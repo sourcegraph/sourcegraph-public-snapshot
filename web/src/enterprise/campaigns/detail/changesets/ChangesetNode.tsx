@@ -161,10 +161,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 ? {
                                       ...extensionInfo,
                                       head: {
-                                          commitID: node.head.target.oid,
+                                          commitID: node.head === null ? '' : node.head.target.oid,
                                           repoID: node.repository.id,
                                           repoName: node.repository.name,
-                                          rev: node.head.target.oid,
+                                          rev: node.head === null ? '' : node.head.target.oid,
                                       },
                                       base: {
                                           commitID: node.base.target.oid,

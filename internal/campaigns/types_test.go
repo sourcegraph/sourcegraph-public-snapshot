@@ -295,3 +295,118 @@ func TestChangesetEvents(t *testing.T) {
 		})
 	}
 }
+
+func TestFindMergeCommit(t *testing.T) {
+	now := time.Now()
+	makeBitbucketEvent := func(kind ChangesetEventKind, commit string) *ChangesetEvent {
+		return &ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        kind,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata: &bitbucketserver.Activity{
+				ID: 1,
+				Commit: &bitbucketserver.Commit{
+					ID: commit,
+				},
+			},
+		}
+	}
+	makeGitHubMergeEvent := func(commit string) *ChangesetEvent {
+		return &ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        ChangesetEventKindBitbucketServerMerged,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata: &github.MergedEvent{
+				Commit: github.Commit{
+					OID: commit,
+				},
+			},
+		}
+	}
+	makeOtherGitHubEvent := func() *ChangesetEvent {
+		return &ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        ChangesetEventKindGitHubCommented,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    &github.PullRequestReviewComment{},
+		}
+	}
+	for _, tc := range []struct {
+		name   string
+		events []*ChangesetEvent
+		want   string
+	}{
+		{
+			name:   "nil events",
+			events: nil,
+			want:   "",
+		},
+		{
+			name:   "no events",
+			events: []*ChangesetEvent{},
+			want:   "",
+		},
+		{
+			name: "one bitbucket merge event",
+			events: []*ChangesetEvent{
+				makeBitbucketEvent(ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple bitbucket events with merge",
+			events: []*ChangesetEvent{
+				makeBitbucketEvent(ChangesetEventKindBitbucketServerApproved, ""),
+				makeBitbucketEvent(ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple bitbucket events no merge",
+			events: []*ChangesetEvent{
+				makeBitbucketEvent(ChangesetEventKindBitbucketServerApproved, ""),
+				makeBitbucketEvent(ChangesetEventKindBitbucketServerCommented, ""),
+			},
+			want: "",
+		},
+		{
+			name: "one github merge event",
+			events: []*ChangesetEvent{
+				makeGitHubMergeEvent("deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple github events with merge",
+			events: []*ChangesetEvent{
+				makeOtherGitHubEvent(),
+				makeGitHubMergeEvent("deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple github events no merge",
+			events: []*ChangesetEvent{
+				makeOtherGitHubEvent(),
+				makeOtherGitHubEvent(),
+			},
+			want: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have := FindMergeCommit(tc.events)
+			if have != tc.want {
+				t.Fatalf("Want %q, have %q", tc.want, have)
+			}
+		})
+	}
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -349,12 +350,27 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset head ref could not be determined")
 	}
 
-	oid, err := r.Changeset.HeadRefOid()
-	if err != nil {
-		return nil, err
+	var oid string
+	if r.ExternalState == campaigns.ChangesetStateMerged {
+		// The PR was merged, find the merge commit
+		oid = campaigns.FindMergeCommit(r.Changeset.Events())
+	}
+	if oid == "" {
+		// Fall back to the head ref
+		oid, err = r.Changeset.HeadRefOid()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid)
+	if err != nil {
+		if gitserver.IsRevisionNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return resolver, nil
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
@@ -397,7 +413,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 		Name:         api.RepoName(repo.Name()),
 	})
 	if err != nil {
-		return api.CommitID(""), err
+		return "", err
 	}
 	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 	// exist).
