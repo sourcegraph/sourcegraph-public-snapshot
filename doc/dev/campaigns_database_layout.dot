@@ -1,5 +1,5 @@
 digraph campaignsSchema {
-    label="Sourcegraph Campaigns Database Schema"
+    label="Sourcegraph campaigns database schema"
     rankdir=BT
     ratio=fill
     concentrate=true
@@ -91,7 +91,7 @@ digraph campaignsSchema {
     /* Before update */
     campaign -> { patchset } [ fillcolor="6" ]
 
-    /* When updating a Campaign to have a new PatchSet: */
+    /* When updating a campaign to have a new PatchSet: */
 
     /* subgraph cluster_patchset2 { */
     /*     label="PatchSet 2 - Second action exec" */
