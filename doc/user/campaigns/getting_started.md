@@ -2,7 +2,7 @@
 
 Follow these steps to get started with campaigns on your Sourcegraph instance:
 
-1. **Enable the Campaigns feature flag**: "[Enabling Campaigns](./configuration.md#enabling-campaigns)".
+1. **Enable the campaigns feature flag**: "[Enabling Campaigns](./configuration.md#enabling-campaigns)".
 
     Since campaigns are currently in beta, they're behind a feature flag and need to be enabled by a site admin.
 

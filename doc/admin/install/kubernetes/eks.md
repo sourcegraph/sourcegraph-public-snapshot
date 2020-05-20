@@ -17,7 +17,7 @@ Follow the [EKS Getting Started guide](https://docs.aws.amazon.com/eks/latest/us
 ## Create the Amazon EKS Cluster VPC
 
 1. Open the [**AWS CloudFormation console**](https://console.aws.amazon.com/cloudformation/).
-2. Ensure the region in the top right navigation bar is an EKS-supported region (see [this list](https://docs.aws.amazon.com/general/latest/gr/eks.html)). <!-- there does not seem to be a nicer list elsewhere -->
+2. Ensure the region in the top right navigation bar is an EKS-supported region (many regions do not support EKS yet - see [this list](https://docs.aws.amazon.com/general/latest/gr/eks.html) for supported regions).
 3. Click **Create stack**, and select **"with new resources"**.
 4. When prompted to specify a template, select "Amazon S3 URL" as your **Template Source** and enter:
    ```
@@ -55,22 +55,17 @@ For more details on these steps, refer to [Amazon EKS prerequisites: Create your
 7. Under **NodeGroupName**, enter `sourcegraph-node-group`.
 8. Choose **NodeAutoScalingGroupMinSize** and **NodeAutoScalingGroupMaxSize** and **NodeInstanceType** based on the following chart:
 
-<div class="table">
-
 | Users        | Instance type | Min nodes | Max nodes | Cost est.  | Attached Storage | Root Storage |
 | ------------ | ------------- | --------- | --------- | ---------- | ---------------- | ------------ |
 | 10-500        | m5.4xlarge    | 3         | 6         | $59-118/day | 500 GB           | 100 GB        |
 | 500-2000       | m5.4xlarge   | 6         | 10         | $118-195/day | 500 GB           | 100 GB        |
 
-
-</div>
-
 > **Note:** You can always come back here later and modify these values to scale up/down the number of worker nodes. To do so, just visit the console page again, select **Actions**, **Create Change Set For Current Stack**, enter the same template URL mentioned above, modify the values and hit "next" until reviewing final changes, and finally **Execute**.
 
 9.  Under **KeyName**, choose a valid key name so that you can SSH into worker nodes if needed in the future.
-10.  Under **VpcId**, select `eks-vpc-sourcegraph-VPC`.
-11.  Under **Subnets**, search for and select *all* `eks-vpc-sourcegraph` subnets.
-12.  Click **Next** through the following pages until you get the option to **Create stack**. Review the configuration and click **Create stack**.
+10.   Under **VpcId**, select `eks-vpc-sourcegraph-VPC`.
+11.   Under **Subnets**, search for and select *all* `eks-vpc-sourcegraph` subnets.
+12.   Click **Next** through the following pages until you get the option to **Create stack**. Review the configuration and click **Create stack**.
 
 For more details on these steps, refer to [Worker Nodes: Amazon EKS-optimized Linux AMI](https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html).
 

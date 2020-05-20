@@ -261,7 +261,12 @@ func TestSearchResults(t *testing.T) {
 			if err != nil {
 				t.Fatal("Search:", err)
 			}
+
 			results, err := r.Results(context.Background())
+			if err != nil {
+				t.Fatal("Search: ", err)
+			}
+
 			if results.start.IsZero() {
 				t.Error("Start value is not set")
 			}
