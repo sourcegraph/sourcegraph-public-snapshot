@@ -17,9 +17,8 @@ import (
 // of from the database at once.
 const OrphanedBundleBatchSize = 100
 
-// removeOrphanedBundleFiles calls the precise-code-intel-api-server to get the
-// current state of the bundle known by this bundle manager. Any bundle on disk
-// that is in an errored state or is unknown by the API is removed.
+// removeOrphanedBundleFiles calls the removes any bundle on disk that is in an errored
+// state or has no associated record in the database.
 func (j *Janitor) removeOrphanedBundleFiles() error {
 	pathsByID, err := j.databasePathsByID()
 	if err != nil {
