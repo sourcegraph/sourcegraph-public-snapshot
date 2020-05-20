@@ -7,8 +7,6 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
  *
- * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
- *
  * @deprecated Use logEvent
  */
 export const logUserEvent = (
@@ -17,10 +15,6 @@ export const logUserEvent = (
     url: string,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
-    // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (url === DEFAULT_SOURCEGRAPH_URL) {
-        return
-    }
     requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
@@ -47,8 +41,6 @@ export const logUserEvent = (
 /**
  * Log a raw user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
- *
- * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
 export const logEvent = (
     event: { name: string; userCookieID: string; url: string; argument?: string },
