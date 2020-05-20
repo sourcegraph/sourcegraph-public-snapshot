@@ -46,7 +46,7 @@ func alertForCappedAndExpression() *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceed_and_expression_search_limit",
 		title:          "Too many files to search for and-expression",
-		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+		description:    "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
 	}
 }
 

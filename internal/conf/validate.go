@@ -50,7 +50,6 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 type problemKind string
 
 const (
-	problemCritical        problemKind = "CriticalConfig"
 	problemSite            problemKind = "SiteConfig"
 	problemExternalService problemKind = "ExternalService"
 )
@@ -75,11 +74,6 @@ func NewExternalServiceProblem(msg string) *Problem {
 		kind:        problemExternalService,
 		description: msg,
 	}
-}
-
-// IsCritical returns true if the problem is about critical config.
-func (p Problem) IsCritical() bool {
-	return p.kind == problemCritical
 }
 
 // IsSite returns true if the problem is about site config.
@@ -132,16 +126,6 @@ func (ps Problems) Messages() []string {
 		msgs[i] = ps[i].String()
 	}
 	return msgs
-}
-
-// Critical returns all critical config problems in the list.
-func (ps Problems) Critical() (problems Problems) {
-	for i := range ps {
-		if ps[i].IsCritical() {
-			problems = append(problems, ps[i])
-		}
-	}
-	return problems
 }
 
 // Site returns all site config problems in the list.

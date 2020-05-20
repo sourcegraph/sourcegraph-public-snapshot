@@ -2,11 +2,11 @@
 
 >NOTE: **Campaigns are currently in beta.** We're actively building out the feature set and improving the user experience with every update. Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph) with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
-## What are Campaigns?
+## What are campaigns?
 
 Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
 
-You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
+You provide the code to make the change, and campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
 
 <div class="text-center">
   <iframe
@@ -19,18 +19,18 @@ You provide the code to make the change and Campaigns provide the plumbing to tu
   ></iframe>
 </div>
 
-## Are you a first time user of Campaigns?
+## Are you a first time user of campaigns?
 
-If you are a first-time user of Campaigns, we recommend that you read through the following sections of the documentation:
+If you are a first-time user of campaigns, we recommend that you read through the following sections of the documentation:
 
-1. Read through the **[How it works](#how-it-works)** section below and **watch the video** to get an understanding of how Campaigns work.
-1. Go through the "[Getting started](./getting_started.md)" instructions to setup your Sourcegraph instance for Campaigns.
+1. Read through the **[How it works](#how-it-works)** section below and **watch the video** to get an understanding of how campaigns work.
+1. Go through the "[Getting started](./getting_started.md)" instructions to setup your Sourcegraph instance for campaigns.
 1. Create your first campaign from a set of patches by reading "[Creating a campaign from patches](./creating_campaign_from_patches.md)".
 1. Create a manual campaign to track the progress of already-existing pull requests on your code host: "[Creating a manual campaign](./creating_manual_campaign.md)".
 
 At this point you're ready to explore the [**example campaigns**](./examples/index.md) and [create your own action definitions](./actions.md) and campaigns.
 
-## When should I use Campaigns?
+## When should I use campaigns?
 
 Campaigns allow you to **leverage Sourcegraph's search powers** and **execute code and Docker containers in all the repositories** yielded by a single Sourcegraph search query.
 
@@ -60,7 +60,7 @@ You should use campaigns if you want to
 
 ## How it works
 
-See this video for a demonstration of lifecycle of a Campaign:
+See this video for a demonstration of lifecycle of a campaign:
 
 <div style="max-width: 450px;" class="mx-auto">
   <figure class="figure">
@@ -74,17 +74,17 @@ See this video for a demonstration of lifecycle of a Campaign:
 1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
 
     This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
-1. The patches are then used to **create a draft Campaign**.
-1. At this point, since it's a draft Camapaign, no changesets (_pull requests_ in the case of GitHub here) have been created on the code host.
+1. The patches are then used to **create a draft campaign**.
+1. At this point, since it's a draft camapaign, no changesets (_pull requests_ in the case of GitHub here) have been created on the code host.
 1. The user then selectively **creates GitHub pull requests** by publishing single patches.
 
 <div class="clearfix"></div>
 
 ## Requirements
 
-* Sourcegraph instance [configured for Campaigns](./configuration.md).
+* Sourcegraph instance [configured for campaigns](./configuration.md).
 * `src` CLI: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation)
 
 ## Limitations
 
-Campaigns currently only support **GitHub** and **Bitbucket Server** repositories. If you're interested in using Campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).
+Campaigns currently only support **GitHub** and **Bitbucket Server** repositories. If you're interested in using campaigns on other code hosts, [let us know](https://about.sourcegraph.com/contact).

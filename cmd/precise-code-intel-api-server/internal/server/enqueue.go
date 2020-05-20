@@ -37,6 +37,11 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err == ErrMetadataExceedsBuffer {
+			http.Error(w, "Could not read indexer name from metaData vertex. Please supply it explicitly.", http.StatusBadRequest)
+			return
+		}
+
 		log15.Error("Failed to enqueue payload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -164,7 +169,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 		err = tx.Done(err)
 	}()
 
-	id, err := tx.InsertUpload(r.Context(), &db.Upload{
+	id, err := tx.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -188,7 +193,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
 func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
-	id, err := s.db.InsertUpload(r.Context(), &db.Upload{
+	id, err := s.db.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,

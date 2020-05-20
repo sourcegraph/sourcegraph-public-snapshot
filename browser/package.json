@@ -14,7 +14,7 @@
     "release:ff": "./scripts/release-ff.sh",
     "release:npm": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/publish-npm.ts",
     "lint": "yarn run eslint && yarn run stylelint",
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "eslint": "eslint --cache '**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",

@@ -188,7 +188,7 @@ func (e *ExternalServicesStore) validateGithubConnection(ctx context.Context, id
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
-	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITHUB", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITHUB", c))
 
 	return err.ErrorOrNil()
 }
@@ -199,7 +199,7 @@ func (e *ExternalServicesStore) validateGitlabConnection(ctx context.Context, id
 		err = multierror.Append(err, validate(c, ps))
 	}
 
-	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITLAB", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "GITLAB", c))
 
 	return err.ErrorOrNil()
 }
@@ -214,7 +214,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Co
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
 
-	multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "BITBUCKETSERVER", c))
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, "BITBUCKETSERVER", c))
 
 	return err.ErrorOrNil()
 }
