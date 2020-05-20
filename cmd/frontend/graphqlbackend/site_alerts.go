@@ -127,3 +127,70 @@ func init() {
 		return alerts
 	})
 }
+
+func OutOfDateAlert(months int, isAdmin bool) Alert {
+
+	if isAdmin {
+		switch {
+		case months <= 0:
+			return Alert{}
+		case months == 1:
+			return Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              "Sourcegraph is 1 month out of date",
+				IsDismissibleWithKeyValue: "y", //TODO What does this mean?
+			}
+		case months == 2:
+			return Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              "Sourcegraph is 2 months out of date",
+				IsDismissibleWithKeyValue: "y",
+			}
+		case months == 3:
+			return Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date",
+			}
+		case months == 4:
+			return Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+
+		case months == 5:
+			return Alert{
+				TypeValue:    AlertTypeError,
+				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+
+		default:
+			return Alert{
+				TypeValue:    AlertTypeError,
+				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			}
+		}
+	}
+	switch {
+	case months <= 3:
+		return Alert{}
+	case months == 4:
+		return Alert{
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			IsDismissibleWithKeyValue: "y", //Should only be dismissible by non-admins
+		}
+
+	case months == 5:
+		return Alert{
+			TypeValue:                 AlertTypeError,
+			MessageValue:              "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			IsDismissibleWithKeyValue: "y",
+		}
+
+	default:
+		return Alert{
+			TypeValue:    AlertTypeError,
+			MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+		}
+	}
+}
