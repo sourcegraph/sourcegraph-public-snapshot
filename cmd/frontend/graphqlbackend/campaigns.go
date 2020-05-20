@@ -254,14 +254,15 @@ type ChangesetResolver interface {
 
 type HiddenExternalChangesetResolver interface {
 	ID() graphql.ID
-	ExternalID() string
+
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
+
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
-	ToHiddenExternalExternalChangeset() (HiddenExternalChangesetResolver, bool)
+	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
 }
 
 type ExternalChangesetResolver interface {
