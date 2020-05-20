@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -16,7 +18,9 @@ import (
 			docker run --publish 7080:7080 --rm sourcegraph/server:insiders
 */
 
-func main() {
+var client *e2eutil.Client
+
+func TestMain(m *testing.M) {
 	baseURL := flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
 	email := flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
 	username := flag.String("username", "e2e-admin", "The username of the admin user")
@@ -29,25 +33,21 @@ func main() {
 
 	needsSiteInit, err := e2eutil.NeedsSiteInit(*baseURL)
 	if err != nil {
-		log15.Error("Failed to check if site needs init", "error", err)
-		os.Exit(1)
+		log.Fatal("Failed to check if site needs init:", err)
 	}
 
-	var client *e2eutil.Client
 	if needsSiteInit {
 		client, err = e2eutil.SiteAdminInit(*baseURL, *email, *username, *password)
 		if err != nil {
-			log15.Error("Failed to create site admin", "error", err)
-			os.Exit(1)
+			log.Fatal("Failed to create site admin:", err)
 		}
-		log15.Info("Site admin has been created", "username", *username)
+		log.Println("Site admin has been created:", *username)
 	} else {
 		client, err = e2eutil.SignIn(*baseURL, *email, *password)
 		if err != nil {
-			log15.Error("Failed to sign in", "err", err)
-			os.Exit(1)
+			log.Fatal("Failed to sign in:", err)
 		}
-		log15.Info("Site admin authenticated", "username", *username)
+		log.Println("Site admin authenticated:", *username)
 	}
 
 	// Set up external service
@@ -75,27 +75,14 @@ func main() {
 		}),
 	})
 	if err != nil {
-		log15.Error("Failed to add external service", "error", err)
-		os.Exit(1)
+		log.Fatal("Failed to add external service:", err)
 	}
-
 	time.Sleep(10 * time.Second) // TODO
-	resutls, err := client.SearchRepositories("type:repo visibility:private")
-	if err != nil {
-		log15.Error("Failed to search", "error", err)
-		os.Exit(1)
+
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
 	}
-	found := false
-	for _, r := range resutls {
-		if r.Name == "github.com/sourcegraph/e2e-test-private-repository" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		log15.Error("Visibility filter", "error", "private repository not found")
-		os.Exit(1)
-	}
+	os.Exit(m.Run())
 }
 
 func mustMarshalJSONString(v interface{}) string {
