@@ -12,4 +12,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: file
-          reporter: github-pr-review
+          reporter: github-pr-check
+          level: info
