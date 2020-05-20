@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -23,15 +24,11 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		}
 	}
 
-	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
-	}
-
 	var idArgs [][]int
-	statesFn := func(ctx context.Context, args []int) (map[int]string, error) {
-		sort.Ints(args)
-		idArgs = append(idArgs, args)
+	mockDB := dbmocks.NewMockDB()
+	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+		sort.Ints(ids)
+		idArgs = append(idArgs, ids)
 
 		return map[int]string{
 			1:  "completed",
@@ -42,9 +39,15 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 			9:  "errored",
 			10: "errored",
 		}, nil
+	})
+
+	j := &Janitor{
+		db:        mockDB,
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		t.Fatalf("unexpected error removing orphaned bundle files: %s", err)
 	}
 
@@ -78,25 +81,27 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		}
 	}
 
+	var idArgs [][]int
+	mockDB := dbmocks.NewMockDB()
+	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+		idArgs = append(idArgs, ids)
+
+		states := map[int]string{}
+		for _, id := range ids {
+			if id%2 == 0 {
+				states[id] = "completed"
+			}
+		}
+		return states, nil
+	})
+
 	j := &Janitor{
+		db:        mockDB,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	var idArgs [][]int
-	statesFn := func(ctx context.Context, args []int) (map[int]string, error) {
-		idArgs = append(idArgs, args)
-
-		states := map[int]string{}
-		for _, arg := range args {
-			if arg%2 == 0 {
-				states[arg] = "completed"
-			}
-		}
-		return states, nil
-	}
-
-	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 
