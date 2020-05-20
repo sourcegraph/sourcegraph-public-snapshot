@@ -79,7 +79,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			"warnings", warn)
 	}
 	if results.Type() != model.ValMatrix {
-		return nil, fmt.Errorf("received unexpected result type '%s' from prometheus", results.Type())
+		return nil, fmt.Errorf("received unexpected result type %q from prometheus", results.Type())
 	}
 
 	data := results.(model.Matrix)
