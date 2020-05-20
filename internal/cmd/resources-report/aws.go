@@ -54,10 +54,11 @@ var awsResources = map[string]AWSResourceFetchFunc{
 					Platform:   PlatformAWS,
 					Identifier: *volume.VolumeId,
 					Location:   *volume.AvailabilityZone,
-					Owner:      "",
+					Owner:      "-",
 					Type:       fmt.Sprintf("EC2::Volumes::%s", string(volume.VolumeType)),
 					Meta: map[string]interface{}{
-						"tags": volume.Tags,
+						"tags":        volume.Tags,
+						"attachments": volume.Attachments,
 					},
 				})
 			}
@@ -71,13 +72,22 @@ var awsResources = map[string]AWSResourceFetchFunc{
 		var rs []Resource
 		for pager.Next(ctx) {
 			page := pager.CurrentPage()
-			for _, cluster := range page.Clusters {
+			for _, clusterName := range page.Clusters {
+				cluster, err := client.DescribeClusterRequest(&aws_eks.DescribeClusterInput{
+					Name: aws.String(clusterName),
+				}).Send(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to fetch details for cluster '%s': %w", clusterName, err)
+				}
 				rs = append(rs, Resource{
 					Platform:   PlatformAWS,
-					Identifier: cluster,
+					Identifier: *cluster.Cluster.Arn,
 					Location:   cfg.Region,
-					Owner:      "",
+					Owner:      "-",
 					Type:       "EKS::Cluster",
+					Meta: map[string]interface{}{
+						"tags": cluster.Cluster.Tags,
+					},
 				})
 			}
 		}
