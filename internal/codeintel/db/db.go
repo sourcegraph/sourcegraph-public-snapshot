@@ -152,6 +152,10 @@ func New(postgresDSN string) (DB, error) {
 	return &dbImpl{db: db}, nil
 }
 
+func NewWithHandle(db *sql.DB) DB {
+	return &dbImpl{db: db}
+}
+
 // query performs QueryContext on the underlying connection.
 func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	return db.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)

@@ -14,19 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func NewProxy() (*httpapi.LSIFServerProxy, error) {
+func NewProxy(db codeinteldb.DB, bundleManagerClient bundles.BundleManagerClient) (*httpapi.LSIFServerProxy, error) {
 	return &httpapi.LSIFServerProxy{
-		UploadHandler: http.HandlerFunc(uploadProxyHandler()),
+		UploadHandler: http.HandlerFunc(uploadProxyHandler(enqueuer.NewEnqueuer(db, bundleManagerClient))),
 	}, nil
 }
 
-func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler(enqueuer *enqueuer.Enqueuer) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
@@ -60,27 +62,8 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			}
 		}
 
-		host, err := client.SelectRandomHost()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		proxyReq, err := makeUploadRequest(host, q, r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		proxyResp, err := client.DefaultClient.RawRequest(ctx, proxyReq)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer proxyResp.Body.Close()
-
-		w.WriteHeader(proxyResp.StatusCode)
-		_, _ = io.Copy(w, proxyResp.Body)
+		r.URL.RawQuery = q.Encode()
+		enqueuer.HandleEnqueue(w, r)
 	}
 }
 
