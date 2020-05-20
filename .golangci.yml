@@ -1,6 +1,3 @@
-run:
-  timeout: 3m
-
 linters-settings:
   dupl:
     threshold: 100
@@ -97,6 +94,8 @@ issues:
       text: "unnecessaryDefer:"
 
 run:
+  timeout: 5m
+
   skip-dirs:
     - browser
     - client

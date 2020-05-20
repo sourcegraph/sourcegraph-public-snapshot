@@ -11,4 +11,3 @@ jobs:
         uses: docker://reviewdog/action-golangci-lint:latest
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          golangci_lint_flags: -v --timeout=5m
