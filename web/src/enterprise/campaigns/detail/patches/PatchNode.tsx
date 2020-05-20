@@ -35,7 +35,10 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     const [isPublishing, setIsPublishing] = useState<boolean | Error>(false)
     useEffect(() => {
         setIsPublishing(node.publicationEnqueued)
-    }, [node.publicationEnqueued])
+        // Need to watch for the node to change, that means a refetch has happened.
+        // It can be that node.publicationEnqueued never got true,
+        // when it failed between the `publishChangeset` call and the first refetch.
+    }, [node])
 
     const publishChangeset: React.MouseEventHandler = async () => {
         try {

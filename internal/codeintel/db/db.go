@@ -49,7 +49,7 @@ type DB interface {
 	QueueSize(ctx context.Context) (int, error)
 
 	// InsertUpload inserts a new upload and returns its identifier.
-	InsertUpload(ctx context.Context, upload *Upload) (int, error)
+	InsertUpload(ctx context.Context, upload Upload) (int, error)
 
 	// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 	// (the resulting array is deduplicated on update).

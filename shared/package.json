@@ -16,7 +16,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "eslint": "eslint --cache './{dev,src}/**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "test": "jest",
     "graphql": "gulp graphQLTypes",
