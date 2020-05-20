@@ -45,7 +45,7 @@ func run(opts options) error {
 	defer cancel()
 
 	// collect resources
-	resources := make([]Resource, 0)
+	var resources []Resource
 	if *opts.gcp {
 		rs, err := collectGCPResources(ctx, *opts.verbose)
 		if err != nil {
