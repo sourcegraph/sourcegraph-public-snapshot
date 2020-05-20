@@ -92,7 +92,6 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 				return tt.fields.queryValue, tt.fields.queryWarnings, tt.fields.queryErr
 			})
 			r := &siteMonitoringStatisticsResolver{
-				ctx:      context.Background(),
 				prom:     mock,
 				timespan: 24 * time.Hour,
 			}

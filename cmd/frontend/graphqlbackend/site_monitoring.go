@@ -40,7 +40,6 @@ func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 }
 
 type siteMonitoringStatisticsResolver struct {
-	ctx      context.Context
 	prom     prometheusQuerier
 	timespan time.Duration
 }
