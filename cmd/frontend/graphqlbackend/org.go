@@ -250,7 +250,6 @@ func (*schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Username     string
 }) (*EmptyResponse, error) {
-
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
