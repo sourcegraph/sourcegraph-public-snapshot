@@ -20,21 +20,12 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
-  gocyclo:
-    min-complexity: 15
   goimports:
     local-prefixes: github.com/sourcegraph/sourcegraph
   golint:
     min-confidence: 0
-  gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
   govet:
     check-shadowing: true
-  lll:
-    line-length: 140
   maligned:
     suggest-new: true
   misspell:
