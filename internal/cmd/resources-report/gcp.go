@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	gcp_ca "google.golang.org/api/cloudasset/v1p1beta1"
 	gcp_crm "google.golang.org/api/cloudresourcemanager/v1"
@@ -17,7 +18,7 @@ var gcpAssetTypes = []string{
 	"dataproc.googleapis.com/Cluster",
 }
 
-func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) {
+func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]Resource, error) {
 	logger := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources with types: %+v", gcpAssetTypes)

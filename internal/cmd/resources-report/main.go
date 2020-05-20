@@ -13,6 +13,7 @@ type options struct {
 	slackWebhook *string
 	gcp          *bool
 	aws          *bool
+	window       *time.Duration
 
 	dry     *bool
 	verbose *bool
@@ -25,6 +26,7 @@ func main() {
 		slackWebhook: flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
 		gcp:          flag.Bool("gcp", false, "Report on Google Cloud resources"),
 		aws:          flag.Bool("aws", false, "Report on Amazon Web Services resources"),
+		window:       flag.Duration("window", 48*time.Hour, "Restrict results to resources created within a period"),
 
 		dry:     flag.Bool("dry", false, "Do not post updates to slack, but print them to stdout"),
 		verbose: flag.Bool("verbose", false, "Print debug output to stdout"),
@@ -46,15 +48,16 @@ func run(opts options) error {
 
 	// collect resources
 	var resources []Resource
+	since := time.Now().UTC().Add(-*opts.window)
 	if *opts.gcp {
-		rs, err := collectGCPResources(ctx, *opts.verbose)
+		rs, err := collectGCPResources(ctx, since, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("gcp: %w", err)
 		}
 		resources = append(resources, rs...)
 	}
 	if *opts.aws {
-		rs, err := collectAWSResources(ctx, *opts.verbose)
+		rs, err := collectAWSResources(ctx, since, *opts.verbose)
 		if err != nil {
 			return fmt.Errorf("aws: %w", err)
 		}
@@ -66,12 +69,12 @@ func run(opts options) error {
 		log.Println("dry run - collected resources:")
 		log.Println(reportString(resources))
 	} else {
-		if err := reportToSlack(ctx, *opts.slackWebhook, resources); err != nil {
+		if err := reportToSlack(ctx, *opts.slackWebhook, resources, since); err != nil {
 			return fmt.Errorf("slack: %w", err)
 		}
 	}
 
-	log.Printf("done - collected a total of %d resources\n", len(resources))
+	log.Printf("done - collected a total of %d resources since %s", len(resources), since.String())
 	return nil
 }
 

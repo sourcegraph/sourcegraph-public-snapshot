@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // see https://api.slack.com/reference/block-kit/blocks
@@ -23,14 +24,14 @@ type slackText struct {
 	Text string `json:"text"`
 }
 
-func reportToSlack(ctx context.Context, webhook string, resources []Resource) error {
+func reportToSlack(ctx context.Context, webhook string, resources []Resource, since time.Time) error {
 	// generate message to deliver
 	blocks := []slackBlock{
 		{
 			"type": "section",
 			"text": &slackText{
 				Type: slackTextMarkdown,
-				Text: fmt.Sprintf(":package: I've found %d resources!", len(resources)),
+				Text: fmt.Sprintf(":package: I've found %d resources created since %s!", len(resources), since.String()),
 			},
 		},
 		{
