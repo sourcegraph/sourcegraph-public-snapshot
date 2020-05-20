@@ -70,7 +70,7 @@ func PreciseCodeIntelBundleManager() *Container {
 				},
 			},
 			{
-				Title:  "Janitor - cleans up and keeps free space on disk",
+				Title:  "Janitor - synchronizes database and filesystem and keeps free space on disk",
 				Hidden: true,
 				Rows: []Row{
 					{
@@ -92,8 +92,16 @@ func PreciseCodeIntelBundleManager() *Container {
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
 							PossibleSolutions: "none",
 						},
+						{
+							Name:              "janitor_old_dumps",
+							Description:       "bundle files removed (due to low disk space) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
 					},
-					// TODO - reorganize this
 					{
 						{
 							Name:              "janitor_orphaned_dumps",
@@ -105,17 +113,8 @@ func PreciseCodeIntelBundleManager() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_old_dumps",
-							Description:       "bundle files removed (after evicting them from the database) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
-							DataMayNotExist:   true,
-							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("files removed"),
-							PossibleSolutions: "none",
-						},
-						{
 							Name:              "janitor_uploads_without_bundle_files",
-							Description:       "upload records removed (due to missing bundle files) every 5m",
+							Description:       "upload records removed (with no corresponding bundle file) every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_upload_records_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
