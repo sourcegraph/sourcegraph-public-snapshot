@@ -18,7 +18,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false, err
+		return false, nil
 	}
 
 	return needsRepositoryConfiguration(ctx)
