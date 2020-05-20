@@ -3,7 +3,7 @@
 This tool reports on the status of various resources in AWS and GCP accounts. Credentials are expected to be set up beforehand, and leverage default credentials of each supported platform. Basic usage:
 
 ```sh
-go build && ./resources-report --aws --gcp --dry
+go build && ./resources-report --aws --gcp --slack.webhook="https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ## Authentication

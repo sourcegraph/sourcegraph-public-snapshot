@@ -74,3 +74,11 @@ func run(opts options) error {
 	log.Printf("done - collected a total of %d resources\n", len(resources))
 	return nil
 }
+
+func reportString(resources []Resource) string {
+	var output string
+	for _, r := range resources {
+		output += fmt.Sprintf(" * %+v\n", r)
+	}
+	return output
+}
