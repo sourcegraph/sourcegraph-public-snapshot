@@ -128,6 +128,7 @@ func displayNameFromEndpoint(ep Endpoint) string {
 // reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from
 // request before it gets sent to the destination endpoint.
 func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
+	// 🚨 SECURITY Only admins can create reverse proxies from host
 	return adminOnly(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
@@ -143,7 +144,6 @@ func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO (Dax): Does this require 🚨 everywhere its called?
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
