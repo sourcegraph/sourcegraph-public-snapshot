@@ -13,8 +13,6 @@ import (
 
 var prometheusURL = env.Get("PROMETHEUS_URL", "http://prometheus:9090", "prometheus server URL")
 
-//go:generate $PWD/.bin/go-mockgen -f github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend -i prometheusQuerier -o prometheus_mock.go
-
 // prometheusQuerier provides a shim around prometheus.API
 type prometheusQuerier interface {
 	// QueryRange performs a query for the given range.
