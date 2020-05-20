@@ -63,7 +63,6 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		Config      *string
 	}
 }) (*externalServiceResolver, error) {
-
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
