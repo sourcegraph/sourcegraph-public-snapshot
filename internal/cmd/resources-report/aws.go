@@ -20,33 +20,33 @@ type AWSResourceFetchFunc func(context.Context, aws.Config) ([]Resource, error)
 var awsResources = map[string]AWSResourceFetchFunc{
 	// fetch ec2 instances
 	"EC2::Instances": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
-		c := aws_ec2.New(cfg)
-		p := aws_ec2.NewDescribeInstancesPaginator(c.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
-		r := make([]Resource, 0)
-		for p.Next(ctx) {
-			page := p.CurrentPage()
-			for _, res := range page.Reservations {
-				for _, inst := range res.Instances {
+		client := aws_ec2.New(cfg)
+		pager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
+		var r []Resource
+		for pager.Next(ctx) {
+			page := pager.CurrentPage()
+			for _, reservation := range page.Reservations {
+				for _, instance := range reservation.Instances {
 					r = append(r, Resource{
 						Platform:   PlatformAWS,
-						Identifier: *inst.InstanceId,
-						Location:   *inst.Placement.AvailabilityZone,
-						Owner:      *res.OwnerId,
-						Type:       fmt.Sprintf("EC2::%s", string(inst.InstanceType)),
+						Identifier: *instance.InstanceId,
+						Location:   *instance.Placement.AvailabilityZone,
+						Owner:      *reservation.OwnerId,
+						Type:       fmt.Sprintf("EC2::%s", string(instance.InstanceType)),
 						Meta:       map[string]interface{}{},
 					})
 				}
 			}
 		}
-		return r, p.Err()
+		return r, pager.Err()
 	},
 	// fetch kubernetes clusters
 	"EKS::Clusters": func(ctx context.Context, cfg aws.Config) ([]Resource, error) {
-		c := aws_eks.New(cfg)
-		p := aws_eks.NewListClustersPaginator(c.ListClustersRequest(&aws_eks.ListClustersInput{}))
-		r := make([]Resource, 0)
-		for p.Next(ctx) {
-			page := p.CurrentPage()
+		client := aws_eks.New(cfg)
+		pager := aws_eks.NewListClustersPaginator(client.ListClustersRequest(&aws_eks.ListClustersInput{}))
+		var r []Resource
+		for pager.Next(ctx) {
+			page := pager.CurrentPage()
 			for _, cluster := range page.Clusters {
 				r = append(r, Resource{
 					Platform:   PlatformAWS,
@@ -57,7 +57,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 				})
 			}
 		}
-		return r, p.Err()
+		return r, pager.Err()
 	},
 }
 
@@ -69,9 +69,9 @@ var awsRegionPrefixes = []string{
 }
 
 func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) {
-	log := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
+	logger := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
-		log.Printf("collecting resources")
+		logger.Printf("collecting resources")
 	}
 
 	cfg, err := aws_ext.LoadDefaultAWSConfig()
@@ -80,7 +80,7 @@ func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) 
 	}
 
 	// query default aws regions
-	resources := make([]Resource, 0)
+	var resources []Resource
 	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
 	for _, region := range pt.Regions() {
 		shouldCheckRegion := false
@@ -94,20 +94,20 @@ func collectAWSResources(ctx context.Context, verbose bool) ([]Resource, error) 
 			continue // skip this region
 		}
 		if verbose {
-			log.Printf("querying region %s", cfg.Region)
+			logger.Printf("querying region %s", cfg.Region)
 		}
 
 		cfg.Region = region.ID()
 		// query configured resource in region
-		for rid, fetch := range awsResources {
-			r, err := fetch(ctx, cfg.Copy())
+		for resourceID, fetchResource := range awsResources {
+			rs, err := fetchResource(ctx, cfg.Copy())
 			if err != nil {
 				if verbose {
-					log.Printf("resource fetch for '%s' failed in region %s: %v", rid, cfg.Region, err)
+					logger.Printf("resource fetch for '%s' failed in region %s: %v", resourceID, cfg.Region, err)
 				}
 				continue
 			}
-			resources = append(resources, r...)
+			resources = append(resources, rs...)
 		}
 	}
 

@@ -20,9 +20,9 @@ var gcpAssetTypes = []string{
 }
 
 func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) {
-	log := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
+	logger := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
-		log.Printf("collecting resources with types: %+v", gcpAssetTypes)
+		logger.Printf("collecting resources with types: %+v", gcpAssetTypes)
 	}
 
 	crm, err := gcp_crm.NewService(ctx)
@@ -34,12 +34,12 @@ func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) 
 		return nil, fmt.Errorf("failed to init assets client: %w", err)
 	}
 
-	resources := make([]Resource, 0)
+	var resources []Resource
 	if err := crm.Projects.List().Pages(ctx, func(page *gcp_crm.ListProjectsResponse) error {
-		for _, p := range page.Projects {
-			parent := fmt.Sprintf("projects/%s", p.ProjectId)
+		for _, project := range page.Projects {
+			parent := fmt.Sprintf("projects/%s", project.ProjectId)
 			if verbose {
-				log.Printf("found project: %s", parent)
+				logger.Printf("found project: %s", parent)
 			}
 
 			if err := assets.Resources.SearchAll(parent).AssetTypes(gcpAssetTypes...).
@@ -49,7 +49,7 @@ func collectGCPResources(ctx context.Context, verbose bool) ([]Resource, error) 
 							Platform:   PlatformGCP,
 							Identifier: asset.Name,
 							Location:   asset.Location,
-							Owner:      p.ProjectId,
+							Owner:      project.ProjectId,
 							Type:       asset.AssetType,
 							Meta: map[string]interface{}{
 								"description": asset.Description,
