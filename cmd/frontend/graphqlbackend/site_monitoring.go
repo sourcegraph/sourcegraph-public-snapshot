@@ -35,7 +35,6 @@ func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &siteMonitoringStatisticsResolver{
-		ctx:      ctx,
 		prom:     prom,
 		timespan: time.Duration(*args.Days) * 24 * time.Hour,
 	}, nil
@@ -49,8 +48,8 @@ type siteMonitoringStatisticsResolver struct {
 
 const alertsResolution = 12 * time.Hour
 
-func (r *siteMonitoringStatisticsResolver) Alerts() ([]*MonitoringAlert, error) {
-	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
+func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
 
 	var err error

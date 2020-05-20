@@ -80,7 +80,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 				prom:     mock,
 				timespan: 24 * time.Hour,
 			}
-			alerts, err := r.Alerts()
+			alerts, err := r.Alerts(context.Background())
 			if err != nil {
 				if tt.wantErr == nil {
 					t.Errorf("expected no error, got %v", err)
