@@ -60,7 +60,6 @@ linters:
     - funlen
     - goconst
     - gocritic
-    - gocyclo
     - gofmt
     - goimports
     - golint

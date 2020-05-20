@@ -202,7 +202,9 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	if after+1 > len(p.buf) || !isSpace(p.buf[after:after+1]) {
 		return false
 	}
+	// Bar
 	return strings.ToLower(v) == string(keyword)
+	// Foo
 }
 
 // skipSpaces advances the input and places the parser position at the next
@@ -703,7 +705,6 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
 			// Reduce left node.
 			return append(operator.Operands, right...), true
-
 		}
 	}
 	if len(right) > 1 {
