@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -130,21 +131,16 @@ func init() {
 
 func OutOfDateAlert(months int, isAdmin bool) Alert {
 
+	var alert Alert
 	if isAdmin {
+		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d months out of date", months)
+		key := fmt.Sprintf("%d", months)
 		switch {
-		case months <= 0:
-			return Alert{}
-		case months == 1:
+		case months > 0 && months < 3:
 			return Alert{
 				TypeValue:                 AlertTypeInfo,
-				MessageValue:              "Sourcegraph is 1 month out of date",
-				IsDismissibleWithKeyValue: "y", //TODO What does this mean?
-			}
-		case months == 2:
-			return Alert{
-				TypeValue:                 AlertTypeInfo,
-				MessageValue:              "Sourcegraph is 2 months out of date",
-				IsDismissibleWithKeyValue: "y",
+				MessageValue:              alert.MessageValue,
+				IsDismissibleWithKeyValue: key,
 			}
 		case months == 3:
 			return Alert{
@@ -154,43 +150,46 @@ func OutOfDateAlert(months int, isAdmin bool) Alert {
 		case months == 4:
 			return Alert{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes please upgrade",
 			}
 
 		case months == 5:
 			return Alert{
 				TypeValue:    AlertTypeError,
-				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes please upgrade.",
 			}
 
 		default:
 			return Alert{
 				TypeValue:    AlertTypeError,
-				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes please upgrade.",
 			}
 		}
 	}
-	switch {
-	case months <= 3:
-		return Alert{}
-	case months == 4:
+	if months <= 3 {
+		return alert
+	}
+	alert.MessageValue = fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
+		"for the latest features and bug fixes ask your site administrator to upgrade.", months)
+	key := fmt.Sprintf("%d", months)
+	switch months {
+	case 4:
 		return Alert{
 			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "Sourcegraph is 4+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
-			IsDismissibleWithKeyValue: "y", //Should only be dismissible by non-admins
+			MessageValue:              alert.MessageValue,
+			IsDismissibleWithKeyValue: key,
 		}
-
-	case months == 5:
+	case 5:
 		return Alert{
 			TypeValue:                 AlertTypeError,
-			MessageValue:              "Sourcegraph is 5+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
-			IsDismissibleWithKeyValue: "y",
+			MessageValue:              alert.MessageValue,
+			IsDismissibleWithKeyValue: key,
 		}
 
 	default:
 		return Alert{
 			TypeValue:    AlertTypeError,
-			MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.",
+			MessageValue: alert.MessageValue,
 		}
 	}
 }
