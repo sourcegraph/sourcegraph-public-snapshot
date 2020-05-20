@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivationDropdown renders the activation dropdown 1`] = `
+Array [
+  <button
+    aria-controls="menu"
+    aria-haspopup="true"
+    class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle"
+    data-reach-menu-button=""
+    type="button"
+  >
+    <div
+      class="activation-dropdown-button__confetti"
+    >
+      <div
+        style="position:relative"
+      />
+    </div>
+    Get started
+    <div
+      class="activation-dropdown-button__confetti"
+    >
+      <div
+        style="position:relative"
+      />
+    </div>
+    <span
+      class="activation-dropdown-button__progress-bar-container"
+    >
+      <svg
+        class="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        data-test-id="CircularProgressbar"
+        viewBox="0 0 100 100"
+      >
+        <path
+          class="CircularProgressbar-trail"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fill-opacity="0"
+          stroke-width="12"
+          style="stroke-dasharray:276.46015351590177px 276.46015351590177px;stroke-dashoffset:0px"
+        />
+        <path
+          class="CircularProgressbar-path"
+          d="
+      M 50,50
+      m 0,-44
+      a 44,44 0 1 1 0,88
+      a 44,44 0 1 1 0,-88
+    "
+          fill-opacity="0"
+          stroke-width="12"
+          style="stroke-dasharray:276.46015351590177px 276.46015351590177px;stroke-dashoffset:276.46015351590177px"
+        />
+      </svg>
+    </span>
+  </button>,
+  <span />,
+]
+`;

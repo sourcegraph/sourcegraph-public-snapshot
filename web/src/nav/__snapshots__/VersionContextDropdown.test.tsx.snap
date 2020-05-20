@@ -1,0 +1,301 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`VersionContextDropdown renders the expanded version context dropdown, with 3.15 selected and displayed first 1`] = `
+<div
+  class="version-context-dropdown text-nowrap"
+>
+  <div
+    data-reach-listbox-input=""
+    data-state="closed"
+    data-value="3.15"
+    id="listbox-input"
+  >
+    <span
+      aria-haspopup="listbox"
+      aria-labelledby="button--listbox-input"
+      class="version-context-dropdown__button btn btn-secondary"
+      data-reach-listbox-button=""
+      id="button--listbox-input"
+      role="button"
+      tabindex="0"
+    >
+      <svg
+        class="mdi-icon icon-inline small"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M6,3A1,1 0 0,1 7,4V4.88C8.06,4.44 9.5,4 11,4C14,4 14,6 16,6C19,6 20,4 20,4V12C20,12 19,14 16,14C13,14 13,12 11,12C8,12 7,14 7,14V21H5V4A1,1 0 0,1 6,3Z"
+        />
+      </svg>
+      <span
+        class="version-context-dropdown__button-text ml-2 mr-1"
+      >
+        3.15 (Active)
+      </span>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+    <div
+      class="version-context-dropdown__popover dropdown-menu show"
+      data-reach-listbox-popover=""
+      hidden=""
+      tabindex="-1"
+    >
+      <div
+        class="version-context-dropdown__title pl-2 mb-1"
+      >
+        <span
+          class="text-nowrap"
+        >
+          Select version context
+        </span>
+        <button
+          class="btn btn-icon"
+          type="button"
+        >
+          <svg
+            class="mdi-icon icon-inline small"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M11,18H13V16H11V18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,6A4,4 0 0,0 8,10H10A2,2 0 0,1 12,8A2,2 0 0,1 14,10C14,12 11,11.75 11,15H13C13,12.75 16,12.5 16,10A4,4 0 0,0 12,6Z"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="version-context-dropdown__info card"
+      >
+        <span
+          class="font-weight-bold"
+        >
+          About version contexts
+        </span>
+        <p
+          class="mb-2"
+        >
+          Version contexts (
+          <a
+            href="http://docs.sourcegraph.com/user/search#version-contexts"
+          >
+            documentation
+          </a>
+          ) allow you to search a set of repositories based on a commit hash, tag, or other interesting moment in time of multiple code bases. Your administrator can configure version contexts in the site configuration.
+        </p>
+        <button
+          class="btn btn-outline-primary version-context-dropdown__info-dismiss"
+          type="button"
+        >
+          Do not show this again
+        </button>
+      </div>
+      <ul
+        aria-activedescendant="option-3.15--listbox-input"
+        class="version-context-dropdown__list"
+        data-reach-listbox-list=""
+        id="listbox--listbox-input"
+        role="listbox"
+        tabindex="-1"
+      >
+        <span
+          class="version-context-dropdown__option version-context-dropdown__title"
+          data-reach-listbox-group-label=""
+          disabled=""
+          role="presentation"
+          value="title"
+        >
+          <div />
+          <span
+            class="version-context-dropdown__option-name"
+          >
+            Name
+          </span>
+          <span
+            class="version-context-dropdown__option-description"
+          >
+            Description
+          </span>
+        </span>
+        <li
+          aria-selected="true"
+          class="version-context-dropdown__option"
+          data-current=""
+          data-label="3.15"
+          data-reach-listbox-option=""
+          data-value="3.15"
+          id="option-3.15--listbox-input"
+          role="option"
+        >
+          <div>
+            <button
+              aria-label="Disable version context"
+              class="btn btn-icon"
+              type="button"
+            >
+              <svg
+                class="mdi-icon icon-inline small"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <span
+            class="version-context-dropdown__option-name"
+          >
+            3.15
+          </span>
+          <span
+            class="version-context-dropdown__option-description"
+          >
+            3.15
+          </span>
+        </li>
+        <li
+          class="version-context-dropdown__option"
+          data-label="3.0"
+          data-reach-listbox-option=""
+          data-value="3.0"
+          id="option-3.0--listbox-input"
+          role="option"
+        >
+          <div />
+          <span
+            class="version-context-dropdown__option-name"
+          >
+            3.0
+          </span>
+          <span
+            class="version-context-dropdown__option-description"
+          >
+            3.0
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`VersionContextDropdown renders the version context dropdown with 3.15 context selected 1`] = `
+<div
+  class="version-context-dropdown text-nowrap"
+>
+  <div
+    data-reach-listbox-input=""
+    data-state="closed"
+    data-value="3.15"
+    id="listbox-input"
+  >
+    <span
+      aria-haspopup="listbox"
+      aria-labelledby="button--listbox-input"
+      class="version-context-dropdown__button btn btn-secondary"
+      data-reach-listbox-button=""
+      id="button--listbox-input"
+      role="button"
+      tabindex="0"
+    >
+      <svg
+        class="mdi-icon icon-inline small"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M6,3A1,1 0 0,1 7,4V4.88C8.06,4.44 9.5,4 11,4C14,4 14,6 16,6C19,6 20,4 20,4V12C20,12 19,14 16,14C13,14 13,12 11,12C8,12 7,14 7,14V21H5V4A1,1 0 0,1 6,3Z"
+        />
+      </svg>
+      <span
+        class="version-context-dropdown__button-text ml-2 mr-1"
+      >
+        3.15 (Active)
+      </span>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+    <span />
+  </div>
+</div>
+`;
+
+exports[`VersionContextDropdown renders the version context dropdown with no context selected 1`] = `
+<div
+  class="version-context-dropdown text-nowrap"
+>
+  <div
+    data-reach-listbox-input=""
+    data-state="closed"
+    id="listbox-input"
+  >
+    <span
+      aria-haspopup="listbox"
+      aria-labelledby="button--listbox-input"
+      class="version-context-dropdown__button btn btn-secondary"
+      data-reach-listbox-button=""
+      id="button--listbox-input"
+      role="button"
+      tabindex="0"
+    >
+      <svg
+        class="mdi-icon icon-inline small"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M6,3A1,1 0 0,1 7,4V4.88C8.06,4.44 9.5,4 11,4C14,4 14,6 16,6C19,6 20,4 20,4V12C20,12 19,14 16,14C13,14 13,12 11,12C8,12 7,14 7,14V21H5V4A1,1 0 0,1 6,3Z"
+        />
+      </svg>
+      <span
+        class="version-context-dropdown__button-text ml-2 mr-1"
+      >
+        Select context
+      </span>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </span>
+    <span />
+  </div>
+</div>
+`;
