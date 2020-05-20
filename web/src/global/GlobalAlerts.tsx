@@ -58,7 +58,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {this.state.siteFlags.needsRepositoryConfiguration && (
                             <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
                         )}
-                        {this.props.isSiteAdmin &&
+                        {
                             this.state.siteFlags.updateCheck &&
                             !this.state.siteFlags.updateCheck.errorMessage &&
                             this.state.siteFlags.updateCheck.updateVersionAvailable &&
@@ -73,6 +73,17 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                                     updateVersionAvailable={this.state.siteFlags.updateCheck.updateVersionAvailable}
                                 />
                             )}
+                        {
+                            this.state.siteFlags.updateCheck.errorMessage &&
+                            this.state.siteFlags.updateCheck.alert &&
+                            (<GlobalAlert
+                                key={1}
+                                alert={this.state.siteFlags.updateCheck.alert}
+                                className="global-alerts__alert"
+                                history={this.props.history}
+                            />)
+                        }
+
                         {this.state.siteFlags.freeUsersExceeded && (
                             <FreeUsersExceededAlert
                                 noLicenseWarningUserCount={
