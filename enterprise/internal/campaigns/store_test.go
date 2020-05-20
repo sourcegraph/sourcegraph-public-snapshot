@@ -1311,7 +1311,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	// We need campaigns attached to each changeset
 	for _, cs := range changesets {
 		c := &cmpgn.Campaign{
-			Name:           fmt.Sprintf("ListChangesetSyncData test"),
+			Name:           "ListChangesetSyncData test",
 			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
 		}

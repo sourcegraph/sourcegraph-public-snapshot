@@ -154,7 +154,10 @@ func sanitizeFilename(s string) string {
 func runSearchTests() error {
 	_, err := os.Stat(searchTestDataDir)
 	if os.IsNotExist(err) {
-		os.MkdirAll(searchTestDataDir, os.ModePerm)
+		err := os.MkdirAll(searchTestDataDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 	if err != nil {
 		fmt.Println(err)
