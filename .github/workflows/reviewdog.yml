@@ -1,5 +1,5 @@
 name: reviewdog
-on: [push, pull_request]
+on: [pull_request]
 jobs:
   golangci-lint:
     name: golangci-lint
