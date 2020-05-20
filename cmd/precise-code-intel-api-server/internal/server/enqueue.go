@@ -164,7 +164,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 		err = tx.Done(err)
 	}()
 
-	id, err := tx.InsertUpload(r.Context(), &db.Upload{
+	id, err := tx.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
@@ -188,7 +188,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
 func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
-	id, err := s.db.InsertUpload(r.Context(), &db.Upload{
+	id, err := s.db.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
 		RepositoryID:  uploadArgs.RepositoryID,
