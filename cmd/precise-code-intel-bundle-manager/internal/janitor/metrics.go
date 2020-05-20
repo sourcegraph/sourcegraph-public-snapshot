@@ -6,6 +6,7 @@ type JanitorMetrics struct {
 	UploadFilesRemoved         prometheus.Counter
 	OrphanedBundleFilesRemoved prometheus.Counter
 	EvictedBundleFilesRemoved  prometheus.Counter
+	UploadRecordsRemoved       prometheus.Counter
 	Errors                     prometheus.Counter
 }
 
@@ -28,6 +29,12 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 	})
 	r.MustRegister(evictedBundleFilesRemoved)
 
+	uploadRecordsRemoved := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_bundle_manager_janitor_upload_records_removed_total",
+		Help: "Total number of processed upload records removed (with no corresponding bundle file)",
+	})
+	r.MustRegister(uploadRecordsRemoved)
+
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_errors_total",
 		Help: "Total number of errors when running the janitor",
@@ -38,6 +45,7 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 		UploadFilesRemoved:         uploadFilesRemoved,
 		OrphanedBundleFilesRemoved: orphanedBundleFilesRemoved,
 		EvictedBundleFilesRemoved:  evictedBundleFilesRemoved,
+		UploadRecordsRemoved:       uploadRecordsRemoved,
 		Errors:                     errors,
 	}
 }
