@@ -617,12 +617,12 @@ export function fetchSiteUpdateCheck(): Observable<{
 }
 
 /**
- * Resolves to false if prometheus API is unavailable.
+ * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
  *
  * @param days number of days of data to fetch
  */
 export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
-    // see equivalent in graphqlbackend.errPrometheusUnavailable
+    // more details in /internal/prometheusutil.ErrPrometheusUnavailable
     const errPrometheusUnavailable = 'prometheus API is unavailable'
     return queryGraphQL(
         gql`
