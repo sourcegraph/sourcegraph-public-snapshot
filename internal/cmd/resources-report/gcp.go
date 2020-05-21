@@ -154,6 +154,9 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 	// aggregate resources for each GCP project
 	if err := crm.Projects.List().Pages(ctx, func(page *gcp_crm.ListProjectsResponse) error {
 		for _, project := range page.Projects {
+			if verbose {
+				logger.Printf("querying project %s", project.Name)
+			}
 			for resourceID, fetchResource := range gcpResources {
 				wait.Add(1)
 				go func(resourceID string, fetchResource GCPResourceFetchFunc, project string) {
