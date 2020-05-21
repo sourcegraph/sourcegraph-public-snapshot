@@ -265,7 +265,7 @@ type BitbucketServerPlugin struct {
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
-	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with Bitbucket Server instance
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance
 	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`

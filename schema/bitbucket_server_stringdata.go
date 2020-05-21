@@ -114,7 +114,7 @@ const BitbucketServerSchemaJSON = `{
               "minLength": 1
             },
             "disableSync": {
-              "description": "Disallow Sourcegraph from automatically syncing webhook config with Bitbucket Server instance",
+              "description": "Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance",
               "type": "boolean",
               "default": false
             }
