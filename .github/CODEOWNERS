@@ -179,10 +179,12 @@ Dockerfile @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
+/internal/prometheusutil @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
