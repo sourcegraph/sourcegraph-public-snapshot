@@ -1,4 +1,4 @@
-# Resources report tool
+# Resources report tool [![Resources Report](https://github.com/sourcegraph/sourcegraph/workflows/Resources%20Report/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions?query=workflow%3A%22Resources+Report%22)
 
 This tool reports on the status of various resources in AWS and GCP accounts. Credentials are expected to be set up beforehand, and leverage default credentials of each supported platform. Basic usage:
 
@@ -14,7 +14,7 @@ Credentials should be a GCP service account with access to the following permiss
 
 - `Viewer`
 
-The path to the key should be set to `GOOGLE_APPLICATION_CREDENTIALS`. For the GitHub Action, set the key to `RR_GCP_ACCOUNT_KEY` in the Secrets tab by encoding it in base64, e.g. `cat my-key.json | base64` (see [`resources-report.yml`](../../../.github/workflows/resources-report.yml)).
+The path to the key should be set to `GOOGLE_APPLICATION_CREDENTIALS`. For the GitHub Action, set the key to `RR_GCP_ACCOUNT_KEY` in the Secrets tab by encoding it in base64, e.g. `cat $GOOGLE_APPLICATION_CREDENTIALS | base64` (see [`resources-report.yml`](../../../.github/workflows/resources-report.yml)).
 
 ### Amazon Web Services
 

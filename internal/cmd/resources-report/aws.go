@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	aws_ep "github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	aws_ext "github.com/aws/aws-sdk-go-v2/aws/external"
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_eks "github.com/aws/aws-sdk-go-v2/service/eks"
@@ -123,24 +122,27 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 	if err != nil {
 		return nil, fmt.Errorf("failed to init client: %w", err)
 	}
-
+	cfg.Region = "us-east-1" // set an arbitrary region to start
 	results := make(chan Resource, resultsBuffer)
 	wait := &sync.WaitGroup{}
 
-	// query default aws regions - the only partition we are interested in is the
-	// normal `aws` regions, which will always exist (other partitions include China,
-	// US government, etc.)
-	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
-	for _, region := range pt.Regions() {
-		if !hasPrefix(region.ID(), awsRegionPrefixes) {
+	// iterate over regions based on accessible EC2 regions
+	regions, err := aws_ec2.New(cfg).DescribeRegionsRequest(&aws_ec2.DescribeRegionsInput{
+		AllRegions: aws.Bool(true),
+	}).Send(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list regions: %w", err)
+	}
+	for _, region := range regions.Regions {
+		if !hasPrefix(*region.RegionName, awsRegionPrefixes) {
 			continue // skip this zone
 		}
+		cfg.Region = *region.RegionName
 		if verbose {
 			logger.Printf("querying region %s", cfg.Region)
 		}
 
 		// query configured resource in region
-		cfg.Region = region.ID()
 		for resourceID, fetchResource := range awsResources {
 			wait.Add(1)
 			go func(resourceID string, fetchResource AWSResourceFetchFunc, cfg aws.Config) {
