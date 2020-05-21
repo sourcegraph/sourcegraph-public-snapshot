@@ -33,9 +33,9 @@ export interface VersionContextDropdownProps
     navbarSearchQuery: string
 
     /**
-     * Whether to show the expanded state. Used for testing.
+     * Whether to always show the expanded state. Used for testing.
      */
-    expandedForTesting?: boolean
+    alwaysExpanded?: boolean
     portal?: boolean
 }
 
@@ -104,7 +104,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                 </ListboxButton>
                                 <ListboxPopover
                                     className={classNames('version-context-dropdown__popover dropdown-menu', {
-                                        show: isExpanded || props.expandedForTesting,
+                                        show: isExpanded || props.alwaysExpanded,
                                     })}
                                     portal={props.portal}
                                 >

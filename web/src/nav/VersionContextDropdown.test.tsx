@@ -31,7 +31,7 @@ describe('VersionContextDropdown', () => {
 
     it('renders the expanded version context dropdown, with 3.15 selected and displayed first', () => {
         const wrapper = render(
-            <VersionContextDropdown {...commonProps} versionContext="3.15" expandedForTesting={true} portal={false} />
+            <VersionContextDropdown {...commonProps} versionContext="3.15" alwaysExpanded={true} portal={false} />
         )
         expect(wrapper).toMatchSnapshot()
     })
