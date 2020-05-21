@@ -34,8 +34,8 @@ const baseActivation: Activation = {
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
         },
     ],
-    refetch: sinon.spy(),
-    update: sinon.spy(),
+    refetch: sinon.spy(() => undefined),
+    update: sinon.spy(() => undefined),
     completed: {
         ConnectedCodeHost: false,
         DidSearch: false,
