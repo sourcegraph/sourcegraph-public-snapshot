@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,6 +28,25 @@ func (r *MonitoringAlert) Timestamp() DateTime { return r.TimestampValue }
 func (r *MonitoringAlert) Name() string        { return r.NameValue }
 func (r *MonitoringAlert) ServiceName() string { return r.ServiceNameValue }
 func (r *MonitoringAlert) Average() float64    { return r.AverageValue }
+
+type MonitoringAlerts []*MonitoringAlert
+
+// Less determined by timestamp -> serviceName -> alert name
+func (a MonitoringAlerts) Less(i, j int) bool {
+	if a[i].Timestamp().Equal(a[j].Timestamp().Time) {
+		if a[i].ServiceName() == a[j].ServiceName() {
+			return a[i].Name() < a[j].Name()
+		}
+		return a[i].ServiceName() < a[j].ServiceName()
+	}
+	return a[i].Timestamp().Before(a[j].Timestamp().Time)
+}
+func (a MonitoringAlerts) Swap(i, j int) {
+	tmp := a[i]
+	a[i] = a[j]
+	a[j] = tmp
+}
+func (a MonitoringAlerts) Len() int { return len(a) }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
@@ -79,7 +99,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 	}
 
 	data := results.(model.Matrix)
-	alerts := make([]*MonitoringAlert, 0)
+	var alerts MonitoringAlerts
 	for _, sample := range data {
 		var (
 			name        = string(sample.Metric["name"])
@@ -107,5 +127,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			})
 		}
 	}
+
+	sort.Sort(alerts)
 	return alerts, err
 }

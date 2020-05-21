@@ -31,15 +31,15 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			fields: fields{
 				queryValue: model.Matrix{
 					&model.SampleStream{
-						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Metric: model.Metric{"name": "hello", "service_name": "world", "level": "warn"},
 						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(0)}}},
 				},
 			},
 			want: []*MonitoringAlert{{
 				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-				NameValue:        "hello",
+				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
-				OccurrencesValue: 0,
+				AverageValue:     0,
 			}},
 			wantErr: nil,
 		}, {
@@ -47,15 +47,15 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			fields: fields{
 				queryValue: model.Matrix{
 					&model.SampleStream{
-						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Metric: model.Metric{"name": "hello", "service_name": "world", "level": "warn"},
 						Values: []model.SamplePair{{Timestamp: sampleT, Value: model.SampleValue(1)}}},
 				},
 			},
 			want: []*MonitoringAlert{{
 				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-				NameValue:        "hello",
+				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
-				OccurrencesValue: 1,
+				AverageValue:     1,
 			}},
 			wantErr: nil,
 		}, {
@@ -63,7 +63,7 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			fields: fields{
 				queryValue: model.Matrix{
 					&model.SampleStream{
-						Metric: model.Metric{"name": "hello", "service_name": "world"},
+						Metric: model.Metric{"name": "hello", "service_name": "world", "level": "warn"},
 						Values: []model.SamplePair{
 							{Timestamp: sampleT, Value: model.SampleValue(1)},
 							{Timestamp: sampleT.Add(time.Hour), Value: model.SampleValue(1)},
@@ -73,9 +73,56 @@ func Test_siteMonitoringStatisticsResolver_Alerts(t *testing.T) {
 			},
 			want: []*MonitoringAlert{{
 				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
-				NameValue:        "hello",
+				NameValue:        "warn: hello",
 				ServiceNameValue: "world",
-				OccurrencesValue: 1,
+				AverageValue:     1,
+			}},
+			wantErr: nil,
+		}, {
+			name: "elements are sorted",
+			fields: fields{
+				queryValue: model.Matrix{
+					&model.SampleStream{
+						Metric: model.Metric{"name": "b", "service_name": "b", "level": "warn"},
+						Values: []model.SamplePair{
+							{Timestamp: sampleT, Value: model.SampleValue(1)},
+						},
+					},
+					&model.SampleStream{
+						Metric: model.Metric{"name": "a", "service_name": "b", "level": "warn"},
+						Values: []model.SamplePair{
+							{Timestamp: sampleT, Value: model.SampleValue(1)},
+							{Timestamp: sampleT.Add(time.Hour), Value: model.SampleValue(2)},
+						},
+					},
+					&model.SampleStream{
+						Metric: model.Metric{"name": "a", "service_name": "a", "level": "warn"},
+						Values: []model.SamplePair{
+							{Timestamp: sampleT, Value: model.SampleValue(1)},
+						},
+					},
+				},
+			},
+			want: []*MonitoringAlert{{
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "warn: a",
+				ServiceNameValue: "a",
+				AverageValue:     1,
+			}, {
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "warn: a",
+				ServiceNameValue: "b",
+				AverageValue:     1,
+			}, {
+				TimestampValue:   DateTime{sampleT.Time().Truncate(time.Hour)},
+				NameValue:        "warn: b",
+				ServiceNameValue: "b",
+				AverageValue:     1,
+			}, {
+				TimestampValue:   DateTime{sampleT.Time().Add(time.Hour).Truncate(time.Hour)},
+				NameValue:        "warn: a",
+				ServiceNameValue: "b",
+				AverageValue:     2,
 			}},
 			wantErr: nil,
 		},
