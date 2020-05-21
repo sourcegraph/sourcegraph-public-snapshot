@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.20.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
+	github.com/briandowns/spinner v1.11.1
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -44,6 +45,7 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v28 v28.1.1
+	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20200324103759-172db892e9a2
@@ -82,6 +84,7 @@ require (
 	github.com/lightstep/lightstep-tracer-go v0.20.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
@@ -145,6 +148,7 @@ require (
 	golang.org/x/tools v0.0.0-20200420001825-978e26b7c37c
 	google.golang.org/api v0.21.0 // indirect
 	google.golang.org/genproto v0.0.0-20200403120447-c50568487044 // indirect
+	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
