@@ -353,7 +353,7 @@ const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX
 // archive.
 func exactlyOneRepo(repoFilters []string) bool {
 	if len(repoFilters) == 1 {
-		filter := repoFilters[0]
+		filter, _ := search.ParseRepositoryRevisions(repoFilters[0])
 		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
 			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
 			r, err := regexpsyntax.Parse(filter, regexpFlags)
@@ -583,11 +583,11 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
-		if _, err := regexp.Compile(string(repoPattern)); err != nil {
+		if _, err := regexp.Compile(repoPattern); err != nil {
 			return nil, &badRequestError{err}
 		}
-		repoPattern = api.RepoName(optimizeRepoPatternWithHeuristics(string(repoPattern)))
-		includePatterns[i] = string(repoPattern)
+		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+		includePatterns[i] = repoPattern
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
 			if err != nil {
