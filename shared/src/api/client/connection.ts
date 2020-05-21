@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
-import { concatMap, switchMap } from 'rxjs/operators'
+import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'

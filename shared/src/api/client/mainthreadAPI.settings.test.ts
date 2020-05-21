@@ -83,7 +83,7 @@ describe('configuration', () => {
         }
 
         const passedToExtHost: SettingsCascade<object>[] = []
-        const [_, subscription] = initMainThreadAPI(
+        const [, subscription] = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
                 updateConfigurationData: data => {
                     passedToExtHost.push(data)
