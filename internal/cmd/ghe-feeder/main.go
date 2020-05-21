@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/inconshreveable/log15"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -26,10 +27,17 @@ func main() {
 	numGHEConcurrency := flag.Int("numGHEConcurrency", 10, "number of simultaneous GHE requests in flight")
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
+	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
 
 	help := flag.Bool("help", false, "Show help")
 
 	flag.Parse()
+
+	logHandler, err := log15.FileHandler(*logFilepath, log15.LogfmtFormat())
+	if err != nil {
+		log.Fatal(err)
+	}
+	log15.Root().SetHandler(logHandler)
 
 	if *help || len(*baseURL) == 0 || len(*token) == 0 {
 		flag.PrintDefaults()
@@ -43,7 +51,8 @@ func main() {
 	if len(*scratchDir) == 0 {
 		d, err := ioutil.TempDir("", "ghe-feeder")
 		if err != nil {
-			log.Fatal(err)
+			log15.Error("failed to create scratch dir", "error", err)
+			os.Exit(1)
 		}
 		*scratchDir = d
 	}
@@ -51,12 +60,14 @@ func main() {
 	ctx := context.Background()
 	gheClient, err := newGHEClient(ctx, *baseURL, *uploadURL, *token)
 	if err != nil {
-		log.Fatal(err)
+		log15.Error("failed to create GHE client", "error", err)
+		os.Exit(1)
 	}
 
 	fdr, err := newFeederDB(*progressFilepath)
 	if err != nil {
-		log.Fatal(err)
+		log15.Error("failed to create sqlite DB", "path", *progressFilepath, "error", err)
+		os.Exit(1)
 	}
 
 	gheSemaphore := make(chan struct{}, *numGHEConcurrency)
@@ -66,7 +77,8 @@ func main() {
 
 	numLines, err := numLinesTotal()
 	if err != nil {
-		log.Fatal(err)
+		log15.Error("failed to calculate outstanding work", "error", err)
+		os.Exit(1)
 	}
 
 	if numLines > *limitPump {
@@ -83,6 +95,7 @@ func main() {
 		remaining: *limitPump,
 		pipe:      work,
 		fdr:       fdr,
+		logger:    log15.New("source", "producer"),
 	}
 
 	var wg sync.WaitGroup
@@ -112,7 +125,8 @@ func main() {
 		wkrScratchDir := filepath.Join(*scratchDir, name)
 		err := os.MkdirAll(wkrScratchDir, 0777)
 		if err != nil {
-			log.Fatal(err)
+			log15.Error("failed to create worker scratch dir", "scratchDir", *scratchDir, "error", err)
+			os.Exit(1)
 		}
 		wkr := &worker{
 			name:       name,
@@ -124,6 +138,7 @@ func main() {
 			wg:         &wg,
 			bar:        bar,
 			fdr:        fdr,
+			logger:     log15.New("source", name),
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
@@ -131,7 +146,8 @@ func main() {
 
 	err = prdc.pump(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log15.Error("pump failed", "error", err)
+		os.Exit(1)
 	}
 	close(work)
 	wg.Wait()

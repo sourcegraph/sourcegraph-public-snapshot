@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v31/github"
+	"github.com/inconshreveable/log15"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
 )
@@ -50,6 +51,7 @@ type worker struct {
 	currentOrg      string
 	currentNumRepos int
 	currentMaxRepos int
+	logger          log15.Logger
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -57,12 +59,15 @@ func (wkr *worker) run(ctx context.Context) {
 
 	wkr.currentOrg, wkr.currentMaxRepos = createOrg()
 
+	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
+
 	for line := range wkr.work {
 		if ctx.Err() != nil {
 			return
 		}
 		err := wkr.process(ctx, line)
 		if err != nil {
+			wkr.logger.Error("failed to process repo", "ownerRepo", line, "error", err)
 			wkr.numFailed++
 			_ = wkr.fdr.failed(line)
 		} else {
@@ -71,6 +76,7 @@ func (wkr *worker) run(ctx context.Context) {
 			if wkr.currentNumRepos >= wkr.currentMaxRepos {
 				wkr.currentOrg, wkr.currentMaxRepos = createOrg()
 				wkr.currentNumRepos = 0
+				wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
 			}
 		}
 		_ = wkr.bar.Add(1)

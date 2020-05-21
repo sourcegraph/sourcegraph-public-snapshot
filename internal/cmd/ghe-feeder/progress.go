@@ -4,13 +4,15 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type feederDB struct {
 	sync.Mutex
-	path string
-	db   *sql.DB
+	path   string
+	db     *sql.DB
+	logger log15.Logger
 }
 
 func newFeederDB(path string) (*feederDB, error) {
@@ -28,8 +30,9 @@ func newFeederDB(path string) (*feederDB, error) {
 	}
 
 	return &feederDB{
-		path: path,
-		db:   db,
+		path:   path,
+		db:     db,
+		logger: log15.New("source", "feederDB"),
 	}, nil
 }
 

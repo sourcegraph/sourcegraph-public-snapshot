@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/inconshreveable/log15"
 )
 
 func extractOwnerRepoFromCSVLine(line string) string {
@@ -28,6 +30,7 @@ type producer struct {
 	pipe       chan<- string
 	fdr        *feederDB
 	numSkipped int64
+	logger     log15.Logger
 }
 
 func (prdc *producer) pumpFile(ctx context.Context, path string) error {
@@ -55,6 +58,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		}
 		if skip {
 			prdc.numSkipped++
+			prdc.logger.Debug("skipping repo", "owner/repo", line)
 			continue
 		}
 		select {
