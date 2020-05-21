@@ -146,10 +146,14 @@ func outOfDateAlert(isAdmin bool) Alert {
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return alert
 	}
-	if globalUpdateStatus.MonthsOutOfDate <= 0 {
+	months := globalUpdateStatus.MonthsOutOfDate
+	if months <= 0 {
 		return alert
 	}
-	months := globalUpdateStatus.MonthsOutOfDate
+	// online instances will still be prompt prompt side admins to upgrade via site_update_check
+	if months < 3 && !globalUpdateStatus.Offline {
+		return alert
+	}
 
 	if isAdmin {
 		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d months out of date", months)

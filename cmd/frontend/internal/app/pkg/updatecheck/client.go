@@ -39,6 +39,7 @@ type Status struct {
 	Err             error     // the error that occurred, if any
 	UpdateVersion   string    // the version string of the updated version, if any
 	MonthsOutOfDate int       // used if UpdateVersion is unavailable
+	Offline         bool      // uses to indicate if the instance is unable to check sourcegraph.com for new versions
 }
 
 // HasUpdate reports whether the status indicates an update is available.
@@ -325,15 +326,19 @@ func check(ctx context.Context) (*Status, error) {
 	startedAt = &thisCheckStartedAt
 	mu.Unlock()
 
+	isOffline := false
 	updateVersion, err := doCheck()
+
+	if err != nil {
+		isOffline = true
+	}
+
 	monthsSinceRelease := 0
 	var versionErr error
-	if err != nil {
-		// fallback to using the version and current month to determine if a update is available
-		monthsSinceRelease, versionErr = version.HowLongOutOfDate(version.Version())
-		if versionErr != nil {
-			err = errors.Wrap(err, versionErr.Error())
-		}
+
+	monthsSinceRelease, versionErr = version.HowLongOutOfDate(version.Version())
+	if versionErr != nil {
+		err = errors.Wrap(err, versionErr.Error())
 	}
 
 	mu.Lock()
@@ -345,6 +350,7 @@ func check(ctx context.Context) (*Status, error) {
 		Err:             err,
 		UpdateVersion:   updateVersion,
 		MonthsOutOfDate: monthsSinceRelease,
+		Offline:         isOffline,
 	}
 	mu.Unlock()
 
