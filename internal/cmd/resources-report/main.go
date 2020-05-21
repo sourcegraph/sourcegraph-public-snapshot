@@ -17,6 +17,7 @@ type options struct {
 	aws          *bool
 	window       *time.Duration
 
+	runID   *string
 	dry     *bool
 	verbose *bool
 	timeout *time.Duration
@@ -30,6 +31,7 @@ func main() {
 		aws:          flag.Bool("aws", false, "Report on Amazon Web Services resources"),
 		window:       flag.Duration("window", 48*time.Hour, "Restrict results to resources created within a period"),
 
+		runID:   flag.String("run.id", os.Getenv("GITHUB_RUN_ID"), "ID of workflow run"),
 		dry:     flag.Bool("dry", false, "Do not post updates to slack, but print them to stdout"),
 		verbose: flag.Bool("verbose", false, "Print debug output to stdout"),
 		timeout: flag.Duration("timeout", time.Minute, "Set a timeout for report generation"),
@@ -71,7 +73,7 @@ func run(opts options) error {
 		log.Println("dry run - collected resources:")
 		log.Println(reportString(resources))
 	} else {
-		if err := reportToSlack(ctx, *opts.slackWebhook, resources, since); err != nil {
+		if err := reportToSlack(ctx, *opts.slackWebhook, resources, since, *opts.runID); err != nil {
 			return fmt.Errorf("slack: %w", err)
 		}
 	}

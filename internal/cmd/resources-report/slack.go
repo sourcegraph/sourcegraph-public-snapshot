@@ -20,11 +20,11 @@ type slackBlock map[string]interface{}
 const slackTextMarkdown = "mrkdwn"
 
 type slackText struct {
-	Type string `json:"type"` // just use `slackTextMarkdown`
+	Type string `json:"type"` // just use `slackTextMarkdown` for the most part
 	Text string `json:"text"`
 }
 
-func reportToSlack(ctx context.Context, webhook string, resources []Resource, since time.Time) error {
+func reportToSlack(ctx context.Context, webhook string, resources []Resource, since time.Time, runID string) error {
 	// generate message to deliver
 	blocks := []slackBlock{
 		{
@@ -34,10 +34,25 @@ func reportToSlack(ctx context.Context, webhook string, resources []Resource, si
 				Text: fmt.Sprintf(":package: I've found %d resources created since %s!", len(resources), since.Format(time.RFC1123)),
 			},
 		},
-		{
-			"type": "divider",
-		},
 	}
+	if runID != "" {
+		blocks = append(blocks, slackBlock{
+			"type": "actions",
+			"elements": []slackBlock{
+				{
+					"type": "button",
+					"text": slackText{
+						Type: "plain_text",
+						Text: "Run logs",
+					},
+					"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
+				},
+			},
+		})
+	}
+	blocks = append(blocks, slackBlock{
+		"type": "divider",
+	})
 	for _, resource := range resources {
 		// if we have too many results, split up the message
 		if len(blocks) > 40 {
