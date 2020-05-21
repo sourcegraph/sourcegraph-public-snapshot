@@ -15,17 +15,28 @@ import (
 	aws_eks "github.com/aws/aws-sdk-go-v2/service/eks"
 )
 
+// for resources that require enumerating over regions, it is not very partical to
+// make queries for regions that will either not work or will never have Sourcegraph
+// resources - define relevant regions here.
+//
+// refer to https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html#Concepts.RegionsAndAvailabilityZones.Availability
+var awsRegionPrefixes = []string{
+	"us-",
+	"eu-",
+}
+
 type AWSResourceFetchFunc func(context.Context, aws.Config, time.Time) ([]Resource, error)
 
 // refer to https://docs.aws.amazon.com/sdk-for-go/v2/api/ for how to query resources under /service
 var awsResources = map[string]AWSResourceFetchFunc{
-	// fetch ec2 instances
-	"EC2::Instances": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
+	// fetch ec2 resources
+	"EC2": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
 		client := aws_ec2.New(cfg)
-		pager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
 		var rs []Resource
-		for pager.Next(ctx) {
-			page := pager.CurrentPage()
+
+		instancesPager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
+		for instancesPager.Next(ctx) {
+			page := instancesPager.CurrentPage()
 			for _, reservation := range page.Reservations {
 				for _, instance := range reservation.Instances {
 					if instance.LaunchTime.After(since) {
@@ -43,15 +54,13 @@ var awsResources = map[string]AWSResourceFetchFunc{
 				}
 			}
 		}
-		return rs, pager.Err()
-	},
-	// fetch ec2 volumes
-	"EC2::Volumes": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
-		client := aws_ec2.New(cfg)
-		pager := aws_ec2.NewDescribeVolumesPaginator(client.DescribeVolumesRequest(&aws_ec2.DescribeVolumesInput{}))
-		var rs []Resource
-		for pager.Next(ctx) {
-			page := pager.CurrentPage()
+		if instancesPager.Err() != nil {
+			return nil, fmt.Errorf("instances query failed: %w", instancesPager.Err())
+		}
+
+		volumesPager := aws_ec2.NewDescribeVolumesPaginator(client.DescribeVolumesRequest(&aws_ec2.DescribeVolumesInput{}))
+		for volumesPager.Next(ctx) {
+			page := volumesPager.CurrentPage()
 			for _, volume := range page.Volumes {
 				if volume.CreateTime.After(since) {
 					rs = append(rs, Resource{
@@ -68,10 +77,14 @@ var awsResources = map[string]AWSResourceFetchFunc{
 				}
 			}
 		}
-		return rs, pager.Err()
+		if volumesPager.Err() != nil {
+			return nil, fmt.Errorf("volumes query failed: %w", volumesPager.Err())
+		}
+
+		return rs, nil
 	},
 	// fetch kubernetes clusters
-	"EKS::Clusters": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
+	"EKS": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
 		client := aws_eks.New(cfg)
 		pager := aws_eks.NewListClustersPaginator(client.ListClustersRequest(&aws_eks.ListClustersInput{}))
 		var rs []Resource
@@ -102,17 +115,10 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	},
 }
 
-// refer to https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html#Concepts.RegionsAndAvailabilityZones.Availability
-// for available regions
-var awsRegionPrefixes = []string{
-	"us-",
-	"eu-",
-}
-
 func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]Resource, error) {
 	logger := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
-		logger.Printf("collecting resources")
+		logger.Printf("collecting resources since %s", since)
 	}
 
 	cfg, err := aws_ext.LoadDefaultAWSConfig()

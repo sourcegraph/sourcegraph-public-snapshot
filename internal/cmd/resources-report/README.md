@@ -13,7 +13,6 @@ go build && ./resources-report --aws --gcp --slack.webhook="https://hooks.slack.
 Credentials should be a GCP service account with access to the following permissions in all relevant projects:
 
 - `Viewer`
-- `Cloud Asset Viewer`
 
 The key should be accessible in `GOOGLE_APPLICATION_CREDENTIALS`.
 
@@ -25,7 +24,11 @@ Credentials should be an AWS IAM with the following permissions:
 
 Credentials should be set in `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
+### Slack
+
+This bot can be [configured in Slack](https://api.slack.com/apps/A013EETK25V) with various channel webhooks under "Incoming Webhooks".
+
 ## Resources
 
-- GCP: declare resource types to query in [`gcp.go`](./gcp.go)'s `gcpAssetTypes` variable.
+- GCP: Declare resource types to query in [`gcp.go`](./gcp.go)'s `gcpResources` variable.
 - AWS: Declare queries for resources as functions in [`aws.go`](./aws.go)'s `awsResources` variable.

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type Platform string
@@ -55,4 +56,13 @@ func (r *Resource) toSlackBlock() (slackBlock, error) {
 			},
 		},
 	}, nil
+}
+
+func hasPrefix(value string, prefixes []string) bool {
+	for _, prefix := range awsRegionPrefixes {
+		if strings.HasPrefix(value, prefix) {
+			return true
+		}
+	}
+	return false
 }

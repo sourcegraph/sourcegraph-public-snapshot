@@ -74,7 +74,7 @@ func run(opts options) error {
 		}
 	}
 
-	log.Printf("done - collected a total of %d resources since %s", len(resources), since.String())
+	log.Printf("done - collected a total of %d resources created since %s", len(resources), since.String())
 	return nil
 }
 

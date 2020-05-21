@@ -3,7 +3,6 @@ module github.com/sourcegraph/sourcegraph
 go 1.14
 
 require (
-	cloud.google.com/go v0.56.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
@@ -144,7 +143,7 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.0.0-20200420001825-978e26b7c37c
 	google.golang.org/api v0.24.0
-	google.golang.org/genproto v0.0.0-20200403120447-c50568487044 // indirect
+	google.golang.org/genproto v0.0.0-20200519141106-08726f379972 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
