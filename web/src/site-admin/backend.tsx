@@ -633,7 +633,7 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
                             serviceName
                             name
                             timestamp
-                            occurrences
+                            average
                         }
                     }
                 }

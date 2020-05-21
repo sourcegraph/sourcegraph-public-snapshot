@@ -121,7 +121,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 value={
                     allConfig
                         ? JSON.stringify(
-                              monitoringStats ? { ...allConfig, ...monitoringStats } : allConfig,
+                              monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
                               undefined,
                               2
                           )

@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var PrometheusURL = env.Get("PROMETHEUS_URL", "http://prometheus:9090", "prometheus server URL")
+var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 
 // PrometheusQuerier provides a shim around prometheus.API
 type PrometheusQuerier interface {

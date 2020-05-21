@@ -20,13 +20,13 @@ type MonitoringAlert struct {
 	TimestampValue   DateTime
 	NameValue        string
 	ServiceNameValue string
-	OccurrencesValue int32
+	AverageValue     float64
 }
 
 func (r *MonitoringAlert) Timestamp() DateTime { return r.TimestampValue }
 func (r *MonitoringAlert) Name() string        { return r.NameValue }
 func (r *MonitoringAlert) ServiceName() string { return r.ServiceNameValue }
-func (r *MonitoringAlert) Occurrences() int32  { return r.OccurrencesValue }
+func (r *MonitoringAlert) Average() float64    { return r.AverageValue }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
@@ -46,8 +46,6 @@ type siteMonitoringStatisticsResolver struct {
 	timespan time.Duration
 }
 
-const alertsResolution = 12 * time.Hour
-
 func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	span, ctx := ot.StartSpanFromContext(ctx, "site.MonitoringStatistics.alerts")
@@ -62,11 +60,11 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		span.Finish()
 	}()
 
-	results, warn, err := r.prom.QueryRange(ctx, `sum by (service_name,name)(alert_count{name!=""})`,
+	results, warn, err := r.prom.QueryRange(ctx, `max by (level,name,service_name)(avg_over_time(alert_count{name!=""}[12h]))`,
 		prometheus.Range{
 			Start: time.Now().Add(-r.timespan),
 			End:   time.Now(),
-			Step:  alertsResolution,
+			Step:  12 * time.Hour,
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "prometheus query failed")
@@ -104,7 +102,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 				NameValue:        name,
 				ServiceNameValue: serviceName,
 				TimestampValue:   DateTime{p.Timestamp.Time().UTC().Truncate(time.Hour)},
-				OccurrencesValue: int32(p.Value),
+				AverageValue:     float64(p.Value),
 			})
 		}
 	}

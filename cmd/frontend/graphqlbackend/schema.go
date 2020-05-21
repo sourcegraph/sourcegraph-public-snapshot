@@ -3327,6 +3327,14 @@ type Site implements SettingsSubject {
         months: Int
     ): CodeIntelUsageStatistics!
     # Monitoring overview for this site.
+    #
+    # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
+    # is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
+    # order to ensure that if the frontend goes down you still recieve alerts:
+    #
+    # Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
+    # Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    #
     monitoringStatistics(
         # Days of history (based on current UTC time).
         days: Int
@@ -3637,16 +3645,18 @@ type MonitoringStatistics {
     alerts: [MonitoringAlert!]!
 }
 
-# An alert fired by monitored metrics.
+# A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
 type MonitoringAlert {
-    # Timestamp of alert event.
+    # End time of this event, which describes the past 12h of recorded data.
     timestamp: DateTime!
-    # Name of alert event.
+    # Name of alert that the service fired.
     name: String!
-    # Name of service associated with alert.
+    # Name of the service that fired the alert.
     serviceName: String!
-    # Number of times this alert occured in window.
-    occurrences: Int!
+    # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
+    # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
+    # time on average, etc.
+    average: Float!
 }
 
 # A list of survey responses
