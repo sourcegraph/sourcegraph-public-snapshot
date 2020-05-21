@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const resultsBuffer = 5
+
 type options struct {
 	slackWebhook *string
 	gcp          *bool

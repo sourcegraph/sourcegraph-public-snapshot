@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	gcp_crm "google.golang.org/api/cloudresourcemanager/v1"
@@ -22,18 +23,17 @@ var gcpLocationPrefixes = []string{
 	"europe-",
 }
 
-type GCPResourceFetchFunc func(context.Context, string, time.Time) ([]Resource, error)
+type GCPResourceFetchFunc func(context.Context, chan<- Resource, string, time.Time) error
 
 var gcpResources = map[string]GCPResourceFetchFunc{
 	// fetch disks and instances
-	"compute": func(ctx context.Context, project string, since time.Time) ([]Resource, error) {
+	"compute": func(ctx context.Context, results chan<- Resource, project string, since time.Time) error {
 		client, err := gcp_cp.NewService(ctx)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// compute APIs require us to specify zones, so we must iterate over all zones
-		var rs []Resource
 		if err := client.Zones.List(project).Pages(ctx, func(zones *gcp_cp.ZoneList) error {
 			for _, zone := range zones.Items {
 				if !hasPrefix(zone.Name, gcpLocationPrefixes) {
@@ -48,7 +48,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 								return err
 							}
 							if t.After(since) {
-								rs = append(rs, Resource{
+								results <- Resource{
 									Platform:   PlatformGCP,
 									Identifier: instance.Name,
 									Location:   zone.Name,
@@ -57,7 +57,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 									Meta: map[string]interface{}{
 										"labels": instance.Labels,
 									},
-								})
+								}
 							}
 						}
 						return nil
@@ -73,7 +73,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 								return err
 							}
 							if t.After(since) {
-								rs = append(rs, Resource{
+								results <- Resource{
 									Platform:   PlatformGCP,
 									Identifier: disk.Name,
 									Location:   zone.Name,
@@ -82,7 +82,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 									Meta: map[string]interface{}{
 										"labels": disk.Labels,
 									},
-								})
+								}
 							}
 						}
 						return nil
@@ -92,31 +92,31 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 			}
 			return nil
 		}); err != nil {
-			return nil, err
+			return err
 		}
-		return rs, nil
+
+		return nil
 	},
 	// fetch clusters
-	"containers": func(ctx context.Context, project string, since time.Time) ([]Resource, error) {
+	"containers": func(ctx context.Context, results chan<- Resource, project string, since time.Time) error {
 		client, err := gcp_ct.NewService(ctx)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// cluster api allows us to query all locations at once
 		parent := fmt.Sprintf("projects/%s/locations/-", project)
 		list, err := client.Projects.Locations.Clusters.List(parent).Context(ctx).Do()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		var rs []Resource
 		for _, cluster := range list.Clusters {
 			t, err := time.Parse(time.RFC3339, cluster.CreateTime)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			if t.After(since) {
-				rs = append(rs, Resource{
+				results <- Resource{
 					Platform:   PlatformGCP,
 					Identifier: cluster.Name,
 					Type:       "container#cluster",
@@ -125,10 +125,10 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 					Meta: map[string]interface{}{
 						"labels": cluster.ResourceLabels,
 					},
-				})
+				}
 			}
 		}
-		return rs, nil
+		return nil
 	},
 }
 
@@ -143,19 +143,22 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 		return nil, fmt.Errorf("failed to init cloud resources client: %w", err)
 	}
 
+	results := make(chan Resource, resultsBuffer)
+	wait := sync.WaitGroup{}
+
 	// aggregate resources for each GCP project
-	var resources []Resource
 	if err := crm.Projects.List().Pages(ctx, func(page *gcp_crm.ListProjectsResponse) error {
 		for _, project := range page.Projects {
 			for resourceID, fetchResource := range gcpResources {
-				rs, err := fetchResource(ctx, project.ProjectId, since)
-				if err != nil {
-					if verbose {
-						logger.Printf("resource fetch for '%s' failed in project: %v", resourceID, err)
+				wait.Add(1)
+				go func(resourceID string, fetchResource GCPResourceFetchFunc) {
+					if err := fetchResource(ctx, results, project.ProjectId, since); err != nil {
+						if verbose {
+							logger.Printf("resource fetch for '%s' failed in project: %v", resourceID, err)
+						}
 					}
-					continue
-				}
-				resources = append(resources, rs...)
+					wait.Done()
+				}(resourceID, fetchResource)
 			}
 		}
 		return nil
@@ -163,5 +166,6 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 		return nil, err
 	}
 
-	return resources, nil
+	// collect results when done
+	return collect(&wait, results), nil
 }

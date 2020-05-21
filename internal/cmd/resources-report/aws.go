@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -25,14 +25,13 @@ var awsRegionPrefixes = []string{
 	"eu-",
 }
 
-type AWSResourceFetchFunc func(context.Context, aws.Config, time.Time) ([]Resource, error)
+type AWSResourceFetchFunc func(context.Context, chan<- Resource, aws.Config, time.Time) error
 
 // refer to https://docs.aws.amazon.com/sdk-for-go/v2/api/ for how to query resources under /service
 var awsResources = map[string]AWSResourceFetchFunc{
 	// fetch ec2 resources
-	"EC2": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
+	"EC2": func(ctx context.Context, results chan<- Resource, cfg aws.Config, since time.Time) error {
 		client := aws_ec2.New(cfg)
-		var rs []Resource
 
 		instancesPager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
 		for instancesPager.Next(ctx) {
@@ -40,7 +39,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 			for _, reservation := range page.Reservations {
 				for _, instance := range reservation.Instances {
 					if instance.LaunchTime.After(since) {
-						rs = append(rs, Resource{
+						results <- Resource{
 							Platform:   PlatformAWS,
 							Identifier: *instance.InstanceId,
 							Location:   *instance.Placement.AvailabilityZone,
@@ -49,13 +48,13 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Meta: map[string]interface{}{
 								"tags": instance.Tags,
 							},
-						})
+						}
 					}
 				}
 			}
 		}
 		if instancesPager.Err() != nil {
-			return nil, fmt.Errorf("instances query failed: %w", instancesPager.Err())
+			return fmt.Errorf("instances query failed: %w", instancesPager.Err())
 		}
 
 		volumesPager := aws_ec2.NewDescribeVolumesPaginator(client.DescribeVolumesRequest(&aws_ec2.DescribeVolumesInput{}))
@@ -63,7 +62,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 			page := volumesPager.CurrentPage()
 			for _, volume := range page.Volumes {
 				if volume.CreateTime.After(since) {
-					rs = append(rs, Resource{
+					results <- Resource{
 						Platform:   PlatformAWS,
 						Identifier: *volume.VolumeId,
 						Location:   *volume.AvailabilityZone,
@@ -73,21 +72,20 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							"tags":        volume.Tags,
 							"attachments": volume.Attachments,
 						},
-					})
+					}
 				}
 			}
 		}
 		if volumesPager.Err() != nil {
-			return nil, fmt.Errorf("volumes query failed: %w", volumesPager.Err())
+			return fmt.Errorf("volumes query failed: %w", volumesPager.Err())
 		}
 
-		return rs, nil
+		return nil
 	},
 	// fetch kubernetes clusters
-	"EKS": func(ctx context.Context, cfg aws.Config, since time.Time) ([]Resource, error) {
+	"EKS": func(ctx context.Context, results chan<- Resource, cfg aws.Config, since time.Time) error {
 		client := aws_eks.New(cfg)
 		pager := aws_eks.NewListClustersPaginator(client.ListClustersRequest(&aws_eks.ListClustersInput{}))
-		var rs []Resource
 		for pager.Next(ctx) {
 			page := pager.CurrentPage()
 			for _, clusterName := range page.Clusters {
@@ -95,10 +93,10 @@ var awsResources = map[string]AWSResourceFetchFunc{
 					Name: aws.String(clusterName),
 				}).Send(ctx)
 				if err != nil {
-					return nil, fmt.Errorf("failed to fetch details for cluster '%s': %w", clusterName, err)
+					return fmt.Errorf("failed to fetch details for cluster '%s': %w", clusterName, err)
 				}
 				if cluster.Cluster.CreatedAt.After(since) {
-					rs = append(rs, Resource{
+					results <- Resource{
 						Platform:   PlatformAWS,
 						Identifier: *cluster.Cluster.Arn,
 						Location:   cfg.Region,
@@ -107,11 +105,11 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Meta: map[string]interface{}{
 							"tags": cluster.Cluster.Tags,
 						},
-					})
+					}
 				}
 			}
 		}
-		return rs, pager.Err()
+		return pager.Err()
 	},
 }
 
@@ -126,40 +124,36 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 		return nil, fmt.Errorf("failed to init client: %w", err)
 	}
 
-	var resources []Resource
+	results := make(chan Resource, resultsBuffer)
+	wait := sync.WaitGroup{}
 
 	// query default aws regions - the only partition we are interested in is the
 	// normal `aws` regions, which will always exist (other partitions include China,
 	// US government, etc.)
 	pt, _ := aws_ep.DefaultPartitions().ForPartition(aws_ep.AwsPartitionID)
 	for _, region := range pt.Regions() {
-		shouldCheckRegion := false
-		for _, prefix := range awsRegionPrefixes {
-			if strings.HasPrefix(region.ID(), prefix) {
-				shouldCheckRegion = true
-				break
-			}
-		}
-		if !shouldCheckRegion {
-			continue // skip this region
+		if !hasPrefix(region.ID(), awsRegionPrefixes) {
+			continue // skip this zone
 		}
 		if verbose {
 			logger.Printf("querying region %s", cfg.Region)
 		}
 
-		cfg.Region = region.ID()
 		// query configured resource in region
+		cfg.Region = region.ID()
 		for resourceID, fetchResource := range awsResources {
-			rs, err := fetchResource(ctx, cfg.Copy(), since)
-			if err != nil {
-				if verbose {
-					logger.Printf("resource fetch for '%s' failed in region %s: %v", resourceID, cfg.Region, err)
+			wait.Add(1)
+			go func(resourceID string, fetchResource AWSResourceFetchFunc, cfg aws.Config) {
+				if err := fetchResource(ctx, results, cfg, since); err != nil {
+					if verbose {
+						logger.Printf("resource fetch for '%s' failed in region %s: %v", resourceID, cfg.Region, err)
+					}
 				}
-				continue
-			}
-			resources = append(resources, rs...)
+				wait.Done()
+			}(resourceID, fetchResource, cfg.Copy())
 		}
 	}
 
-	return resources, nil
+	// collect results when done
+	return collect(&wait, results), nil
 }
