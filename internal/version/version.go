@@ -2,6 +2,7 @@ package version
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -10,7 +11,7 @@ import (
 const devVersion = "0.0.0+dev" // version string for unreleased development builds
 
 // version is configured at build time via ldflags like this:
-// -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=1.2.3+MM-DD-YYYY"
+// -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=1.2.3+UnixTimestamp"
 var version = devVersion
 
 // Version returns the version string configured at build time.
@@ -28,32 +29,64 @@ func Mock(mockVersion string) {
 	version = mockVersion
 }
 
-// HowLongOutOfDate returns a time in months since the last Sourcegraph release
-func HowLongOutOfDate(version string) (int, error) {
-	if IsDev(version) {
+// HowLongOutOfDate returns a time in months since the last Sourcegraph release based on semantic versions  &
+// the fact that Sourcegraph releases every month. It works without needing to call sourcegraph.com and works in airgap
+// it only determines if sourcegraph is more than 6+
+func HowLongOutOfDate(currentVersion string) (int, error) {
+	if IsDev(currentVersion) {
 		return 0, nil
 	}
 
-	sv, err := semver.NewVersion(version)
+	sv, err := semver.NewVersion(currentVersion)
 	if err != nil {
 		return 0, err
 	}
-	// expecting major.minor.patch+YYYY-MM-DD
+
+	// expecting major.minor.patch+UnixTimestamp
 	if len(sv.Metadata()) == 0 {
 		return 0, errors.New("no metadata in semver")
 	}
-
-	releaseDate, err := time.Parse("2006-01-02", sv.Metadata())
+	buildUnixTimestamp, err := strconv.ParseInt(sv.Metadata(), 10, 64)
 	if err != nil {
 		return 0, err
 	}
+	buildTime := time.Unix(buildUnixTimestamp, 0)
+
+	//buildTime, err := time.Parse("2006-01-02", sv.Metadata())
+	//if err != nil {
+	//	return 0, err
+	//}
 	now := time.Now()
-	if releaseDate.After(now) {
+	if buildTime.After(now) {
 		return 0, errors.New("sourcegraph release version occurs in the future")
 	}
+	daysSinceBuild := now.Sub(buildTime).Hours() / 24
 
-	_, months, _, _, _, _ := diff(now, releaseDate)
+	//_, months, _, _, _, _ := diff(buildTime, now)
+	months := monthsFromDays(daysSinceBuild)
 	return months, nil
+}
+
+func monthsFromDays(days float64) int {
+	const daysInAMonth = 30
+
+	switch {
+
+	case days < daysInAMonth*1:
+		return 0
+	case days < daysInAMonth*2:
+		return 1
+	case days < daysInAMonth*3:
+		return 2
+	case days < daysInAMonth*4:
+		return 3
+	case days < daysInAMonth*5:
+		return 4
+	case days < daysInAMonth*6:
+		return 5
+	default:
+		return 6
+	}
 }
 
 // Diff calculates the absolute difference between 2 time instances in
