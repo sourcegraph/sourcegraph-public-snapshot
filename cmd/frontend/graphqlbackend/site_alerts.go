@@ -79,8 +79,9 @@ func init() {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
 		// security vulnerability, but just in case this method is changed to return more
 		// information, let's lock it down.
-		if !args.IsSiteAdmin {
 
+		if !args.IsSiteAdmin {
+			// users will see alerts if Sourcegraph is >4 months out of date
 			alert := outOfDateAlert(args.IsSiteAdmin)
 			return []*Alert{&alert}
 		}
@@ -106,11 +107,16 @@ func init() {
 		}
 		problems = append(problems, warnings...)
 
-		if len(problems) == 0 {
-			return nil
+		alerts := make([]*Alert, 0, 3)
+
+		alert := outOfDateAlert(args.IsSiteAdmin)
+		if len(alert.MessageValue) > 0 {
+			alerts = append(alerts, &alert)
 		}
 
-		alerts := make([]*Alert, 0, 2)
+		if len(problems) == 0 && len(alerts) == 0 {
+			return nil
+		}
 
 		siteProblems := problems.Site()
 		if len(siteProblems) > 0 {
