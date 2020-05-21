@@ -112,6 +112,12 @@ const BitbucketServerSchemaJSON = `{
               "description": "Secret for authenticating incoming webhook payloads",
               "type": "string",
               "minLength": 1
+            },
+            "automaticCreation": {
+              "description": "Allow Sourcegraph to automatically configure webhooks on your Bitbucket Server instance",
+              "type": "string",
+              "enum": ["enabled", "disabled"],
+              "default": "enabled"
             }
           }
         },

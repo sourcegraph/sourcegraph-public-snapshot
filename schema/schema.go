@@ -265,6 +265,8 @@ type BitbucketServerPlugin struct {
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
+	// AutomaticCreation description: Allow Sourcegraph to automatically configure webhooks on your Bitbucket Server instance
+	AutomaticCreation string `json:"automaticCreation,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
 }

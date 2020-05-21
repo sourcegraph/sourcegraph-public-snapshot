@@ -410,7 +410,7 @@ func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	return tc
 }
 
-func TestBitbucketWebhookUpsert(t *testing.T) {
+func TestBitbucketWebhookSync(t *testing.T) {
 	testCases := []struct {
 		name    string
 		con     *schema.BitbucketServerConnection
@@ -423,7 +423,8 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
+						Secret:            "secret",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
@@ -436,7 +437,8 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
+						Secret:            "secret",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
@@ -446,12 +448,13 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 			expect: []string{},
 		},
 		{
-			name: "existing secret does not match matches",
+			name: "existing secret does not match",
 			con: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
+						Secret:            "secret",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
@@ -466,7 +469,8 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
+						Secret:            "",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
@@ -481,7 +485,8 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
+						Secret:            "",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
@@ -494,12 +499,29 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
+						Secret:            "",
+						AutomaticCreation: "enabled",
 					},
 				},
 			},
 			secrets: map[int64]string{
 				1: "",
+			},
+			expect: []string{},
+		},
+		{
+			name: "syncing disabled",
+			con: &schema.BitbucketServerConnection{
+				Plugin: &schema.BitbucketServerPlugin{
+					Permissions: "",
+					Webhooks: &schema.BitbucketServerPluginWebhooks{
+						Secret:            "secret",
+						AutomaticCreation: "disabled",
+					},
+				},
+			},
+			secrets: map[int64]string{
+				1: "old",
 			},
 			expect: []string{},
 		},

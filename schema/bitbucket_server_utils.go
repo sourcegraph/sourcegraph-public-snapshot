@@ -11,3 +11,13 @@ func (c *BitbucketServerConnection) WebhookSecret() string {
 		return ""
 	}
 }
+
+func (c *BitbucketServerConnection) WebhookAutoCreationEnabled() bool {
+	if c.Plugin == nil {
+		return false
+	}
+	if c.Plugin.Webhooks == nil {
+		return false
+	}
+	return c.Plugin.Webhooks.AutomaticCreation == "enabled"
+}
