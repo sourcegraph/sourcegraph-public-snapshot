@@ -34,15 +34,6 @@ func TestIsDev(t *testing.T) {
 }
 
 func Test_diff(t *testing.T) {
-
-	a, err := time.Parse("01-02-2006", "01-02-2010")
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, err := time.Parse("01-02-2006", "01-03-2010")
-	if err != nil {
-		t.Fatal(err)
-	}
 	tests := []struct {
 		name      string
 		timeA     string
