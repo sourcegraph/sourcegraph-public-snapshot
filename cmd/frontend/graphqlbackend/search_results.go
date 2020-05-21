@@ -224,7 +224,7 @@ var commonFileFilters = []struct {
 func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
-	add := func(value string, label string, count int, limitHit bool, kind string) {
+	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
 		sf, ok := filters[value]
 		if !ok {
 			sf = &searchFilterResolver{
@@ -239,7 +239,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			sf.count = int32(count)
 		}
 
-		sf.score++
+		sf.score = score
 	}
 
 	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
@@ -252,13 +252,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
+		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
 			if ff.Regexp.MatchString(fileMatchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file")
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
 			}
 		}
 	}
@@ -275,16 +275,16 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				add(value, value, lineMatchCount, limitHit, "lang")
+				add(value, value, lineMatchCount, limitHit, "lang", scoreDefault)
 			}
 		}
 	}
 
 	if sr.searchResultsCommon.excluded.forks > 0 {
-		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo")
+		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo", scoreImportant)
 	}
 	if sr.searchResultsCommon.excluded.archived > 0 {
-		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo")
+		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.archived, sr.limitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -297,7 +297,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
 			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
+				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol", scoreDefault)
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -326,7 +326,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 
 	allFilters := append(filterSlice, repoFilterSlice...)
 	sort.Slice(allFilters, func(i, j int) bool {
-		return allFilters[j].score < allFilters[i].score
+		left := allFilters[i]
+		right := allFilters[j]
+		if left.score == right.score {
+			// Order alphabetically for equal scores.
+			return strings.Compare(left.value, right.value) < 0
+		}
+		return left.score < right.score
 	})
 
 	return allFilters
@@ -347,9 +353,16 @@ type searchFilterResolver struct {
 	// the kind of filter. Should be "repo", "file", or "lang".
 	kind string
 
-	// score is used to select potential filters
-	score int
+	// score is used to prioritize the order that filters appear in
+	score score
 }
+
+type score int
+
+const (
+	scoreImportant score = iota
+	scoreDefault
+)
 
 func (sf *searchFilterResolver) Value() string {
 	return sf.value

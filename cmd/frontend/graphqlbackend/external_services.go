@@ -63,15 +63,16 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		Config      *string
 	}
 }) (*externalServiceResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to update the user.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins are allowed to update the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}

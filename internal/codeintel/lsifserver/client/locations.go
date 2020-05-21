@@ -1,7 +1,7 @@
-package server
+package client
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 

@@ -179,10 +179,12 @@ Dockerfile @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
+/internal/prometheusutil @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
@@ -224,7 +226,6 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # Precise code intel
-/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /internal/cmd/precise-code-intel-test @sourcegraph/code-intel

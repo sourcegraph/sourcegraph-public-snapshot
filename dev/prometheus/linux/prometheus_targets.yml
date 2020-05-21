@@ -35,11 +35,6 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
-    job: precise-code-intel-api-server
-  targets:
-    # precise-code-intel-api-server
-    - 127.0.0.1:6086
-- labels:
     job: precise-code-intel-bundle-manager
   targets:
     # precise-code-intel-bundle-manager

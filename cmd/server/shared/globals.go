@@ -17,7 +17,6 @@ var SrcProfServices = []map[string]string{
 	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
 	{"Name": "query-runner", "Host": "127.0.0.1:6067"},
 	{"Name": "replacer", "Host": "127.0.0.1:6076"},
-	{"Name": "precise-code-intel-api-server", "Host": "127.0.0.1:6086"},
 	{"Name": "precise-code-intel-bundle-manager", "Host": "127.0.0.1:6087"},
 	{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
 	{"Name": "zoekt-indexserver", "Host": "127.0.0.1:6072"},

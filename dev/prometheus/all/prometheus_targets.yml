@@ -35,11 +35,6 @@
     # zoekt-indexserver
     - host.docker.internal:6072
 - labels:
-    job: precise-code-intel-api-server
-  targets:
-    # precise-code-intel-api-server
-    - host.docker.internal:6086
-- labels:
     job: precise-code-intel-bundle-manager
   targets:
     # precise-code-intel-bundle-manager
