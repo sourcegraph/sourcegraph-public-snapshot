@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -175,8 +174,6 @@ func initCodeIntel() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	fmt.Printf("Conn: %v\n", dbconn.Global)
-
 	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 
@@ -191,7 +188,20 @@ func initCodeIntel() {
 	}
 
 	httpapi.NewLSIFServerProxy = func() (*httpapi.LSIFServerProxy, error) {
-		return proxy.NewProxy(client)
+		if bundleManagerURL == "" {
+			log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+		}
+
+		observationContext := &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+
+		db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
+		bundleManagerClient := bundles.New(bundleManagerURL)
+
+		return proxy.NewProxy(db, bundleManagerClient)
 	}
 }
 

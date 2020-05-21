@@ -86,7 +86,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			repoRevs, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			repoRevs, _, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
@@ -193,7 +193,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		repoRevs, _, _, err := r.resolveRepositories(ctx, nil)
+		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
