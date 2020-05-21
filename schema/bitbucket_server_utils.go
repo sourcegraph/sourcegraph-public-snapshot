@@ -2,6 +2,9 @@ package schema
 
 // WebhookSecret returns the webhook secret from a BBS config
 func (c *BitbucketServerConnection) WebhookSecret() string {
+	if c == nil {
+		return ""
+	}
 	switch {
 	case c.Plugin != nil && c.Plugin.Webhooks != nil:
 		return c.Plugin.Webhooks.Secret
@@ -14,6 +17,9 @@ func (c *BitbucketServerConnection) WebhookSecret() string {
 
 // WebhookSyncDisabled returns true if webhook syncing is disabled
 func (c *BitbucketServerConnection) WebhookSyncDisabled() bool {
+	if c == nil {
+		return false
+	}
 	if c.Plugin == nil {
 		return true
 	}

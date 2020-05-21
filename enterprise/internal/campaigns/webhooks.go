@@ -189,10 +189,9 @@ type BitbucketServerWebhook struct {
 	*Webhook
 	Name string
 
-	// externalServiceID -> secret
-	// It keeps track of secrets we know have been stored
-	// in the remote Bitbucket webhook config
-	secrets map[int64]string
+	// cache of config we've seen so that we can decide what changes
+	// need to be synced if any
+	configCache map[int64]*schema.BitbucketServerConnection
 
 	// Optional httpClient
 	httpClient httpcli.Doer
@@ -785,9 +784,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
-		Name:    name,
-		secrets: make(map[int64]string),
+		Webhook:     &Webhook{store, repos, now, bbs.ServiceType},
+		Name:        name,
+		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
 }
 
@@ -821,10 +820,6 @@ func (h *BitbucketServerWebhook) SyncWebhooks(ctx context.Context, every time.Du
 				continue
 			}
 
-			if con.WebhookSyncDisabled() {
-				continue
-			}
-
 			err = h.syncWebhook(e.ID, con, externalURL())
 			if err != nil {
 				log15.Error("Syncing BBS Webhook failed", "err", err)
@@ -846,10 +841,13 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	defer cancel()
 
 	secret := con.WebhookSecret()
-	oldSecret, ok := h.secrets[externalServiceID]
+	disabled := con.WebhookSyncDisabled()
+	oldConfig, ok := h.configCache[externalServiceID]
+	oldSecret := oldConfig.WebhookSecret()
+	oldDisabled := oldConfig.WebhookSyncDisabled()
 
-	if ok && oldSecret == secret {
-		// Nothing has changed since our last check
+	if ok && oldSecret == secret && oldDisabled == disabled {
+		// Nothing has changed
 		return nil
 	}
 
@@ -859,18 +857,24 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	if secret == "" {
-		// Secret now blank, delete hook.
-		// If this is the first iteration we don't know if the server
-		// has a hook configured or not. If not, the delete will be a noop
-		err = client.DeleteWebhook(ctx, h.Name)
-		if err != nil {
-			return errors.Wrap(err, "deleting webhook")
+		// As a special case, we'll delete where we know we were previously enabled
+		// and secret has been set to blank in the new config
+		if ok && !oldDisabled {
+			err = client.DeleteWebhook(ctx, h.Name)
+			if err != nil {
+				return errors.Wrap(err, "deleting webhook")
+			}
 		}
-		h.secrets[externalServiceID] = secret
+		h.configCache[externalServiceID] = con
 		return nil
 	}
 
-	// Secret has changed to a non blank value, upsert
+	if disabled {
+		// Don't sync
+		return nil
+	}
+
+	// Secret or sync permission has changed, sync
 	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, externalURL)
 	wh := bbs.Webhook{
 		Name:     h.Name,
@@ -884,7 +888,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	if err != nil {
 		return errors.Wrap(err, "upserting webhook")
 	}
-	h.secrets[externalServiceID] = secret
+	h.configCache[externalServiceID] = con
 	return nil
 }
 
