@@ -47,11 +47,6 @@ export function refreshSiteFlags(): Observable<never> {
                             checkedAt
                             errorMessage
                             updateVersionAvailable
-                            alert {
-                                type
-                                message
-                                isDismissibleWithKey
-                            }
                         }
                         productSubscription {
                             license {
