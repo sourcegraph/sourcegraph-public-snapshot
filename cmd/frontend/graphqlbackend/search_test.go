@@ -503,6 +503,27 @@ func Test_queryForStableResults(t *testing.T) {
 }
 
 func TestVersionContext(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				VersionContexts: []*schema.VersionContext{
+					{
+						Name: "ctx-1",
+						Revisions: []*schema.VersionContextRevision{
+							{Repo: "github.com/sourcegraph/foo", Rev: "some-branch"},
+							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
+							{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+						},
+					},
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	tcs := []struct {
 		name           string
 		searchQuery    string
@@ -621,27 +642,6 @@ func TestVersionContext(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						VersionContexts: []*schema.VersionContext{
-							{
-								Name: "ctx-1",
-								Revisions: []*schema.VersionContextRevision{
-									{Repo: "github.com/sourcegraph/foo", Rev: "some-branch"},
-									{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
-									{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
-								},
-							},
-						},
-					},
-				},
-			})
-			defer conf.Mock(nil)
-
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
-
 			qinfo, err := query.ParseAndCheck(tc.searchQuery)
 			if err != nil {
 				t.Fatal(err)
