@@ -19,7 +19,7 @@ export CGO_ENABLED=0
 
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server"
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION+$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
 docker build -f cmd/precise-code-intel-api-server/Dockerfile -t "$IMAGE" "$OUTPUT" \

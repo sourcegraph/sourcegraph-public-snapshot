@@ -11,7 +11,7 @@ if [[ "$basepkg" != "server" ]] && [[ -f "cmd/$basepkg/go-build.sh" ]]; then
 else
   go build \
     -trimpath \
-    -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" \
+    -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION+$(date +%s)" \
     -buildmode exe \
     -installsuffix netgo \
     -tags "dist netgo" \
