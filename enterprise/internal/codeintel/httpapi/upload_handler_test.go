@@ -1,8 +1,9 @@
-package enqueuer
+package httpapi
 
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,12 +13,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestHandleEnqueueSinglePayload(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
@@ -29,10 +35,10 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Fatalf("unexpected error constructing url: %s", err)
 	}
 	testURL.RawQuery = (url.Values{
-		"commit":       []string{"deadbeef"},
-		"root":         []string{"proj/"},
-		"repositoryId": []string{"50"},
-		"indexerName":  []string{"lsif-go"},
+		"commit":      []string{"deadbeef"},
+		"root":        []string{"proj/"},
+		"repository":  []string{"github.com/test/test"},
+		"indexerName": []string{"lsif-go"},
 	}).Encode()
 
 	var expectedContents []byte
@@ -46,11 +52,11 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -97,6 +103,8 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 }
 
 func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
@@ -108,9 +116,9 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error constructing url: %s", err)
 	}
 	testURL.RawQuery = (url.Values{
-		"commit":       []string{"deadbeef"},
-		"root":         []string{"proj/"},
-		"repositoryId": []string{"50"},
+		"commit":     []string{"deadbeef"},
+		"root":       []string{"proj/"},
+		"repository": []string{"github.com/test/test"},
 	}).Encode()
 
 	var lines []string
@@ -131,11 +139,11 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -161,6 +169,8 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartSetup(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
@@ -172,12 +182,12 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Fatalf("unexpected error constructing url: %s", err)
 	}
 	testURL.RawQuery = (url.Values{
-		"commit":       []string{"deadbeef"},
-		"root":         []string{"proj/"},
-		"repositoryId": []string{"50"},
-		"indexerName":  []string{"lsif-go"},
-		"multiPart":    []string{"true"},
-		"numParts":     []string{"3"},
+		"commit":      []string{"deadbeef"},
+		"root":        []string{"proj/"},
+		"repository":  []string{"github.com/test/test"},
+		"indexerName": []string{"lsif-go"},
+		"multiPart":   []string{"true"},
+		"numParts":    []string{"3"},
 	}).Encode()
 
 	w := httptest.NewRecorder()
@@ -186,11 +196,11 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -251,11 +261,11 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -322,11 +332,11 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -375,13 +385,34 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Enqueuer{
+	h := &UploadHandler{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.HandleEnqueue(w, r)
+	h.handleEnqueue(w, r)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusBadRequest, w.Code)
+	}
+}
+
+func setupRepoMocks(t *testing.T) {
+	t.Cleanup(func() {
+		backend.Mocks.Repos.GetByName = nil
+		backend.Mocks.Repos.ResolveRev = nil
+	})
+
+	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+		if name != "github.com/test/test" {
+			t.Errorf("unexpected repository name. want=%s have=%s", "github.com/test/test", name)
+		}
+		return &types.Repo{ID: 50}, nil
+	}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if rev != "deadbeef" {
+			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
+		}
+		return "", nil
 	}
 }
