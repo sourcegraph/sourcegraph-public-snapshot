@@ -27,7 +27,11 @@ func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*githu
 	return github.NewEnterpriseClient(baseURL, uploadURL, tc)
 }
 
-func createOrg() (string, int) {
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func randomOrgNameAndSize() (string, int) {
 	size := rand.Intn(500)
 	if size < 5 {
 		size = 5
@@ -54,14 +58,24 @@ type worker struct {
 	currentMaxRepos int
 	logger          log15.Logger
 	rateLimiter     *rate.Limiter
+	admin           string
+	token           string
+	host            string
 }
 
 func (wkr *worker) run(ctx context.Context) {
 	defer wkr.wg.Done()
 
-	wkr.currentOrg, wkr.currentMaxRepos = createOrg()
+	wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 
 	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
+
+	_, err := wkr.addGHEOrg(ctx)
+	if err != nil {
+		wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
+		// add it to default org then
+		wkr.currentOrg = ""
+	}
 
 	for line := range wkr.work {
 		if ctx.Err() != nil {
@@ -75,9 +89,15 @@ func (wkr *worker) run(ctx context.Context) {
 			wkr.numSucceeded++
 			wkr.currentNumRepos++
 			if wkr.currentNumRepos >= wkr.currentMaxRepos {
-				wkr.currentOrg, wkr.currentMaxRepos = createOrg()
+				wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 				wkr.currentNumRepos = 0
 				wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
+				_, err := wkr.addGHEOrg(ctx)
+				if err != nil {
+					wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
+					// add it to default org then
+					wkr.currentOrg = ""
+				}
 			}
 		}
 		_ = wkr.bar.Add(1)
@@ -94,6 +114,24 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to clone repo", "ownerRepo", work, "error", err)
+		return err
+	}
+
+	gheRepo, err := wkr.addGHERepo(ctx, owner, repo)
+	if err != nil {
+		wkr.logger.Error("failed to create GHE repo", "ownerRepo", work, "error", err)
+		return err
+	}
+
+	err = wkr.addRemote(ctx, gheRepo, owner, repo)
+	if err != nil {
+		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "ownerRepo", work, "error", err)
+		return err
+	}
+
+	err = wkr.pushToGHE(ctx, owner, repo)
+	if err != nil {
+		wkr.logger.Error("failed to push cloned repo to GHE", "ownerRepo", work, "error", err)
 		return err
 	}
 
@@ -119,19 +157,51 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 	return cmd.Run()
 }
 
-func (wkr *worker) addGHERemote(ctx context.Context, owner, repo string) error {
+func (wkr *worker) addRemote(ctx context.Context, gheRepo *github.Repository, owner, repo string) error {
+	repoDir := filepath.Join(wkr.scratchDir, owner, repo)
+
+	remoteURL := fmt.Sprintf("https://%s@%s/%s.git", wkr.token, wkr.host, *gheRepo.FullName)
+	cmd := exec.CommandContext(ctx, "git", "remote", "add", "ghe", remoteURL)
+	cmd.Dir = repoDir
+
+	return cmd.Run()
+}
+
+func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
+	repoDir := filepath.Join(wkr.scratchDir, owner, repo)
+
+	cmd := exec.CommandContext(ctx, "git", "push", "ghe", "master")
+	cmd.Dir = repoDir
+
+	return cmd.Run()
+}
+
+func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
 		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
-		return err
+		return nil, err
+	}
+
+	gheOrg := &github.Organization{
+		Login: github.String(wkr.currentOrg),
+	}
+
+	gheReturnedOrg, _, err := wkr.client.Admin.CreateOrg(ctx, gheOrg, wkr.admin)
+	return gheReturnedOrg, err
+}
+
+func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
+	err := wkr.rateLimiter.Wait(ctx)
+	if err != nil {
+		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
+		return nil, err
 	}
 
 	gheRepo := &github.Repository{
 		Name: github.String(fmt.Sprintf("%s-%s", owner, repo)),
 	}
 
-	gheReturnedRepo, response, err := wkr.client.Repositories.Create(ctx, wkr.currentOrg, gheRepo)
-
-	log15.Debug("add repo", "repo", gheReturnedRepo, "response", response)
-	return err
+	gheReturnedRepo, _, err := wkr.client.Repositories.Create(ctx, wkr.currentOrg, gheRepo)
+	return gheReturnedRepo, err
 }

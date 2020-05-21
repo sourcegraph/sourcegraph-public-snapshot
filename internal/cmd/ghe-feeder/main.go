@@ -11,15 +11,15 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sync"
-	"time"
 
-	"github.com/briandowns/spinner"
+	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/time/rate"
 )
 
 func main() {
+	admin := flag.String("admin", "", "(required) destination GHE admin name")
 	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "(required) GitHub personal access token for the destination GHE instance")
 	progressFilepath := flag.String("progress", "feeder.db", "path to a sqlite DB recording the progress made in the feeder (created if it doesn't exist)")
 	baseURL := flag.String("baseURL", "", "(required) base URL of GHE instance to feed")
@@ -39,7 +39,7 @@ func main() {
 	}
 	log15.Root().SetHandler(logHandler)
 
-	if *help || len(*baseURL) == 0 || len(*token) == 0 {
+	if *help || len(*baseURL) == 0 || len(*token) == 0 || len(*admin) == 0 {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
@@ -57,6 +57,13 @@ func main() {
 		*scratchDir = d
 	}
 
+	u, err := urlx.Parse(*baseURL)
+	if err != nil {
+		log15.Error("failed to parse base URL", "baseURL", *baseURL, "error", err)
+		os.Exit(1)
+	}
+	host := u.Host
+
 	ctx := context.Background()
 	gheClient, err := newGHEClient(ctx, *baseURL, *uploadURL, *token)
 	if err != nil {
@@ -70,20 +77,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	spn := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	spn.Start()
-
+	spinner := progressbar.Default(-1, "calculating work")
 	numLines, err := numLinesTotal()
 	if err != nil {
 		log15.Error("failed to calculate outstanding work", "error", err)
 		os.Exit(1)
 	}
+	_ = spinner.Finish()
 
 	if numLines > *limitPump {
 		numLines = *limitPump
 	}
-
-	spn.Stop()
 
 	bar := progressbar.New64(numLines)
 
@@ -139,6 +143,9 @@ func main() {
 			fdr:         fdr,
 			logger:      log15.New("source", name),
 			rateLimiter: rateLimiter,
+			admin:       *admin,
+			token:       *token,
+			host:        host,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
@@ -151,6 +158,7 @@ func main() {
 	}
 	close(work)
 	wg.Wait()
+	_ = bar.Finish()
 
 	printStats(wkrs, prdc)
 }
