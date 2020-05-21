@@ -10,7 +10,8 @@ import (
 func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, error) {
 	// 🚨 SECURITY: Only site admins can check for updates.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		// TODO: This should return err once the site flags query is fixed for users
+		return nil, nil
 	}
 	return &updateCheckResolver{
 		last:    updatecheck.Last(),
