@@ -14,7 +14,7 @@ Credentials should be a GCP service account with access to the following permiss
 
 - `Viewer`
 
-The key should be accessible in `GOOGLE_APPLICATION_CREDENTIALS`.
+The path to the key should be set to `GOOGLE_APPLICATION_CREDENTIALS`. For the GitHub Action, set the key to `RR_GCP_ACCOUNT_KEY` in the Secrets tab by encoding it in base64, e.g. `cat my-key.json | base64` (see [`resources-report.yml`](../../../.github/workflows/resources-report.yml)).
 
 ### Amazon Web Services
 
@@ -22,11 +22,11 @@ Credentials should be an AWS IAM with the following permissions:
 
 - `ReadOnlyAccess`
 
-Credentials should be set in `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+Credentials should be set in `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. For the GitHub Action, set these variables to `RR_ACCESS_KEY_ID` etc. in the Secrets tab (see [`resources-report.yml`](../../../.github/workflows/resources-report.yml)).
 
 ### Slack
 
-This bot can be [configured in Slack](https://api.slack.com/apps/A013EETK25V) with various channel webhooks under "Incoming Webhooks".
+This bot can be [configured in Slack](https://api.slack.com/apps/A013EETK25V) with various channel webhooks under "Incoming Webhooks". For the GitHub Action, set the webhook to `RR_SLACK_WEBHOOK` in the Secrets tab (see [`resources-report.yml`](../../../.github/workflows/resources-report.yml)).
 
 ## Resources
 
