@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,13 +48,15 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 							if err != nil {
 								return fmt.Errorf("could not parse create time for instance %s: %w", instance.Name, err)
 							}
+							machineTypeSegments := strings.Split(instance.MachineType, "/")
+							machineType := machineTypeSegments[len(machineTypeSegments)-1]
 							if t.After(since) {
 								results <- Resource{
 									Platform:   PlatformGCP,
 									Identifier: instance.Name,
 									Location:   zone.Name,
 									Owner:      project,
-									Type:       instance.Kind,
+									Type:       fmt.Sprintf("%s::%s", instance.Kind, machineType),
 									Meta: map[string]interface{}{
 										"labels": instance.Labels,
 									},
@@ -72,13 +75,15 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 							if err != nil {
 								return fmt.Errorf("could not parse create time for disk %s: %w", disk.Name, err)
 							}
+							diskTypeSegments := strings.Split(disk.Type, "/")
+							diskType := diskTypeSegments[len(diskTypeSegments)-1]
 							if t.After(since) {
 								results <- Resource{
 									Platform:   PlatformGCP,
 									Identifier: disk.Name,
 									Location:   zone.Name,
 									Owner:      project,
-									Type:       disk.Kind,
+									Type:       fmt.Sprintf("%s::%s::%dGB", disk.Kind, diskType, disk.SizeGb),
 									Meta: map[string]interface{}{
 										"labels": disk.Labels,
 									},
@@ -144,7 +149,7 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	results := make(chan Resource, resultsBuffer)
-	wait := sync.WaitGroup{}
+	wait := &sync.WaitGroup{}
 
 	// aggregate resources for each GCP project
 	if err := crm.Projects.List().Pages(ctx, func(page *gcp_crm.ListProjectsResponse) error {
@@ -167,5 +172,5 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	// collect results when done
-	return collect(&wait, results), nil
+	return collect(wait, results), nil
 }

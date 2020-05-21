@@ -125,7 +125,7 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	results := make(chan Resource, resultsBuffer)
-	wait := sync.WaitGroup{}
+	wait := &sync.WaitGroup{}
 
 	// query default aws regions - the only partition we are interested in is the
 	// normal `aws` regions, which will always exist (other partitions include China,
@@ -155,5 +155,5 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	// collect results when done
-	return collect(&wait, results), nil
+	return collect(wait, results), nil
 }
