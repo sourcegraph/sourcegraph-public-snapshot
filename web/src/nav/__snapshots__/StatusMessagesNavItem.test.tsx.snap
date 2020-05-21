@@ -78,6 +78,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
+        key="Currently cloning repositories..."
       >
         <h4>
           <CloudSyncIcon
@@ -125,6 +126,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
+        key="Currently cloning repositories..."
       >
         <h4>
           <CloudSyncIcon
@@ -182,6 +184,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+        key="failed to list organization kubernetes repos: request returned status 404: Not Found"
       >
         <h4>
           <CloudAlertIcon
@@ -229,6 +232,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+        key="failed to list organization kubernetes repos: request returned status 404: Not Found"
       >
         <h4>
           <CloudAlertIcon
@@ -286,6 +290,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+        key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
       >
         <h4>
           <CloudAlertIcon
@@ -333,6 +338,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     >
       <div
         className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+        key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
       >
         <h4>
           <CloudAlertIcon
