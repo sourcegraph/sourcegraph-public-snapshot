@@ -15,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
+	"golang.org/x/time/rate"
 )
 
 func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*github.Client, error) {
@@ -52,6 +53,7 @@ type worker struct {
 	currentNumRepos int
 	currentMaxRepos int
 	logger          log15.Logger
+	rateLimiter     *rate.Limiter
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -67,7 +69,6 @@ func (wkr *worker) run(ctx context.Context) {
 		}
 		err := wkr.process(ctx, line)
 		if err != nil {
-			wkr.logger.Error("failed to process repo", "ownerRepo", line, "error", err)
 			wkr.numFailed++
 			_ = wkr.fdr.failed(line)
 		} else {
@@ -92,6 +93,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
+		wkr.logger.Error("failed to clone repo", "ownerRepo", work, "error", err)
 		return err
 	}
 
@@ -102,6 +104,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 	ownerDir := filepath.Join(wkr.scratchDir, owner)
 	err := os.MkdirAll(ownerDir, 0777)
 	if err != nil {
+		wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
 		return err
 	}
 
@@ -114,4 +117,21 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=/bin/echo")
 
 	return cmd.Run()
+}
+
+func (wkr *worker) addGHERemote(ctx context.Context, owner, repo string) error {
+	err := wkr.rateLimiter.Wait(ctx)
+	if err != nil {
+		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
+		return err
+	}
+
+	gheRepo := &github.Repository{
+		Name: github.String(fmt.Sprintf("%s-%s", owner, repo)),
+	}
+
+	gheReturnedRepo, response, err := wkr.client.Repositories.Create(ctx, wkr.currentOrg, gheRepo)
+
+	log15.Debug("add repo", "repo", gheReturnedRepo, "response", response)
+	return err
 }

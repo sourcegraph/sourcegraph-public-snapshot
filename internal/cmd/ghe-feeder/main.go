@@ -16,15 +16,15 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/inconshreveable/log15"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/time/rate"
 )
 
 func main() {
-	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "(required) GitHub personal access token")
+	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "(required) GitHub personal access token for the destination GHE instance")
 	progressFilepath := flag.String("progress", "feeder.db", "path to a sqlite DB recording the progress made in the feeder (created if it doesn't exist)")
 	baseURL := flag.String("baseURL", "", "(required) base URL of GHE instance to feed")
 	uploadURL := flag.String("uploadURL", "", "upload URL of GHE instance to feed")
 	numWorkers := flag.Int("numWorkers", 20, "number of workers")
-	numGHEConcurrency := flag.Int("numGHEConcurrency", 10, "number of simultaneous GHE requests in flight")
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
 	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
@@ -69,8 +69,6 @@ func main() {
 		log15.Error("failed to create sqlite DB", "path", *progressFilepath, "error", err)
 		os.Exit(1)
 	}
-
-	gheSemaphore := make(chan struct{}, *numGHEConcurrency)
 
 	spn := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	spn.Start()
@@ -118,6 +116,8 @@ func main() {
 		}
 	}()
 
+	rateLimiter := rate.NewLimiter(1, 10)
+
 	var wkrs []*worker
 
 	for i := 0; i < *numWorkers; i++ {
@@ -129,16 +129,16 @@ func main() {
 			os.Exit(1)
 		}
 		wkr := &worker{
-			name:       name,
-			client:     gheClient,
-			sem:        gheSemaphore,
-			index:      i,
-			scratchDir: wkrScratchDir,
-			work:       work,
-			wg:         &wg,
-			bar:        bar,
-			fdr:        fdr,
-			logger:     log15.New("source", name),
+			name:        name,
+			client:      gheClient,
+			index:       i,
+			scratchDir:  wkrScratchDir,
+			work:        work,
+			wg:          &wg,
+			bar:         bar,
+			fdr:         fdr,
+			logger:      log15.New("source", name),
+			rateLimiter: rateLimiter,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
