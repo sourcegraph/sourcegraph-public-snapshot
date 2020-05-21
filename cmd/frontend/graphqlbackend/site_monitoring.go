@@ -84,6 +84,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 		var (
 			name        = string(sample.Metric["name"])
 			serviceName = string(sample.Metric["service_name"])
+			level       = string(sample.Metric["level"])
 			prevVal     *model.SampleValue
 		)
 		for _, p := range sample.Values {
@@ -99,7 +100,7 @@ func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*Monit
 			prevVal = &v
 			// record alert in results
 			alerts = append(alerts, &MonitoringAlert{
-				NameValue:        name,
+				NameValue:        fmt.Sprintf("%s: %s", level, name),
 				ServiceNameValue: serviceName,
 				TimestampValue:   DateTime{p.Timestamp.Time().UTC().Truncate(time.Hour)},
 				AverageValue:     float64(p.Value),
