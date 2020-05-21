@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -528,118 +529,65 @@ func TestVersionContext(t *testing.T) {
 		name           string
 		searchQuery    string
 		versionContext string
-		reposGetList   func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-		wantResults    []*search.RepositoryRevisions
-	}{
-		{
-			name:           "query with version context should return the right repositories",
-			searchQuery:    "foo",
-			versionContext: "ctx-1",
-			reposGetList: func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
-				expectedOpts := db.ReposListOptions{
-					Names: []string{
-						"github.com/sourcegraph/foo",
-						"github.com/sourcegraph/foobar",
-						"github.com/sourcegraph/bar",
-					},
-					NoForks:     true,
-					NoArchived:  true,
-					OnlyRepoIDs: true,
-					LimitOffset: &db.LimitOffset{Limit: 1073741824},
-				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
-				return []*types.Repo{
-					{Name: "github.com/sourcegraph/foo"},
-					{Name: "github.com/sourcegraph/foobar"},
-					{Name: "github.com/sourcegraph/bar"},
-				}, nil
-			},
-			wantResults: []*search.RepositoryRevisions{
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/foo"}, Revs: []search.RevisionSpecifier{{RevSpec: "some-branch"}}},
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/foobar"}, Revs: []search.RevisionSpecifier{{RevSpec: "v1.0.0"}}},
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/bar"}, Revs: []search.RevisionSpecifier{{RevSpec: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"}}},
-			},
+		// db.ReposListOptions.Names
+		wantReposListOptionsNames []string
+		reposGetListNames         []string
+		wantResults               []string
+	}{{
+		name:           "query with version context should return the right repositories",
+		searchQuery:    "foo",
+		versionContext: "ctx-1",
+		wantReposListOptionsNames: []string{
+			"github.com/sourcegraph/foo",
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/bar",
 		},
-		{
-			name:           "query with version context and subset of repos",
-			searchQuery:    "repo:github.com/sourcegraph/foo.*",
-			versionContext: "ctx-1",
-			reposGetList: func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
-				expectedOpts := db.ReposListOptions{
-					Names: []string{
-						"github.com/sourcegraph/foo",
-						"github.com/sourcegraph/foobar",
-						"github.com/sourcegraph/bar",
-					},
-					IncludePatterns: []string{"github\\.com/sourcegraph/foo.*"},
-					NoForks:         true,
-					NoArchived:      true,
-					OnlyRepoIDs:     true,
-					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
-				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
-				return []*types.Repo{
-					{Name: "github.com/sourcegraph/foo"},
-					{Name: "github.com/sourcegraph/foobar"},
-				}, nil
-			},
-			wantResults: []*search.RepositoryRevisions{
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/foo"}, Revs: []search.RevisionSpecifier{{RevSpec: "some-branch"}}},
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/foobar"}, Revs: []search.RevisionSpecifier{{RevSpec: "v1.0.0"}}},
-			},
+		reposGetListNames: []string{
+			"github.com/sourcegraph/foo",
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/bar",
 		},
-		{
-			name:           "query with version context and non-exact search",
-			searchQuery:    "repo:github.com/sourcegraph/notincontext",
-			versionContext: "ctx-1",
-			reposGetList: func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
-				expectedOpts := db.ReposListOptions{
-					Names: []string{
-						"github.com/sourcegraph/foo",
-						"github.com/sourcegraph/foobar",
-						"github.com/sourcegraph/bar",
-					},
-					IncludePatterns: []string{"github\\.com/sourcegraph/notincontext"},
-					NoForks:         true,
-					NoArchived:      true,
-					OnlyRepoIDs:     true,
-					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
-				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
-				return []*types.Repo{}, nil
-			},
-			wantResults: []*search.RepositoryRevisions{},
+		wantResults: []string{
+			"github.com/sourcegraph/foo@some-branch",
+			"github.com/sourcegraph/foobar@v1.0.0",
+			"github.com/sourcegraph/bar@e62b6218f61cc1564d6ebcae19f9dafdf1357567",
 		},
-		{
-			name:           "query with version context and exact repo search",
-			searchQuery:    "repo:github.com/sourcegraph/notincontext@v1.0.0",
-			versionContext: "ctx-1",
-			reposGetList: func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
-				expectedOpts := db.ReposListOptions{
-					IncludePatterns: []string{"github\\.com/sourcegraph/notincontext"},
-					NoForks:         true,
-					NoArchived:      true,
-					OnlyRepoIDs:     true,
-					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
-				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
-				return []*types.Repo{
-					{Name: "github.com/sourcegraph/notincontext"},
-				}, nil
-			},
-			wantResults: []*search.RepositoryRevisions{
-				{Repo: &types.Repo{Name: "github.com/sourcegraph/notincontext"}, Revs: []search.RevisionSpecifier{{RevSpec: "v1.0.0"}}},
-			},
+	}, {
+		name:           "query with version context and subset of repos",
+		searchQuery:    "repo:github.com/sourcegraph/foo.*",
+		versionContext: "ctx-1",
+		wantReposListOptionsNames: []string{
+			"github.com/sourcegraph/foo",
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/bar",
 		},
-	}
+		reposGetListNames: []string{
+			"github.com/sourcegraph/foo",
+			"github.com/sourcegraph/foobar",
+		},
+		wantResults: []string{
+			"github.com/sourcegraph/foo@some-branch",
+			"github.com/sourcegraph/foobar@v1.0.0",
+		},
+	}, {
+		name:           "query with version context and non-exact search",
+		searchQuery:    "repo:github.com/sourcegraph/notincontext",
+		versionContext: "ctx-1",
+		wantReposListOptionsNames: []string{
+			"github.com/sourcegraph/foo",
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/bar",
+		},
+		reposGetListNames: []string{},
+		wantResults:       []string{},
+	}, {
+		name:                      "query with version context and exact repo search",
+		searchQuery:               "repo:github.com/sourcegraph/notincontext@v1.0.0",
+		versionContext:            "ctx-1",
+		wantReposListOptionsNames: []string{},
+		reposGetListNames:         []string{"github.com/sourcegraph/notincontext"},
+		wantResults:               []string{"github.com/sourcegraph/notincontext@v1.0.0"},
+	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			qinfo, err := query.ParseAndCheck(tc.searchQuery)
@@ -652,14 +600,28 @@ func TestVersionContext(t *testing.T) {
 				versionContext: &tc.versionContext,
 			}
 
-			db.Mocks.Repos.List = tc.reposGetList
+			db.Mocks.Repos.List = func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
+				if diff := cmp.Diff(tc.wantReposListOptionsNames, opts.Names, cmpopts.EquateEmpty()); diff != "" {
+					t.Fatalf("db.RepostListOptions.Names mismatch (-want, +got):\n%s", diff)
+				}
+				var repos []*types.Repo
+				for _, name := range tc.reposGetListNames {
+					repos = append(repos, &types.Repo{Name: api.RepoName(name)})
+				}
+				return repos, nil
+			}
+
 			gotResults, _, _, err := resolver.resolveRepositories(context.Background(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
+			var got []string
+			for _, reporev := range gotResults {
+				got = append(got, string(reporev.Repo.Name)+"@"+strings.Join(reporev.RevSpecs(), ":"))
+			}
 
-			if diff := cmp.Diff(gotResults, tc.wantResults); diff != "" {
-				t.Fatalf(diff)
+			if diff := cmp.Diff(tc.wantResults, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}
