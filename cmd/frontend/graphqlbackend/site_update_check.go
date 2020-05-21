@@ -2,25 +2,33 @@ package graphqlbackend
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 )
 
 func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, error) {
-	// 🚨 SECURITY: Only site admins can check for updates but users may see notifications
+	// 🚨 SECURITY: Only site admins can check for updates.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		// TODO(dax): This should return err once the site flags query is fixed for users
+		return &updateCheckResolver{
+			last: &updatecheck.Status{
+				Date:          time.Time{},
+				Err:           err,
+				UpdateVersion: "",
+			},
+		}, nil
+	}
 	return &updateCheckResolver{
-		last:        updatecheck.Last(),
-		pending:     updatecheck.IsPending(),
-		IsSiteAdmin: backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
+		last:    updatecheck.Last(),
+		pending: updatecheck.IsPending(),
 	}, nil
 }
 
 type updateCheckResolver struct {
-	last        *updatecheck.Status
-	pending     bool
-	IsSiteAdmin bool
-	alert       Alert
+	last    *updatecheck.Status
+	pending bool
 }
 
 func (r *updateCheckResolver) Pending() bool { return r.pending }
@@ -45,17 +53,4 @@ func (r *updateCheckResolver) UpdateVersionAvailable() *string {
 		return nil
 	}
 	return &r.last.UpdateVersion
-}
-
-// Alert only triggers when the instance is either offline or severely out of date
-func (r *updateCheckResolver) Alert() *Alert {
-	if r.last == nil || r.last.HasUpdate() {
-		return nil
-	}
-	alert := OutOfDateAlert(r.last.MonthsOutOfDate, r.IsSiteAdmin)
-
-	if alert.MessageValue == "" {
-		return nil
-	}
-	return &alert
 }
