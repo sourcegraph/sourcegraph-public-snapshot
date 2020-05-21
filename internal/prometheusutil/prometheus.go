@@ -18,7 +18,7 @@ type PrometheusQuerier interface {
 	QueryRange(ctx context.Context, query string, r prometheus.Range) (model.Value, prometheus.Warnings, error)
 }
 
-// errPrometheusUnavailable is raised specifically when prometheusURL is unset or when
+// ErrPrometheusUnavailable is raised specifically when prometheusURL is unset or when
 // prometheus API access times out, both of which indicate that the server API has likely
 // been configured to explicitly disallow access to prometheus, or that prometheus is not
 // deployed at all. The website checks for this error in `fetchMonitoringStats`, for example.
