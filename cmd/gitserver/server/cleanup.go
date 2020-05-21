@@ -283,6 +283,10 @@ func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
+	if howManyBytesToFree <= 0 {
+		return nil
+	}
+
 	// Get the git directories and their mod times.
 	gitDirs, err := s.findGitDirs()
 	if err != nil {
