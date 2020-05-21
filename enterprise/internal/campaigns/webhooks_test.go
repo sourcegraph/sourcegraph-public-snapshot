@@ -503,22 +503,6 @@ func TestBitbucketWebhookSync(t *testing.T) {
 			},
 			expect: []string{},
 		},
-		{
-			name: "syncing disabled",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:      "secret",
-						DisableSync: true,
-					},
-				},
-			},
-			secrets: map[int64]string{
-				1: "old",
-			},
-			expect: []string{},
-		},
 	}
 
 	for _, tc := range testCases {

@@ -793,7 +793,8 @@ func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.
 
 // SyncWebhooks ensures the creation / deletion of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
-func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
+// It is expected to run in the background and will exit when the supplied context is cancelled.
+func (h *BitbucketServerWebhook) SyncWebhooks(ctx context.Context, every time.Duration) {
 	externalURL := func() string {
 		return conf.Cached(func() interface{} {
 			return conf.Get().ExternalURL
@@ -815,22 +816,27 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 				continue
 			}
 
+			if con.WebhookSyncDisabled() {
+				continue
+			}
+
 			err = h.syncWebhook(e.ID, con, externalURL())
 			if err != nil {
 				log15.Error("Syncing BBS Webhook failed", "err", err)
 			}
 		}
 
-		time.Sleep(every)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(every):
+		}
 	}
 }
 
 // syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the existing webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
-	if con.WebhookSyncDisabled() {
-		return nil
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
