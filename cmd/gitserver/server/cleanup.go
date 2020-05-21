@@ -22,14 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/inconshreveable/log15"
 )
-
-func init() {
-	prometheus.MustRegister(reposRemoved)
-	prometheus.MustRegister(reposRecloned)
-}
 
 const (
 	// repoTTL is how often we should reclone a repository
@@ -39,15 +35,16 @@ const (
 	repoTTLGC = time.Hour * 24 * 2
 )
 
-var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_repos_removed",
-	Help: "number of repos removed during cleanup",
-})
-
-var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_repos_recloned",
-	Help: "number of repos removed and recloned due to age",
-})
+var (
+	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_removed",
+		Help: "number of repos removed during cleanup",
+	})
+	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_recloned",
+		Help: "number of repos removed and recloned due to age",
+	})
+)
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
