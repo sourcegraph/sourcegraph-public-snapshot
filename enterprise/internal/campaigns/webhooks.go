@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -458,7 +457,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 		ours = h.checkRunEvent(cr)
 	}
 
-	return
+	return prs, ours
 }
 
 func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment {
@@ -784,7 +783,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, repos, now, bbs.ServiceType},
+		Webhook:     &Webhook{store, repos, now, bitbucketserver.ServiceType},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
@@ -851,7 +850,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 		return nil
 	}
 
-	client, err := bbs.NewClient(con, h.httpClient)
+	client, err := bitbucketserver.NewClient(con, h.httpClient)
 	if err != nil {
 		return errors.Wrap(err, "creating client")
 	}
@@ -877,7 +876,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 
 	// Secret or sync permission has changed, sync
 	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, externalURL)
-	wh := bbs.Webhook{
+	wh := bitbucketserver.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
 		Events:   []string{"pr", "repo"},
@@ -976,7 +975,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
+	e, err := bitbucketserver.ParseWebhookEvent(bitbucketserver.WebhookEventType(r), payload)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "parsing webhook")}
 	}
@@ -987,23 +986,23 @@ func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, our
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
-	case *bbs.PullRequestActivityEvent:
+	case *bitbucketserver.PullRequestActivityEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		prs = append(prs, pr)
 		return prs, e.Activity
-	case *bbs.PullRequestParticipantStatusEvent:
+	case *bitbucketserver.PullRequestParticipantStatusEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		prs = append(prs, pr)
 		return prs, e.ParticipantStatusEvent
-	case *bbs.BuildStatusEvent:
+	case *bitbucketserver.BuildStatusEvent:
 		for _, p := range e.PullRequests {
 			repoID := strconv.Itoa(p.FromRef.Repository.ID)
 			pr := PR{ID: int64(p.ID), RepoExternalID: repoID}
 			prs = append(prs, pr)
 		}
-		return prs, &bbs.CommitStatus{
+		return prs, &bitbucketserver.CommitStatus{
 			Commit: e.Commit,
 			Status: e.Status,
 		}
