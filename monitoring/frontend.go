@@ -359,7 +359,7 @@ func Frontend() *Container {
 						},
 						{
 							Name:              "precise_code_intel_bundle_manager_error_responses",
-							Description:       "precise code intel bundle manager error responses every 5m",
+							Description:       "precise-code-intel-bundle-manager error responses every 5m",
 							Query:             `sum by (category)(increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
