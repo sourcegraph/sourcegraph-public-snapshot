@@ -871,6 +871,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 
 	if disabled {
 		// Don't sync
+		h.configCache[externalServiceID] = con
 		return nil
 	}
 
