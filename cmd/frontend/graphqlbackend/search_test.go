@@ -515,6 +515,13 @@ func TestVersionContext(t *testing.T) {
 							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
 							{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
 						},
+					}, {
+						Name: "multiple-revs",
+						Revisions: []*schema.VersionContextRevision{
+							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.0.0"},
+							{Repo: "github.com/sourcegraph/foobar", Rev: "v1.1.0"},
+							{Repo: "github.com/sourcegraph/bar", Rev: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+						},
 					},
 				},
 			},
@@ -587,6 +594,23 @@ func TestVersionContext(t *testing.T) {
 		wantReposListOptionsNames: []string{},
 		reposGetListNames:         []string{"github.com/sourcegraph/notincontext"},
 		wantResults:               []string{"github.com/sourcegraph/notincontext@v1.0.0"},
+	}, {
+		name:           "multiple revs",
+		searchQuery:    "foo",
+		versionContext: "multiple-revs",
+		wantReposListOptionsNames: []string{
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/foobar", // we don't mind listing repos twice
+			"github.com/sourcegraph/bar",
+		},
+		reposGetListNames: []string{
+			"github.com/sourcegraph/foobar",
+			"github.com/sourcegraph/bar",
+		},
+		wantResults: []string{
+			"github.com/sourcegraph/foobar@v1.0.0:v1.1.0",
+			"github.com/sourcegraph/bar@e62b6218f61cc1564d6ebcae19f9dafdf1357567",
+		},
 	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
