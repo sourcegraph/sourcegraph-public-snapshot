@@ -43,7 +43,6 @@ func randomOrgNameAndSize() (string, int) {
 type worker struct {
 	name            string
 	client          *github.Client
-	sem             chan struct{}
 	index           int
 	scratchDir      string
 	work            <-chan string
@@ -61,6 +60,7 @@ type worker struct {
 	admin           string
 	token           string
 	host            string
+	pushSem         chan struct{}
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -145,12 +145,27 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 		return err
 	}
 
-	err = wkr.pushToGHE(ctx, owner, repo)
-	if err != nil {
-		wkr.logger.Error("failed to push cloned repo to GHE", "ownerRepo", work, "error", err)
-		return err
+	attempt := 1
+	for {
+		err = wkr.pushToGHE(ctx, owner, repo)
+		if err != nil {
+			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "ownerRepo", work, "error", err)
+			attempt++
+			if attempt < 3 && ctx.Err() == nil {
+				continue
+			}
+			return err
+		} else {
+			break
+		}
 	}
 
+	ownerDir := filepath.Join(wkr.scratchDir, owner)
+
+	err = os.RemoveAll(ownerDir)
+	if err != nil {
+		wkr.logger.Error("failed to clean up cloned repo", "ownerRepo", work, "error", err, "ownerDir", ownerDir)
+	}
 	return nil
 }
 
@@ -184,12 +199,20 @@ func (wkr *worker) addRemote(ctx context.Context, gheRepo *github.Repository, ow
 }
 
 func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
-	repoDir := filepath.Join(wkr.scratchDir, owner, repo)
+	select {
+	case wkr.pushSem <- struct{}{}:
+		defer func() {
+			<-wkr.pushSem
+		}()
+		repoDir := filepath.Join(wkr.scratchDir, owner, repo)
 
-	cmd := exec.CommandContext(ctx, "git", "push", "ghe", "master")
-	cmd.Dir = repoDir
+		cmd := exec.CommandContext(ctx, "git", "push", "ghe", "master")
+		cmd.Dir = repoDir
 
-	return cmd.Run()
+		return cmd.Run()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) {

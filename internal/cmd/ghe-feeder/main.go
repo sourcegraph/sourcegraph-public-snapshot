@@ -122,6 +122,8 @@ func main() {
 
 	rateLimiter := rate.NewLimiter(1, 10)
 
+	pushSem := make(chan struct{}, 3)
+
 	var wkrs []*worker
 
 	for i := 0; i < *numWorkers; i++ {
@@ -146,6 +148,7 @@ func main() {
 			admin:       *admin,
 			token:       *token,
 			host:        host,
+			pushSem:     pushSem,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
