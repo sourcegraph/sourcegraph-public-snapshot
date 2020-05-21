@@ -25,7 +25,6 @@ func main() {
 	numWorkers := flag.Int("numWorkers", 20, "number of workers")
 	numGHEConcurrency := flag.Int("numGHEConcurrency", 10, "number of simultaneous GHE requests in flight")
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
-	reposPerOrg := flag.Int("reposPerOrg", 300, "how many repos per org (with some random variance)")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
 
 	help := flag.Bool("help", false, "Show help")
@@ -116,16 +115,15 @@ func main() {
 			log.Fatal(err)
 		}
 		wkr := &worker{
-			name:        name,
-			client:      gheClient,
-			sem:         gheSemaphore,
-			index:       i,
-			scratchDir:  wkrScratchDir,
-			work:        work,
-			wg:          &wg,
-			bar:         bar,
-			reposPerOrg: *reposPerOrg,
-			fdr:         fdr,
+			name:       name,
+			client:     gheClient,
+			sem:        gheSemaphore,
+			index:      i,
+			scratchDir: wkrScratchDir,
+			work:       work,
+			wg:         &wg,
+			bar:        bar,
+			fdr:        fdr,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)

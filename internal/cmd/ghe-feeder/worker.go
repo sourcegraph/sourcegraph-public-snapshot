@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,23 +25,37 @@ func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*githu
 	return github.NewEnterpriseClient(baseURL, uploadURL, tc)
 }
 
+func createOrg() (string, int) {
+	size := rand.Intn(500)
+	if size < 5 {
+		size = 5
+	}
+	name := fmt.Sprintf("%s-%d", getRandomName(0), size)
+	return name, size
+}
+
 type worker struct {
-	name         string
-	client       *github.Client
-	sem          chan struct{}
-	index        int
-	scratchDir   string
-	work         <-chan string
-	wg           *sync.WaitGroup
-	bar          *progressbar.ProgressBar
-	reposPerOrg  int
-	numFailed    int64
-	numSucceeded int64
-	fdr          *feederDB
+	name            string
+	client          *github.Client
+	sem             chan struct{}
+	index           int
+	scratchDir      string
+	work            <-chan string
+	wg              *sync.WaitGroup
+	bar             *progressbar.ProgressBar
+	reposPerOrg     int
+	numFailed       int64
+	numSucceeded    int64
+	fdr             *feederDB
+	currentOrg      string
+	currentNumRepos int
+	currentMaxRepos int
 }
 
 func (wkr *worker) run(ctx context.Context) {
 	defer wkr.wg.Done()
+
+	wkr.currentOrg, wkr.currentMaxRepos = createOrg()
 
 	for line := range wkr.work {
 		if ctx.Err() != nil {
@@ -52,6 +67,11 @@ func (wkr *worker) run(ctx context.Context) {
 			_ = wkr.fdr.failed(line)
 		} else {
 			wkr.numSucceeded++
+			wkr.currentNumRepos++
+			if wkr.currentNumRepos >= wkr.currentMaxRepos {
+				wkr.currentOrg, wkr.currentMaxRepos = createOrg()
+				wkr.currentNumRepos = 0
+			}
 		}
 		_ = wkr.bar.Add(1)
 	}
