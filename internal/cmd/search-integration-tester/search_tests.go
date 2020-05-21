@@ -138,6 +138,10 @@ var tests = []test{
 		Name:  `Global search, fork included if exact without option, nonzero result`,
 		Query: `repo:^github\.com/sgtest/mux$`,
 	},
+	{
+		Name:  `Global search, exclude counts for fork and archive`,
+		Query: `repo:mux|archive|caddy`,
+	},
 }
 
 func sanitizeFilename(s string) string {
@@ -170,7 +174,7 @@ func runSearchTests() error {
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
 		if err := assertGolden(test.Name, goldenPath, got, update); err != nil {
-			return err
+			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err)
 		}
 	}
 	return nil
