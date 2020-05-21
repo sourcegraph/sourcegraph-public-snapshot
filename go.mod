@@ -3,7 +3,6 @@ module github.com/sourcegraph/sourcegraph
 go 1.14
 
 require (
-	cloud.google.com/go v0.56.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
@@ -95,6 +94,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/common v0.9.1
 	github.com/prometheus/procfs v0.0.11 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/russellhaering/gosaml2 v0.4.0
@@ -143,7 +143,7 @@ require (
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.0.0-20200420001825-978e26b7c37c
-	google.golang.org/api v0.21.0 // indirect
+	google.golang.org/api v0.24.0 // indirect
 	google.golang.org/genproto v0.0.0-20200403120447-c50568487044 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect

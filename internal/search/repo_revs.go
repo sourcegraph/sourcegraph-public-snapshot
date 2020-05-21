@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -73,7 +72,7 @@ func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 //
 //   repo@revs
 //
-// where repo is a repository path and revs is a ':'-separated list of revspecs
+// where repo is a repository regex and revs is a ':'-separated list of revspecs
 // and/or ref globs. A ref glob is a revspec prefixed with '*' (which is not a
 // valid revspec or ref itself; see `man git-check-ref-format`). The '@' and revs
 // may be omitted to refer to the default branch.
@@ -87,7 +86,7 @@ func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 // - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //   section on the --glob flag)
-func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []RevisionSpecifier) {
+func ParseRepositoryRevisions(repoAndOptionalRev string) (string, []RevisionSpecifier) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
 		// return an empty slice to indicate that there's no revisions; callers
@@ -95,10 +94,10 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoName, []Revisi
 		// cases where two repo specs both match the same repository, and only one
 		// specifies a revspec, which normally implies "master" but in that case
 		// really means "didn't specify"
-		return api.RepoName(repoAndOptionalRev), []RevisionSpecifier{}
+		return repoAndOptionalRev, []RevisionSpecifier{}
 	}
 
-	repo := api.RepoName(repoAndOptionalRev[:i])
+	repo := repoAndOptionalRev[:i]
 	var revs []RevisionSpecifier
 	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
 		if part == "" {
