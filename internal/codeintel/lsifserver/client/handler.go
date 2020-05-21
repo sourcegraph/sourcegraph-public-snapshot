@@ -1,10 +1,9 @@
-package server
+package client
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/api"
@@ -13,22 +12,6 @@ import (
 
 const DefaultUploadPageSize = 50
 const DefaultReferencesPageSize = 100
-
-func (s *Server) handler() http.Handler {
-	mux := mux.NewRouter()
-	mux.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUploadByID)
-	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUploadByID)
-	mux.Path("/uploads/repository/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUploadsByRepo)
-	mux.Path("/upload").Methods("POST").HandlerFunc(s.enqueuer.HandleEnqueue)
-	mux.Path("/exists").Methods("GET").HandlerFunc(s.handleExists)
-	mux.Path("/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
-	mux.Path("/references").Methods("GET").HandlerFunc(s.handleReferences)
-	mux.Path("/hover").Methods("GET").HandlerFunc(s.handleHover)
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	return mux
-}
 
 // GET /uploads/{id:[0-9]+}
 func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {

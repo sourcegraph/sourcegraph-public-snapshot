@@ -107,6 +107,8 @@ type LSIFUploadsListOptions struct {
 }
 
 type lsifUploadConnectionResolver struct {
+	lsifserverClient *client.Client
+
 	opt LSIFUploadsListOptions
 
 	// cache results because they are used by multiple fields
@@ -166,7 +168,7 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSI
 			return
 		}
 
-		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
+		r.uploads, r.nextURL, r.totalCount, r.err = r.lsifserverClient.GetUploads(ctx, &struct {
 			RepoID          api.RepoID
 			Query           *string
 			State           *string

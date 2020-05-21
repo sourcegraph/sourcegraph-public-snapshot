@@ -1,4 +1,4 @@
-package server
+package client
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/api"

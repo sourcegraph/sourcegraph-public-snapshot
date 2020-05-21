@@ -32,8 +32,12 @@ import (
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/enqueuer"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	lsifserverclient "github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -49,8 +53,9 @@ func main() {
 	}
 
 	initLicensing()
-	initResolvers()
-	initLSIFEndpoints()
+	initAuthz()
+	initCampaigns()
+	initCodeIntel()
 
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
@@ -144,9 +149,7 @@ func initLicensing() {
 	}
 }
 
-func initResolvers() {
-	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
-	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
+func initAuthz() {
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
 		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
 			return time.Now().UTC().Truncate(time.Microsecond)
@@ -154,24 +157,41 @@ func initResolvers() {
 	}
 }
 
+func initCampaigns() {
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
+
+}
+
 var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
 
-func initLSIFEndpoints() {
+func initCodeIntel() {
+	if bundleManagerURL == "" {
+		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+	}
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
+	bundleManagerClient := bundles.New(bundleManagerURL)
+
+	client := lsifserverclient.New(
+		db,
+		bundleManagerClient,
+		codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient),
+	)
+
+	enqueuer := enqueuer.NewEnqueuer(db, bundleManagerClient)
+
+	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
+		return codeIntelResolvers.NewResolver(client)
+	}
+
 	httpapi.NewLSIFServerProxy = func() (*httpapi.LSIFServerProxy, error) {
-		if bundleManagerURL == "" {
-			log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
-		}
-
-		observationContext := &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-
-		db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(bundleManagerURL)
-
-		return proxy.NewProxy(db, bundleManagerClient)
+		return proxy.NewProxy(enqueuer, client)
 	}
 }
 
