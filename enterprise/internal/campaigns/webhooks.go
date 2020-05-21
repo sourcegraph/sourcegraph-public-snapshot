@@ -811,7 +811,7 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 
 			err = h.syncWebhook(e.ID, con, conf.ExternalURL())
 			if err != nil {
-				log15.Debug("Upserting BBS Webhook failed", "err", err)
+				log15.Error("Syncing BBS Webhook failed", "err", err)
 			}
 		}
 
