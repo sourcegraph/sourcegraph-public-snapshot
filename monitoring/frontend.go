@@ -286,8 +286,8 @@ func Frontend() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "db_errors",
-							Description:       "database errors every 5m",
+							Name:              "precise_code_intel_db_errors",
+							Description:       "precise code intel database errors every 5m",
 							Query:             `increase(src_code_intel_db_errors_total{job="frontend"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
