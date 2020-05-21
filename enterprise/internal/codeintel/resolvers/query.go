@@ -4,23 +4,28 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/lsif"
+	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
+// TODO(efritz) - cleanup
 type lsifQueryResolver struct {
-	lsifserverClient *client.Client
+	db                  db.DB                       // TODO
+	bundleManagerClient bundles.BundleManagerClient // TODO
+	codeIntelAPI        codeintelapi.CodeIntelAPI   // TODO
 
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	// commit is the requested target commit
 	commit api.CommitID
 	path   string
 	// uploads are ordered by their commit distance from the target commit
-	uploads []*lsif.LSIFUpload
+	uploads []db.Dump
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
@@ -36,32 +41,31 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 			continue
 		}
 
-		opts := &struct {
-			RepoID    api.RepoID
-			Commit    api.CommitID
-			Path      string
-			Line      int32
-			Character int32
-			UploadID  int64
-		}{
-			RepoID:    r.repositoryResolver.Type().ID,
-			Commit:    r.commit,
-			Path:      r.path,
-			Line:      int32(adjustedPosition.Line),
-			Character: int32(adjustedPosition.Character),
-			UploadID:  upload.ID,
+		defs, err := r.codeIntelAPI.Definitions(
+			ctx,
+			r.path,
+			int(adjustedPosition.Line),
+			int(adjustedPosition.Character),
+			int(upload.ID),
+		)
+		if err != nil {
+			if err == codeintelapi.ErrMissingDump {
+				// TODO
+			}
+
+			return nil, err
 		}
 
-		locations, _, err := r.lsifserverClient.Definitions(ctx, opts)
+		outers, err := serializeLocations(defs)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(locations) > 0 {
+		if len(outers) > 0 {
 			return &locationConnectionResolver{
 				repo:      r.repositoryResolver.Type(),
 				commit:    r.commit,
-				locations: locations,
+				locations: outers,
 			}, nil
 		}
 	}
@@ -82,9 +86,9 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 	// We need to maintain a symmetric map for the next page
 	// of results that we can encode into the endCursor of
 	// this request.
-	newCursors := map[int64]string{}
+	newCursors := map[int]string{}
 
-	var allLocations []*lsif.LSIFLocation
+	var allLocations []*APILocation
 	for _, upload := range r.uploads {
 		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
@@ -94,28 +98,18 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			continue
 		}
 
-		opts := &struct {
-			RepoID    api.RepoID
-			Commit    api.CommitID
-			Path      string
-			Line      int32
-			Character int32
-			UploadID  int64
-			Limit     *int32
-			Cursor    *string
-		}{
-			RepoID:    r.repositoryResolver.Type().ID,
-			Commit:    r.commit,
-			Path:      r.path,
-			Line:      int32(adjustedPosition.Line),
-			Character: int32(adjustedPosition.Character),
-			UploadID:  upload.ID,
-		}
+		limit := DefaultReferencesPageSize
 		if args.First != nil {
-			opts.Limit = args.First
+			limit = int(*args.First)
 		}
+		if limit <= 0 {
+			// TODO - check on defs too
+			return nil, errors.New("illegal limit")
+		}
+
+		rawCursor := ""
 		if nextURL, ok := nextURLs[upload.ID]; ok {
-			opts.Cursor = &nextURL
+			rawCursor = nextURL
 		} else if len(nextURLs) != 0 {
 			// Result set is exhausted or newer than the first page
 			// of results. Skip anything from this upload as it will
@@ -123,14 +117,48 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			continue
 		}
 
-		locations, nextURL, err := r.lsifserverClient.References(ctx, opts)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(
+			r.path,
+			int(adjustedPosition.Line),
+			int(adjustedPosition.Character),
+			int(upload.ID),
+			rawCursor,
+			r.db,
+			r.bundleManagerClient,
+		)
+		if err != nil {
+			if err == codeintelapi.ErrMissingDump {
+				// TODO
+			}
+
+			return nil, err
+		}
+
+		locations, newCursor, hasNewCursor, err := r.codeIntelAPI.References(
+			ctx,
+			int(r.repositoryResolver.Type().ID),
+			string(r.commit),
+			limit,
+			cursor,
+		)
 		if err != nil {
 			return nil, err
 		}
-		allLocations = append(allLocations, locations...)
 
-		if nextURL != "" {
-			newCursors[upload.ID] = nextURL
+		outers, err := serializeLocations(locations)
+		if err != nil {
+			return nil, err
+		}
+
+		cx := ""
+		if hasNewCursor {
+			cx = codeintelapi.EncodeCursor(newCursor)
+		}
+
+		allLocations = append(allLocations, outers...)
+
+		if cx != "" {
+			newCursors[upload.ID] = cx
 		}
 	}
 
@@ -157,23 +185,24 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 			continue
 		}
 
-		text, lspRange, err := r.lsifserverClient.Hover(ctx, &struct {
-			RepoID    api.RepoID
-			Commit    api.CommitID
-			Path      string
-			Line      int32
-			Character int32
-			UploadID  int64
-		}{
-			RepoID:    r.repositoryResolver.Type().ID,
-			Commit:    r.commit,
-			Path:      r.path,
-			Line:      int32(adjustedPosition.Line),
-			Character: int32(adjustedPosition.Character),
-			UploadID:  upload.ID,
-		})
-		if err != nil {
+		text, rn, exists, err := r.codeIntelAPI.Hover(
+			ctx,
+			r.path,
+			adjustedPosition.Line,
+			adjustedPosition.Character,
+			int(upload.ID),
+		)
+		if err != nil || !exists {
+			if err == codeintelapi.ErrMissingDump {
+				// TODO
+			}
+
 			return nil, err
+		}
+
+		lspRange := lsp.Range{
+			Start: lsp.Position{Line: rn.Start.Line, Character: rn.Start.Character},
+			End:   lsp.Position{Line: rn.End.Line, Character: rn.End.Character},
 		}
 
 		if text != "" {
@@ -223,7 +252,7 @@ func (r *lsifQueryResolver) adjustRange(ctx context.Context, uploadCommit string
 
 // readCursor decodes a cursor into a map from upload ids to URLs that
 // serves the next page of results.
-func readCursor(after *string) (map[int64]string, error) {
+func readCursor(after *string) (map[int]string, error) {
 	if after == nil {
 		return nil, nil
 	}
@@ -233,7 +262,7 @@ func readCursor(after *string) (map[int64]string, error) {
 		return nil, err
 	}
 
-	var cursors map[int64]string
+	var cursors map[int]string
 	if err := json.Unmarshal(decoded, &cursors); err != nil {
 		return nil, err
 	}
@@ -243,7 +272,7 @@ func readCursor(after *string) (map[int64]string, error) {
 // makeCursor encodes a map from upload ids to URLs that serves the next
 // page of results into a single string that can be sent back for use in
 // cursor pagination.
-func makeCursor(cursors map[int64]string) (string, error) {
+func makeCursor(cursors map[int]string) (string, error) {
 	if len(cursors) == 0 {
 		return "", nil
 	}

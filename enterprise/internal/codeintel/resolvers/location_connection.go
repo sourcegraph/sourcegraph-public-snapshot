@@ -8,13 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type locationConnectionResolver struct {
 	repo      *types.Repo
 	commit    api.CommitID
-	locations []*lsif.LSIFLocation
+	locations []*APILocation
 	endCursor string
 }
 
@@ -63,7 +62,7 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 //
 // A non-nil error means the connection resolver was unable to load the diff between
 // the requested commit and location's commit.
-func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location *lsif.LSIFLocation) (string, lsp.Range, error) {
+func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location *APILocation) (string, lsp.Range, error) {
 	if location.RepositoryID != r.repo.ID {
 		return location.Commit, location.Range, nil
 	}
