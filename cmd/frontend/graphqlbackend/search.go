@@ -731,7 +731,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				if vcRepoRev.Repo == string(repo.Name) {
 					repoRev.Repo = repo
 					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
-					break
 				}
 			}
 		} else {

@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Repository search within a version context will link to the revision in the version context. [#10860](https://github.com/sourcegraph/sourcegraph/pull/10860)
+
 ### Fixed
 
 - Dynamic repo search filters on branches which contain special characters are correctly escaped now. [#10810](https://github.com/sourcegraph/sourcegraph/pull/10810)
