@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -11,7 +12,13 @@ func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, e
 	// 🚨 SECURITY: Only site admins can check for updates.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		// TODO: This should return err once the site flags query is fixed for users
-		return nil, nil
+		return &updateCheckResolver{
+			last: &updatecheck.Status{
+				Date:          time.Time{},
+				Err:           err,
+				UpdateVersion: "",
+			},
+		}, nil
 	}
 	return &updateCheckResolver{
 		last:    updatecheck.Last(),
