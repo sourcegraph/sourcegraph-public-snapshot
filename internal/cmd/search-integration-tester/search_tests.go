@@ -174,7 +174,7 @@ func runSearchTests() error {
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
 		if err := assertGolden(test.Name, goldenPath, got, update); err != nil {
-			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err.Error())
+			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err)
 		}
 	}
 	return nil

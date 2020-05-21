@@ -252,13 +252,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", Default)
+		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
 			if ff.Regexp.MatchString(fileMatchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", Default)
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
 			}
 		}
 	}
@@ -275,16 +275,16 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				add(value, value, lineMatchCount, limitHit, "lang", Default)
+				add(value, value, lineMatchCount, limitHit, "lang", scoreDefault)
 			}
 		}
 	}
 
 	if sr.searchResultsCommon.excluded.forks > 0 {
-		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo", Important)
+		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo", scoreImportant)
 	}
 	if sr.searchResultsCommon.excluded.archived > 0 {
-		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.archived, sr.limitHit, "repo", Important)
+		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.archived, sr.limitHit, "repo", scoreImportant)
 	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -297,7 +297,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
 			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol", Default)
+				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol", scoreDefault)
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -360,8 +360,8 @@ type searchFilterResolver struct {
 type score int
 
 const (
-	Important score = iota
-	Default
+	scoreImportant score = iota
+	scoreDefault
 )
 
 func (sf *searchFilterResolver) Value() string {
