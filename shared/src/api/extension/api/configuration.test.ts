@@ -1,22 +1,7 @@
-import { Remote } from 'comlink'
-import { CalledFromExtHost } from '../../contract'
-import { initNewExtensionAPI } from '../newExtensionApi'
+import { initNewExtensionAPI } from '../flatExtentionAPI'
 import { SettingsEdit } from '../../client/services/settings'
-
-// Promisify method calls and objects if specified, throws otherwise
-const pretendRemote = (api: Partial<CalledFromExtHost>): Remote<CalledFromExtHost> =>
-    (new Proxy(api, {
-        get: (a, prop) => {
-            if (prop in a) {
-                if (typeof (a as any)[prop] !== 'function') {
-                    return Promise.resolve((a as any)[prop])
-                }
-
-                return (...args: any[]) => Promise.resolve((a as any)[prop](...args))
-            }
-            throw new Error(`unspecified property in the stub ${prop.toString()}`)
-        },
-    }) as unknown) as Remote<CalledFromExtHost>
+import { pretendRemote } from '../../util'
+import { MainThreadAPI } from '../../contract'
 
 describe('ConfigurationService', () => {
     describe('get()', () => {
@@ -80,7 +65,7 @@ describe('ConfigurationService', () => {
             const config = configuration.get<{ a: string }>()
             expect(config.get('a')).toBe('b')
             updateConfigurationData({ subjects: [], final: { a: 'c' } })
-            expect(config.get('a')).toBe('c') // Shouldn't this be 'c' instead?
+            expect(config.get('a')).toBe('b') // Shouldn't this be 'c' instead?
         })
     })
 
@@ -90,7 +75,14 @@ describe('ConfigurationService', () => {
             const {
                 configuration,
                 exposedToMain: { updateConfigurationData },
-            } = initNewExtensionAPI(pretendRemote({ changeConfiguration: edit => requestedEdits.push(edit) }))
+            } = initNewExtensionAPI(
+                pretendRemote<MainThreadAPI>({
+                    changeConfiguration: edit =>
+                        Promise.resolve().then(() => {
+                            requestedEdits.push(edit)
+                        }),
+                })
+            )
             updateConfigurationData({ subjects: [], final: { a: 'b' } })
             const config = configuration.get<{ a: string }>()
             await config.update('a', 'aha!')

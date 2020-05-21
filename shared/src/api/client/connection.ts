@@ -26,9 +26,7 @@ import {
 import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
-import { updateSettings } from './services/settings'
-import { isSettingsValid } from '../../settings/settings'
-import { CalledFromExtHost } from '../contract'
+import { initMainThreadAPI } from './mainthreadAPI'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -59,7 +57,7 @@ export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
     services: Services,
     initData: InitData,
-    ctx: Pick<PlatformContext, 'settings' | 'updateSettings'>
+    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
 ): Promise<Unsubscribable> {
     const subscription = new Subscription()
 
@@ -141,18 +139,9 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const newExtAPI = proxy.newExtAPI
+    const [newAPI, sub] = initMainThreadAPI(proxy, platformContext)
 
-    subscription.add(
-        from(ctx.settings)
-            .pipe(switchMap(settings => (isSettingsValid(settings) ? newExtAPI.updateConfigurationData(settings) : [])))
-            .subscribe()
-    )
-
-    const mainAPI: CalledFromExtHost = {
-        [comlink.proxyMarker]: true,
-        changeConfiguration: edit => updateSettings(ctx, edit),
-    }
+    subscription.add(sub)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
@@ -164,7 +153,7 @@ export async function createExtensionHostClientConnection(
         codeEditor: clientCodeEditor,
         views: clientViews,
         content: clientContent,
-        newAPI: mainAPI,
+        ...newAPI,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

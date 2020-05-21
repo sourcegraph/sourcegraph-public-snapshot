@@ -18,7 +18,7 @@ import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
-import { initNewExtensionAPI } from './newExtensionApi'
+import { initNewExtensionAPI } from './flatExtentionAPI'
 
 /**
  * Required information when initializing an extension host.
@@ -143,7 +143,7 @@ function createExtensionAPI(
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
 
-    const { configuration, exposedToMain } = initNewExtensionAPI(proxy.newAPI)
+    const { configuration, exposedToMain } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -155,7 +155,7 @@ function createExtensionAPI(
         extensions,
         workspace,
         windows,
-        newExtAPI: exposedToMain,
+        ...exposedToMain,
     }
 
     // Expose the extension API to extensions

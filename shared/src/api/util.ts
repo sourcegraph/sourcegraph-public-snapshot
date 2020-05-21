@@ -66,3 +66,23 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
     value !== null &&
     hasProperty('subscribe')(value) &&
     typeof value.subscribe === 'function'
+
+/**
+ * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided
+ * NOTE: it does not handle ProxyMethods and callbacks yet
+ * NOTE2: for testing purposes only!!
+ */
+export const pretendRemote = <T>(obj: Partial<T>): Remote<T> =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    (new Proxy(obj, {
+        get: (a, prop) => {
+            if (prop in a) {
+                if (typeof (a as any)[prop] !== 'function') {
+                    return Promise.resolve((a as any)[prop])
+                }
+
+                return (...args: any[]) => Promise.resolve((a as any)[prop](...args))
+            }
+            throw new Error(`unspecified property in the stub ${prop.toString()}`)
+        },
+    }) as unknown) as Remote<T>

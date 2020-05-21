@@ -23,11 +23,11 @@ export function createExtensionHostClient(
     services: Services,
     extensionHostEndpoint: Observable<EndpointPair>,
     initData: InitData,
-    ctx: PlatformContext
+    platformContext: PlatformContext
 ): ExtensionHostClient {
     const client = extensionHostEndpoint.pipe(
         switchMap(endpoints =>
-            from(createExtensionHostClientConnection(endpoints, services, initData, ctx)).pipe(
+            from(createExtensionHostClientConnection(endpoints, services, initData, platformContext)).pipe(
                 switchMap(client => merge([client], new Observable<never>(() => client)))
             )
         )

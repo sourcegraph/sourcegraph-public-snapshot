@@ -6,12 +6,12 @@ import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
-import { CalledFromExtHost } from '../../contract'
+import { MainThreadAPI } from '../../contract'
 
 /**
  * The API that is exposed from the client (main thread) to the extension host (worker)
  */
-export interface ClientAPI {
+export interface ClientAPI extends MainThreadAPI {
     ping(): 'pong'
 
     context: ClientContextAPI
@@ -22,5 +22,4 @@ export interface ClientAPI {
     codeEditor: ClientCodeEditorAPI
     views: ClientViewsAPI
     content: ClientContentAPI
-    newAPI: CalledFromExtHost
 }

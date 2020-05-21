@@ -1,8 +1,8 @@
 import { SettingsCascade } from '../../settings/settings'
-import { Remote, proxyMarker } from 'comlink'
+import { Remote } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ReplaySubject } from 'rxjs'
-import { ExposedToClient, CalledFromExtHost } from '../contract'
+import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 
 // This holds the entire Ext Host state
 // as a single plain object
@@ -12,7 +12,7 @@ export interface ExtState {
 
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
-    exposedToMain: ExposedToClient
+    exposedToMain: FlatExtHostAPI
 }
 
 /**
@@ -22,13 +22,12 @@ export interface InitResult {
  *
  * @param mainAPI
  */
-export const initNewExtensionAPI = (mainAPI: Remote<CalledFromExtHost>): InitResult => {
+export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult => {
     const state: ExtState = {}
 
     const configChanges = new ReplaySubject<void>(1)
 
-    const exposedToMain: ExposedToClient = {
-        [proxyMarker]: true,
+    const exposedToMain: FlatExtHostAPI = {
         updateConfigurationData: data => {
             state.settings = Object.freeze(data)
             configChanges.next()

@@ -6,8 +6,8 @@ import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw 
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
 import { ViewerService, ViewerWithPartialModel } from './viewerService'
-import { SettingsService } from './settings'
 import { ModelService } from './modelService'
+import { PlatformContext } from '../../../platform/context'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -37,7 +37,7 @@ export class ContributionRegistry {
     constructor(
         private viewerService: Pick<ViewerService, 'activeViewerUpdates'>,
         private modelService: Pick<ModelService, 'getPartialModel'>,
-        private settingsService: Pick<SettingsService, 'data'>,
+        private settings: PlatformContext['settings'],
         private context: Subscribable<Context<any>>
     ) {}
 
@@ -128,7 +128,7 @@ export class ContributionRegistry {
                     }
                 })
             ),
-            this.settingsService.data,
+            this.settings,
             this.context,
         ]).pipe(
             map(([multiContributions, activeEditor, settings, context]) => {

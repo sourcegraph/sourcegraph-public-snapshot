@@ -21,12 +21,18 @@ export interface SettingsEdit {
     /** The new value to insert at the key path. */
     value: any
 }
-
+/**
+ *
+ * @todo move that to the platform context itself.
+ * the code below doesn't seem to nessesery (simon)
+ * @todo  also it doesn't check if subjects has any elements
+ *
+ */
 export async function updateSettings(
-    ctx: Pick<PlatformContext, 'settings' | 'updateSettings'>,
+    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>,
     edit: SettingsEdit
 ): Promise<void> {
-    const { settings: data, updateSettings: update } = ctx
+    const { settings: data, updateSettings: update } = platformContext
     const settings = await from(data).pipe(first()).toPromise()
     if (!isSettingsValid(settings)) {
         throw new Error('invalid settings (internal error)')
