@@ -339,7 +339,7 @@ func Frontend() *Container {
 					{
 						{
 							Name:              "99th_percentile_precise_code_intel_bundle_manager_query_duration",
-							Description:       "99th percentile successful precise code intel bundle manager query duration over 5m",
+							Description:       "99th percentile successful precise-code-intel-bundle-manager query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="frontend",category!="transfer"}[5m])))`,
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
