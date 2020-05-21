@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
