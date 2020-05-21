@@ -113,11 +113,10 @@ const BitbucketServerSchemaJSON = `{
               "type": "string",
               "minLength": 1
             },
-            "automaticCreation": {
-              "description": "Allow Sourcegraph to automatically configure webhooks on your Bitbucket Server instance",
-              "type": "string",
-              "enum": ["enabled", "disabled"],
-              "default": "enabled"
+            "disableSync": {
+              "description": "Disallow Sourcegraph from automatically syncing webhook config with Bitbucket Server instance",
+              "type": "boolean",
+              "default": false
             }
           }
         },

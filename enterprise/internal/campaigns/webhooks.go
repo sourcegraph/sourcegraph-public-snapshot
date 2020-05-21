@@ -822,7 +822,7 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 // syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the existing webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
-	if !con.WebhookAutoCreationEnabled() {
+	if con.WebhookSyncDisabled() {
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

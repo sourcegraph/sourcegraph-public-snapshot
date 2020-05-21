@@ -423,8 +423,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "secret",
-						AutomaticCreation: "enabled",
+						Secret: "secret",
 					},
 				},
 			},
@@ -437,8 +436,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "secret",
-						AutomaticCreation: "enabled",
+						Secret: "secret",
 					},
 				},
 			},
@@ -453,8 +451,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "secret",
-						AutomaticCreation: "enabled",
+						Secret: "secret",
 					},
 				},
 			},
@@ -469,8 +466,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "",
-						AutomaticCreation: "enabled",
+						Secret: "",
 					},
 				},
 			},
@@ -485,8 +481,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "",
-						AutomaticCreation: "enabled",
+						Secret: "",
 					},
 				},
 			},
@@ -499,8 +494,7 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "",
-						AutomaticCreation: "enabled",
+						Secret: "",
 					},
 				},
 			},
@@ -515,8 +509,8 @@ func TestBitbucketWebhookSync(t *testing.T) {
 				Plugin: &schema.BitbucketServerPlugin{
 					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret:            "secret",
-						AutomaticCreation: "disabled",
+						Secret:      "secret",
+						DisableSync: true,
 					},
 				},
 			},

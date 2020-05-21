@@ -12,12 +12,13 @@ func (c *BitbucketServerConnection) WebhookSecret() string {
 	}
 }
 
-func (c *BitbucketServerConnection) WebhookAutoCreationEnabled() bool {
+// WebhookSyncDisabled returns true if webhook syncing is disabled
+func (c *BitbucketServerConnection) WebhookSyncDisabled() bool {
 	if c.Plugin == nil {
-		return false
+		return true
 	}
 	if c.Plugin.Webhooks == nil {
-		return false
+		return true
 	}
-	return c.Plugin.Webhooks.AutomaticCreation == "enabled"
+	return c.Plugin.Webhooks.DisableSync
 }
