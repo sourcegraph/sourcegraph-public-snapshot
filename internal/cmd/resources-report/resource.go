@@ -33,7 +33,7 @@ func (r *Resource) toSlackBlock() (slackBlock, error) {
 		"elements": []slackText{
 			{
 				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*Platform*: %s", r.Platform),
+				Text: fmt.Sprintf("*%s*", r.Platform),
 			},
 			{
 				Type: slackTextMarkdown,

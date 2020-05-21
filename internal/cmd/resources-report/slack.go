@@ -31,7 +31,7 @@ func reportToSlack(ctx context.Context, webhook string, resources []Resource, si
 			"type": "section",
 			"text": &slackText{
 				Type: slackTextMarkdown,
-				Text: fmt.Sprintf(":package: I've found %d resources created since %s!", len(resources), since.String()),
+				Text: fmt.Sprintf(":package: I've found %d resources created since %s!", len(resources), since.Format(time.RFC1123)),
 			},
 		},
 		{

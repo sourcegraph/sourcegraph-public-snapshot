@@ -30,7 +30,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 	"compute": func(ctx context.Context, results chan<- Resource, project string, since time.Time) error {
 		client, err := gcp_cp.NewService(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to init client: %w", err)
 		}
 
 		// compute APIs require us to specify zones, so we must iterate over all zones
@@ -45,7 +45,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 						for _, instance := range instances.Items {
 							t, err := time.Parse(time.RFC3339, instance.CreationTimestamp)
 							if err != nil {
-								return err
+								return fmt.Errorf("could not parse create time for instance %s: %w", instance.Name, err)
 							}
 							if t.After(since) {
 								results <- Resource{
@@ -62,7 +62,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 						}
 						return nil
 					}); err != nil {
-					return err
+					return fmt.Errorf("instances: %w", err)
 				}
 
 				if err := client.Disks.List(project, zone.Name).
@@ -70,7 +70,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 						for _, disk := range disks.Items {
 							t, err := time.Parse(time.RFC3339, disk.CreationTimestamp)
 							if err != nil {
-								return err
+								return fmt.Errorf("could not parse create time for disk %s: %w", disk.Name, err)
 							}
 							if t.After(since) {
 								results <- Resource{
@@ -87,7 +87,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 						}
 						return nil
 					}); err != nil {
-					return err
+					return fmt.Errorf("disks: %w", err)
 				}
 			}
 			return nil
@@ -101,19 +101,19 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 	"containers": func(ctx context.Context, results chan<- Resource, project string, since time.Time) error {
 		client, err := gcp_ct.NewService(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to init client: %w", err)
 		}
 
 		// cluster api allows us to query all locations at once
 		parent := fmt.Sprintf("projects/%s/locations/-", project)
 		list, err := client.Projects.Locations.Clusters.List(parent).Context(ctx).Do()
 		if err != nil {
-			return err
+			return fmt.Errorf("clusters: %w", err)
 		}
 		for _, cluster := range list.Clusters {
 			t, err := time.Parse(time.RFC3339, cluster.CreateTime)
 			if err != nil {
-				return err
+				return fmt.Errorf("could not parse create time for cluster %s: %w", cluster.Name, err)
 			}
 			if t.After(since) {
 				results <- Resource{
