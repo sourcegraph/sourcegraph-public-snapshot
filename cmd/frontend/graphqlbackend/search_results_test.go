@@ -30,6 +30,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
+
+func assertEqual(t *testing.T, got, want interface{}) {
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
+	}
+}
+
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
@@ -74,21 +82,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs:     true,
-				IncludePatterns: []string{"r", "p"},
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
@@ -112,22 +117,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -188,22 +189,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -1042,6 +1039,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{repoWithIDs}, nil
 	}
+	db.Mocks.Repos.Count = mockCount
 
 	defer func() { db.Mocks = db.MockStores{} }()
 
@@ -1129,6 +1127,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
+	db.Mocks.Repos.Count = mockCount
 	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoektRepo := &zoekt.RepoListEntry{

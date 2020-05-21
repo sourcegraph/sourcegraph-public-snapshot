@@ -182,7 +182,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		InsertUploadFunc: &DBInsertUploadFunc{
-			defaultHook: func(context.Context, *db.Upload) (int, error) {
+			defaultHook: func(context.Context, db.Upload) (int, error) {
 				return 0, nil
 			},
 		},
@@ -1926,15 +1926,15 @@ func (c DBHasCommitFuncCall) Results() []interface{} {
 // DBInsertUploadFunc describes the behavior when the InsertUpload method of
 // the parent MockDB instance is invoked.
 type DBInsertUploadFunc struct {
-	defaultHook func(context.Context, *db.Upload) (int, error)
-	hooks       []func(context.Context, *db.Upload) (int, error)
+	defaultHook func(context.Context, db.Upload) (int, error)
+	hooks       []func(context.Context, db.Upload) (int, error)
 	history     []DBInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
+func (m *MockDB) InsertUpload(v0 context.Context, v1 db.Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(DBInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1942,7 +1942,7 @@ func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1950,7 +1950,7 @@ func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Uploa
 // InsertUpload method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1959,7 +1959,7 @@ func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (in
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, *db.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
@@ -1967,12 +1967,12 @@ func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, *db.Upload) (int, error) {
+	f.PushHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBInsertUploadFunc) nextHook() func(context.Context, *db.Upload) (int, error) {
+func (f *DBInsertUploadFunc) nextHook() func(context.Context, db.Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2010,7 +2010,7 @@ type DBInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *db.Upload
+	Arg1 db.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
