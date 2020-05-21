@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 )
 
 type Platform string
@@ -66,20 +65,4 @@ func hasPrefix(value string, prefixes []string) bool {
 		}
 	}
 	return false
-}
-
-func collect(wait *sync.WaitGroup, results chan Resource) []Resource {
-	go func() {
-		wait.Wait()
-		close(results)
-	}()
-	var resources []Resource
-	for {
-		r, ok := <-results
-		if ok {
-			resources = append(resources, r)
-		} else {
-			return resources
-		}
-	}
 }

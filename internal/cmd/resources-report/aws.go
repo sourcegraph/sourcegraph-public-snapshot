@@ -155,5 +155,17 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	// collect results when done
-	return collect(wait, results), nil
+	go func() {
+		wait.Wait()
+		close(results)
+	}()
+	var resources []Resource
+	for {
+		r, ok := <-results
+		if ok {
+			resources = append(resources, r)
+		} else {
+			return resources, nil
+		}
+	}
 }

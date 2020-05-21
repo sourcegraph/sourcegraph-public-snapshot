@@ -156,14 +156,14 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 		for _, project := range page.Projects {
 			for resourceID, fetchResource := range gcpResources {
 				wait.Add(1)
-				go func(resourceID string, fetchResource GCPResourceFetchFunc) {
-					if err := fetchResource(ctx, results, project.ProjectId, since); err != nil {
+				go func(resourceID string, fetchResource GCPResourceFetchFunc, project string) {
+					if err := fetchResource(ctx, results, project, since); err != nil {
 						if verbose {
 							logger.Printf("resource fetch for '%s' failed in project: %v", resourceID, err)
 						}
 					}
 					wait.Done()
-				}(resourceID, fetchResource)
+				}(resourceID, fetchResource, project.ProjectId)
 			}
 		}
 		return nil
@@ -172,5 +172,17 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	// collect results when done
-	return collect(wait, results), nil
+	go func() {
+		wait.Wait()
+		close(results)
+	}()
+	var resources []Resource
+	for {
+		r, ok := <-results
+		if ok {
+			resources = append(resources, r)
+		} else {
+			return resources, nil
+		}
+	}
 }
