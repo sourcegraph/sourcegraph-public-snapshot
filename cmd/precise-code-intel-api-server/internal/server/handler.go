@@ -19,7 +19,7 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/uploads/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUploadByID)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUploadByID)
 	mux.Path("/uploads/repository/{id:[0-9]+}").Methods("GET").HandlerFunc(s.handleGetUploadsByRepo)
-	mux.Path("/upload").Methods("POST").HandlerFunc(s.handleEnqueue)
+	mux.Path("/upload").Methods("POST").HandlerFunc(s.enqueuer.HandleEnqueue)
 	mux.Path("/exists").Methods("GET").HandlerFunc(s.handleExists)
 	mux.Path("/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/references").Methods("GET").HandlerFunc(s.handleReferences)

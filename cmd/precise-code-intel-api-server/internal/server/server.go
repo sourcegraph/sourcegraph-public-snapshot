@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -22,6 +23,7 @@ type Server struct {
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
 	codeIntelAPI        api.CodeIntelAPI
+	enqueuer            *enqueuer.Enqueuer
 	server              *http.Server
 	once                sync.Once
 }
@@ -40,6 +42,7 @@ func New(
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
 		codeIntelAPI:        codeIntelAPI,
+		enqueuer:            enqueuer.NewEnqueuer(db, bundleManagerClient),
 	}
 
 	s.server = &http.Server{

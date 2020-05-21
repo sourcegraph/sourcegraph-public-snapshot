@@ -1,4 +1,4 @@
-package server
+package enqueuer
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
@@ -28,8 +29,20 @@ type enqueuePayload struct {
 	ID string `json:"id"`
 }
 
+type Enqueuer struct {
+	db                  db.DB
+	bundleManagerClient bundles.BundleManagerClient
+}
+
+func NewEnqueuer(db db.DB, bundleManagerClient bundles.BundleManagerClient) *Enqueuer {
+	return &Enqueuer{
+		db:                  db,
+		bundleManagerClient: bundleManagerClient,
+	}
+}
+
 // POST /upload
-func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
+func (s *Enqueuer) HandleEnqueue(w http.ResponseWriter, r *http.Request) {
 	payload, err := s.handleEnqueueErr(w, r)
 	if err != nil {
 		if cerr, ok := err.(*ClientError); ok {
@@ -83,7 +96,7 @@ type UploadArgs struct {
 //   - handleEnqueueMultipartSetup
 //   - handleEnqueueMultipartUpload
 //   - handleEnqueueMultipartFinalize
-func (s *Server) handleEnqueueErr(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+func (s *Enqueuer) handleEnqueueErr(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	uploadArgs := UploadArgs{
 		Commit:       getQuery(r, "commit"),
 		Root:         sanitizeRoot(getQuery(r, "root")),
@@ -132,7 +145,7 @@ func (s *Server) handleEnqueueErr(w http.ResponseWriter, r *http.Request) (inter
 
 // handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
 // with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
-func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadArgs) (_ interface{}, err error) {
+func (s *Enqueuer) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadArgs) (_ interface{}, err error) {
 	// Newer versions of src-cli will do this same check before uploading the file. However,
 	// older versions of src-cli will not guarantee that the index name query parameter is
 	// sent. Requiring it now will break valid workflows. We only need ot maintain backwards
@@ -192,7 +205,7 @@ func (s *Server) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadAr
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
 // new upload record with state 'uploading' and returns the generated ID to be used in subsequent
 // requests for the same upload.
-func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
+func (s *Enqueuer) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
 	id, err := s.db.InsertUpload(r.Context(), db.Upload{
 		Commit:        uploadArgs.Commit,
 		Root:          uploadArgs.Root,
@@ -212,7 +225,7 @@ func (s *Server) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadA
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
-func (s *Server) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload, partIndex int) (_ interface{}, err error) {
+func (s *Enqueuer) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload, partIndex int) (_ interface{}, err error) {
 	tx, err := s.db.Transact(r.Context())
 	if err != nil {
 		return nil, err
@@ -234,7 +247,7 @@ func (s *Server) handleEnqueueMultipartUpload(r *http.Request, upload db.Upload,
 //.handleEnqueueMultipartFinalize handles the final request of a multipart upload. This transitions the
 // upload from 'uploading' to 'queued', then instructs the bundle manager to concatenate all of the part
 // files together.
-func (s *Server) handleEnqueueMultipartFinalize(r *http.Request, upload db.Upload) (_ interface{}, err error) {
+func (s *Enqueuer) handleEnqueueMultipartFinalize(r *http.Request, upload db.Upload) (_ interface{}, err error) {
 	if len(upload.UploadedParts) != upload.NumParts {
 		return nil, clientError("upload is missing %d parts", upload.NumParts-len(upload.UploadedParts))
 	}

@@ -1,4 +1,4 @@
-package server
+package enqueuer
 
 import (
 	"bytes"
@@ -46,11 +46,11 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -131,11 +131,11 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -186,11 +186,11 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -251,11 +251,11 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -322,11 +322,11 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -375,11 +375,11 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	s := &Server{
+	s := &Enqueuer{
 		db:                  mockDB,
 		bundleManagerClient: mockBundleManagerClient,
 	}
-	s.handleEnqueue(w, r)
+	s.HandleEnqueue(w, r)
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusBadRequest, w.Code)
