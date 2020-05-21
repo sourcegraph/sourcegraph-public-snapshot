@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -78,7 +80,9 @@ func init() {
 		// security vulnerability, but just in case this method is changed to return more
 		// information, let's lock it down.
 		if !args.IsSiteAdmin {
-			return nil
+
+			alert := outOfDateAlert(args.IsSiteAdmin)
+			return []*Alert{&alert}
 		}
 
 		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
@@ -129,9 +133,18 @@ func init() {
 	})
 }
 
-func OutOfDateAlert(months int, isAdmin bool) Alert {
+func outOfDateAlert(isAdmin bool) Alert {
 
 	var alert Alert
+	globalUpdateStatus := updatecheck.Last()
+	if globalUpdateStatus == nil || updatecheck.IsPending() {
+		return alert
+	}
+	if globalUpdateStatus.MonthsOutOfDate <= 0 {
+		return alert
+	}
+	months := globalUpdateStatus.MonthsOutOfDate
+
 	if isAdmin {
 		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d months out of date", months)
 		key := fmt.Sprintf("%d", months)
