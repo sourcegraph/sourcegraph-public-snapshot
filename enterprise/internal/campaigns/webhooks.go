@@ -803,9 +803,14 @@ func (h *BitbucketServerWebhook) SyncWebhooks(ctx context.Context, every time.Du
 
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
-		es, err := h.Repos.ListExternalServices(context.Background(), args)
+		es, err := h.Repos.ListExternalServices(ctx, args)
 		if err != nil {
 			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", "err", err)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(every):
+			}
 			continue
 		}
 

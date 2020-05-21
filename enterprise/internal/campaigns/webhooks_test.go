@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"net/http"
@@ -516,6 +517,97 @@ func TestBitbucketWebhookSync(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			methods := make([]string, len(rec.requests))
+			for i := range rec.requests {
+				methods[i] = rec.requests[i].Method
+			}
+			if diff := cmp.Diff(tc.expect, methods); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSyncWebhooks(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		listFunc func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+		expect   []string
+	}{
+		{
+			name: "Error store",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				return nil, errors.New("fail")
+			},
+			expect: []string{},
+		},
+		{
+			name: "Store returning a valid hook config",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				config := &schema.BitbucketServerConnection{
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							DisableSync: false,
+							Secret:      "secret",
+						},
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				return []*repos.ExternalService{
+					{
+						ID:     1,
+						Kind:   "BITBUCKETSERVER",
+						Config: string(data),
+					},
+				}, nil
+			},
+			expect: []string{"POST"},
+		},
+		{
+			name: "Store returning a disabled hook config",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				config := &schema.BitbucketServerConnection{
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							DisableSync: true,
+							Secret:      "secret",
+						},
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				return []*repos.ExternalService{
+					{
+						ID:     1,
+						Kind:   "BITBUCKETSERVER",
+						Config: string(data),
+					},
+				}, nil
+			},
+			expect: []string{},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			rec := new(requestRecorder)
+			h := NewBitbucketServerWebhook(nil, nil, time.Now, "testhook")
+			h.Repos = &MockRepoStore{
+				// We cancel the context from within the func so that we know the routine will exit
+				listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+					defer cancel()
+					return tc.listFunc(ctx, args)
+				},
+			}
+			h.httpClient = rec
+
+			h.SyncWebhooks(ctx, 10*time.Second)
 			methods := make([]string, len(rec.requests))
 			for i := range rec.requests {
 				methods[i] = rec.requests[i].Method
