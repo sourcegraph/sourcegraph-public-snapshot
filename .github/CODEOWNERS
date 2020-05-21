@@ -143,14 +143,15 @@
 /schema/ @sourcegraph/core-services
 
 # Search and code mod
-*/search/**/* @sourcegraph/core-services
-/cmd/frontend/internal/pkg/search @sourcegraph/core-services
-/cmd/query-runner/ @sourcegraph/core-services
-/cmd/replacer/ @sourcegraph/core-services @rvantonder
-/cmd/searcher/ @sourcegraph/core-services
-/cmd/symbols/ @sourcegraph/core-services
-/internal/search/ @sourcegraph/core-services
-/internal/symbols/ @sourcegraph/core-services
+*/search/**/* @sourcegraph/search
+/cmd/frontend/internal/pkg/search @sourcegraph/search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/search
+/cmd/query-runner/ @sourcegraph/search
+/cmd/replacer/ @sourcegraph/search @rvantonder
+/cmd/searcher/ @sourcegraph/search
+/cmd/symbols/ @sourcegraph/search
+/internal/search/ @sourcegraph/search
+/internal/symbols/ @sourcegraph/search
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel

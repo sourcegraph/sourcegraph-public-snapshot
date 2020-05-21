@@ -526,9 +526,14 @@ func TestVersionContext(t *testing.T) {
 					OnlyRepoIDs: true,
 					LimitOffset: &db.LimitOffset{Limit: 1073741824},
 				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
+
+				// Validate that the following options are invariant
+				// when calling the DB through Repos.List no matter how
+				// many times it is called for a single Search(...) operation.
+				assertEqual(t, opts.Names, expectedOpts.Names)
+				assertEqual(t, opts.LimitOffset, expectedOpts.LimitOffset)
+				assertEqual(t, opts.OnlyRepoIDs, expectedOpts.OnlyRepoIDs)
+
 				return []*types.Repo{
 					{Name: "github.com/sourcegraph/foo"},
 					{Name: "github.com/sourcegraph/foobar"},
@@ -553,14 +558,17 @@ func TestVersionContext(t *testing.T) {
 						"github.com/sourcegraph/bar",
 					},
 					IncludePatterns: []string{"github\\.com/sourcegraph/foo.*"},
-					NoForks:         true,
-					NoArchived:      true,
 					OnlyRepoIDs:     true,
 					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
 				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
+				// Validate that the following options are invariant
+				// when calling the DB through Repos.List no matter how
+				// many times it is called for a single Search(...) operation.
+				assertEqual(t, opts.Names, expectedOpts.Names)
+				assertEqual(t, opts.IncludePatterns, expectedOpts.IncludePatterns)
+				assertEqual(t, opts.LimitOffset, expectedOpts.LimitOffset)
+				assertEqual(t, opts.OnlyRepoIDs, expectedOpts.OnlyRepoIDs)
+
 				return []*types.Repo{
 					{Name: "github.com/sourcegraph/foo"},
 					{Name: "github.com/sourcegraph/foobar"},
@@ -583,14 +591,18 @@ func TestVersionContext(t *testing.T) {
 						"github.com/sourcegraph/bar",
 					},
 					IncludePatterns: []string{"github\\.com/sourcegraph/notincontext"},
-					NoForks:         true,
-					NoArchived:      true,
 					OnlyRepoIDs:     true,
 					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
 				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
+
+				// Validate that the following options are invariant
+				// when calling the DB through Repos.List no matter how
+				// many times it is called for a single Search(...) operation.
+				assertEqual(t, opts.Names, expectedOpts.Names)
+				assertEqual(t, opts.IncludePatterns, expectedOpts.IncludePatterns)
+				assertEqual(t, opts.LimitOffset, expectedOpts.LimitOffset)
+				assertEqual(t, opts.OnlyRepoIDs, expectedOpts.OnlyRepoIDs)
+
 				return []*types.Repo{}, nil
 			},
 			wantResults: []*search.RepositoryRevisions{},
@@ -602,14 +614,18 @@ func TestVersionContext(t *testing.T) {
 			reposGetList: func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
 				expectedOpts := db.ReposListOptions{
 					IncludePatterns: []string{"github\\.com/sourcegraph/notincontext"},
-					NoForks:         true,
-					NoArchived:      true,
 					OnlyRepoIDs:     true,
 					LimitOffset:     &db.LimitOffset{Limit: 1073741824},
 				}
-				if diff := cmp.Diff(opts, expectedOpts); diff != "" {
-					t.Fatalf(diff)
-				}
+
+				// Validate that the following options are invariant
+				// when calling the DB through Repos.List no matter how
+				// many times it is called for a single Search(...) operation.
+				assertEqual(t, opts.Names, expectedOpts.Names)
+				assertEqual(t, opts.IncludePatterns, expectedOpts.IncludePatterns)
+				assertEqual(t, opts.LimitOffset, expectedOpts.LimitOffset)
+				assertEqual(t, opts.OnlyRepoIDs, expectedOpts.OnlyRepoIDs)
+
 				return []*types.Repo{
 					{Name: "github.com/sourcegraph/notincontext"},
 				}, nil
@@ -653,13 +669,113 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			db.Mocks.Repos.List = tc.reposGetList
-			gotResults, _, _, err := resolver.resolveRepositories(context.Background(), nil)
+			gotResults, _, _, _, err := resolver.resolveRepositories(context.Background(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if diff := cmp.Diff(gotResults, tc.wantResults); diff != "" {
 				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
+func Test_computeExcludedRepositories(t *testing.T) {
+	cases := []struct {
+		Name              string
+		Query             string
+		Repos             []types.Repo
+		WantExcludedRepos *excludedRepos
+	}{
+		{
+			Name:  "filter out forks and archived repos",
+			Query: "repo:repo",
+			Repos: []types.Repo{
+				{
+					Name:       "repo-ordinary",
+					RepoFields: &types.RepoFields{},
+				},
+				{
+					Name:       "repo-forked",
+					RepoFields: &types.RepoFields{Fork: true},
+				},
+				{
+					Name:       "repo-forked-2",
+					RepoFields: &types.RepoFields{Fork: true},
+				},
+				{
+					Name:       "repo-archived",
+					RepoFields: &types.RepoFields{Archived: true},
+				},
+			},
+			WantExcludedRepos: &excludedRepos{forks: 2, archived: 1},
+		},
+		{
+			Name:  "exact repo match does not exclude fork",
+			Query: "repo:^repo-forked$",
+			Repos: []types.Repo{
+				{
+					Name:       "repo-forked",
+					RepoFields: &types.RepoFields{Fork: true},
+				},
+			},
+			WantExcludedRepos: &excludedRepos{forks: 0, archived: 0},
+		},
+		{
+			Name:  "when fork is set don't populate exclude",
+			Query: "repo:repo fork:no",
+			Repos: []types.Repo{
+				{
+					Name:       "repo",
+					RepoFields: &types.RepoFields{},
+				},
+				{
+					Name:       "repo-forked",
+					RepoFields: &types.RepoFields{Fork: true},
+				},
+			},
+			WantExcludedRepos: &excludedRepos{forks: 0, archived: 0},
+		},
+	}
+
+	for _, c := range cases {
+		// Setup: parse the query, extract its repo filters, and use
+		// those to populate the resolve repo options to pass to the
+		// function under test.
+		q, err := query.ParseAndCheck(c.Query)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := searchResolver{query: q}
+		includePatterns, _ := r.query.RegexpPatterns(query.FieldRepo)
+		options := db.ReposListOptions{IncludePatterns: includePatterns}
+
+		// Setup: the mock DB lookup returns forked repo count if OnlyForks is set,
+		// and archived repo count if OnlyArchived is set.
+		db.Mocks.Repos.Count = func(_ context.Context, options db.ReposListOptions) (int, error) {
+			var count int
+			if options.OnlyForks {
+				for _, repo := range c.Repos {
+					if repo.Fork {
+						count += 1
+					}
+				}
+			}
+			if options.OnlyArchived {
+				for _, repo := range c.Repos {
+					if repo.Archived {
+						count += 1
+					}
+				}
+			}
+			return count, nil
+		}
+
+		t.Run("exclude repo", func(t *testing.T) {
+			got := computeExcludedRepositories(context.Background(), q, options)
+			if !reflect.DeepEqual(got, c.WantExcludedRepos) {
+				t.Fatalf("results = %+v, want %+v", got, c.WantExcludedRepos)
 			}
 		})
 	}

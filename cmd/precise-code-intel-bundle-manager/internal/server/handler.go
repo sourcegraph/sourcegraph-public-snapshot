@@ -37,7 +37,6 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/dbs/{id:[0-9]+}/monikersByPosition").Methods("GET").HandlerFunc(s.handleMonikersByPosition)
 	mux.Path("/dbs/{id:[0-9]+}/monikerResults").Methods("GET").HandlerFunc(s.handleMonikerResults)
 	mux.Path("/dbs/{id:[0-9]+}/packageInformation").Methods("GET").HandlerFunc(s.handlePackageInformation)
-	mux.Path("/exists").Methods("GET").HandlerFunc(s.handleBulkExists)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -206,23 +205,6 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// GET /exists?ids=1,2,3
-func (s *Server) handleBulkExists(w http.ResponseWriter, r *http.Request) {
-	existsMap := map[int]bool{}
-	for _, id := range getQueryInts(r, "ids") {
-		exists, err := fileExists(paths.DBFilename(s.bundleDir, int64(id)))
-		if err != nil {
-			log15.Error("Failed to check filepath", "err", err)
-			http.Error(w, fmt.Sprintf("failed to check filepath: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		existsMap[id] = exists
-	}
-
-	writeJSON(w, existsMap)
-}
-
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
@@ -293,7 +275,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		cached = false
 
 		// Ensure database exists prior to opening
-		if exists, err := fileExists(filename); err != nil {
+		if exists, err := paths.PathExists(filename); err != nil {
 			return nil, err
 		} else if !exists {
 			return nil, ErrUnknownDatabase
@@ -308,7 +290,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		// the DB file was deleted between the exists check and opening the database
 		// and SQLite has created a new, empty database that is not yet written to disk.
 		// Ensure database exists prior to opening
-		if exists, err := fileExists(filename); err != nil {
+		if exists, err := paths.PathExists(filename); err != nil {
 			return nil, err
 		} else if !exists {
 			sqliteReader.Close()

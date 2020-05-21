@@ -1,8 +1,8 @@
 # Configuration
 
-## Enabling Campaigns
+## Enabling campaigns
 
-In order to use Campaigns, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
+In order to use campaigns, a site-admin of your Sourcegraph instance must enable it in the site configuration settings e.g. `sourcegraph.example.com/site-admin/configuration`
 
 ```json
 {
