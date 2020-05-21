@@ -2,6 +2,7 @@ package version
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -48,7 +49,7 @@ func HowLongOutOfDate(currentVersion string) (int, error) {
 	}
 	buildUnixTimestamp, err := strconv.ParseInt(sv.Metadata(), 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("unable to parse semver metadata, is it a unix timestamp? %w", err)
 	}
 	buildTime := time.Unix(buildUnixTimestamp, 0)
 
