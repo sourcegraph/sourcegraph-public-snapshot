@@ -44,8 +44,8 @@ var (
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and recloned due to age",
 	})
-	reposRemovedDiskSpace = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_repos_removed_disk_space",
+	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repos_removed_disk_pressure",
 		Help: "number of repos removed due to not enough disk space",
 	})
 )
@@ -325,7 +325,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
-		reposRemovedDiskSpace.Inc()
+		reposRemovedDiskPressure.Inc()
 
 		// Report the new disk usage situation after removing this repo.
 		actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(s.ReposDir)
