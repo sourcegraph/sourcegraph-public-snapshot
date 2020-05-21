@@ -758,3 +758,151 @@ func Test_ScanDelimited(t *testing.T) {
 		})
 	}
 }
+
+// backcompat
+func Test_ParseLiteralSearch(t *testing.T) {
+	cases := []struct {
+		Input string
+		Want  string
+	}{
+		{
+			Input: "",
+			Want:  "",
+		},
+		{
+			Input: " ",
+			Want:  "",
+		},
+		{
+			Input: "  ",
+			Want:  "",
+		},
+		{
+			Input: "a",
+			Want:  `"a"`,
+		},
+		{
+			Input: " a",
+			Want:  `"a"`,
+		},
+		{
+			Input: `a `,
+			Want:  `"a"`,
+		},
+		{
+			Input: ` a b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `a  b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `:`,
+			Want:  `":"`,
+		},
+		{
+			Input: `:=`,
+			Want:  `":="`,
+		},
+		{
+			Input: `:= range`,
+			Want:  `(concat ":=" "range")`,
+		},
+		{
+			Input: "`",
+			Want:  "\"`\"",
+		},
+		/* TODO support dangling quotes
+		{
+			Input: `'`,
+			Want:  "'",
+		},
+		*/
+		{
+			Input: "f:a",
+			Want:  `"f:a"`,
+		},
+		// TODO: this should be quoted, check quoted
+		{
+			Input: `"f:a"`,
+			Want:  `"f:a"`,
+		},
+		{
+			Input: `"r:b r:c"`,
+			Want:  `"r:b r:c"`,
+		},
+		{
+			Input: `"r:b -r:c"`,
+			Want:  `"r:b -r:c"`,
+		},
+		{
+			Input: `".*"`,
+			Want:  `".*"`,
+		},
+		// TODO check quoted
+		{
+			Input: `a:b "patterntype:regexp"`,
+			Want:  `(and "a:b" "patterntype:regexp")`,
+		},
+		// TODO literal whitespace or punt
+		{
+			Input: `lang:go func  main`,
+			Want:  `(and "lang:go" (concat "func" "main"))`,
+		},
+		// TODO quote escape sequences if they are not in quotes
+		{
+			Input: `\n`,
+			Want:  `"\n"`,
+		},
+		// TODO quote escape sequences if they are not in quotes
+		{
+			Input: `\t`,
+			Want:  `"\t"`,
+		},
+		// TODO quote escape sequences if they are not in quotes
+		{
+			Input: `\\`,
+			Want:  `"\\"`,
+		},
+		{
+			Input: `foo\d "bar*"`,
+			Want:  `(concat "foo\\d" "bar*")`,
+		},
+		{
+			Input: `\d`,
+			Want:  `"\\d"`,
+		},
+		// TODO print the JSON, hard to see what's going on here.
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago"`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago")`,
+		},
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago" test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago' test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		// TODO: decide whether to throw error or what.
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:'10" (concat "days" "ago\"" "test" "test2"))`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run("literal search parse", func(t *testing.T) {
+			result, _ := ParseAndOr(tt.Input)
+			var resultStr []string
+			for _, node := range result {
+				resultStr = append(resultStr, node.String())
+			}
+			got := strings.Join(resultStr, " ")
+			if diff := cmp.Diff(tt.Want, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}

@@ -254,7 +254,15 @@ loop:
 			if len(buf[advance:]) > 0 {
 				r = next()
 				switch r {
-				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', delimiter:
+				case 'a', 'b', 'f', 'v':
+					result = append(result, '\\', r)
+				case 'n':
+					result = append(result, '\n')
+				case 'r':
+					result = append(result, '\r')
+				case 't':
+					result = append(result, '\t')
+				case '\\', delimiter:
 					result = append(result, r)
 				default:
 					return "", count, errors.New("unrecognized escape sequence")
