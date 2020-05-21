@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -23,16 +24,9 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		}
 	}
 
-	j := &Janitor{
-		bundleDir: bundleDir,
-		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
-	}
-
-	var idArgs [][]int
-	statesFn := func(ctx context.Context, args []int) (map[int]string, error) {
-		sort.Ints(args)
-		idArgs = append(idArgs, args)
-
+	mockDB := dbmocks.NewMockDB()
+	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+		sort.Ints(ids)
 		return map[int]string{
 			1:  "completed",
 			2:  "queued",
@@ -42,9 +36,15 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 			9:  "errored",
 			10: "errored",
 		}, nil
+	})
+
+	j := &Janitor{
+		db:        mockDB,
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		t.Fatalf("unexpected error removing orphaned bundle files: %s", err)
 	}
 
@@ -56,6 +56,11 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 	expectedNames := []string{"1.lsif.db", "2.lsif.db", "3.lsif.db", "4.lsif.db", "5.lsif.db"}
 	if diff := cmp.Diff(expectedNames, names); diff != "" {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
+	}
+
+	var idArgs [][]int
+	for _, call := range mockDB.GetStatesFunc.History() {
+		idArgs = append(idArgs, call.Arg1)
 	}
 
 	expectedArgs := [][]int{ids}
@@ -78,25 +83,24 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 		}
 	}
 
+	mockDB := dbmocks.NewMockDB()
+	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+		states := map[int]string{}
+		for _, id := range ids {
+			if id%2 == 0 {
+				states[id] = "completed"
+			}
+		}
+		return states, nil
+	})
+
 	j := &Janitor{
+		db:        mockDB,
 		bundleDir: bundleDir,
 		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
 	}
 
-	var idArgs [][]int
-	statesFn := func(ctx context.Context, args []int) (map[int]string, error) {
-		idArgs = append(idArgs, args)
-
-		states := map[int]string{}
-		for _, arg := range args {
-			if arg%2 == 0 {
-				states[arg] = "completed"
-			}
-		}
-		return states, nil
-	}
-
-	if err := j.removeOrphanedBundleFiles(statesFn); err != nil {
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		t.Fatalf("unexpected error removing dead dumps: %s", err)
 	}
 
@@ -110,12 +114,12 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	var allArgs []int
-	for _, args := range idArgs {
-		if len(args) > OrphanedBundleBatchSize {
-			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(args))
+	for _, call := range mockDB.GetStatesFunc.History() {
+		if len(call.Arg1) > OrphanedBundleBatchSize {
+			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(call.Arg1))
 		}
 
-		allArgs = append(allArgs, args...)
+		allArgs = append(allArgs, call.Arg1...)
 	}
 	sort.Ints(allArgs)
 

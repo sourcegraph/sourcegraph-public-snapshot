@@ -24,7 +24,7 @@ There are four fields for configuring which repositories are mirrored:
 
 The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server instance to send webhooks to Sourcegraph.
 
-Using webhooks is highly recommended when using [Campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
 
 To set up webhooks:
 
@@ -38,7 +38,7 @@ To set up webhooks:
 
 If the webhook was not automatically added, see the [Manual Configuration](bitbucket_server.md#manual-configuration) section below.
 
-Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [Campaigns](../../user/campaigns/index.md), fast and more efficiently.
+Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [campaigns](../../user/campaigns/index.md), fast and more efficiently.
 
 ### Manual configuration
 
@@ -92,7 +92,7 @@ Internal rate limiting can be configured to limit the rate at which requests are
 
 If enabled, the default rate is set at 28,800 per hour (8 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
+**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../user/campaigns/index.md) changesets.
 
 ## Configuration
 
