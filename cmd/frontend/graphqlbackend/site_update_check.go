@@ -11,7 +11,7 @@ import (
 func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, error) {
 	// 🚨 SECURITY: Only site admins can check for updates.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		// TODO: This should return err once the site flags query is fixed for users
+		// TODO(dax): This should return err once the site flags query is fixed for users
 		return &updateCheckResolver{
 			last: &updatecheck.Status{
 				Date:          time.Time{},
