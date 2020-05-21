@@ -397,18 +397,27 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
-    # Set permissions of a repository with a full set of users by their usernames or emails.
+    # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
+    # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
-        # The repository that the mutation is applied to.
+        # The repository whose permissions to set.
         repository: ID!
-        # A list of usernames or email addresses according to site configuration.
+        # A list of user identifiers, which define the set of users who may view the repository. All
+        # users not included in the list will not be permitted to view the repository on
+        # Sourcegraph. Depending on the bindID option in the permissions.userMapping site
+        # configuration property, the elements of the list are either all usernames (bindID of
+        # "username") or all email addresses (bindID of "email").
         bindIDs: [String!]!
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
-    # Schedule a permissions sync for given repository.
+    # Schedule a permissions sync for given repository. This queries the repository's code host for
+    # all users' permissions associated with the repository, so that the current permissions apply
+    # to all users' operations on that repository on Sourcegraph.
     scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
-    # Schedule a permissions sync for given user.
+    # Schedule a permissions sync for given user. This queries all code hosts for the user's current
+    # repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
+    # the user's operations on Sourcegraph.
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 }
 
@@ -1329,7 +1338,7 @@ type SearchResults {
     repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
-    # reached.
+    # reached, or because they were excluded due to being forks or archives.
     #
     # In paginated search requests, this represents the set of repositories searched for the
     # individual paginated request / input cursor and not the global set of repositories that
@@ -2485,6 +2494,8 @@ interface TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2551,6 +2562,8 @@ type GitTree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -3324,6 +3337,19 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): CodeIntelUsageStatistics!
+    # Monitoring overview for this site.
+    #
+    # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
+    # is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
+    # order to ensure that if the frontend goes down you still recieve alerts:
+    #
+    # Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
+    # Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    #
+    monitoringStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+    ): MonitoringStatistics!
 }
 
 # The configuration for a site.
@@ -3622,6 +3648,26 @@ type DeploymentConfiguration {
     email: String
     # The site ID.
     siteID: String
+}
+
+# Monitoring overview.
+type MonitoringStatistics {
+    # Alerts fired in this time span.
+    alerts: [MonitoringAlert!]!
+}
+
+# A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+type MonitoringAlert {
+    # End time of this event, which describes the past 12h of recorded data.
+    timestamp: DateTime!
+    # Name of alert that the service fired.
+    name: String!
+    # Name of the service that fired the alert.
+    serviceName: String!
+    # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
+    # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
+    # time on average, etc.
+    average: Float!
 }
 
 # A list of survey responses

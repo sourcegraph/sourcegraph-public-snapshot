@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -25,8 +24,6 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/references").Methods("GET").HandlerFunc(s.handleReferences)
 	mux.Path("/hover").Methods("GET").HandlerFunc(s.handleHover)
-	mux.Path("/uploads").Methods("POST").HandlerFunc(s.handleUploads)
-	mux.Path("/prune").Methods("POST").HandlerFunc(s.handlePrune)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -232,47 +229,5 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, nil)
 	} else {
 		writeJSON(w, map[string]interface{}{"text": text, "range": rn})
-	}
-}
-
-// POST /uploads
-func (s *Server) handleUploads(w http.ResponseWriter, r *http.Request) {
-	payload := struct {
-		IDs []int `json:"ids"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		log15.Error("Failed to read request body", "error", err)
-		http.Error(w, fmt.Sprintf("failed to read request body: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	states, err := s.db.GetStates(r.Context(), payload.IDs)
-	if err != nil {
-		log15.Error("Failed to retrieve upload states", "error", err)
-		http.Error(w, fmt.Sprintf("failed to retrieve upload states: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	pairs := []interface{}{}
-	for k, v := range states {
-		pairs = append(pairs, []interface{}{k, v})
-	}
-
-	writeJSON(w, map[string]interface{}{"type": "map", "value": pairs})
-}
-
-// POST /prune
-func (s *Server) handlePrune(w http.ResponseWriter, r *http.Request) {
-	id, prunable, err := s.db.DeleteOldestDump(r.Context())
-	if err != nil {
-		log15.Error("Failed to prune upload", "error", err)
-		http.Error(w, fmt.Sprintf("failed to prune upload: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	if prunable {
-		writeJSON(w, map[string]interface{}{"id": id})
-	} else {
-		writeJSON(w, map[string]interface{}{"id": nil})
 	}
 }

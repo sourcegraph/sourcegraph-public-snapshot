@@ -304,7 +304,7 @@ func (db *ObservedDB) QueueSize(ctx context.Context) (_ int, err error) {
 }
 
 // InsertUpload calls into the inner DB and registers the observed result.
-func (db *ObservedDB) InsertUpload(ctx context.Context, upload *Upload) (_ int, err error) {
+func (db *ObservedDB) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
 	ctx, endObservation := db.insertUploadOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.InsertUpload(ctx, upload)

@@ -79,6 +79,10 @@ const gqlSearch = `query Search($query: String!) {
 					query
 				}
 			}
+			dynamicFilters {
+				value
+				count
+			}
 		}
 	}
 }

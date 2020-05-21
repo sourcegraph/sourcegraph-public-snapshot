@@ -5,36 +5,27 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
-
-// BundleBatchSize is the maximum number of bundle ids to request at
-// once from the precise-code-intel-bundle-manager.
-const BundleBatchSize = 100
 
 // removeProcessedUploadsWithoutBundleFile removes all processed upload records
 // that do not have a corresponding bundle file on disk.
 func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	ctx := context.Background()
 
+	// TODO(efritz) - request in batches
 	ids, err := j.db.GetDumpIDs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "db.GetDumpIDs")
 	}
 
-	allExists := map[int]bool{}
-	for _, batch := range batchIntSlice(ids, BundleBatchSize) {
-		exists, err := j.bundleManagerClient.Exists(ctx, batch)
+	for _, id := range ids {
+		exists, err := paths.PathExists(paths.DBFilename(j.bundleDir, int64(id)))
 		if err != nil {
-			return errors.Wrap(err, "bundleManagerClient.Exists")
+			return errors.Wrap(err, "paths.PathExists")
 		}
 
-		for k, v := range exists {
-			allExists[k] = v
-		}
-	}
-
-	for id, exists := range allExists {
 		if exists {
 			continue
 		}
@@ -58,19 +49,4 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	}
 
 	return nil
-}
-
-// batchIntSlice returns slices of s (in order) at most batchSize in length.
-func batchIntSlice(s []int, batchSize int) [][]int {
-	batches := [][]int{}
-	for len(s) > batchSize {
-		batches = append(batches, s[:batchSize])
-		s = s[batchSize:]
-	}
-
-	if len(s) > 0 {
-		batches = append(batches, s)
-	}
-
-	return batches
 }
