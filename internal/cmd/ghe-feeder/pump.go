@@ -52,7 +52,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		if len(line) == 0 {
 			continue
 		}
-		skip, err := prdc.fdr.declare(line)
+		skip, err := prdc.fdr.declareRepo(line)
 		if err != nil {
 			return err
 		}

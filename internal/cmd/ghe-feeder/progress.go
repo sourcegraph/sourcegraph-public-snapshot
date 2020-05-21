@@ -20,7 +20,16 @@ func newFeederDB(path string) (*feederDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, failed BOOLEAN, UNIQUE(ownerRepo, failed))")
+	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, org STRING, failed BOOLEAN, UNIQUE(ownerRepo, failed))")
+	if err != nil {
+		return nil, err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS orgs (name STRING PRIMARY KEY)")
 	if err != nil {
 		return nil, err
 	}
@@ -36,16 +45,16 @@ func newFeederDB(path string) (*feederDB, error) {
 	}, nil
 }
 
-func (fdr *feederDB) declare(ownerRepo string) (bool, error) {
+func (fdr *feederDB) declareRepo(ownerRepo string) (bool, error) {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("INSERT OR IGNORE INTO repos(ownerRepo, failed) VALUES(?, ?)")
+	stmt, err := fdr.db.Prepare("INSERT OR IGNORE INTO repos(ownerRepo, failed) VALUES(?, FALSE)")
 	if err != nil {
 		return false, err
 	}
 
-	res, err := stmt.Exec(ownerRepo, false)
+	res, err := stmt.Exec(ownerRepo)
 	if err != nil {
 		return false, err
 	}
@@ -68,6 +77,40 @@ func (fdr *feederDB) failed(ownerRepo string) error {
 	}
 
 	_, err = stmt.Exec(ownerRepo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fdr *feederDB) succeeded(ownerRepo string, org string) error {
+	fdr.Lock()
+	defer fdr.Unlock()
+
+	stmt, err := fdr.db.Prepare("UPDATE repos SET failed = FALSE, org = ? WHERE ownerRepo = ?")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(org, ownerRepo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fdr *feederDB) declareOrg(org string) error {
+	fdr.Lock()
+	defer fdr.Unlock()
+
+	stmt, err := fdr.db.Prepare("INSERT OR IGNORE INTO orgs(name) VALUES(?)")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(org)
 	if err != nil {
 		return err
 	}

@@ -75,6 +75,11 @@ func (wkr *worker) run(ctx context.Context) {
 		wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
 		// add it to default org then
 		wkr.currentOrg = ""
+	} else {
+		err = wkr.fdr.declareOrg(wkr.currentOrg)
+		if err != nil {
+			wkr.logger.Error("failed to declare org", "org", wkr.currentOrg, "error", err)
+		}
 	}
 
 	for line := range wkr.work {
@@ -88,6 +93,12 @@ func (wkr *worker) run(ctx context.Context) {
 		} else {
 			wkr.numSucceeded++
 			wkr.currentNumRepos++
+
+			err = wkr.fdr.succeeded(line, wkr.currentOrg)
+			if err != nil {
+				wkr.logger.Error("failed to mark succeeded repo", "ownerRepo", line, "error", err)
+			}
+
 			if wkr.currentNumRepos >= wkr.currentMaxRepos {
 				wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 				wkr.currentNumRepos = 0
@@ -97,6 +108,11 @@ func (wkr *worker) run(ctx context.Context) {
 					wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
 					// add it to default org then
 					wkr.currentOrg = ""
+				} else {
+					err = wkr.fdr.declareOrg(wkr.currentOrg)
+					if err != nil {
+						wkr.logger.Error("failed to declare org", "org", wkr.currentOrg, "error", err)
+					}
 				}
 			}
 		}
