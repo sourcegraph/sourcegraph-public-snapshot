@@ -128,6 +128,7 @@ func displayNameFromEndpoint(ep Endpoint) string {
 // reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from
 // request before it gets sent to the destination endpoint.
 func reverseProxyFromHost(host string, pathPrefix string) http.Handler {
+	// 🚨 SECURITY: Only admins can create reverse proxies from host
 	return adminOnly(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"

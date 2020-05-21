@@ -142,7 +142,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return JSONCString(""), err
+		return "", err
 	}
 	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
 	return JSONCString(siteConfig), nil
@@ -197,7 +197,7 @@ func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return JSONCString(""), err
+		return "", err
 	}
 	criticalConf := globals.ConfigurationServerFrontendOnly.Raw().Critical
 	return JSONCString(criticalConf), nil

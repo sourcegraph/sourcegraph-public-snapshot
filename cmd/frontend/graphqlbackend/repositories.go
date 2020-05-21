@@ -86,7 +86,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		opt2 := r.opt
 
 		if envvar.SourcegraphDotComMode() {
-			// Don't allow non-admins to perform huge queries on Sourcegraph.com.
+			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
 			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &db.LimitOffset{Limit: 1000}
@@ -213,10 +213,10 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
-	if isAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx); isAdminErr != nil {
+	// 🚨 SECURITY: Only site admins can perform precise counts, because it is a slow operation.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if args.Precise {
-			// Only site admins can perform precise counts, because it is a slow operation.
-			return nil, isAdminErr
+			return nil, err
 		}
 		return nil, nil
 	}
