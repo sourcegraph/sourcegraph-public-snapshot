@@ -44,7 +44,7 @@ describe('configuration', () => {
     test('changes of settings from platform propagated to the ext host', () => {
         const values: SettingsCascade<{ a: string }>[] = [
             {
-                subjects: [], // this is valid actually even though is shoudln't
+                subjects: [], // this is valid actually even though it shouldn't
                 final: { a: 'one' },
             },
             {

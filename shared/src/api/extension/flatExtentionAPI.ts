@@ -4,8 +4,10 @@ import * as sourcegraph from 'sourcegraph'
 import { ReplaySubject } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 
-// This holds the entire Ext Host state
-// as a single plain object
+/**
+ * Holds the entire state exposed to the extension host
+ * as a single plain object
+ */
 export interface ExtState {
     settings?: Readonly<SettingsCascade<object>>
 }

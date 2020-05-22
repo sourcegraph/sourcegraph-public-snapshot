@@ -7,8 +7,10 @@ import { SettingsEdit } from './client/services/settings'
  * Note this API object lives in the extension host thread
  */
 export interface FlatExtHostAPI {
-    // ExtConfiguration
-    updateConfigurationData: (data: Readonly<SettingsCascade<object>>) => void
+    /**
+     * Updates the settings exposed to extensions.
+     */
+    syncSettingsData: (data: Readonly<SettingsCascade<object>>) => Promise<void>
 }
 
 /**
@@ -17,6 +19,8 @@ export interface FlatExtHostAPI {
  * Note this API object lives in the main thread
  */
 export interface MainThreadAPI {
-    // ExtConfiguration
-    changeConfiguration: (edit: SettingsEdit) => Promise<void>
+    /**
+     * Applies a settings update from extensions.
+     */
+    applySettingsEdit: (edit: SettingsEdit) => Promise<void>
 }
