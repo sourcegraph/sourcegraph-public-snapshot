@@ -47,11 +47,11 @@ type feederError struct {
 	err     error
 }
 
-func (e feederError) Error() string {
+func (e *feederError) Error() string {
 	return fmt.Sprintf("%v: %v", e.errType, e.err)
 }
 
-func (e feederError) Unwrap() error {
+func (e *feederError) Unwrap() error {
 	return e.err
 }
 
@@ -156,19 +156,19 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to clone repo", "ownerRepo", work, "error", err)
-		return feederError{"clone", err}
+		return &feederError{"clone", err}
 	}
 
 	gheRepo, err := wkr.addGHERepo(ctx, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to create GHE repo", "ownerRepo", work, "error", err)
-		return feederError{"api", err}
+		return &feederError{"api", err}
 	}
 
 	err = wkr.addRemote(ctx, gheRepo, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "ownerRepo", work, "error", err)
-		return feederError{"api", err}
+		return &feederError{"api", err}
 	}
 
 	attempt := 1
@@ -180,7 +180,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
 				continue
 			}
-			return feederError{"push", err}
+			return &feederError{"push", err}
 		} else {
 			break
 		}
