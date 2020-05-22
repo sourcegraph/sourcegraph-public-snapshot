@@ -72,7 +72,21 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &changesetResolver{store: r.store, Changeset: changeset}, nil
+	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	repo, err := db.Repos.Get(ctx, changeset.RepoID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &changesetResolver{
+		store:         r.store,
+		Changeset:     changeset,
+		preloadedRepo: repo,
+	}, nil
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
