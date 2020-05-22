@@ -3,6 +3,7 @@ package version
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -66,22 +67,6 @@ func HowLongOutOfDate(currentVersion string) (int, error) {
 // monthsFromDays returns a maximum of 6
 func monthsFromDays(days float64) int {
 	const daysInAMonth = 30
-
-	switch {
-
-	case days < daysInAMonth*1:
-		return 0
-	case days < daysInAMonth*2:
-		return 1
-	case days < daysInAMonth*3:
-		return 2
-	case days < daysInAMonth*4:
-		return 3
-	case days < daysInAMonth*5:
-		return 4
-	case days < daysInAMonth*6:
-		return 5
-	default:
-		return 6
-	}
+	months := math.Floor(days / daysInAMonth)
+	return int(months)
 }

@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -72,11 +73,11 @@ func Test_monthsFromDays(t *testing.T) {
 			4,
 		},
 
-		{ // func returns a max of 6
+		{
 			"6+ months",
 			"12-01-2019",
-			"07-01-2021",
-			6,
+			"07-01-2020",
+			7,
 		},
 	}
 	for _, tt := range tests {
@@ -93,6 +94,8 @@ func Test_monthsFromDays(t *testing.T) {
 			}
 			timeSince := b.Sub(a)
 			days := timeSince.Hours() / 24
+
+			fmt.Println(days)
 
 			if got := monthsFromDays(days); got != tt.wantMonths {
 				t.Errorf("monthsFromDays() = %v, want %v", got, tt.wantMonths)
