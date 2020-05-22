@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 // see https://api.slack.com/reference/block-kit/blocks
@@ -25,63 +24,27 @@ type slackText struct {
 	Text string `json:"text"`
 }
 
-func newSlackButtonSet(runID string) slackBlock {
+func newSlackButtonRun(runID string) slackBlock {
 	return slackBlock{
-		"type": "actions",
-		"elements": []slackBlock{
-			{
-				"type": "button",
-				"text": slackText{
-					Type: "plain_text",
-					Text: "Run logs",
-				},
-				"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
-			},
+		"type": "button",
+		"text": slackText{
+			Type: "plain_text",
+			Text: "Run logs",
 		},
+		"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
 	}
 }
 
-func reportToSlack(ctx context.Context, webhook string, resources []Resource, since time.Time, runID string) error {
-	// generate message to deliver
-	blocks := []slackBlock{
-		{
-			"type": "section",
-			"text": &slackText{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf(":package: I've found %d resources created since %s!", len(resources), since.Format(time.RFC1123)),
-			},
+func newSlackButtonSheet(sheetID string) slackBlock {
+	return slackBlock{
+		"type": "button",
+		"text": slackText{
+			Type: "plain_text",
+			Text: "Report",
 		},
+		"style": "primary",
+		"url":   fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID),
 	}
-	if runID != "" {
-		blocks = append(blocks, newSlackButtonSet(runID))
-	}
-	blocks = append(blocks, slackBlock{
-		"type": "divider",
-	})
-	for _, resource := range resources {
-		// if we have too many results, split up the message
-		if len(blocks) > 40 {
-			if err := sendSlackBlocks(ctx, webhook, blocks); err != nil {
-				return err
-			}
-			blocks = nil
-			break
-		}
-		block, err := resource.toSlackBlock()
-		if err != nil {
-			return err
-		}
-		blocks = append(blocks, block)
-	}
-
-	// send remaining blocks
-	if len(blocks) > 0 {
-		if err := sendSlackBlocks(ctx, webhook, blocks); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func reportError(ctx context.Context, opts options, err error, scope string) {
@@ -94,7 +57,10 @@ func reportError(ctx context.Context, opts options, err error, scope string) {
 			},
 		}}
 		if *opts.runID != "" {
-			blocks = append(blocks, newSlackButtonSet(*opts.runID))
+			blocks = append(blocks, slackBlock{
+				"type":     "actions",
+				"elements": []slackBlock{newSlackButtonRun(*opts.runID)},
+			})
 		}
 		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, blocks)
 		if slackErr != nil {

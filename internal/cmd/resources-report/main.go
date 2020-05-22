@@ -13,6 +13,7 @@ const resultsBuffer = 5
 
 type options struct {
 	slackWebhook *string
+	sheetID      *string
 	gcp          *bool
 	aws          *bool
 	window       *time.Duration
@@ -27,6 +28,7 @@ func main() {
 	help := flag.Bool("help", false, "Show help text")
 	opts := options{
 		slackWebhook: flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
+		sheetID:      flag.String("sheet.id", os.Getenv("SHEET_ID"), "Slack webhook to post updates to"),
 		gcp:          flag.Bool("gcp", false, "Report on Google Cloud resources"),
 		aws:          flag.Bool("aws", false, "Report on Amazon Web Services resources"),
 		window:       flag.Duration("window", 48*time.Hour, "Restrict results to resources created within a period"),
@@ -79,9 +81,9 @@ func run(opts options) error {
 		log.Println("collected resources:\n", reportString(resources))
 		log.Printf("found a total of %d resources created since %s", len(resources), since.String())
 	}
-	if !*opts.dry && *opts.slackWebhook != "" {
-		if err := reportToSlack(ctx, *opts.slackWebhook, resources, since, *opts.runID); err != nil {
-			return fmt.Errorf("slack: %w", err)
+	if !*opts.dry && *opts.slackWebhook != "" && *opts.sheetID != "" {
+		if err := generateReport(ctx, opts, resources); err != nil {
+			return fmt.Errorf("report: %w", err)
 		}
 	}
 

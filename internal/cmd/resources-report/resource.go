@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"strings"
 )
@@ -22,47 +22,44 @@ type Resource struct {
 	Meta       map[string]interface{}
 }
 
-func (r *Resource) toSlackBlock() (slackBlock, error) {
-	meta, err := json.Marshal(r.Meta)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert resource to Slack block: %w", err)
-	}
-	return slackBlock{
-		"type": "context",
-		"elements": []slackText{
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*%s*", r.Platform),
-			},
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*Type*: `%s`", r.Type),
-			},
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*ID*: `%s`", r.Identifier),
-			},
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*Location*: %s", r.Location),
-			},
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*Owner*: %s", r.Owner),
-			},
-			{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf("*Meta*: `%s`", string(meta)),
-			},
-		},
-	}, nil
-}
-
 func hasPrefix(value string, prefixes []string) bool {
-	for _, prefix := range awsRegionPrefixes {
+	for _, prefix := range prefixes {
 		if strings.HasPrefix(value, prefix) {
 			return true
 		}
 	}
 	return false
+}
+
+func generateReport(ctx context.Context, opts options, resources []Resource) error {
+	// populate google sheet with data
+	if err := updateSheet(ctx, *opts.sheetID, resources); err != nil {
+		return fmt.Errorf("sheets: %w", err)
+	}
+
+	// generate message to deliver
+	buttons := []slackBlock{
+		newSlackButtonSheet(*opts.sheetID),
+	}
+	if *opts.runID != "" {
+		buttons = append(buttons, newSlackButtonRun(*opts.runID))
+	}
+	blocks := []slackBlock{
+		{
+			"type": "section",
+			"text": &slackText{
+				Type: slackTextMarkdown,
+				Text: fmt.Sprintf(":package: I've found %d resources created in the past %s!", len(resources), opts.window),
+			},
+		},
+		{
+			"type":     "actions",
+			"elements": buttons,
+		},
+	}
+	if err := sendSlackBlocks(ctx, *opts.slackWebhook, blocks); err != nil {
+		return fmt.Errorf("slack: %w", err)
+	}
+
+	return nil
 }
