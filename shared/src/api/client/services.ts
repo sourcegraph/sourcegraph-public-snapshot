@@ -13,7 +13,6 @@ import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderReg
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
-import { createSettingsService } from './services/settings'
 import { PanelViewProviderRegistry } from './services/panelViews'
 import { createViewService } from './services/viewService'
 import { createWorkspaceService } from './services/workspaceService'
@@ -40,9 +39,13 @@ export class Services {
     public readonly model = createModelService()
     public readonly viewer = createViewerService(this.model)
     public readonly notifications = new NotificationsService()
-    public readonly settings = createSettingsService(this.platformContext)
-    public readonly contribution = new ContributionRegistry(this.viewer, this.model, this.settings, this.context.data)
-    public readonly extensions = new ExtensionsService(this.platformContext, this.model, this.settings)
+    public readonly contribution = new ContributionRegistry(
+        this.viewer,
+        this.model,
+        this.platformContext.settings,
+        this.context.data
+    )
+    public readonly extensions = new ExtensionsService(this.platformContext, this.model)
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()
