@@ -18,7 +18,6 @@ zoekt-webserver-1: ./dev/zoekt/wrapper webserver 1
 keycloak: ./dev/auth-provider/keycloak.sh
 jaeger: ./dev/jaeger.sh
 docsite: ./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
-precise-code-intel-api-server: precise-code-intel-api-server
 precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
 precise-code-intel-worker: precise-code-intel-worker
 prometheus: ./dev/prometheus.sh

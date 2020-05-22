@@ -109,7 +109,7 @@ func main() {
 		bitbucketWebhookName,
 	)
 
-	go bitbucketServerWebhook.SyncWebhooks(1 * time.Minute)
+	go bitbucketServerWebhook.SyncWebhooks(ctx, 1*time.Minute)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
@@ -177,13 +177,8 @@ func initCodeIntel() {
 
 	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
-
-	client := lsifserverclient.New(
-		db,
-		bundleManagerClient,
-		codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient),
-	)
-
+	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
+	client := lsifserverclient.New(db, bundleManagerClient, api)
 	enqueuer := enqueuer.NewEnqueuer(db, bundleManagerClient)
 
 	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {

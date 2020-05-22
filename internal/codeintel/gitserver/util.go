@@ -12,14 +12,23 @@ import (
 
 // execGitCommand executes a git command for the given repository by identifier.
 func execGitCommand(ctx context.Context, db db.DB, repositoryID int, args ...string) (string, error) {
-	// TODO(efritz) - remove dependency on codeintel/db package
-	repoName, err := db.RepoName(ctx, repositoryID)
+	repo, err := repositoryIDToRepo(ctx, db, repositoryID)
 	if err != nil {
-		return "", errors.Wrap(err, "db.RepoName")
+		return "", err
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = gitserver.Repo{Name: api.RepoName(repoName)}
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
+}
+
+// repositoryIDToRepo creates a gitserver.Repo from a repository identifier.
+func repositoryIDToRepo(ctx context.Context, db db.DB, repositoryID int) (gitserver.Repo, error) {
+	repoName, err := db.RepoName(ctx, repositoryID)
+	if err != nil {
+		return gitserver.Repo{}, errors.Wrap(err, "db.RepoName")
+	}
+
+	return gitserver.Repo{Name: api.RepoName(repoName)}, nil
 }

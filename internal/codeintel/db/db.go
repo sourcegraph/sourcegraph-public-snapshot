@@ -144,7 +144,7 @@ var _ DB = &dbImpl{}
 
 // New creates a new instance of DB connected to the given Postgres DSN.
 func New(postgresDSN string) (DB, error) {
-	db, err := dbutil.NewDB(postgresDSN, "precise-code-intel-api-server")
+	db, err := dbutil.NewDB(postgresDSN, "codeintel")
 	if err != nil {
 		return nil, err
 	}

@@ -107,6 +107,11 @@
               "description": "Secret for authenticating incoming webhook payloads",
               "type": "string",
               "minLength": 1
+            },
+            "disableSync": {
+              "description": "Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks",
+              "type": "boolean",
+              "default": false
             }
           }
         },
