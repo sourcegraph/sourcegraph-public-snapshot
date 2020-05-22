@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"net/http"
@@ -410,96 +411,109 @@ func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	return tc
 }
 
-func TestBitbucketWebhookUpsert(t *testing.T) {
+func TestBitbucketWebhookSync(t *testing.T) {
 	testCases := []struct {
-		name    string
-		con     *schema.BitbucketServerConnection
-		secrets map[int64]string
-		expect  []string
+		name      string
+		newConfig *schema.BitbucketServerConnection
+		cache     map[int64]*schema.BitbucketServerConnection
+		expect    []string
 	}{
 		{
-			name: "No existing secret",
-			con: &schema.BitbucketServerConnection{
+			name:      "no existing config and new is nil",
+			newConfig: &schema.BitbucketServerConnection{},
+			cache:     map[int64]*schema.BitbucketServerConnection{},
+			expect:    []string{},
+		},
+		{
+			name: "no existing config",
+			newConfig: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
 						Secret: "secret",
 					},
 				},
 			},
-			secrets: map[int64]string{},
-			expect:  []string{"POST"},
+			cache:  map[int64]*schema.BitbucketServerConnection{},
+			expect: []string{"POST"},
 		},
 		{
 			name: "existing secret matches",
-			con: &schema.BitbucketServerConnection{
+			newConfig: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
 						Secret: "secret",
 					},
 				},
 			},
-			secrets: map[int64]string{
-				1: "secret",
+			cache: map[int64]*schema.BitbucketServerConnection{
+				1: {
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							Secret: "secret",
+						},
+					},
+				},
 			},
 			expect: []string{},
 		},
 		{
-			name: "existing secret does not match matches",
-			con: &schema.BitbucketServerConnection{
+			name: "existing secret does not match",
+			newConfig: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
 						Secret: "secret",
 					},
 				},
 			},
-			secrets: map[int64]string{
-				1: "old",
+			cache: map[int64]*schema.BitbucketServerConnection{
+				1: {
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							Secret: "something_else",
+						},
+					},
+				},
 			},
 			expect: []string{"POST"},
 		},
 		{
-			name: "secret removed",
-			con: &schema.BitbucketServerConnection{
+			name: "secret removed and previously enabled",
+			newConfig: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
 						Secret: "",
 					},
 				},
 			},
-			secrets: map[int64]string{
-				1: "old",
+			cache: map[int64]*schema.BitbucketServerConnection{
+				1: {
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							Secret: "something_else",
+						},
+					},
+				},
 			},
 			expect: []string{"DELETE"},
 		},
 		{
-			name: "secret removed, no history",
-			con: &schema.BitbucketServerConnection{
+			name: "secret removed and previously disabled",
+			newConfig: &schema.BitbucketServerConnection{
 				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
 					Webhooks: &schema.BitbucketServerPluginWebhooks{
 						Secret: "",
 					},
 				},
 			},
-			secrets: map[int64]string{},
-			expect:  []string{"DELETE"},
-		},
-		{
-			name: "secret removed, with history",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
+			cache: map[int64]*schema.BitbucketServerConnection{
+				1: {
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							Secret:      "something_else",
+							DisableSync: true,
+						},
 					},
 				},
-			},
-			secrets: map[int64]string{
-				1: "",
 			},
 			expect: []string{},
 		},
@@ -509,13 +523,112 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := new(requestRecorder)
 			h := NewBitbucketServerWebhook(nil, nil, time.Now, "testhook")
-			h.secrets = tc.secrets
+			h.configCache = tc.cache
 			h.httpClient = rec
 
-			err := h.syncWebhook(1, tc.con, "http://example.com/")
+			err := h.syncWebhook(1, tc.newConfig, "http://example.com/")
 			if err != nil {
 				t.Fatal(err)
 			}
+			methods := make([]string, len(rec.requests))
+			for i := range rec.requests {
+				methods[i] = rec.requests[i].Method
+			}
+			if diff := cmp.Diff(tc.expect, methods); diff != "" {
+				t.Fatal(diff)
+			}
+			// New value should be cached
+			cached, ok := h.configCache[1]
+			if !ok {
+				t.Fatalf("New config not cached")
+			}
+			if diff := cmp.Diff(tc.newConfig, cached); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSyncWebhooks(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		listFunc func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+		expect   []string
+	}{
+		{
+			name: "Error store",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				return nil, errors.New("fail")
+			},
+			expect: []string{},
+		},
+		{
+			name: "Store returning a valid hook config",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				config := &schema.BitbucketServerConnection{
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							DisableSync: false,
+							Secret:      "secret",
+						},
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				return []*repos.ExternalService{
+					{
+						ID:     1,
+						Kind:   "BITBUCKETSERVER",
+						Config: string(data),
+					},
+				}, nil
+			},
+			expect: []string{"POST"},
+		},
+		{
+			name: "Store returning a disabled hook config",
+			listFunc: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+				config := &schema.BitbucketServerConnection{
+					Plugin: &schema.BitbucketServerPlugin{
+						Webhooks: &schema.BitbucketServerPluginWebhooks{
+							DisableSync: true,
+							Secret:      "secret",
+						},
+					},
+				}
+				data, err := json.Marshal(config)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				return []*repos.ExternalService{
+					{
+						ID:     1,
+						Kind:   "BITBUCKETSERVER",
+						Config: string(data),
+					},
+				}, nil
+			},
+			expect: []string{},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			rec := new(requestRecorder)
+			h := NewBitbucketServerWebhook(nil, nil, time.Now, "testhook")
+			h.Repos = &MockRepoStore{
+				// We cancel the context from within the func so that we know the routine will exit
+				listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+					defer cancel()
+					return tc.listFunc(ctx, args)
+				},
+			}
+			h.httpClient = rec
+
+			h.SyncWebhooks(ctx, 10*time.Second)
 			methods := make([]string, len(rec.requests))
 			for i := range rec.requests {
 				methods[i] = rec.requests[i].Method
