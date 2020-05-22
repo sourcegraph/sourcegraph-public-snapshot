@@ -100,13 +100,15 @@ Hover results are attached to ranges or result sets via a _textDocument/hover_ e
 {"id": "15", "type": "edge", "label": "textDocument/hover", "outV": "11", "inV": "14"}
 ```
 
+The `contents` property of a hover result is composed of a list of segments which are formatted independently then concatenated. If a segment is a bare string, it is rendered as markdown. If it is a object indicating a language and a value, it will be formatted as code and highlighted based on the language identifier.
+
 Using result sets, our LSIF output can now be visualized as follows, and the hover text is now (indirectly) attached to both the definition and reference ranges defined earlier.
 
 <center><img src="https://storage.googleapis.com/sourcegraph-assets/docs.sourcegraph.com/lsif-graphviz/4.png" width="50%"></center>
 
 ### Linking definitions and references together
 
-For each range that defines a symbol, we create a _definitionResult_ vertex. This should be attached directly to the range, or to a resultSet that is not shared with another range that does not define that symbol via a _textDocument/definition_ edge. Here, we'll choose to attach it to the definition range's result set, but it would also be valid to attach it directly to the definition range.
+For each range corresponding to a definition we create a _definitionResult_ vertex. This should be attached directly to the range, or to a resultSet that is not shared with another range that does not define that symbol via a _textDocument/definition_ edge. Here, we'll choose to attach it to the definition range's result set, but it would also be valid to attach it directly to the definition range.
 
 ```json
 {"id": "16", "type": "vertex", "label": "definitionResult"}
@@ -138,6 +140,10 @@ Our LSIF output can now be visualized as follows.
 
 The previous section detailed how to link definitions and references together, but that only works when the definition and reference reside in the same project (and in documents that are both indexed at the same time). Monikers allow us to attach names to ranges and result sets in a way that allows us to link names together between distinct indexes. This enables us to perform cross-repository jump-to-definition and global find-reference operations.
 
+Each imported package gets an associated _packageInformation_ vertex, and each use of an imported symbol is linked to a moniker which gets linked to that package. Conversely, the index defines a _packageInformation_ vertex representing exported symbols, and each exported symbol is associated with a unique moniker linked to that _packageInformation_ vertex.
+
+<!-- TODO - add a sample diagram -->
+
 For this section, we will use a new [source code fragment](https://github.com/sourcegraph/lsif-go/blob/421d9d997bc90afbe8126e72b23885bf94c92528/internal/index/helper.go#L79) as our example, shown below.
 
 ```go
@@ -158,11 +164,11 @@ func constructMarkedString(s, comments, extra string) ([]protocol.MarkedString, 
 
 The call `doc.ToMarkdown(...)` refers to a function defined in a remote package. In order to support a remote jump-to-definition operation (assuming that the remote package has also been indexed), we need to give the definition a stable name that will be the same in both indexes, and we need to emit enough information to determine _in what remote index_ the definition lives.
 
-We create a _moniker_ vertex with a kind property specifying the direction of dependency (`import` for a remote definition and `export` for a definition that can be _used_ remotely in other indexes), a scheme property that indicates the source of the moniker, and an identifier property. Moniker identifiers should be unique within the specified scheme in a single LSIF index (such that a two monikers with the same scheme and identifier should refer to teh same symbol), but is not necessarily unique across indexes.
+We create a _moniker_ vertex with a kind property specifying the direction of dependency (`import` for a remote definition and `export` for a definition that can be _used_ remotely in other indexes), a scheme property that indicates the source of the moniker, and an identifier property. Moniker identifiers should be unique within the specified scheme in a single LSIF index (such that a two monikers with the same scheme and identifier should refer to the same symbol), but is not necessarily unique across indexes.
 
 We also create a _packageInformation_ vertex that specifies name, manager, and version properties. The value of the name and value properties should refer to the package dependency (in the case of an import moniker), or should refer to the package being provided by the project/document being indexed (in the case of an export moniker). The value fo the manager property should be the name of the package management system (e.g. npm, gomod, pip) providing the package.
 
-Monikers are attached to ranges or result sets vai a _moniker_ edge, and package information vertices are attached to moniker vertices via a _packageInformation_ edge, as follows.
+Monikers are attached to ranges or result sets via a _moniker_ edge, and package information vertices are attached to moniker vertices via a _packageInformation_ edge, as follows.
 
 ```json
 {"id": "1", "type": "vertex", "label": "range", "start": {"line": 78, "character": 6}, "end": {"line": 78, "character": 16}}
