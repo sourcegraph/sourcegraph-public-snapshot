@@ -36,24 +36,19 @@ type Mutation {
     # pull requests on GitHub). If a changeset with the given input already
     # exists, it is returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
-    # Add a list of changesets to a campaign. The campaign must not have a patchset.
+    # Add a list of changesets to a campaign.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Create a patchset from patches (in unified diff format) that are computed by the caller.
-    #
-    # To create the campaign, call createCampaign with the returned PatchSet.id in the
-    # CreateCampaignInput.patchSet field.
-    createPatchSetFromPatches(
-        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
-        # created from this PatchSet.
-        patches: [PatchInput!]!
-    ): PatchSet!
+    # Add patches in batches to a campaign, resulting in a patchset. Specifying a patchset will append to an existing one.
+    addPatchesToCampaign(campaign: ID!, patchset: ID, patches: [PatchInputOrID!]!): Patchset!
+    # Generate a preview of changes to the campaign, possibly omitting some of them from `patches`.
+    previewSetPatchesForCampaign(patchset: ID!, omitPatches: [ID!]): CampaignPreview!
+    # Add the patches frmo patchset to the campaign, leaving out specified patches.
+    setPatchesForCampaign(campaign: ID!, patchset: ID!, omitPatches: [ID!]): Campaign!
     # Updates a campaign. Updating is not allowed when any of the following are true:
     #
     # - The campaign has already been closed.
-    # - A plan is added to a manual campaign.
-    # - A non-manual campaign is being published.
     # - The branch of a (partially or fully) published campaign is changed.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retry creating changesets from the patches in the campaign's patchset that could not be
@@ -459,18 +454,6 @@ input CreateCampaignInput {
     # exist. Example: "my-branch-name" becomes "my-branch-name-1". Required if the patchSet
     # attribute is specified.
     branch: String
-
-    # An optional reference to a patchset that was created before this mutation. If null, existing
-    # changesets can be added manually. If set, no changesets can be added manually; they will be
-    # created. based on the patches belonging to the patchset. An error will be returned if the
-    # patchset has expired. Using a patchset to create or update a campaign will retain it for the
-    # lifetime of the campaign and prevent it from expiring.
-    patchSet: ID
-
-    # Whether to create the campaign in draft mode. Default is false. A draft campaign lets you
-    # preview the changesets before creating them on the code host. When you're ready, you can
-    # publish changesets individually or all at once.
-    draft: Boolean
 }
 
 # Input arguments for updating a campaign.
@@ -487,18 +470,16 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign (as Markdown), if non-null.
     description: String
-
-    # A patchset that describes a new set of changes to make. If set, the previous changesets are
-    # updated or closed, and new changesetes are created, to reflect the new patchset.
-    patchSet: ID
 }
 
 # A set of patches that will be applied to code by a campaign. Each patch corresponds to a single
 # changeset that will be created on a code host. A patchset is cached and is addressable by its ID
 # for a limited amount of time.
-type PatchSet implements Node {
+type Patchset implements Node {
     # The unique ID of this patchset.
     id: ID!
+
+    campaign: Campaign!
 
     # The proposed patches for the changesets that will be created by the campaign.
     patches(first: Int): PatchConnection!
@@ -508,6 +489,9 @@ type PatchSet implements Node {
 
     # The diff stat for all the patches in the patchset.
     diffStat: DiffStat!
+
+    # After this time, the patchset is no longer available for usage.
+    expiresAt: DateTime!
 }
 
 # A paginated list of repository diffs committed to git.
@@ -549,14 +533,22 @@ type BackgroundProcessStatus {
     errors: [String!]!
 }
 
+# Patch ID is a UUID, base64 encoded. That is, so the patch IDs can't be guessed.
+union PatchInputOrID = PatchInput | ID
+
+type CampaignPreview {
+    # URL where this preview can be looked at in the UI.
+    url: String!
+    unchanged(first: Int, after: String): ExternalChangesetConnection!
+    changed(first: Int, after: String): ExternalChangesetConnection!
+    deleted(first: Int, after: String): ExternalChangesetConnection!
+    added(first: Int, after: String): PatchConnection!
+}
+
 # A campaign is a set of related changes to apply to code across one or more repositories.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
-
-    # The patchset that was used to create this campaign. If null, changesets are added to the
-    # campaign manually.
-    patchSet: PatchSet
 
     # The current status of creating or updating the campaign's changesets on the code host.
     status: BackgroundProcessStatus!
