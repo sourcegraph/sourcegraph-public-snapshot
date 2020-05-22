@@ -364,7 +364,7 @@ Indexes:
 ```
        Column       |           Type           |                         Modifiers                         
 --------------------+--------------------------+-----------------------------------------------------------
- id                 | integer                  | not null default nextval('lsif_indexes_id_seq'::regclass)
+ id                 | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
  commit             | text                     | not null
  queued_at          | timestamp with time zone | not null default now()
  state              | lsif_index_state         | not null default 'queued'::lsif_index_state

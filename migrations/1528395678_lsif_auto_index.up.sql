@@ -16,7 +16,7 @@ CREATE TYPE lsif_index_state AS ENUM (
 );
 
 CREATE TABLE lsif_indexes (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     commit text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
     state lsif_index_state DEFAULT 'queued'::lsif_index_state NOT NULL,
