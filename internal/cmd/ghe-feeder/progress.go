@@ -49,22 +49,27 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (bool, error) {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("INSERT OR IGNORE INTO repos(ownerRepo, failed) VALUES(?, FALSE)")
-	if err != nil {
+	var failed bool
+
+	err := fdr.db.QueryRow("SELECT failed FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed)
+	if err != nil && err != sql.ErrNoRows {
 		return false, err
 	}
 
-	res, err := stmt.Exec(ownerRepo)
-	if err != nil {
-		return false, err
-	}
+	if err == sql.ErrNoRows {
+		stmt, err := fdr.db.Prepare("INSERT INTO repos(ownerRepo, failed) VALUES(?, FALSE)")
+		if err != nil {
+			return false, err
+		}
 
-	ra, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
+		_, err = stmt.Exec(ownerRepo)
+		if err != nil {
+			return false, err
+		}
 
-	return ra == 0, nil
+		return false, nil
+	}
+	return !failed, nil
 }
 
 func (fdr *feederDB) failed(ownerRepo string) error {
