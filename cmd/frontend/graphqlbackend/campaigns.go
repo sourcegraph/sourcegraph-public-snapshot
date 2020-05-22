@@ -242,7 +242,7 @@ type ChangesetLabelResolver interface {
 
 type ChangesetResolver interface {
 	ID() graphql.ID
-	ExternalID() string
+
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
@@ -267,12 +267,14 @@ type HiddenExternalChangesetResolver interface {
 
 type ExternalChangesetResolver interface {
 	ID() graphql.ID
-	ExternalID() string
+
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
+
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
+	ExternalID() string
 	Title() (string, error)
 	Body() (string, error)
 	State() campaigns.ChangesetState

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -380,7 +381,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	var repoIDs []api.RepoID
-	repoSet := map[api.RepoID]*repos.Repo{}
+	repoSet := map[api.RepoID]*types.Repo{}
 	cs := make([]*campaigns.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
@@ -408,7 +409,9 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
-	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
