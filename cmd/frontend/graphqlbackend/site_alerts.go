@@ -83,7 +83,10 @@ func init() {
 		if !args.IsSiteAdmin {
 			// users will see alerts if Sourcegraph is >4 months out of date
 			alert := outOfDateAlert(args.IsSiteAdmin)
-			return []*Alert{&alert}
+			if alert == nil {
+				return nil
+			}
+			return []*Alert{alert}
 		}
 
 		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
@@ -110,8 +113,8 @@ func init() {
 		alerts := make([]*Alert, 0, 3)
 
 		alert := outOfDateAlert(args.IsSiteAdmin)
-		if len(alert.MessageValue) > 0 {
-			alerts = append(alerts, &alert)
+		if alert == nil {
+			alerts = append(alerts, alert)
 		}
 
 		if len(problems) == 0 && len(alerts) == 0 {
@@ -139,78 +142,78 @@ func init() {
 	})
 }
 
-func outOfDateAlert(isAdmin bool) Alert {
+func outOfDateAlert(isAdmin bool) *Alert {
 
 	var alert Alert
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
-		return alert
+		return &alert
 	}
 	months := globalUpdateStatus.MonthsOutOfDate
 	if months <= 0 {
-		return alert
+		return &alert
 	}
-	// online instances will still be prompt prompt side admins to upgrade via site_update_check
+	// online instances will still be prompt site admins to upgrade via site_update_check
 	if months < 3 && !globalUpdateStatus.Offline {
-		return alert
+		return &alert
 	}
 
 	if isAdmin {
 		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d months out of date", months)
 		key := fmt.Sprintf("months-out-of-date-%d", months)
 		switch {
-		case months > 0 && months < 3:
-			return Alert{
+		case months < 3:
+			return &Alert{
 				TypeValue:                 AlertTypeInfo,
 				MessageValue:              alert.MessageValue,
 				IsDismissibleWithKeyValue: key,
 			}
 		case months == 3:
-			return Alert{
+			return &Alert{
 				TypeValue:    AlertTypeWarning,
 				MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date",
 			}
 		case months == 4:
-			return Alert{
+			return &Alert{
 				TypeValue:    AlertTypeWarning,
 				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes please upgrade",
 			}
 
 		case months == 5:
-			return Alert{
+			return &Alert{
 				TypeValue:    AlertTypeError,
 				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes please upgrade.",
 			}
 
 		default:
-			return Alert{
+			return &Alert{
 				TypeValue:    AlertTypeError,
 				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes please upgrade.",
 			}
 		}
 	}
 	if months <= 3 {
-		return alert
+		return &alert
 	}
 	alert.MessageValue = fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
 		"for the latest features and bug fixes ask your site administrator to upgrade.", months)
 	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
 	case 4:
-		return Alert{
+		return &Alert{
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              alert.MessageValue,
 			IsDismissibleWithKeyValue: key,
 		}
 	case 5:
-		return Alert{
+		return &Alert{
 			TypeValue:                 AlertTypeError,
 			MessageValue:              alert.MessageValue,
 			IsDismissibleWithKeyValue: key,
 		}
 
 	default:
-		return Alert{
+		return &Alert{
 			TypeValue:    AlertTypeError,
 			MessageValue: alert.MessageValue,
 		}
