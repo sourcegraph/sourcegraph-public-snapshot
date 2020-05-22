@@ -177,7 +177,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*120)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", "clone",
