@@ -1,12 +1,6 @@
 linters-settings:
   dupl:
     threshold: 100
-  funlen:
-    lines: 100
-    statements: 50
-  goconst:
-    min-len: 2
-    min-occurrences: 2
   gocritic:
     enabled-tags:
       - diagnostic
@@ -25,7 +19,7 @@ linters-settings:
   golint:
     min-confidence: 0
   govet:
-    check-shadowing: true
+    check-shadowing: false
   maligned:
     suggest-new: true
   misspell:
@@ -36,19 +30,16 @@ linters-settings:
     require-explanation: false # don't require an explanation for nolint directives
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
 
+# See explanation of linters at https://golangci-lint.run/usage/linters/
 linters:
   disable-all: true
   enable:
     - bodyclose
     - deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
-    - funlen
-    - goconst
     - gocritic
-    - gofmt
     - goimports
     - golint
     - goprintffuncname
@@ -61,7 +52,6 @@ linters:
     - nakedret
     - nolintlint
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck

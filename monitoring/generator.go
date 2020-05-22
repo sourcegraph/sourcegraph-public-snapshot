@@ -823,7 +823,6 @@ func main() {
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
-		PreciseCodeIntelAPIServer(),
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),

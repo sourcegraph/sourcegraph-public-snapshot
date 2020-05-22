@@ -144,12 +144,16 @@ var _ DB = &dbImpl{}
 
 // New creates a new instance of DB connected to the given Postgres DSN.
 func New(postgresDSN string) (DB, error) {
-	db, err := dbutil.NewDB(postgresDSN, "precise-code-intel-api-server")
+	db, err := dbutil.NewDB(postgresDSN, "codeintel")
 	if err != nil {
 		return nil, err
 	}
 
 	return &dbImpl{db: db}, nil
+}
+
+func NewWithHandle(db *sql.DB) DB {
+	return &dbImpl{db: db}
 }
 
 // query performs QueryContext on the underlying connection.
