@@ -439,17 +439,6 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 		return err
 	}
 
-	// Soft-delete discussions data.
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_mail_reply_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -509,23 +498,6 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	// org settings that apply to other users, too. There is currently no way to hard-delete
 	// settings for an org or globally, but we can handle those rare cases manually.
 	if _, err := tx.ExecContext(ctx, "UPDATE settings SET author_user_id=NULL WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-
-	// Hard-delete discussions data.
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id IN (SELECT id FROM discussion_threads WHERE author_user_id=$1)", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_comments WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads WHERE author_user_id=$1", id); err != nil {
 		return err
 	}
 

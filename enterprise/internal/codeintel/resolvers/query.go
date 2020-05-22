@@ -13,6 +13,8 @@ import (
 )
 
 type lsifQueryResolver struct {
+	lsifserverClient *client.Client
+
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	// commit is the requested target commit
 	commit api.CommitID
@@ -50,7 +52,7 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 			UploadID:  upload.ID,
 		}
 
-		locations, _, err := client.DefaultClient.Definitions(ctx, opts)
+		locations, _, err := r.lsifserverClient.Definitions(ctx, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +123,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			continue
 		}
 
-		locations, nextURL, err := client.DefaultClient.References(ctx, opts)
+		locations, nextURL, err := r.lsifserverClient.References(ctx, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +157,7 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 			continue
 		}
 
-		text, lspRange, err := client.DefaultClient.Hover(ctx, &struct {
+		text, lspRange, err := r.lsifserverClient.Hover(ctx, &struct {
 			RepoID    api.RepoID
 			Commit    api.CommitID
 			Path      string

@@ -33,7 +33,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps, CaseSensitivityProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
@@ -55,6 +55,7 @@ export interface RepoRevContainerContext
         >,
         PatternTypeProps,
         CaseSensitivityProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     repo: GQL.IRepository
     rev: string
@@ -78,6 +79,7 @@ interface RepoRevContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     routes: readonly RepoRevContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -235,6 +237,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            copyQueryButton: this.props.copyQueryButton,
             versionContext: this.props.versionContext,
         }
 

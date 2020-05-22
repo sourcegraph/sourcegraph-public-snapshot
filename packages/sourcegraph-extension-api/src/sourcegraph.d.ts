@@ -727,8 +727,8 @@ declare module 'sourcegraph' {
         /** The key in the data object. */
         dataKey: K
 
-        /** The scale of the axis. Currently only "time" is supported. */
-        scale: 'time' | 'linear'
+        /** The scale of the axis. */
+        scale?: 'time' | 'linear'
 
         /** The type of the data key. */
         type: 'number' | 'category'
@@ -821,6 +821,9 @@ declare module 'sourcegraph' {
     export interface View {
         /** The title of the view. */
         title: string
+
+        /** An optional subtitle displayed under the title. */
+        subtitle?: string
 
         /**
          * The content sections of the view. The sections are rendered in order.
@@ -1000,6 +1003,21 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace root is added or removed from the workspace.
          */
         export const rootChanges: Subscribable<void>
+
+        /**
+         * The current version context of the workspace, if any.
+         *
+         * A version context is a set of repositories and revisions on a Sourcegraph instance.
+         * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         *
+         * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
+         */
+        export const versionContext: string | undefined
+
+        /**
+         * An event that is fired when a workspace's version context changes.
+         */
+        export const versionContextChanges: Subscribable<string | undefined>
     }
 
     /**

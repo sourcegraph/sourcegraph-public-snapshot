@@ -46,7 +46,7 @@ func alertForCappedAndExpression() *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceed_and_expression_search_limit",
 		title:          "Too many files to search for and-expression",
-		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+		description:    "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
 	}
 }
 
@@ -131,7 +131,7 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func reposExist(ctx context.Context, options resolveRepoOp) bool {
-	repos, _, _, err := resolveRepositories(ctx, options)
+	repos, _, _, _, err := resolveRepositories(ctx, options)
 	return err == nil && len(repos) > 0
 }
 
@@ -387,13 +387,11 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		}
 	}
 
-	repos, _, _, _ := r.resolveRepositories(ctx, nil)
+	repos, _, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
-		pathPatterns := make([]string, len(repos))
 		for i, repo := range repos {
 			paths[i] = string(repo.Repo.Name)
-			pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 		}
 
 		// See if we can narrow it down by using filters like
@@ -418,7 +416,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
@@ -598,7 +596,8 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	return &SearchResultsResolver{alert: alert}, nil
+	// ElapsedMilliseconds() will calculate a very large value for duration if start takes on the nil-value of year 1. As a workaround, instantiate start with time.now(). TODO(rvantonder): #10801.
+	return &SearchResultsResolver{alert: alert, start: time.Now()}, nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {

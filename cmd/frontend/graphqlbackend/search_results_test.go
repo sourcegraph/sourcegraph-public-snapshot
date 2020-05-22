@@ -30,6 +30,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
+
+func assertEqual(t *testing.T, got, want interface{}) {
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
+	}
+}
+
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
@@ -74,21 +82,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs:     true,
-				IncludePatterns: []string{"r", "p"},
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
@@ -112,22 +117,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -188,22 +189,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -252,6 +249,24 @@ func TestSearchResults(t *testing.T) {
 		}
 		if calledSearchSymbols {
 			t.Error("calledSearchSymbols")
+		}
+	})
+
+	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
+		for _, v := range searchVersions {
+			r, err := (&schemaResolver{}).Search(&SearchArgs{Query: `repo:*`, Version: v})
+			if err != nil {
+				t.Fatal("Search:", err)
+			}
+
+			results, err := r.Results(context.Background())
+			if err != nil {
+				t.Fatal("Search: ", err)
+			}
+
+			if results.start.IsZero() {
+				t.Error("Start value is not set")
+			}
 		}
 	})
 }
@@ -643,7 +658,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		Repo:  repo,
 	}
 
-	rev := "develop"
+	rev := "develop3.0"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
 		Repo:     repo,
@@ -679,8 +694,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			descr:         "single file match with specified revision",
 			searchResults: []SearchResultResolver{fileMatchRev},
 			expectedDynamicFilterStrs: map[string]struct{}{
-				`repo:^testRepo$@develop`: {},
-				`lang:markdown`:           {},
+				`repo:^testRepo$@develop3.0`: {},
+				`lang:markdown`:              {},
 			},
 		},
 		{
@@ -725,8 +740,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				actualDynamicFilterStrs[filter.Value()] = struct{}{}
 			}
 
-			if !reflect.DeepEqual(actualDynamicFilterStrs, test.expectedDynamicFilterStrs) {
-				t.Errorf("actual: %v, expected: %v", actualDynamicFilterStrs, test.expectedDynamicFilterStrs)
+			if diff := cmp.Diff(test.expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
+				t.Errorf("mismatch (-want, +got):\n%s", diff)
 			}
 		})
 	}
@@ -1024,6 +1039,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{repoWithIDs}, nil
 	}
+	db.Mocks.Repos.Count = mockCount
 
 	defer func() { db.Mocks = db.MockStores{} }()
 
@@ -1111,6 +1127,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
+	db.Mocks.Repos.Count = mockCount
 	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoektRepo := &zoekt.RepoListEntry{
@@ -1290,23 +1307,21 @@ func Test_ZoektSingleIndexedRepo(t *testing.T) {
 			},
 		}
 	}
-	zoektRepos := []*zoekt.RepoListEntry{
-		{
-			Repository: zoekt.Repository{
-				Name: "test/repo",
-				Branches: []zoekt.RepositoryBranch{
-					{
-						Name:    "HEAD",
-						Version: "df3f4e499698e48152b39cd655d8901eaf583fa5",
-					},
-					{
-						Name:    "NOT-HEAD",
-						Version: "8ec975423738fe7851676083ebf660a062ed1578",
-					},
+	zoektRepos := []*zoekt.RepoListEntry{{
+		Repository: zoekt.Repository{
+			Name: "test/repo",
+			Branches: []zoekt.RepositoryBranch{
+				{
+					Name:    "HEAD",
+					Version: "df3f4e499698e48152b39cd655d8901eaf583fa5",
+				},
+				{
+					Name:    "NOT-HEAD",
+					Version: "8ec975423738fe7851676083ebf660a062ed1578",
 				},
 			},
 		},
-	}
+	}}
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
 			repos: &zoekt.RepoList{Repos: zoektRepos},
@@ -1314,58 +1329,68 @@ func Test_ZoektSingleIndexedRepo(t *testing.T) {
 		DisableCache: true,
 	}
 	cases := []struct {
-		rev           *search.RepositoryRevisions
+		rev           string
 		wantIndexed   []*search.RepositoryRevisions
 		wantUnindexed []*search.RepositoryRevisions
 	}{
 		{
-			rev:           repoRev(""),
+			rev:           "",
 			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           repoRev("HEAD"),
+			rev:           "HEAD",
 			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5"),
+			rev:           "df3f4e499698e48152b39cd655d8901eaf583fa5",
 			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           repoRev("df3f4e"),
+			rev:           "df3f4e",
 			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           repoRev("d"),
+			rev:           "d",
 			wantIndexed:   []*search.RepositoryRevisions{},
 			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
 		},
 		{
-			rev:           repoRev("HEAD^1"),
+			rev:           "HEAD^1",
 			wantIndexed:   []*search.RepositoryRevisions{},
 			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
 		},
 		{
-			rev:           repoRev("8ec975423738fe7851676083ebf660a062ed1578"),
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+			rev:           "8ec975423738fe7851676083ebf660a062ed1578",
+			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
 		},
 	}
 
+	type ret struct {
+		Indexed, Unindexed []*search.RepositoryRevisions
+	}
+
 	for _, tt := range cases {
-		t.Run("classify indexed repo by commit", func(t *testing.T) {
-			filter := func(*zoekt.Repository) bool { return true }
-			indexed, unindexed, _ := zoektSingleIndexedRepo(context.Background(), z, tt.rev, filter)
-			if cmp.Diff(indexed, tt.wantIndexed) != "" {
-				t.Errorf("Got indexed repo %v, want %v", indexed, tt.wantIndexed)
-			}
-			if cmp.Diff(unindexed, tt.wantUnindexed) != "" {
-				t.Errorf("Got unindexed repo %v, want %v", unindexed, tt.wantUnindexed)
-			}
-		})
+		filter := func(*zoekt.Repository) bool { return true }
+		indexed, unindexed, err := zoektSingleIndexedRepo(context.Background(), z, repoRev(tt.rev), filter)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := ret{
+			Indexed:   indexed,
+			Unindexed: unindexed,
+		}
+		want := ret{
+			Indexed:   tt.wantIndexed,
+			Unindexed: tt.wantUnindexed,
+		}
+		if !cmp.Equal(want, got) {
+			t.Errorf("%s mismatch (-want +got):\n%s", tt.rev, cmp.Diff(want, got))
+		}
 	}
 }
 

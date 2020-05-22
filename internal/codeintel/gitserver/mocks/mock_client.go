@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	"context"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"sync"
@@ -28,17 +29,17 @@ type MockClient struct {
 func NewMockClient() *MockClient {
 	return &MockClient{
 		CommitsNearFunc: &ClientCommitsNearFunc{
-			defaultHook: func(db.DB, int, string) (map[string][]string, error) {
+			defaultHook: func(context.Context, db.DB, int, string) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
 		DirectoryChildrenFunc: &ClientDirectoryChildrenFunc{
-			defaultHook: func(db.DB, int, string, []string) (map[string][]string, error) {
+			defaultHook: func(context.Context, db.DB, int, string, []string) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
 		HeadFunc: &ClientHeadFunc{
-			defaultHook: func(db.DB, int) (string, error) {
+			defaultHook: func(context.Context, db.DB, int) (string, error) {
 				return "", nil
 			},
 		},
@@ -64,23 +65,23 @@ func NewMockClientFrom(i gitserver.Client) *MockClient {
 // ClientCommitsNearFunc describes the behavior when the CommitsNear method
 // of the parent MockClient instance is invoked.
 type ClientCommitsNearFunc struct {
-	defaultHook func(db.DB, int, string) (map[string][]string, error)
-	hooks       []func(db.DB, int, string) (map[string][]string, error)
+	defaultHook func(context.Context, db.DB, int, string) (map[string][]string, error)
+	hooks       []func(context.Context, db.DB, int, string) (map[string][]string, error)
 	history     []ClientCommitsNearFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitsNear delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) CommitsNear(v0 db.DB, v1 int, v2 string) (map[string][]string, error) {
-	r0, r1 := m.CommitsNearFunc.nextHook()(v0, v1, v2)
-	m.CommitsNearFunc.appendCall(ClientCommitsNearFuncCall{v0, v1, v2, r0, r1})
+func (m *MockClient) CommitsNear(v0 context.Context, v1 db.DB, v2 int, v3 string) (map[string][]string, error) {
+	r0, r1 := m.CommitsNearFunc.nextHook()(v0, v1, v2, v3)
+	m.CommitsNearFunc.appendCall(ClientCommitsNearFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CommitsNear method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientCommitsNearFunc) SetDefaultHook(hook func(db.DB, int, string) (map[string][]string, error)) {
+func (f *ClientCommitsNearFunc) SetDefaultHook(hook func(context.Context, db.DB, int, string) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -88,7 +89,7 @@ func (f *ClientCommitsNearFunc) SetDefaultHook(hook func(db.DB, int, string) (ma
 // CommitsNear method of the parent MockClient instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientCommitsNearFunc) PushHook(hook func(db.DB, int, string) (map[string][]string, error)) {
+func (f *ClientCommitsNearFunc) PushHook(hook func(context.Context, db.DB, int, string) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -97,7 +98,7 @@ func (f *ClientCommitsNearFunc) PushHook(hook func(db.DB, int, string) (map[stri
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ClientCommitsNearFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(db.DB, int, string) (map[string][]string, error) {
+	f.SetDefaultHook(func(context.Context, db.DB, int, string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
@@ -105,12 +106,12 @@ func (f *ClientCommitsNearFunc) SetDefaultReturn(r0 map[string][]string, r1 erro
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ClientCommitsNearFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(db.DB, int, string) (map[string][]string, error) {
+	f.PushHook(func(context.Context, db.DB, int, string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientCommitsNearFunc) nextHook() func(db.DB, int, string) (map[string][]string, error) {
+func (f *ClientCommitsNearFunc) nextHook() func(context.Context, db.DB, int, string) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -145,13 +146,16 @@ func (f *ClientCommitsNearFunc) History() []ClientCommitsNearFuncCall {
 type ClientCommitsNearFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 db.DB
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 db.DB
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -163,7 +167,7 @@ type ClientCommitsNearFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientCommitsNearFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -175,24 +179,24 @@ func (c ClientCommitsNearFuncCall) Results() []interface{} {
 // ClientDirectoryChildrenFunc describes the behavior when the
 // DirectoryChildren method of the parent MockClient instance is invoked.
 type ClientDirectoryChildrenFunc struct {
-	defaultHook func(db.DB, int, string, []string) (map[string][]string, error)
-	hooks       []func(db.DB, int, string, []string) (map[string][]string, error)
+	defaultHook func(context.Context, db.DB, int, string, []string) (map[string][]string, error)
+	hooks       []func(context.Context, db.DB, int, string, []string) (map[string][]string, error)
 	history     []ClientDirectoryChildrenFuncCall
 	mutex       sync.Mutex
 }
 
 // DirectoryChildren delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) DirectoryChildren(v0 db.DB, v1 int, v2 string, v3 []string) (map[string][]string, error) {
-	r0, r1 := m.DirectoryChildrenFunc.nextHook()(v0, v1, v2, v3)
-	m.DirectoryChildrenFunc.appendCall(ClientDirectoryChildrenFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockClient) DirectoryChildren(v0 context.Context, v1 db.DB, v2 int, v3 string, v4 []string) (map[string][]string, error) {
+	r0, r1 := m.DirectoryChildrenFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DirectoryChildrenFunc.appendCall(ClientDirectoryChildrenFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the DirectoryChildren
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientDirectoryChildrenFunc) SetDefaultHook(hook func(db.DB, int, string, []string) (map[string][]string, error)) {
+func (f *ClientDirectoryChildrenFunc) SetDefaultHook(hook func(context.Context, db.DB, int, string, []string) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -200,7 +204,7 @@ func (f *ClientDirectoryChildrenFunc) SetDefaultHook(hook func(db.DB, int, strin
 // DirectoryChildren method of the parent MockClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientDirectoryChildrenFunc) PushHook(hook func(db.DB, int, string, []string) (map[string][]string, error)) {
+func (f *ClientDirectoryChildrenFunc) PushHook(hook func(context.Context, db.DB, int, string, []string) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -209,7 +213,7 @@ func (f *ClientDirectoryChildrenFunc) PushHook(hook func(db.DB, int, string, []s
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ClientDirectoryChildrenFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(db.DB, int, string, []string) (map[string][]string, error) {
+	f.SetDefaultHook(func(context.Context, db.DB, int, string, []string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
@@ -217,12 +221,12 @@ func (f *ClientDirectoryChildrenFunc) SetDefaultReturn(r0 map[string][]string, r
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ClientDirectoryChildrenFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(db.DB, int, string, []string) (map[string][]string, error) {
+	f.PushHook(func(context.Context, db.DB, int, string, []string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientDirectoryChildrenFunc) nextHook() func(db.DB, int, string, []string) (map[string][]string, error) {
+func (f *ClientDirectoryChildrenFunc) nextHook() func(context.Context, db.DB, int, string, []string) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -257,16 +261,19 @@ func (f *ClientDirectoryChildrenFunc) History() []ClientDirectoryChildrenFuncCal
 type ClientDirectoryChildrenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 db.DB
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 db.DB
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 int
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 []string
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -278,7 +285,7 @@ type ClientDirectoryChildrenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientDirectoryChildrenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -290,23 +297,23 @@ func (c ClientDirectoryChildrenFuncCall) Results() []interface{} {
 // ClientHeadFunc describes the behavior when the Head method of the parent
 // MockClient instance is invoked.
 type ClientHeadFunc struct {
-	defaultHook func(db.DB, int) (string, error)
-	hooks       []func(db.DB, int) (string, error)
+	defaultHook func(context.Context, db.DB, int) (string, error)
+	hooks       []func(context.Context, db.DB, int) (string, error)
 	history     []ClientHeadFuncCall
 	mutex       sync.Mutex
 }
 
 // Head delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) Head(v0 db.DB, v1 int) (string, error) {
-	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
-	m.HeadFunc.appendCall(ClientHeadFuncCall{v0, v1, r0, r1})
+func (m *MockClient) Head(v0 context.Context, v1 db.DB, v2 int) (string, error) {
+	r0, r1 := m.HeadFunc.nextHook()(v0, v1, v2)
+	m.HeadFunc.appendCall(ClientHeadFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Head method of the
 // parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientHeadFunc) SetDefaultHook(hook func(db.DB, int) (string, error)) {
+func (f *ClientHeadFunc) SetDefaultHook(hook func(context.Context, db.DB, int) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -314,7 +321,7 @@ func (f *ClientHeadFunc) SetDefaultHook(hook func(db.DB, int) (string, error)) {
 // Head method of the parent MockClient instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientHeadFunc) PushHook(hook func(db.DB, int) (string, error)) {
+func (f *ClientHeadFunc) PushHook(hook func(context.Context, db.DB, int) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -323,7 +330,7 @@ func (f *ClientHeadFunc) PushHook(hook func(db.DB, int) (string, error)) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(db.DB, int) (string, error) {
+	f.SetDefaultHook(func(context.Context, db.DB, int) (string, error) {
 		return r0, r1
 	})
 }
@@ -331,12 +338,12 @@ func (f *ClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ClientHeadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(db.DB, int) (string, error) {
+	f.PushHook(func(context.Context, db.DB, int) (string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientHeadFunc) nextHook() func(db.DB, int) (string, error) {
+func (f *ClientHeadFunc) nextHook() func(context.Context, db.DB, int) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -371,10 +378,13 @@ func (f *ClientHeadFunc) History() []ClientHeadFuncCall {
 type ClientHeadFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 db.DB
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 db.DB
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -386,7 +396,7 @@ type ClientHeadFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientHeadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

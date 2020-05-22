@@ -277,11 +277,13 @@ export class Driver {
         displayName,
         config,
         ensureRepos,
+        alwaysCloning,
     }: {
         kind: ExternalServiceKind
         displayName: string
         config: string
         ensureRepos?: string[]
+        alwaysCloning?: string[]
     }): Promise<void> {
         // Use the graphQL API to query external services on the instance.
         const { externalServices } = dataOrThrowErrors(
@@ -340,7 +342,19 @@ export class Driver {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(
-                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?filter=cloned&query=${encodeURIComponent(slug)}`
+                )
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
+                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
+            }
+        }
+
+        if (alwaysCloning) {
+            for (const slug of alwaysCloning) {
+                await this.page.goto(
+                    this.sourcegraphBaseUrl +
+                        `/site-admin/repositories?filter=cloning&query=${encodeURIComponent(slug)}`
                 )
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286

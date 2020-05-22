@@ -17,7 +17,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps, CopyQueryButtonProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -44,6 +44,7 @@ interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
+        CopyQueryButtonProps,
         Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
     location: H.Location

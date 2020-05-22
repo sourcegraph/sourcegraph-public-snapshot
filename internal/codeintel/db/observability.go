@@ -27,6 +27,7 @@ type ObservedDB struct {
 	getStatesOperation                 *observation.Operation
 	deleteUploadByIDOperation          *observation.Operation
 	resetStalledOperation              *observation.Operation
+	getDumpIDsOperation                *observation.Operation
 	getDumpByIDOperation               *observation.Operation
 	findClosestDumpsOperation          *observation.Operation
 	deleteOldestDumpOperation          *observation.Operation
@@ -130,6 +131,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"reset_stalled"},
 			Metrics:      metrics,
 		}),
+		getDumpIDsOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.GetDumpIDs",
+			MetricLabels: []string{"get_dump_ids"},
+			Metrics:      metrics,
+		}),
 		getDumpByIDOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.GetDumpByID",
 			MetricLabels: []string{"get_dump_by_id"},
@@ -200,6 +206,10 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 
 // wrap the given database with the same observed operations as the receiver database.
 func (db *ObservedDB) wrap(other DB) DB {
+	if other == nil {
+		return nil
+	}
+
 	return &ObservedDB{
 		db:                                 other,
 		savepointOperation:                 db.savepointOperation,
@@ -217,6 +227,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		getStatesOperation:                 db.getStatesOperation,
 		deleteUploadByIDOperation:          db.deleteUploadByIDOperation,
 		resetStalledOperation:              db.resetStalledOperation,
+		getDumpIDsOperation:                db.getDumpIDsOperation,
 		getDumpByIDOperation:               db.getDumpByIDOperation,
 		findClosestDumpsOperation:          db.findClosestDumpsOperation,
 		deleteOldestDumpOperation:          db.deleteOldestDumpOperation,
@@ -244,10 +255,10 @@ func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
 }
 
 // Savepoint calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Savepoint(ctx context.Context, name string) (err error) {
+func (db *ObservedDB) Savepoint(ctx context.Context) (_ string, err error) {
 	ctx, endObservation := db.savepointOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.Savepoint(ctx, name)
+	return db.db.Savepoint(ctx)
 }
 
 // RollbackToSavepoint calls into the inner DB and registers the observed results.
@@ -293,7 +304,7 @@ func (db *ObservedDB) QueueSize(ctx context.Context) (_ int, err error) {
 }
 
 // InsertUpload calls into the inner DB and registers the observed result.
-func (db *ObservedDB) InsertUpload(ctx context.Context, upload *Upload) (_ int, err error) {
+func (db *ObservedDB) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
 	ctx, endObservation := db.insertUploadOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.InsertUpload(ctx, upload)
@@ -328,18 +339,12 @@ func (db *ObservedDB) MarkErrored(ctx context.Context, id int, failureSummary, f
 }
 
 // Dequeue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ JobHandle, _ bool, err error) {
+func (db *ObservedDB) Dequeue(ctx context.Context) (_ Upload, _ DB, _ bool, err error) {
 	ctx, endObservation := db.dequeueOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	upload, jobHandle, ok, err := db.db.Dequeue(ctx)
-	if err == nil && ok {
-		// TODO(efritz) - find a way to do this without casting
-		if impl, ok := jobHandle.(*jobHandleImpl); ok {
-			impl.db = db.wrap(impl.db)
-		}
-	}
-	return upload, jobHandle, ok, err
+	upload, tx, ok, err := db.db.Dequeue(ctx)
+	return upload, db.wrap(tx), ok, err
 }
 
 // GetStates calls into the inner DB and registers the observed results.
@@ -361,6 +366,13 @@ func (db *ObservedDB) ResetStalled(ctx context.Context, now time.Time) (ids []in
 	ctx, endObservation := db.resetStalledOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
 	return db.db.ResetStalled(ctx, now)
+}
+
+// GetDumpIDs calls into the inner DB and registers the observed results.
+func (db *ObservedDB) GetDumpIDs(ctx context.Context) (_ []int, err error) {
+	ctx, endObservation := db.getDumpIDsOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.GetDumpIDs(ctx)
 }
 
 // GetDumpByID calls into the inner DB and registers the observed results.

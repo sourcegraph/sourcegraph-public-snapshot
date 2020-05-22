@@ -3,10 +3,11 @@ package janitor
 import "github.com/prometheus/client_golang/prometheus"
 
 type JanitorMetrics struct {
-	UploadFilesRemoved          prometheus.Counter
-	OprphanedBundleFilesRemoved prometheus.Counter
-	EvictedBundleFilesRemoved   prometheus.Counter
-	Errors                      prometheus.Counter
+	UploadFilesRemoved         prometheus.Counter
+	OrphanedBundleFilesRemoved prometheus.Counter
+	EvictedBundleFilesRemoved  prometheus.Counter
+	UploadRecordsRemoved       prometheus.Counter
+	Errors                     prometheus.Counter
 }
 
 func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
@@ -16,17 +17,23 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 	})
 	r.MustRegister(uploadFilesRemoved)
 
-	oprphanedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
+	orphanedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_orphaned_bundle_files_removed_total",
 		Help: "Total number of bundle files removed (with no corresponding database entry)",
 	})
-	r.MustRegister(oprphanedBundleFilesRemoved)
+	r.MustRegister(orphanedBundleFilesRemoved)
 
 	evictedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_evicted_bundle_files_removed_total",
 		Help: "Total number of bundles files removed (after evicting them from the database)",
 	})
 	r.MustRegister(evictedBundleFilesRemoved)
+
+	uploadRecordsRemoved := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_bundle_manager_janitor_upload_records_removed_total",
+		Help: "Total number of processed upload records removed (with no corresponding bundle file)",
+	})
+	r.MustRegister(uploadRecordsRemoved)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_errors_total",
@@ -35,9 +42,10 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 	r.MustRegister(errors)
 
 	return JanitorMetrics{
-		UploadFilesRemoved:          uploadFilesRemoved,
-		OprphanedBundleFilesRemoved: oprphanedBundleFilesRemoved,
-		EvictedBundleFilesRemoved:   evictedBundleFilesRemoved,
-		Errors:                      errors,
+		UploadFilesRemoved:         uploadFilesRemoved,
+		OrphanedBundleFilesRemoved: orphanedBundleFilesRemoved,
+		EvictedBundleFilesRemoved:  evictedBundleFilesRemoved,
+		UploadRecordsRemoved:       uploadRecordsRemoved,
+		Errors:                     errors,
 	}
 }

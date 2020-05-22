@@ -30,16 +30,15 @@ scalar JSONCString
 
 # A mutation.
 type Mutation {
-    # Creates a list of Changesets of a given repository in a code host (e.g.
-    # pull request on GitHub). If a changeset with the given input already
-    # exists, it's returned instead of a new entry being added to the database.
+    # Create a list of changesets in a specific repository on a code host (e.g.,
+    # pull requests on GitHub). If a changeset with the given input already
+    # exists, it is returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
-    # Adds a list of Changesets to a Campaign.
-    # The campaign must not have a PatchSet.
+    # Add a list of changesets to a campaign. The campaign must not have a patchset.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Create a patch set from patches (in unified diff format) that are computed by the caller.
+    # Create a patchset from patches (in unified diff format) that are computed by the caller.
     #
     # To create the campaign, call createCampaign with the returned PatchSet.id in the
     # CreateCampaignInput.patchSet field.
@@ -48,48 +47,41 @@ type Mutation {
         # created from this PatchSet.
         patches: [PatchInput!]!
     ): PatchSet!
-    # Updates a campaign.
-    # Note, updating is not allowed when:
-    # The campaign has already been closed.
-    # A plan is added to a manual campaign.
-    # A non-manual campaign is being published.
-    # The branch of a (partially-) published campaign is changed.
+    # Updates a campaign. Updating is not allowed when any of the following are true:
+    #
+    # - The campaign has already been closed.
+    # - A plan is added to a manual campaign.
+    # - A non-manual campaign is being published.
+    # - The branch of a (partially or fully) published campaign is changed.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retries creating changesets from the patches in the PatchSet that could not be successfully created on the code host.
-    # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
+    # Retry creating changesets from the patches in the campaign's patchset that could not be
+    # successfully created on the code host. Retrying will clear the errors list of a campaign.
     retryCampaign(campaign: ID!): Campaign!
-    # Deletes a campaign.
+    # Delete a campaign.
     deleteCampaign(
         campaign: ID!
-        # Whether to close the changesets associated with this campaign on their
-        # respective codehosts, where "close" means the appropriate final state
-        # on the codehost (e.g. "declined" on Bitbucket Server).
+        # Whether to close the changesets associated with this campaign on their respective code
+        # hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): EmptyResponse
-    # Closes a campaign.
-    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
-    # time and, if closeChangesets = true, closes associated changesets on the
-    # codehosts.
+    # Close a campaign.
     closeCampaign(
         campaign: ID!
-        # Whether to close the changesets associated with this campaign on their
-        # respective codehosts, where "close" means the appropriate final state
-        # on the codehost (e.g. "declined" on Bitbucket Server).
+        # Whether to close the changesets associated with this campaign on their respective code
+        # hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Publishes the Campaign by turning its patches into changesets on
-    # the codehosts.
-    # The Campaign.draft field will be set to false and Campaign.status will
-    # update according to the progress of turning the patches into
-    # changesets.
+    # Publish the campaign by turning its patches into changesets on the code hosts. The
+    # Campaign.draft field will be set to false and Campaign.status will update according to the
+    # progress of turning the patches into changesets.
     publishCampaign(campaign: ID!): Campaign!
-    # Creates an ExternalChangeset on the codehost asynchronously.
-    # The Patch has to belong to a PatchSet that has been attached
-    # to a Campaign. Otherwise an error is returned.
-    # Since this is an asynchronous operation, the Campaign.status field can be
-    # used to keep track of progress.
+    # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
+    # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
+    # query the campaign's status to track the progress of this async operation.
     publishChangeset(patch: ID!): EmptyResponse!
-    # Enqueues the given changeset for high-priority syncing.
+    # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
@@ -398,23 +390,32 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
-    # Set permissions of a repository with a full set of users by their usernames or emails.
+    # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
+    # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
-        # The repository that the mutation is applied to.
+        # The repository whose permissions to set.
         repository: ID!
-        # A list of usernames or email addresses according to site configuration.
+        # A list of user identifiers, which define the set of users who may view the repository. All
+        # users not included in the list will not be permitted to view the repository on
+        # Sourcegraph. Depending on the bindID option in the permissions.userMapping site
+        # configuration property, the elements of the list are either all usernames (bindID of
+        # "username") or all email addresses (bindID of "email").
         bindIDs: [String!]!
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
-    # Schedule a permissions sync for given repository.
+    # Schedule a permissions sync for given repository. This queries the repository's code host for
+    # all users' permissions associated with the repository, so that the current permissions apply
+    # to all users' operations on that repository on Sourcegraph.
     scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
-    # Schedule a permissions sync for given user.
+    # Schedule a permissions sync for given user. This queries all code hosts for the user's current
+    # repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
+    # the user's operations on Sourcegraph.
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created
-# from the parent patch set.
+# from the parent patchset.
 input PatchInput {
     # The repository that this patch is applied to.
     repository: ID!
@@ -442,25 +443,26 @@ input CreateCampaignInput {
     # The name of the campaign.
     name: String!
 
-    # The description of the campaign as Markdown.
+    # The description of the campaign (as Markdown).
     description: String
 
-    # The name of the branch that will be created for each changeset on the codehost if the patchSet attribute is specified.
-    # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
-    # This is required if the patchSet attribute is specified.
+    # The name of the branch that will be created for each changeset on the code host if the
+    # patchSet attribute is specified. If a branch with the given name already exists, a fallback
+    # name will be created by adding a count to the end of the branch name until the name doesn't
+    # exist. Example: "my-branch-name" becomes "my-branch-name-1". Required if the patchSet
+    # attribute is specified.
     branch: String
 
-    # An optional reference to a PatchSet that was created before this mutation.
-    # If null, existing changesets can be added manually.
-    # If set, no changesets can be added manually, they will be created by Sourcegraph
-    # based on the patches belonging to the PatchSet.
-    # Will error if the PatchSet has been purged already and needs to be recreated.
-    # Using a PatchSet for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
+    # An optional reference to a patchset that was created before this mutation. If null, existing
+    # changesets can be added manually. If set, no changesets can be added manually; they will be
+    # created. based on the patches belonging to the patchset. An error will be returned if the
+    # patchset has expired. Using a patchset to create or update a campaign will retain it for the
+    # lifetime of the campaign and prevent it from expiring.
     patchSet: ID
 
-    # Whether or not to create the Campaign in draft mode. Default is false.
-    # When a Campaign is created in draft mode, its patches are not
-    # created on the codehost, but only when publishing the Campaign.
+    # Whether to create the campaign in draft mode. Default is false. A draft campaign lets you
+    # preview the changesets before creating them on the code host. When you're ready, you can
+    # publish changesets individually or all at once.
     draft: Boolean
 }
 
@@ -472,33 +474,32 @@ input UpdateCampaignInput {
     # The updated name of the campaign (if non-null).
     name: String
 
-    # The branch name. This is not allowed if the campaign or any individual changesets have already been published.
+    # The branch name. This is not allowed if the campaign or any individual changesets have already
+    # been published.
     branch: String
 
-    # The updated description of the campaign as Markdown (if non-null).
+    # The updated description of the campaign (as Markdown), if non-null.
     description: String
 
-    # An optional reference to a completed PatchSet that was previewed
-    # before updating the Campaign.
-    # If set, the Campaign's changesets will be updated to the Changesets of the given PatchSet.
-    # The Campaign's status will be updated accordingly while possibly
-    # new ExternalChangesets are created/updated/closed on the codehosts.
+    # A patchset that describes a new set of changes to make. If set, the previous changesets are
+    # updated or closed, and new changesetes are created, to reflect the new patchset.
     patchSet: ID
 }
 
-# A set of Patches that will be turned into changesets by a campaign.
-# It is cached and addressable by its ID for a limited amount of time.
+# A set of patches that will be applied to code by a campaign. Each patch corresponds to a single
+# changeset that will be created on a code host. A patchset is cached and is addressable by its ID
+# for a limited amount of time.
 type PatchSet implements Node {
-    # The unique ID of this PatchSet.
+    # The unique ID of this patchset.
     id: ID!
 
     # The proposed patches for the changesets that will be created by the campaign.
     patches(first: Int): PatchConnection!
 
-    # The URL where the PatchSet can be previewed and a campaign can be created from it.
+    # The URL where the patchset preview is displayed (and where you can create a campaign from it).
     previewURL: String!
 
-    # The diff stat for all the patches in the patch set.
+    # The diff stat for all the patches in the patchset.
     diffStat: DiffStat!
 }
 
@@ -514,44 +515,43 @@ type RepositoryComparisonConnection {
     pageInfo: PageInfo!
 }
 
-# The state a background process can be in.
+# The state of a background process.
 enum BackgroundProcessState {
-    # The background process is processing items.
+    # The background process is currently processing items.
     PROCESSING
-    # The background process attempted processing all items, but some failed.
+    # The background process failed.
     ERRORED
-    # The background process completed processing all items successfully.
+    # The background process successfully completed the processing of all items.
     COMPLETED
-    # The background process was canceled.
+    # The background process was cancelled.
     CANCELED
 }
 
-# Reusable type to report progress of a background process.
+# The status of a background process.
 type BackgroundProcessStatus {
     # How many items were successfully completed.
     completedCount: Int!
 
-    # How many items are not done yet (including items that errored).
+    # How many items are not yet done (including items that errored).
     pendingCount: Int!
 
-    # The state the background process is currently in.
+    # The state of the background process.
     state: BackgroundProcessState!
 
     # Messages of errors that occurred since the current run of this process was started.
     errors: [String!]!
 }
 
-# A collection of changesets.
+# A campaign is a set of related changes to apply to code across one or more repositories.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
 
-    # The PatchSet that was used to create this campaign.
-    # If null, changesets are added to the campaign manually.
+    # The patchset that was used to create this campaign. If null, changesets are added to the
+    # campaign manually.
     patchSet: PatchSet
 
-    # The current status of creating or updating the campaigns changesets on
-    # the code host.
+    # The current status of creating or updating the campaign's changesets on the code host.
     status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
@@ -560,7 +560,7 @@ type Campaign implements Node {
     # The name of the campaign.
     name: String!
 
-    # The description as Markdown.
+    # The description (as Markdown).
     description: String
 
     # The branch of the changesets.
@@ -581,53 +581,50 @@ type Campaign implements Node {
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
 
-    # The combined diff of all changesets across all repositories, already created on the code host.
+    # The combined diff of all changesets (that already exist on the code host) across all affected
+    # repositories.
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
-    # The changesets in this campaign, already created on the code host.
+    # The changesets in this campaign that already exist on the code host.
     changesets(
         first: Int
-        # Only include changesets with the given state
+        # Only include changesets with the given state.
         state: ChangesetState
-        # Only include changesets with the given review state
+        # Only include changesets with the given review state.
         reviewState: ChangesetReviewState
-        # Only include changesets with the given check state
+        # Only include changesets with the given check state.
         checkState: ChangesetCheckState
     ): ExternalChangesetConnection!
 
     # All the changesets in this campaign whose state is ChangesetState.OPEN.
     openChangesets: ExternalChangesetConnection!
 
-    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    # The changeset counts over time, in 1-day intervals backwards from the point in time given in
+    # the "to" parameter.
     changesetCountsOverTime(
-        # Only include changeset counts up to this point in time (inclusive).
-        # Defaults to createdAt.
+        # Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
         from: DateTime
-        # Only include changeset counts up to this point in time (inclusive).
-        # Defaults to now.
+        # Only include changeset counts up to this point in time (inclusive). Defaults to the
+        # current time.
         to: DateTime
     ): [ChangesetCounts!]!
 
     # The date and time when the campaign was closed.
     closedAt: DateTime
 
-    # The date and time when the Campaign changed from draft mode to published.
-    # If the Campaign has not been published yet (is still in draft mode) this
-    # is null.
-    # If the Campaign was never in draft mode the value is the same as createdAt.
+    # The date and time when the campaign changed from draft mode to published. If the campaign has
+    # not been published yet (i.e., it is still in draft mode), this is null. If the campaign was never in
+    # draft mode, the value is the same as Campaign.createdAt.
     publishedAt: DateTime
 
-    # The patches that will be turned into changesets on the code host when
-    # publishing the Campaign.
-    # If the Campaign is a "manual" campaign and doesn't have a PatchSet
-    # attached, there won't be any nodes returned by this connection.
-    # When publishing a Campaign, the number of nodes in changesets will
-    # increase with each decrease in patches. The Completed count in the
-    # Campaign.status increments with every Patch turned into an
-    # ExternalChangeset.
+    # The patches that will be turned into changesets on the code host when publishing the campaign.
+    # If the campaign is a "manual" campaign and doesn't have a patchset attached, there won't be
+    # any nodes returned by this connection. When publishing a campaign, the number of nodes in
+    # changesets will increase with each decrease in patches. The completed count in the
+    # Campaign.status field increments with every patch turned into an ExternalChangeset.
     patches(first: Int): PatchConnection!
 
-    # The diff stat for all the patches and changesets in the Campaign.
+    # The diff stat for all the patches and changesets in the campaign.
     diffStat: DiffStat!
 }
 
@@ -663,7 +660,7 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# A Changeset's state
+# The state of a changeset.
 enum ChangesetState {
     OPEN
     CLOSED
@@ -671,7 +668,7 @@ enum ChangesetState {
     DELETED
 }
 
-# The state of a Changeset Review
+# The review state of a changeset.
 enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
@@ -680,7 +677,7 @@ enum ChangesetReviewState {
     DISMISSED
 }
 
-# The state of continuous integration checks on a changeset
+# The state of checks (e.g., for continuous integration) on a changeset.
 enum ChangesetCheckState {
     PENDING
     PASSED
@@ -689,14 +686,15 @@ enum ChangesetCheckState {
 
 # The input to the createChangesets mutation.
 input CreateChangesetInput {
-    # The repository ID that this Changeset belongs to.
+    # The ID of the repository that this changeset belongs to.
     repository: ID!
-    # The external ID that uniquely identifies this Changeset in the above repository.
-    # Github: PR number
+    # The external ID that uniquely identifies this changeset in the repository on the code host.
+    # For GitHub and Bitbucket Server, this is the pull request number (as a string).
     externalID: String!
 }
 
-# A Patch that can be used to create a changeset on a code host.
+# A patch is a code change on a repository branch. It is used to create a changeset on a code host
+# as part of a campaign.
 type Patch implements Node {
     # The id of the patch.
     id: ID!
@@ -707,42 +705,44 @@ type Patch implements Node {
     # The actual diff of the patch.
     diff: PreviewRepositoryComparison!
 
-    # Whether the Patch is enqueued for publication. Default is false.
-    # It will be true when:
-    # - a Campaign has been created with the PatchSet to which this Patch belongs.
-    # - when a Campaign with the PatchSet has been published after being in draft mode.
-    # - when the Patch has been individually published through the publishChangeset mutation.
+    # Whether the patch is enqueued for publication. Defaults to false. It will be true when any of
+    # the following has occurred:
+    #
+    # - A campaign has been created with the patchset to which this patch belongs.
+    # - A campaign with the patchset has been published after being in draft mode.
+    # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
 }
 
-# A label attached to a changeset on a codehost, mirrored
+# A label attached to a changeset on a code host.
 type ChangesetLabel {
-    # The labels text
+    # The label's text.
     text: String!
-    # Label color, defined in hex without the #. E.g., 93ba13
+    # The label's color, as a hex color code without the #. For example: "93ba13".
     color: String!
-    # Optional descriptive text to support the understandability of the labels meaning
+    # An optional description of the label.
     description: String
 }
 
-# A changeset in a code host (e.g. a PR on Github)
+# A changeset on a code host (e.g., a pull request on GitHub).
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
     # The external ID that uniquely identifies this ExternalChangeset on the
-    # codehost. For example, on GitHub this is the PR number.
+    # code host. For example, on GitHub this is the pull request number.
     externalID: String!
 
     # The repository changed by this changeset.
     repository: Repository!
 
-    # The campaigns that have this changeset in them.
+    # The campaigns that contain this changeset.
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Only return campaigns in this state.
         state: CampaignState
-        # Only return campaigns that have a patch set.
+        # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
     ): CampaignConnection!
 
@@ -755,16 +755,16 @@ type ExternalChangeset implements Node {
     # The date and time when the changeset was updated.
     updatedAt: DateTime!
 
-    # The date and time when the next changeset sync is scheduled. Can be null if not scheduled.
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
     nextSyncAt: DateTime
 
-    # The title of the changeset
+    # The title of the changeset.
     title: String!
 
-    # The body of the changeset
+    # The body of the changeset.
     body: String!
 
-    # The state of the changeset
+    # The state of the changeset.
     state: ChangesetState!
 
     # The labels attached to the changeset on the code host.
@@ -776,18 +776,17 @@ type ExternalChangeset implements Node {
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
 
-    # The head of the diff ("new" or "right-hand side").
-    head: GitRef!
-
     # The base of the diff ("old" or "left-hand side").
     base: GitRef!
 
-    # The diff of this changeset.
-    # Only returned if the changeset has not been merged or closed.
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef!
+
+    # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
 
-    # The state of the continuous integration checks on this changeset.
-    # It can be null if no checks have been configured.
+    # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
+    # checks have been configured.
     checkState: ChangesetCheckState
 }
 
@@ -815,7 +814,7 @@ type PatchConnection {
     pageInfo: PageInfo!
 }
 
-# A changeset event in a code host (e.g. a comment on a PR on Github)
+# A changeset event in a code host (e.g., a comment on a pull request on GitHub).
 type ChangesetEvent implements Node {
     # The unique ID for the changeset event.
     id: ID!
@@ -1017,7 +1016,7 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a patch set.
+        # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
     ): CampaignConnection!
 
@@ -1332,7 +1331,7 @@ type SearchResults {
     repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
-    # reached.
+    # reached, or because they were excluded due to being forks or archives.
     #
     # In paginated search requests, this represents the set of repositories searched for the
     # individual paginated request / input cursor and not the global set of repositories that
@@ -1716,8 +1715,6 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
-    # Link to another Sourcegraph instance location where this repository is located.
-    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
@@ -1945,44 +1942,7 @@ type PreviewRepositoryComparison {
         first: Int
         # Return file diffs after the given cursor.
         after: String
-    ): PreviewFileDiffConnection!
-}
-
-# A list of file diffs that might be applied.
-type PreviewFileDiffConnection {
-    # A list of file diffs that might be applied.
-    nodes: [PreviewFileDiff!]!
-    # The total count of file diffs in the connection, if available. This total count may be larger than the number
-    # of nodes in this object when the result is paginated.
-    totalCount: Int
-    # Pagination information.
-    pageInfo: PageInfo!
-    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    diffStat: DiffStat!
-    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    rawDiff: String!
-}
-
-# A diff for a single file that has not been applied yet.
-# Subset of the FileDiff type.
-type PreviewFileDiff {
-    # The old (original) path of the file, or null if the file was added.
-    oldPath: String
-    # The old file, or null if the file was created (oldFile.path == oldPath).
-    oldFile: File2
-    # The new path of the file if the diff was applied, or null if the file was deleted.
-    newPath: String
-    # Hunks that were would be changed from old to new.
-    hunks: [FileDiffHunk!]!
-    # The diff stat for the whole file.
-    stat: DiffStat!
-    # FOR INTERNAL USE ONLY.
-    #
-    # An identifier for the file diff that is unique among all other file diffs in the list that
-    # contains it.
-    internalID: String!
+    ): FileDiffConnection!
 }
 
 # The differences between two concrete Git commits in a repository.
@@ -2527,6 +2487,8 @@ interface TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2593,6 +2555,8 @@ type GitTree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2626,6 +2590,41 @@ interface File2 {
     # The canonical URL to this file (using an immutable revision specifier).
     canonicalURL: String!
     # The URLs to this file on external services.
+    externalURLs: [ExternalLink!]!
+    # Highlight the file.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
+}
+
+# A virtual file is an arbitrary file that is generated in memory.
+type VirtualFile implements File2 {
+    # The full path (relative to the root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file.
+    name: String!
+    # False because this is a file, not a directory.
+    isDirectory: Boolean!
+    # The content of this file.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The file rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # Not implemented.
+    url: String!
+    # Not implemented.
+    canonicalURL: String!
+    # Not implemented.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(
@@ -2798,7 +2797,8 @@ type FileMatch {
 type LineMatch {
     # The preview.
     preview: String!
-    # The line number.
+    # The line number. 0-based. The first line will have lineNumber 0. Note: A
+    # UI will normally display line numbers 1-based.
     lineNumber: Int!
     # Tuples of [offset, length] measured in characters (not bytes).
     offsetAndLengths: [[Int!]!]!
@@ -3330,6 +3330,19 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): CodeIntelUsageStatistics!
+    # Monitoring overview for this site.
+    #
+    # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
+    # is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
+    # order to ensure that if the frontend goes down you still recieve alerts:
+    #
+    # Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
+    # Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    #
+    monitoringStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+    ): MonitoringStatistics!
 }
 
 # The configuration for a site.
@@ -3628,6 +3641,26 @@ type DeploymentConfiguration {
     email: String
     # The site ID.
     siteID: String
+}
+
+# Monitoring overview.
+type MonitoringStatistics {
+    # Alerts fired in this time span.
+    alerts: [MonitoringAlert!]!
+}
+
+# A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+type MonitoringAlert {
+    # End time of this event, which describes the past 12h of recorded data.
+    timestamp: DateTime!
+    # Name of alert that the service fired.
+    name: String!
+    # Name of the service that fired the alert.
+    serviceName: String!
+    # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
+    # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
+    # time on average, etc.
+    average: Float!
 }
 
 # A list of survey responses
@@ -3935,6 +3968,9 @@ enum LSIFUploadState {
 
     # This upload is queued to be processed later.
     QUEUED
+
+    # This upload is currently being transferred to Sourcegraph.
+    UPLOADING
 }
 
 # Metadata and status about an LSIF upload.

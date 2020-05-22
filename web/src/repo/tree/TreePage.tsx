@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -26,7 +27,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -51,7 +52,15 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
+        <Link
+            to={url}
+            className={classNames(
+                'tree-entry',
+                isDir && 'font-weight-bold',
+                `e2e-tree-entry-${isDir ? 'directory' : 'file'}`
+            )}
+            title={filePath}
+        >
             {name}
             {isDir && '/'}
         </Link>
@@ -70,7 +79,7 @@ const TreeEntriesSection: React.FunctionComponent<{
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
 }> = ({ title, parentPath, entries }) =>
     entries.length > 0 ? (
-        <section className="tree-page__section">
+        <section className="tree-page__section e2e-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((e, i) => (
@@ -143,6 +152,7 @@ interface Props
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        CopyQueryButtonProps,
         VersionContextProps {
     repoName: string
     repoID: GQL.ID
@@ -314,44 +324,44 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 )
             ) : (
                 <>
-                    {treeOrError.isRoot ? (
-                        <header>
-                            <h2 className="tree-page__title">
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
-                            </h2>
-                            {repoDescription && <p>{repoDescription}</p>}
-                            <div className="btn-group mb-3">
-                                <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
-                                    <SourceCommitIcon className="icon-inline" /> Commits
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
-                                    <SourceBranchIcon className="icon-inline" /> Branches
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
-                                    <TagIcon className="icon-inline" /> Tags
-                                </Link>
-                                <Link
-                                    className="btn btn-secondary"
-                                    to={
-                                        rev
-                                            ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
-                                            : `/${repoName}/-/compare`
-                                    }
-                                >
-                                    <HistoryIcon className="icon-inline" /> Compare
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
-                                    <UserIcon className="icon-inline" /> Contributors
-                                </Link>
-                            </div>
-                        </header>
-                    ) : (
-                        <header>
+                    <header className="mb-3">
+                        {treeOrError.isRoot ? (
+                            <>
+                                <h2 className="tree-page__title">
+                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
+                                </h2>
+                                {repoDescription && <p>{repoDescription}</p>}
+                                <div className="btn-group mb-3">
+                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
+                                        <SourceCommitIcon className="icon-inline" /> Commits
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
+                                        <SourceBranchIcon className="icon-inline" /> Branches
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
+                                        <TagIcon className="icon-inline" /> Tags
+                                    </Link>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={
+                                            rev
+                                                ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
+                                                : `/${repoName}/-/compare`
+                                        }
+                                    >
+                                        <HistoryIcon className="icon-inline" /> Compare
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
+                                        <UserIcon className="icon-inline" /> Contributors
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
                             <h2 className="tree-page__title">
                                 <FolderIcon className="icon-inline" /> {filePath}
                             </h2>
-                        </header>
-                    )}
+                        )}
+                    </header>
                     {views && (
                         <ViewGrid
                             {...props}

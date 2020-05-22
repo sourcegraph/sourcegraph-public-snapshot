@@ -222,11 +222,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	}
 
 	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
+		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, overLimit bool, err error) {
 			calledResolveRepositories = true
 			missingRepoRevs = make([]*search.RepositoryRevisions, 0)
 			repoRevs = generateRepoRevs(numRepos)
-			return repoRevs, missingRepoRevs, true, nil
+			return repoRevs, missingRepoRevs, excludedRepos, true, nil
 		}
 	}
 	defer func() { mockResolveRepositories = nil }()

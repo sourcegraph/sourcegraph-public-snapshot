@@ -27,10 +27,12 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	repo        *types.Repo
-	redirectURL *string
-	icon        string
-	matches     []*searchResultMatchResolver
+	repo    *types.Repo
+	icon    string
+	matches []*searchResultMatchResolver
+
+	// rev optionally specifies a revision to go to for search results.
+	rev string
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
@@ -118,11 +120,6 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	}
 
 	return r.repo.Description, nil
-}
-
-// Deprecated: Use repositoryRedirect query instead.
-func (r *RepositoryResolver) RedirectURL() *string {
-	return r.redirectURL
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -227,7 +224,12 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 	return nil
 }
 
-func (r *RepositoryResolver) URL() string { return "/" + string(r.repo.Name) }
+func (r *RepositoryResolver) URL() string {
+	if r.rev != "" {
+		return "/" + string(r.repo.Name) + "@" + r.rev
+	}
+	return "/" + string(r.repo.Name)
+}
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
@@ -238,7 +240,13 @@ func (r *RepositoryResolver) Icon() string {
 }
 
 func (r *RepositoryResolver) Label() (*markdownResolver, error) {
-	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
+	var label string
+	if r.rev != "" {
+		label = string(r.repo.Name) + "@" + r.rev
+	} else {
+		label = string(r.repo.Name)
+	}
+	text := "[" + label + "](/" + label + ")"
 	return &markdownResolver{text: text}, nil
 }
 

@@ -2,12 +2,12 @@ package resolvers
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -255,23 +255,6 @@ func (r *patchResolver) BaseRepository(ctx context.Context) (*graphqlbackend.Rep
 	return r.Repository(ctx)
 }
 
-func (r *patchResolver) Diff() graphqlbackend.PatchResolver {
-	return r
-}
-
-func (r *patchResolver) FileDiffs(ctx context.Context, args *graphqlbackend.FileDiffsConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {
-	_, commit, err := r.computeRepoCommit(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &previewFileDiffConnectionResolver{
-		patch:  r.patch,
-		commit: commit,
-		first:  args.First,
-		after:  args.After,
-	}, nil
-}
-
 func (r *patchResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 	// We tried to preload a ChangesetJob for this Patch
 	if r.attemptedPreloadChangesetJob {
@@ -295,156 +278,131 @@ func (r *patchResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 	return cj.FinishedAt.IsZero(), nil
 }
 
-type previewFileDiffConnectionResolver struct {
-	patch  *campaigns.Patch
-	commit *graphqlbackend.GitCommitResolver
-	first  *int32
-	after  *string
-
-	// cache result because it is used by multiple fields
-	once        sync.Once
-	fileDiffs   []*diff.FileDiff
-	afterIdx    int32
-	hasNextPage bool
-	err         error
+func (r *patchResolver) Diff() graphqlbackend.PatchResolver {
+	return r
 }
 
-func (r *previewFileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, int32, error) {
-	r.once.Do(func() {
-		r.fileDiffs, r.err = diff.ParseMultiFileDiff([]byte(r.patch.Diff))
-		if r.err != nil {
-			return
-		}
-		if r.after != nil {
-			parsedIdx, err := strconv.ParseInt(*r.after, 0, 32)
-			if err != nil {
-				r.err = err
-				return
+func (r *patchResolver) FileDiffs(ctx context.Context, args *graphqlbackend.FileDiffsConnectionArgs) (graphqlbackend.FileDiffConnection, error) {
+	_, commit, err := r.computeRepoCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewFileDiffConnectionResolver(commit, commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
+}
+
+func fileDiffConnectionCompute(patch *campaigns.Patch) func(ctx context.Context, args *graphqlbackend.FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
+	var (
+		once        sync.Once
+		fileDiffs   []*diff.FileDiff
+		afterIdx    int32
+		hasNextPage bool
+		err         error
+	)
+	return func(ctx context.Context, args *graphqlbackend.FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
+		once.Do(func() {
+			if args.After != nil {
+				parsedIdx, err := strconv.ParseInt(*args.After, 0, 32)
+				if err != nil {
+					return
+				}
+				if parsedIdx < 0 {
+					parsedIdx = 0
+				}
+				afterIdx = int32(parsedIdx)
 			}
-			if parsedIdx < 0 {
-				parsedIdx = 0
+			totalAmount := afterIdx
+			if args.First != nil {
+				totalAmount += *args.First
 			}
-			r.afterIdx = int32(parsedIdx)
+
+			dr := diff.NewMultiFileDiffReader(strings.NewReader(patch.Diff))
+			for {
+				var fileDiff *diff.FileDiff
+				fileDiff, err = dr.ReadFile()
+				if err == io.EOF {
+					err = nil
+					break
+				}
+				if err != nil {
+					return
+				}
+				fileDiffs = append(fileDiffs, fileDiff)
+				if len(fileDiffs) == int(totalAmount) {
+					// Check for hasNextPage.
+					_, err = dr.ReadFile()
+					if err != nil && err != io.EOF {
+						return
+					}
+					if err == io.EOF {
+						err = nil
+					} else {
+						hasNextPage = true
+					}
+					break
+				}
+			}
+		})
+		return fileDiffs, afterIdx, hasNextPage, err
+	}
+}
+
+func previewNewFile(r *graphqlbackend.FileDiffResolver) graphqlbackend.FileResolver {
+	fileStat := graphqlbackend.CreateFileInfo(r.FileDiff.NewName, false)
+	return graphqlbackend.NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r))
+}
+
+func fileDiffVirtualFileContent(r *graphqlbackend.FileDiffResolver) graphqlbackend.FileContentFunc {
+	var (
+		once       sync.Once
+		newContent string
+		err        error
+	)
+	return func(ctx context.Context) (string, error) {
+		once.Do(func() {
+			var oldContent string
+			if oldFile := r.OldFile(); oldFile != nil {
+				var err error
+				oldContent, err = r.OldFile().Content(ctx)
+				if err != nil {
+					return
+				}
+			}
+			newContent = applyPatch(oldContent, r.FileDiff)
+		})
+		return newContent, err
+	}
+}
+
+func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
+	contentLines := strings.Split(fileContent, "\n")
+	newContentLines := make([]string, 0)
+	var lastLine int32 = 1
+	// Assumes the hunks are sorted by ascending lines.
+	for _, hunk := range fileDiff.Hunks {
+		// Detect holes.
+		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
+			originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
+			newContentLines = append(newContentLines, originalLines...)
+			lastLine += int32(len(originalLines))
 		}
-		if r.first != nil && len(r.fileDiffs) > int(*r.first+r.afterIdx) {
-			r.hasNextPage = true
-		}
-	})
-	return r.fileDiffs, r.afterIdx, r.err
-}
-
-func (r *previewFileDiffConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PreviewFileDiff, error) {
-	fileDiffs, afterIdx, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if r.first != nil && int(*r.first+afterIdx) <= len(fileDiffs) {
-		fileDiffs = fileDiffs[afterIdx:(*r.first + afterIdx)]
-	} else if int(afterIdx) <= len(fileDiffs) {
-		fileDiffs = fileDiffs[afterIdx:]
-	} else {
-		fileDiffs = []*diff.FileDiff{}
-	}
-
-	resolvers := make([]graphqlbackend.PreviewFileDiff, len(fileDiffs))
-	for i, fileDiff := range fileDiffs {
-		resolvers[i] = &previewFileDiffResolver{
-			fileDiff: fileDiff,
-			commit:   r.commit,
+		hunkLines := strings.Split(string(hunk.Body), "\n")
+		for _, line := range hunkLines {
+			switch {
+			case line == "":
+				// Skip
+			case strings.HasPrefix(line, "-"):
+				lastLine++
+			case strings.HasPrefix(line, "+"):
+				newContentLines = append(newContentLines, line[1:])
+			default:
+				newContentLines = append(newContentLines, contentLines[lastLine-1])
+				lastLine++
+			}
 		}
 	}
-	return resolvers, nil
-}
-
-func (r *previewFileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
+	// Append remaining lines from original file.
+	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
+		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
 	}
-	if r.first == nil || (len(fileDiffs) > int(*r.first)) {
-		n := int32(len(fileDiffs))
-		return &n, nil
-	}
-	// This is taken from fileDiffConnectionResolver.TotalCount
-	return nil, nil
-}
-
-func (r *previewFileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, afterIdx, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !r.hasNextPage {
-		return graphqlutil.HasNextPage(r.hasNextPage), nil
-	}
-	next := int32(afterIdx)
-	if r.first != nil {
-		next += *r.first
-	}
-	return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
-}
-
-func (r *previewFileDiffConnectionResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	fileDiffs, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stat := &graphqlbackend.DiffStat{}
-	for _, fileDiff := range fileDiffs {
-		s := fileDiff.Stat()
-		stat.AddStat(s)
-	}
-	return stat, nil
-}
-
-func (r *previewFileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, _, err := r.compute(ctx)
-	if err != nil {
-		return "", err
-	}
-	b, err := diff.PrintMultiFileDiff(fileDiffs)
-	return string(b), err
-}
-
-type previewFileDiffResolver struct {
-	fileDiff *diff.FileDiff
-	commit   *graphqlbackend.GitCommitResolver
-}
-
-func (r *previewFileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
-func (r *previewFileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-
-func (r *previewFileDiffResolver) Hunks() []*graphqlbackend.DiffHunk {
-	highlighter := &previewFileDiffHighlighter{previewFileDiffResolver: r}
-	hunks := make([]*graphqlbackend.DiffHunk, len(r.fileDiff.Hunks))
-	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = graphqlbackend.NewDiffHunk(hunk, highlighter)
-	}
-	return hunks
-}
-
-func (r *previewFileDiffResolver) Stat() *graphqlbackend.DiffStat {
-	stat := r.fileDiff.Stat()
-	return graphqlbackend.NewDiffStat(stat)
-}
-
-func (r *previewFileDiffResolver) OldFile() *graphqlbackend.GitTreeEntryResolver {
-	if diffPathOrNull(r.fileDiff.OrigName) == nil {
-		return nil
-	}
-	fileStat := graphqlbackend.CreateFileInfo(r.fileDiff.OrigName, false)
-	return graphqlbackend.NewGitTreeEntryResolver(r.commit, fileStat)
-}
-
-func (r *previewFileDiffResolver) InternalID() string {
-	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.fileDiff.OrigName), r.fileDiff.OrigName, r.fileDiff.NewName)))
-	return hex.EncodeToString(b[:])[:32]
-}
-
-func diffPathOrNull(path string) *string {
-	if path == "/dev/null" || path == "" {
-		return nil
-	}
-	return &path
+	return strings.Join(newContentLines, "\n")
 }

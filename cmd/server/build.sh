@@ -64,7 +64,6 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/replacer
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/sourcegraph/cmd/symbols
-  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager
   github.com/google/zoekt/cmd/zoekt-archive-index
@@ -82,9 +81,6 @@ echo "--- ctags"
 cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
-
-echo "--- precise code intel"
-cp -a ./cmd/precise-code-intel "$OUTPUT"
 
 echo "--- monitoring generation"
 pushd monitoring && go generate && popd

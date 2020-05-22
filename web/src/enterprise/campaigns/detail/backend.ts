@@ -11,12 +11,11 @@ import {
     IEmptyResponse,
     IExternalChangeset,
     IFileDiffConnection,
-    IPreviewFileDiffConnection,
     IPatchSet,
     IPatchesOnCampaignArguments,
     IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
@@ -497,7 +496,7 @@ export const queryExternalChangesetFileDiffs = (
 export const queryPatchFileDiffs = (
     patch: ID,
     { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
-): Observable<IPreviewFileDiffConnection> =>
+): Observable<IFileDiffConnection> =>
     queryGraphQL(
         gql`
             query PatchFileDiffs($patch: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
@@ -507,7 +506,7 @@ export const queryPatchFileDiffs = (
                         diff {
                             fileDiffs(first: $first, after: $after) {
                                 nodes {
-                                    ...PreviewFileDiffFields
+                                    ...FileDiffFields
                                 }
                                 totalCount
                                 pageInfo {
@@ -523,7 +522,7 @@ export const queryPatchFileDiffs = (
                 }
             }
 
-            ${PreviewFileDiffFields}
+            ${FileDiffFields}
 
             ${DiffStatFields}
         `,

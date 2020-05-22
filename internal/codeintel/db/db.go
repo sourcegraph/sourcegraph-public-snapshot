@@ -24,13 +24,14 @@ type DB interface {
 	// to a TxBeginner.
 	Transact(ctx context.Context) (DB, error)
 
-	// Savepoint creates a named position in the transaction from which all additional work can
-	// be discarded.
-	Savepoint(ctx context.Context, name string) error
+	// Savepoint creates a named position in the transaction from which all additional work
+	// can be discarded. The returned identifier can be passed to RollbackToSavepont to undo
+	// all the work since this call.
+	Savepoint(ctx context.Context) (string, error)
 
 	// RollbackToSavepoint throws away all the work on the underlying transaction since the
 	// savepoint with the given name was created.
-	RollbackToSavepoint(ctx context.Context, name string) error
+	RollbackToSavepoint(ctx context.Context, savepointID string) error
 
 	// Done commits underlying the transaction on a nil error value and performs a rollback
 	// otherwise. If an error occurs during commit or rollback of the transaction, the error
@@ -48,7 +49,7 @@ type DB interface {
 	QueueSize(ctx context.Context) (int, error)
 
 	// InsertUpload inserts a new upload and returns its identifier.
-	InsertUpload(ctx context.Context, upload *Upload) (int, error)
+	InsertUpload(ctx context.Context, upload Upload) (int, error)
 
 	// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 	// (the resulting array is deduplicated on update).
@@ -64,22 +65,25 @@ type DB interface {
 	MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) error
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
-	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
-	// If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned along with a
-	// false-valued flag.  This method must not be called from within a transaction.
-	Dequeue(ctx context.Context) (Upload, JobHandle, bool, error)
+	// upload is returned along with a DB instance which wraps the transaction. This transaction must be closed.
+	// If there is no such unlocked upload, a zero-value upload and nil DB will be returned along with a false
+	// valued flag. This method must not be called from within a transaction.
+	Dequeue(ctx context.Context) (Upload, DB, bool, error)
 
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
 
 	// DeleteUploadByID deletes an upload by its identifier. If the upload was visible at the tip of its repository's default branch,
-	// the visibility of all uploads for that repository are recalculated. The given function is expected to return the newest commit
-	// on the default branch when invoked.
+	// the visibility of all uploads for that repository are recalculated. The getTipCommit function is expected to return the newest
+	// commit on the default branch when invoked.
 	DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (bool, error)
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// This method returns a list of updated upload identifiers.
 	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
+
+	// GetDumpIDs returns all dump ids in chronological order.
+	GetDumpIDs(ctx context.Context) ([]int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
@@ -132,19 +136,24 @@ type DB interface {
 type GetTipCommitFn func(repositoryID int) (string, error)
 
 type dbImpl struct {
-	db dbutil.DB
+	db           dbutil.DB
+	savepointIDs []string
 }
 
 var _ DB = &dbImpl{}
 
 // New creates a new instance of DB connected to the given Postgres DSN.
 func New(postgresDSN string) (DB, error) {
-	db, err := dbutil.NewDB(postgresDSN, "precise-code-intel-api-server")
+	db, err := dbutil.NewDB(postgresDSN, "codeintel")
 	if err != nil {
 		return nil, err
 	}
 
 	return &dbImpl{db: db}, nil
+}
+
+func NewWithHandle(db *sql.DB) DB {
+	return &dbImpl{db: db}
 }
 
 // query performs QueryContext on the underlying connection.

@@ -1,8 +1,14 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { map, tap, mapTo } from 'rxjs/operators'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    isErrorGraphQLResult,
+    gql,
+} from '../../../shared/src/graphql/graphql'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
@@ -205,6 +211,40 @@ export function checkMirrorRepositoryConnection(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
+    )
+}
+
+export function scheduleRepositoryPermissionsSync(args: { repository: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
+                scheduleRepositoryPermissionsSync(repository: $repository) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
+    )
+}
+
+export function scheduleUserPermissionsSync(args: { user: GQL.ID }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation ScheduleUserPermissionsSync($user: ID!) {
+                scheduleUserPermissionsSync(user: $user) {
+                    alwaysNil
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        mapTo(undefined)
     )
 }
 
@@ -573,5 +613,48 @@ export function fetchSiteUpdateCheck(): Observable<{
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
+    )
+}
+
+/**
+ * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
+ *
+ * @param days number of days of data to fetch
+ */
+export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
+    // more details in /internal/prometheusutil.ErrPrometheusUnavailable
+    const errPrometheusUnavailable = 'prometheus API is unavailable'
+    return queryGraphQL(
+        gql`
+            query SiteMonitoringStatistics($days: Int!) {
+                site {
+                    monitoringStatistics(days: $days) {
+                        alerts {
+                            serviceName
+                            name
+                            timestamp
+                            average
+                        }
+                    }
+                }
+            }
+        `,
+        { days }
+    ).pipe(
+        map(result => {
+            if (isErrorGraphQLResult(result)) {
+                if (result.errors.find(e => e.message.includes(errPrometheusUnavailable))) {
+                    return false
+                }
+                throw createAggregateError(result.errors)
+            }
+            return result.data
+        }),
+        map(data => {
+            if (data) {
+                return data.site.monitoringStatistics
+            }
+            return data
+        })
     )
 }

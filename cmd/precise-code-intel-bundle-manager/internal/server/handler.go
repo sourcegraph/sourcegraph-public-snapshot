@@ -275,12 +275,10 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		cached = false
 
 		// Ensure database exists prior to opening
-		if _, err := os.Stat(filename); err != nil {
-			if os.IsNotExist(err) {
-				return nil, ErrUnknownDatabase
-			}
-
+		if exists, err := paths.PathExists(filename); err != nil {
 			return nil, err
+		} else if !exists {
+			return nil, ErrUnknownDatabase
 		}
 
 		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
@@ -291,14 +289,13 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		// Check to see if the database exists after opening it. If it doesn't, then
 		// the DB file was deleted between the exists check and opening the database
 		// and SQLite has created a new, empty database that is not yet written to disk.
-		if _, err := os.Stat(filename); err != nil {
-			if os.IsNotExist(err) {
-				sqliteReader.Close()
-				os.Remove(filename) // Possibly created on close
-				return nil, ErrUnknownDatabase
-			}
-
+		// Ensure database exists prior to opening
+		if exists, err := paths.PathExists(filename); err != nil {
 			return nil, err
+		} else if !exists {
+			sqliteReader.Close()
+			os.Remove(filename) // Possibly created on close
+			return nil, ErrUnknownDatabase
 		}
 
 		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)

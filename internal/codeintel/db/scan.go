@@ -126,6 +126,11 @@ func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
 	return uploads[0], true, nil
 }
 
+// scanFirstUploadDequeue is scanFirstUpload with an interface return value.
+func scanFirstUploadDequeue(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstUpload(rows, err)
+}
+
 // scanPackageReference populates a package reference value from the given scanner.
 func scanPackageReference(scanner scanner) (reference types.PackageReference, err error) {
 	err = scanner.Scan(&reference.DumpID, &reference.Scheme, &reference.Name, &reference.Version, &reference.Filter)

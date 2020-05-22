@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+set -ex
 
 if [ -z "$IMAGE" ]; then
   echo "Must specify \$IMAGE."
@@ -27,23 +27,19 @@ docker exec "$CONTAINER" apk add --no-cache socat
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
 echo "--- Waiting for $URL to be up"
-
-read -r -d '' retryPingCommand <<-EOF
-until curl --output /dev/null --silent --head --fail $URL; do
+set +e
+timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
-done
-EOF
-
-set +e
-if ! timeout 60s bash -c "$retryPingCommand"; then
+done"
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
   echo "^^^ +++"
   echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
   docker inspect "$CONTAINER"
   exit 1
 fi
 set -e
-
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"

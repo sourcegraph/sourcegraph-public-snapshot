@@ -23,6 +23,13 @@ export const failedWithHTTPStatus = (error: unknown, status: number): boolean =>
     isErrorLike(error) && error.message.includes(` failed with ${status} `)
 
 /**
+ * Checks if the given error is an HTTP status error that failed with an HTTP status code commonly returned by auth
+ * proxies or our API to indicate the user is unauthenticated.
+ */
+export const isHTTPAuthError = (error: unknown): boolean =>
+    failedWithHTTPStatus(error, 401) || failedWithHTTPStatus(error, 403)
+
+/**
  * Checks if a given fetch Response has a HTTP 2xx status code and throws an HTTPStatusError otherwise.
  */
 export function checkOk(response: Response): Response {

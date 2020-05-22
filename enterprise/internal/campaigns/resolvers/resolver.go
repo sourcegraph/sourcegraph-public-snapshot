@@ -34,6 +34,7 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 }
 
 func allowReadAccess(ctx context.Context) error {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if readAccess := conf.CampaignsReadAccessEnabled(); readAccess {
 		return nil
 	}
@@ -477,21 +478,6 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	return csr, nil
-}
-
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlbackend.ListChangesetsArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
-	if err := allowReadAccess(ctx); err != nil {
-		return nil, err
-	}
-	opts, err := listChangesetOptsFromArgs(args)
-	if err != nil {
-		return nil, err
-	}
-	return &changesetsConnectionResolver{
-		store: r.store,
-		opts:  opts,
-	}, nil
 }
 
 func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {

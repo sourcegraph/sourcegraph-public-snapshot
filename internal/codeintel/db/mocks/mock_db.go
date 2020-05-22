@@ -38,6 +38,9 @@ type MockDB struct {
 	// GetDumpByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetDumpByID.
 	GetDumpByIDFunc *DBGetDumpByIDFunc
+	// GetDumpIDsFunc is an instance of a mock function object controlling
+	// the behavior of the method GetDumpIDs.
+	GetDumpIDsFunc *DBGetDumpIDsFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *DBGetPackageFunc
@@ -129,7 +132,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		DequeueFunc: &DBDequeueFunc{
-			defaultHook: func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+			defaultHook: func(context.Context) (db.Upload, db.DB, bool, error) {
 				return db.Upload{}, nil, false, nil
 			},
 		},
@@ -146,6 +149,11 @@ func NewMockDB() *MockDB {
 		GetDumpByIDFunc: &DBGetDumpByIDFunc{
 			defaultHook: func(context.Context, int) (db.Dump, bool, error) {
 				return db.Dump{}, false, nil
+			},
+		},
+		GetDumpIDsFunc: &DBGetDumpIDsFunc{
+			defaultHook: func(context.Context) ([]int, error) {
+				return nil, nil
 			},
 		},
 		GetPackageFunc: &DBGetPackageFunc{
@@ -174,7 +182,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		InsertUploadFunc: &DBInsertUploadFunc{
-			defaultHook: func(context.Context, *db.Upload) (int, error) {
+			defaultHook: func(context.Context, db.Upload) (int, error) {
 				return 0, nil
 			},
 		},
@@ -224,8 +232,8 @@ func NewMockDB() *MockDB {
 			},
 		},
 		SavepointFunc: &DBSavepointFunc{
-			defaultHook: func(context.Context, string) error {
-				return nil
+			defaultHook: func(context.Context) (string, error) {
+				return "", nil
 			},
 		},
 		TransactFunc: &DBTransactFunc{
@@ -283,6 +291,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		GetDumpByIDFunc: &DBGetDumpByIDFunc{
 			defaultHook: i.GetDumpByID,
+		},
+		GetDumpIDsFunc: &DBGetDumpIDsFunc{
+			defaultHook: i.GetDumpIDs,
 		},
 		GetPackageFunc: &DBGetPackageFunc{
 			defaultHook: i.GetPackage,
@@ -797,15 +808,15 @@ func (c DBDeleteUploadByIDFuncCall) Results() []interface{} {
 // DBDequeueFunc describes the behavior when the Dequeue method of the
 // parent MockDB instance is invoked.
 type DBDequeueFunc struct {
-	defaultHook func(context.Context) (db.Upload, db.JobHandle, bool, error)
-	hooks       []func(context.Context) (db.Upload, db.JobHandle, bool, error)
+	defaultHook func(context.Context) (db.Upload, db.DB, bool, error)
+	hooks       []func(context.Context) (db.Upload, db.DB, bool, error)
 	history     []DBDequeueFuncCall
 	mutex       sync.Mutex
 }
 
 // Dequeue delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.DB, bool, error) {
 	r0, r1, r2, r3 := m.DequeueFunc.nextHook()(v0)
 	m.DequeueFunc.appendCall(DBDequeueFuncCall{v0, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -813,7 +824,7 @@ func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.JobHandle, bool, err
 
 // SetDefaultHook sets function that is called when the Dequeue method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db.JobHandle, bool, error)) {
+func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db.DB, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -821,7 +832,7 @@ func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db
 // Dequeue method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.JobHandle, bool, error)) {
+func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.DB, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -829,21 +840,21 @@ func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.JobHa
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBDequeueFunc) SetDefaultReturn(r0 db.Upload, r1 db.JobHandle, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) SetDefaultReturn(r0 db.Upload, r1 db.DB, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context) (db.Upload, db.DB, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBDequeueFunc) PushReturn(r0 db.Upload, r1 db.JobHandle, r2 bool, r3 error) {
-	f.PushHook(func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) PushReturn(r0 db.Upload, r1 db.DB, r2 bool, r3 error) {
+	f.PushHook(func(context.Context) (db.Upload, db.DB, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *DBDequeueFunc) nextHook() func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) nextHook() func(context.Context) (db.Upload, db.DB, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -884,7 +895,7 @@ type DBDequeueFuncCall struct {
 	Result0 db.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 db.JobHandle
+	Result1 db.DB
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -1231,6 +1242,111 @@ func (c DBGetDumpByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c DBGetDumpByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBGetDumpIDsFunc describes the behavior when the GetDumpIDs method of the
+// parent MockDB instance is invoked.
+type DBGetDumpIDsFunc struct {
+	defaultHook func(context.Context) ([]int, error)
+	hooks       []func(context.Context) ([]int, error)
+	history     []DBGetDumpIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetDumpIDs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GetDumpIDs(v0 context.Context) ([]int, error) {
+	r0, r1 := m.GetDumpIDsFunc.nextHook()(v0)
+	m.GetDumpIDsFunc.appendCall(DBGetDumpIDsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetDumpIDs method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGetDumpIDsFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetDumpIDs method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGetDumpIDsFunc) PushHook(hook func(context.Context) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGetDumpIDsFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGetDumpIDsFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBGetDumpIDsFunc) nextHook() func(context.Context) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGetDumpIDsFunc) appendCall(r0 DBGetDumpIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGetDumpIDsFuncCall objects describing the
+// invocations of this function.
+func (f *DBGetDumpIDsFunc) History() []DBGetDumpIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGetDumpIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGetDumpIDsFuncCall is an object that describes an invocation of method
+// GetDumpIDs on an instance of MockDB.
+type DBGetDumpIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGetDumpIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGetDumpIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBGetPackageFunc describes the behavior when the GetPackage method of the
@@ -1810,15 +1926,15 @@ func (c DBHasCommitFuncCall) Results() []interface{} {
 // DBInsertUploadFunc describes the behavior when the InsertUpload method of
 // the parent MockDB instance is invoked.
 type DBInsertUploadFunc struct {
-	defaultHook func(context.Context, *db.Upload) (int, error)
-	hooks       []func(context.Context, *db.Upload) (int, error)
+	defaultHook func(context.Context, db.Upload) (int, error)
+	hooks       []func(context.Context, db.Upload) (int, error)
 	history     []DBInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
+func (m *MockDB) InsertUpload(v0 context.Context, v1 db.Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(DBInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1826,7 +1942,7 @@ func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1834,7 +1950,7 @@ func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Uploa
 // InsertUpload method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1843,7 +1959,7 @@ func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (in
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, *db.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
@@ -1851,12 +1967,12 @@ func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, *db.Upload) (int, error) {
+	f.PushHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBInsertUploadFunc) nextHook() func(context.Context, *db.Upload) (int, error) {
+func (f *DBInsertUploadFunc) nextHook() func(context.Context, db.Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1894,7 +2010,7 @@ type DBInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *db.Upload
+	Arg1 db.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -2916,23 +3032,23 @@ func (c DBSameRepoPagerFuncCall) Results() []interface{} {
 // DBSavepointFunc describes the behavior when the Savepoint method of the
 // parent MockDB instance is invoked.
 type DBSavepointFunc struct {
-	defaultHook func(context.Context, string) error
-	hooks       []func(context.Context, string) error
+	defaultHook func(context.Context) (string, error)
+	hooks       []func(context.Context) (string, error)
 	history     []DBSavepointFuncCall
 	mutex       sync.Mutex
 }
 
 // Savepoint delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Savepoint(v0 context.Context, v1 string) error {
-	r0 := m.SavepointFunc.nextHook()(v0, v1)
-	m.SavepointFunc.appendCall(DBSavepointFuncCall{v0, v1, r0})
-	return r0
+func (m *MockDB) Savepoint(v0 context.Context) (string, error) {
+	r0, r1 := m.SavepointFunc.nextHook()(v0)
+	m.SavepointFunc.appendCall(DBSavepointFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Savepoint method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context, string) error) {
+func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -2940,7 +3056,7 @@ func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context, string) erro
 // Savepoint method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBSavepointFunc) PushHook(hook func(context.Context, string) error) {
+func (f *DBSavepointFunc) PushHook(hook func(context.Context) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2948,21 +3064,21 @@ func (f *DBSavepointFunc) PushHook(hook func(context.Context, string) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBSavepointFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string) error {
-		return r0
+func (f *DBSavepointFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context) (string, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBSavepointFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string) error {
-		return r0
+func (f *DBSavepointFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context) (string, error) {
+		return r0, r1
 	})
 }
 
-func (f *DBSavepointFunc) nextHook() func(context.Context, string) error {
+func (f *DBSavepointFunc) nextHook() func(context.Context) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2998,24 +3114,24 @@ type DBSavepointFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBSavepointFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSavepointFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBTransactFunc describes the behavior when the Transact method of the

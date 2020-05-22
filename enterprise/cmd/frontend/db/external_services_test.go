@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -1271,7 +1272,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 
 			s := NewExternalServicesStore()
-			err := s.ValidateConfig(tc.kind, tc.config, tc.ps)
+			err := s.ValidateConfig(context.Background(), 0, tc.kind, tc.config, tc.ps)
 			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")

@@ -23,7 +23,7 @@ type MockProcessor struct {
 func NewMockProcessor() *MockProcessor {
 	return &MockProcessor{
 		ProcessFunc: &ProcessorProcessFunc{
-			defaultHook: func(context.Context, db.DB, db.Upload, db.JobHandle) error {
+			defaultHook: func(context.Context, db.DB, db.Upload) error {
 				return nil
 			},
 		},
@@ -43,23 +43,23 @@ func NewMockProcessorFrom(i Processor) *MockProcessor {
 // ProcessorProcessFunc describes the behavior when the Process method of
 // the parent MockProcessor instance is invoked.
 type ProcessorProcessFunc struct {
-	defaultHook func(context.Context, db.DB, db.Upload, db.JobHandle) error
-	hooks       []func(context.Context, db.DB, db.Upload, db.JobHandle) error
+	defaultHook func(context.Context, db.DB, db.Upload) error
+	hooks       []func(context.Context, db.DB, db.Upload) error
 	history     []ProcessorProcessFuncCall
 	mutex       sync.Mutex
 }
 
 // Process delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockProcessor) Process(v0 context.Context, v1 db.DB, v2 db.Upload, v3 db.JobHandle) error {
-	r0 := m.ProcessFunc.nextHook()(v0, v1, v2, v3)
-	m.ProcessFunc.appendCall(ProcessorProcessFuncCall{v0, v1, v2, v3, r0})
+func (m *MockProcessor) Process(v0 context.Context, v1 db.DB, v2 db.Upload) error {
+	r0 := m.ProcessFunc.nextHook()(v0, v1, v2)
+	m.ProcessFunc.appendCall(ProcessorProcessFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Process method of
 // the parent MockProcessor instance is invoked and the hook queue is empty.
-func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, db.DB, db.Upload, db.JobHandle) error) {
+func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, db.DB, db.Upload) error) {
 	f.defaultHook = hook
 }
 
@@ -67,7 +67,7 @@ func (f *ProcessorProcessFunc) SetDefaultHook(hook func(context.Context, db.DB, 
 // Process method of the parent MockProcessor instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, db.DB, db.Upload, db.JobHandle) error) {
+func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, db.DB, db.Upload) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -76,7 +76,7 @@ func (f *ProcessorProcessFunc) PushHook(hook func(context.Context, db.DB, db.Upl
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ProcessorProcessFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, db.DB, db.Upload, db.JobHandle) error {
+	f.SetDefaultHook(func(context.Context, db.DB, db.Upload) error {
 		return r0
 	})
 }
@@ -84,12 +84,12 @@ func (f *ProcessorProcessFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ProcessorProcessFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, db.DB, db.Upload, db.JobHandle) error {
+	f.PushHook(func(context.Context, db.DB, db.Upload) error {
 		return r0
 	})
 }
 
-func (f *ProcessorProcessFunc) nextHook() func(context.Context, db.DB, db.Upload, db.JobHandle) error {
+func (f *ProcessorProcessFunc) nextHook() func(context.Context, db.DB, db.Upload) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -131,9 +131,6 @@ type ProcessorProcessFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 db.Upload
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 db.JobHandle
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -142,7 +139,7 @@ type ProcessorProcessFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ProcessorProcessFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

@@ -12,7 +12,7 @@ import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 import { SignInButton } from '../../libs/code_intelligence/SignInButton'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface ButtonProps {
     className?: string
@@ -59,7 +59,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             scope={props.scope}
         />{' '}
         {isErrorLike(props.fileInfoOrError) ? (
-            failedWithHTTPStatus(props.fileInfoOrError, 401) ? (
+            isHTTPAuthError(props.fileInfoOrError) ? (
                 <SignInButton
                     sourcegraphURL={props.sourcegraphURL}
                     onSignInClose={props.onSignInClose}

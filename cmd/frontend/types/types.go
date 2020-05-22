@@ -302,6 +302,49 @@ type SearchEventLatencies struct {
 	P99 float64
 }
 
+// SiteUsageSummary is an alternate view of SiteUsageStatistics which is
+// calculated in the database layer.
+type SiteUsageSummary struct {
+	Month                   time.Time
+	Week                    time.Time
+	Day                     time.Time
+	UniquesMonth            int32
+	UniquesWeek             int32
+	UniquesDay              int32
+	RegisteredUniquesMonth  int32
+	RegisteredUniquesWeek   int32
+	RegisteredUniquesDay    int32
+	IntegrationUniquesMonth int32
+	IntegrationUniquesWeek  int32
+	IntegrationUniquesDay   int32
+	ManageUniquesMonth      int32
+	CodeUniquesMonth        int32
+	VerifyUniquesMonth      int32
+	MonitorUniquesMonth     int32
+	ManageUniquesWeek       int32
+	CodeUniquesWeek         int32
+	VerifyUniquesWeek       int32
+	MonitorUniquesWeek      int32
+}
+
+// AggregatedEvent represents the total events, unique users, and
+// latencies over the current month, week, and day for a single event.
+type AggregatedEvent struct {
+	Name           string
+	Month          time.Time
+	Week           time.Time
+	Day            time.Time
+	TotalMonth     int32
+	TotalWeek      int32
+	TotalDay       int32
+	UniquesMonth   int32
+	UniquesWeek    int32
+	UniquesDay     int32
+	LatenciesMonth []float64
+	LatenciesWeek  []float64
+	LatenciesDay   []float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
