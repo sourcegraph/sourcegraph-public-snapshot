@@ -32,6 +32,7 @@ func main() {
 	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
 	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 20, "number of simultaneous GHE pushes")
 	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
+	numCloningAttempts := flag.Int("numCloningAttempts", 5, "number of cloning attempts before giving up")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -138,21 +139,22 @@ func main() {
 			os.Exit(1)
 		}
 		wkr := &worker{
-			name:             name,
-			client:           gheClient,
-			index:            i,
-			scratchDir:       wkrScratchDir,
-			work:             work,
-			wg:               &wg,
-			bar:              bar,
-			fdr:              fdr,
-			logger:           log15.New("source", name),
-			rateLimiter:      rateLimiter,
-			admin:            *admin,
-			token:            *token,
-			host:             host,
-			pushSem:          pushSem,
-			cloneRepoTimeout: *cloneRepoTimeout,
+			name:               name,
+			client:             gheClient,
+			index:              i,
+			scratchDir:         wkrScratchDir,
+			work:               work,
+			wg:                 &wg,
+			bar:                bar,
+			fdr:                fdr,
+			logger:             log15.New("source", name),
+			rateLimiter:        rateLimiter,
+			admin:              *admin,
+			token:              *token,
+			host:               host,
+			pushSem:            pushSem,
+			cloneRepoTimeout:   *cloneRepoTimeout,
+			numCloningAttempts: *numCloningAttempts,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)

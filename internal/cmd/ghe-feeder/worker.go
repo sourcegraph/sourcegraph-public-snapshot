@@ -41,27 +41,28 @@ func randomOrgNameAndSize() (string, int) {
 }
 
 type worker struct {
-	name             string
-	client           *github.Client
-	index            int
-	scratchDir       string
-	work             <-chan string
-	wg               *sync.WaitGroup
-	bar              *progressbar.ProgressBar
-	reposPerOrg      int
-	numFailed        int64
-	numSucceeded     int64
-	fdr              *feederDB
-	currentOrg       string
-	currentNumRepos  int
-	currentMaxRepos  int
-	logger           log15.Logger
-	rateLimiter      *rate.Limiter
-	admin            string
-	token            string
-	host             string
-	pushSem          chan struct{}
-	cloneRepoTimeout time.Duration
+	name               string
+	client             *github.Client
+	index              int
+	scratchDir         string
+	work               <-chan string
+	wg                 *sync.WaitGroup
+	bar                *progressbar.ProgressBar
+	reposPerOrg        int
+	numFailed          int64
+	numSucceeded       int64
+	fdr                *feederDB
+	currentOrg         string
+	currentNumRepos    int
+	currentMaxRepos    int
+	logger             log15.Logger
+	rateLimiter        *rate.Limiter
+	admin              string
+	token              string
+	host               string
+	pushSem            chan struct{}
+	cloneRepoTimeout   time.Duration
+	numCloningAttempts int
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -152,7 +153,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 		if err != nil {
 			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "ownerRepo", work, "error", err)
 			attempt++
-			if attempt < 3 && ctx.Err() == nil {
+			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
 				continue
 			}
 			return err
