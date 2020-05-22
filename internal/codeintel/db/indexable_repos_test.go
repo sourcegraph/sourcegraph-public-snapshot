@@ -16,7 +16,7 @@ func TestIndexableRepositories(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	t1 := time.Now()
+	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
 	t3 := t2.Add(-time.Hour)
 
@@ -66,7 +66,7 @@ func TestIndexableRepositoriesMinimumTimeSinceLastEnqueue(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	t1 := time.Now()
+	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
 	t3 := t2.Add(-time.Hour)
 	t4 := t3.Add(-time.Hour)
