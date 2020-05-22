@@ -89,10 +89,14 @@ func (wkr *worker) run(ctx context.Context) {
 			return
 		}
 		err := wkr.process(ctx, line)
+		reposProcessedCounter.Inc()
+		remainingWorkGauge.Add(-1.0)
 		if err != nil {
 			wkr.numFailed++
+			reposFailedCounter.Inc()
 			_ = wkr.fdr.failed(line)
 		} else {
+			reposSucceededCounter.Inc()
 			wkr.numSucceeded++
 			wkr.currentNumRepos++
 
@@ -208,6 +212,9 @@ func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 		}()
 		repoDir := filepath.Join(wkr.scratchDir, owner, repo)
 
+		ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
+		defer cancel()
+
 		cmd := exec.CommandContext(ctx, "git", "push", "ghe", "master")
 		cmd.Dir = repoDir
 
@@ -224,6 +231,9 @@ func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) 
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
+
 	gheOrg := &github.Organization{
 		Login: github.String(wkr.currentOrg),
 	}
@@ -238,6 +248,9 @@ func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.
 		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
 		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
 
 	gheRepo := &github.Repository{
 		Name: github.String(fmt.Sprintf("%s-%s", owner, repo)),

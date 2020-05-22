@@ -58,6 +58,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		}
 		if skip {
 			prdc.numSkipped++
+			reposSkippedCounter.Inc()
 			prdc.logger.Debug("skipping repo", "owner/repo", line)
 			continue
 		}

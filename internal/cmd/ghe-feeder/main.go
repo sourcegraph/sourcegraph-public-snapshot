@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -15,8 +16,35 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/time/rate"
+)
+
+var (
+	reposProcessedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_processed",
+		Help: "The total number of processed repos",
+	})
+	reposFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_failed",
+		Help: "The total number of failed repos",
+	})
+	reposSucceededCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_succeeded",
+		Help: "The total number of succeeded repos",
+	})
+	reposSkippedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_skipped",
+		Help: "The total number of skipped repos",
+	})
+
+	remainingWorkGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ghe_feeder_remaining_work",
+		Help: "The number of repos that still need to be processed from the specified input",
+	})
 )
 
 func main() {
@@ -94,6 +122,7 @@ func main() {
 		numLines = *limitPump
 	}
 
+	remainingWorkGauge.Set(float64(numLines))
 	bar := progressbar.New64(numLines)
 
 	work := make(chan string)
@@ -123,6 +152,11 @@ func main() {
 			cancel()
 		case <-ctx.Done():
 		}
+	}()
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		_ = http.ListenAndServe(":2112", nil)
 	}()
 
 	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
