@@ -1370,25 +1370,3 @@ type ChangesetSyncData struct {
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
-
-// FindMergeCommit will return the merge commit from the given set of events, stopping
-// on the first it finds.
-// It returns an empty string if none are found.
-func FindMergeCommitID(events []*ChangesetEvent) string {
-	for _, event := range events {
-		switch m := event.Metadata.(type) {
-		case *bitbucketserver.Activity:
-			if event.Kind != ChangesetEventKindBitbucketServerMerged {
-				continue
-			}
-			if m.Commit == nil {
-				continue
-			}
-			return m.Commit.ID
-
-		case *github.MergedEvent:
-			return m.Commit.OID
-		}
-	}
-	return ""
-}

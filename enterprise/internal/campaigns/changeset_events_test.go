@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"sort"
 	"testing"
 	"time"
@@ -97,6 +98,121 @@ func TestChangesetEventsLabels(t *testing.T) {
 			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
 			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestFindMergeCommitID(t *testing.T) {
+	now := time.Now()
+	makeBitbucketEvent := func(kind cmpgn.ChangesetEventKind, commit string) *cmpgn.ChangesetEvent {
+		return &cmpgn.ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        kind,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata: &bitbucketserver.Activity{
+				ID: 1,
+				Commit: &bitbucketserver.Commit{
+					ID: commit,
+				},
+			},
+		}
+	}
+	makeGitHubMergeEvent := func(commit string) *cmpgn.ChangesetEvent {
+		return &cmpgn.ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        cmpgn.ChangesetEventKindBitbucketServerMerged,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata: &github.MergedEvent{
+				Commit: github.Commit{
+					OID: commit,
+				},
+			},
+		}
+	}
+	makeOtherGitHubEvent := func() *cmpgn.ChangesetEvent {
+		return &cmpgn.ChangesetEvent{
+			ID:          1,
+			ChangesetID: 1,
+			Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+			Key:         "key",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			Metadata:    &github.PullRequestReviewComment{},
+		}
+	}
+	for _, tc := range []struct {
+		name   string
+		events ChangesetEvents
+		want   string
+	}{
+		{
+			name:   "nil events",
+			events: nil,
+			want:   "",
+		},
+		{
+			name:   "no events",
+			events: ChangesetEvents{},
+			want:   "",
+		},
+		{
+			name: "one bitbucket merge event",
+			events: ChangesetEvents{
+				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple bitbucket events with merge",
+			events: ChangesetEvents{
+				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerApproved, ""),
+				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple bitbucket events no merge",
+			events: ChangesetEvents{
+				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerApproved, ""),
+				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerCommented, ""),
+			},
+			want: "",
+		},
+		{
+			name: "one github merge event",
+			events: ChangesetEvents{
+				makeGitHubMergeEvent("deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple github events with merge",
+			events: ChangesetEvents{
+				makeOtherGitHubEvent(),
+				makeGitHubMergeEvent("deadbeef"),
+			},
+			want: "deadbeef",
+		},
+		{
+			name: "multiple github events no merge",
+			events: ChangesetEvents{
+				makeOtherGitHubEvent(),
+				makeOtherGitHubEvent(),
+			},
+			want: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have := tc.events.FindMergeCommitID()
+			if have != tc.want {
+				t.Fatalf("Want %q, have %q", tc.want, have)
 			}
 		})
 	}
