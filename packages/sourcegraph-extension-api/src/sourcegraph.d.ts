@@ -1159,7 +1159,7 @@ declare module 'sourcegraph' {
         backgroundColor?: string
 
         /**
-         *  The CSS color property value for the attachment.
+         * The CSS color property value for the attachment.
          *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
          */
@@ -1178,14 +1178,14 @@ declare module 'sourcegraph' {
         linkURL?: string
 
         /**
-         *  Overwrite style for light themes.
+         * Overwrite style for light themes.
          *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
          */
         light?: ThemableBadgeAttachmentStyle
 
         /**
-         *  Overwrite style for dark themes.
+         * Overwrite style for dark themes.
          *
          * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
          */
