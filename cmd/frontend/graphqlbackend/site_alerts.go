@@ -76,10 +76,8 @@ func init() {
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
-		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
-		// security vulnerability, but just in case this method is changed to return more
-		// information, let's lock it down.
-
+		// 🚨 SECURITY: Only the site admin cares about this. The only time a user should receive a site alert is if
+		// sourcegraph is very out of date and or basic setup is still needed (https/ external URL)
 		if !args.IsSiteAdmin {
 			// users will see alerts if Sourcegraph is >4 months out of date
 			alert := outOfDateAlert(args.IsSiteAdmin)
