@@ -194,7 +194,7 @@ func outOfDateAlert(isAdmin bool) Alert {
 	}
 	alert.MessageValue = fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
 		"for the latest features and bug fixes ask your site administrator to upgrade.", months)
-	key := fmt.Sprintf("%d", months)
+	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
 	case 4:
 		return Alert{
