@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -13,11 +11,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -34,7 +32,7 @@ type changesetsConnectionResolver struct {
 	once           sync.Once
 	changesets     []*campaigns.Changeset
 	scheduledSyncs map[int64]time.Time
-	reposByID      map[api.RepoID]*repos.Repo
+	reposByID      map[api.RepoID]*types.Repo
 	next           int64
 	err            error
 }
@@ -49,10 +47,16 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 	for _, c := range changesets {
 		repo, ok := reposByID[c.RepoID]
 		if !ok {
-			return nil, fmt.Errorf("failed to load repo %d", c.RepoID)
+			// If it's not in reposByID the repository was either deleted or
+			// filtered out by the authz-filter.
+			// In both cases: use hiddenChangesetResolver.
+			resolvers = append(resolvers, &hiddenChangesetResolver{
+				store:      r.store,
+				Changeset:  c,
+				nextSyncAt: r.scheduledSyncs[c.ID],
+			})
+			continue
 		}
-
-		// TODO: If repository was filtered out, return a hiddenChangesetResolver
 
 		resolvers = append(resolvers, &changesetResolver{
 			store:         r.store,
@@ -84,7 +88,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Changeset, map[api.RepoID]*repos.Repo, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Changeset, map[api.RepoID]*types.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
 		if r.err != nil {
@@ -106,21 +110,20 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			r.scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
 		}
 
-		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
 		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
 			repoIDs[i] = c.RepoID
 		}
 
-		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
+		rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		// TODO: Filter out the repositories with authzFilter
-
-		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
+		r.reposByID = make(map[api.RepoID]*types.Repo, len(rs))
 		for _, repo := range rs {
 			r.reposByID[repo.ID] = repo
 		}
@@ -132,7 +135,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 type changesetResolver struct {
 	store *ee.Store
 	*campaigns.Changeset
-	preloadedRepo *repos.Repo
+	preloadedRepo *types.Repo
 
 	// cache repo because it's called more than once
 	repoOnce sync.Once
@@ -170,7 +173,7 @@ func (r *changesetResolver) ToHiddenExternalChangeset() (graphqlbackend.HiddenEx
 func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.repoOnce.Do(func() {
 		if r.preloadedRepo != nil {
-			r.repo = newRepositoryResolver(r.preloadedRepo)
+			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
 		} else {
 			r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, r.RepoID)
 			if r.repoErr != nil {
@@ -427,20 +430,6 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 	// exist).
 	return git.ResolveRevision(ctx, *grepo, nil, refName, nil)
-}
-
-func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(&types.Repo{
-		ID:           r.ID,
-		ExternalRepo: r.ExternalRepo,
-		Name:         api.RepoName(r.Name),
-		RepoFields: &types.RepoFields{
-			URI:         r.URI,
-			Description: r.Description,
-			Language:    r.Language,
-			Fork:        r.Fork,
-		},
-	})
 }
 
 type changesetLabelResolver struct {
