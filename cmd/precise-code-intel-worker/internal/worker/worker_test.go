@@ -142,6 +142,7 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
+	mockDB.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockProcessor := NewMockProcessor()
 	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
 	mockDB.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("db failure"))
