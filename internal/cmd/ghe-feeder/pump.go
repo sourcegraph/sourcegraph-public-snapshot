@@ -62,6 +62,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 			reposSkippedCounter.Inc()
 			reposProcessedCounter.With(prometheus.Labels{"worker": "skipped"}).Inc()
 			reposSucceededCounter.Inc()
+			remainingWorkGauge.Add(-1.0)
 			prdc.logger.Debug("skipping repo", "owner/repo", line)
 			continue
 		}
