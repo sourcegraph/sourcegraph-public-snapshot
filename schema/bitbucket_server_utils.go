@@ -15,7 +15,7 @@ func (c *BitbucketServerConnection) WebhookSecret() string {
 	}
 }
 
-// WebhookSyncDisabled returns true if webhook syncing is disabled
+// WebhookSyncDisabled returns true if no webhooks are configured or when webhook syncing is explicitly disabled.
 func (c *BitbucketServerConnection) WebhookSyncDisabled() bool {
 	if c == nil {
 		return false
