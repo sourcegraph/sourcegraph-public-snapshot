@@ -3,7 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 
@@ -142,6 +145,10 @@ func init() {
 
 func outOfDateAlert(isAdmin bool) *Alert {
 
+	if os.Getenv("DISABLE_SECURITY_NOTICES") != "" {
+		log15.Warn("DISABLED SECURITY NOTICES, this is not recommended")
+		return &Alert{}
+	}
 	var alert Alert
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
