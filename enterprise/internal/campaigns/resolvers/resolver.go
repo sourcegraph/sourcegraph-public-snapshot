@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -123,7 +124,17 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	return &patchResolver{store: r.store, patch: patch}, nil
+	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	repo, err := db.Repos.Get(ctx, patch.RepoID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &patchResolver{store: r.store, patch: patch, preloadedRepo: repo}, nil
 }
 
 func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {

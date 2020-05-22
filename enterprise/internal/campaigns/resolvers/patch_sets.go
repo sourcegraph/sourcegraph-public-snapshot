@@ -129,8 +129,7 @@ func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 		if !ok {
 			// If it's not in reposByID the repository was either deleted or
 			// filtered out by the authz-filter.
-
-			// TODO: We need a hiddenPatchResolver here.
+			// Use a hiddenPatchResolver.
 			resolvers = append(resolvers, &hiddenPatchResolver{patch: j})
 			continue
 		}
