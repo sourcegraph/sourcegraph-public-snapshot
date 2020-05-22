@@ -25,6 +25,22 @@ type slackText struct {
 	Text string `json:"text"`
 }
 
+func newSlackButtonSet(runID string) slackBlock {
+	return slackBlock{
+		"type": "actions",
+		"elements": []slackBlock{
+			{
+				"type": "button",
+				"text": slackText{
+					Type: "plain_text",
+					Text: "Run logs",
+				},
+				"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
+			},
+		},
+	}
+}
+
 func reportToSlack(ctx context.Context, webhook string, resources []Resource, since time.Time, runID string) error {
 	// generate message to deliver
 	blocks := []slackBlock{
@@ -37,19 +53,7 @@ func reportToSlack(ctx context.Context, webhook string, resources []Resource, si
 		},
 	}
 	if runID != "" {
-		blocks = append(blocks, slackBlock{
-			"type": "actions",
-			"elements": []slackBlock{
-				{
-					"type": "button",
-					"text": slackText{
-						Type: "plain_text",
-						Text: "Run logs",
-					},
-					"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
-				},
-			},
-		})
+		blocks = append(blocks, newSlackButtonSet(runID))
 	}
 	blocks = append(blocks, slackBlock{
 		"type": "divider",
@@ -80,6 +84,28 @@ func reportToSlack(ctx context.Context, webhook string, resources []Resource, si
 	return nil
 }
 
+func reportError(ctx context.Context, opts options, err error, scope string) {
+	if *opts.slackWebhook != "" {
+		blocks := []slackBlock{{
+			"type": "section",
+			"text": &slackText{
+				Type: slackTextMarkdown,
+				Text: fmt.Sprintf(":warning: Error encountered: %s: %v", scope, err),
+			},
+		}}
+		if *opts.runID != "" {
+			blocks = append(blocks, newSlackButtonSet(*opts.runID))
+		}
+		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, blocks)
+		if slackErr != nil {
+			log.Printf("slack: %v", err)
+		}
+	}
+	if *opts.verbose {
+		log.Printf("%s: %v", scope, err)
+	}
+}
+
 func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) error {
 	b, err := json.Marshal(&slackMessage{blocks})
 	if err != nil {
@@ -103,22 +129,4 @@ func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) e
 		}
 	}
 	return nil
-}
-
-func reportError(ctx context.Context, opts options, err error, scope string) {
-	if *opts.slackWebhook != "" {
-		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, []slackBlock{{
-			"type": "section",
-			"text": &slackText{
-				Type: slackTextMarkdown,
-				Text: fmt.Sprintf(":warning: Error encountered: %s: %v", scope, err),
-			},
-		}})
-		if slackErr != nil {
-			log.Printf("slack: %v", err)
-		}
-	}
-	if *opts.verbose {
-		log.Printf("%s: %v", scope, err)
-	}
 }
