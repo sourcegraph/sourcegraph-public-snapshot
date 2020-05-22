@@ -357,8 +357,8 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 
 type emptyPatchConnectionResolver struct{}
 
-func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
-	return []graphqlbackend.PatchResolver{}, nil
+func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
+	return []graphqlbackend.PatchInterfaceResolver{}, nil
 }
 
 func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {

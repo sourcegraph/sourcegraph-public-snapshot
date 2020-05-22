@@ -294,9 +294,16 @@ type ExternalChangesetResolver interface {
 }
 
 type PatchConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PatchResolver, error)
+	Nodes(ctx context.Context) ([]PatchInterfaceResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type PatchInterfaceResolver interface {
+	ID() graphql.ID
+
+	ToPatch() (PatchResolver, bool)
+	ToHiddenPatch() (HiddenPatchResolver, bool)
 }
 
 type PatchResolver interface {
@@ -306,6 +313,16 @@ type PatchResolver interface {
 	Diff() PatchResolver
 	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
+
+	ToPatch() (PatchResolver, bool)
+	ToHiddenPatch() (HiddenPatchResolver, bool)
+}
+
+type HiddenPatchResolver interface {
+	ID() graphql.ID
+
+	ToPatch() (PatchResolver, bool)
+	ToHiddenPatch() (HiddenPatchResolver, bool)
 }
 
 type ChangesetEventsConnectionResolver interface {

@@ -952,42 +952,44 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
             id
             patches(first: %d) {
               nodes {
-                repository {
-                  name
-                }
-				diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
+			    ... on Patch {
+                  repository {
+                    name
+                  }
+				  diff {
+                    fileDiffs {
+                      rawDiff
+                      diffStat {
                         added
                         deleted
                         changed
                       }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
                         }
                       }
                     }
                   }
-                }
+				}
 			  }
             }
             previewURL
@@ -1123,46 +1125,51 @@ func TestPatchSetResolver(t *testing.T) {
               }
               patches(first: %d) {
                 nodes {
-                  repository {
-                    name
-                  }
-                  diff {
-                    fileDiffs(first: %d, after: %s) {
-                      rawDiff
-                      diffStat {
-                        added
-                        deleted
-                        changed
-                      }
-                      pageInfo {
-                        endCursor
-                        hasNextPage
-                      }
-                      nodes {
-                        oldPath
-                        newPath
-                        hunks {
-                          body
-                          section
-                          newRange { startLine, lines }
-                          oldRange { startLine, lines }
-                          oldNoNewlineAt
-                        }
-                        stat {
+				  ... on HiddenPatch {
+				    id
+				  }
+				  ... on Patch {
+                    repository {
+                      name
+                    }
+                    diff {
+                      fileDiffs(first: %d, after: %s) {
+                        rawDiff
+                        diffStat {
                           added
                           deleted
                           changed
                         }
-                        oldFile {
-                          name
-                          externalURLs {
-                            serviceType
-                            url
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
+                        nodes {
+                          oldPath
+                          newPath
+                          hunks {
+                            body
+                            section
+                            newRange { startLine, lines }
+                            oldRange { startLine, lines }
+                            oldNoNewlineAt
+                          }
+                          stat {
+                            added
+                            deleted
+                            changed
+                          }
+                          oldFile {
+                            name
+                            externalURLs {
+                              serviceType
+                              url
+                            }
                           }
                         }
                       }
                     }
-                  }
+				  }
                 }
               }
             }
@@ -1305,43 +1312,48 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       status { state }
       patches {
         nodes {
-          publicationEnqueued
-          repository {
-            name
-          }
-          diff {
-            fileDiffs {
-              rawDiff
-              diffStat {
-                added
-                deleted
-                changed
-              }
-              nodes {
-                oldPath
-                newPath
-                hunks {
-                  body
-                  section
-                  newRange { startLine, lines }
-                  oldRange { startLine, lines }
-                  oldNoNewlineAt
-                }
-                stat {
+		  ... on HiddenPatch {
+		    id
+		  }
+		  ... on Patch {
+            publicationEnqueued
+            repository {
+              name
+            }
+            diff {
+              fileDiffs {
+                rawDiff
+                diffStat {
                   added
                   deleted
                   changed
                 }
-                oldFile {
-                  name
-                  externalURLs {
-                    serviceType
-                    url
+                nodes {
+                  oldPath
+                  newPath
+                  hunks {
+                    body
+                    section
+                    newRange { startLine, lines }
+                    oldRange { startLine, lines }
+                    oldNoNewlineAt
+                  }
+                  stat {
+                    added
+                    deleted
+                    changed
+                  }
+                  oldFile {
+                    name
+                    externalURLs {
+                      serviceType
+                      url
+                    }
                   }
                 }
               }
             }
-          }
+		  }
         }
       }
       diffStat {
@@ -1387,7 +1399,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
           branch
           patches {
             nodes {
-              publicationEnqueued
+			  ... on Patch {
+                publicationEnqueued
+			  }
             }
           }
         }

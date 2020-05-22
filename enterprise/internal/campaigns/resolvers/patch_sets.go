@@ -117,13 +117,13 @@ type patchesConnectionResolver struct {
 	err                    error
 }
 
-func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
+func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
 	patches, reposByID, changesetJobsByPatchID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.PatchResolver, 0, len(patches))
+	resolvers := make([]graphqlbackend.PatchInterfaceResolver, 0, len(patches))
 	for _, j := range patches {
 		repo, ok := reposByID[j.RepoID]
 		if !ok {
@@ -131,6 +131,7 @@ func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 			// filtered out by the authz-filter.
 
 			// TODO: We need a hiddenPatchResolver here.
+			resolvers = append(resolvers, &hiddenPatchResolver{patch: j})
 			continue
 		}
 
@@ -229,6 +230,14 @@ type patchResolver struct {
 	err    error
 	repo   *graphqlbackend.RepositoryResolver
 	commit *graphqlbackend.GitCommitResolver
+}
+
+func (r *patchResolver) ToPatch() (graphqlbackend.PatchResolver, bool) {
+	return r, true
+}
+
+func (r *patchResolver) ToHiddenPatch() (graphqlbackend.HiddenPatchResolver, bool) {
+	return nil, false
 }
 
 func (r *patchResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.RepositoryResolver, *graphqlbackend.GitCommitResolver, error) {
@@ -410,4 +419,20 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
 	}
 	return strings.Join(newContentLines, "\n")
+}
+
+type hiddenPatchResolver struct {
+	patch *campaigns.Patch
+}
+
+func (r *hiddenPatchResolver) ToPatch() (graphqlbackend.PatchResolver, bool) {
+	return nil, false
+}
+
+func (r *hiddenPatchResolver) ToHiddenPatch() (graphqlbackend.HiddenPatchResolver, bool) {
+	return r, true
+}
+
+func (r *hiddenPatchResolver) ID() graphql.ID {
+	return marshalPatchID(r.patch.ID)
 }
