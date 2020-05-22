@@ -391,7 +391,14 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, err
 	}
 
-	return r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid)
+	if err != nil {
+		if gitserver.IsRevisionNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return resolver, nil
 }
 
 func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
