@@ -1,7 +1,6 @@
 package version
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -35,7 +34,6 @@ func TestIsDev(t *testing.T) {
 }
 
 func Test_monthsFromDays(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		timeA      string
@@ -82,7 +80,6 @@ func Test_monthsFromDays(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			a, err := time.Parse("01-02-2006", tt.timeA)
 			if err != nil {
 				t.Fatal(err)
@@ -94,8 +91,6 @@ func Test_monthsFromDays(t *testing.T) {
 			}
 			timeSince := b.Sub(a)
 			days := timeSince.Hours() / 24
-
-			fmt.Println(days)
 
 			if got := monthsFromDays(days); got != tt.wantMonths {
 				t.Errorf("monthsFromDays() = %v, want %v", got, tt.wantMonths)

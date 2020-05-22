@@ -45,7 +45,7 @@ func HowLongOutOfDate(currentVersion string) (int, error) {
 	}
 
 	// expecting major.minor.patch+UnixTimestamp
-	if len(sv.Metadata()) == 0 {
+	if sv.Metadata() == "" {
 		return 0, errors.New("no metadata in semver")
 	}
 	buildUnixTimestamp, err := strconv.ParseInt(sv.Metadata(), 10, 64)
