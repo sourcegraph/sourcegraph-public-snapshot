@@ -35,6 +35,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import { LAST_VERSION_CONTEXT_KEY } from '../../SourcegraphWebApp'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -79,6 +80,9 @@ interface SearchResultsState {
 
     /** Whether to show a warning saying that the URL has changed the version context. */
     showVersionContextWarning: boolean
+
+    /** Whether the user has dismissed the version context warning. */
+    dismissedVersionContextWarning?: boolean
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
@@ -207,7 +211,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 code_search: { error_message: asError(error).message },
                                             })
                                             console.error(error)
-                                            AlertOutlineIcon
                                         }
                                     ),
                                     // Update view with results or error
@@ -231,7 +234,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     if (
                         !searchParams.has('from-context-toggle') &&
                         props.availableVersionContexts &&
-                        props.versionContext !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                        (props.versionContext
+                            ? props.versionContext !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                            : !props.versionContext &&
+                              (localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== undefined ||
+                                  localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== null))
                     ) {
                         this.setState({ showVersionContextWarning: true })
                     }
@@ -246,9 +253,14 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     }
 
                     if (
-                        props.versionContext === localStorage.getItem(LAST_VERSION_CONTEXT_KEY) &&
-                        this.state.showVersionContextWarning
+                        this.state.showVersionContextWarning &&
+                        (props.versionContext
+                            ? props.versionContext === localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                            : !props.versionContext &&
+                              (localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === undefined ||
+                                  localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === null))
                     ) {
+                        console.log('testing')
                         this.setState({ showVersionContextWarning: false })
                     }
                 })
@@ -283,6 +295,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
+    private onDismissWarning = (): void => {
+        this.setState({ showVersionContextWarning: false })
+    }
+
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
@@ -308,13 +324,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )}
                 {this.state.showVersionContextWarning && (
                     <div className="mt-2 mx-2">
-                        <div className="alert alert-warning mb-0">
-                            <span>
+                        <div className="d-flex alert alert-warning mb-0 justify-content-between">
+                            <div>
                                 <AlertOutlineIcon className="icon-inline mr-2" />
-                            </span>
-                            This link changed your version context to{' '}
-                            <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with the
-                            selector to the left of the search bar.
+                                This link changed your version context to{' '}
+                                <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with
+                                the selector to the left of the search bar.
+                            </div>
+                            <div onClick={this.onDismissWarning}>
+                                <CloseIcon className="icon-inline ml-2" />
+                            </div>
                         </div>
                     </div>
                 )}
