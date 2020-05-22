@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -189,10 +188,9 @@ type BitbucketServerWebhook struct {
 	*Webhook
 	Name string
 
-	// externalServiceID -> secret
-	// It keeps track of secrets we know have been stored
-	// in the remote Bitbucket webhook config
-	secrets map[int64]string
+	// cache of config we've seen so that we can decide what changes
+	// need to be synced if any
+	configCache map[int64]*schema.BitbucketServerConnection
 
 	// Optional httpClient
 	httpClient httpcli.Doer
@@ -459,7 +457,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 		ours = h.checkRunEvent(cr)
 	}
 
-	return
+	return prs, ours
 }
 
 func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment {
@@ -785,15 +783,16 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
-		Name:    name,
-		secrets: make(map[int64]string),
+		Webhook:     &Webhook{store, repos, now, bitbucketserver.ServiceType},
+		Name:        name,
+		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
 }
 
 // SyncWebhooks ensures the creation / deletion of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
-func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
+// It is expected to run in the background and will exit when the supplied context is cancelled.
+func (h *BitbucketServerWebhook) SyncWebhooks(ctx context.Context, every time.Duration) {
 	externalURL := func() string {
 		return conf.Cached(func() interface{} {
 			return conf.Get().ExternalURL
@@ -802,9 +801,14 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
-		es, err := h.Repos.ListExternalServices(context.Background(), args)
+		es, err := h.Repos.ListExternalServices(ctx, args)
 		if err != nil {
 			log15.Error("Upserting BBS Webhook failed [Listing BBS extsvc]", "err", err)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(every):
+			}
 			continue
 		}
 
@@ -814,50 +818,70 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 			if !ok {
 				continue
 			}
+
 			err = h.syncWebhook(e.ID, con, externalURL())
 			if err != nil {
-				log15.Error("Upserting BBS Webhook failed", "err", err)
+				log15.Error("Syncing BBS Webhook failed", "err", err)
 			}
 		}
 
-		time.Sleep(every)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(every):
+		}
 	}
 }
 
 // syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the existing webhook config.
-func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
+func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	secret := con.WebhookSecret()
-	oldSecret, ok := h.secrets[externalServiceID]
+	disabled := con.WebhookSyncDisabled()
+	oldConfig, ok := h.configCache[externalServiceID]
+	oldSecret := oldConfig.WebhookSecret()
+	oldDisabled := oldConfig.WebhookSyncDisabled()
 
-	if ok && oldSecret == secret {
-		// Nothing has changed since our last check
+	if ok && oldSecret == secret && oldDisabled == disabled {
+		// Nothing has changed
 		return nil
 	}
 
-	client, err := bbs.NewClient(con, h.httpClient)
+	defer func() {
+		// We only update the config in our cache if everything worked, so that in case of an error we automatically retry.
+		if err == nil {
+			h.configCache[externalServiceID] = con
+		}
+	}()
+
+	client, err := bitbucketserver.NewClient(con, h.httpClient)
 	if err != nil {
 		return errors.Wrap(err, "creating client")
 	}
 
 	if secret == "" {
-		// Secret now blank, delete hook.
-		// If this is the first iteration we don't know if the server
-		// has a hook configured or not. If not, the delete will be a noop
-		err = client.DeleteWebhook(ctx, h.Name)
-		if err != nil {
-			return errors.Wrap(err, "deleting webhook")
+		// As a special case, we'll delete where we know we were previously enabled
+		// and secret has been set to blank in the new config
+		if ok && !oldDisabled {
+			err = client.DeleteWebhook(ctx, h.Name)
+			if err != nil {
+				return errors.Wrap(err, "deleting webhook")
+			}
 		}
-		h.secrets[externalServiceID] = secret
 		return nil
 	}
 
-	// Secret has changed to a non blank value, upsert
-	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, conf.ExternalURL())
-	wh := bbs.Webhook{
+	if disabled {
+		// Don't sync
+		return nil
+	}
+
+	// Secret or sync permission has changed, sync
+	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, externalURL)
+	wh := bitbucketserver.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
 		Events:   []string{"pr", "repo"},
@@ -869,7 +893,6 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	if err != nil {
 		return errors.Wrap(err, "upserting webhook")
 	}
-	h.secrets[externalServiceID] = secret
 	return nil
 }
 
@@ -956,7 +979,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
+	e, err := bitbucketserver.ParseWebhookEvent(bitbucketserver.WebhookEventType(r), payload)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "parsing webhook")}
 	}
@@ -967,23 +990,23 @@ func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, our
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
-	case *bbs.PullRequestActivityEvent:
+	case *bitbucketserver.PullRequestActivityEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		prs = append(prs, pr)
 		return prs, e.Activity
-	case *bbs.PullRequestParticipantStatusEvent:
+	case *bitbucketserver.PullRequestParticipantStatusEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		prs = append(prs, pr)
 		return prs, e.ParticipantStatusEvent
-	case *bbs.BuildStatusEvent:
+	case *bitbucketserver.BuildStatusEvent:
 		for _, p := range e.PullRequests {
 			repoID := strconv.Itoa(p.FromRef.Repository.ID)
 			pr := PR{ID: int64(p.ID), RepoExternalID: repoID}
 			prs = append(prs, pr)
 		}
-		return prs, &bbs.CommitStatus{
+		return prs, &bitbucketserver.CommitStatus{
 			Commit: e.Commit,
 			Status: e.Status,
 		}
