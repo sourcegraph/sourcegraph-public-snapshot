@@ -7,15 +7,44 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/time/rate"
+)
+
+var (
+	reposProcessedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_processed",
+		Help: "The total number of processed repos",
+	})
+	reposFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_failed",
+		Help: "The total number of failed repos",
+	})
+	reposSucceededCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_succeeded",
+		Help: "The total number of succeeded repos",
+	})
+	reposSkippedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ghe_feeder_skipped",
+		Help: "The total number of skipped repos",
+	})
+
+	remainingWorkGauge = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ghe_feeder_remaining_work",
+		Help: "The number of repos that still need to be processed from the specified input",
+	})
 )
 
 func main() {
@@ -28,6 +57,10 @@ func main() {
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
 	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
+	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
+	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 20, "number of simultaneous GHE pushes")
+	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
+	numCloningAttempts := flag.Int("numCloningAttempts", 5, "number of cloning attempts before giving up")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -89,6 +122,7 @@ func main() {
 		numLines = *limitPump
 	}
 
+	remainingWorkGauge.Set(float64(numLines))
 	bar := progressbar.New64(numLines)
 
 	work := make(chan string)
@@ -120,9 +154,13 @@ func main() {
 		}
 	}()
 
-	rateLimiter := rate.NewLimiter(1, 10)
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		_ = http.ListenAndServe(":2112", nil)
+	}()
 
-	pushSem := make(chan struct{}, 3)
+	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
+	pushSem := make(chan struct{}, *numSimultaneousPushes)
 
 	var wkrs []*worker
 
@@ -135,20 +173,22 @@ func main() {
 			os.Exit(1)
 		}
 		wkr := &worker{
-			name:        name,
-			client:      gheClient,
-			index:       i,
-			scratchDir:  wkrScratchDir,
-			work:        work,
-			wg:          &wg,
-			bar:         bar,
-			fdr:         fdr,
-			logger:      log15.New("source", name),
-			rateLimiter: rateLimiter,
-			admin:       *admin,
-			token:       *token,
-			host:        host,
-			pushSem:     pushSem,
+			name:               name,
+			client:             gheClient,
+			index:              i,
+			scratchDir:         wkrScratchDir,
+			work:               work,
+			wg:                 &wg,
+			bar:                bar,
+			fdr:                fdr,
+			logger:             log15.New("source", name),
+			rateLimiter:        rateLimiter,
+			admin:              *admin,
+			token:              *token,
+			host:               host,
+			pushSem:            pushSem,
+			cloneRepoTimeout:   *cloneRepoTimeout,
+			numCloningAttempts: *numCloningAttempts,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
@@ -163,10 +203,13 @@ func main() {
 	wg.Wait()
 	_ = bar.Finish()
 
-	printStats(wkrs, prdc)
+	s := stats(wkrs, prdc)
+
+	fmt.Println(s)
+	log15.Info(s)
 }
 
-func printStats(wkrs []*worker, prdc *producer) {
+func stats(wkrs []*worker, prdc *producer) string {
 	var numProcessed, numSucceeded, numFailed int64
 
 	for _, wkr := range wkrs {
@@ -175,6 +218,6 @@ func printStats(wkrs []*worker, prdc *producer) {
 		numSucceeded += wkr.numSucceeded
 	}
 
-	fmt.Printf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
+	return fmt.Sprintf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
 		numProcessed, numSucceeded, numFailed, prdc.numSkipped)
 }

@@ -41,26 +41,28 @@ func randomOrgNameAndSize() (string, int) {
 }
 
 type worker struct {
-	name            string
-	client          *github.Client
-	index           int
-	scratchDir      string
-	work            <-chan string
-	wg              *sync.WaitGroup
-	bar             *progressbar.ProgressBar
-	reposPerOrg     int
-	numFailed       int64
-	numSucceeded    int64
-	fdr             *feederDB
-	currentOrg      string
-	currentNumRepos int
-	currentMaxRepos int
-	logger          log15.Logger
-	rateLimiter     *rate.Limiter
-	admin           string
-	token           string
-	host            string
-	pushSem         chan struct{}
+	name               string
+	client             *github.Client
+	index              int
+	scratchDir         string
+	work               <-chan string
+	wg                 *sync.WaitGroup
+	bar                *progressbar.ProgressBar
+	reposPerOrg        int
+	numFailed          int64
+	numSucceeded       int64
+	fdr                *feederDB
+	currentOrg         string
+	currentNumRepos    int
+	currentMaxRepos    int
+	logger             log15.Logger
+	rateLimiter        *rate.Limiter
+	admin              string
+	token              string
+	host               string
+	pushSem            chan struct{}
+	cloneRepoTimeout   time.Duration
+	numCloningAttempts int
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -87,10 +89,14 @@ func (wkr *worker) run(ctx context.Context) {
 			return
 		}
 		err := wkr.process(ctx, line)
+		reposProcessedCounter.Inc()
+		remainingWorkGauge.Add(-1.0)
 		if err != nil {
 			wkr.numFailed++
+			reposFailedCounter.Inc()
 			_ = wkr.fdr.failed(line)
 		} else {
+			reposSucceededCounter.Inc()
 			wkr.numSucceeded++
 			wkr.currentNumRepos++
 
@@ -151,7 +157,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 		if err != nil {
 			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "ownerRepo", work, "error", err)
 			attempt++
-			if attempt < 3 && ctx.Err() == nil {
+			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
 				continue
 			}
 			return err
@@ -177,7 +183,11 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	ctx, cancel := context.WithTimeout(ctx, time.Second*120)
+=======
+	ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
+>>>>>>> aff911d584eda44b13083b3fae9a7214b8ca3369
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", "clone",
@@ -206,6 +216,9 @@ func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 		}()
 		repoDir := filepath.Join(wkr.scratchDir, owner, repo)
 
+		ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
+		defer cancel()
+
 		cmd := exec.CommandContext(ctx, "git", "push", "ghe", "master")
 		cmd.Dir = repoDir
 
@@ -222,6 +235,9 @@ func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) 
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
+
 	gheOrg := &github.Organization{
 		Login: github.String(wkr.currentOrg),
 	}
@@ -236,6 +252,9 @@ func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.
 		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
 		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	defer cancel()
 
 	gheRepo := &github.Repository{
 		Name: github.String(fmt.Sprintf("%s-%s", owner, repo)),
