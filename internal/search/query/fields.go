@@ -1,8 +1,6 @@
 package query
 
-type none struct{}
-
-var empty = none{}
+var empty = struct{}{}
 
 var allFields = map[string]struct{}{
 	FieldCase:               empty,

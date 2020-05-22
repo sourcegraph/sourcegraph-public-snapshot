@@ -122,11 +122,11 @@ func skipSpace(buf []byte) int {
 }
 
 type heuristic struct {
-	// if true, parses parens as patterns rather than expression groups.
+	// If true, parses parens as patterns rather than expression groups.
 	parensAsPatterns bool
-	// if true, disables parsing parentheses as expression groups.
+	// If true, disables parsing parentheses as expression groups.
 	allowDanglingParens bool
-	// if true, the parser accepts any characters (e.g., unbalanced quotes,
+	// If true, the parser accepts any characters (e.g., unbalanced quotes,
 	// parentheses, backslashes) if they can be associated with a pattern.
 	// Balanced quotes remain expected for non-empty fields like repo:"foo",
 	// if specified.
@@ -602,7 +602,7 @@ func (p *parser) ParseParameter() Parameter {
 
 	if p.heuristic.literalSearchPatterns {
 		if field == "" {
-			// No foo: prefix was parsed, accept as spattern.
+			// No foo: prefix was parsed, accept as pattern.
 			value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
 			p.pos += advance
 			return Parameter{Field: "", Value: value, Negated: false, Quoted: false}
