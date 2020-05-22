@@ -31,7 +31,7 @@ Examples:
 
   Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
 
-    	$ src lsif upload -indexerName=lsif-elixir
+    	$ src lsif upload -indexer=lsif-elixir
 `
 
 	var flags struct {
