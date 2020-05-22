@@ -206,12 +206,10 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after+1 > len(p.buf) || !isSpace(p.buf[after:after+1]) {
+	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
 		return false
 	}
-	// Bar
-	return strings.ToLower(v) == string(keyword)
-	// Foo
+	return strings.EqualFold(v, string(keyword))
 }
 
 // skipSpaces advances the input and places the parser position at the next
@@ -299,7 +297,7 @@ loop:
 				default:
 					return "", count, errors.New("unrecognized escape sequence")
 				}
-				if len(buf) <= 0 {
+				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
 				}
 			} else {
@@ -475,7 +473,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
-// to a search pattern). It's main function is to determine when to stop
+// to a search pattern). Its main function is to determine when to stop
 // scanning a value (e.g., at a parentheses), and which escape sequences to
 // interpret.
 func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
