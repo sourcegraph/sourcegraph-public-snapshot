@@ -1374,7 +1374,7 @@ func unixMilliToTime(ms int64) time.Time {
 // FindMergeCommit will return the merge commit from the given set of events, stopping
 // on the first it finds.
 // It returns an empty string if none are found.
-func FindMergeCommit(events []*ChangesetEvent) string {
+func FindMergeCommitID(events []*ChangesetEvent) string {
 	for _, event := range events {
 		switch m := event.Metadata.(type) {
 		case *bitbucketserver.Activity:

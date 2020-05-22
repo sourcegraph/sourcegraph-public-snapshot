@@ -353,7 +353,7 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 	var oid string
 	if r.ExternalState == campaigns.ChangesetStateMerged {
 		// The PR was merged, find the merge commit
-		oid = campaigns.FindMergeCommit(r.Changeset.Events())
+		oid = campaigns.FindMergeCommitID(r.Changeset.Events())
 	}
 	if oid == "" {
 		// Fall back to the head ref

@@ -296,7 +296,7 @@ func TestChangesetEvents(t *testing.T) {
 	}
 }
 
-func TestFindMergeCommit(t *testing.T) {
+func TestFindMergeCommitID(t *testing.T) {
 	now := time.Now()
 	makeBitbucketEvent := func(kind ChangesetEventKind, commit string) *ChangesetEvent {
 		return &ChangesetEvent{
@@ -403,7 +403,7 @@ func TestFindMergeCommit(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			have := FindMergeCommit(tc.events)
+			have := FindMergeCommitID(tc.events)
 			if have != tc.want {
 				t.Fatalf("Want %q, have %q", tc.want, have)
 			}
