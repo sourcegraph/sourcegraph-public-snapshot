@@ -331,5 +331,5 @@ func ExecChangesetJob(
 
 	job.ChangesetID = clone.ID
 	runFinalUpdate(ctx, store)
-	return
+	return err
 }
