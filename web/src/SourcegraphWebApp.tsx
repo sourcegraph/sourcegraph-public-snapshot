@@ -167,7 +167,7 @@ const notificationClassNames = {
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const SEARCH_MODE_KEY = 'sg-search-mode'
-const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
+export const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {

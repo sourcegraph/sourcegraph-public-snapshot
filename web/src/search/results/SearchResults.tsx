@@ -33,6 +33,8 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
+import { LAST_VERSION_CONTEXT_KEY } from '../../SourcegraphWebApp'
+import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -74,6 +76,9 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
+
+    /** Whether to show a warning saying that the URL has changed the version context. */
+    showVersionContextWarning: boolean
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
@@ -89,6 +94,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
+        showVersionContextWarning: false,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -201,6 +207,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                 code_search: { error_message: asError(error).message },
                                             })
                                             console.error(error)
+                                            AlertOutlineIcon
                                         }
                                     ),
                                     // Update view with results or error
@@ -214,6 +221,37 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     newState => this.setState(newState as SearchResultsState),
                     err => console.error(err)
                 )
+        )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(distinctUntilChanged((a, b) => isEqual(a.location, b.location)))
+                .subscribe(props => {
+                    const searchParams = new URLSearchParams(props.location.search)
+                    if (
+                        !searchParams.has('from-context-toggle') &&
+                        props.availableVersionContexts &&
+                        props.versionContext !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                    ) {
+                        this.setState({ showVersionContextWarning: true })
+                    }
+
+                    if (searchParams.has('from-context-toggle')) {
+                        searchParams.delete('from-context-toggle')
+                        this.props.history.replace({
+                            search: searchParams.toString(),
+                            hash: this.props.history.location.hash,
+                        })
+                        this.setState({ showVersionContextWarning: false })
+                    }
+
+                    if (
+                        props.versionContext === localStorage.getItem(LAST_VERSION_CONTEXT_KEY) &&
+                        this.state.showVersionContextWarning
+                    ) {
+                        this.setState({ showVersionContextWarning: false })
+                    }
+                })
         )
 
         this.subscriptions.add(
@@ -267,6 +305,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         onShowMoreResultsClick={this.showMoreResults}
                         calculateShowMoreResultsCount={this.calculateCount}
                     />
+                )}
+                {this.state.showVersionContextWarning && (
+                    <div className="mt-2 mx-2">
+                        <div className="alert alert-warning mb-0">
+                            <span>
+                                <AlertOutlineIcon className="icon-inline mr-2" />
+                            </span>
+                            This link changed your version context to{' '}
+                            <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with the
+                            selector to the left of the search bar.
+                        </div>
+                    </div>
                 )}
                 <SearchResultTypeTabs
                     {...this.props}

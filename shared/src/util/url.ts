@@ -573,7 +573,8 @@ export function buildSearchURLQuery(
     patternType: SearchPatternType,
     caseSensitive: boolean,
     versionContext?: string,
-    filtersInQuery?: FiltersToTypeAndValue
+    filtersInQuery?: FiltersToTypeAndValue,
+    queryParams?: { key: string; value: string }[]
 ): string {
     const searchParams = new URLSearchParams()
     let fullQuery = query
@@ -623,6 +624,12 @@ export function buildSearchURLQuery(
 
     if (versionContext) {
         searchParams.set('c', versionContext)
+    }
+
+    if (queryParams) {
+        for (const queryParam of queryParams) {
+            searchParams.set(queryParam.key, queryParam.value)
+        }
     }
 
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')

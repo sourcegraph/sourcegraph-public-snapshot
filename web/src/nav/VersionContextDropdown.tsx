@@ -43,6 +43,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
         const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
         const activation = undefined
         const source = 'filter'
+        const queryParams: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
         if (searchQueryNotEmpty) {
             submitSearch({
                 history,
@@ -53,6 +54,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                 versionContext,
                 activation,
                 filtersInQuery,
+                queryParams,
             })
         }
     }
