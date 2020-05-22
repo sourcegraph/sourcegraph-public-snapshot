@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"sort"
 	"sync"
 	"time"
@@ -353,7 +353,11 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 	var oid string
 	if r.ExternalState == campaigns.ChangesetStateMerged {
 		// The PR was merged, find the merge commit
-		oid = ee.ChangesetEvents(r.Changeset.Events()).FindMergeCommitID()
+		events, err := r.computeEvents(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching changeset events")
+		}
+		oid = ee.ChangesetEvents(events).FindMergeCommitID()
 	}
 	if oid == "" {
 		// Fall back to the head ref
