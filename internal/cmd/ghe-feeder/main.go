@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
@@ -28,6 +29,9 @@ func main() {
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
 	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
+	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
+	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 20, "number of simultaneous GHE pushes")
+	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -120,9 +124,8 @@ func main() {
 		}
 	}()
 
-	rateLimiter := rate.NewLimiter(1, 10)
-
-	pushSem := make(chan struct{}, 3)
+	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
+	pushSem := make(chan struct{}, *numSimultaneousPushes)
 
 	var wkrs []*worker
 
@@ -135,20 +138,21 @@ func main() {
 			os.Exit(1)
 		}
 		wkr := &worker{
-			name:        name,
-			client:      gheClient,
-			index:       i,
-			scratchDir:  wkrScratchDir,
-			work:        work,
-			wg:          &wg,
-			bar:         bar,
-			fdr:         fdr,
-			logger:      log15.New("source", name),
-			rateLimiter: rateLimiter,
-			admin:       *admin,
-			token:       *token,
-			host:        host,
-			pushSem:     pushSem,
+			name:             name,
+			client:           gheClient,
+			index:            i,
+			scratchDir:       wkrScratchDir,
+			work:             work,
+			wg:               &wg,
+			bar:              bar,
+			fdr:              fdr,
+			logger:           log15.New("source", name),
+			rateLimiter:      rateLimiter,
+			admin:            *admin,
+			token:            *token,
+			host:             host,
+			pushSem:          pushSem,
+			cloneRepoTimeout: *cloneRepoTimeout,
 		}
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
@@ -163,10 +167,13 @@ func main() {
 	wg.Wait()
 	_ = bar.Finish()
 
-	printStats(wkrs, prdc)
+	s := stats(wkrs, prdc)
+
+	fmt.Println(s)
+	log15.Info(s)
 }
 
-func printStats(wkrs []*worker, prdc *producer) {
+func stats(wkrs []*worker, prdc *producer) string {
 	var numProcessed, numSucceeded, numFailed int64
 
 	for _, wkr := range wkrs {
@@ -175,6 +182,6 @@ func printStats(wkrs []*worker, prdc *producer) {
 		numSucceeded += wkr.numSucceeded
 	}
 
-	fmt.Printf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
+	return fmt.Sprintf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
 		numProcessed, numSucceeded, numFailed, prdc.numSkipped)
 }

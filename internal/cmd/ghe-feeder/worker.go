@@ -41,26 +41,27 @@ func randomOrgNameAndSize() (string, int) {
 }
 
 type worker struct {
-	name            string
-	client          *github.Client
-	index           int
-	scratchDir      string
-	work            <-chan string
-	wg              *sync.WaitGroup
-	bar             *progressbar.ProgressBar
-	reposPerOrg     int
-	numFailed       int64
-	numSucceeded    int64
-	fdr             *feederDB
-	currentOrg      string
-	currentNumRepos int
-	currentMaxRepos int
-	logger          log15.Logger
-	rateLimiter     *rate.Limiter
-	admin           string
-	token           string
-	host            string
-	pushSem         chan struct{}
+	name             string
+	client           *github.Client
+	index            int
+	scratchDir       string
+	work             <-chan string
+	wg               *sync.WaitGroup
+	bar              *progressbar.ProgressBar
+	reposPerOrg      int
+	numFailed        int64
+	numSucceeded     int64
+	fdr              *feederDB
+	currentOrg       string
+	currentNumRepos  int
+	currentMaxRepos  int
+	logger           log15.Logger
+	rateLimiter      *rate.Limiter
+	admin            string
+	token            string
+	host             string
+	pushSem          chan struct{}
+	cloneRepoTimeout time.Duration
 }
 
 func (wkr *worker) run(ctx context.Context) {
@@ -177,7 +178,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
+	ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", "clone",
