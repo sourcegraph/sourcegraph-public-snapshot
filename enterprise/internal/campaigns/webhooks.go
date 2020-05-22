@@ -835,7 +835,7 @@ func (h *BitbucketServerWebhook) SyncWebhooks(ctx context.Context, every time.Du
 
 // syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the existing webhook config.
-func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
+func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -849,6 +849,13 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 		// Nothing has changed
 		return nil
 	}
+
+	defer func() {
+		// We only update the config in our cache if everything worked, so that in case of an error we automatically retry.
+		if err == nil {
+			h.configCache[externalServiceID] = con
+		}
+	}()
 
 	client, err := bitbucketserver.NewClient(con, h.httpClient)
 	if err != nil {
@@ -864,13 +871,11 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 				return errors.Wrap(err, "deleting webhook")
 			}
 		}
-		h.configCache[externalServiceID] = con
 		return nil
 	}
 
 	if disabled {
 		// Don't sync
-		h.configCache[externalServiceID] = con
 		return nil
 	}
 
@@ -888,7 +893,6 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	if err != nil {
 		return errors.Wrap(err, "upserting webhook")
 	}
-	h.configCache[externalServiceID] = con
 	return nil
 }
 
