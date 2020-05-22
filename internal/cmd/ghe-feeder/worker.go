@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/google/go-github/v31/github"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
@@ -38,6 +40,19 @@ func randomOrgNameAndSize() (string, int) {
 	}
 	name := fmt.Sprintf("%s-%d", getRandomName(0), size)
 	return name, size
+}
+
+type feederError struct {
+	errType string
+	err     error
+}
+
+func (e feederError) Error() string {
+	return fmt.Sprintf("%v: %v", e.errType, e.err)
+}
+
+func (e feederError) Unwrap() error {
+	return e.err
 }
 
 type worker struct {
@@ -89,11 +104,16 @@ func (wkr *worker) run(ctx context.Context) {
 			return
 		}
 		err := wkr.process(ctx, line)
-		reposProcessedCounter.Inc()
+		reposProcessedCounter.With(prometheus.Labels{"worker": wkr.name}).Inc()
 		remainingWorkGauge.Add(-1.0)
 		if err != nil {
 			wkr.numFailed++
-			reposFailedCounter.Inc()
+			errType := "unknown"
+			var ferr *feederError
+			if errors.As(err, &ferr) {
+				errType = ferr.errType
+			}
+			reposFailedCounter.With(prometheus.Labels{"worker": wkr.name, "err_type": errType})
 			_ = wkr.fdr.failed(line)
 		} else {
 			reposSucceededCounter.Inc()
@@ -136,19 +156,19 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to clone repo", "ownerRepo", work, "error", err)
-		return err
+		return feederError{"clone", err}
 	}
 
 	gheRepo, err := wkr.addGHERepo(ctx, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to create GHE repo", "ownerRepo", work, "error", err)
-		return err
+		return feederError{"api", err}
 	}
 
 	err = wkr.addRemote(ctx, gheRepo, owner, repo)
 	if err != nil {
 		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "ownerRepo", work, "error", err)
-		return err
+		return feederError{"api", err}
 	}
 
 	attempt := 1
@@ -160,7 +180,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
 				continue
 			}
-			return err
+			return feederError{"push", err}
 		} else {
 			break
 		}

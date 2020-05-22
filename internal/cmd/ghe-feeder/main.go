@@ -24,14 +24,14 @@ import (
 )
 
 var (
-	reposProcessedCounter = promauto.NewCounter(prometheus.CounterOpts{
+	reposProcessedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "ghe_feeder_processed",
-		Help: "The total number of processed repos",
-	})
-	reposFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Help: "The total number of processed repos (labels: worker)",
+	}, []string{"worker"})
+	reposFailedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "ghe_feeder_failed",
-		Help: "The total number of failed repos",
-	})
+		Help: "The total number of failed repos (labels: worker, err_type with values {clone, api, push, unknown}",
+	}, []string{"worker", "err_type"})
 	reposSucceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "ghe_feeder_succeeded",
 		Help: "The total number of succeeded repos",
