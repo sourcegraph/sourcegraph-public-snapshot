@@ -185,6 +185,8 @@ Dockerfile @sourcegraph/distribution
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
 /internal/prometheusutil @sourcegraph/distribution
+/internal/cmd/resources-report @sourcegraph/distribution
+/.github/workflows/resources-report.yml @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
