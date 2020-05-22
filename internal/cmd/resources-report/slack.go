@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -102,4 +103,22 @@ func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) e
 		}
 	}
 	return nil
+}
+
+func reportError(ctx context.Context, opts options, err error, scope string) {
+	if *opts.slackWebhook != "" {
+		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, []slackBlock{{
+			"type": "section",
+			"text": &slackText{
+				Type: slackTextMarkdown,
+				Text: fmt.Sprintf(":warning: Error encountered: %s: %v", scope, err),
+			},
+		}})
+		if slackErr != nil {
+			log.Printf("slack: %v", err)
+		}
+	}
+	if *opts.verbose {
+		log.Printf("%s: %v", scope, err)
+	}
 }

@@ -30,6 +30,11 @@ type AWSResourceFetchFunc func(context.Context, chan<- Resource, aws.Config, tim
 var awsResources = map[string]AWSResourceFetchFunc{
 	// fetch ec2 resources
 	"EC2": func(ctx context.Context, results chan<- Resource, cfg aws.Config, since time.Time) error {
+		// ECS not accessible in these regions
+		if cfg.Region == "eu-south-1" {
+			return nil
+		}
+
 		client := aws_ec2.New(cfg)
 
 		instancesPager := aws_ec2.NewDescribeInstancesPaginator(client.DescribeInstancesRequest(&aws_ec2.DescribeInstancesInput{}))
@@ -83,6 +88,11 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	},
 	// fetch kubernetes clusters
 	"EKS": func(ctx context.Context, results chan<- Resource, cfg aws.Config, since time.Time) error {
+		// EKS is not available in these regions
+		if cfg.Region == "us-west-1" || cfg.Region == "eu-south-1" {
+			return nil
+		}
+
 		client := aws_eks.New(cfg)
 		pager := aws_eks.NewListClustersPaginator(client.ListClustersRequest(&aws_eks.ListClustersInput{}))
 		for pager.Next(ctx) {
@@ -123,7 +133,9 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 		return nil, fmt.Errorf("failed to init client: %w", err)
 	}
 	cfg.Region = "us-east-1" // set an arbitrary region to start
+
 	results := make(chan Resource, resultsBuffer)
+	errs := make(chan error)
 	wait := &sync.WaitGroup{}
 
 	// iterate over regions based on accessible EC2 regions
@@ -147,27 +159,30 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 			wait.Add(1)
 			go func(resourceID string, fetchResource AWSResourceFetchFunc, cfg aws.Config) {
 				if err := fetchResource(ctx, results, cfg, since); err != nil {
-					if verbose {
-						logger.Printf("resource fetch for '%s' failed in region %s: %v", resourceID, cfg.Region, err)
-					}
+					errs <- fmt.Errorf("region %s, resource %s: %w", cfg.Region, resourceID, err)
 				}
 				wait.Done()
 			}(resourceID, fetchResource, cfg.Copy())
 		}
 	}
 
-	// collect results when done
+	// collect results until done
 	go func() {
 		wait.Wait()
 		close(results)
 	}()
 	var resources []Resource
 	for {
-		r, ok := <-results
-		if ok {
-			resources = append(resources, r)
-		} else {
-			return resources, nil
+		select {
+		case r, ok := <-results:
+			if ok {
+				resource := r
+				resources = append(resources, resource)
+			} else {
+				return resources, nil
+			}
+		case err := <-errs:
+			return nil, err
 		}
 	}
 }

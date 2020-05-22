@@ -44,41 +44,47 @@ func main() {
 	if err := run(opts); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("done")
 }
 
 func run(opts options) error {
 	ctx, cancel := context.WithTimeout(context.Background(), *opts.timeout)
 	defer cancel()
 
-	// collect resources
+	// Collect resources - let detailed errors be handled by reportErr, which
+	// will attempt to send it to Slack. This hopefully prevents errors from
+	// revealing too much in our public build logs. If Slack fails, just log it
+	// and hope Slack doesn't spit out anything sensitive.
 	var resources []Resource
 	since := time.Now().UTC().Add(-*opts.window)
 	if *opts.gcp {
 		rs, err := collectGCPResources(ctx, since, *opts.verbose)
 		if err != nil {
-			return fmt.Errorf("gcp: %w", err)
+			reportError(ctx, opts, err, "gcp")
+			return fmt.Errorf("gcp: failed to collect resources")
 		}
 		resources = append(resources, rs...)
 	}
 	if *opts.aws {
 		rs, err := collectAWSResources(ctx, since, *opts.verbose)
 		if err != nil {
-			return fmt.Errorf("aws: %w", err)
+			reportError(ctx, opts, err, "aws")
+			return fmt.Errorf("aws: failed to collect resources")
 		}
 		resources = append(resources, rs...)
 	}
 
 	// report results
-	if *opts.dry {
-		log.Println("dry run - collected resources:")
-		log.Println(reportString(resources))
-	} else {
+	if *opts.verbose {
+		log.Println("collected resources:\n", reportString(resources))
+		log.Printf("found a total of %d resources created since %s", len(resources), since.String())
+	}
+	if !*opts.dry && *opts.slackWebhook != "" {
 		if err := reportToSlack(ctx, *opts.slackWebhook, resources, since, *opts.runID); err != nil {
 			return fmt.Errorf("slack: %w", err)
 		}
 	}
 
-	log.Printf("done - collected a total of %d resources created since %s", len(resources), since.String())
 	return nil
 }
 

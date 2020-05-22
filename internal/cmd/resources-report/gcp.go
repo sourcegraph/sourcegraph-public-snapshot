@@ -149,6 +149,7 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 	}
 
 	results := make(chan Resource, resultsBuffer)
+	errs := make(chan error)
 	wait := &sync.WaitGroup{}
 
 	// aggregate resources for each GCP project
@@ -161,9 +162,7 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 				wait.Add(1)
 				go func(resourceID string, fetchResource GCPResourceFetchFunc, project string) {
 					if err := fetchResource(ctx, results, project, since); err != nil {
-						if verbose {
-							logger.Printf("resource fetch for '%s' failed in project: %v", resourceID, err)
-						}
+						errs <- fmt.Errorf("project %s, resource %s: %w", project, resourceID)
 					}
 					wait.Done()
 				}(resourceID, fetchResource, project.ProjectId)
@@ -174,18 +173,23 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 		return nil, err
 	}
 
-	// collect results when done
+	// collect results until done
 	go func() {
 		wait.Wait()
 		close(results)
 	}()
 	var resources []Resource
 	for {
-		r, ok := <-results
-		if ok {
-			resources = append(resources, r)
-		} else {
-			return resources, nil
+		select {
+		case r, ok := <-results:
+			if ok {
+				resource := r
+				resources = append(resources, resource)
+			} else {
+				return resources, nil
+			}
+		case err := <-errs:
+			return nil, err
 		}
 	}
 }
