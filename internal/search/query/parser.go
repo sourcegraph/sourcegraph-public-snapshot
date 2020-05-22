@@ -825,11 +825,11 @@ func ProcessAndOr(in string) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	query = LowercaseFieldNames(query)
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
 		return nil, err
 	}
-	query = SubstituteAliases(query)
+
 	return &AndOrQuery{Query: query}, nil
 }

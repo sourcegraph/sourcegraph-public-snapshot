@@ -109,3 +109,11 @@ func containsUppercase(s string) bool {
 	}
 	return false
 }
+
+// Map pipes query through one or more query transformer functions.
+func Map(query []Node, fns ...func([]Node) []Node) []Node {
+	for _, fn := range fns {
+		query = fn(query)
+	}
+	return query
+}
