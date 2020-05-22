@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func extractOwnerRepoFromCSVLine(line string) string {
@@ -59,6 +60,8 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		if skip {
 			prdc.numSkipped++
 			reposSkippedCounter.Inc()
+			reposProcessedCounter.With(prometheus.Labels{"worker": "skipped"}).Inc()
+			reposSucceededCounter.Inc()
 			prdc.logger.Debug("skipping repo", "owner/repo", line)
 			continue
 		}
