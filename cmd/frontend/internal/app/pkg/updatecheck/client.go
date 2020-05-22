@@ -39,7 +39,7 @@ type Status struct {
 	Err             error     // the error that occurred, if any
 	UpdateVersion   string    // the version string of the updated version, if any
 	MonthsOutOfDate int       // used if UpdateVersion is unavailable
-	Offline         bool      // uses to indicate if the instance is unable to check sourcegraph.com for new versions
+	Offline         bool      // used to indicate if the instance is unable to check sourcegraph.com for updates
 }
 
 // HasUpdate reports whether the status indicates an update is available.
