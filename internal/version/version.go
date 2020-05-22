@@ -64,7 +64,7 @@ func HowLongOutOfDate(currentVersion string) (int, error) {
 	return months, nil
 }
 
-// monthsFromDays returns a maximum of 6
+// monthsFromDays roughly determines the number of months given days
 func monthsFromDays(days float64) int {
 	const daysInAMonth = 30
 	months := math.Floor(days / daysInAMonth)
