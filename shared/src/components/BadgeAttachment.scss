@@ -12,7 +12,7 @@
         background-color: rgba($body-bg-color-dark, 0.8);
     }
     &__icon-svg {
-        // TODO is there a better way to style this?
+        // TODO is there a better way to style this? padding vs margin (see __contents)
         margin: 0.25rem;
     }
     &__contents {
