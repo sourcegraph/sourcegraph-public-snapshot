@@ -102,6 +102,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
+    private locationUpdates = new Subject<SearchResultsProps['location']>()
 
     private subscriptions = new Subscription()
 
@@ -228,17 +229,20 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         this.subscriptions.add(
             this.componentUpdates
-                .pipe(distinctUntilChanged((a, b) => isEqual(a.location, b.location)))
+                .pipe(
+                    startWith(this.props),
+                    distinctUntilChanged((a, b) => isEqual(a.location, b.location))
+                )
                 .subscribe(props => {
                     const searchParams = new URLSearchParams(props.location.search)
+                    const versionFromURL = searchParams.get('c')
+
                     if (
                         !searchParams.has('from-context-toggle') &&
                         props.availableVersionContexts &&
-                        (props.versionContext
-                            ? props.versionContext !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-                            : !props.versionContext &&
-                              (localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== undefined ||
-                                  localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== null))
+                        (versionFromURL
+                            ? versionFromURL !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                            : localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== null)
                     ) {
                         this.setState({ showVersionContextWarning: true })
                     }
@@ -254,13 +258,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
                     if (
                         this.state.showVersionContextWarning &&
-                        (props.versionContext
-                            ? props.versionContext === localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-                            : !props.versionContext &&
-                              (localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === undefined ||
-                                  localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === null))
+                        (versionFromURL
+                            ? versionFromURL === localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+                            : localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === null)
                     ) {
-                        console.log('testing')
                         this.setState({ showVersionContextWarning: false })
                     }
                 })
