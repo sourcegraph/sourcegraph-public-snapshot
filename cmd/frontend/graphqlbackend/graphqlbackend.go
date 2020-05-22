@@ -402,6 +402,11 @@ func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToHiddenPatch() (HiddenPatchResolver, bool) {
+	n, ok := r.Node.(HiddenPatchResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	n, ok := r.Node.(ChangesetEventResolver)
 	return n, ok

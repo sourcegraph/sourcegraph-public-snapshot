@@ -699,9 +699,17 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# A patch is a code change on a repository branch. It is used to create a changeset on a code host
-# as part of a campaign.
-type Patch implements Node {
+# A campaign patch is code change on a repository branch that a user might or might not
+# have access to.
+# It is used to create a changeset on a code host as part of a campaign.
+interface PatchInterface {
+    # The id of the patch.
+    id: ID!
+}
+
+# A patch is a patch in a repository that the user has read-access
+# to.
+type Patch implements PatchInterface & Node {
     # The id of the patch.
     id: ID!
 
@@ -718,6 +726,13 @@ type Patch implements Node {
     # - A campaign with the patchset has been published after being in draft mode.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
+}
+
+# A hidden patch is a patch in a repository that the user does NOT have
+# read-access to.
+type HiddenPatch implements PatchInterface & Node {
+    # The id of the patch.
+    id: ID!
 }
 
 # A label attached to a changeset on a code host.
@@ -863,7 +878,7 @@ type ChangesetConnection {
 # A list of patches.
 type PatchConnection {
     # A list of patches.
-    nodes: [Patch!]!
+    nodes: [PatchInterface!]!
 
     # The total number of patches in the connection.
     totalCount: Int!
