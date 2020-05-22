@@ -56,6 +56,8 @@
 // 1528395676_add_diff_stats_to_patches.up.sql (231B)
 // 1528395677_add_index_user_external_accounts_user_id.down.sql (70B)
 // 1528395677_add_index_user_external_accounts_user_id.up.sql (157B)
+// 1528395678_lsif_auto_index.down.sql (110B)
+// 1528395678_lsif_auto_index.up.sql (865B)
 
 package migrations
 
@@ -1244,6 +1246,46 @@ func _1528395677_add_index_user_external_accounts_user_idUpSql() (*asset, error)
 	return a, nil
 }
 
+var __1528395678_lsif_auto_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\xcc\x4b\x49\xad\x48\x2d\xb6\x86\x4a\x44\x06\x20\x8b\xc7\x17\x97\x24\x96\xa4\x5a\x63\xd7\x94\x98\x94\x93\x1a\x5f\x94\x5a\x90\x5f\x9c\x59\x92\x5f\x94\x09\x32\x83\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\xdf\x5e\x34\x6b\x6e\x00\x00\x00")
+
+func _1528395678_lsif_auto_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395678_lsif_auto_indexDownSql,
+		"1528395678_lsif_auto_index.down.sql",
+	)
+}
+
+func _1528395678_lsif_auto_indexDownSql() (*asset, error) {
+	bytes, err := _1528395678_lsif_auto_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395678_lsif_auto_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x40, 0x5, 0xa2, 0x5, 0xf7, 0xe1, 0x96, 0xed, 0x8b, 0xb6, 0x5e, 0x0, 0xf9, 0xb4, 0xbc, 0xf4, 0xb7, 0x75, 0x17, 0xf4, 0x30, 0x3d, 0x7e, 0xc7, 0x9e, 0x8f, 0xd4, 0x37, 0xec, 0xa4, 0xbe, 0x25}}
+	return a, nil
+}
+
+var __1528395678_lsif_auto_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x92\x4d\x8f\xd3\x30\x10\x86\xef\xf9\x15\x73\x40\x4a\x2b\xb1\x52\x0f\x5c\xe8\x9e\xb2\xc5\x40\xb4\x69\xba\xa4\xc9\xa1\x42\x60\x19\x67\x76\x33\x22\xb1\x83\x3d\x61\x3f\x10\xfc\x76\x44\xdd\x96\x6e\x2b\x75\x7b\x4c\xde\xc7\x63\x3f\xaf\x7d\x25\x3e\xa4\xf9\x65\x14\xcd\x0a\x91\x94\x02\xca\xe4\x2a\x13\xd0\x7a\xba\x95\x64\x6a\x7c\x50\xdf\x5a\x94\x0e\x7b\xeb\x89\xad\x23\xf4\x30\x8a\x00\x00\xa8\x86\xa5\x28\xd2\x24\x83\x9b\x22\x9d\x27\xc5\x0a\xae\xc5\xea\xf5\x3a\xda\xd1\x8f\x92\x6a\x20\xc3\x78\x87\x0e\xf2\x45\x09\x79\x95\x65\x50\xe5\xe9\xa7\x4a\x04\xd4\xa3\x72\xba\x91\xda\x0e\x86\x8f\xc9\x77\xe2\x7d\x52\x65\x25\x4c\x02\xdc\x3b\xd4\xe4\xf1\x4c\xba\x55\x9e\x83\x82\x44\xf3\x63\xc0\x01\x6b\xa9\x18\x98\x3a\xf4\xac\xba\x1e\xee\x89\x9b\xf5\x27\x3c\x59\x83\xd1\x78\xaf\x83\xd5\xcd\x7e\x05\xd2\xb3\x62\x84\x64\x09\x22\xaf\xe6\x1b\xff\x38\x8c\x8c\xc3\x66\x71\xef\xac\x46\xef\xc9\xdc\x6d\xff\x68\xdb\xf5\x2d\xf2\x7f\x04\x9d\xb3\x0e\xeb\xf8\xd9\x4e\x07\x6d\x9f\x53\xaf\xb6\x5d\x47\x0c\x8c\x0f\xbc\x93\x0f\xc9\xcb\x96\xbb\x92\x8c\xbd\x1f\x8d\x0f\x96\x07\xcd\x23\xef\xed\x92\xad\xf1\x74\x7a\x84\x3c\x9f\x73\xab\xa8\x1d\x1c\x4a\x3f\x74\x9d\x72\x8f\xeb\x93\x1e\x24\xac\xf4\x77\x76\x4a\xe3\x5e\xe8\x59\x39\x3e\x7d\xfc\xcd\x14\x32\xe4\x9b\x73\xc8\xd3\x2f\x31\x30\xb3\x45\xbe\x2c\x8b\x24\xcd\xcb\xa0\x3e\xf4\xad\x55\xb5\x97\xa1\x66\xf9\x53\xb5\x54\x4b\xdd\x28\xe7\x61\xf6\x51\xcc\xae\x61\x34\xda\xdc\xc0\x1f\x88\xbf\x7e\x56\x17\x4f\x93\x8b\xb7\x5f\x7e\xbd\x99\xfc\x7e\x15\x4f\xa7\xff\x74\xc6\xe3\x70\xc5\x8b\xf9\x3c\x2d\x2f\xa3\xbf\x01\x00\x00\xff\xff\xcd\x8a\x90\xcd\x61\x03\x00\x00")
+
+func _1528395678_lsif_auto_indexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395678_lsif_auto_indexUpSql,
+		"1528395678_lsif_auto_index.up.sql",
+	)
+}
+
+func _1528395678_lsif_auto_indexUpSql() (*asset, error) {
+	bytes, err := _1528395678_lsif_auto_indexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395678_lsif_auto_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x86, 0x97, 0x23, 0xdd, 0xd2, 0xa7, 0xfa, 0x97, 0x69, 0x5d, 0x2a, 0xf0, 0x30, 0xff, 0x24, 0x29, 0xdc, 0xeb, 0xb0, 0xe0, 0x96, 0x2e, 0x18, 0x7, 0x7, 0xcf, 0x6, 0xed, 0x6d, 0xea, 0xbb, 0xa0}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1391,6 +1433,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395676_add_diff_stats_to_patches.up.sql":                             _1528395676_add_diff_stats_to_patchesUpSql,
 	"1528395677_add_index_user_external_accounts_user_id.down.sql":            _1528395677_add_index_user_external_accounts_user_idDownSql,
 	"1528395677_add_index_user_external_accounts_user_id.up.sql":              _1528395677_add_index_user_external_accounts_user_idUpSql,
+	"1528395678_lsif_auto_index.down.sql":                                     _1528395678_lsif_auto_indexDownSql,
+	"1528395678_lsif_auto_index.up.sql":                                       _1528395678_lsif_auto_indexUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1490,6 +1534,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395676_add_diff_stats_to_patches.up.sql":                             {_1528395676_add_diff_stats_to_patchesUpSql, map[string]*bintree{}},
 	"1528395677_add_index_user_external_accounts_user_id.down.sql":            {_1528395677_add_index_user_external_accounts_user_idDownSql, map[string]*bintree{}},
 	"1528395677_add_index_user_external_accounts_user_id.up.sql":              {_1528395677_add_index_user_external_accounts_user_idUpSql, map[string]*bintree{}},
+	"1528395678_lsif_auto_index.down.sql":                                     {_1528395678_lsif_auto_indexDownSql, map[string]*bintree{}},
+	"1528395678_lsif_auto_index.up.sql":                                       {_1528395678_lsif_auto_indexUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
