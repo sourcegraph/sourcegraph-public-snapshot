@@ -11,6 +11,7 @@ If you are looking for our non-derivative Docker images, see e.g. `/cmd/.../Dock
 
 All images in this directory are built and published automatically on CI:
 
+- To add an image to the automated builds pipeline, make sure to add it to [`allDockerImages`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph+file:%5Eenterprise/dev/ci/ci/pipeline-steps%5C.go+var+allDockerImages&patternType=literal)
 - See [the handbook](https://about.sourcegraph.com/handbook/engineering/deployments) for more information
 - Or see [how to build a test image](https://about.sourcegraph.com/handbook/engineering/deployments#building-docker-images-for-a-specific-branch) if you need to build a test image without merging your change to `master` first.
 
