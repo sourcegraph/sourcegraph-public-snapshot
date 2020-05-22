@@ -164,7 +164,8 @@ func outOfDateAlert(isAdmin bool) *Alert {
 	}
 
 	if isAdmin {
-		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d months out of date", months)
+		alert.MessageValue = fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
+			"for the latest features and bug fixes please upgrade", months)
 		key := fmt.Sprintf("months-out-of-date-%d", months)
 		switch {
 		case months < 3:
@@ -181,22 +182,23 @@ func outOfDateAlert(isAdmin bool) *Alert {
 		case months == 4:
 			return &Alert{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "Sourcegraph is 4+ months out of date, for the latest features and bug fixes please upgrade",
+				MessageValue: alert.MessageValue,
 			}
 
 		case months == 5:
 			return &Alert{
 				TypeValue:    AlertTypeError,
-				MessageValue: "Sourcegraph is 5+ months out of date, for the latest features and bug fixes please upgrade.",
+				MessageValue: alert.MessageValue,
 			}
 
 		default:
 			return &Alert{
 				TypeValue:    AlertTypeError,
-				MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes please upgrade.",
+				MessageValue: alert.MessageValue,
 			}
 		}
 	}
+
 	if months <= 3 {
 		return &alert
 	}
