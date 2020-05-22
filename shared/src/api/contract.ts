@@ -10,7 +10,7 @@ export interface FlatExtHostAPI {
     /**
      * Updates the settings exposed to extensions.
      */
-    syncSettingsData: (data: Readonly<SettingsCascade<object>>) => Promise<void>
+    syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 }
 
 /**

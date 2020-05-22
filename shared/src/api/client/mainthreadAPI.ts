@@ -17,7 +17,7 @@ export const initMainThreadAPI = (
             .pipe(
                 switchMap(settings => {
                     if (isSettingsValid(settings)) {
-                        return ext.updateConfigurationData(settings)
+                        return ext.syncSettingsData(settings)
                     }
                     return []
                 })
@@ -26,7 +26,7 @@ export const initMainThreadAPI = (
     )
 
     const mainAPI: MainThreadAPI = {
-        changeConfiguration: edit => updateSettings(platformContext, edit),
+        applySettingsEdit: edit => updateSettings(platformContext, edit),
     }
 
     return [mainAPI, subscription]

@@ -36,7 +36,7 @@ describe('configuration', () => {
         const [api] = initMainThreadAPI(pretendRemote({}), platformContext)
 
         const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
-        await api.changeConfiguration(edit)
+        await api.applySettingsEdit(edit)
 
         expect(calledWith).toEqual<Parameters<PlatformContext['updateSettings']>>(['id2', edit])
     })
@@ -65,7 +65,7 @@ describe('configuration', () => {
         const passedToExtHost: SettingsCascade<object>[] = []
         initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
-                updateConfigurationData: data => {
+                syncSettingsData: data => {
                     passedToExtHost.push(data)
                 },
             }),
@@ -85,7 +85,7 @@ describe('configuration', () => {
         const passedToExtHost: SettingsCascade<object>[] = []
         const [, subscription] = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
-                updateConfigurationData: data => {
+                syncSettingsData: data => {
                     passedToExtHost.push(data)
                 },
             }),

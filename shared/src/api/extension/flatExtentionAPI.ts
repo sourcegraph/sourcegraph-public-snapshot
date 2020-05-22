@@ -30,7 +30,7 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
     const configChanges = new ReplaySubject<void>(1)
 
     const exposedToMain: FlatExtHostAPI = {
-        updateConfigurationData: data => {
+        syncSettingsData: data => {
             state.settings = Object.freeze(data)
             configChanges.next()
         },
@@ -47,7 +47,7 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         const configuration: sourcegraph.Configuration<C> & { toJSON: any } = {
             value: snapshot,
             get: key => snapshot[key],
-            update: (key, value) => mainAPI.changeConfiguration({ path: [key as string | number], value }),
+            update: (key, value) => mainAPI.applySettingsEdit({ path: [key as string | number], value }),
             toJSON: () => snapshot,
         }
         return configuration

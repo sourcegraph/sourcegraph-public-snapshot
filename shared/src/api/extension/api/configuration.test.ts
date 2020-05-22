@@ -12,10 +12,10 @@ describe('ConfigurationService', () => {
         test('returns the latest settings', () => {
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(pretendRemote({}))
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
-            updateConfigurationData({ subjects: [], final: { a: 'c' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'c' } })
             expect(configuration.get<{ a: string }>().get('a')).toBe('c')
         })
     })
@@ -24,21 +24,21 @@ describe('ConfigurationService', () => {
         test('emits as soon as initial settings are received', () => {
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(pretendRemote({}))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
             expect(calledTimes).toBe(0)
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
             expect(calledTimes).toBe(1)
         })
         test('emits immediately on subscription if initial settings have already been received', () => {
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(pretendRemote({}))
             let calledTimes = 0
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
             configuration.subscribe(() => calledTimes++)
             expect(calledTimes).toBe(1)
         })
@@ -46,25 +46,25 @@ describe('ConfigurationService', () => {
         test('emits when settings are updated', () => {
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(pretendRemote({}))
             let calledTimes = 0
             configuration.subscribe(() => calledTimes++)
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
-            updateConfigurationData({ subjects: [], final: { a: 'c' } })
-            updateConfigurationData({ subjects: [], final: { a: 'd' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'c' } })
+            syncSettingsData({ subjects: [], final: { a: 'd' } })
             expect(calledTimes).toBe(3)
         })
 
         test('config objects freezes in time??!?!', () => {
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(pretendRemote({}))
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
             const config = configuration.get<{ a: string }>()
             expect(config.get('a')).toBe('b')
-            updateConfigurationData({ subjects: [], final: { a: 'c' } })
+            syncSettingsData({ subjects: [], final: { a: 'c' } })
             expect(config.get('a')).toBe('b') // Shouldn't this be 'c' instead?
         })
     })
@@ -74,16 +74,16 @@ describe('ConfigurationService', () => {
             const requestedEdits: SettingsEdit[] = []
             const {
                 configuration,
-                exposedToMain: { updateConfigurationData },
+                exposedToMain: { syncSettingsData },
             } = initNewExtensionAPI(
                 pretendRemote<MainThreadAPI>({
-                    changeConfiguration: edit =>
+                    applySettingsEdit: edit =>
                         Promise.resolve().then(() => {
                             requestedEdits.push(edit)
                         }),
                 })
             )
-            updateConfigurationData({ subjects: [], final: { a: 'b' } })
+            syncSettingsData({ subjects: [], final: { a: 'b' } })
             const config = configuration.get<{ a: string }>()
             await config.update('a', 'aha!')
             expect(requestedEdits).toEqual<SettingsEdit[]>([{ path: ['a'], value: 'aha!' }])
