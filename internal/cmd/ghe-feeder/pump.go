@@ -135,12 +135,30 @@ func numLinesInFile(path string) (int64, error) {
 
 func numLinesTotal() (int64, error) {
 	numLines := int64(0)
-	for _, path := range flag.Args() {
-		nl, err := numLinesInFile(path)
+
+	for _, root := range flag.Args() {
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") ||
+				strings.HasSuffix(path, ".json") {
+				nl, err := numLinesInFile(path)
+				if err != nil {
+					return err
+				}
+				numLines += nl
+			}
+			return nil
+		})
+
 		if err != nil {
 			return 0, err
 		}
-		numLines += nl
 	}
 
 	return numLines, nil
