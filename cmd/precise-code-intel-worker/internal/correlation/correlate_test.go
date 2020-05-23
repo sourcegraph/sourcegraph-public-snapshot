@@ -11,7 +11,7 @@ import (
 )
 
 func TestCorrelate(t *testing.T) {
-	input, err := ioutil.ReadFile("../../testdata/dump.lsif")
+	input, err := ioutil.ReadFile("./testdata/dump1.lsif")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
@@ -119,6 +119,78 @@ func TestCorrelate(t *testing.T) {
 		ExportedMonikers:       datastructures.IDSet{"19": {}},
 		LinkedMonikers:         datastructures.DisjointIDSet{"19": {"21": {}}, "21": {"19": {}}},
 		LinkedReferenceResults: datastructures.DisjointIDSet{"14": {"15": {}}, "15": {"14": {}}},
+	}
+
+	if diff := cmp.Diff(expectedState, state); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
+func TestCorrelateMetaDataRoot(t *testing.T) {
+	input, err := ioutil.ReadFile("./testdata/dump2.lsif")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	state, err := correlateFromReader(bytes.NewReader(input), "root/")
+	if err != nil {
+		t.Fatalf("unexpected error correlating input: %s", err)
+	}
+
+	expectedState := &State{
+		LSIFVersion: "0.4.3",
+		ProjectRoot: "file:///test/root/",
+		DocumentData: map[string]lsif.Document{
+			"02": {URI: "foo.go", Contains: datastructures.IDSet{}},
+		},
+		RangeData:              map[string]lsif.Range{},
+		ResultSetData:          map[string]lsif.ResultSet{},
+		DefinitionData:         map[string]datastructures.DefaultIDSetMap{},
+		ReferenceData:          map[string]datastructures.DefaultIDSetMap{},
+		HoverData:              map[string]string{},
+		MonikerData:            map[string]lsif.Moniker{},
+		PackageInformationData: map[string]lsif.PackageInformation{},
+		NextData:               map[string]string{},
+		ImportedMonikers:       datastructures.IDSet{},
+		ExportedMonikers:       datastructures.IDSet{},
+		LinkedMonikers:         datastructures.DisjointIDSet{},
+		LinkedReferenceResults: datastructures.DisjointIDSet{},
+	}
+
+	if diff := cmp.Diff(expectedState, state); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
+func TestCorrelateMetaDataRootX(t *testing.T) {
+	input, err := ioutil.ReadFile("./testdata/dump3.lsif")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	state, err := correlateFromReader(bytes.NewReader(input), "")
+	if err != nil {
+		t.Fatalf("unexpected error correlating input: %s", err)
+	}
+
+	expectedState := &State{
+		LSIFVersion: "0.4.3",
+		ProjectRoot: "file:///__w/sourcegraph/sourcegraph/shared/",
+		DocumentData: map[string]lsif.Document{
+			"02": {URI: "../node_modules/@types/history/index.d.ts", Contains: datastructures.IDSet{}},
+		},
+		RangeData:              map[string]lsif.Range{},
+		ResultSetData:          map[string]lsif.ResultSet{},
+		DefinitionData:         map[string]datastructures.DefaultIDSetMap{},
+		ReferenceData:          map[string]datastructures.DefaultIDSetMap{},
+		HoverData:              map[string]string{},
+		MonikerData:            map[string]lsif.Moniker{},
+		PackageInformationData: map[string]lsif.PackageInformation{},
+		NextData:               map[string]string{},
+		ImportedMonikers:       datastructures.IDSet{},
+		ExportedMonikers:       datastructures.IDSet{},
+		LinkedMonikers:         datastructures.DisjointIDSet{},
+		LinkedReferenceResults: datastructures.DisjointIDSet{},
 	}
 
 	if diff := cmp.Diff(expectedState, state); diff != "" {

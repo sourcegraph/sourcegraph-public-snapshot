@@ -52,32 +52,32 @@ func Correlate(filename string, dumpID int, root string, getChildren existence.G
 	return groupedBundleData, nil
 }
 
-// TODO - test in correlation
-// "file:///test/root/foo.go"}`, "file:///test/root/") =>   "foo.go",
-// "file:///__w/sourcegraph/sourcegraph/node_modules/@types/history/index.d.ts"}`, "file:///__w/sourcegraph/sourcegraph/shared/") =>    "../node_modules/@types/history/index.d.ts",
-
 // correlateFromReader reads the given upload stream and returns a correlation state object.
 // The data in the correlation state is neither canonicalized nor pruned.
 func correlateFromReader(r io.Reader, root string) (*State, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := jsonlines.Read(ctx, r)
 	defer func() {
+		// stop producer from reading more input on correlation error
 		cancel()
+
 		for range ch {
+			// drain whatever is in the channel to help out GC
 		}
 	}()
 
 	wrappedState := newWrappedState(root)
-	lineNumber := 0
+
+	i := 0
 	for pair := range ch {
-		lineNumber++
+		i++
 
 		if pair.Err != nil {
-			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, pair.Err)
+			return nil, fmt.Errorf("dump malformed on element %d: %s", i, pair.Err)
 		}
 
 		if err := correlateElement(wrappedState, pair.Element); err != nil {
-			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
+			return nil, fmt.Errorf("dump malformed on element %d: %s", i, err)
 		}
 	}
 
@@ -189,7 +189,7 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 		payload.ProjectRoot += "/"
 	}
 
-	if state.dumpRoot != "" && !strings.HasPrefix(payload.ProjectRoot, state.dumpRoot) {
+	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, state.dumpRoot) {
 		payload.ProjectRoot += state.dumpRoot
 	}
 
