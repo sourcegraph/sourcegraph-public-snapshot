@@ -132,6 +132,7 @@ func main() {
 		pipe:      work,
 		fdr:       fdr,
 		logger:    log15.New("source", "producer"),
+		bar:       bar,
 	}
 
 	var wg sync.WaitGroup

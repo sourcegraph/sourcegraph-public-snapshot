@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/schollz/progressbar/v3"
 )
 
 func extractOwnerRepoFromCSVLine(line string) string {
@@ -32,6 +33,7 @@ type producer struct {
 	fdr        *feederDB
 	numSkipped int64
 	logger     log15.Logger
+	bar        *progressbar.ProgressBar
 }
 
 func (prdc *producer) pumpFile(ctx context.Context, path string) error {
@@ -59,6 +61,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		}
 		if skip {
 			prdc.numSkipped++
+			_ = prdc.bar.Add(1)
 			reposSkippedCounter.Inc()
 			reposProcessedCounter.With(prometheus.Labels{"worker": "skipped"}).Inc()
 			reposSucceededCounter.Inc()
