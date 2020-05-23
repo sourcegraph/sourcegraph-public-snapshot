@@ -58,9 +58,10 @@ func main() {
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
 	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
 	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
-	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 20, "number of simultaneous GHE pushes")
+	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 10, "number of simultaneous GHE pushes")
 	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
 	numCloningAttempts := flag.Int("numCloningAttempts", 5, "number of cloning attempts before giving up")
+	numSimultaneousClones := flag.Int("numSimultaneousClones", 10, "number of simultaneous github.com clones")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -162,6 +163,7 @@ func main() {
 
 	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
 	pushSem := make(chan struct{}, *numSimultaneousPushes)
+	cloneSem := make(chan struct{}, *numSimultaneousClones)
 
 	var wkrs []*worker
 
@@ -188,6 +190,7 @@ func main() {
 			token:              *token,
 			host:               host,
 			pushSem:            pushSem,
+			cloneSem:           cloneSem,
 			cloneRepoTimeout:   *cloneRepoTimeout,
 			numCloningAttempts: *numCloningAttempts,
 		}

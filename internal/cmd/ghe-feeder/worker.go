@@ -76,6 +76,7 @@ type worker struct {
 	token              string
 	host               string
 	pushSem            chan struct{}
+	cloneSem           chan struct{}
 	cloneRepoTimeout   time.Duration
 	numCloningAttempts int
 }
@@ -199,22 +200,31 @@ func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 }
 
 func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
-	ownerDir := filepath.Join(wkr.scratchDir, owner)
-	err := os.MkdirAll(ownerDir, 0777)
-	if err != nil {
-		wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
-		return err
+	select {
+	case wkr.cloneSem <- struct{}{}:
+		defer func() {
+			<-wkr.cloneSem
+		}()
+
+		ownerDir := filepath.Join(wkr.scratchDir, owner)
+		err := os.MkdirAll(ownerDir, 0777)
+		if err != nil {
+			wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
+			return err
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, "git", "clone",
+			fmt.Sprintf("https://github.com/%s/%s", owner, repo))
+		cmd.Dir = ownerDir
+		cmd.Env = append(cmd.Env, "GIT_ASKPASS=/bin/echo")
+
+		return cmd.Run()
+	case <-ctx.Done():
+		return ctx.Err()
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, wkr.cloneRepoTimeout)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "git", "clone",
-		fmt.Sprintf("https://github.com/%s/%s", owner, repo))
-	cmd.Dir = ownerDir
-	cmd.Env = append(cmd.Env, "GIT_ASKPASS=/bin/echo")
-
-	return cmd.Run()
 }
 
 func (wkr *worker) addRemote(ctx context.Context, gheRepo *github.Repository, owner, repo string) error {
