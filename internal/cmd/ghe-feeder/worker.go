@@ -100,10 +100,20 @@ func (wkr *worker) run(ctx context.Context) {
 	}
 
 	for line := range wkr.work {
+		_ = wkr.bar.Add(1)
+
 		if ctx.Err() != nil {
 			return
 		}
-		err := wkr.process(ctx, line)
+
+		xs := strings.Split(line, "/")
+		if len(xs) != 2 {
+			wkr.logger.Error("failed tos split line", "line", line)
+			continue
+		}
+		owner, repo := xs[0], xs[1]
+
+		err := wkr.process(ctx, owner, repo)
 		reposProcessedCounter.With(prometheus.Labels{"worker": wkr.name}).Inc()
 		remainingWorkGauge.Add(-1.0)
 		if err != nil {
@@ -142,32 +152,31 @@ func (wkr *worker) run(ctx context.Context) {
 				}
 			}
 		}
-		_ = wkr.bar.Add(1)
+		ownerDir := filepath.Join(wkr.scratchDir, owner)
+
+		err = os.RemoveAll(ownerDir)
+		if err != nil {
+			wkr.logger.Error("failed to clean up cloned repo", "ownerRepo", line, "error", err, "ownerDir", ownerDir)
+		}
 	}
 }
 
-func (wkr *worker) process(ctx context.Context, work string) error {
-	xs := strings.Split(work, "/")
-	if len(xs) != 2 {
-		return fmt.Errorf("expected owner/repo line, got %s instead", work)
-	}
-	owner, repo := xs[0], xs[1]
-
+func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to clone repo", "ownerRepo", work, "error", err)
+		wkr.logger.Error("failed to clone repo", "owner", owner, "repo", repo, "error", err)
 		return &feederError{"clone", err}
 	}
 
 	gheRepo, err := wkr.addGHERepo(ctx, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to create GHE repo", "ownerRepo", work, "error", err)
+		wkr.logger.Error("failed to create GHE repo", "owner", owner, "repo", repo, "error", err)
 		return &feederError{"api", err}
 	}
 
 	err = wkr.addRemote(ctx, gheRepo, owner, repo)
 	if err != nil {
-		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "ownerRepo", work, "error", err)
+		wkr.logger.Error("failed to add GHE as a remote in cloned repo", "owner", owner, "repo", repo, "error", err)
 		return &feederError{"api", err}
 	}
 
@@ -175,7 +184,7 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 	for {
 		err = wkr.pushToGHE(ctx, owner, repo)
 		if err != nil {
-			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "ownerRepo", work, "error", err)
+			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "owner", owner, "repo", repo, "error", err)
 			attempt++
 			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
 				continue
@@ -186,12 +195,6 @@ func (wkr *worker) process(ctx context.Context, work string) error {
 		}
 	}
 
-	ownerDir := filepath.Join(wkr.scratchDir, owner)
-
-	err = os.RemoveAll(ownerDir)
-	if err != nil {
-		wkr.logger.Error("failed to clean up cloned repo", "ownerRepo", work, "error", err, "ownerDir", ownerDir)
-	}
 	return nil
 }
 
