@@ -361,7 +361,7 @@ func makeCommit(i int) string {
 }
 
 func copyTestDump(ctx context.Context, uploadID int, dir string) (string, error) {
-	src, err := os.Open("../../testdata/dump.lsif")
+	src, err := os.Open("../../testdata/dump1.lsif")
 	if err != nil {
 		return "", err
 	}
