@@ -27,10 +27,10 @@ func unmarshalElement(line []byte) (_ lsif.Element, err error) {
 	}
 
 	if payload.Type == "edge" {
-		element.Element, err = unmarshalEdge(line)
+		element.Payload, err = unmarshalEdge(line)
 	} else if payload.Type == "vertex" {
 		if unmarshaler, ok := vertexUnmarshalers[payload.Label]; ok {
-			element.Element, err = unmarshaler(line)
+			element.Payload, err = unmarshaler(line)
 		}
 	}
 
@@ -63,11 +63,11 @@ func unmarshalEdge(line []byte) (interface{}, error) {
 
 var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
 	"metaData":           unmarshalMetaData,
-	"document":           unmarshalDocumentData,
-	"range":              unmarshalRangeData,
-	"hoverResult":        unmarshalHoverData,
-	"moniker":            unmarshalMonikerData,
-	"packageInformation": unmarshalPackageInformationData,
+	"document":           unmarshalDocument,
+	"range":              unmarshalRange,
+	"hoverResult":        unmarshalHover,
+	"moniker":            unmarshalMoniker,
+	"packageInformation": unmarshalPackageInformation,
 }
 
 func unmarshalMetaData(line []byte) (interface{}, error) {
@@ -85,7 +85,7 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 	}, nil
 }
 
-func unmarshalDocumentData(line []byte) (interface{}, error) {
+func unmarshalDocument(line []byte) (interface{}, error) {
 	var payload struct {
 		URI string `json:"uri"`
 	}
@@ -93,13 +93,13 @@ func unmarshalDocumentData(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.DocumentData{
+	return lsif.Document{
 		URI:      payload.URI,
 		Contains: datastructures.IDSet{},
 	}, nil
 }
 
-func unmarshalRangeData(line []byte) (interface{}, error) {
+func unmarshalRange(line []byte) (interface{}, error) {
 	type position struct {
 		Line      int `json:"line"`
 		Character int `json:"character"`
@@ -112,7 +112,7 @@ func unmarshalRangeData(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.RangeData{
+	return lsif.Range{
 		StartLine:      payload.Start.Line,
 		StartCharacter: payload.Start.Character,
 		EndLine:        payload.End.Line,
@@ -121,7 +121,7 @@ func unmarshalRangeData(line []byte) (interface{}, error) {
 	}, nil
 }
 
-func unmarshalHoverData(line []byte) (interface{}, error) {
+func unmarshalHover(line []byte) (interface{}, error) {
 	type hoverResult struct {
 		Contents json.RawMessage `json:"contents"`
 	}
@@ -172,7 +172,7 @@ func unmarshalHoverPart(raw json.RawMessage) (string, error) {
 	return strings.TrimSpace(objPayload.Value), nil
 }
 
-func unmarshalMonikerData(line []byte) (interface{}, error) {
+func unmarshalMoniker(line []byte) (interface{}, error) {
 	var payload struct {
 		Kind       string `json:"kind"`
 		Scheme     string `json:"scheme"`
@@ -186,14 +186,14 @@ func unmarshalMonikerData(line []byte) (interface{}, error) {
 		payload.Kind = "local"
 	}
 
-	return lsif.MonikerData{
+	return lsif.Moniker{
 		Kind:       payload.Kind,
 		Scheme:     payload.Scheme,
 		Identifier: payload.Identifier,
 	}, nil
 }
 
-func unmarshalPackageInformationData(line []byte) (interface{}, error) {
+func unmarshalPackageInformation(line []byte) (interface{}, error) {
 	var payload struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
@@ -202,7 +202,7 @@ func unmarshalPackageInformationData(line []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return lsif.PackageInformationData{
+	return lsif.PackageInformation{
 		Name:    payload.Name,
 		Version: payload.Version,
 	}, nil

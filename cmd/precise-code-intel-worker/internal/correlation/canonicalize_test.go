@@ -10,7 +10,7 @@ import (
 
 func TestCanonicalizeDocuments(t *testing.T) {
 	state := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "main.go", Contains: datastructures.IDSet{"r01": {}}},
 			"d02": {URI: "foo.go", Contains: datastructures.IDSet{"r02": {}}},
 			"d03": {URI: "bar.go", Contains: datastructures.IDSet{"r03": {}}},
@@ -28,7 +28,7 @@ func TestCanonicalizeDocuments(t *testing.T) {
 	canonicalizeDocuments(state)
 
 	expectedState := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "main.go", Contains: datastructures.IDSet{"r01": {}, "r04": {}}},
 			"d02": {URI: "foo.go", Contains: datastructures.IDSet{"r02": {}}},
 			"d03": {URI: "bar.go", Contains: datastructures.IDSet{"r03": {}}},
@@ -53,11 +53,11 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	linkedReferenceResults.Union("x01", "x03")
 
 	state := &State{
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"r01": {ReferenceResultID: "x02"},
 			"r02": {ReferenceResultID: "x03"},
 		},
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s03": {ReferenceResultID: "x03"},
 			"s04": {ReferenceResultID: "x04"},
 		},
@@ -72,11 +72,11 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	canonicalizeReferenceResults(state)
 
 	expectedState := &State{
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"r01": {ReferenceResultID: "x02"},
 			"r02": {ReferenceResultID: "x01"},
 		},
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s03": {ReferenceResultID: "x01"},
 			"s04": {ReferenceResultID: "x04"},
 		},
@@ -99,7 +99,7 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	linkedMonikers.Union("m02", "m05")
 
 	state := &State{
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s01": {
 				DefinitionResultID: "",
 				ReferenceResultID:  "",
@@ -141,7 +141,7 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	canonicalizeResultSets(state)
 
 	expectedState := &State{
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s01": {
 				DefinitionResultID: "x06",
 				ReferenceResultID:  "x07",
@@ -187,7 +187,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 	linkedMonikers.Union("m02", "m05")
 
 	state := &State{
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"r01": {
 				DefinitionResultID: "",
 				ReferenceResultID:  "",
@@ -207,7 +207,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 				MonikerIDs:         datastructures.IDSet{"m03": {}},
 			},
 		},
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s01": {
 				DefinitionResultID: "x06",
 				ReferenceResultID:  "x07",
@@ -230,7 +230,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 	canonicalizeRanges(state)
 
 	expectedState := &State{
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"r01": {
 				DefinitionResultID: "x06",
 				ReferenceResultID:  "x07",
@@ -250,7 +250,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 				MonikerIDs:         datastructures.IDSet{"m02": {}, "m03": {}, "m05": {}},
 			},
 		},
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"s01": {
 				DefinitionResultID: "x06",
 				ReferenceResultID:  "x07",

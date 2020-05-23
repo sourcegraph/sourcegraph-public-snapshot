@@ -90,13 +90,13 @@ func TestUnmarshalMetaData(t *testing.T) {
 	}
 }
 
-func TestUnmarshalDocumentData(t *testing.T) {
-	document, err := unmarshalDocumentData([]byte(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}`))
+func TestUnmarshalDocument(t *testing.T) {
+	document, err := unmarshalDocument([]byte(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling document data: %s", err)
 	}
 
-	expectedDocument := lsif.DocumentData{
+	expectedDocument := lsif.Document{
 		URI:      "file:///test/root/foo.go",
 		Contains: datastructures.IDSet{},
 	}
@@ -105,13 +105,13 @@ func TestUnmarshalDocumentData(t *testing.T) {
 	}
 }
 
-func TestUnmarshalRangeData(t *testing.T) {
-	r, err := unmarshalRangeData([]byte(`{"id": "04", "type": "vertex", "label": "range", "start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}}`))
+func TestUnmarshalRange(t *testing.T) {
+	r, err := unmarshalRange([]byte(`{"id": "04", "type": "vertex", "label": "range", "start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling range data: %s", err)
 	}
 
-	expectedRange := lsif.RangeData{
+	expectedRange := lsif.Range{
 		StartLine:          1,
 		StartCharacter:     2,
 		EndLine:            3,
@@ -126,7 +126,7 @@ func TestUnmarshalRangeData(t *testing.T) {
 	}
 }
 
-func TestUnmarshalHoverData(t *testing.T) {
+func TestUnmarshalHover(t *testing.T) {
 	testCases := []struct {
 		contents      string
 		expectedHover string
@@ -153,7 +153,7 @@ func TestUnmarshalHoverData(t *testing.T) {
 		name := fmt.Sprintf("contents=%s", testCase.contents)
 
 		t.Run(name, func(t *testing.T) {
-			hover, err := unmarshalHoverData([]byte(fmt.Sprintf(`{"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": %s}}`, testCase.contents)))
+			hover, err := unmarshalHover([]byte(fmt.Sprintf(`{"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": %s}}`, testCase.contents)))
 			if err != nil {
 				t.Fatalf("unexpected error unmarshalling hover data: %s", err)
 			}
@@ -165,13 +165,13 @@ func TestUnmarshalHoverData(t *testing.T) {
 	}
 }
 
-func TestUnmarshalMonikerData(t *testing.T) {
-	moniker, err := unmarshalMonikerData([]byte(`{"id": "18", "type": "vertex", "label": "moniker", "kind": "import", "scheme": "scheme A", "identifier": "ident A"}`))
+func TestUnmarshalMoniker(t *testing.T) {
+	moniker, err := unmarshalMoniker([]byte(`{"id": "18", "type": "vertex", "label": "moniker", "kind": "import", "scheme": "scheme A", "identifier": "ident A"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling moniker data: %s", err)
 	}
 
-	expectedMoniker := lsif.MonikerData{
+	expectedMoniker := lsif.Moniker{
 		Kind:       "import",
 		Scheme:     "scheme A",
 		Identifier: "ident A",
@@ -181,13 +181,13 @@ func TestUnmarshalMonikerData(t *testing.T) {
 	}
 }
 
-func TestUnmarshalPackageInformationData(t *testing.T) {
-	packageInformation, err := unmarshalPackageInformationData([]byte(`{"id": "22", "type": "vertex", "label": "packageInformation", "name": "pkg A", "version": "v0.1.0"}`))
+func TestUnmarshalPackageInformation(t *testing.T) {
+	packageInformation, err := unmarshalPackageInformation([]byte(`{"id": "22", "type": "vertex", "label": "packageInformation", "name": "pkg A", "version": "v0.1.0"}`))
 	if err != nil {
 		t.Fatalf("unexpected error unmarshalling package information data: %s", err)
 	}
 
-	expectedPackageInformation := lsif.PackageInformationData{
+	expectedPackageInformation := lsif.PackageInformation{
 		Name:    "pkg A",
 		Version: "v0.1.0",
 	}

@@ -3,7 +3,6 @@ package jsonlines
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
@@ -16,13 +15,13 @@ import (
 // This corresponds a 10MB buffer that can accommodate 10 million characters.
 const LineBufferSize = 1e7
 
-// TODO(efritz) - document
+// Read reads the given content as line-separated JSON objects representing a single LSIF vertex or edge and
+// returns a channel of lsif.Pair values for each non-empty line.
 func Read(ctx context.Context, r io.Reader) <-chan lsif.Pair {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
-	// TODO(efritz) - configure a buffer
 	ch := make(chan lsif.Pair)
 
 	go func() {
@@ -36,7 +35,6 @@ func Read(ctx context.Context, r io.Reader) <-chan lsif.Pair {
 
 			element, err := unmarshalElement(line)
 			if err != nil {
-				fmt.Printf("NOPE: %v\n", line)
 				ch <- lsif.Pair{Err: err}
 			} else {
 				select {

@@ -156,24 +156,24 @@ var edgeHandlers = map[string]func(state *wrappedState, id string, edge lsif.Edg
 
 // correlateElement maps a single edge element into the correlation state.
 func correlateEdge(state *wrappedState, element lsif.Element) error {
+	edge, ok := element.Payload.(lsif.Edge)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	handler, ok := edgeHandlers[element.Label]
 	if !ok {
 		// We don't care, can safely skip
 		return nil
 	}
 
-	edge, ok := element.Element.(lsif.Edge)
-	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
-	}
-
 	return handler(state, element.ID, edge)
 }
 
 func correlateMetaData(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Element.(lsif.MetaData)
+	payload, ok := element.Payload.(lsif.MetaData)
 	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+		return ErrUnexpectedPayload
 	}
 
 	// We assume that the project root in the LSIF dump is either:
@@ -199,13 +199,13 @@ func correlateMetaData(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateDocument(state *wrappedState, element lsif.Element) error {
-	if state.ProjectRoot == "" {
-		return ErrMissingMetaData
+	payload, ok := element.Payload.(lsif.Document)
+	if !ok {
+		return ErrUnexpectedPayload
 	}
 
-	payload, ok := element.Element.(lsif.DocumentData)
-	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+	if state.ProjectRoot == "" {
+		return ErrMissingMetaData
 	}
 
 	relativeURI, err := filepath.Rel(state.ProjectRoot, payload.URI)
@@ -219,9 +219,9 @@ func correlateDocument(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateRange(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Element.(lsif.RangeData)
+	payload, ok := element.Payload.(lsif.Range)
 	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+		return ErrUnexpectedPayload
 	}
 
 	state.RangeData[element.ID] = payload
@@ -229,7 +229,7 @@ func correlateRange(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateResultSet(state *wrappedState, element lsif.Element) error {
-	state.ResultSetData[element.ID] = lsif.ResultSetData{
+	state.ResultSetData[element.ID] = lsif.ResultSet{
 		MonikerIDs: datastructures.IDSet{},
 	}
 	return nil
@@ -246,9 +246,9 @@ func correlateReferenceResult(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateHoverResult(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Element.(string)
+	payload, ok := element.Payload.(string)
 	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+		return ErrUnexpectedPayload
 	}
 
 	state.HoverData[element.ID] = payload
@@ -256,9 +256,9 @@ func correlateHoverResult(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateMoniker(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Element.(lsif.MonikerData)
+	payload, ok := element.Payload.(lsif.Moniker)
 	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+		return ErrUnexpectedPayload
 	}
 
 	state.MonikerData[element.ID] = payload
@@ -266,9 +266,9 @@ func correlateMoniker(state *wrappedState, element lsif.Element) error {
 }
 
 func correlatePackageInformation(state *wrappedState, element lsif.Element) error {
-	payload, ok := element.Element.(lsif.PackageInformationData)
+	payload, ok := element.Payload.(lsif.PackageInformation)
 	if !ok {
-		return fmt.Errorf("unexpected element") // TODO
+		return ErrUnexpectedPayload
 	}
 
 	state.PackageInformationData[element.ID] = payload

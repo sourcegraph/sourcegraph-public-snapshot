@@ -6,7 +6,7 @@ type Element struct {
 	ID      string
 	Type    string
 	Label   string
-	Element interface{} // TODO(efritz) - rename
+	Payload interface{}
 }
 
 type Edge struct {
@@ -21,13 +21,12 @@ type MetaData struct {
 	ProjectRoot string
 }
 
-type DocumentData struct {
+type Document struct {
 	URI      string
 	Contains datastructures.IDSet
 }
 
-// TODO(efritz) - rename all *Data structs
-type RangeData struct {
+type Range struct {
 	StartLine          int
 	StartCharacter     int
 	EndLine            int
@@ -38,8 +37,8 @@ type RangeData struct {
 	MonikerIDs         datastructures.IDSet
 }
 
-func (d RangeData) SetDefinitionResultID(id string) RangeData {
-	return RangeData{
+func (d Range) SetDefinitionResultID(id string) Range {
+	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
 		EndLine:            d.EndLine,
@@ -51,8 +50,8 @@ func (d RangeData) SetDefinitionResultID(id string) RangeData {
 	}
 }
 
-func (d RangeData) SetReferenceResultID(id string) RangeData {
-	return RangeData{
+func (d Range) SetReferenceResultID(id string) Range {
+	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
 		EndLine:            d.EndLine,
@@ -64,8 +63,8 @@ func (d RangeData) SetReferenceResultID(id string) RangeData {
 	}
 }
 
-func (d RangeData) SetHoverResultID(id string) RangeData {
-	return RangeData{
+func (d Range) SetHoverResultID(id string) Range {
+	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
 		EndLine:            d.EndLine,
@@ -77,8 +76,8 @@ func (d RangeData) SetHoverResultID(id string) RangeData {
 	}
 }
 
-func (d RangeData) SetMonikerIDs(ids datastructures.IDSet) RangeData {
-	return RangeData{
+func (d Range) SetMonikerIDs(ids datastructures.IDSet) Range {
+	return Range{
 		StartLine:          d.StartLine,
 		StartCharacter:     d.StartCharacter,
 		EndLine:            d.EndLine,
@@ -90,15 +89,15 @@ func (d RangeData) SetMonikerIDs(ids datastructures.IDSet) RangeData {
 	}
 }
 
-type ResultSetData struct {
+type ResultSet struct {
 	DefinitionResultID string
 	ReferenceResultID  string
 	HoverResultID      string
 	MonikerIDs         datastructures.IDSet
 }
 
-func (d ResultSetData) SetDefinitionResultID(id string) ResultSetData {
-	return ResultSetData{
+func (d ResultSet) SetDefinitionResultID(id string) ResultSet {
+	return ResultSet{
 		DefinitionResultID: id,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      d.HoverResultID,
@@ -106,8 +105,8 @@ func (d ResultSetData) SetDefinitionResultID(id string) ResultSetData {
 	}
 }
 
-func (d ResultSetData) SetReferenceResultID(id string) ResultSetData {
-	return ResultSetData{
+func (d ResultSet) SetReferenceResultID(id string) ResultSet {
+	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  id,
 		HoverResultID:      d.HoverResultID,
@@ -115,8 +114,8 @@ func (d ResultSetData) SetReferenceResultID(id string) ResultSetData {
 	}
 }
 
-func (d ResultSetData) SetHoverResultID(id string) ResultSetData {
-	return ResultSetData{
+func (d ResultSet) SetHoverResultID(id string) ResultSet {
+	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      id,
@@ -124,8 +123,8 @@ func (d ResultSetData) SetHoverResultID(id string) ResultSetData {
 	}
 }
 
-func (d ResultSetData) SetMonikerIDs(ids datastructures.IDSet) ResultSetData {
-	return ResultSetData{
+func (d ResultSet) SetMonikerIDs(ids datastructures.IDSet) ResultSet {
+	return ResultSet{
 		DefinitionResultID: d.DefinitionResultID,
 		ReferenceResultID:  d.ReferenceResultID,
 		HoverResultID:      d.HoverResultID,
@@ -133,15 +132,15 @@ func (d ResultSetData) SetMonikerIDs(ids datastructures.IDSet) ResultSetData {
 	}
 }
 
-type MonikerData struct {
+type Moniker struct {
 	Kind                 string
 	Scheme               string
 	Identifier           string
 	PackageInformationID string
 }
 
-func (d MonikerData) SetPackageInformationID(id string) MonikerData {
-	return MonikerData{
+func (d Moniker) SetPackageInformationID(id string) Moniker {
+	return Moniker{
 		Kind:                 d.Kind,
 		Scheme:               d.Scheme,
 		Identifier:           d.Identifier,
@@ -149,7 +148,7 @@ func (d MonikerData) SetPackageInformationID(id string) MonikerData {
 	}
 }
 
-type PackageInformationData struct {
+type PackageInformation struct {
 	Name    string
 	Version string
 }

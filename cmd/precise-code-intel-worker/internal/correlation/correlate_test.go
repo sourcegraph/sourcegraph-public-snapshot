@@ -24,11 +24,11 @@ func TestCorrelate(t *testing.T) {
 	expectedState := &State{
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root",
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"02": {URI: "foo.go", Contains: datastructures.IDSet{"04": {}, "05": {}, "06": {}}},
 			"03": {URI: "bar.go", Contains: datastructures.IDSet{"07": {}, "08": {}, "09": {}}},
 		},
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"04": {
 				StartLine:          1,
 				StartCharacter:     2,
@@ -78,7 +78,7 @@ func TestCorrelate(t *testing.T) {
 				MonikerIDs:     datastructures.IDSet{"19": {}},
 			},
 		},
-		ResultSetData: map[string]lsif.ResultSetData{
+		ResultSetData: map[string]lsif.ResultSet{
 			"10": {
 				DefinitionResultID: "12",
 				ReferenceResultID:  "14",
@@ -101,13 +101,13 @@ func TestCorrelate(t *testing.T) {
 			"16": "```go\ntext A\n```",
 			"17": "```go\ntext B\n```",
 		},
-		MonikerData: map[string]lsif.MonikerData{
+		MonikerData: map[string]lsif.Moniker{
 			"18": {Kind: "import", Scheme: "scheme A", Identifier: "ident A", PackageInformationID: "22"},
 			"19": {Kind: "export", Scheme: "scheme B", Identifier: "ident B", PackageInformationID: "23"},
 			"20": {Kind: "import", Scheme: "scheme C", Identifier: "ident C", PackageInformationID: ""},
 			"21": {Kind: "export", Scheme: "scheme D", Identifier: "ident D", PackageInformationID: ""},
 		},
-		PackageInformationData: map[string]lsif.PackageInformationData{
+		PackageInformationData: map[string]lsif.PackageInformation{
 			"22": {Name: "pkg A", Version: "v0.1.0"},
 			"23": {Name: "pkg B", Version: "v1.2.3"},
 		},
