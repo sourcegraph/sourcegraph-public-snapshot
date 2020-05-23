@@ -89,7 +89,7 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         },
         onDidChangeRoots: rootChanges,
         rootChanges,
-        versionContextChanges,
+        versionContextChanges: versionContextChanges.asObservable(),
     }
 
     return {
