@@ -2,6 +2,8 @@ package graphqlbackend
 
 import "github.com/sourcegraph/sourcegraph/internal/search/query"
 
+// searchQueryDescription is a type for the SearchQueryDescription resolver used
+// by SearchAlert.
 type searchQueryDescription struct {
 	description string
 	query       string
