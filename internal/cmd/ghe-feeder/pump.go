@@ -28,12 +28,13 @@ func extractOwnerRepoFromCSVLine(line string) string {
 }
 
 type producer struct {
-	remaining  int64
-	pipe       chan<- string
-	fdr        *feederDB
-	numSkipped int64
-	logger     log15.Logger
-	bar        *progressbar.ProgressBar
+	remaining      int64
+	pipe           chan<- string
+	fdr            *feederDB
+	numAlreadyDone int64
+	logger         log15.Logger
+	bar            *progressbar.ProgressBar
+	skipNumLines   int64
 }
 
 func (prdc *producer) pumpFile(ctx context.Context, path string) error {
@@ -48,6 +49,10 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 	scanner := bufio.NewScanner(file)
 	lineNum := int64(0)
 	for scanner.Scan() && prdc.remaining > 0 {
+		if prdc.skipNumLines > 0 {
+			prdc.skipNumLines--
+			continue
+		}
 		line := strings.TrimSpace(scanner.Text())
 		if isCSV {
 			line = extractOwnerRepoFromCSVLine(line)
@@ -57,18 +62,18 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		if len(line) == 0 {
 			continue
 		}
-		skip, err := prdc.fdr.declareRepo(line)
+		alreadyDone, err := prdc.fdr.declareRepo(line)
 		if err != nil {
 			return err
 		}
-		if skip {
-			prdc.numSkipped++
+		if alreadyDone {
+			prdc.numAlreadyDone++
 			_ = prdc.bar.Add(1)
-			reposSkippedCounter.Inc()
+			reposAlreadyDoneCounter.Inc()
 			reposProcessedCounter.With(prometheus.Labels{"worker": "skipped"}).Inc()
 			reposSucceededCounter.Inc()
 			remainingWorkGauge.Add(-1.0)
-			prdc.logger.Debug("skipping repo", "owner/repo", line)
+			prdc.logger.Debug("repo already done in previous run", "owner/repo", line)
 			continue
 		}
 		select {
@@ -117,24 +122,35 @@ func (prdc *producer) pump(ctx context.Context) error {
 	return nil
 }
 
-func numLinesInFile(path string) (int64, error) {
-	numLines := int64(0)
+func numLinesInFile(path string, skipNumLines int64) (int64, int64, error) {
+	var numLines, skippedLines int64
+
 	file, err := os.Open(path)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+
+	counting := skipNumLines == 0
 	for scanner.Scan() {
-		numLines++
+		if counting {
+			numLines++
+		} else {
+			skippedLines++
+		}
+		if skippedLines == skipNumLines {
+			counting = true
+		}
 	}
 
-	return numLines, scanner.Err()
+	return numLines, skippedLines, scanner.Err()
 }
 
-func numLinesTotal() (int64, error) {
-	numLines := int64(0)
+func numLinesTotal(skipNumLines int64) (int64, error) {
+	var numLines int64
+	skippedLines := skipNumLines
 
 	for _, root := range flag.Args() {
 		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -147,11 +163,12 @@ func numLinesTotal() (int64, error) {
 
 			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") ||
 				strings.HasSuffix(path, ".json") {
-				nl, err := numLinesInFile(path)
+				nl, sl, err := numLinesInFile(path, skippedLines)
 				if err != nil {
 					return err
 				}
 				numLines += nl
+				skippedLines -= sl
 			}
 			return nil
 		})

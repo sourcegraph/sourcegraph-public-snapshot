@@ -846,7 +846,7 @@ begin:
 	}
 
 	if retry > 0 {
-		name = fmt.Sprintf("%s-%d", name, rand.Intn(10))
+		name = fmt.Sprintf("%s-%d", name, rand.Intn(1000))
 	}
 	return name
 }

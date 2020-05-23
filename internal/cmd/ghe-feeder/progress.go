@@ -20,7 +20,7 @@ func newFeederDB(path string) (*feederDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, org STRING, failed BOOLEAN, UNIQUE(ownerRepo, failed))")
+	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, org STRING, failed BOOLEAN, errType STRING, UNIQUE(ownerRepo, failed))")
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +45,14 @@ func newFeederDB(path string) (*feederDB, error) {
 	}, nil
 }
 
-func (fdr *feederDB) declareRepo(ownerRepo string) (bool, error) {
+func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error) {
 	fdr.Lock()
 	defer fdr.Unlock()
 
 	var failed bool
+	var errType string
 
-	err := fdr.db.QueryRow("SELECT failed FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed)
+	err = fdr.db.QueryRow("SELECT failed, errType FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed, &errType)
 	if err != nil && err != sql.ErrNoRows {
 		return false, err
 	}
@@ -69,19 +70,21 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (bool, error) {
 
 		return false, nil
 	}
-	return !failed, nil
+
+	alreadyDone = !failed || (failed && errType == "clone")
+	return
 }
 
-func (fdr *feederDB) failed(ownerRepo string) error {
+func (fdr *feederDB) failed(ownerRepo string, errType string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("UPDATE repos SET failed = TRUE WHERE ownerRepo = ?")
+	stmt, err := fdr.db.Prepare("UPDATE repos SET failed = TRUE, errType = ?  WHERE ownerRepo = ?")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(ownerRepo)
+	_, err = stmt.Exec(errType, ownerRepo)
 	if err != nil {
 		return err
 	}

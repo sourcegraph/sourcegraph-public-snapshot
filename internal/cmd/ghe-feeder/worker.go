@@ -125,7 +125,7 @@ func (wkr *worker) run(ctx context.Context) {
 				errType = ferr.errType
 			}
 			reposFailedCounter.With(prometheus.Labels{"worker": wkr.name, "err_type": errType}).Inc()
-			_ = wkr.fdr.failed(line)
+			_ = wkr.fdr.failed(line, errType)
 		} else {
 			reposSucceededCounter.Inc()
 			wkr.numSucceeded++

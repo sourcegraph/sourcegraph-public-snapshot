@@ -36,9 +36,9 @@ var (
 		Name: "ghe_feeder_succeeded",
 		Help: "The total number of succeeded repos",
 	})
-	reposSkippedCounter = promauto.NewCounter(prometheus.CounterOpts{
+	reposAlreadyDoneCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "ghe_feeder_skipped",
-		Help: "The total number of skipped repos",
+		Help: "The total number of repos already done in previous runs (found in feeder.db)",
 	})
 
 	remainingWorkGauge = promauto.NewGauge(prometheus.GaugeOpts{
@@ -56,6 +56,7 @@ func main() {
 	numWorkers := flag.Int("numWorkers", 20, "number of workers")
 	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
 	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
+	skipNumLines := flag.Int64("skip", 0, "skip this many lines from input")
 	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
 	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
 	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 10, "number of simultaneous GHE pushes")
@@ -112,7 +113,7 @@ func main() {
 	}
 
 	spinner := progressbar.Default(-1, "calculating work")
-	numLines, err := numLinesTotal()
+	numLines, err := numLinesTotal(*skipNumLines)
 	if err != nil {
 		log15.Error("failed to calculate outstanding work", "error", err)
 		os.Exit(1)
@@ -123,17 +124,24 @@ func main() {
 		numLines = *limitPump
 	}
 
+	if numLines == 0 {
+		log15.Info("no work remaining in input")
+		fmt.Println("no work remaining in input, exiting")
+		os.Exit(0)
+	}
+
 	remainingWorkGauge.Set(float64(numLines))
 	bar := progressbar.New64(numLines)
 
 	work := make(chan string)
 
 	prdc := &producer{
-		remaining: *limitPump,
-		pipe:      work,
-		fdr:       fdr,
-		logger:    log15.New("source", "producer"),
-		bar:       bar,
+		remaining:    *limitPump,
+		pipe:         work,
+		fdr:          fdr,
+		logger:       log15.New("source", "producer"),
+		bar:          bar,
+		skipNumLines: *skipNumLines,
 	}
 
 	var wg sync.WaitGroup
@@ -223,5 +231,5 @@ func stats(wkrs []*worker, prdc *producer) string {
 	}
 
 	return fmt.Sprintf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
-		numProcessed, numSucceeded, numFailed, prdc.numSkipped)
+		numProcessed, numSucceeded, numFailed, prdc.numAlreadyDone)
 }
