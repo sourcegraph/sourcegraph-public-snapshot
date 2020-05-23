@@ -1,6 +1,9 @@
 import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { BehaviorSubject, NextObserver, Subscribable } from 'rxjs'
 
+// TODO (simon) This is essentially global mutable object that is proxied to extensions
+// try to rework this pattern later
+
 /**
  * A workspace root with additional metadata that is not exposed to extensions.
  */

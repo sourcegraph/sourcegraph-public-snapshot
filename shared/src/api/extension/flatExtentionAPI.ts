@@ -1,7 +1,7 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ReplaySubject } from 'rxjs'
+import { ReplaySubject, Subject, BehaviorSubject } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 
 /**
@@ -10,13 +10,26 @@ import { FlatExtHostAPI, MainThreadAPI } from '../contract'
  */
 export interface ExtState {
     settings?: Readonly<SettingsCascade<object>>
+
+    roots: readonly sourcegraph.WorkspaceRoot[]
 }
 
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
+    workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtHostAPI
 }
 
+/**
+ * mimics sourcegraph.workspace namespace without documents
+ */
+export interface PartialWorkspaceNamespace {
+    roots: readonly sourcegraph.WorkspaceRoot[]
+    onDidChangeRoots: sourcegraph.Subscribable<void>
+    rootChanges: sourcegraph.Subscribable<void>
+    versionContext: string | undefined
+    versionContextChanges: sourcegraph.Subscribable<string | undefined>
+}
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns initialized public Ext API ready for consumption and API object marshaled into Client
@@ -25,15 +38,28 @@ export interface InitResult {
  * @param mainAPI
  */
 export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult => {
-    const state: ExtState = {}
+    const state: ExtState = { roots: [] }
 
     const configChanges = new ReplaySubject<void>(1)
 
+    const rootChanges = new Subject<void>()
+    // TODO (simon) this holds implicit state of the version context
+    // move it to ExtState
+    const versionContextChanges = new BehaviorSubject<string | undefined>(undefined)
+
     const exposedToMain: FlatExtHostAPI = {
+        // Configuration
         syncSettingsData: data => {
             state.settings = Object.freeze(data)
             configChanges.next()
         },
+
+        // Workspace
+        syncRoots: (roots): void => {
+            state.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
+            rootChanges.next()
+        },
+        syncVersionContext: ctx => versionContextChanges.next(ctx),
     }
 
     // Configuration
@@ -53,10 +79,24 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         return configuration
     }
 
+    // Workspace
+    const workspace: PartialWorkspaceNamespace = {
+        get roots() {
+            return state.roots
+        },
+        get versionContext() {
+            return versionContextChanges.value
+        },
+        onDidChangeRoots: rootChanges,
+        rootChanges,
+        versionContextChanges,
+    }
+
     return {
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
         }),
         exposedToMain,
+        workspace,
     }
 }
