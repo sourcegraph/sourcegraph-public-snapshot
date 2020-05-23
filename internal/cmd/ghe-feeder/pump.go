@@ -51,6 +51,8 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 		line := strings.TrimSpace(scanner.Text())
 		if isCSV {
 			line = extractOwnerRepoFromCSVLine(line)
+		} else {
+			line = strings.Trim(line, "\"")
 		}
 		if len(line) == 0 {
 			continue
@@ -98,7 +100,8 @@ func (prdc *producer) pump(ctx context.Context) error {
 			if prdc.remaining <= 0 {
 				return nil
 			}
-			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") {
+			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") ||
+				strings.HasSuffix(path, ".json") {
 				err := prdc.pumpFile(ctx, path)
 				if err != nil {
 					return err
