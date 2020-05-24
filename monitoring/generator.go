@@ -880,6 +880,7 @@ func main() {
 		if err != nil {
 			log.Fatal("reloading Prometheus rules, got error:", err)
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			log.Fatal("reloading Prometheus rules, got status code:", resp.StatusCode)
 		}
