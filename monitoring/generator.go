@@ -2,6 +2,7 @@
 //go:generate go build -o /tmp/monitoring-generator
 //go:generate /tmp/monitoring-generator
 
+//nolint:golint,gocritic
 package main
 
 import (
@@ -889,6 +890,7 @@ func main() {
 
 	if docSolutionsFile != "" {
 		solutions := generateDocs(containers)
+		// #nosec G306
 		err := ioutil.WriteFile(docSolutionsFile, solutions, 0666)
 		if err != nil {
 			log.Fatal(err)
