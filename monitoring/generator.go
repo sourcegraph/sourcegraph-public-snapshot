@@ -844,6 +844,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			// #nosec G306  prometheus runs as nobody
 			err = ioutil.WriteFile(filepath.Join(grafanaDir, container.Name+".json"), data, 0666)
 			if err != nil {
 				log.Fatal(err)
@@ -865,6 +866,7 @@ func main() {
 				log.Fatal(err)
 			}
 			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
+			// #nosec G306  grafana runs as UID 472
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
 			if err != nil {
 				log.Fatal(err)
