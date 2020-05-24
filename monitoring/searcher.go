@@ -16,7 +16,7 @@ func Searcher() *Container {
 							Query:             `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{code}}"),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{code}}"),
 							PossibleSolutions: "none",
 						},
 						sharedFrontendInternalAPIErrorResponses("searcher"),

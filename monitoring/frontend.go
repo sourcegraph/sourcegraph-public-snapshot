@@ -17,7 +17,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 20},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -32,7 +32,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 15},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -49,7 +49,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -59,7 +59,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard error"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -68,7 +68,7 @@ func Frontend() *Container {
 							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name!="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("partial timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -77,7 +77,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",name!="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{alert_type}}"),
 							PossibleSolutions: `
 								- This indicates your user's are making syntax errors or similar user errors.
 							`,
@@ -97,7 +97,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 20},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -112,7 +112,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 15},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -129,7 +129,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -139,7 +139,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard error"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -148,7 +148,7 @@ func Frontend() *Container {
 							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("partial timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -157,7 +157,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{alert_type}}"),
 							PossibleSolutions: `
 								- This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
 							`,
@@ -177,7 +177,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **If your users are requesting many results** with a large 'count:' parameter, consider using our [search pagination API](../../api/graphql/search.md).
@@ -193,7 +193,7 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 40},
-							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
+							PanelOptions:    NewPanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **If your users are requesting many results** with a large 'count:' parameter, consider using our [search pagination API](../../api/graphql/search.md).
@@ -211,7 +211,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -221,7 +221,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
 							Critical:          Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("hard error"),
+							PanelOptions:      NewPanelOptions().LegendFormat("hard error"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -230,7 +230,7 @@ func Frontend() *Container {
 							Query:             `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("partial timeout"),
+							PanelOptions:      NewPanelOptions().LegendFormat("partial timeout"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -239,7 +239,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="other"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
-							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{alert_type}}"),
 							PossibleSolutions: `
 								- This indicates your user's search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
 							`,
@@ -260,7 +260,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("api operation").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("api operation").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 						{
@@ -269,7 +269,7 @@ func Frontend() *Container {
 							Query:             `increase(src_code_intel_api_errors_total[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("api operation"),
+							PanelOptions:      NewPanelOptions().LegendFormat("api operation"),
 							PossibleSolutions: "none",
 						},
 					},
@@ -282,7 +282,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("db operation").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("db operation").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 						{
@@ -291,7 +291,7 @@ func Frontend() *Container {
 							Query:             `increase(src_code_intel_db_errors_total{job="frontend"}[5m])`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("db operation"),
+							PanelOptions:      NewPanelOptions().LegendFormat("db operation"),
 							PossibleSolutions: "none",
 						},
 					},
@@ -308,7 +308,7 @@ func Frontend() *Container {
 							Query:           `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
-							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{code}}"),
 							PossibleSolutions: `
 								- Check the Zoekt Web Server dashboard for indications it might be unhealthy.
 							`,
@@ -319,7 +319,7 @@ func Frontend() *Container {
 							Query:           `sum by (code)(increase(searcher_service_request_total{code!~"2.."}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
-							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{code}}"),
 							PossibleSolutions: `
 								- Check the Searcher dashboard for indications it might be unhealthy.
 							`,
@@ -330,7 +330,7 @@ func Frontend() *Container {
 							Query:           `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
-							PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+							PanelOptions:    NewPanelOptions().LegendFormat("{{category}}"),
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -344,7 +344,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 						{
@@ -354,7 +354,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 300},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 						{
@@ -363,7 +363,7 @@ func Frontend() *Container {
 							Query:             `sum by (category)(increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{category}}"),
 							PossibleSolutions: "none",
 						},
 					},
@@ -375,7 +375,7 @@ func Frontend() *Container {
 							DataMayNotExist:   true,
 							DataMayBeNaN:      true,
 							Warning:           Alert{GreaterOrEqual: 20},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 						{
@@ -384,7 +384,7 @@ func Frontend() *Container {
 							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="frontend",code!~"2.."}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      PanelOptions().LegendFormat("{{category}}"),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{category}}"),
 							PossibleSolutions: "none",
 						},
 					},

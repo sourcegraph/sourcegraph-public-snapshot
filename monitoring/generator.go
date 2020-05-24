@@ -189,8 +189,8 @@ type Observable struct {
 	//
 	PossibleSolutions string
 
-	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions panelOptions
+	// NewPanelOptions describes some options for how to render the metric in the Grafana panel.
+	PanelOptions PanelOptions
 }
 
 func (o *Observable) validate() error {
@@ -292,15 +292,18 @@ const (
 	BitsPerSecond UnitType = "bps"
 )
 
-type panelOptions struct {
+// PanelOptions creates a new panel for the grafana dashboard, prefer NewPanelOptions() when creating panels
+type PanelOptions struct {
 	min, max     *float64
 	minAuto      bool
 	legendFormat string
 	unitType     UnitType
 }
 
+func NewPanelOptions() PanelOptions { return PanelOptions{} }
+
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p panelOptions) Min(min float64) panelOptions {
+func (p PanelOptions) Min(min float64) PanelOptions {
 	p.min = &min
 	return p
 }
@@ -309,31 +312,31 @@ func (p panelOptions) Min(min float64) panelOptions {
 // the default zero.
 //
 // This is generally only useful if trying to show negative numbers.
-func (p panelOptions) MinAuto() panelOptions {
+func (p PanelOptions) MinAuto() PanelOptions {
 	p.minAuto = true
 	return p
 }
 
 // Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p panelOptions) Max(min float64) panelOptions {
+func (p PanelOptions) Max(min float64) PanelOptions {
 	p.min = &min
 	return p
 }
 
 // LegendFormat sets the panel's legend format, which may use Go template strings to select
 // labels from the Prometheus query.
-func (p panelOptions) LegendFormat(format string) panelOptions {
+func (p PanelOptions) LegendFormat(format string) PanelOptions {
 	p.legendFormat = format
 	return p
 }
 
 // Unit sets the panel's Y axis unit type.
-func (p panelOptions) Unit(t UnitType) panelOptions {
+func (p PanelOptions) Unit(t UnitType) PanelOptions {
 	p.unitType = t
 	return p
 }
 
-func (p panelOptions) withDefaults() panelOptions {
+func (p PanelOptions) withDefaults() PanelOptions {
 	if p.min == nil && !p.minAuto {
 		defaultMin := 0.0
 		p.min = &defaultMin
@@ -346,8 +349,6 @@ func (p panelOptions) withDefaults() panelOptions {
 	}
 	return p
 }
-
-func PanelOptions() panelOptions { return panelOptions{} }
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {

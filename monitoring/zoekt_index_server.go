@@ -17,7 +17,7 @@ func ZoektIndexServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 15},
 							Critical:          Alert{GreaterOrEqual: 30},
-							PanelOptions:      PanelOptions().LegendFormat("{{duration}}").Unit(Seconds),
+							PanelOptions:      NewPanelOptions().LegendFormat("{{duration}}").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 					},
