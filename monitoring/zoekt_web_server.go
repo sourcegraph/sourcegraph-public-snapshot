@@ -16,7 +16,7 @@ func ZoektWebServer() *Container {
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 50},
-							PanelOptions:      NewPanelOptions().LegendFormat("{{code}}").Unit(Seconds),
+							PanelOptions:      PanelOptions().LegendFormat("{{code}}").Unit(Seconds),
 							PossibleSolutions: "none",
 						},
 					},

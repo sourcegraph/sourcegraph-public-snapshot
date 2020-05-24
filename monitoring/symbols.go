@@ -16,7 +16,7 @@ func Symbols() *Container {
 							Query:             `sum(increase(symbols_store_fetch_failed[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 5},
-							PanelOptions:      NewPanelOptions().LegendFormat("failures"),
+							PanelOptions:      PanelOptions().LegendFormat("failures"),
 							PossibleSolutions: "none",
 						},
 						{
@@ -25,7 +25,7 @@ func Symbols() *Container {
 							Query:             `sum(symbols_store_fetch_queue_size)`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 25},
-							PanelOptions:      NewPanelOptions().LegendFormat("size"),
+							PanelOptions:      PanelOptions().LegendFormat("size"),
 							PossibleSolutions: "none",
 						},
 					},

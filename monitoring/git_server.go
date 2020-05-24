@@ -17,7 +17,7 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
-							PanelOptions:    NewPanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 							`,
@@ -29,7 +29,7 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							Critical:        Alert{GreaterOrEqual: 100},
-							PanelOptions:    NewPanelOptions().LegendFormat("running commands"),
+							PanelOptions:    PanelOptions().LegendFormat("running commands"),
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -43,7 +43,7 @@ func GitServer() *Container {
 							Query:           "sum(src_gitserver_clone_queue)",
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
-							PanelOptions:    NewPanelOptions().LegendFormat("queue size"),
+							PanelOptions:    PanelOptions().LegendFormat("queue size"),
 							PossibleSolutions: `
 								- **If you just added several repositories**, the warning may be expected.
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
@@ -55,7 +55,7 @@ func GitServer() *Container {
 							Query:           "sum(src_gitserver_lsremote_queue)",
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
-							PanelOptions:    NewPanelOptions().LegendFormat("queue size"),
+							PanelOptions:    PanelOptions().LegendFormat("queue size"),
 							PossibleSolutions: `
 								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
@@ -70,7 +70,7 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 1.0},
 							Critical:        Alert{GreaterOrEqual: 2.0},
-							PanelOptions:    NewPanelOptions().LegendFormat("running commands").Unit(Seconds),
+							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
