@@ -95,9 +95,9 @@ func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
 		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
-	for i := range r {
-		if err := r[i].validate(); err != nil {
-			return fmt.Errorf("observable %q: %v", r[i].Name, err)
+	for _, o := range r {
+		if err := o.validate(); err != nil {
+			return fmt.Errorf("observable %q: %v", o.Name, err)
 		}
 	}
 	return nil
@@ -193,7 +193,7 @@ type Observable struct {
 	PanelOptions panelOptions
 }
 
-func (o *Observable) validate() error {
+func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
 	}
@@ -482,8 +482,8 @@ func (c *Container) dashboard() *sdk.Board {
 		for _, row := range group.Rows {
 			panelWidth := 24 / len(row)
 			offsetY++
-			for i := range row {
-				panelTitle := strings.ToTitle(string([]rune(row[i].Description)[0])) + string([]rune(row[i].Description)[1:])
+			for i, o := range row {
+				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
 				panel := sdk.NewGraph(panelTitle)
 				setPanelSize(panel, panelWidth, 5)
 				setPanelPos(panel, i*panelWidth, offsetY)
@@ -498,7 +498,7 @@ func (c *Container) dashboard() *sdk.Board {
 					Show: true,
 				}
 
-				opt := row[i].PanelOptions.withDefaults()
+				opt := o.PanelOptions.withDefaults()
 				leftAxis := sdk.Axis{
 					Decimals: 0,
 					Format:   string(opt.unitType),
@@ -506,10 +506,10 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if row[i].Warning.GreaterOrEqual != 0 {
+				if o.Warning.GreaterOrEqual != 0 {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(row[i].Warning.GreaterOrEqual),
+						Value:     float32(o.Warning.GreaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
@@ -517,10 +517,10 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if row[i].Critical.GreaterOrEqual != 0 {
+				if o.Critical.GreaterOrEqual != 0 {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(row[i].Critical.GreaterOrEqual),
+						Value:     float32(o.Critical.GreaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
@@ -528,10 +528,10 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
-				if row[i].Warning.LessOrEqual != 0 {
+				if o.Warning.LessOrEqual != 0 {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(row[i].Warning.LessOrEqual),
+						Value:     float32(o.Warning.LessOrEqual),
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
@@ -539,10 +539,10 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if row[i].Critical.LessOrEqual != 0 {
+				if o.Critical.LessOrEqual != 0 {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(row[i].Critical.LessOrEqual),
+						Value:     float32(o.Critical.LessOrEqual),
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
@@ -566,7 +566,7 @@ func (c *Container) dashboard() *sdk.Board {
 					},
 				}
 				panel.AddTarget(&sdk.Target{
-					Expr:         row[i].Query,
+					Expr:         o.Query,
 					LegendFormat: opt.legendFormat,
 				})
 				if rowPanel != nil && group.Hidden {
@@ -580,8 +580,8 @@ func (c *Container) dashboard() *sdk.Board {
 	return board
 }
 
-// alertDescription generates an alert description for the specified container alert.
-func (c *Container) alertDescription(o *Observable, alert Alert) string {
+// alertDescription generates an alert description for the specified coontainer's alert.
+func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -606,10 +606,10 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	group := promGroup{Name: c.Name}
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
-			for i := range r {
+			for _, o := range r {
 				for level, alert := range map[string]Alert{
-					"warning":  r[i].Warning,
-					"critical": r[i].Critical,
+					"warning":  o.Warning,
+					"critical": o.Critical,
 				} {
 					if alert.isEmpty() {
 						continue
@@ -617,8 +617,8 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					labels := map[string]string{}
 					labels["service_name"] = c.Name
 					labels["level"] = level
-					labels["name"] = r[i].Name
-					labels["description"] = c.alertDescription(&r[i], alert)
+					labels["name"] = o.Name
+					labels["description"] = c.alertDescription(o, alert)
 
 					// The alertQuery must contribute a query that returns a value < 1 when it is not
 					// firing, or a value of >= 1 when it is firing.
@@ -632,16 +632,16 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	query_value=25 / greaterOrEqual=50 == 0.5
 						// 	query_value=0 / greaterOrEqual=50 == 0.0
 						//
-						alertQuery = fmt.Sprintf("(%s) / %v", r[i].Query, alert.GreaterOrEqual)
+						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
 
 						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if r[i].DataMayNotExist {
+						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
 						// Replace NaN values with zero (not firing) or one (firing) if they are present.
 						fireOnNan := "1"
-						if r[i].DataMayBeNaN {
+						if o.DataMayBeNaN {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
@@ -653,16 +653,16 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
 						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
 						//
-						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, r[i].Query)
+						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, o.Query)
 
 						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if r[i].DataMayNotExist {
+						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
 
 						// Replace NaN values with zero (not firing) or one (firing) if they are present.
 						fireOnNan := "1"
-						if r[i].DataMayBeNaN {
+						if o.DataMayBeNaN {
 							fireOnNan = "0"
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
@@ -754,7 +754,7 @@ for assistance.
 						if alert.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "\n- _%s_\n\n", c.alertDescription(&o, alert))
+						fmt.Fprintf(&b, "\n- _%s_\n\n", c.alertDescription(o, alert))
 					}
 
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
