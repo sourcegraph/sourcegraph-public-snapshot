@@ -251,18 +251,6 @@ export const queryChangesets = (
                                 externalURL {
                                     url
                                 }
-                                head {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
-                                base {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
                                 externalID
                                 createdAt
                                 updatedAt
@@ -438,10 +426,10 @@ export async function syncChangeset(changeset: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export const queryExternalChangesetFileDiffs = (
+export const queryExternalChangesetWithFileDiffs = (
     externalChangeset: ID,
     { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
-): Observable<IFileDiffConnection> =>
+): Observable<IExternalChangeset> =>
     queryGraphQL(
         gql`
             query ExternalChangesetFileDiffs(
@@ -454,6 +442,14 @@ export const queryExternalChangesetFileDiffs = (
                     __typename
                     ... on ExternalChangeset {
                         diff {
+                            range {
+                                base {
+                                    ...GitRefSpecFields
+                                }
+                                head {
+                                    ...GitRefSpecFields
+                                }
+                            }
                             fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
@@ -472,6 +468,23 @@ export const queryExternalChangesetFileDiffs = (
                 }
             }
 
+            fragment GitRefSpecFields on GitRevSpec {
+                __typename
+                ... on GitObject {
+                    oid
+                }
+                ... on GitRef {
+                    target {
+                        oid
+                    }
+                }
+                ... on GitRevSpecExpr {
+                    object {
+                        oid
+                    }
+                }
+            }
+
             ${FileDiffFields}
 
             ${DiffStatFields}
@@ -486,10 +499,7 @@ export const queryExternalChangesetFileDiffs = (
             if (node.__typename !== 'ExternalChangeset') {
                 throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
             }
-            if (!node.diff) {
-                throw new Error('The given Changeset has no diff')
-            }
-            return node.diff.fileDiffs
+            return node
         })
     )
 
