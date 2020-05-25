@@ -339,8 +339,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	return nil
 }
 
-// waitForRateLimit blocks until rate limit quota is available for n.
-// Otherwise, it returns immediately.
+// waitForRateLimit blocks until rate limit permits n events to happen. It returns
+// an error if n exceeds the limiter's burst size, the context is canceled, or the
+// expected wait time exceeds the context's deadline. The burst limit is ignored if
+// the rate limit is Inf.
 func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int) error {
 	if s.rateLimiterRegistry == nil {
 		return nil
