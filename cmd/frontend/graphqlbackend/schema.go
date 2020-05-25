@@ -776,8 +776,8 @@ type ExternalChangeset implements Node {
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
 
-    # The base of the diff ("old" or "left-hand side"). It could be null if the in some cases, for example
-    # where a force push has occured.
+    # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
+    # when a force push has occured.
     base: GitRef
 
     # The head of the diff ("new" or "right-hand side"). It is common for branches to be deleted
