@@ -738,3 +738,8 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 		return campaigns.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
 	}
 }
+
+func checkCurrentUserHasAdminRights(ctx context.Context, c *campaigns.Campaign) error {
+	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
+	return backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID)
+}

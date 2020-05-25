@@ -94,11 +94,15 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	currentUser, err := backend.CurrentUser(ctx)
-	if err != nil {
+	if err := checkCurrentUserHasAdminRights(ctx, r.Campaign); err != nil {
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			return false, nil
+		}
+
 		return false, err
 	}
-	return currentUser.SiteAdmin, nil
+
+	return true, nil
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {

@@ -93,16 +93,17 @@ type UserOrg struct {
 }
 
 type Campaign struct {
-	ID          string
-	Name        string
-	Description string
-	Branch      string
-	Author      User
-	Namespace   UserOrg
-	CreatedAt   string
-	UpdatedAt   string
-	PublishedAt string
-	Status      struct {
+	ID                  string
+	Name                string
+	Description         string
+	Branch              string
+	Author              User
+	ViewerCanAdminister bool
+	Namespace           UserOrg
+	CreatedAt           string
+	UpdatedAt           string
+	PublishedAt         string
+	Status              struct {
 		State string
 	}
 	Patches                 PatchConnection
