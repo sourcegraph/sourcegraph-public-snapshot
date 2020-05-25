@@ -22,7 +22,7 @@ func toSheetValues(resources []Resource) [][]interface{} {
 			resource.Identifier,
 			resource.Location,
 			resource.Owner,
-			resource.Created,
+			resource.Created.UTC(),
 			meta,
 		}
 	}
