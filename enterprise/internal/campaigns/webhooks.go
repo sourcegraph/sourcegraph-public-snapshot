@@ -882,7 +882,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	// Secret or sync permission has changed, sync
 	endpoint := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID, externalURL)
 	wh := bitbucketserver.Webhook{
-		Name:     h.Name,
+		Name:     fmt.Sprintf("%s-%d", h.Name, externalServiceID),
 		Scope:    "global",
 		Events:   []string{"pr", "repo"},
 		Endpoint: endpoint,
