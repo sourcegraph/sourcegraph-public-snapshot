@@ -58,7 +58,7 @@ To disable native code intelligence, simply set **Sourcegraph URL** to an empty 
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
 
-To configure a webhook on the Sourcegraph side, set the [`"webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [campaigns](../user/campaigns/index.md) is created on the Bitbucket Server instance. If you need to configure the webhook on your instance manually, see [manual configuration](../admin/external_service/bitbucket_server.md#manual-configuration).
+To configure a webhook, follow [these steps](../admin/external_service/bitbucket_server.md#webhooks).
 
 Disabling the webhook is as easy as removing the `"webhooks"` property from the `"plugin"` section and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
 
