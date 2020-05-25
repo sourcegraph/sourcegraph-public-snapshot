@@ -7,7 +7,7 @@ import (
 	sheets "google.golang.org/api/sheets/v4"
 )
 
-func toSheetValues(resources []Resource) [][]interface{} {
+func toSheetValues(resources Resources) [][]interface{} {
 	values := make([][]interface{}, len(resources)+1)
 	values[0] = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
 	for i, resource := range resources {
@@ -29,7 +29,7 @@ func toSheetValues(resources []Resource) [][]interface{} {
 	return values
 }
 
-func updateSheet(ctx context.Context, sheetID string, resources []Resource) error {
+func updateSheet(ctx context.Context, sheetID string, resources Resources) error {
 	client, err := sheets.NewService(ctx)
 	if err != nil {
 		return err

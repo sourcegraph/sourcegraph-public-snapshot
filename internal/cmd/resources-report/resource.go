@@ -24,6 +24,16 @@ type Resource struct {
 	Meta       map[string]interface{}
 }
 
+type Resources []Resource
+
+func (r Resources) Less(i, j int) bool { return r[i].Created.After(r[j].Created) }
+func (r Resources) Len() int           { return len(r) }
+func (r Resources) Swap(i, j int) {
+	tmp := r[i]
+	r[i] = r[j]
+	r[j] = tmp
+}
+
 func hasPrefix(value string, prefixes []string) bool {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(value, prefix) {

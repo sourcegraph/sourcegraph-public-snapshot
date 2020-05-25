@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -57,7 +58,7 @@ func run(opts options) error {
 	// will attempt to send it to Slack. This hopefully prevents errors from
 	// revealing too much in our public build logs. If Slack fails, just log it
 	// and hope Slack doesn't spit out anything sensitive.
-	var resources []Resource
+	var resources Resources
 	since := time.Now().UTC().Add(-*opts.window)
 	if *opts.gcp {
 		rs, err := collectGCPResources(ctx, since, *opts.verbose)
@@ -75,6 +76,7 @@ func run(opts options) error {
 		}
 		resources = append(resources, rs...)
 	}
+	sort.Sort(resources)
 
 	// report results
 	if *opts.verbose {
@@ -90,7 +92,7 @@ func run(opts options) error {
 	return nil
 }
 
-func reportString(resources []Resource) string {
+func reportString(resources Resources) string {
 	var output string
 	for _, r := range resources {
 		output += fmt.Sprintf(" * %+v\n", r)
