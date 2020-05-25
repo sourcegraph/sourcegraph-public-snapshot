@@ -15,7 +15,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps<never>> 
         {...props}
         className="card"
         iconClassName="icon-inline"
-        closeButtonClassName="btn btn-icon"
+        iconButtonClassName="btn btn-icon"
         actionItemClassName="btn btn-secondary"
         infoAlertClassName="alert alert-info"
         errorAlertClassName="alert alert-danger"

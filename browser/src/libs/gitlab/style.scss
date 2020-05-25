@@ -3,15 +3,33 @@
     z-index: 1001 !important;
 }
 
-.hover-overlay-mount__gitlab {
-    .hover-overlay {
-        code {
-            background: none;
-            color: unset;
+.btn-icon--gitlab {
+    img {
+        // Gitlab applies this to svgs,
+        // need to apply it to imgs for consistency too
+        position: relative;
+        top: 2px;
+        vertical-align: baseline;
+
+        // Replicate svg color hover effect
+        opacity: 0.6;
+        &:hover {
+            opacity: 1;
         }
     }
+}
 
-    // stylelint-disable
+.hover-overlay--gitlab {
+    border-color: #e5e5e5;
+
+    // Override Gitlab's default styles
+    pre,
+    code {
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+    }
 
     // highlight.js styles
 
