@@ -105,48 +105,21 @@ func TestChangesetEventsLabels(t *testing.T) {
 
 func TestFindMergeCommitID(t *testing.T) {
 	now := time.Now()
-	makeBitbucketEvent := func(kind cmpgn.ChangesetEventKind, commit string) *cmpgn.ChangesetEvent {
-		return &cmpgn.ChangesetEvent{
-			ID:          1,
-			ChangesetID: 1,
-			Kind:        kind,
-			Key:         "key",
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata: &bitbucketserver.Activity{
-				ID: 1,
-				Commit: &bitbucketserver.Commit{
-					ID: commit,
-				},
-			},
+
+	addCommit := func(event *cmpgn.ChangesetEvent, commitID string) *cmpgn.ChangesetEvent {
+		switch m := event.Metadata.(type) {
+		case *github.MergedEvent:
+			m.Commit = github.Commit{
+				OID: commitID,
+			}
+		case *bitbucketserver.Activity:
+			m.Commit = &bitbucketserver.Commit{
+				ID: commitID,
+			}
 		}
+		return event
 	}
-	makeGitHubMergeEvent := func(commit string) *cmpgn.ChangesetEvent {
-		return &cmpgn.ChangesetEvent{
-			ID:          1,
-			ChangesetID: 1,
-			Kind:        cmpgn.ChangesetEventKindBitbucketServerMerged,
-			Key:         "key",
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata: &github.MergedEvent{
-				Commit: github.Commit{
-					OID: commit,
-				},
-			},
-		}
-	}
-	makeOtherGitHubEvent := func() *cmpgn.ChangesetEvent {
-		return &cmpgn.ChangesetEvent{
-			ID:          1,
-			ChangesetID: 1,
-			Kind:        cmpgn.ChangesetEventKindGitHubCommented,
-			Key:         "key",
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata:    &github.PullRequestReviewComment{},
-		}
-	}
+
 	for _, tc := range []struct {
 		name   string
 		events ChangesetEvents
@@ -165,46 +138,46 @@ func TestFindMergeCommitID(t *testing.T) {
 		{
 			name: "one bitbucket merge event",
 			events: ChangesetEvents{
-				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+				addCommit(event(t, now, cmpgn.ChangesetEventKindBitbucketServerMerged, 1), "deadbeef"),
 			},
 			want: "deadbeef",
 		},
 		{
 			name: "multiple bitbucket events with merge",
 			events: ChangesetEvents{
-				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerApproved, ""),
-				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerMerged, "deadbeef"),
+				event(t, now, cmpgn.ChangesetEventKindBitbucketServerReopened, 1),
+				addCommit(event(t, now, cmpgn.ChangesetEventKindBitbucketServerMerged, 1), "deadbeef"),
 			},
 			want: "deadbeef",
 		},
 		{
 			name: "multiple bitbucket events no merge",
 			events: ChangesetEvents{
-				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerApproved, ""),
-				makeBitbucketEvent(cmpgn.ChangesetEventKindBitbucketServerCommented, ""),
+				event(t, now, cmpgn.ChangesetEventKindBitbucketServerReopened, 1),
+				event(t, now, cmpgn.ChangesetEventKindBitbucketServerDeclined, 1),
 			},
 			want: "",
 		},
 		{
 			name: "one github merge event",
 			events: ChangesetEvents{
-				makeGitHubMergeEvent("deadbeef"),
+				addCommit(event(t, now, cmpgn.ChangesetEventKindGitHubMerged, 1), "deadbeef"),
 			},
 			want: "deadbeef",
 		},
 		{
 			name: "multiple github events with merge",
 			events: ChangesetEvents{
-				makeOtherGitHubEvent(),
-				makeGitHubMergeEvent("deadbeef"),
+				event(t, now, cmpgn.ChangesetEventKindGitHubClosed, 1),
+				addCommit(event(t, now, cmpgn.ChangesetEventKindGitHubMerged, 1), "deadbeef"),
 			},
 			want: "deadbeef",
 		},
 		{
 			name: "multiple github events no merge",
 			events: ChangesetEvents{
-				makeOtherGitHubEvent(),
-				makeOtherGitHubEvent(),
+				event(t, now, cmpgn.ChangesetEventKindGitHubClosed, 1),
+				event(t, now, cmpgn.ChangesetEventKindGitHubReopened, 1),
 			},
 			want: "",
 		},
