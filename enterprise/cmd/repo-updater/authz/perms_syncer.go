@@ -35,6 +35,8 @@ type PermsSyncer struct {
 	permsStore *edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
+	// The rate limit registry for code hosts.
+	rateLimiterRegistry *repos.RateLimiterRegistry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
@@ -53,13 +55,15 @@ func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
+	rateLimiterRegistry *repos.RateLimiterRegistry,
 ) *PermsSyncer {
 	s := &PermsSyncer{
-		queue:            newRequestQueue(),
-		reposStore:       reposStore,
-		permsStore:       permsStore,
-		clock:            clock,
-		scheduleInterval: time.Minute,
+		queue:               newRequestQueue(),
+		reposStore:          reposStore,
+		permsStore:          permsStore,
+		clock:               clock,
+		rateLimiterRegistry: rateLimiterRegistry,
+		scheduleInterval:    time.Minute,
 	}
 	return s
 }
@@ -170,6 +174,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
+		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+			return errors.Wrap(err, "wait for rate limiter")
+		}
+
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// Process partial results if this is an initial fetch.
@@ -248,6 +256,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
+	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+		return errors.Wrap(err, "wait for rate limiter")
+	}
+
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
@@ -324,6 +336,20 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name)
+	return nil
+}
+
+// waitForRateLimit blocks until rate limit quota is available for n.
+// Otherwise, it returns immediately.
+func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int) error {
+	if s.rateLimiterRegistry == nil {
+		return nil
+	}
+
+	rl := s.rateLimiterRegistry.GetRateLimiter(serviceID)
+	if err := rl.WaitN(ctx, n); err != nil {
+		return err
+	}
 	return nil
 }
 
