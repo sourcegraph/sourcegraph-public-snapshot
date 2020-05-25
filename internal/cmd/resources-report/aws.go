@@ -49,6 +49,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Location:   *instance.Placement.AvailabilityZone,
 							Owner:      *reservation.OwnerId,
 							Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
+							Created:    *instance.LaunchTime,
 							Meta: map[string]interface{}{
 								"tags": instance.Tags,
 							},
@@ -72,6 +73,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Location:   *volume.AvailabilityZone,
 						Owner:      "-",
 						Type:       fmt.Sprintf("EC2::Volumes::%s", string(volume.VolumeType)),
+						Created:    *volume.CreateTime,
 						Meta: map[string]interface{}{
 							"tags":        volume.Tags,
 							"attachments": volume.Attachments,
@@ -111,6 +113,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Location:   cfg.Region,
 						Owner:      "-",
 						Type:       "EKS::Cluster",
+						Created:    *cluster.Cluster.CreatedAt,
 						Meta: map[string]interface{}{
 							"tags": cluster.Cluster.Tags,
 						},

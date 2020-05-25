@@ -9,7 +9,7 @@ import (
 
 func toSheetValues(resources []Resource) [][]interface{} {
 	values := make([][]interface{}, len(resources)+1)
-	values[0] = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Meta"}
+	values[0] = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
 	for i, resource := range resources {
 		var meta string
 		metaBytes, err := json.Marshal(resource.Meta)
@@ -22,6 +22,7 @@ func toSheetValues(resources []Resource) [][]interface{} {
 			resource.Identifier,
 			resource.Location,
 			resource.Owner,
+			resource.Created,
 			meta,
 		}
 	}

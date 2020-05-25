@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Platform string
@@ -19,6 +20,7 @@ type Resource struct {
 	Type       string
 	Location   string
 	Owner      string
+	Created    time.Time
 	Meta       map[string]interface{}
 }
 
