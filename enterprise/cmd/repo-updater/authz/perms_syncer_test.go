@@ -295,6 +295,9 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 	ctx := context.Background()
 	t.Run("no rate limit registry", func(t *testing.T) {
 		s := NewPermsSyncer(nil, nil, nil, nil)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
 		err := s.waitForRateLimit(ctx, "https://github.com/", 100000)
 		if err != nil {
 			t.Fatal(err)
@@ -307,6 +310,9 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 			t.Fatal(err)
 		}
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
 		err = s.waitForRateLimit(ctx, "https://github.com/", 1)
 		if err != nil {
 			t.Fatal(err)
