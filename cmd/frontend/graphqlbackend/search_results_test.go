@@ -262,7 +262,7 @@ func TestSearchResults(t *testing.T) {
 	})
 }
 
-func Test_orderedFuzzyRegexp(t *testing.T) {
+func TestOrderedFuzzyRegexp(t *testing.T) {
 	got := orderedFuzzyRegexp([]string{})
 	if want := ""; got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -279,7 +279,7 @@ func Test_orderedFuzzyRegexp(t *testing.T) {
 	}
 }
 
-func Test_processSearchPattern(t *testing.T) {
+func TestProcessSearchPattern(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern string
@@ -902,7 +902,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 }
 
-func Test_dedupSort(t *testing.T) {
+func TestDedupSort(t *testing.T) {
 	repos := make(types.Repos, 512)
 	for i := range repos {
 		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}

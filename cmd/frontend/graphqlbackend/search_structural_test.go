@@ -109,7 +109,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 }
 
-func Test_StructuralPatToRegexpQuery(t *testing.T) {
+func TestStructuralPatToRegexpQuery(t *testing.T) {
 	cases := []struct {
 		Name     string
 		Pattern  string
