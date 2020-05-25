@@ -198,6 +198,13 @@ func (s *Enqueuer) handleEnqueueSinglePayload(r *http.Request, uploadArgs Upload
 		return nil, err
 	}
 
+	log15.Info(
+		"Enqueued upload",
+		"id", id,
+		"repository_id", uploadArgs.RepositoryID,
+		"commit", uploadArgs.Commit,
+	)
+
 	// older versions of src-cli expect a string
 	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
 }
@@ -218,6 +225,13 @@ func (s *Enqueuer) handleEnqueueMultipartSetup(r *http.Request, uploadArgs Uploa
 	if err != nil {
 		return nil, err
 	}
+
+	log15.Info(
+		"Enqueued upload",
+		"id", id,
+		"repository_id", uploadArgs.RepositoryID,
+		"commit", uploadArgs.Commit,
+	)
 
 	// older versions of src-cli expect a string
 	return enqueuePayload{fmt.Sprintf("%d", id)}, nil

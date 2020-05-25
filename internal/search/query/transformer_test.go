@@ -182,3 +182,31 @@ func TestSearchUppercase(t *testing.T) {
 		})
 	}
 }
+
+func TestMap(t *testing.T) {
+	cases := []struct {
+		input string
+		fns   []func(_ []Node) []Node
+		want  string
+	}{
+		{
+			input: "RePo:foo",
+			fns:   []func(_ []Node) []Node{LowercaseFieldNames},
+			want:  `"repo:foo"`,
+		},
+		{
+			input: "RePo:foo r:bar",
+			fns:   []func(_ []Node) []Node{LowercaseFieldNames, SubstituteAliases},
+			want:  `(and "repo:foo" "repo:bar")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := prettyPrint(Map(query, c.fns...))
+			if diff := cmp.Diff(got, c.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}

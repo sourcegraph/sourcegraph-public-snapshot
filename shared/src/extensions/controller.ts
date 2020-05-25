@@ -69,7 +69,7 @@ export function createController(context: PlatformContext): Controller {
         sourcegraphURL: context.sourcegraphURL,
         clientApplication: context.clientApplication,
     }
-    const client = createExtensionHostClient(services, extensionHostEndpoint, initData)
+    const client = createExtensionHostClient(services, extensionHostEndpoint, initData, context)
     subscriptions.add(client)
 
     const notifications = new Subject<Notification>()

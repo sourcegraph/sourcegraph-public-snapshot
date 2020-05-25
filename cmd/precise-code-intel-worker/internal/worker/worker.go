@@ -88,9 +88,7 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		return false, errors.Wrap(err, "db.Dequeue")
 	}
 	defer func() {
-		if closeErr := tx.Done(err); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
+		err = tx.Done(err)
 
 		// TODO(efritz) - set error if correlation failed
 		w.metrics.Processor.Observe(time.Since(start).Seconds(), 1, &err)
