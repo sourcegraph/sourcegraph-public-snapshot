@@ -63,7 +63,6 @@ type worker struct {
 	work               <-chan string
 	wg                 *sync.WaitGroup
 	bar                *progressbar.ProgressBar
-	reposPerOrg        int
 	numFailed          int64
 	numSucceeded       int64
 	fdr                *feederDB
@@ -88,7 +87,7 @@ func (wkr *worker) run(ctx context.Context) {
 
 	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
 
-	_, err := wkr.addGHEOrg(ctx)
+	err := wkr.addGHEOrg(ctx)
 	if err != nil {
 		wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
 		// add it to default org then
@@ -140,7 +139,7 @@ func (wkr *worker) run(ctx context.Context) {
 				wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 				wkr.currentNumRepos = 0
 				wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
-				_, err := wkr.addGHEOrg(ctx)
+				err := wkr.addGHEOrg(ctx)
 				if err != nil {
 					wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
 					// add it to default org then
@@ -181,22 +180,18 @@ func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 		return &feederError{"api", err}
 	}
 
-	attempt := 1
-	for {
+	for attempt := 0; attempt < wkr.numCloningAttempts && ctx.Err() == nil; attempt++ {
 		err = wkr.pushToGHE(ctx, owner, repo)
-		if err != nil {
-			wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt, "owner", owner, "repo", repo, "error", err)
-			attempt++
-			if attempt <= wkr.numCloningAttempts && ctx.Err() == nil {
-				continue
-			}
-			return &feederError{"push", err}
-		} else {
-			break
+		if err == nil {
+			return nil
 		}
+		wkr.logger.Error("failed to push cloned repo to GHE", "attempt", attempt+1, "owner", owner, "repo", repo, "error", err)
 	}
 
-	return nil
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return &feederError{"push", err}
 }
 
 func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
@@ -257,11 +252,11 @@ func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 	}
 }
 
-func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) {
+func (wkr *worker) addGHEOrg(ctx context.Context) error {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
 		wkr.logger.Error("failed to get a request spot from rate limiter", "error", err)
-		return nil, err
+		return err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
@@ -271,8 +266,8 @@ func (wkr *worker) addGHEOrg(ctx context.Context) (*github.Organization, error) 
 		Login: github.String(wkr.currentOrg),
 	}
 
-	gheReturnedOrg, _, err := wkr.client.Admin.CreateOrg(ctx, gheOrg, wkr.admin)
-	return gheReturnedOrg, err
+	_, _, err = wkr.client.Admin.CreateOrg(ctx, gheOrg, wkr.admin)
+	return err
 }
 
 func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
