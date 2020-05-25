@@ -118,7 +118,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 				return
 			} else if err != backend.ErrMustBeSiteAdmin {
 				log15.Error("Error checking current user is site admin", "err", err)
-				http.Error(w, "", http.StatusInternalServerError)
+				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
