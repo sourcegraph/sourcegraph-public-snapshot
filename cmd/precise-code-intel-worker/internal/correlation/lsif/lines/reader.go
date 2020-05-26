@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"io"
+	"runtime"
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
@@ -16,10 +17,10 @@ import (
 const LineBufferSize = 1e7
 
 // ChannelBufferSize is the number sources lines that can be read ahead of the correlator.
-const ChannelBufferSize = 500
+const ChannelBufferSize = 512
 
-// NumUnmarshalRoutines is the number of goroutines launched to unmarshal individual lines.
-const NumUnmarshalGoRoutines = 100
+// NumUnmarshalGoRoutines is the number of goroutines launched to unmarshal individual lines.
+var NumUnmarshalGoRoutines = runtime.NumCPU()
 
 // Read reads the given content as line-separated objects which are unmarshallable by the given function
 // and returns a channel of lsif.Pair values for each non-empty line.
