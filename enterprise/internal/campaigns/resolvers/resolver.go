@@ -57,6 +57,10 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
+	if changesetID == 0 {
+		return nil, nil
+	}
+
 	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
 	if err != nil {
 		if err == ee.ErrNoResults {
@@ -77,6 +81,10 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	campaignID, err := unmarshalCampaignID(id)
 	if err != nil {
 		return nil, err
+	}
+
+	if campaignID == 0 {
+		return nil, nil
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -101,6 +109,10 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
+	if patchID == 0 {
+		return nil, nil
+	}
+
 	patch, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
 	if err != nil {
 		if err == ee.ErrNoResults {
@@ -121,6 +133,10 @@ func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlback
 	patchSetID, err := unmarshalPatchSetID(id)
 	if err != nil {
 		return nil, err
+	}
+
+	if patchSetID == 0 {
+		return nil, nil
 	}
 
 	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: patchSetID})
@@ -145,12 +161,19 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
+	if campaignID == 0 {
+		return nil, nil
+	}
+
 	changesetIDs := make([]int64, 0, len(args.Changesets))
 	set := map[int64]struct{}{}
 	for _, changesetID := range args.Changesets {
 		id, err := unmarshalChangesetID(changesetID)
 		if err != nil {
 			return nil, err
+		}
+		if id == 0 {
+			continue
 		}
 
 		if _, ok := set[id]; !ok {
@@ -282,6 +305,10 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, err
 	}
 
+	if campaignID == 0 {
+		return nil, nil
+	}
+
 	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
 	updateArgs.Name = args.Input.Name
 	updateArgs.Description = args.Input.Description
@@ -331,6 +358,10 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
+	if campaignID == 0 {
+		return nil, nil
+	}
+
 	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
@@ -352,6 +383,10 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
+	}
+
+	if campaignID == 0 {
+		return nil, nil
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -581,6 +616,10 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
+	if campaignID == 0 {
+		return nil, nil
+	}
+
 	svc := ee.NewService(r.store, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
@@ -606,6 +645,10 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
+	}
+
+	if campaignID == 0 {
+		return nil, nil
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -634,6 +677,10 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, err
 	}
 
+	if patchID == 0 {
+		return nil, nil
+	}
+
 	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.CreateChangesetJobForPatch(ctx, patchID)
 	if err != nil {
@@ -658,6 +705,10 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	changesetID, err := unmarshalChangesetID(args.Changeset)
 	if err != nil {
 		return nil, err
+	}
+
+	if changesetID == 0 {
+		return nil, nil
 	}
 
 	// Check for existence of changeset so we don't swallow that error.
