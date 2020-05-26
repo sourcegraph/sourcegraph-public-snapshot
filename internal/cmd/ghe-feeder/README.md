@@ -1,7 +1,10 @@
 # GHE feeder tool
 
-Feeds repositories into a destination GHE instance. Takes as input files with owner/repo strings on each line.
-The https://github.com/owner/repo repositories are cloned and then pushed to a destination GHE instance.
+Feeds repositories into a destination GHE instance. Input are files with owner/repo strings on each line and/or 
+directories containing such files (see below for details about the expected input).
+
+The https://github.com/owner/repo repositories specified on the input lines are cloned and then pushed to a destination
+GHE instance. Every once in a while new orgs are created and the repos are added to those orgs. 
 
 ## Usage
 
@@ -47,10 +50,11 @@ ghe-feeder -help
 ```
 
 ## Inputs
-Inputs are command line arguments consisting of files and directories. Files need to end in .json, .txt or .csv. Directories are traversed recursively
-for such files.
 
-If the input file is a .json or .txt file it expects a owner/repo string per line (and nothing else). For example:
+Inputs are command line arguments consisting of files and directories. Files need to end in .json, .txt or .csv. 
+Directories are traversed recursively for such files.
+
+If the input file is a .json or .txt file it expects an owner/repo string per line (and nothing else). For example:
 
 ```
 "FrankBGao/try"
@@ -77,7 +81,7 @@ If the input file is a .json or .txt file it expects a owner/repo string per lin
 Lines can be quoted or not (quotes will be stripped).
 
 If the input file is a .csv then owner/Repo is expected in position 6 (1-based counting) and owner is separated from repo
-by a dash. For example:
+by the first dash. For example:
 
 ```
 2019-05-23 15:22:44 -0700,4,Organization,sourcegraph,1,sourcegraph-sirupsen-logrus,public,0 Bytes,0,0,false,false
