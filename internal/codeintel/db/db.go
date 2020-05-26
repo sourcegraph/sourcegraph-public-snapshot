@@ -160,6 +160,11 @@ type DB interface {
 	// false valued flag. This method must not be called from within a transaction.
 	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
 
+	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
+	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered
+	// by search then precise event counts.
+	RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistics, error)
+
 	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
