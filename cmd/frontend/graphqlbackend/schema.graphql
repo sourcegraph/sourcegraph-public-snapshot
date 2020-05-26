@@ -402,14 +402,10 @@ type Mutation {
     setRepositoryPermissionsForUsers(
         # The repository whose permissions to set.
         repository: ID!
-        # A list of user identifiers, which define the set of users who may view the repository. All
-        # users not included in the list will not be permitted to view the repository on
-        # Sourcegraph. Depending on the bindID option in the permissions.userMapping site
-        # configuration property, the elements of the list are either all usernames (bindID of
-        # "username") or all email addresses (bindID of "email").
-        bindIDs: [String!]!
-        # The level of repository permission.
-        perm: RepositoryPermission = READ
+        # A list of user identifiers and their repository permissions, which defines the set of
+        # users who may view the repository. All users not included in the list will not be
+        # permitted to view the repository on Sourcegraph.
+        userPermissions: [UserPermission!]!
     ): EmptyResponse!
     # Schedule a permissions sync for given repository. This queries the repository's code host for
     # all users' permissions associated with the repository, so that the current permissions apply
@@ -419,6 +415,16 @@ type Mutation {
     # repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
     # the user's operations on Sourcegraph.
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
+}
+
+# A user (identified either by username or email address) with its repository permission.
+input UserPermission {
+    # Depending on the bindID option in the permissions.userMapping site configuration property,
+    # the elements of the list are either all usernames (bindID of "username") or all email
+    # addresses (bindID of "email").
+    bindID: String!
+    # The highest level of repository permission.
+    permission: RepositoryPermission = READ
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created
@@ -1767,7 +1773,7 @@ type Repository implements Node & GenericSearchResultInterface {
     # "permissions.userMapping" in site configuration.
     authorizedUsers(
         # Permission that the user has on this repository.
-        perm: RepositoryPermission = READ
+        permission: RepositoryPermission = READ
         # Number of users to return after the given cursor.
         first: Int!
         # Opaque pagination cursor.

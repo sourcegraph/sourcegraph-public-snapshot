@@ -251,13 +251,17 @@ Next, set the list of users allowed to view the repository:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsForUsers(repository: "<repo ID>", bindIDs: ["user@example.com"]) {
+  setRepositoryPermissionsForUsers(
+    repository: "<repo ID>", 
+    userPermissions: [
+      { bindID: "user@example.com" }
+    ]) {
     alwaysNil
   }
 }
 ```
 
-Now, only the users specified in the `bindIDs` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
+Now, only the users specified in the `userPermissions` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
 
 You can call `setRepositoryPermissionsForUsers` repeatedly to set permissions for each repository, and whenever you want to change the list of authorized users.
 
