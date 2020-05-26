@@ -17,15 +17,50 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
+func forAll(nodes []Node, fn func(Node) bool) bool {
+	result := true
+	Visit(nodes, func(node Node) {
+		result = fn(node) && result
+	})
+	return result
+}
+
+func exists(nodes []Node, fn func(Node) bool) bool {
+	result := false
+	Visit(nodes, func(node Node) {
+		result = fn(node) || result
+	})
+	return result
+}
+
+// containsPattern returns true if any descendent of nodes is a search pattern.
+func containsPattern(node Node) bool {
+	return exists([]Node{node}, func(node Node) bool {
+		_, ok := node.(Pattern)
+		return ok
+	})
+}
+
+// returns true if descendent of node contains and/or expressions.
+func containsAndOrExpression(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		if term, ok := node.(Operator); ok {
+			if term.Kind == And || term.Kind == Or {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 // isPatternExpression returns true if every leaf node in a tree root at node is
 // a search pattern.
 func isPatternExpression(nodes []Node) bool {
-	result := true
 	// Any non-pattern, i.e., Parameter, falsifies the predicate.
-	VisitParameter(nodes, func(_, _ string, _ bool) {
-		result = false
+	return forAll(nodes, func(node Node) bool {
+		_, ok := node.(Parameter)
+		return !ok
 	})
-	return result
 }
 
 // ContainsAndOrKeyword returns true if this query contains or- or and-
