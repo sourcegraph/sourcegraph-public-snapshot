@@ -46,8 +46,8 @@ type BundleManagerClient interface {
 	// DeleteUpload removes the upload file with the given identifier from disk.
 	DeleteUpload(ctx context.Context, bundleID int) error
 
-	// GetUploads retrieves a raw LSIF upload from disk. The file is written to a file in the
-	// given directory with a random filename. The generated filename is returned on success.
+	// GetUploads retrieves a raw LSIF upload from the bundle manager. The file is written to a file
+	// in  the given directory with a random filename. The generated filename is returned on success.
 	GetUpload(ctx context.Context, bundleID int, dir string) (string, error)
 
 	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
@@ -86,10 +86,12 @@ var defaultTransport = &ot.Transport{
 }
 
 type bundleManagerClientImpl struct {
-	httpClient       *http.Client
-	httpLimiter      *parallel.Run
-	bundleManagerURL string
-	UserAgent        string
+	httpClient          *http.Client
+	httpLimiter         *parallel.Run
+	bundleManagerURL    string
+	userAgent           string
+	maxPayloadSizeBytes int
+	ioCopy              func(io.Writer, io.Reader) (int64, error)
 }
 
 var _ BundleManagerClient = &bundleManagerClientImpl{}
@@ -97,10 +99,12 @@ var _ baseClient = &bundleManagerClientImpl{}
 
 func New(bundleManagerURL string) BundleManagerClient {
 	return &bundleManagerClientImpl{
-		httpClient:       &http.Client{Transport: defaultTransport},
-		httpLimiter:      parallel.NewRun(500),
-		bundleManagerURL: bundleManagerURL,
-		UserAgent:        filepath.Base(os.Args[0]),
+		httpClient:          &http.Client{Transport: defaultTransport},
+		httpLimiter:         parallel.NewRun(500),
+		bundleManagerURL:    bundleManagerURL,
+		userAgent:           filepath.Base(os.Args[0]),
+		maxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
+		ioCopy:              io.Copy,
 	}
 }
 
@@ -172,8 +176,8 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 	return nil
 }
 
-// GetUploads retrieves a raw LSIF upload from disk. The file is written to a file in the
-// given directory with a random filename. The generated filename is returned on success.
+// GetUploads retrieves a raw LSIF upload from the bundle manager. The file is written to a file
+// in  the given directory with a random filename. The generated filename is returned on success.
 func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, dir string) (_ string, err error) {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
 	if err != nil {
@@ -190,38 +194,37 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		}
 	}()
 
-	totalWritten := int64(0)
+	seek := int64(0)
 	for {
-		q := url.Query()
-		q.Set("seek", fmt.Sprintf("%d", totalWritten))
-		url.RawQuery = q.Encode()
-
-		body, err := c.do(ctx, "GET", url, nil)
-		if err != nil {
-			return "", err
+		n, err := c.getUploadChunk(ctx, f, url, seek)
+		if err == nil {
+			return f.Name(), nil
 		}
-		defer body.Close()
-
-		//
-		// TODO - need to test these conditions specifically now
-		//
-
-		if n, err := io.Copy(f, body); err != nil {
-			if isConnectionError(err) {
-				log15.Error("Failure to download bundle from manager - error occurred on read", "n", n)
-				totalWritten += n
-				continue
-			}
-
+		if !isConnectionError(err) {
 			return "", err
 		}
 
-		return f.Name(), nil
+		seek += n
+		log15.Warn("Transient error while reading payload", "error", err)
 	}
 }
 
-// TODO(efritz) - envvar / configure
-const MaxPayloadSizeBytes = 100 * 1000 * 1000
+// getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as
+// indicated by seek. The number of bytes written to the given writer is returned, along with any
+// error.
+func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (n int64, err error) {
+	q := url.Query()
+	q.Set("seek", fmt.Sprintf("%d", seek))
+	url.RawQuery = q.Encode()
+
+	body, err := c.do(ctx, "GET", url, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer body.Close()
+
+	return c.ioCopy(w, body)
+}
 
 // SendDB transfers a converted database to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) error {
@@ -230,14 +233,14 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, file
 		return err
 	}
 
-	if fileInfo.Size() <= int64(MaxPayloadSizeBytes) {
+	if fileInfo.Size() <= int64(c.maxPayloadSizeBytes) {
 		return c.sendDB(ctx, bundleID, filename)
 	}
 
 	return c.sendDBMultipart(ctx, bundleID, filename)
 }
 
-// TODO(efritz) - document
+// sendDB performs a single request to the bundle manager.
 func (c *bundleManagerClientImpl) sendDB(ctx context.Context, bundleID int, filename string) error {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d", bundleID), nil)
 	if err != nil {
@@ -258,9 +261,10 @@ func (c *bundleManagerClientImpl) sendDB(ctx context.Context, bundleID int, file
 	return nil
 }
 
-// TODO(efritz) - document
+// sendDBMultipart splits the database file into chunks small enough to upload, then performs a
+// series of request to the bundle manager.
 func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID int, filename string) error {
-	files, cleanup, err := codeintelutils.SplitFile(filename, MaxPayloadSizeBytes)
+	files, cleanup, err := codeintelutils.SplitFile(filename, c.maxPayloadSizeBytes)
 	if err != nil {
 		return err
 	}
@@ -292,6 +296,8 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 		body.Close()
 	}
 
+	// We've uploaded all of our parts, signal the bundle manager to concatenate all
+	// of the part files together so it can begin to serve queries with the new database.
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/stitch", bundleID), nil)
 	if err != nil {
 		return err
@@ -363,7 +369,7 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 	req = req.WithContext(ctx)
 
 	if c.httpLimiter != nil {
