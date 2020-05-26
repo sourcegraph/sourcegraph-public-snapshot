@@ -1435,7 +1435,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job)
+	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job, "http://localhost")
 	if err != nil {
 		t.Fatal(err)
 	}
