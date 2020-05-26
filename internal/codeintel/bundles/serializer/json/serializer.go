@@ -1,64 +1,61 @@
-package serializer
+package json
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
-	"io"
-	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-type defaultSerializer struct{}
+type jsonSerializer struct{}
 
-var _ Serializer = &defaultSerializer{}
+var _ serializer.Serializer = &jsonSerializer{}
 
-func NewDefaultSerializer() Serializer {
-	return &defaultSerializer{}
+func New() serializer.Serializer {
+	return &jsonSerializer{}
 }
 
-func (*defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
-	rangePairs := []interface{}{}
+func (*jsonSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
+	rangePairs := make([]interface{}, 0, len(d.Ranges))
 	for k, v := range d.Ranges {
 		if v.MonikerIDs == nil {
 			v.MonikerIDs = []types.ID{}
 		}
 
-		vs := map[string]interface{}{
-			"startLine":          v.StartLine,
-			"startCharacter":     v.StartCharacter,
-			"endLine":            v.EndLine,
-			"endCharacter":       v.EndCharacter,
-			"definitionResultId": v.DefinitionResultID,
-			"referenceResultId":  v.ReferenceResultID,
-			"hoverResultId":      v.HoverResultID,
-			"monikerIds":         map[string]interface{}{"type": "set", "value": v.MonikerIDs},
+		vs := SerializingRange{
+			StartLine:          v.StartLine,
+			StartCharacter:     v.StartCharacter,
+			EndLine:            v.EndLine,
+			EndCharacter:       v.EndCharacter,
+			DefinitionResultID: v.DefinitionResultID,
+			ReferenceResultID:  v.ReferenceResultID,
+			HoverResultID:      v.HoverResultID,
+			MonikerIDs:         SerializingTaggedValue{Type: "set", Value: v.MonikerIDs},
 		}
 
 		rangePairs = append(rangePairs, []interface{}{k, vs})
 	}
 
-	hoverResultPairs := []interface{}{}
+	hoverResultPairs := make([]interface{}, 0, len(d.HoverResults))
 	for k, v := range d.HoverResults {
 		hoverResultPairs = append(hoverResultPairs, []interface{}{k, v})
 	}
 
-	monikerPairs := []interface{}{}
+	monikerPairs := make([]interface{}, 0, len(d.Monikers))
 	for k, v := range d.Monikers {
 		monikerPairs = append(monikerPairs, []interface{}{k, v})
 	}
 
-	packageInformationPairs := []interface{}{}
+	packageInformationPairs := make([]interface{}, 0, len(d.PackageInformation))
 	for k, v := range d.PackageInformation {
 		packageInformationPairs = append(packageInformationPairs, []interface{}{k, v})
 	}
 
-	encoded, err := json.Marshal(map[string]interface{}{
-		"ranges":             map[string]interface{}{"type": "map", "value": rangePairs},
-		"hoverResults":       map[string]interface{}{"type": "map", "value": hoverResultPairs},
-		"monikers":           map[string]interface{}{"type": "map", "value": monikerPairs},
-		"packageInformation": map[string]interface{}{"type": "map", "value": packageInformationPairs},
+	encoded, err := json.Marshal(SerializingDocument{
+		Ranges:             SerializingTaggedValue{Type: "map", Value: rangePairs},
+		HoverResults:       SerializingTaggedValue{Type: "map", Value: hoverResultPairs},
+		Monikers:           SerializingTaggedValue{Type: "map", Value: monikerPairs},
+		PackageInformation: SerializingTaggedValue{Type: "map", Value: packageInformationPairs},
 	})
 	if err != nil {
 		return nil, err
@@ -67,20 +64,20 @@ func (*defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, err
 	return compress(encoded)
 }
 
-func (defaultSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
-	documentPathPairs := []interface{}{}
+func (jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
+	documentPathPairs := make([]interface{}, 0, len(rc.DocumentPaths))
 	for k, v := range rc.DocumentPaths {
 		documentPathPairs = append(documentPathPairs, []interface{}{k, v})
 	}
 
-	documentIDRangeIDPairs := []interface{}{}
+	documentIDRangeIDPairs := make([]interface{}, 0, len(rc.DocumentIDRangeIDs))
 	for k, v := range rc.DocumentIDRangeIDs {
 		documentIDRangeIDPairs = append(documentIDRangeIDPairs, []interface{}{k, v})
 	}
 
-	encoded, err := json.Marshal(map[string]interface{}{
-		"documentPaths":      map[string]interface{}{"type": "map", "value": documentPathPairs},
-		"documentIdRangeIds": map[string]interface{}{"type": "map", "value": documentIDRangeIDPairs},
+	encoded, err := json.Marshal(SerializingResultChunk{
+		DocumentPaths:      SerializingTaggedValue{Type: "map", Value: documentPathPairs},
+		DocumentIDRangeIDs: SerializingTaggedValue{Type: "map", Value: documentIDRangeIDPairs},
 	})
 	if err != nil {
 		return nil, err
@@ -89,14 +86,8 @@ func (defaultSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byt
 	return compress(encoded)
 }
 
-func (defaultSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
-	payload := struct {
-		Ranges             wrappedMapValue `json:"ranges"`
-		HoverResults       wrappedMapValue `json:"hoverResults"`
-		Monikers           wrappedMapValue `json:"monikers"`
-		PackageInformation wrappedMapValue `json:"packageInformation"`
-	}{}
-
+func (jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
+	var payload SerializedDocument
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.DocumentData{}, err
 	}
@@ -129,12 +120,8 @@ func (defaultSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData,
 	}, nil
 }
 
-func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
-	payload := struct {
-		DocumentPaths      wrappedMapValue `json:"documentPaths"`
-		DocumentIDRangeIDs wrappedMapValue `json:"documentIdRangeIds"`
-	}{}
-
+func (jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
+	var payload SerializedResultChunk
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.ResultChunkData{}, err
 	}
@@ -144,7 +131,7 @@ func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChun
 		return types.ResultChunkData{}, err
 	}
 
-	documentIDRangeIDs, err := unmarshalWrappedDocumentIdRangeIDs(payload.DocumentIDRangeIDs.Value)
+	documentIDRangeIDs, err := unmarshalWrappedDocumentIDRangeIDs(payload.DocumentIDRangeIDs.Value)
 	if err != nil {
 		return types.ResultChunkData{}, err
 	}
@@ -155,24 +142,11 @@ func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChun
 	}, nil
 }
 
-//
-//
-//
-
 func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeData, error) {
 	m := map[types.ID]types.RangeData{}
 	for _, pair := range pairs {
 		var id ID
-		var value struct {
-			StartLine          int             `json:"startLine"`
-			StartCharacter     int             `json:"startCharacter"`
-			EndLine            int             `json:"endLine"`
-			EndCharacter       int             `json:"endCharacter"`
-			DefinitionResultID ID              `json:"definitionResultId"`
-			ReferenceResultID  ID              `json:"referenceResultId"`
-			HoverResultID      ID              `json:"hoverResultId"`
-			MonikerIDs         wrappedSetValue `json:"monikerIds"`
-		}
+		var value SerializedRange
 
 		target := []interface{}{&id, &value}
 		if err := json.Unmarshal([]byte(pair), &target); err != nil {
@@ -225,12 +199,7 @@ func unmarshalWrappedMonikers(pairs []json.RawMessage) (map[types.ID]types.Monik
 	m := map[types.ID]types.MonikerData{}
 	for _, pair := range pairs {
 		var id ID
-		var value struct {
-			Kind                 string `json:"kind"`
-			Scheme               string `json:"scheme"`
-			Identifier           string `json:"identifier"`
-			PackageInformationID ID     `json:"packageInformationId"`
-		}
+		var value SerializedMoniker
 
 		target := []interface{}{&id, &value}
 		if err := json.Unmarshal([]byte(pair), &target); err != nil {
@@ -252,10 +221,7 @@ func unmarshalWrappedPackageInformation(pairs []json.RawMessage) (map[types.ID]t
 	m := map[types.ID]types.PackageInformationData{}
 	for _, pair := range pairs {
 		var id ID
-		var value struct {
-			Name    string `json:"name"`
-			Version string `json:"version"`
-		}
+		var value SerializedPackageInformation
 
 		target := []interface{}{&id, &value}
 		if err := json.Unmarshal([]byte(pair), &target); err != nil {
@@ -288,14 +254,11 @@ func unmarshalWrappedDocumentPaths(pairs []json.RawMessage) (map[types.ID]string
 	return m, nil
 }
 
-func unmarshalWrappedDocumentIdRangeIDs(pairs []json.RawMessage) (map[types.ID][]types.DocumentIDRangeID, error) {
+func unmarshalWrappedDocumentIDRangeIDs(pairs []json.RawMessage) (map[types.ID][]types.DocumentIDRangeID, error) {
 	m := map[types.ID][]types.DocumentIDRangeID{}
 	for _, pair := range pairs {
 		var id ID
-		var value []struct {
-			DocumentID ID `json:"documentId"`
-			RangeID    ID `json:"rangeId"`
-		}
+		var value []SerializedDocumentIDRangeID
 
 		target := []interface{}{&id, &value}
 		if err := json.Unmarshal([]byte(pair), &target); err != nil {
@@ -314,84 +277,4 @@ func unmarshalWrappedDocumentIdRangeIDs(pairs []json.RawMessage) (map[types.ID][
 	}
 
 	return m, nil
-}
-
-// TODO(efritz) - document
-func compress(uncompressed []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	gzipWriter := gzip.NewWriter(&buf)
-
-	if _, err := io.Copy(gzipWriter, bytes.NewReader(uncompressed)); err != nil {
-		return nil, err
-	}
-
-	if err := gzipWriter.Close(); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-// unmarshalGzippedJSON unmarshals the gzip+json encoded data.
-func unmarshalGzippedJSON(data []byte, payload interface{}) error {
-	gzipReader, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
-	return json.NewDecoder(gzipReader).Decode(&payload)
-}
-
-// wrappedMapValue represents a JSON-encoded map with the following form.
-// This maintains the same functionality that exists on the TypeScript side.
-//
-//     {
-//       "value": [
-//         ["key-1", "value-1"],
-//         ["key-2", "value-2"],
-//         ...
-//       ]
-//     }
-type wrappedMapValue struct {
-	Value []json.RawMessage `json:"value"`
-}
-
-// wrappedSetValue represents a JSON-encoded set with the following form.
-// This maintains the same functionality that exists on the TypeScript side.
-//
-//     {
-//       "value": [
-//         "value-1",
-//         "value-2",
-//         ...
-//       ]
-//     }
-type wrappedSetValue struct {
-	Value []json.RawMessage `json:"value"`
-}
-
-//
-//
-//
-
-type ID string
-
-func (id *ID) UnmarshalJSON(raw []byte) error {
-	if raw[0] == '"' {
-		var v string
-		if err := json.Unmarshal(raw, &v); err != nil {
-			return err
-		}
-
-		*id = ID(v)
-		return nil
-	}
-
-	var v int64
-	if err := json.Unmarshal(raw, &v); err != nil {
-		return err
-	}
-
-	*id = ID(strconv.FormatInt(v, 10))
-	return nil
 }
