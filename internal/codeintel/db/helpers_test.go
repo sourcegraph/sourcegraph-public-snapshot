@@ -89,7 +89,50 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting dump: %s", err)
+			t.Fatalf("unexpected error while inserting upload: %s", err)
+		}
+	}
+}
+
+// insertIndexes populates the lsif_indexes table with the given index models.
+func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
+	for _, index := range indexes {
+		if index.Commit == "" {
+			index.Commit = makeCommit(index.ID)
+		}
+		if index.State == "" {
+			index.State = "completed"
+		}
+		if index.RepositoryID == 0 {
+			index.RepositoryID = 50
+		}
+
+		query := sqlf.Sprintf(`
+			INSERT INTO lsif_indexes (
+				id,
+				commit,
+				queued_at,
+				state,
+				failure_summary,
+				failure_stacktrace,
+				started_at,
+				finished_at,
+				repository_id
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+		`,
+			index.ID,
+			index.Commit,
+			index.QueuedAt,
+			index.State,
+			index.FailureSummary,
+			index.FailureStacktrace,
+			index.StartedAt,
+			index.FinishedAt,
+			index.RepositoryID,
+		)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while inserting index: %s", err)
 		}
 	}
 }

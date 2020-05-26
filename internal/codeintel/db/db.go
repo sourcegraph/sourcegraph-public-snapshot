@@ -16,6 +16,8 @@ import (
 //   - lsif_packages
 //   - lsif_references
 //   - lsif_uploads
+//   - lsif_indexable_repositories
+//   - lsif_indexes
 //
 // These tables are kept separate from the remainder of Sourcegraph tablespace.
 type DB interface {
@@ -127,8 +129,38 @@ type DB interface {
 	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 	UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) error
 
-	// RepoName returns the name for the repo with the given identifier. This is the only method
-	// in this package that touches any table that does not start with `lsif_`.
+	// IndexableRepositories returns the identifiers of all indexable repositories.
+	IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) ([]IndexableRepository, error)
+
+	// UpdateIndexableRepository updates the metadata for an indexable repository. If the repository is not
+	// already marked as indexable, a new record will be created.
+	UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error
+
+	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
+	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
+
+	// IndexQueueSize returns the number of indexes in the queued state.
+	IndexQueueSize(ctx context.Context) (int, error)
+
+	// IsQueued returns true if there is an index or an upload for the repository and commit.
+	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+
+	// InsertIndex inserts a new index and returns its identifier.
+	InsertIndex(ctx context.Context, index Index) (int, error)
+
+	// MarkIndexComplete updates the state of the index to complete.
+	MarkIndexComplete(ctx context.Context, id int) (err error)
+
+	// MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
+	MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error)
+
+	// DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
+	// the index is returned along with a DB instance which wraps the transaction. This transaction must be
+	// closed. If there is no such unlocked index, a zero-value index and nil DB will be returned along with a
+	// false valued flag. This method must not be called from within a transaction.
+	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
+
+	// RepoName returns the name for the repo with the given identifier.
 	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
