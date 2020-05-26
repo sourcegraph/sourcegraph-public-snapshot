@@ -91,7 +91,7 @@ export async function integrationTestContext(
         sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
-    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
+    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData, mocks)
 
     const extensionAPI = await extensionHost.extensionAPI
     if (initModel.models) {

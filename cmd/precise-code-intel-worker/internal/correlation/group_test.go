@@ -15,12 +15,12 @@ import (
 func TestConvert(t *testing.T) {
 	state := &State{
 		LSIFVersion: "0.4.3",
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go", Contains: datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}}},
 			"d02": {URI: "bar.go", Contains: datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}}},
 			"d03": {URI: "baz.go", Contains: datastructures.IDSet{"r07": {}, "r08": {}, "r09": {}}},
 		},
-		RangeData: map[string]lsif.RangeData{
+		RangeData: map[string]lsif.Range{
 			"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: datastructures.IDSet{"m01": {}, "m02": {}}},
 			"r02": {StartLine: 2, StartCharacter: 3, EndLine: 4, EndCharacter: 5, ReferenceResultID: "x06", MonikerIDs: datastructures.IDSet{"m03": {}, "m04": {}}},
 			"r03": {StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6, DefinitionResultID: "x02"},
@@ -46,13 +46,13 @@ func TestConvert(t *testing.T) {
 			"x08": "foo",
 			"x09": "bar",
 		},
-		MonikerData: map[string]lsif.MonikerData{
+		MonikerData: map[string]lsif.Moniker{
 			"m01": {Kind: "import", Scheme: "scheme A", Identifier: "ident A", PackageInformationID: "p01"},
 			"m02": {Kind: "import", Scheme: "scheme B", Identifier: "ident B"},
 			"m03": {Kind: "export", Scheme: "scheme C", Identifier: "ident C", PackageInformationID: "p02"},
 			"m04": {Kind: "export", Scheme: "scheme D", Identifier: "ident D"},
 		},
-		PackageInformationData: map[string]lsif.PackageInformationData{
+		PackageInformationData: map[string]lsif.PackageInformation{
 			"p01": {Name: "pkg A", Version: "0.1.0"},
 			"p02": {Name: "pkg B", Version: "1.2.3"},
 		},
