@@ -27,18 +27,24 @@ func DBsDir(bundleDir string) string {
 	return filepath.Join(bundleDir, "dbs")
 }
 
-// UploadFilename returns the path fo the upload with the given identifier.
+// UploadFilename returns the path of the upload with the given identifier.
 func UploadFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.lsif.gz", id))
 }
 
+// UploadPartFilename returns the path of the upload with the given identifier and part index.
 func UploadPartFilename(bundleDir string, id, index int64) string {
 	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.%d.lsif.gz", id, index))
 }
 
-// DBFilename returns the path fo the database with the given identifier.
+// DBFilename returns the path of the database with the given identifier.
 func DBFilename(bundleDir string, id int64) string {
 	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+}
+
+// DBPartFilename returns the path of the database with the given identifier and part index.
+func DBPartFilename(bundleDir string, id, index int64) string {
+	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.%d.lsif.gz", id, index))
 }
 
 // PathExists returns (true, nil) if the specified path exists, or (false, error) if an error

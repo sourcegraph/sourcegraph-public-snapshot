@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -199,9 +200,14 @@ func TestGetUploadNotFound(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp directory: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	_, err := client.GetUpload(context.Background(), 42, "")
-	if err != ErrNotFound {
+	if _, err := client.GetUpload(context.Background(), 42, tempDir); err != ErrNotFound {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
 	}
 }
@@ -212,9 +218,14 @@ func TestGetUploadBadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp directory: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	_, err := client.GetUpload(context.Background(), 42, "")
-	if err == nil {
+	if _, err := client.GetUpload(context.Background(), 42, tempDir); err == nil {
 		t.Fatalf("unexpected nil error sending db")
 	}
 }
@@ -236,9 +247,19 @@ func TestSendDB(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.SendDB(context.Background(), 42, bytes.NewReader([]byte("payload\n")))
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
+		t.Fatalf("unexpected error creating temp directory: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	filename := filepath.Join(tempDir, "test.db")
+	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error writing file: %s", err)
+	}
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
+	if err := client.SendDB(context.Background(), 42, filename); err != nil {
 		t.Fatalf("unexpected error sending db: %s", err)
 	}
 }
@@ -249,9 +270,19 @@ func TestSendDBBadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp directory: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	filename := filepath.Join(tempDir, "test.db")
+	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error writing file: %s", err)
+	}
+
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	err := client.SendDB(context.Background(), 42, bytes.NewReader([]byte("payload\n")))
-	if err == nil {
+	if err := client.SendDB(context.Background(), 42, filename); err == nil {
 		t.Fatalf("unexpected nil error sending db")
 	}
 }

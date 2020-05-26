@@ -40,7 +40,7 @@ func TestStitchMultipart(t *testing.T) {
 		}
 	}
 
-	if err := stitchMultipart(bundleDir, 42); err != nil {
+	if err := stitchMultipart(bundleDir, 42, paths.UploadFilename, paths.UploadPartFilename, true); err != nil {
 		t.Fatalf("unexpected error stitching multipart files: %s", err)
 	}
 

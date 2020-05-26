@@ -51,7 +51,7 @@ type BundleManagerClient interface {
 
 	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
 	// will also remove the original upload file with the same identifier from disk.
-	SendDB(ctx context.Context, bundleID int, r io.Reader) error
+	SendDB(ctx context.Context, bundleID int, filename string) error
 
 	// Exists determines if a file exists on disk for all the supplied identifiers.
 	Exists(ctx context.Context, bundleIDs []int) (map[int]bool, error)
@@ -179,15 +179,6 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		return "", err
 	}
 
-	body, err := c.do(ctx, "GET", url, nil)
-	if err != nil {
-		if isConnectionError(err) {
-			log15.Error("Failure to download bundle from manager - error occurred on request")
-		}
-		return "", err
-	}
-	defer body.Close()
-
 	f, err := openRandomFile(dir)
 	if err != nil {
 		return "", err
@@ -198,24 +189,116 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		}
 	}()
 
-	if n, err := io.Copy(f, body); err != nil {
-		if isConnectionError(err) {
-			log15.Error("Failure to download bundle from manager - error occurred on read", "n", n)
-		}
-		return "", err
-	}
+	totalWritten := int64(0)
+	for {
+		q := url.Query()
+		q.Set("seek", fmt.Sprintf("%d", totalWritten))
+		url.RawQuery = q.Encode()
 
-	return f.Name(), nil
+		body, err := c.do(ctx, "GET", url, nil)
+		if err != nil {
+			return "", err
+		}
+		defer body.Close()
+
+		//
+		// TODO - need to test these conditions specifically now
+		//
+
+		if n, err := io.Copy(f, body); err != nil {
+			if isConnectionError(err) {
+				log15.Error("Failure to download bundle from manager - error occurred on read", "n", n)
+				totalWritten += n
+				continue
+			}
+
+			return "", err
+		}
+
+		return f.Name(), nil
+	}
 }
 
+// TODO(efritz) - envvar / configure
+const MaxPayloadSizeBytes = 100 * 1000 * 1000
+
 // SendDB transfers a converted database to the bundle manager to be stored on disk.
-func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io.Reader) error {
+func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) error {
+	fileInfo, err := os.Stat(filename)
+	if err != nil {
+		return err
+	}
+
+	if fileInfo.Size() <= int64(MaxPayloadSizeBytes) {
+		return c.sendDB(ctx, bundleID, filename)
+	}
+
+	return c.sendDBMultipart(ctx, bundleID, filename)
+}
+
+// TODO(efritz) - document
+func (c *bundleManagerClientImpl) sendDB(ctx context.Context, bundleID int, filename string) error {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d", bundleID), nil)
 	if err != nil {
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, r)
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	body, err := c.do(ctx, "POST", url, file)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// TODO(efritz) - document
+func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID int, filename string) error {
+	files, cleanup, err := splitFile(filename, MaxPayloadSizeBytes)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = cleanup(err)
+	}()
+
+	for i, file := range files {
+		fmt.Printf("SENDING PART\n")
+		f, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if closeErr := f.Close(); closeErr != nil {
+				err = multierror.Append(err, closeErr)
+			}
+		}()
+
+		url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, i), nil)
+		if err != nil {
+			return err
+		}
+
+		// TODO(efritz) - will also need a way to clean up old dump files
+		body, err := c.do(ctx, "POST", url, gzipReader(f))
+		if err != nil {
+			return err
+		}
+		body.Close()
+	}
+
+	fmt.Printf("SENDING STITCH REQUEST\n")
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/stitch", bundleID), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, nil)
 	if err != nil {
 		return err
 	}
