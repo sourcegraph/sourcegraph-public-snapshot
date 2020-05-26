@@ -56,6 +56,9 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: GQL.IU
                     <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
                 </div>
             )}
+            <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                Learn more about background permissions synching.
+            </a>
         </div>
     )
 }
