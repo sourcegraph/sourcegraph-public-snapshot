@@ -187,14 +187,15 @@ function createExtensionAPI(
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
-        workspace: {
+        // Note here we need to use Object.assign because 'workspace' object has getters
+        // that we need to preserve (for now)
+        workspace: Object.assign(workspace, {
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-            ...workspace,
-        },
+        }),
 
         configuration,
 

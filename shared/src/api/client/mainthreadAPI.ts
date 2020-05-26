@@ -28,12 +28,19 @@ export const initMainThreadAPI = (
     )
 
     // Workspace
-    subscription.add(roots.subscribe(rs => {
-        ext.syncRoots(rs || [])
-    }))
+    subscription.add(
+        roots.subscribe(rs => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            ext.syncRoots(rs || [])
+        })
+    )
 
-    // eslint-disable-next-line no-void
-    subscription.add(versionContext.subscribe(ctx => void ext.syncVersionContext(ctx)))
+    subscription.add(
+        versionContext.subscribe(ctx => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            ext.syncVersionContext(ctx)
+        })
+    )
 
     const mainAPI: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
