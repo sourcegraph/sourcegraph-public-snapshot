@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+var ErrIDIsZero = errors.New("invalid node id")
+
 // Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
 	store       *ee.Store
@@ -359,7 +361,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	}
 
 	if campaignID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -386,7 +388,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 	}
 
 	if campaignID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
@@ -617,7 +619,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	if campaignID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -648,7 +650,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	}
 
 	if campaignID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -678,7 +680,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	}
 
 	if patchID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
@@ -708,7 +710,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	if changesetID == 0 {
-		return nil, nil
+		return nil, ErrIDIsZero
 	}
 
 	// Check for existence of changeset so we don't swallow that error.
