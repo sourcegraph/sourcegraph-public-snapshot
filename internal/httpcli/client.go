@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// A Doer captures the Do method of an http.Client. It faciliates decorating
+// A Doer captures the Do method of an http.Client. It facilitates decorating
 // an http.Client with orthogonal concerns such as logging, metrics, retries,
 // etc.
 type Doer interface {

@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -194,7 +193,6 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
-	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
@@ -226,17 +224,14 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return err
 	}
 
-	// httpapi.NewLSIFServerProxy is set by enterprise frontend
-	var lsifServerProxy *httpapi.LSIFServerProxy
-	if httpapi.NewLSIFServerProxy != nil {
-		var err error
-		if lsifServerProxy, err = httpapi.NewLSIFServerProxy(); err != nil {
-			return err
-		}
+	// httpapi.NewCodeIntelUploadHandler is set by the enterprise frontend
+	var codeintelUploadHandler http.Handler
+	if httpapi.NewCodeIntelUploadHandler != nil {
+		codeintelUploadHandler = httpapi.NewCodeIntelUploadHandler()
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, lsifServerProxy)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, codeintelUploadHandler)
 	if err != nil {
 		return err
 	}

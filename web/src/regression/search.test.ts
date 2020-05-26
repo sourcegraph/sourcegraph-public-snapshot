@@ -269,7 +269,7 @@ describe('Search regression test suite', () => {
                 config.sourcegraphBaseUrl +
                     '/search?q=String+repo:%5Egithub.com/adjust/go-wrk%24+&patternType=regexp&case=yes'
             )
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 3)
         })
         test('Global text search, fork:only, few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
@@ -501,54 +501,52 @@ describe('Search regression test suite', () => {
         })
 
         test('Search suggestions', async () => {
+            const getSearchFieldValue = (): Promise<string | undefined> =>
+                driver.page.evaluate(
+                    () => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value
+                )
             // Repo autocomplete from homepage
             await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-query-input')
+            // Using id selector rather than `e2e-` classes as Monaco doesn't allow customizing classes
+            await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
-                selector: '.e2e-query-input',
+                selector: '#monaco-query-input',
                 newText: 'go-jwt-middlew',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector('.e2e-query-suggestions')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.e2e-query-suggestions li',
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
             })
-            await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/github.com/auth0/go-jwt-middleware`)
+            assert.strictEqual(await getSearchFieldValue(), 'repo:^github\\.com/auth0/go-jwt-middleware$ ')
+
+            // Submit search
+            await driver.page.keyboard.press(Key.Enter)
 
             // File autocomplete from repo search bar
-            await driver.page.waitForSelector('.e2e-repo-container .e2e-query-input')
-            await driver.replaceText({
-                selector: '.e2e-repo-container .e2e-query-input',
-                newText: 'READM',
-                enterTextMethod: 'type',
-            })
-            await driver.page.waitForSelector('.e2e-repo-container .e2e-query-suggestions')
-            await driver.findElementWithText('README.md', {
-                selector: '.e2e-repo-container .e2e-query-suggestions',
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.page.focus('#monaco-query-input')
+            await driver.page.keyboard.type('jwtmi')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('jwtmiddleware.go', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
                 wait: { timeout: 5000 },
             })
             await driver.page.keyboard.press(Key.ArrowDown)
-            await driver.page.keyboard.press(Key.Enter)
-            await driver.page.waitForFunction(() => document.location.href.endsWith('/README.md'), { timeout: 5000 })
+            await driver.page.keyboard.press(Key.Tab)
+            assert.strictEqual(
+                await getSearchFieldValue(),
+                'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
+            )
 
             // Symbol autocomplete in top search bar
-            await driver.page.waitForSelector('.e2e-query-input')
-            await driver.replaceText({
-                selector: '.e2e-query-input',
-                newText: 'checkj',
-                enterTextMethod: 'type',
-            })
-            await driver.page.waitForSelector('.e2e-query-suggestions')
-            await driver.findElementWithText('CheckJWT', {
-                selector: '.e2e-query-suggestions',
+            await driver.page.keyboard.type('On')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('OnError', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
                 wait: { timeout: 5000 },
-            })
-            await driver.page.keyboard.press(Key.ArrowDown)
-            await driver.page.keyboard.press(Key.Enter)
-            await driver.page.waitForFunction(() => document.location.pathname.endsWith('/jwtmiddleware.go'), {
-                timeout: 5000,
             })
         })
 
@@ -631,13 +629,7 @@ describe('Search regression test suite', () => {
 
         test('Toggling between plain and interactive mode shows correct elements', async () => {
             await driver.page.goto(`${config.sourcegraphBaseUrl}/search`)
-            await driver.page.waitForSelector('.e2e-query-input')
-            const numQueryInputs = () =>
-                driver.page.evaluate(() => {
-                    const queryInput = document.querySelectorAll<HTMLInputElement>('.e2e-query-input')
-                    return queryInput.length
-                })
-            assert.strictEqual(await numQueryInputs(), 1)
+            await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.waitForSelector('.e2e-search-mode-toggle')
             await driver.page.click('.e2e-search-mode-toggle')
             await driver.page.waitForSelector('.e2e-search-mode-toggle__interactive-mode')
@@ -677,7 +669,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('.filter-input')
             await driver.page.keyboard.type('auth0/go-jwt-middleware$')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%22auth0/go-jwt-middleware%24%22&patternType=literal')
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-search-result')
@@ -688,7 +680,9 @@ describe('Search regression test suite', () => {
             await driver.page.click('.e2e-query-input')
             await driver.page.keyboard.type('error')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=error+repo:auth0/go-jwt-middleware%24&patternType=literal')
+            await driver.assertWindowLocation(
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22&patternType=literal'
+            )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-file-match-children-item-wrapper')
@@ -702,7 +696,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README&patternType=literal'
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
@@ -719,7 +713,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.type('markdown')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=error+repo:auth0/go-jwt-middleware%24+file:README+lang:markdown&patternType=literal'
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22+file:%22README%22+lang:%22markdown%22&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
@@ -741,9 +735,9 @@ describe('Search regression test suite', () => {
 
                     return (
                         textContents.length === 3 &&
-                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
-                        textContents.includes('file:README') &&
-                        textContents.includes('lang:markdown')
+                        textContents.includes('repo:"auth0/go-jwt-middleware$"') &&
+                        textContents.includes('file:"README"') &&
+                        textContents.includes('lang:"markdown"')
                     )
                 })
             assert.strictEqual(await hasCorrectFilters(), true)
@@ -785,10 +779,11 @@ describe('Search regression test suite', () => {
 
         test('Querying from a repository tree page produces correct query and filter values', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware')
-            await driver.page.waitForSelector('.tree-page__section-search  .query-input2 .e2e-query-input')
-            await driver.page.click('.tree-page__section-search  .query-input2 .e2e-query-input')
+            await driver.page.waitForSelector('.query-input2 .e2e-query-input')
+            await driver.page.click('.query-input2 .e2e-query-input')
             await driver.page.keyboard.type('test')
             await driver.page.keyboard.press('Enter')
+            // TODO(uwedeportivo): the query string flips between "test" before or after the repo clause
             await driver.assertWindowLocation(
                 '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24+test&patternType=literal'
             )
@@ -877,7 +872,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/auth0/go-jwt-middleware%24%22&patternType=literal'
             )
         })
 
@@ -889,7 +884,7 @@ describe('Search regression test suite', () => {
             await driver.page.keyboard.press('Backspace')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middlewar&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/auth0/go-jwt-middlewar%22&patternType=literal'
             )
         })
         test('Adding and editing finite filters', async () => {
@@ -901,14 +896,14 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:no&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:%22no%22&patternType=literal')
             await driver.page.waitForSelector('.filter-input')
             await driver.page.click('.filter-input')
             await driver.page.waitForSelector('.e2e-filter-input-finite-form')
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:only&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test+fork:%22only%22&patternType=literal')
         })
     })
 })

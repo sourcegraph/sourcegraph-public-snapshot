@@ -11,7 +11,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { NavLinks } from '../../../nav/NavLinks'
 import { showDotComMarketing } from '../../../util/features'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ThemePreferenceProps } from '../../../theme'
@@ -19,11 +19,20 @@ import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue, FilterType } from '../../../../../shared/src/search/interactive/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps } from '../..'
+import {
+    parseSearchURLQuery,
+    InteractiveSearchProps,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    CopyQueryButtonProps,
+} from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
 import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContext } from '../../../schema/site.schema'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -36,7 +45,9 @@ interface InteractiveModeProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
+        CopyQueryButtonProps,
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'>,
+        VersionContextProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -49,6 +60,9 @@ interface InteractiveModeProps
     authenticatedUser: GQL.IUser | null
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
+
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 interface InteractiveModeState {
@@ -220,6 +234,15 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <SearchModeToggle {...this.props} interactiveSearchMode={true} />
+                                <VersionContextDropdown
+                                    history={this.props.history}
+                                    navbarSearchQuery={this.props.navbarSearchState.query}
+                                    caseSensitive={this.props.caseSensitive}
+                                    patternType={this.props.patternType}
+                                    versionContext={this.props.versionContext}
+                                    setVersionContext={this.props.setVersionContext}
+                                    availableVersionContexts={this.props.availableVersionContexts}
+                                />
                                 <QueryInput
                                     {...this.props}
                                     location={this.props.location}
@@ -235,6 +258,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
+                                    keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                                 />
                                 <SearchButton noHelp={true} />
                             </div>

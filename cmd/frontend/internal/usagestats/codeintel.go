@@ -84,13 +84,10 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 
 	eventStatisticByName := map[string]func(p *ciUsagePeriod) *ciEventStatistics{
 		"codeintel.lsifHover":         func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.LSIF },
-		"codeintel.lspHover":          func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.LSP },
 		"codeintel.searchHover":       func(p *ciUsagePeriod) *ciEventStatistics { return p.Hover.Search },
 		"codeintel.lsifDefinitions":   func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.LSIF },
-		"codeintel.lspDefinitions":    func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.LSP },
 		"codeintel.searchDefinitions": func(p *ciUsagePeriod) *ciEventStatistics { return p.Definitions.Search },
 		"codeintel.lsifReferences":    func(p *ciUsagePeriod) *ciEventStatistics { return p.References.LSIF },
-		"codeintel.lspReferences":     func(p *ciUsagePeriod) *ciEventStatistics { return p.References.LSP },
 		"codeintel.searchReferences":  func(p *ciUsagePeriod) *ciEventStatistics { return p.References.Search },
 	}
 
@@ -144,8 +141,12 @@ func codeIntelActivity(ctx context.Context, periodType db.PeriodType, periods in
 
 func newCodeIntelEventCategory() *ciEventCategoryStatistics {
 	return &ciEventCategoryStatistics{
-		LSIF:   &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
-		LSP:    &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
-		Search: &ciEventStatistics{EventLatencies: &ciEventLatencies{}},
+		LSIF:   codeIntelEventStatistics(),
+		LSP:    codeIntelEventStatistics(),
+		Search: codeIntelEventStatistics(),
 	}
+}
+
+func codeIntelEventStatistics() *ciEventStatistics {
+	return &ciEventStatistics{EventLatencies: &ciEventLatencies{}}
 }

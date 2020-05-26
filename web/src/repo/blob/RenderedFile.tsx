@@ -10,17 +10,18 @@ interface Props {
     dangerousInnerHTML: string
 
     location: H.Location
+    history: H.History
 }
 
 /**
  * Displays a file whose contents are rendered to HTML, such as a Markdown file.
  */
-export const RenderedFile: React.FunctionComponent<Props> = ({ dangerousInnerHTML, location }) => {
+export const RenderedFile: React.FunctionComponent<Props> = ({ dangerousInnerHTML, location, history }) => {
     useScrollToLocationHash(location)
     return (
         <div className="rendered-file">
             <div className="rendered-file__container">
-                <Markdown dangerousInnerHTML={dangerousInnerHTML} />
+                <Markdown dangerousInnerHTML={dangerousInnerHTML} history={history} />
             </div>
         </div>
     )

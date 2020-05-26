@@ -22,6 +22,7 @@ import {
     CaseSensitivityProps,
     InteractiveSearchProps,
     repoFilterForRepoRev,
+    CopyQueryButtonProps,
 } from '../search'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
@@ -38,6 +39,8 @@ import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
 import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
+import * as H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -51,7 +54,9 @@ export interface RepoContainerContext
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -81,7 +86,9 @@ interface RepoContainerProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -89,6 +96,7 @@ interface RepoContainerProps
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (state: QueryState) => void
+    history: H.History
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -284,7 +292,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.repoOrError} />}
+                    subtitle={<ErrorMessage error={this.state.repoOrError} history={this.props.history} />}
                 />
             )
         }
@@ -310,6 +318,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            copyQueryButton: this.props.copyQueryButton,
+            versionContext: this.props.versionContext,
         }
 
         return (

@@ -1,35 +1,38 @@
 #!/usr/bin/env bash
 
 set -ex
-cd $(dirname "${BASH_SOURCE[0]}")
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 parallel_run() {
-    ../ci/parallel_run.sh "$@"
+  ../ci/parallel_run.sh "$@"
 }
 
 go version
 go env
 
 CHECKS=(
-    ./yarn-deduplicate.sh \
-    ./docsite.sh \
-    ./gofmt.sh \
-    ./template-inlines.sh \
-    ./go-enterprise-import.sh \
-    ./go-dbconn-import.sh \
-    ./go-generate.sh \
-    ./go-lint.sh \
-    ./todo-security.sh \
-    ./no-localhost-guard.sh \
-    ./bash-syntax.sh \
-    ./check-owners.sh
+  ./yarn-deduplicate.sh
+  ./docsite.sh
+  ./gofmt.sh
+  ./template-inlines.sh
+  ./go-enterprise-import.sh
+  ./go-dbconn-import.sh
+  ./go-generate.sh
+  ./go-lint.sh
+  ./todo-security.sh
+  ./no-localhost-guard.sh
+  ./bash-syntax.sh
+  ./check-owners.sh
+  ./shfmt.sh
+  ./shellcheck.sh
+  ./licenses.sh
 )
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
 
 MAYBE_TIME_PREFIX=""
 if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-    MAYBE_TIME_PREFIX="env time -v"
+  MAYBE_TIME_PREFIX="env time -v"
 fi
 
 parallel_run "${MAYBE_TIME_PREFIX}" {} ::: "${CHECKS[@]}"

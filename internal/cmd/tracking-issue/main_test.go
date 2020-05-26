@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/machinebox/graphql"
@@ -19,20 +21,23 @@ var (
 	update        = flag.Bool("update", false, "update testdata golden")
 )
 
-func TestGenerate(t *testing.T) {
-	milestone := "3.13"
-	issues, prs := getIssuesAndPullRequestsFixtures(t, "sourcegraph", milestone, []string{"team/core-services"})
-	got := generate(workloads(issues, prs, milestone))
+func TestIntegration(t *testing.T) {
+	ti := &TrackingIssue{
+		Issue: &Issue{
+			Number:    9917,
+			Milestone: "3.16",
+			Labels:    []string{"tracking", "team/code-intelligence"},
+		},
+	}
+
+	loadTrackingIssueFixtures(t, "sourcegraph", ti)
+
+	got := ti.Workloads().Markdown(ti.LabelWhitelist)
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }
 
-func getIssuesAndPullRequestsFixtures(t testing.TB, org, milestone string, labels []string) ([]*Issue, []*PullRequest) {
-	type fixtures struct {
-		Issues       []*Issue
-		PullRequests []*PullRequest
-	}
-
+func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 	path := filepath.Join("testdata", "fixtures.json")
 
 	if *updateFixture {
@@ -43,20 +48,39 @@ func getIssuesAndPullRequestsFixtures(t testing.TB, org, milestone string, label
 				&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 			))),
 		)
-		issues, prs, err := listIssuesAndPullRequests(ctx, cli, org, milestone, labels)
+
+		var q strings.Builder
+		fmt.Fprintf(&q, "org:sourcegraph milestone:%s", issue.Milestone)
+		for _, label := range issue.Labels {
+			fmt.Fprintf(&q, " label:%s", label)
+		}
+
+		tracking, err := listTrackingIssues(ctx, cli, q.String())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		for _, issue := range issues {
+		for _, ti := range tracking {
+			if ti.Number == issue.Number {
+				issue = ti
+				break
+			}
+		}
+
+		err = loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, issue := range issue.Issues {
 			issue.Redact()
 		}
 
-		for _, pr := range prs {
+		for _, pr := range issue.PRs {
 			pr.Redact()
 		}
 
-		testutil.AssertGolden(t, path, true, fixtures{issues, prs})
+		testutil.AssertGolden(t, path, true, issue)
 	}
 
 	f, err := os.Open(path)
@@ -65,10 +89,9 @@ func getIssuesAndPullRequestsFixtures(t testing.TB, org, milestone string, label
 	}
 	defer f.Close()
 
-	var v fixtures
-	if err := json.NewDecoder(f).Decode(&v); err != nil {
+	if err := json.NewDecoder(f).Decode(issue); err != nil {
 		t.Fatal(err)
 	}
 
-	return v.Issues, v.PullRequests
+	issue.FillLabelWhitelist()
 }

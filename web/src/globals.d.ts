@@ -77,7 +77,11 @@ interface SourcegraphContext
      */
     site: Pick<
         import('./schema/site.schema').SiteConfiguration,
-        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled'
+        | 'auth.public'
+        | 'update.channel'
+        | 'campaigns.readAccess.enabled'
+        | 'disableNonCriticalTelemetry'
+        | 'permissions.backgroundSync'
     >
 
     /** Whether access tokens are enabled. */
@@ -127,6 +131,9 @@ interface SourcegraphContext
 
         brandName: string
     }
+
+    /** The publishable key for the billing service (Stripe). */
+    billingPublishableKey?: string
 }
 
 interface BrandAssets {
@@ -146,4 +153,9 @@ declare module 'worker-loader?*' {
         constructor()
     }
     export default WebpackWorker
+}
+
+declare module '*.scss' {
+    const cssModule: string
+    export default cssModule
 }

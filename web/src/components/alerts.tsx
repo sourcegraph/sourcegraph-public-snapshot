@@ -5,15 +5,16 @@ import { upperFirst } from 'lodash'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import classNames from 'classnames'
+import * as H from 'history'
 
 const renderError = (error: unknown): string =>
-    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')))
+    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
         .trim()
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')
 
-export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ error }) => (
-    <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} />
+export const ErrorMessage: React.FunctionComponent<{ error: unknown; history: H.History }> = ({ error, history }) => (
+    <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} history={history} />
 )
 
 /**
@@ -43,12 +44,13 @@ export const ErrorAlert: React.FunctionComponent<{
 
     className?: string
     style?: React.CSSProperties
-}> = ({ error, className, icon = true, prefix, ...rest }) => {
+    history: H.History
+}> = ({ error, className, icon = true, prefix, history, ...rest }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>
             {icon && <AlertCircleIcon className="icon icon-inline" />} {prefix && <strong>{prefix}:</strong>}{' '}
-            <ErrorMessage error={error} />
+            <ErrorMessage error={error} history={history} />
         </div>
     )
 }

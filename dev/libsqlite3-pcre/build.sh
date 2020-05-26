@@ -11,81 +11,85 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
 # Print the absolute path of the sqlite3 shared library for this platform,
 # or terminate with an error.
 function libpath() {
-    case "$OSTYPE" in
-        darwin*)
-            echo "$PWD/libsqlite3-pcre.dylib"
-            ;;
+  case "$OSTYPE" in
+    darwin*)
+      echo "$PWD/libsqlite3-pcre.dylib"
+      ;;
 
-        linux*)
-            echo "$PWD/libsqlite3-pcre.so"
-            ;;
+    linux*)
+      echo "$PWD/libsqlite3-pcre.so"
+      ;;
 
-        *)
-            echo "Unknown platform $OSTYPE"
-            exit 1
-            ;;
-    esac
+    *)
+      echo "Unknown platform $OSTYPE"
+      exit 1
+      ;;
+  esac
 }
 
 function build() {
-    local libsqlite_path=$(libpath)
-    if [[ -f "$libsqlite_path" ]]; then
-        # Already exists
-        exit 0
-    fi
+  local libsqlite_path
+  libsqlite_path=$(libpath)
 
-    echo "--- libsqlite3-pcre build"
+  if [[ -f "$libsqlite_path" ]]; then
+    # Already exists
+    exit 0
+  fi
 
-    if ! command -v pkg-config >/dev/null 2>&1 || ! command -v pkg-config --cflags sqlite3 libpcre >/dev/null 2>&1; then
-        echo "Missing sqlite dependencies."
-        case "$OSTYPE" in
-            darwin*)
-                echo "Install them by running 'brew install pkg-config sqlite pcre FiloSottile/musl-cross/musl-cross'"
-                ;;
+  echo "--- libsqlite3-pcre build"
 
-            linux*)
-                echo "Install them by running 'apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools'"
-                ;;
-
-            *)
-                echo "See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies"
-                ;;
-        esac
-
-        exit 1
-    fi
-
-    echo "--- $libsqlite_path build"
-    curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$OUTPUT" -xzvf - --strip 1
-    cd "$OUTPUT"
-
+  if ! command -v pkg-config >/dev/null 2>&1 || ! command -v pkg-config --cflags sqlite3 libpcre >/dev/null 2>&1; then
+    echo "Missing sqlite dependencies."
     case "$OSTYPE" in
-        darwin*)
-            # pkg-config spits out multiple arguments and must not be quoted.
-            gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
-            exit 0
-            ;;
+      darwin*)
+        echo "Install them by running 'brew install pkg-config sqlite pcre FiloSottile/musl-cross/musl-cross'"
+        ;;
 
-        linux*)
-            # pkg-config spits out multiple arguments and must not be quoted.
-            gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
-            exit 0
-            ;;
+      linux*)
+        echo "Install them by running 'apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools'"
+        ;;
 
-        *)
-            echo "See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies"Uecho "Unknown platform $OSTYPE"
-            exit 1
-            ;;
+      *)
+        echo "See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies"
+        ;;
     esac
+
+    exit 1
+  fi
+
+  echo "--- $libsqlite_path build"
+  curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$OUTPUT" -xzvf - --strip 1
+  cd "$OUTPUT"
+
+  case "$OSTYPE" in
+    darwin*)
+      # pkg-config spits out multiple arguments and must not be quoted.
+      # shellcheck disable=SC2046
+      gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
+      exit 0
+      ;;
+
+    linux*)
+      # pkg-config spits out multiple arguments and must not be quoted.
+      # shellcheck disable=SC2046
+      gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
+      exit 0
+      ;;
+
+    *)
+      echo "See the local development documentation: https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-2-install-dependencies"Uecho "Unknown platform $OSTYPE"
+      exit 1
+      ;;
+  esac
 }
 
 # Execute $1 (build by default)

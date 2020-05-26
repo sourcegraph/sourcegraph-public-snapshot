@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -64,23 +65,33 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true} // when treating term as repo: field
-			wantAll := db.ReposListOptions{OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true}                                   // when treating term as text query
-			if reflect.DeepEqual(op, wantAll) {
-				calledReposListAll = true
-				return []*types.Repo{{Name: "bar-repo"}}, nil
-			} else if reflect.DeepEqual(op, wantFoo) {
+
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+
+			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
+				// when treating term as repo: field
 				calledReposListFoo = true
 				return []*types.Repo{{Name: "foo-repo"}}, nil
 			} else {
-				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
+				// when treating term as text query
+				calledReposListAll = true
+				return []*types.Repo{{Name: "bar-repo"}}, nil
 			}
 			return nil, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
+
 		defer func() { db.Mocks = db.MockStores{} }()
 		git.Mocks.ResolveRevision = func(rev string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
@@ -130,6 +141,10 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repogroup: and single term", func(t *testing.T) {
 		t.Skip("TODO(slimsag): this test is not reliable")
 		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
@@ -149,6 +164,7 @@ func TestSearchSuggestions(t *testing.T) {
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
@@ -202,24 +218,26 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		calledReposList := false
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"foo"})
+
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.
@@ -252,6 +270,9 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("repo: field for language suggestions", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		db.Mocks.Repos.List = func(_ context.Context, have db.ReposListOptions) ([]*types.Repo, error) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
@@ -265,6 +286,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		calledReposGetInventory := false
@@ -299,24 +321,25 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
 
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		calledReposList := false
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
 
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"foo"})
+
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.

@@ -106,13 +106,19 @@ func Init(d dbutil.DB, clock func() time.Time) {
 	})
 
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
-	// (due to a error in parsing or verification, or because the license has expired).
+	// (due to an error in parsing or verification, or because the license has expired).
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
-				// Site admins are exempt from license enforcement screens such that they can
-				// easily update the license key.
+			// Site admins are exempt from license enforcement screens so that they can
+			// easily update the license key. Also ignore backend.ErrNotAuthenticated
+			// because we need to allow site admins to sign in.
+			err := backend.CheckCurrentUserIsSiteAdmin(r.Context())
+			if err == nil || err == backend.ErrNotAuthenticated {
 				next.ServeHTTP(w, r)
+				return
+			} else if err != backend.ErrMustBeSiteAdmin {
+				log15.Error("Error checking current user is site admin", "err", err)
+				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 

@@ -16,6 +16,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 /**
  * Fetches a repository's text search index information.
@@ -114,6 +115,7 @@ const TextSearchIndexedRef: React.FunctionComponent<{
 
 interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
+    history: H.History
 }
 
 interface State {
@@ -159,7 +161,11 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                 <h2>Indexing</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && (
-                    <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
+                    <ErrorAlert
+                        prefix="Error getting repository index status"
+                        error={this.state.error}
+                        history={this.props.history}
+                    />
                 )}
                 {!this.state.error &&
                     !this.state.loading &&

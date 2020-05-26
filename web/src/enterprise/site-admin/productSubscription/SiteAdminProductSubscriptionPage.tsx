@@ -1,32 +1,19 @@
-import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { Subscription } from 'rxjs'
+import React, { useEffect } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
-
-interface Props extends RouteComponentProps<{}> {}
+import { RouteComponentProps } from 'react-router'
 
 /**
  * Displays the product subscription information from the license key in site configuration.
  */
-export class SiteAdminProductSubscriptionPage extends React.Component<Props> {
-    private subscriptions = new Subscription()
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<RouteComponentProps> = props => {
+    useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminProductSubscription')
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="site-admin-product-subscription-page">
-                <PageTitle title="Sourcegraph product subscription" />
-                <ProductSubscriptionStatus showTrueUpStatus={true} />
-            </div>
-        )
-    }
+    return (
+        <div className="site-admin-product-subscription-page">
+            <PageTitle title="Sourcegraph product subscription" />
+            <ProductSubscriptionStatus {...props} showTrueUpStatus={true} />
+        </div>
+    )
 }

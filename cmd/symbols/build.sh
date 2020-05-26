@@ -5,9 +5,9 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -20,7 +20,7 @@ cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-a
 
 echo "--- docker build"
 docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

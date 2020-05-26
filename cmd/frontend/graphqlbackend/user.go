@@ -287,6 +287,10 @@ func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, err
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
+func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
+	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
+}
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
@@ -319,6 +323,5 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
-	return isSiteAdminErr == nil
+	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 }

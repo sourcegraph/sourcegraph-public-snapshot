@@ -8,18 +8,18 @@ set -eux
 CTAGS_VERSION=03f933a96d3ef87adbf9d167462d45ce69577edb
 
 apk --no-cache add \
-    --virtual build-deps \
-    autoconf \
-    automake \
-    binutils \
-    curl \
-    g++ \
-    gcc \
-    jansson-dev \
-    libseccomp-dev \
-    linux-headers \
-    make \
-    pkgconfig
+  --virtual build-deps \
+  autoconf \
+  automake \
+  binutils \
+  curl \
+  g++ \
+  gcc \
+  jansson-dev \
+  libseccomp-dev \
+  linux-headers \
+  make \
+  pkgconfig
 
 # Installation
 curl "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C /tmp

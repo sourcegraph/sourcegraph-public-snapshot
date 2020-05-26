@@ -276,6 +276,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     style={treePadding(this.props.depth, true)}
                                                     error={treeOrError}
                                                     prefix="Error loading file tree"
+                                                    history={this.props.history}
                                                 />
                                             ) : (
                                                 treeOrError && (

@@ -25,7 +25,6 @@ export function refreshAuthenticatedUser(): Observable<never> {
                 username
                 avatarURL
                 email
-                username
                 displayName
                 siteAdmin
                 tags

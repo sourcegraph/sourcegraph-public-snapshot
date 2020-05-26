@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -841,7 +842,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
 			kind:   "GITLAB",
@@ -859,6 +860,34 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"projectQuery": ["none"],
 				"exclude": [
 					{"name": "foo/bar", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "subgroup paths are valid for exclude",
+			config: `
+			{
+				"url": "https://gitlab.corp.com",
+				"token": "very-secret-token",
+				"projectQuery": ["none"],
+				"exclude": [
+					{"name": "foo/bar/baz", "id": 1234}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "paths containing . in the first part of the path are valid for exclude",
+			config: `
+			{
+				"url": "https://gitlab.corp.com",
+				"token": "very-secret-token",
+				"projectQuery": ["none"],
+				"exclude": [
+					{"name": "foo.bar/baz", "id": 1234}
 				]
 			}`,
 			assert: equals(`<nil>`),
@@ -885,7 +914,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid projects item name",
 			config: `{"projects": [{"name": "bar"}]}`,
-			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+(/[\w.-]+)+$'`),
+			assert: includes(`projects.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
 			kind:   "GITLAB",
@@ -1243,7 +1272,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 
 			s := NewExternalServicesStore()
-			err := s.ValidateConfig(tc.kind, tc.config, tc.ps)
+			err := s.ValidateConfig(context.Background(), 0, tc.kind, tc.config, tc.ps)
 			switch e := err.(type) {
 			case nil:
 				have = append(have, "<nil>")

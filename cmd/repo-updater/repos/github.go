@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 // A GithubSource yields repositories from a single Github connection configured
@@ -40,18 +41,24 @@ type GithubSource struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+
+	// rateLimiter should be used to limit requests made to the external service
+	rateLimiter *rate.Limiter
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	if rl == nil {
+		rl = rate.NewLimiter(rate.Inf, 0)
+	}
+	return newGithubSource(svc, &c, cf, rl)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -116,6 +123,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		client:           github.NewClient(apiURL, c.Token, cli),
 		searchClient:     github.NewClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
+		rateLimiter:      rl,
 	}, nil
 }
 
@@ -158,6 +166,10 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return false, errors.Wrap(err, "waiting for rate limiter")
+	}
+
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
 		RepositoryID: repo.ID,
 		Title:        c.Title,
@@ -196,6 +208,9 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
@@ -222,6 +237,12 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		}
 	}
 
+	// Each LoadPullRequest call uses 3 tokens. This was calculated by manually calling the query
+	// and asking for the cost as described here:
+	// https://developer.github.com/v4/guides/resource-limitations/#returning-a-calls-rate-limit-status
+	if err := s.rateLimiter.WaitN(ctx, len(prs)*3); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.LoadPullRequests(ctx, prs...)
 	if err != nil {
 		return err
@@ -243,6 +264,9 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
@@ -536,7 +560,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListAffiliatedRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
 	})
 }
 

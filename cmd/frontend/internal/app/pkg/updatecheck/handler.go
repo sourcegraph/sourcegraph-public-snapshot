@@ -32,12 +32,12 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.14.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.16.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.14.2")
+	latestReleaseKubernetesBuild = newBuild("3.16.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
@@ -86,15 +86,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	latestReleaseBuild := getLatestRelease(pr.DeployType)
 	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
-	if err != nil {
-		// Still log pings on malformed version strings.
-		logPing(r, pr, false)
 
+	// Always log, even on malformed version strings
+	logPing(r, pr, hasUpdate)
+
+	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	logPing(r, pr, hasUpdate)
 
 	if !hasUpdate {
 		// No newer version.
@@ -164,7 +163,8 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string          `json:"site"`
+	ClientSiteID         string `json:"site"`
+	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
 	AuthProviders        []string        `json:"auth"`
@@ -197,7 +197,9 @@ func readPingRequest(r *http.Request) (*pingRequest, error) {
 
 func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 	return &pingRequest{
-		ClientSiteID:         q.Get("site"),
+		ClientSiteID: q.Get("site"),
+		// LicenseKey was added after the switch from query strings to POST data, so it's not
+		// available.
 		DeployType:           q.Get("deployType"),
 		ClientVersionString:  q.Get("version"),
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
@@ -254,6 +256,7 @@ type pingPayload struct {
 	RemoteIP             string          `json:"remote_ip"`
 	RemoteSiteVersion    string          `json:"remote_site_version"`
 	RemoteSiteID         string          `json:"remote_site_id"`
+	LicenseKey           string          `json:"license_key"`
 	HasUpdate            string          `json:"has_update"`
 	UniqueUsersToday     string          `json:"unique_users_today"`
 	SiteActivity         json.RawMessage `json:"site_activity"`
@@ -274,6 +277,13 @@ type pingPayload struct {
 }
 
 func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			log15.Warn("logPing: panic", "recover", r)
+			errorCounter.Inc()
+		}
+	}()
+
 	var clientAddr string
 	if v := r.Header.Get("x-forwarded-for"); v != "" {
 		clientAddr = v
@@ -283,11 +293,13 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
+		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
 	} else {
 		if pubsubutil.Enabled() {
 			err := pubsubutil.Publish(pubSubPingsTopicID, string(message))
 			if err != nil {
+				errorCounter.Inc()
 				log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 			}
 		}
@@ -318,6 +330,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteIP:             clientAddr,
 		RemoteSiteVersion:    pr.ClientVersionString,
 		RemoteSiteID:         pr.ClientSiteID,
+		LicenseKey:           pr.LicenseKey,
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,       // no change in schema
@@ -350,6 +363,9 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 	var codeIntelUsage *types.CodeIntelUsageStatistics
 	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
 		return nil, err
+	}
+	if codeIntelUsage == nil {
+		return nil, nil
 	}
 
 	singlePeriodUsage := struct {
@@ -384,6 +400,9 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	if err := json.Unmarshal(payload, &searchUsage); err != nil {
 		return nil, err
 	}
+	if searchUsage == nil {
+		return nil, nil
+	}
 
 	singlePeriodUsage := struct {
 		Daily   *types.SearchUsagePeriod
@@ -406,20 +425,21 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 var (
 	requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests",
-		Help:      "Number of requests to the update check handler.",
+		Name: "src_updatecheck_requests",
+		Help: "Number of requests to the update check handler.",
 	})
 	requestHasUpdateCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "updatecheck",
-		Name:      "requests_has_update",
-		Help:      "Number of requests to the update check handler where an update is available.",
+		Name: "src_updatecheck_requests_has_update",
+		Help: "Number of requests to the update check handler where an update is available.",
+	})
+	errorCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_updatecheck_errors",
+		Help: "Number of errors that occur while publishing server pings.",
 	})
 )
 
 func init() {
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(requestHasUpdateCounter)
+	prometheus.MustRegister(errorCounter)
 }

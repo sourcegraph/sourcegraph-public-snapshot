@@ -1,0 +1,108 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProductPlanFormControl new subscription 1`] = `
+<div
+  className="product-plan-form-control "
+>
+  <div
+    className="list-group"
+  >
+    <div
+      className="list-group-item p-0"
+    >
+      <label
+        className="p-3 mb-0 d-flex"
+        htmlFor="product-plan-form-control__plan0"
+      >
+        <input
+          checked={false}
+          className="mr-2"
+          disabled={false}
+          id="product-plan-form-control__plan0"
+          name="product-plan-form-control__plan"
+          onChange={[Function]}
+          required={true}
+          type="radio"
+          value="p0"
+        />
+        <div>
+          <strong>
+            n0
+          </strong>
+          <div
+            className="text-muted"
+          >
+            <ProductPlanPrice
+              plan={
+                Object {
+                  "__typename": "ProductPlan",
+                  "billingPlanID": "p0",
+                  "maxQuantity": 10,
+                  "minQuantity": null,
+                  "name": "n0",
+                  "nameWithBrand": "nb0",
+                  "planTiers": Array [],
+                  "pricePerUserPerYear": 123,
+                  "productPlanID": "pp0",
+                  "tiersMode": "volume",
+                }
+              }
+            />
+          </div>
+        </div>
+      </label>
+    </div>
+    <div
+      className="list-group-item p-0"
+    >
+      <label
+        className="p-3 mb-0 d-flex"
+        htmlFor="product-plan-form-control__plan1"
+      >
+        <input
+          checked={false}
+          className="mr-2"
+          disabled={false}
+          id="product-plan-form-control__plan1"
+          name="product-plan-form-control__plan"
+          onChange={[Function]}
+          required={true}
+          type="radio"
+          value="p1"
+        />
+        <div>
+          <strong>
+            n1
+          </strong>
+          <div
+            className="text-muted"
+          >
+            <ProductPlanPrice
+              plan={
+                Object {
+                  "__typename": "ProductPlan",
+                  "billingPlanID": "p1",
+                  "maxQuantity": null,
+                  "minQuantity": null,
+                  "name": "n1",
+                  "nameWithBrand": "nb1",
+                  "planTiers": Array [],
+                  "pricePerUserPerYear": 456,
+                  "productPlanID": "pp1",
+                  "tiersMode": "volume",
+                }
+              }
+            />
+          </div>
+        </div>
+      </label>
+    </div>
+  </div>
+  <a
+    className="small"
+    href="https://about.sourcegraph.com/pricing"
+  >
+    Compare plans
+  </a>
+</div>
+`;

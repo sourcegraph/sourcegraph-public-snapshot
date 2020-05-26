@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.13.2"}} {{$previousReleaseVersion := "3.13"}} {{$currentReleaseRevspec := "v3.14.2"}} {{$currentReleaseVersion := "3.14"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.15.1"}} {{$previousReleaseVersion := "3.15"}} {{$currentReleaseRevspec := "v3.16.0"}} {{$currentReleaseVersion := "3.16"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -113,7 +113,8 @@
                                     <li><a href="/user/code_intelligence/lsif">LSIF</a></li>
                                     <li><a href="/user/code_intelligence/lsif_quickstart">LSIF quickstart</a></li>
                                     <li><a href="/user/code_intelligence/adding_lsif_to_workflows">Adding LSIF to workflows</a></li>
-                                    <li><a href="/user/code_intelligence/language_servers">Language servers</a></li>
+                                    <li><a href="/user/code_intelligence/languages">Language-specific guides</a></li>
+                                    <li><a href="/user/code_intelligence/writing_an_indexer">Writing an indexer</a></li>
                                 </ul>
                             </li>
                             <li><a href="/user/search">Code Search</a></li>
@@ -130,10 +131,30 @@
                             <li><a href="/user/organizations">Organizations</a></li>
                             <li><a href="/user/repository">Repositories</a></li>
                             <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
-                            <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">private beta</span></a></li>
                             <li><a href="/user/usage_statistics">Usage statistics</a></li>
                             <li><a href="/user/user_surveys">User surveys</a></li>
                             <li><a href="/user/quick_links">Quick links</a></li>
+
+                            <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">Beta</span></a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/user/campaigns/getting_started">Getting started</a></li>
+                                    <li><a href="/user/campaigns/creating_campaign_from_patches">Creating a campaign from patches</a></li>
+                                    <li><a href="/user/campaigns/creating_manual_campaign">Creating a manual campaign</a></li>
+                                    <li><a href="/user/campaigns/actions">Actions</a></li>
+                                    <li><a href="/user/campaigns/updating_campaigns">Updating campaigns</a></li>
+                                    <li><a href="/user/campaigns/drafts">Campaign drafts</a></li>
+                                    <li><a href="/user/campaigns/configuration">Configuration</a></li>
+                                    <li><a href="/user/campaigns/examples">Examples</a></li>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Examples" )>
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/user/campaigns/examples/eslint_typescript_version">Migrate to a new TypeScript version</a></li>
+                                            <li><a href="/user/campaigns/examples/lsif_action">Adding a GitHub Action to upload LSIF data</a></li>
+                                            <li><a href="/user/campaigns/examples/refactor_go_comby">Refactor Go code using Comby</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -164,6 +185,7 @@
                                             <li><a href="/admin/install/docker-compose/aws">AWS</a></li>
                                             <li><a href="/admin/install/docker-compose/digitalocean">DigitalOcean</a></li>
                                             <li><a href="/admin/install/docker-compose/google_cloud">Google Cloud</a></li>
+                                          <li><a href="/admin/install/docker-compose/migrate">Migrate from the single Docker image to Docker Compose</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
@@ -324,7 +346,7 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/api">API Documentation</a>
+                        <a class="content-nav-section-header" href="/api">API documentation</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/api/graphql">GraphQL API</a></li>
                             <li class="content-nav-no-hover">
@@ -361,14 +383,21 @@
                         <ul class="content-nav-section-group">
                             <li><a href="/dev/campaigns_development">Developing campaigns</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
-                            <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
                             <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
                             <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
                             <li><a href="/dev/phabricator_gitolite">Print info from Gitolite</a></li>
                             <li><a href="/dev/architecture">Sourcegraph Architecture Overview</a></li>
                             <li><a href="/dev/telemetry">Telemetry</a></li>
                             <li><a href="/dev/testing">Testing</a></li>
-                            <li><a href="/dev/typescript">TypeScript development guide</a></li>
+                            <li>
+                                <a href="/dev/web">Developing the web clients</a>
+                                <li class="content-nav-no-hover">
+                                    <ul class="content-nav-section-subsection">
+                                        <li><a href="/dev/web/web_app">Developing the web app</a></li>
+                                        <li><a href="/dev/web/build">Build setup</a></li>
+                                    </ul>
+                                </li>
+                            </li>
                         </ul>
                     </li>
                 </ul>

@@ -9,10 +9,14 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -27,22 +31,31 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
-	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	codeintelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	lsifserverclient "github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func main() {
-	initLicensing()
-	initResolvers()
-	initLSIFEndpoints()
-
 	// Connect to the database.
 	if err := shared.InitDB(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
+
+	initLicensing()
+	initAuthz()
+	initCampaigns()
+	initCodeIntel()
 
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
@@ -72,6 +85,18 @@ func main() {
 	}
 
 	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
+
+	// Migrate all patches in the database to cache their diff stats.
+	// Since we validate each Patch's diff before we store it in the database,
+	// this migration should never fail, except in exceptional circumstances
+	// (database not reachable), in which case it's okay to exit.
+	//
+	// This can be removed in 3.19.
+	err = campaigns.MigratePatchesWithoutDiffStats(ctx, campaignsStore)
+	if err != nil {
+		log.Fatalf("FATAL: Migrating patches without diff stats: %v", err)
+	}
+
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
@@ -84,7 +109,7 @@ func main() {
 		bitbucketWebhookName,
 	)
 
-	go bitbucketServerWebhook.Upsert(30 * time.Second)
+	go bitbucketServerWebhook.SyncWebhooks(ctx, 1*time.Minute)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
@@ -124,9 +149,7 @@ func initLicensing() {
 	}
 }
 
-func initResolvers() {
-	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
-	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
+func initAuthz() {
 	graphqlbackend.NewAuthzResolver = func() graphqlbackend.AuthzResolver {
 		return authzResolvers.NewResolver(dbconn.Global, func() time.Time {
 			return time.Now().UTC().Truncate(time.Microsecond)
@@ -134,8 +157,36 @@ func initResolvers() {
 	}
 }
 
-func initLSIFEndpoints() {
-	httpapi.NewLSIFServerProxy = proxy.NewProxy
+func initCampaigns() {
+	graphqlbackend.NewCampaignsResolver = campaignsResolvers.NewResolver
+
+}
+
+var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
+
+func initCodeIntel() {
+	if bundleManagerURL == "" {
+		log.Fatalf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
+	}
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
+	bundleManagerClient := bundles.New(bundleManagerURL)
+	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
+	client := lsifserverclient.New(db, bundleManagerClient, api)
+
+	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
+		return codeintelResolvers.NewResolver(client)
+	}
+
+	httpapi.NewCodeIntelUploadHandler = func() http.Handler {
+		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient)
+	}
 }
 
 type usersStore struct{}

@@ -9,6 +9,7 @@
 | [Kubernetes](../../install/cluster.md)                   | Medium & large highly-available cluster deployments | 30 minutes | Easily         | Yes           | Yes         |
 
 * If you're just starting out, we recommend [running Sourcegraph locally](../docker/index.md). It takes only a few minutes and lets you try out all of the features.
+* If you want to migrate from the single-container server (`sourcegraph/server`) to the Docker Compose deployment, refer to this [migration guide](./migrate.md).
 * If you need scalability and high-availability beyond what a single-node [Docker Compose](https://docs.docker.com/compose/) can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
 
 ---
@@ -18,7 +19,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker Compose
 ```bash
 git clone git@github.com:sourcegraph/deploy-sourcegraph-docker.git
 cd deploy-sourcegraph-docker/docker-compose
-git checkout v3.14.2
+git checkout v3.16.0
 docker-compose up -d
 ```
 
@@ -38,7 +39,7 @@ We **strongly** recommend that you create your own fork of [sourcegraph/deploy-s
 * Create a `release` branch (to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph's Docker Compose definition, you will merge upstream into this branch.
 
 ```bash
-SOURCEGRAPH_VERSION="v3.14.2"
+SOURCEGRAPH_VERSION="v3.16.0"
 git checkout $SOURCEGRAPH_VERSION -b release
 ```
 

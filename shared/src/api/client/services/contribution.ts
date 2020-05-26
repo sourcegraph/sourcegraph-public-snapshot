@@ -5,9 +5,9 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
-import { EditorService } from './editorService'
-import { SettingsService } from './settings'
+import { ViewerService, ViewerWithPartialModel } from './viewerService'
 import { ModelService } from './modelService'
+import { PlatformContext } from '../../../platform/context'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -35,9 +35,9 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     constructor(
-        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
+        private viewerService: Pick<ViewerService, 'activeViewerUpdates'>,
         private modelService: Pick<ModelService, 'getPartialModel'>,
-        private settingsService: Pick<SettingsService, 'data'>,
+        private settings: PlatformContext['settings'],
         private context: Subscribable<Context<any>>
     ) {}
 
@@ -112,14 +112,23 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            from(this.editorService.activeEditorUpdates).pipe(
-                map(activeEditor =>
-                    activeEditor
-                        ? { ...activeEditor, model: this.modelService.getPartialModel(activeEditor.resource) }
-                        : undefined
-                )
+            from(this.viewerService.activeViewerUpdates).pipe(
+                map((activeEditor): ViewerWithPartialModel | undefined => {
+                    if (!activeEditor) {
+                        return undefined
+                    }
+                    switch (activeEditor.type) {
+                        case 'CodeEditor':
+                            return {
+                                ...activeEditor,
+                                model: this.modelService.getPartialModel(activeEditor.resource),
+                            }
+                        case 'DirectoryViewer':
+                            return activeEditor
+                    }
+                })
             ),
-            this.settingsService.data,
+            this.settings,
             this.context,
         ]).pipe(
             map(([multiContributions, activeEditor, settings, context]) => {
@@ -198,6 +207,13 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
                         merged.menus[menu] = [...mergedItems, ...items]
                     }
                 }
+            }
+        }
+        if (c.views) {
+            if (!merged.views) {
+                merged.views = [...c.views]
+            } else {
+                merged.views = [...merged.views, ...c.views]
             }
         }
         if (c.searchFilters) {

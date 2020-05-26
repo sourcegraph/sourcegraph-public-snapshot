@@ -3,15 +3,19 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // SyncRegistry manages a ChangesetSyncer per external service.
@@ -82,7 +86,8 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	case "GITHUB", "BITBUCKETSERVER":
 	// Supported by campaigns
 	default:
-		log15.Warn("Syncer not started for unsupported code host", "kind", service.Kind)
+		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)
+		return
 	}
 
 	s.mu.Lock()
@@ -103,6 +108,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
+		rateLimitRegistry: s.RateLimiterRegistry,
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -171,21 +177,27 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	// For now we just need to start and stop them.
-	// TODO: Once rate limiters are added we'll need to update those
 	s.mu.Lock()
 	syncer, exists := s.syncers[es.ID]
 	s.mu.Unlock()
 
-	if es.DeletedAt == nil && !exists {
+	if timeIsNilOrZero(es.DeletedAt) && !exists {
 		s.Add(es.ID)
 	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if es.DeletedAt != nil && exists {
 		delete(s.syncers, es.ID)
 		syncer.cancel()
 	}
+}
+
+func timeIsNilOrZero(t *time.Time) bool {
+	if t == nil {
+		return true
+	}
+	return t.IsZero()
 }
 
 // shardChangeset assigns an external service to the supplied changeset.
@@ -224,6 +236,47 @@ type ChangesetSyncer struct {
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
+
+	// rateLimitRegistry should be used fetch the current rate limiter for an external service
+	rateLimitRegistry *repos.RateLimiterRegistry
+}
+
+var syncerMetrics = struct {
+	syncs                   *prometheus.CounterVec
+	priorityQueued          *prometheus.CounterVec
+	syncDuration            *prometheus.HistogramVec
+	computeScheduleDuration *prometheus.HistogramVec
+	scheduleSize            *prometheus.GaugeVec
+	behindSchedule          *prometheus.GaugeVec
+}{}
+
+func init() {
+	syncerMetrics.syncs = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_changeset_syncer_syncs",
+		Help: "Total number of changeset syncs",
+	}, []string{"extsvc", "success"})
+	syncerMetrics.priorityQueued = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_changeset_syncer_priority_queued",
+		Help: "Total number of priority items added to queue",
+	}, []string{"extsvc"})
+	syncerMetrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_repoupdater_changeset_syncer_sync_duration_seconds",
+		Help:    "Time spent syncing changesets",
+		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
+	}, []string{"extsvc", "success"})
+	syncerMetrics.computeScheduleDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_repoupdater_changeset_syncer_compute_schedule_duration_seconds",
+		Help:    "Time spent computing changeset schedule",
+		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
+	}, []string{"extsvc", "success"})
+	syncerMetrics.scheduleSize = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_changeset_syncer_schedule_size",
+		Help: "The number of changesets scheduled to sync",
+	}, []string{"extsvc"})
+	syncerMetrics.behindSchedule = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_changeset_syncer_behind_schedule",
+		Help: "The number of changesets behind schedule",
+	}, []string{"extsvc"})
 }
 
 type SyncStore interface {
@@ -238,13 +291,12 @@ type SyncStore interface {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *ChangesetSyncer) Run(ctx context.Context) {
-	// TODO: Setup instrumentation here
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
 	if s.syncFunc == nil {
-		s.syncFunc = s.SyncChangesetByID
+		s.syncFunc = s.SyncChangeset
 	}
 	if s.clock == nil {
 		s.clock = time.Now
@@ -263,6 +315,8 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 
 	var next scheduledSync
 	var ok bool
+
+	svcID := strconv.FormatInt(s.externalServiceID, 10)
 
 	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
 	// are not safe for concurrent use
@@ -290,20 +344,39 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			if timer != nil {
 				timer.Stop()
 			}
+			start := time.Now()
 			schedule, err := s.computeSchedule(ctx)
+			labelValues := []string{svcID, strconv.FormatBool(err == nil)}
+			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
+			syncerMetrics.scheduleSize.WithLabelValues(svcID).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
+			var behindSchedule int
+			now := time.Now()
+			for _, ss := range schedule {
+				if ss.nextSync.Before(now) {
+					behindSchedule++
+				}
+			}
+			syncerMetrics.behindSchedule.WithLabelValues(svcID).Set(float64(behindSchedule))
 		case <-timerChan:
+			start := time.Now()
 			err := s.syncFunc(ctx, next.changesetID)
+			labelValues := []string{svcID, strconv.FormatBool(err == nil)}
+			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
+			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
+
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
+
 			// Remove item now that it has been processed
 			s.queue.Remove(next.changesetID)
+			syncerMetrics.scheduleSize.WithLabelValues(svcID).Dec()
 		case ids := <-s.priorityNotify:
 			if timer != nil {
 				timer.Stop()
@@ -321,7 +394,9 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 				}
 				item.priority = priorityHigh
 				s.queue.Upsert(item)
+				syncerMetrics.scheduleSize.WithLabelValues(svcID).Inc()
 			}
+			syncerMetrics.priorityQueued.WithLabelValues(svcID).Add(float64(len(ids)))
 		}
 	}
 }
@@ -331,8 +406,8 @@ var (
 	maxSyncDelay = 8 * time.Hour
 )
 
-// nextSync computes the time we want the next sync to happen.
-func nextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
+// NextSync computes the time we want the next sync to happen.
+func NextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
 
 	if lastSync.IsZero() {
@@ -395,7 +470,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 	ss := make([]scheduledSync, len(syncData))
 	for i := range syncData {
-		nextSync := nextSync(s.clock, syncData[i])
+		nextSync := NextSync(s.clock, syncData[i])
 
 		ss[i] = scheduledSync{
 			changesetID: syncData[i].ChangesetID,
@@ -406,43 +481,35 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
-// filterSyncData filters to changesets that serviceID is responsible for.
-func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
-	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
-	for _, d := range allSyncData {
-		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
-		if svcID == serviceID {
-			syncData = append(syncData, d)
-		}
-	}
-	return syncData
-}
-
-// SyncChangesetByID will sync a single changeset given its id.
-func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangesetByID", "id", id)
+// SyncChangeset will sync a single changeset given its id.
+func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
+	log15.Debug("SyncChangeset", "id", id)
 	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {
 		return err
 	}
-	return s.SyncChangesets(ctx, cs)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, s.rateLimitRegistry, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
-func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.Changeset) (err error) {
+func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
+}
+
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, s.ReposStore, s.HTTPFactory, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, repoStore, cf, rlr, cs...)
 	if err != nil {
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, s.SyncStore, bySource)
+	return SyncChangesetsWithSources(ctx, syncStore, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
@@ -479,7 +546,19 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 			csEvents := c.Events()
 			SetDerivedState(c.Changeset, csEvents)
 
-			events = append(events, csEvents...)
+			// Deduplicate events per changeset based on their Kind+Key to avoid
+			// conflicts when inserting into database.
+			uniqueEvents := make(map[string]struct{}, len(csEvents))
+			for _, e := range csEvents {
+				k := string(e.Kind) + e.Key
+				if _, ok := uniqueEvents[k]; ok {
+					log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+					continue
+				}
+				uniqueEvents[k] = struct{}{}
+				events = append(events, e)
+			}
+
 			cs = append(cs, c.Changeset)
 		}
 	}
@@ -500,7 +579,8 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+// rlr is optional
+func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -546,14 +626,17 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, cf)
+		var rl *rate.Limiter
+		if rlr != nil {
+			u, err := e.BaseURL()
+			if err != nil {
+				return nil, errors.Wrap(err, "getting base URL")
+			}
+			rl = rlr.GetRateLimiter(u.String())
+		}
+		css, err := repos.NewChangesetSource(e, cf, rl)
 		if err != nil {
 			return nil, err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
@@ -577,6 +660,18 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 	}
 
 	return res, nil
+}
+
+// filterSyncData filters to changesets that serviceID is responsible for.
+func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
+	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
+	for _, d := range allSyncData {
+		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+		if svcID == serviceID {
+			syncData = append(syncData, d)
+		}
+	}
+	return syncData
 }
 
 type scheduledSync struct {
@@ -609,8 +704,8 @@ func newChangesetPriorityQueue() *changesetPriorityQueue {
 func (pq *changesetPriorityQueue) Len() int { return len(pq.items) }
 
 func (pq *changesetPriorityQueue) Less(i, j int) bool {
-	// We want items ordered by priority, then nextSync
-	// Order by priority and then nextSync
+	// We want items ordered by priority, then NextSync
+	// Order by priority and then NextSync
 	a := pq.items[i]
 	b := pq.items[j]
 

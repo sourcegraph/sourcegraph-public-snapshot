@@ -2,12 +2,12 @@
 
 path_to_package=${1:-github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 # We want to build multiple go binaries, so we use a custom build step on CI.
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -ex
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -18,11 +18,11 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 for pkg in $path_to_package; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o "$OUTPUT/$(basename "$pkg")" "$pkg"
 done
 
-docker build -f cmd/repo-updater/Dockerfile -t $IMAGE $OUTPUT \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+docker build -f cmd/repo-updater/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

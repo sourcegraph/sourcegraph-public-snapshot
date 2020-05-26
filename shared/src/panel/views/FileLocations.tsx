@@ -14,7 +14,8 @@ import { VirtualList } from '../../components/VirtualList'
 import { SettingsCascadeProps } from '../../settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { property, isDefined } from '../../util/types'
-import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
+import { parseRepoURI, toPrettyBlobURL, toRepoURL } from '../../util/url'
+import { VersionContextProps } from '../../search/util'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
@@ -28,7 +29,7 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -181,7 +182,7 @@ function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
             // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
             // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
             // deprecated usage.
-            url: toRepoURL(p.repoName),
+            url: toRepoURL(p),
         },
         limitHit: false,
         lineMatches: refs.filter(property('range', isDefined)).map(
@@ -194,13 +195,4 @@ function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
             })
         ),
     }
-}
-
-/**
- * Returns the URL path for the given repository name.
- *
- * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
- */
-function toRepoURL(repoName: string): string {
-    return `/${repoName}`
 }

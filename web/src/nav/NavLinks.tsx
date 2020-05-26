@@ -10,7 +10,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { isDiscussionsEnabled } from '../discussions'
 import { ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -111,6 +110,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             <StatusMessagesNavItem
                                 fetchMessages={fetchAllStatusMessages}
                                 isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                                history={this.props.history}
                             />
                         </li>
                     )}
@@ -128,7 +128,6 @@ export class NavLinks extends React.PureComponent<Props> {
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
-                            showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
                             keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>

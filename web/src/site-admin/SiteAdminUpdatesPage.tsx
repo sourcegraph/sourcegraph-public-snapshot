@@ -91,6 +91,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                 className="site-admin-updates-page__alert"
                                 prefix="Error checking for updates"
                                 error={this.state.updateCheck.errorMessage}
+                                history={this.props.history}
                             />
                         )}
                     </div>

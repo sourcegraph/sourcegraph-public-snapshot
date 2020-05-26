@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { CampaignActionsBar } from './CampaignActionsBar'
-import { BackgroundProcessState, ChangesetState } from '../../../../../shared/src/graphql/schema'
+import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
 
 const PROPS = {
     name: 'Super campaign',
@@ -35,7 +35,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -55,7 +55,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -75,7 +75,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: new Date().toISOString(),
                         name: 'Super campaign',
                         status: {
@@ -95,7 +95,7 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -115,7 +115,7 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -135,7 +135,7 @@ describe('CampaignActionsBar', () => {
                     mode="saving"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -155,7 +155,7 @@ describe('CampaignActionsBar', () => {
                     mode="deleting"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -175,7 +175,7 @@ describe('CampaignActionsBar', () => {
                     mode="closing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 0, nodes: [] },
+                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -195,7 +195,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: { totalCount: 1, nodes: [{ state: ChangesetState.OPEN }] },
+                        openChangesets: { totalCount: 1 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -215,13 +215,8 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        changesets: {
-                            totalCount: 3,
-                            nodes: [
-                                { state: ChangesetState.CLOSED },
-                                { state: ChangesetState.DELETED },
-                                { state: ChangesetState.MERGED },
-                            ],
+                        openChangesets: {
+                            totalCount: 0,
                         },
                         closedAt: null,
                         name: 'Super campaign',

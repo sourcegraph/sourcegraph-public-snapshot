@@ -12,10 +12,12 @@ import { fetchRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
 import { defaultExternalServices } from '../../site-admin/externalServices'
 import { asError } from '../../../../shared/src/util/errors'
+import * as H from 'history'
 
 interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    history: H.History
 }
 
 interface State {
@@ -66,7 +68,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <ErrorAlert error={this.state.error} />}
+                {this.state.error && <ErrorAlert error={this.state.error} history={this.props.history} />}
                 {services.length > 0 && (
                     <div className="mb-4">
                         {services.map(service => (

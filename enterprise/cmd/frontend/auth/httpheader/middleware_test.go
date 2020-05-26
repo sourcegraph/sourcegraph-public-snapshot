@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -18,10 +17,7 @@ import (
 // SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
 // helper program, which helps with manual testing of the HTTP auth proxy behavior.
 func TestMiddleware(t *testing.T) {
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+	defer licensing.TestingSkipFeatureChecks()()
 
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
@@ -116,10 +112,7 @@ func TestMiddleware(t *testing.T) {
 }
 
 func TestMiddleware_stripPrefix(t *testing.T) {
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+	defer licensing.TestingSkipFeatureChecks()()
 
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())

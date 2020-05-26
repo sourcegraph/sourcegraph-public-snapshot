@@ -5,9 +5,9 @@ exports[`CampaignDiffStat for campaign 1`] = `
   className="abc"
 >
   <DiffStat
-    added={20}
-    changed={20}
-    deleted={20}
+    added={888}
+    changed={999}
+    deleted={777}
     expandedCounts={true}
   />
 </div>
@@ -18,9 +18,9 @@ exports[`CampaignDiffStat for patch set 1`] = `
   className="abc"
 >
   <DiffStat
-    added={10}
-    changed={10}
-    deleted={10}
+    added={888}
+    changed={777}
+    deleted={999}
     expandedCounts={true}
   />
 </div>

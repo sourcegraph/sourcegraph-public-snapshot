@@ -13,32 +13,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, cf, store.Clock())
+func NewService(store *Store, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{store: store, git: git, cf: cf, clock: clock}
+func NewServiceWithClock(store *Store, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{store: store, cf: cf, clock: clock}
 
 	return svc
 }
 
-type GitserverClient interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
-}
-
 type Service struct {
 	store *Store
-	git   GitserverClient
 	cf    *httpcli.Factory
 
 	clock func() time.Time
@@ -137,9 +131,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 		return err
 	}
 
-	if c.PatchSetID != 0 && c.Branch == "" {
-		err = ErrCampaignBranchBlank
-		return err
+	if c.PatchSetID != 0 {
+		if err := validateCampaignBranch(c.Branch); err != nil {
+			return err
+		}
 	}
 
 	if c.PatchSetID == 0 || draft {
@@ -370,7 +365,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	}
 
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, nil, cs...)
 	if err != nil {
 		return err
 	}
@@ -464,9 +459,13 @@ type UpdateCampaignArgs struct {
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
-// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
+// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
 // branch is blank. This is only enforced when creating published campaigns with a patch set.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
+
+// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
+// branch is invalid. This is only enforced when creating published campaigns with a patch set.
+var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
 // attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
@@ -544,8 +543,8 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if args.Branch != nil && campaign.Branch != *args.Branch {
-		if *args.Branch == "" {
-			return nil, nil, ErrCampaignBranchBlank
+		if err := validateCampaignBranch(*args.Branch); err != nil {
+			return nil, nil, err
 		}
 
 		campaign.Branch = *args.Branch
@@ -650,6 +649,16 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
+}
+
+func validateCampaignBranch(branch string) error {
+	if branch == "" {
+		return ErrCampaignBranchBlank
+	}
+	if !git.ValidateBranchName(branch) {
+		return ErrCampaignBranchInvalid
+	}
+	return nil
 }
 
 // campaignPublished returns true if all ChangesetJobs have been created yet

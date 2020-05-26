@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 echo "--- docsite check (lint Markdown files in doc/)"
 
@@ -10,8 +12,8 @@ echo
 echo
 
 ./dev/docsite.sh check || {
-    echo
-    echo Errors found in Markdown documentation files. Fix the errors in doc/ and try again.
-    echo
-    exit 1
+  echo
+  echo Errors found in Markdown documentation files. Fix the errors in doc/ and try again.
+  echo
+  exit 1
 }

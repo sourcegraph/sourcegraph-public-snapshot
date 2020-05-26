@@ -3,6 +3,7 @@
 exports[`ChangesetNode renders an externalchangeset 1`] = `
 Object {
   "children": <Collapsible
+    expandedButtonClassName="mb-3"
     title={
       <div
         className="d-flex align-items-start m-1 ml-2"
@@ -16,13 +17,13 @@ Object {
             <div
               className="m-0 mb-2"
             >
-              <SourcePullIcon
-                className="mr-1 icon-inline text-success"
-                data-tooltip="open"
-              />
               <h3
                 className="m-0 d-inline"
               >
+                <SourcePullIcon
+                  className="mr-1 icon-inline text-success"
+                  data-tooltip="open"
+                />
                 <LinkOrSpan
                   rel="noopener noreferrer"
                   target="_blank"
@@ -32,6 +33,10 @@ Object {
                    (#
                   123
                   )
+                   
+                  <Memo(ExternalLinkIcon)
+                    size="1rem"
+                  />
                 </LinkOrSpan>
               </h3>
               <small>
@@ -146,7 +151,8 @@ Object {
     wholeTitleClickable={false}
   >
     <FileDiffConnection
-      defaultFirst={25}
+      cursorPaging={true}
+      defaultFirst={15}
       hideSearch={true}
       history={
         Object {

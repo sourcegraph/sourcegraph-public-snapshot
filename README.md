@@ -9,10 +9,10 @@
 
 **Features**
 
-- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
-- Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
-- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension)
-- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions)
+- Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming.
+- Code intelligence for many languages via the [Language Server Index Format](https://lsif.dev/).
+- Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension).
+- Integration with third-party developer tools via the [Sourcegraph extension API](https://docs.sourcegraph.com/extensions).
 
 ## Try it yourself
 

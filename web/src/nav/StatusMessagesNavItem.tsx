@@ -3,8 +3,8 @@ import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Observable, Subscription, of } from 'rxjs'
-import { catchError, map, repeatWhen, delay, tap, switchMap } from 'rxjs/operators'
+import { Observable, Subscription } from 'rxjs'
+import { catchError, map, repeatWhen, delay } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -12,6 +12,8 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { queryGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
+import * as H from 'history'
+import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 
 export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     return queryGraphQL(
@@ -93,6 +95,7 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 interface Props {
     fetchMessages: () => Observable<GQL.StatusMessage[]>
     isSiteAdmin: boolean
+    history: H.History
 }
 
 interface State {
@@ -116,24 +119,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
-        let lastWasSuccess = true
         this.subscriptions.add(
             this.props
                 .fetchMessages()
                 .pipe(
                     catchError(err => [asError(err) as ErrorLike]),
-                    tap(messagesOrError => {
-                        lastWasSuccess = !isErrorLike(messagesOrError) && messagesOrError.length === 0
-                    }),
-                    repeatWhen(obs =>
-                        obs.pipe(
-                            switchMap(() =>
-                                of(undefined).pipe(
-                                    delay(lastWasSuccess ? REFRESH_INTERVAL_MS : REFRESH_INTERVAL_AFTER_ERROR_MS)
-                                )
-                            )
-                        )
-                    )
+                    // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
+                    repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
+                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS)))
                 )
                 .subscribe(messagesOrError => this.setState({ messagesOrError }))
         )
@@ -234,6 +227,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 className="status-messages-nav-item__entry"
                                 prefix="Failed to load status messages"
                                 error={this.state.messagesOrError}
+                                history={this.props.history}
                             />
                         ) : this.state.messagesOrError.length > 0 ? (
                             this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))

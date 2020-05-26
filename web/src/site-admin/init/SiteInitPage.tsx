@@ -5,6 +5,7 @@ import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
+import * as H from 'history'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
     const resp = await fetch('/-/site-init', {
@@ -35,6 +36,7 @@ interface Props extends ThemeProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
+    history: H.History
 }
 
 /**
@@ -45,6 +47,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     authenticatedUser,
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
+    history,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to="/search" />
@@ -71,6 +74,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 doSignUp={initSite}
+                                history={history}
                             />
                         </>
                     )}

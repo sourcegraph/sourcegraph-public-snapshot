@@ -16,26 +16,36 @@ import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { FileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../backend/diff'
+import { FileDiffFields, DiffStatFields } from '../../backend/diff'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
     base: string | null
     head: string | null
     first?: number
+    after?: string
+    isLightTheme: boolean
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $isLightTheme: Boolean!
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first) {
+                            fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
                                 }
                                 totalCount
                                 pageInfo {
+                                    endCursor
                                     hasNextPage
                                 }
                                 diffStat {
@@ -48,8 +58,6 @@ export function queryRepositoryComparisonFileDiffs(args: {
             }
 
             ${FileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,
@@ -103,11 +111,13 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         },
                         lineNumbers: true,
                     }}
-                    defaultFirst={25}
+                    updateOnChange={String(this.props.isLightTheme)}
+                    defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    cursorPaging={true}
                 />
             </div>
         )
@@ -119,5 +129,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            isLightTheme: this.props.isLightTheme,
         })
 }

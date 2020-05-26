@@ -3,10 +3,11 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -28,11 +30,12 @@ type changesetsConnectionResolver struct {
 	opts  ee.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
-	once       sync.Once
-	changesets []*campaigns.Changeset
-	reposByID  map[api.RepoID]*repos.Repo
-	next       int64
-	err        error
+	once           sync.Once
+	changesets     []*campaigns.Changeset
+	scheduledSyncs map[int64]time.Time
+	reposByID      map[api.RepoID]*repos.Repo
+	next           int64
+	err            error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ExternalChangesetResolver, error) {
@@ -52,6 +55,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			store:         r.store,
 			Changeset:     c,
 			preloadedRepo: repo,
+			nextSyncAt:    r.scheduledSyncs[c.ID],
 		})
 	}
 
@@ -84,6 +88,21 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			return
 		}
 
+		changesetIDs := make([]int64, len(r.changesets))
+		for i, c := range r.changesets {
+			changesetIDs[i] = c.ID
+		}
+
+		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.scheduledSyncs = make(map[int64]time.Time)
+		for _, d := range syncData {
+			r.scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+		}
+
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
 		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
@@ -98,7 +117,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 
 		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[api.RepoID(repo.ID)] = repo
+			r.reposByID[repo.ID] = repo
 		}
 	})
 
@@ -119,6 +138,9 @@ type changesetResolver struct {
 	eventsOnce sync.Once
 	events     []*campaigns.ChangesetEvent
 	eventsErr  error
+
+	// When the next sync is scheduled
+	nextSyncAt time.Time
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -196,6 +218,13 @@ func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
 
 func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
+}
+
+func (r *changesetResolver) NextSyncAt() *graphqlbackend.DateTime {
+	if r.nextSyncAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
 }
 
 func (r *changesetResolver) Title() (string, error) {
@@ -321,12 +350,31 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset head ref could not be determined")
 	}
 
-	oid, err := r.Changeset.HeadRefOid()
-	if err != nil {
-		return nil, err
+	var oid string
+	if r.ExternalState == campaigns.ChangesetStateMerged {
+		// The PR was merged, find the merge commit
+		events, err := r.computeEvents(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching changeset events")
+		}
+		oid = ee.ChangesetEvents(events).FindMergeCommitID()
+	}
+	if oid == "" {
+		// Fall back to the head ref
+		oid, err = r.Changeset.HeadRefOid()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid)
+	if err != nil {
+		if gitserver.IsRevisionNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return resolver, nil
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
@@ -343,7 +391,14 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, err
 	}
 
-	return r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid)
+	if err != nil {
+		if gitserver.IsRevisionNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return resolver, nil
 }
 
 func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
@@ -369,7 +424,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 		Name:         api.RepoName(repo.Name()),
 	})
 	if err != nil {
-		return api.CommitID(""), err
+		return "", err
 	}
 	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 	// exist).

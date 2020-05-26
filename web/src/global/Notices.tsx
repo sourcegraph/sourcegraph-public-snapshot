@@ -4,9 +4,14 @@ import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/setti
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
+import * as H from 'history'
 
-const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string }> = ({ notice, className = '' }) => {
-    const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
+const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; history: H.History }> = ({
+    notice,
+    history,
+    className = '',
+}) => {
+    const content = <Markdown history={history} dangerousInnerHTML={renderMarkdown(notice.message)} />
     const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
     return notice.dismissible ? (
         <DismissibleAlert className={`${baseClassName} ${className}`} partialStorageKey={`notice.${notice.message}`}>
@@ -18,6 +23,7 @@ const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string 
 }
 
 interface Props extends SettingsCascadeProps {
+    history: H.History
     className?: string
 
     /** Apply this class name to each notice (alongside .alert). */
@@ -35,6 +41,7 @@ export const Notices: React.FunctionComponent<Props> = ({
     alertClassName,
     settingsCascade,
     location,
+    history,
 }) => {
     if (
         !isSettingsValid<Settings>(settingsCascade) ||
@@ -50,7 +57,7 @@ export const Notices: React.FunctionComponent<Props> = ({
     return (
         <div className={`notices ${className}`}>
             {notices.map((notice, i) => (
-                <NoticeAlert key={i} className={alertClassName} notice={notice} />
+                <NoticeAlert key={i} className={alertClassName} notice={notice} history={history} />
             ))}
         </div>
     )

@@ -13,7 +13,7 @@ import (
 
 type locationConnectionResolver struct {
 	repo      *types.Repo
-	commit    graphqlbackend.GitObjectID
+	commit    api.CommitID
 	locations []*lsif.LSIFLocation
 	endCursor string
 }

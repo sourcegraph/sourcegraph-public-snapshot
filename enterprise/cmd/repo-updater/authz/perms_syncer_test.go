@@ -19,12 +19,12 @@ import (
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
-	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleUsers(context.Background(), PriorityHigh, 1)
+	s := NewPermsSyncer(nil, nil, nil, nil)
+	s.ScheduleUsers(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeUser,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -35,12 +35,12 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 }
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
-	s := NewPermsSyncer(nil, nil, nil)
-	s.ScheduleRepos(context.Background(), PriorityHigh, 1)
+	s := NewPermsSyncer(nil, nil, nil, nil)
+	s.ScheduleRepos(context.Background(), 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
-			Priority: PriorityHigh,
+			Priority: priorityHigh,
 			Type:     requestTypeRepo,
 			ID:       1,
 		}, acquired: false, index: 0},
@@ -110,14 +110,6 @@ func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, erro
 	return nil, nil
 }
 
-type mockPermsStore struct {
-	listExternalAccounts func(context.Context, int32) ([]*extsvc.Account, error)
-}
-
-func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.Account, error) {
-	return s.listExternalAccounts(ctx, userID)
-}
-
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		serviceType: gitlab.ServiceType,
@@ -163,7 +155,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock)
+	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
 	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
 	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
@@ -253,7 +245,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock)
+	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
 	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
 	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
@@ -286,6 +278,63 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 }
 
+type fakeExternalServiceLister struct{}
+
+func (*fakeExternalServiceLister) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+	return []*repos.ExternalService{
+		{
+			ID:          1,
+			Kind:        "GITHUB",
+			DisplayName: "GitHub.com",
+			Config:      `{"url": "https://github.com"}`,
+		},
+	}, nil
+}
+
+func TestPermsSyncer_waitForRateLimit(t *testing.T) {
+	ctx := context.Background()
+	t.Run("no rate limit registry", func(t *testing.T) {
+		s := NewPermsSyncer(nil, nil, nil, nil)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err := s.waitForRateLimit(ctx, "https://github.com/", 100000)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("enough quota available", func(t *testing.T) {
+		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err = s.waitForRateLimit(ctx, "https://github.com/", 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("not enough quota available", func(t *testing.T) {
+		rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, &fakeExternalServiceLister{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err = s.waitForRateLimit(ctx, "https://github.com/", 10)
+		if err == nil {
+			t.Fatalf("err: want %v but got nil", context.Canceled)
+		}
+	})
+}
+
 func TestPermsSyncer_syncPerms(t *testing.T) {
 	request := &syncRequest{
 		requestMeta: &requestMeta{
@@ -296,7 +345,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	}
 
 	// Request should be removed from the queue even if error occurred.
-	s := NewPermsSyncer(nil, nil, nil)
+	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.queue.Push(request)
 
 	expErr := "unexpected request type: 3"

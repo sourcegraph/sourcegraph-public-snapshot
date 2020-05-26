@@ -80,7 +80,7 @@ func TestNextSync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextSync(clock, tt.h)
+			got := NextSync(clock, tt.h)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatal(diff)
 			}
@@ -488,6 +488,18 @@ func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 type MockRepoStore struct {
 	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
 	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
+func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*repos.ExternalService) error {
+	panic("implement me")
+}
+
+func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
+	panic("implement me")
+}
+
+func (m MockRepoStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
+	panic("implement me")
 }
 
 func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
@@ -69,65 +68,50 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 
 // AndOrQuery satisfies the interface for QueryInfo close to that of OrdinaryQuery.
 func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	found := false
-	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
+	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
 			values = append(values, visitedValue)
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return values, negatedValues
 }
 
 func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	found := false
-	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
+	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
 			values = append(values, visitedValue)
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return values, negatedValues
 }
 
 func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	found := false
-	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
+	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
 		if negated {
 			negatedValue = visitedValue
 		} else {
 			value = visitedValue
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return value, negatedValue
 }
 
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
-	VisitField(q.Query, field, func(value string, _ bool) {
-		values = append(values, valueToTypedValue(field, value)...)
+	VisitField(q.Query, field, func(value string, _, quoted bool) {
+		values = append(values, valueToTypedValue(field, value, quoted)...)
 	})
 	return values
 }
 
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
-	VisitParameter(q.Query, func(field, value string, _ bool) {
-		fields[field] = valueToTypedValue(field, value)
+	VisitParameter(q.Query, func(field, value string, _, quoted bool) {
+		fields[field] = valueToTypedValue(field, value, quoted)
 	})
 	return fields
 }
@@ -137,7 +121,7 @@ func (q AndOrQuery) Fields() map[string][]*types.Value {
 // not is significant for surfacing suggestions.
 func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
-	VisitParameter(q.Query, func(field, value string, negated bool) {
+	VisitParameter(q.Query, func(field, value string, negated, _ bool) {
 		expr := &syntax.Expr{
 			Field: field,
 			Value: value,
@@ -145,13 +129,12 @@ func (q AndOrQuery) ParseTree() syntax.ParseTree {
 		}
 		tree = append(tree, expr)
 	})
-	log15.Info("Query", "ParseTree", tree)
 	return tree
 }
 
 func (q AndOrQuery) BoolValue(field string) bool {
 	result := false
-	VisitField(q.Query, field, func(value string, _ bool) {
+	VisitField(q.Query, field, func(value string, _, _ bool) {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result
@@ -172,12 +155,16 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func valueToTypedValue(field, value string) []*types.Value {
+func valueToTypedValue(field, value string, quoted bool) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
-		// Treat as string for sipmplicity. The type could be regexp or
-		// string depending on quotes or search kind.
+		if quoted {
+			return []*types.Value{{String: &value}}
+		}
+		if regexp, err := regexp.Compile(value); err == nil {
+			return []*types.Value{{Regexp: regexp}}
+		}
 		return []*types.Value{{String: &value}}
 
 	case

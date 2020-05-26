@@ -33,6 +33,7 @@ const (
 	requestErrorCauseKey
 	graphQLRequestNameKey
 	originKey
+	sourceKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -43,18 +44,14 @@ var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "request_duration_seconds",
-	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   UserLatencyBuckets,
+	Name:    "src_http_request_duration_seconds",
+	Help:    "The HTTP request latencies in seconds.",
+	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_last_timestamp_unixtime",
-	Help:      "Last time a request finished for a http endpoint.",
+	Name: "src_http_requests_last_timestamp_unixtime",
+	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
 func init() {
@@ -121,6 +118,31 @@ func RequestOrigin(ctx context.Context) string {
 // WithRequestOrigin sets the request origin in the context.
 func WithRequestOrigin(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, originKey, name)
+}
+
+// SourceType indicates the type of source that likely created the request.
+type SourceType string
+
+const (
+	// SourceBrowser indicates the request likely came from a web browser.
+	SourceBrowser SourceType = "browser"
+
+	// SourceOther indicates the request likely came from a non-browser HTTP client.
+	SourceOther SourceType = "other"
+)
+
+// WithRequestSource sets the request source type in the context.
+func WithRequestSource(ctx context.Context, source SourceType) context.Context {
+	return context.WithValue(ctx, sourceKey, source)
+}
+
+// RequestSource returns the request source constant for a request context.
+func RequestSource(ctx context.Context) SourceType {
+	v := ctx.Value(sourceKey)
+	if v == nil {
+		return SourceOther
+	}
+	return v.(SourceType)
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.

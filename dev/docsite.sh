@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 mkdir -p .bin
 
@@ -12,13 +12,13 @@ target="$PWD/.bin/docsite_${suffix}"
 url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite_${suffix}"
 
 if [ ! -f "${target}" ]; then
-    echo "downloading ${url}" 1>&2
-    curl -sS -L -f "${url}" -o "${target}.tmp"
-    mv "${target}.tmp" "${target}"
+  echo "downloading ${url}" 1>&2
+  curl -sS -L -f "${url}" -o "${target}.tmp"
+  mv "${target}.tmp" "${target}"
 fi
 
 chmod +x "${target}"
 
-popd > /dev/null
+popd >/dev/null
 
 exec "${target}" "$@"

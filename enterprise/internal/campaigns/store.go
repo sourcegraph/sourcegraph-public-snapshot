@@ -267,7 +267,9 @@ WITH batch AS (
       external_updated_at   timestamptz,
       external_state        text,
       external_review_state text,
-      external_check_state  text
+      external_check_state  text,
+      created_by_campaign   boolean,
+      added_to_campaign     boolean
     )
   )
   WITH ORDINALITY
@@ -290,7 +292,9 @@ changed AS (
     external_updated_at,
     external_state,
     external_review_state,
-    external_check_state
+    external_check_state,
+    created_by_campaign,
+    added_to_campaign
   )
   SELECT
     repo_id,
@@ -305,7 +309,9 @@ changed AS (
     external_updated_at,
     external_state,
     external_review_state,
-    external_check_state
+    external_check_state,
+    created_by_campaign,
+    added_to_campaign
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
@@ -329,7 +335,9 @@ SELECT
   COALESCE(changed.external_updated_at, existing.external_updated_at) AS external_updated_at,
   COALESCE(changed.external_state, existing.external_state) AS external_state,
   COALESCE(changed.external_review_state, existing.external_review_state) AS external_review_state,
-  COALESCE(changed.external_check_state, existing.external_check_state) AS external_check_state
+  COALESCE(changed.external_check_state, existing.external_check_state) AS external_check_state,
+  COALESCE(changed.created_by_campaign, existing.created_by_campaign) AS created_by_campaign,
+  COALESCE(changed.added_to_campaign, existing.added_to_campaign) AS added_to_campaign
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -368,6 +376,8 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 		ExternalState       *campaigns.ChangesetState       `json:"external_state"`
 		ExternalReviewState *campaigns.ChangesetReviewState `json:"external_review_state"`
 		ExternalCheckState  *campaigns.ChangesetCheckState  `json:"external_check_state"`
+		CreatedByCampaign   bool                            `json:"created_by_campaign"`
+		AddedToCampaign     bool                            `json:"added_to_campaign"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -395,6 +405,8 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 			ExternalUpdatedAt:   nullTimeColumn(c.ExternalUpdatedAt),
+			CreatedByCampaign:   c.CreatedByCampaign,
+			AddedToCampaign:     c.AddedToCampaign,
 		}
 		if len(c.ExternalState) > 0 {
 			r.ExternalState = &c.ExternalState
@@ -525,7 +537,9 @@ SELECT
   external_updated_at,
   external_state,
   external_review_state,
-  external_check_state
+  external_check_state,
+  created_by_campaign,
+  added_to_campaign
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -690,7 +704,9 @@ SELECT
   changesets.external_updated_at,
   changesets.external_state,
   changesets.external_review_state,
-  changesets.external_check_state
+  changesets.external_check_state,
+  changesets.created_by_campaign,
+  changesets.added_to_campaign
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
@@ -781,7 +797,9 @@ changed AS (
 	external_updated_at   = batch.external_updated_at,
     external_state        = batch.external_state,
     external_review_state = batch.external_review_state,
-    external_check_state  = batch.external_check_state
+    external_check_state  = batch.external_check_state,
+    created_by_campaign   = batch.created_by_campaign,
+    added_to_campaign     = batch.added_to_campaign
   FROM batch
   WHERE changesets.id = batch.id
   RETURNING changesets.*
@@ -803,7 +821,9 @@ SELECT
   changed.external_updated_at,
   changed.external_state,
   changed.external_review_state,
-  changed.external_check_state
+  changed.external_check_state,
+  changed.created_by_campaign,
+  changed.added_to_campaign
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -1844,10 +1864,13 @@ INSERT INTO patches (
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   patch_set_id,
@@ -1855,6 +1878,9 @@ RETURNING
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 `
@@ -1875,6 +1901,9 @@ func (s *Store) createPatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.DiffStatAdded,
+		c.DiffStatDeleted,
+		c.DiffStatChanged,
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1902,8 +1931,11 @@ SET (
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   updated_at
-) = (%s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1912,6 +1944,9 @@ RETURNING
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 `
@@ -1926,6 +1961,9 @@ func (s *Store) updatePatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.DiffStatAdded,
+		c.DiffStatDeleted,
+		c.DiffStatChanged,
 		c.UpdatedAt,
 		c.ID,
 	), nil
@@ -2026,6 +2064,9 @@ SELECT
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 FROM patches
@@ -2058,6 +2099,10 @@ type ListPatchesOpts struct {
 	// are _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
+
+	// If this is set only the Patches where diff_stat_added OR
+	// diff_stat_changed OR diff_stat_deleted are NULL.
+	OnlyWithoutDiffStats bool
 }
 
 // ListPatches lists Patches with the given filters.
@@ -2091,6 +2136,9 @@ SELECT
   rev,
   base_ref,
   diff,
+  diff_stat_added,
+  diff_stat_deleted,
+  diff_stat_changed,
   created_at,
   updated_at
 FROM patches
@@ -2123,6 +2171,10 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	}
+
+	if opts.OnlyWithoutDiffStats {
+		preds = append(preds, sqlf.Sprintf("(diff_stat_added IS NULL OR diff_stat_deleted IS NULL OR diff_stat_changed IS NULL)"))
 	}
 
 	return sqlf.Sprintf(
@@ -2653,6 +2705,8 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullString{S: &externalState},
 		&dbutil.NullString{S: &externamReviewState},
 		&dbutil.NullString{S: &externalCheckState},
+		&t.CreatedByCampaign,
+		&t.AddedToCampaign,
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -2710,7 +2764,7 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
-		&c.Description,
+		&dbutil.NullString{S: &c.Description},
 		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
@@ -2735,6 +2789,9 @@ func scanPatch(c *campaigns.Patch, s scanner) error {
 		&c.Rev,
 		&c.BaseRef,
 		&c.Diff,
+		&c.DiffStatAdded,
+		&c.DiffStatDeleted,
+		&c.DiffStatChanged,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

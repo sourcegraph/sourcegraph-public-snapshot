@@ -11,8 +11,9 @@ import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike, tryCatch } from '../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import { isExternalLink } from '../util/url'
 
 export interface ActionItemAction {
     /**
@@ -190,8 +191,17 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
-        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
         const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
+        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
+        const to = primaryTo || altTo
+        // Open in new tab if an external link
+        const newTabProps =
+            to && isExternalLink(to)
+                ? {
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                  }
+                : {}
 
         return (
             <LinkOrButton
@@ -212,16 +222,14 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     pressed && ['action-item--pressed', this.props.pressedClassName]
                 )}
                 pressed={pressed}
+                onSelect={this.runAction}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
-                to={primaryTo || altTo}
-                onSelect={this.runAction}
+                to={to}
+                {...newTabProps}
             >
                 {content}{' '}
-                {primaryTo &&
-                    tryCatch(() => new URL(primaryTo, window.location.href).origin !== window.location.origin) && (
-                        <OpenInNewIcon className={this.props.iconClassName} />
-                    )}
+                {primaryTo && isExternalLink(primaryTo) && <OpenInNewIcon className={this.props.iconClassName} />}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />

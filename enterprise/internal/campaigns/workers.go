@@ -27,6 +27,10 @@ var maxWorkers = env.Get("CAMPAIGNS_MAX_WORKERS", "8", "maximum number of reposi
 
 const defaultWorkerCount = 8
 
+type GitserverClient interface {
+	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
+}
+
 // RunWorkers should be executed in a background goroutine and is responsible
 // for finding pending ChangesetJobs and executing them.
 // ctx should be canceled to terminate the function.
@@ -36,6 +40,9 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		log15.Error("Parsing max worker count failed. Falling back to default.", "default", defaultWorkerCount, "err", err)
 		workerCount = defaultWorkerCount
 	}
+
+	// process is executed inside a database transaction that's opened by
+	// ProcessPendingChangesetJobs.
 	process := func(ctx context.Context, s *Store, job campaigns.ChangesetJob) error {
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{
 			ID: job.CampaignID,
@@ -45,7 +52,7 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		}
 
 		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, c, &job); runErr != nil {
-			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", err)
+			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", runErr)
 		}
 		// We don't assign to err here so that we don't roll back the transaction
 		// ExecChangesetJob will save the error in the job row
@@ -74,8 +81,12 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 }
 
 // ExecChangesetJob will execute the given ChangesetJob for the given campaign.
+// It must be executed inside a transaction.
 // It is idempotent and if the job has already been executed it will not be
 // executed.
+// ProcessPendingChangesetJobs opens a transaction before ultimately calling
+// ExecChangesetJob. If ExecChangesetJob is called outside of that context, a
+// transaction needs to be opened.
 func ExecChangesetJob(
 	ctx context.Context,
 	clock func() time.Time,
@@ -85,12 +96,6 @@ func ExecChangesetJob(
 	c *campaigns.Campaign,
 	job *campaigns.ChangesetJob,
 ) (err error) {
-	// Store should already have an open transaction but ensure here anyway
-	store, err = store.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "creating transaction")
-	}
-
 	tr, ctx := trace.New(ctx, "service.ExecChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
 		tr.SetError(err)
@@ -136,7 +141,7 @@ func ExecChangesetJob(
 	}
 
 	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(patch.RepoID)}})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{patch.RepoID}})
 	if err != nil {
 		return err
 	}
@@ -172,9 +177,7 @@ func ExecChangesetJob(
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
-		// Since we also produce diffs manually, we might not have context lines,
-		// so we need to disable that check with `--unidiff-zero`.
-		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
+		GitApplyArgs: []string{"-p0"},
 		Push:         true,
 	})
 	if err != nil {
@@ -250,8 +253,9 @@ func ExecChangesetJob(
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
 		Changeset: &campaigns.Changeset{
-			RepoID:      repo.ID,
-			CampaignIDs: []int64{job.CampaignID},
+			RepoID:            repo.ID,
+			CampaignIDs:       []int64{job.CampaignID},
+			CreatedByCampaign: true,
 		},
 	}
 
@@ -305,6 +309,7 @@ func ExecChangesetJob(
 		SetDerivedState(clone, events)
 
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
+		clone.CreatedByCampaign = true
 
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
@@ -326,5 +331,5 @@ func ExecChangesetJob(
 
 	job.ChangesetID = clone.ID
 	runFinalUpdate(ctx, store)
-	return
+	return err
 }

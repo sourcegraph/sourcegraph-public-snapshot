@@ -38,7 +38,7 @@ func addDebugHandlers(r *mux.Router) {
 		for _, s := range debugserver.Services {
 			peps = append(peps, debugproxies.Endpoint{
 				Service: s.Name,
-				Host:    s.Host,
+				Addr:    s.Host,
 			})
 		}
 		rph.Populate(peps)
@@ -73,6 +73,7 @@ func addGrafana(r *mux.Router) {
 			addNoGrafanaHandler(r)
 		} else {
 			prefix := "/grafana"
+			// 🚨 SECURITY: Only admins have access to Grafana dashboard
 			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
 				Director: func(req *http.Request) {
 					req.URL.Scheme = "http"

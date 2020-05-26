@@ -39,8 +39,9 @@ const (
 	// The user of pkg/conf only reads the configuration file.
 	modeClient
 
-	// The user of pkg/conf is a test case.
-	modeTest
+	// The user of pkg/conf is a test case or explicitly opted to have no
+	// configuration.
+	modeEmpty
 )
 
 func getMode() configurationMode {
@@ -51,11 +52,13 @@ func getMode() configurationMode {
 		return modeServer
 	case "client":
 		return modeClient
+	case "empty":
+		return modeEmpty
 	default:
-		// Detect 'go test' and default to test mode in that case.
+		// Detect 'go test' and default to empty mode in that case.
 		p, err := os.Executable()
 		if err == nil && strings.Contains(strings.ToLower(p), "test") {
-			return modeTest
+			return modeEmpty
 		}
 
 		// Otherwise we default to client mode, so that most services need not
@@ -75,11 +78,11 @@ func initDefaultClient() *client {
 	mode := getMode()
 
 	// Don't kickoff the background updaters for the client/server
-	// when running test cases.
-	if mode == modeTest {
+	// when in empty mode.
+	if mode == modeEmpty {
 		close(configurationServerFrontendOnlyInitialized)
 
-		// Seed the client store with a dummy configuration for test cases.
+		// Seed the client store with an empty configuration.
 		_, err := clientStore.MaybeUpdate(conftypes.RawUnified{
 			Critical:           "{}",
 			Site:               "{}",
@@ -144,7 +147,7 @@ func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.R
 func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	mode := getMode()
 
-	if mode == modeTest {
+	if mode == modeEmpty {
 		return nil
 	}
 

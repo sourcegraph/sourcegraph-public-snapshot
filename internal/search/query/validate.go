@@ -1,7 +1,6 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -10,16 +9,32 @@ import (
 	"github.com/src-d/enry/v2"
 )
 
+type UnsupportedError struct {
+	Msg string
+}
+
+func (e *UnsupportedError) Error() string {
+	return e.Msg
+}
+
 // isPatternExpression returns true if every leaf node in a tree root at node is
 // a search pattern.
 func isPatternExpression(nodes []Node) bool {
 	result := true
-	VisitParameter(nodes, func(field, _ string, _ bool) {
+	VisitParameter(nodes, func(field, _ string, _, _ bool) {
 		if field != "" && field != "content" {
 			result = false
 		}
 	})
 	return result
+}
+
+// ContainsAndOrKeyword returns true if this query contains or- or and-
+// keywords. It is a temporary signal to determine whether we can fallback to
+// the older existing search functionality.
+func ContainsAndOrKeyword(input string) bool {
+	lower := strings.ToLower(input)
+	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
 }
 
 // processTopLevel processes the top level of a query. It validates that we can
@@ -36,7 +51,7 @@ func processTopLevel(nodes []Node) ([]Node, error) {
 		} else if term.Kind == Concat {
 			return nodes, nil
 		} else {
-			return nil, errors.New("cannot evaluate: unable to partition pure search pattern")
+			return nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	return nodes, nil
@@ -62,7 +77,7 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 		} else if term, ok := node.(Parameter); ok {
 			parameters = append(parameters, term)
 		} else {
-			return nil, nil, errors.New("cannot evaluate: unable to partition pure search pattern")
+			return nil, nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	if len(patterns) > 1 {
@@ -151,6 +166,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isNumber := func() error {
+		count, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			if err.(*strconv.NumError).Err == strconv.ErrRange {
+				return fmt.Errorf("field %s has a value that is out of range, try making it smaller", field)
+			}
+			return fmt.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)
+		}
+		if count <= 0 {
+			return fmt.Errorf("field %s requires a positive number", field)
+		}
+		return nil
+	}
+
 	isLanguage := func() error {
 		_, ok := enry.GetLanguageByAlias(value)
 		if !ok {
@@ -180,20 +209,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldCase:
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
-		FieldRepo, "r":
+		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup, "g":
+		FieldRepoGroup:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldFile, "f":
+		FieldFile:
 		return satisfies(isValidRegexp)
 	case
 		FieldFork,
 		FieldArchived:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldLang, "l", "language":
+		FieldLang:
 		return satisfies(isLanguage)
 	case
 		FieldType:
@@ -209,18 +238,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepoHasCommitAfter:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldBefore, "until",
-		FieldAfter, "since":
+		FieldBefore,
+		FieldAfter:
 		return satisfies(isNotNegated)
 	case
 		FieldAuthor,
 		FieldCommitter,
-		FieldMessage, "m", "msg":
+		FieldMessage:
 		return satisfies(isValidRegexp)
 	case
-		FieldIndex,
-		FieldCount:
+		FieldIndex:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldCount:
+		return satisfies(isSingular, isNumber, isNotNegated)
 	case
 		FieldStable:
 		return satisfies(isSingular, isBoolean, isNotNegated)
@@ -239,7 +270,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 func validate(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool) {
+	VisitParameter(nodes, func(field, value string, negated, _ bool) {
 		if err != nil {
 			return
 		}

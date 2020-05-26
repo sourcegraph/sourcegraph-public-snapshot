@@ -3,6 +3,7 @@ import renderer from 'react-test-renderer'
 import { CampaignNode } from './CampaignNode'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { parseISO } from 'date-fns'
+import { createMemoryHistory } from 'history'
 
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
@@ -25,7 +26,11 @@ describe('CampaignNode', () => {
 
     test('open campaign', () => {
         expect(
-            renderer.create(<CampaignNode node={node} now={parseISO('2019-01-01T23:15:01Z')} />).toJSON()
+            renderer
+                .create(
+                    <CampaignNode node={node} now={parseISO('2019-01-01T23:15:01Z')} history={createMemoryHistory()} />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
     test('closed campaign', () => {
@@ -35,6 +40,7 @@ describe('CampaignNode', () => {
                     <CampaignNode
                         node={{ ...node, closedAt: '2019-12-04T23:19:01Z' }}
                         now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
                     />
                 )
                 .toJSON()
@@ -43,7 +49,13 @@ describe('CampaignNode', () => {
     test('open draft campaign', () => {
         expect(
             renderer
-                .create(<CampaignNode node={{ ...node, publishedAt: null }} now={parseISO('2019-01-01T23:15:01Z')} />)
+                .create(
+                    <CampaignNode
+                        node={{ ...node, publishedAt: null }}
+                        now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
+                    />
+                )
                 .toJSON()
         ).toMatchSnapshot()
     })
@@ -54,6 +66,7 @@ describe('CampaignNode', () => {
                     <CampaignNode
                         node={{ ...node, publishedAt: null, closedAt: '2019-12-04T23:19:01Z' }}
                         now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
                     />
                 )
                 .toJSON()
@@ -70,6 +83,7 @@ describe('CampaignNode', () => {
                             description: '',
                         }}
                         now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
                     />
                 )
                 .toJSON()
@@ -87,6 +101,7 @@ describe('CampaignNode', () => {
                             onSelect: () => undefined,
                         }}
                         now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
                     />
                 )
                 .toJSON()
@@ -104,6 +119,7 @@ describe('CampaignNode', () => {
                             },
                         }}
                         now={parseISO('2019-01-01T23:15:01Z')}
+                        history={createMemoryHistory()}
                     />
                 )
                 .toJSON()

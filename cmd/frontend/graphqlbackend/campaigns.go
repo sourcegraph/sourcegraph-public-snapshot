@@ -24,7 +24,7 @@ type CreateCampaignArgs struct {
 	Input struct {
 		Namespace   graphql.ID
 		Name        string
-		Description string
+		Description *string
 		Branch      *string
 		PatchSet    *graphql.ID
 		Draft       *bool
@@ -91,6 +91,11 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type FileDiffsConnectionArgs struct {
+	First *int32
+	After *string
+}
+
 type CampaignsResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -105,7 +110,6 @@ type CampaignsResolver interface {
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
-	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
@@ -167,10 +171,6 @@ func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
 func (defaultCampaignsResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -202,7 +202,7 @@ type ListChangesetsArgs struct {
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
-	Description() string
+	Description() *string
 	Branch() *string
 	Author(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
@@ -211,6 +211,7 @@ type CampaignResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
+	OpenChangesets(ctx context.Context) (ExternalChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	PatchSet(ctx context.Context) (PatchSetResolver, error)
@@ -218,6 +219,7 @@ type CampaignResolver interface {
 	ClosedAt() *DateTime
 	PublishedAt(ctx context.Context) (*DateTime, error)
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type CampaignsConnectionResolver interface {
@@ -243,6 +245,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	NextSyncAt() *DateTime
 	Title() (string, error)
 	Body() (string, error)
 	State() campaigns.ChangesetState
@@ -269,7 +272,7 @@ type PatchResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() PatchResolver
-	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
+	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
 }
 
@@ -311,21 +314,5 @@ type PatchSetResolver interface {
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
 
 	PreviewURL() string
-}
-
-type PreviewFileDiff interface {
-	OldPath() *string
-	NewPath() *string
-	Hunks() []*DiffHunk
-	Stat() *DiffStat
-	OldFile() *GitTreeEntryResolver
-	InternalID() string
-}
-
-type PreviewFileDiffConnection interface {
-	Nodes(ctx context.Context) ([]PreviewFileDiff, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
-	RawDiff(ctx context.Context) (string, error)
 }

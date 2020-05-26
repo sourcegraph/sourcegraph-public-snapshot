@@ -6,7 +6,7 @@ cmd="${1:-}"
 replica="${2:-0}"
 index="$HOME/.sourcegraph/zoekt/index-$replica"
 
-if (( replica != 0 )) && [[ -n "${DISABLE_SEARCH_SHARDING-}" ]]; then
+if ((replica != 0)) && [[ -n "${DISABLE_SEARCH_SHARDING-}" ]]; then
     exit 0
 fi
 
@@ -20,22 +20,23 @@ export GOGC=50
 
 case "$cmd" in
 
-    indexserver)
-        exec zoekt-sourcegraph-indexserver \
-             -sourcegraph_url http://localhost:3090 \
-             -index "$index" \
-             -hostname "localhost:$webport" \
-             -interval 1m \
-             -listen ":$indexport"
-        ;;
+indexserver)
+    exec zoekt-sourcegraph-indexserver \
+        -sourcegraph_url http://localhost:3090 \
+        -index "$index" \
+        -hostname "localhost:$webport" \
+        -interval 1m \
+        -listen ":$indexport" \
+        -cpu_fraction 0.25
+    ;;
 
-    webserver)
-        exec zoekt-webserver -index "$index" -pprof -rpc -listen ":$webport"
-        ;;
+webserver)
+    exec zoekt-webserver -index "$index" -pprof -rpc -listen ":$webport"
+    ;;
 
-    *)
-        echo "USAGE: $0 (indexserver|webserver)"
-        exit 1
-        ;;
+*)
+    echo "USAGE: $0 (indexserver|webserver)"
+    exit 1
+    ;;
 
 esac

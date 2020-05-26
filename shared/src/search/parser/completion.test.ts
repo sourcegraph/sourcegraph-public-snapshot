@@ -1,4 +1,5 @@
-import { getCompletionItems } from './completion'
+import * as Monaco from 'monaco-editor'
+import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
 import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
@@ -292,7 +293,58 @@ describe('getCompletionItems()', () => {
                         },
                     ] as SearchSuggestion[])
                 )
-            )?.suggestions.map(({ label }) => label)
-        ).toStrictEqual(['connect.go'])
+            )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
+        ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$' }])
+    })
+
+    test('inserts valid filters when selecting a file or repository suggestion', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('jsonrpc') as ParseSuccess<Sequence>).token,
+                    { column: 8 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'jsonrpc2.go',
+                            name: 'jsonrpc2.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2.go',
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions
+                .filter(
+                    ({ kind }) =>
+                        kind === Monaco.languages.CompletionItemKind.File || kind === repositoryCompletionItemKind
+                )
+                .map(({ insertText }) => insertText)
+        ).toStrictEqual(['file:^jsonrpc2\\.go$ ', 'repo:^github\\.com/sourcegraph/jsonrpc2\\.go$ '])
+    })
+
+    test('sets current filter value as filterText', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    (parseSearchQuery('f:^jsonrpc') as ParseSuccess<Sequence>).token,
+                    { column: 11 },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'jsonrpc2.go',
+                            name: 'jsonrpc2.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
+                            },
+                        },
+                    ] as SearchSuggestion[])
+                )
+            )?.suggestions.map(({ filterText }) => filterText)
+        ).toStrictEqual(['^jsonrpc'])
     })
 })

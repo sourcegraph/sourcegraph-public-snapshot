@@ -11,15 +11,12 @@ import {
     IEmptyResponse,
     IExternalChangeset,
     IFileDiffConnection,
-    IPreviewFileDiffConnection,
     IPatchSet,
     IPatchesOnCampaignArguments,
     IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-
-export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -42,35 +39,14 @@ const campaignFragment = gql`
         publishedAt
         closedAt
         viewerCanAdminister
-        changesets(first: 10000) {
+        changesets {
             totalCount
-            nodes {
-                __typename
-                id
-                state
-                diff {
-                    fileDiffs {
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
         }
-        patches(first: 10000) {
+        openChangesets {
             totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
+        }
+        patches {
+            totalCount
         }
         patchSet {
             id
@@ -85,6 +61,9 @@ const campaignFragment = gql`
             openPending
             total
         }
+        diffStat {
+            ...DiffStatFields
+        }
     }
 
     ${DiffStatFields}
@@ -94,20 +73,11 @@ const patchSetFragment = gql`
     fragment PatchSetFields on PatchSet {
         __typename
         id
-        patches(first: 10000) {
+        diffStat {
+            ...DiffStatFields
+        }
+        patches {
             totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -281,21 +251,10 @@ export const queryChangesets = (
                                 externalURL {
                                     url
                                 }
-                                head {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
-                                base {
-                                    abbrevName
-                                    target {
-                                        oid
-                                    }
-                                }
                                 externalID
                                 createdAt
                                 updatedAt
+                                nextSyncAt
                                 diff {
                                     fileDiffs {
                                         diffStat {
@@ -467,24 +426,102 @@ export async function syncChangeset(changeset: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export const queryExternalChangesetFileDiffs = (
+export const queryExternalChangesetWithFileDiffs = (
     externalChangeset: ID,
-    { first }: FilteredConnectionQueryArgs
-): Observable<IFileDiffConnection> =>
+    { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
+): Observable<IExternalChangeset> =>
     queryGraphQL(
         gql`
-            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int) {
+            query ExternalChangesetFileDiffs(
+                $externalChangeset: ID!
+                $first: Int
+                $after: String
+                $isLightTheme: Boolean!
+            ) {
                 node(id: $externalChangeset) {
                     __typename
                     ... on ExternalChangeset {
                         diff {
-                            fileDiffs(first: $first) {
+                            range {
+                                base {
+                                    ...GitRefSpecFields
+                                }
+                                head {
+                                    ...GitRefSpecFields
+                                }
+                            }
+                            fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
                                 }
                                 totalCount
                                 pageInfo {
                                     hasNextPage
+                                    endCursor
+                                }
+                                diffStat {
+                                    ...DiffStatFields
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment GitRefSpecFields on GitRevSpec {
+                __typename
+                ... on GitObject {
+                    oid
+                }
+                ... on GitRef {
+                    target {
+                        oid
+                    }
+                }
+                ... on GitRevSpecExpr {
+                    object {
+                        oid
+                    }
+                }
+            }
+
+            ${FileDiffFields}
+
+            ${DiffStatFields}
+        `,
+        { externalChangeset, first, after, isLightTheme }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Changeset with ID ${externalChangeset} does not exist`)
+            }
+            if (node.__typename !== 'ExternalChangeset') {
+                throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
+            }
+            return node
+        })
+    )
+
+export const queryPatchFileDiffs = (
+    patch: ID,
+    { first, after, isLightTheme }: FilteredConnectionQueryArgs & { isLightTheme: boolean }
+): Observable<IFileDiffConnection> =>
+    queryGraphQL(
+        gql`
+            query PatchFileDiffs($patch: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
+                node(id: $patch) {
+                    __typename
+                    ... on Patch {
+                        diff {
+                            fileDiffs(first: $first, after: $after) {
+                                nodes {
+                                    ...FileDiffFields
+                                }
+                                totalCount
+                                pageInfo {
+                                    hasNextPage
+                                    endCursor
                                 }
                                 diffStat {
                                     ...DiffStatFields
@@ -497,62 +534,9 @@ export const queryExternalChangesetFileDiffs = (
 
             ${FileDiffFields}
 
-            ${FileDiffHunkRangeFields}
-
             ${DiffStatFields}
         `,
-        { externalChangeset, first }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Changeset with ID ${externalChangeset} does not exist`)
-            }
-            if (node.__typename !== 'ExternalChangeset') {
-                throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
-            }
-            if (!node.diff) {
-                throw new Error('The given Changeset has no diff')
-            }
-            return node.diff.fileDiffs
-        })
-    )
-
-export const queryPatchFileDiffs = (
-    patch: ID,
-    { first }: FilteredConnectionQueryArgs
-): Observable<IPreviewFileDiffConnection> =>
-    queryGraphQL(
-        gql`
-            query PatchFileDiffs($patch: ID!, $first: Int) {
-                node(id: $patch) {
-                    __typename
-                    ... on Patch {
-                        diff {
-                            fileDiffs(first: $first) {
-                                nodes {
-                                    ...PreviewFileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
-                                diffStat {
-                                    ...DiffStatFields
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${PreviewFileDiffFields}
-
-            ${FileDiffHunkRangeFields}
-
-            ${DiffStatFields}
-        `,
-        { patch, first }
+        { patch, first, after, isLightTheme }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

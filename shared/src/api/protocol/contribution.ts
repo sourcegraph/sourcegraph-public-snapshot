@@ -32,6 +32,9 @@ export interface Contributions {
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
 
+    /** Views contributed by the extension. */
+    views?: ViewContribution[]
+
     /** Search filters contributed by the extension */
     searchFilters?: SearchFilters[]
 }
@@ -295,12 +298,38 @@ export interface SearchFilters {
 }
 
 /** The containers to which an extension can contribute views. */
-export enum ContributableViewContainer {
+export const ContributableViewContainer = {
     /**
      * A view that is displayed in the panel for a window.
      *
      * Clients: The client should render this as a resizable panel in a window, with multiple tabs to switch
      * between different panel views.
      */
-    Panel = 'window/panel',
+    Panel: 'window/panel',
+
+    /**
+     * A global page view, displayed as a standalone page at `/views/ID`.
+     */
+    GlobalPage: 'global/page',
+
+    /**
+     * A view contributed to directory pages.
+     */
+    Directory: 'directory',
+} as const
+export type ContributableViewContainer = typeof ContributableViewContainer[keyof typeof ContributableViewContainer]
+
+/**
+ * A view contributed by an extension.
+ */
+export interface ViewContribution {
+    /**
+     * The identifier for this view, which must be unique among all contributed views.
+     */
+    id: string
+
+    /**
+     * The container where this view will be displayed.
+     */
+    where: ContributableViewContainer
 }

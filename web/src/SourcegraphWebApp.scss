@@ -192,6 +192,11 @@ body,
     flex: 1;
 }
 
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
 .cursor-pointer {
     cursor: pointer;
 }
@@ -217,14 +222,12 @@ body,
 // Pages
 @import './Layout';
 @import './api/APIConsole';
-@import './discussions/DiscussionsPage';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './global/Notices';
 @import './savedSearches/index';
-@import './search/ScopePage';
 @import './search/input/SearchPage';
 @import './search/queryBuilder/index';
 @import './search/results/SearchResults';
@@ -260,10 +263,15 @@ body,
 @import './components/DismissibleAlert';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
-@import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';
+
+:root {
+    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
+    --reach-menu-button: 1;
+    --reach-accordion: 1;
+}

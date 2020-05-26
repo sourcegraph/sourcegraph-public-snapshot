@@ -13,7 +13,7 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './contribution'
-import { createTestEditorService } from './editorService.test'
+import { createTestViewerService } from './viewerService.test'
 import { ModelService } from './modelService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
@@ -97,9 +97,9 @@ describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
             new ContributionRegistry(
-                createTestEditorService({}),
+                createTestViewerService({}),
                 TEST_MODEL_SERVICE,
-                { data: of(EMPTY_SETTINGS_CASCADE) },
+                of(EMPTY_SETTINGS_CASCADE),
                 of({})
             ).entries.value
         ).toEqual([])
@@ -108,9 +108,9 @@ describe('ContributionRegistry', () => {
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
-            createTestEditorService({}),
+            createTestViewerService({}),
             TEST_MODEL_SERVICE,
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
@@ -131,9 +131,9 @@ describe('ContributionRegistry', () => {
 
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
-            createTestEditorService({}),
+            createTestViewerService({}),
             TEST_MODEL_SERVICE,
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
@@ -163,10 +163,10 @@ describe('ContributionRegistry', () => {
                     }
                 })(
                     {
-                        activeEditorUpdates: of(undefined),
+                        activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
-                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of(EMPTY_SETTINGS_CASCADE),
                     of({})
                 )
                 type Marble = 'a' | 'b' | 'c'
@@ -196,10 +196,10 @@ describe('ContributionRegistry', () => {
                     }
                 })(
                     {
-                        activeEditorUpdates: of(undefined),
+                        activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
-                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of(EMPTY_SETTINGS_CASCADE),
                     of({})
                 )
                 type Marble = 'b' | 'c'
@@ -228,15 +228,15 @@ describe('ContributionRegistry', () => {
                     constructor() {
                         super(
                             {
-                                activeEditorUpdates: of(undefined),
+                                activeViewerUpdates: of(undefined),
                             },
                             TEST_MODEL_SERVICE,
-                            {
-                                data: cold<SettingsCascadeOrError>('-a-b-|', {
-                                    a: EMPTY_SETTINGS_CASCADE,
-                                    b: EMPTY_SETTINGS_CASCADE,
-                                }),
-                            },
+
+                            cold<SettingsCascadeOrError>('-a-b-|', {
+                                a: EMPTY_SETTINGS_CASCADE,
+                                b: EMPTY_SETTINGS_CASCADE,
+                            }),
+
                             cold<Context>('-a-b-|', { a: { x: 1, y: 2 }, b: { x: 1, y: 1 } })
                         )
                     }
@@ -270,9 +270,9 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            createTestEditorService({}),
+                            createTestViewerService({}),
                             TEST_MODEL_SERVICE,
-                            { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
+                            cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }),
                             cold<Context>('a', {})
                         )
                     }

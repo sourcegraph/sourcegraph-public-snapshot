@@ -4,16 +4,23 @@ import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { CompletionList } from 'sourcegraph'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
-
-import 'bootstrap/scss/bootstrap.scss'
-import './CompletionWidget.scss'
+import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
+import completionWidgetStyles from './CompletionWidget.scss'
 
 const onSelectItem = action('onSelectItem')
 
 // Disable keyboard shortcuts because in CompletionWidget the cursor is in a contenteditable element,
 // which Storybook doesn't consider to be an input, so it intercepts keyboard shortcuts instead of
 // propagating them to the CompletionWidget element.
-const { add } = storiesOf('CompletionWidget', module).addParameters({ options: { enableShortcuts: false } })
+const { add } = storiesOf('CompletionWidget', module)
+    .addParameters({ options: { enableShortcuts: false } })
+    .addDecorator(story => (
+        <>
+            <style>{bootstrapStyles}</style>
+            <style>{completionWidgetStyles}</style>
+            <div>{story()}</div>
+        </>
+    ))
 
 const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-flex align-items-center p-2'
 const StyledCompletionWidget: React.FunctionComponent<CompletionWidgetProps> = props => (

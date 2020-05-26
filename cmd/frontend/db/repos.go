@@ -241,6 +241,13 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
+	// Names is a list of repository names used to limit the results to that
+	// set of repositories.
+	// Note: This is currently used for version contexts. In future iterations,
+	// version contexts may have their own table
+	// and this may be replaced by the version context name.
+	Names []string
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -456,6 +463,13 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	}
 	if opt.OnlyPrivate {
 		conds = append(conds, sqlf.Sprintf("private"))
+	}
+	if len(opt.Names) > 0 {
+		queries := make([]*sqlf.Query, 0, len(opt.Names))
+		for _, repo := range opt.Names {
+			queries = append(queries, sqlf.Sprintf("%s", repo))
+		}
+		conds = append(conds, sqlf.Sprintf("NAME IN (%s)", sqlf.Join(queries, ", ")))
 	}
 
 	if opt.Index != nil {

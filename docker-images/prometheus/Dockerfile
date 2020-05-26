@@ -1,10 +1,10 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
-COPY ./src-observability-generator /go/src/
-WORKDIR /go/src/src-observability-generator
-RUN CGO_ENABLED=0 go install .
+COPY monitoring /go/src/monitoring-generator
+WORKDIR /go/src/monitoring-generator
+RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/prometheus
-RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/src-observability-generator
+RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
 
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.
@@ -17,6 +17,13 @@ FROM prom/prometheus:v2.16.0@sha256:e4ca62c0d62f3e886e684806dfe9d4e0cda60d549868
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:0c38f63cbe19e40123668a48c36466ef72b195e723cbfcbe01e9657a5f14cec6
 
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
@@ -50,7 +57,7 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 USER sourcegraph
 
-COPY --from=builder /generated/prometheus/* /sg_config_prometheus
+COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 

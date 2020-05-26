@@ -24,10 +24,6 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         const q = new URLSearchParams(location.search)
 
         if (!q.has(ToggleRenderedFileMode.URL_QUERY_PARAM)) {
-            const isDiscussions = new URLSearchParams(location.hash).get('tab') === 'discussions'
-            if (isDiscussions) {
-                return 'code'
-            }
             return undefined
         }
         return q.get(ToggleRenderedFileMode.URL_QUERY_PARAM) === 'code' ? 'code' : 'rendered' // default to rendered

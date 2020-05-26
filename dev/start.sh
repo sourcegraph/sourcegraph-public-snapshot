@@ -6,9 +6,10 @@ unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 if [ -f .env ]; then
-    set -o allexport
-    source .env
-    set +o allexport
+  set -o allexport
+  # shellcheck disable=SC1091
+  source .env
+  set +o allexport
 fi
 
 export GO111MODULE=on
@@ -16,18 +17,19 @@ go run ./internal/version/minversion
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
-    # "brew install postgresql@9.6" does not put psql on the $PATH by default;
-    # try to fix this automatically if we can.
-    hash brew 2>/dev/null && {
-        if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
-            export PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
-        fi
-    }
+  # "brew install postgresql@9.6" does not put psql on the $PATH by default;
+  # try to fix this automatically if we can.
+  hash brew 2>/dev/null && {
+    if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
+      PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+      export PATH
+    fi
+  }
 }
 if ! psql -wc '\x' >/dev/null; then
-    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
-    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
-    exit 1
+  echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
+  echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+  exit 1
 fi
 
 export PGSSLMODE=disable
@@ -37,7 +39,7 @@ export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
-export LSIF_STORAGE_ROOT=$HOME/.sourcegraph/lsif-storage
+export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
 export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
@@ -52,13 +54,17 @@ export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
-export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
+
+SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
+export SRC_PROF_SERVICES
+
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
 export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
+export PROMETHEUS_URL="${PROMETHEUS_URL:-"http://localhost:9090"}"
 
 # Caddy / HTTPS configuration
 export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
@@ -85,7 +91,8 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Ensure SQLite for symbols is built
 ./dev/libsqlite3-pcre/build.sh
-export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+export LIBSQLITE3_PCRE
 
 # Ensure ctags image is built
 ./cmd/symbols/build-ctags.sh
@@ -94,30 +101,26 @@ export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
 yarn_pid=''
 [ -n "${OFFLINE-}" ] || {
-    yarn --no-progress &
-    yarn_pid="$!"
+  yarn --no-progress &
+  yarn_pid="$!"
 }
 
 if ! ./dev/go-install.sh; then
-	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
-	# actual reason we're failing.
-	wait
-	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
-	exit 1
+  # let Yarn finish, otherwise we get Yarn diagnostics AFTER the
+  # actual reason we're failing.
+  wait
+  echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
+  exit 1
 fi
 
 # Wait for yarn if it is still running
 if [[ -n "$yarn_pid" ]]; then
-    wait "$yarn_pid"
+  wait "$yarn_pid"
 fi
 
-# Install precise code intel dependencies
-pushd ./cmd/precise-code-intel 1> /dev/null
-yarn --no-progress
-popd 1> /dev/null
-
 # Increase ulimit (not needed on Windows/WSL)
-type ulimit > /dev/null && ulimit -n 10000 || true
+# shellcheck disable=SC2015
+type ulimit >/dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
@@ -131,4 +134,14 @@ build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
-exec $GOREMAN start
+
+if ! [ "$(id -u)" = 0 ] && command -v authbind; then
+  # ignoring because $GOREMAN is used in other handle-change.sh
+  # shellcheck disable=SC2086
+  # Support using authbind to bind to port 443 as non-root
+  exec authbind --deep $GOREMAN start
+else
+  # ignoring because $GOREMAN is used in other handle-change.sh
+  # shellcheck disable=SC2086
+  exec $GOREMAN start
+fi

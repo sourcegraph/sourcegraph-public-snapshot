@@ -174,7 +174,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 		// A directory which also is a repository (have .git folder inside it)
 		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
-		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
+		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
 			return nil
 		}
 
@@ -214,13 +214,6 @@ func configureRepos(logger *log.Logger, root string) []string {
 
 	return gitDirs
 }
-
-const postUpdateHook = `#!/bin/sh
-#
-# Added by Sourcegraph src-expose serve
-
-exec git update-server-info
-`
 
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html

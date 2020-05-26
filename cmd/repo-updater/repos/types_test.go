@@ -1,6 +1,9 @@
 package repos
 
 import (
+	"context"
+	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"testing"
 	"time"
 
@@ -470,65 +473,190 @@ func formatJSON(t testing.TB, s string) string {
 }
 
 func TestRateLimiterRegistry(t *testing.T) {
-	r := &RateLimiterRegistry{
-		rateLimiters: make(map[int64]*rate.Limiter),
-	}
-
-	l := r.GetRateLimiter(1)
-	if l == nil {
-		t.Fatalf("Expected a limiter")
-	}
-	expectedLimit := rate.Inf
-	if l.Limit() != expectedLimit {
-		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
-	}
-
 	now := time.Now()
-	s := api.ExternalService{
-		ID:          1,
-		Kind:        "GitLab",
-		DisplayName: "GitLab",
-		Config:      "",
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		DeletedAt:   nil,
-	}
-	err := r.HandleExternalServiceSync(s)
-	if err != nil {
-		t.Fatal(err)
+	ctx := context.Background()
+
+	baseURL := "http://gitlab.com/"
+
+	type limitOptions struct {
+		includeLimit bool
+		enabled      bool
+		perHour      float64
 	}
 
-	// We should have default limit
-	l = r.GetRateLimiter(1)
-	if l == nil {
-		t.Fatalf("Expected a limiter")
-	}
-	expectedLimit = rate.Limit(10)
-	if l.Limit() != expectedLimit {
-		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
+	makeLister := func(options ...limitOptions) *MockExternalServicesLister {
+		services := make([]*ExternalService, 0, len(options))
+		for i, o := range options {
+			svc := &ExternalService{
+				ID:          int64(i) + 1,
+				Kind:        "GitLab",
+				DisplayName: "GitLab",
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				DeletedAt:   time.Time{},
+			}
+			config := schema.GitLabConnection{
+				Url: baseURL,
+			}
+			if o.includeLimit {
+				config.RateLimit = &schema.GitLabRateLimit{
+					RequestsPerHour: o.perHour,
+					Enabled:         o.enabled,
+				}
+			}
+			data, err := json.Marshal(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			svc.Config = string(data)
+			services = append(services, svc)
+		}
+		return &MockExternalServicesLister{
+			listExternalServices: func(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+				return services, nil
+			},
+		}
 	}
 
-	// Add config
-	s.Config = `
-{
-  "RateLimit": {
-    "Enabled": true,
-    "RequestsPerHour": 3600,
-  }
+	for _, tc := range []struct {
+		name    string
+		options []limitOptions
+		want    rate.Limit
+	}{
+		{
+			name:    "No limiters defined",
+			options: []limitOptions{},
+			want:    rate.Inf,
+		},
+		{
+			name: "One limit, enabled",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      3600,
+				},
+			},
+			want: rate.Limit(1),
+		},
+		{
+			name: "Two limits, enabled",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      3600,
+				},
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      7200,
+				},
+			},
+			want: rate.Limit(1),
+		},
+		{
+			name: "One limit, disabled",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      false,
+					perHour:      3600,
+				},
+			},
+			want: rate.Inf,
+		},
+		{
+			name: "One limit, zero",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      0,
+				},
+			},
+			want: rate.Limit(0),
+		},
+		{
+			name: "No limit",
+			options: []limitOptions{
+				{
+					includeLimit: false,
+				},
+			},
+			want: rate.Limit(10),
+		},
+		{
+			name: "Two limits, one default",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      3600,
+				},
+				{
+					includeLimit: false,
+				},
+			},
+			want: rate.Limit(1),
+		},
+		// Default for GitLab is 10 per second
+		{
+			name: "Default, Higher than default",
+			options: []limitOptions{
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      20 * 3600,
+				},
+				{
+					includeLimit: false,
+				},
+			},
+			want: rate.Limit(20),
+		},
+		{
+			name: "Higher than default, Default",
+			options: []limitOptions{
+				{
+					includeLimit: false,
+				},
+				{
+					includeLimit: true,
+					enabled:      true,
+					perHour:      20 * 3600,
+				},
+			},
+			want: rate.Limit(20),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &RateLimiterRegistry{
+				serviceLister: makeLister(tc.options...),
+				rateLimiters:  make(map[string]*rate.Limiter),
+			}
+
+			err := r.SyncRateLimiters(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// We should have the lower limit
+			l := r.GetRateLimiter(baseURL)
+			if l == nil {
+				t.Fatalf("expected a limiter")
+			}
+			if l.Limit() != tc.want {
+				t.Fatalf("Expected limit %f, got %f", tc.want, l.Limit())
+			}
+		})
+	}
 }
-`
-	err = r.HandleExternalServiceSync(s)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// We should have new limit
-	l = r.GetRateLimiter(1)
-	if l == nil {
-		t.Fatalf("Expected a limiter")
-	}
-	expectedLimit = rate.Limit(1)
-	if l.Limit() != expectedLimit {
-		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
-	}
+type MockExternalServicesLister struct {
+	listExternalServices func(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+}
+
+func (m MockExternalServicesLister) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
+	return m.listExternalServices(ctx, args)
 }

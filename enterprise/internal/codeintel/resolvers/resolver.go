@@ -7,16 +7,20 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	lsifserverClient *client.Client
+}
 
 var _ graphqlbackend.CodeIntelResolver = &Resolver{}
 
-func NewResolver() graphqlbackend.CodeIntelResolver {
-	return &Resolver{}
+func NewResolver(lsifserverClient *client.Client) graphqlbackend.CodeIntelResolver {
+	return &Resolver{
+		lsifserverClient: lsifserverClient,
+	}
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFUploadResolver, error) {
@@ -25,7 +29,7 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 		return nil, err
 	}
 
-	lsifUpload, err := client.DefaultClient.GetUpload(ctx, &struct {
+	lsifUpload, err := r.lsifserverClient.GetUpload(ctx, &struct {
 		UploadID int64
 	}{
 		UploadID: uploadID,
@@ -48,7 +52,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 		return nil, err
 	}
 
-	err = client.DefaultClient.DeleteUpload(ctx, &struct {
+	err = r.lsifserverClient.DeleteUpload(ctx, &struct {
 		UploadID int64
 	}{
 		UploadID: uploadID,
@@ -87,17 +91,17 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 		opt.NextURL = &nextURL
 	}
 
-	return &lsifUploadConnectionResolver{opt: opt}, nil
+	return &lsifUploadConnectionResolver{lsifserverClient: r.lsifserverClient, opt: opt}, nil
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	uploads, err := client.DefaultClient.Exists(ctx, &struct {
+	uploads, err := r.lsifserverClient.Exists(ctx, &struct {
 		RepoID api.RepoID
-		Commit string
+		Commit api.CommitID
 		Path   string
 	}{
 		RepoID: args.Repository.Type().ID,
-		Commit: string(args.Commit),
+		Commit: args.Commit,
 		Path:   args.Path,
 	})
 
@@ -110,6 +114,7 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 	}
 
 	return &lsifQueryResolver{
+		lsifserverClient:   r.lsifserverClient,
 		repositoryResolver: args.Repository,
 		commit:             args.Commit,
 		path:               args.Path,

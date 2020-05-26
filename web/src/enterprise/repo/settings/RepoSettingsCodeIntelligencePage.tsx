@@ -15,8 +15,15 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Subject } from 'rxjs'
+import * as H from 'history'
 
-const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () => void }> = ({ node, onDelete }) => {
+export interface LsifUploadNodeProps {
+    node: GQL.ILSIFUpload
+    onDelete: () => void
+    history: H.History
+}
+
+const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete, history }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
@@ -40,7 +47,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () =>
     }
 
     return deletionOrError && isErrorLike(deletionOrError) ? (
-        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
         <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
             <div className="lsif-data__meta">
@@ -71,7 +78,9 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () =>
                         -
                         <span className="ml-2">
                             <Link to={`./code-intelligence/lsif-uploads/${node.id}`}>
-                                {node.state === GQL.LSIFUploadState.PROCESSING ? (
+                                {node.state === GQL.LSIFUploadState.UPLOADING ? (
+                                    <span>Uploading</span>
+                                ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
                                     <span>Processing</span>
                                 ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
                                     <span className="text-success">Processed</span>
@@ -159,13 +168,13 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 intelligence for historic and branch commits.
             </p>
 
-            <FilteredConnection<GQL.ILSIFUpload, { onDelete: () => void }>
+            <FilteredConnection<GQL.ILSIFUpload, Omit<LsifUploadNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="upload"
                 pluralNoun="uploads"
                 queryConnection={queryUploads}
                 nodeComponent={LsifUploadNode}
-                nodeComponentProps={{ onDelete: onDeleteCallback }}
+                nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
                 updates={onDeleteSubject}
                 history={props.history}
                 location={props.location}

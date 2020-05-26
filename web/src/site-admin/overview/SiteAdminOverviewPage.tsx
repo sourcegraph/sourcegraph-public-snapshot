@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H from 'history'
+import * as H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
@@ -132,26 +132,41 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 </div>
             )}
             {info === undefined && <LoadingSpinner className="icon-inline" />}
+            <div className="pt-3 mb-4">
+                {activation?.completed && (
+                    <Collapsible
+                        title={
+                            <>
+                                {setupPercentage > 0 && setupPercentage < 100
+                                    ? 'Almost there!'
+                                    : 'Welcome to Sourcegraph'}
+                            </>
+                        }
+                        detail={
+                            setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''
+                        }
+                        defaultExpanded={setupPercentage < 100}
+                        className="p-0 list-group-item font-weight-normal e2e-site-admin-overview-menu"
+                        buttonClassName="mb-0 py-3 px-3"
+                        titleClassName="h5 mb-0 font-weight-bold"
+                        detailClassName="h5 mb-0 font-weight-normal"
+                        titleAtStart={true}
+                    >
+                        {activation.completed && (
+                            <ActivationChecklist
+                                history={history}
+                                steps={activation.steps}
+                                completed={activation.completed}
+                                buttonClassName="h5 mb-0 font-weight-normal"
+                            />
+                        )}
+                    </Collapsible>
+                )}
+            </div>
+
             <div className="list-group">
                 {info && !isErrorLike(info) && (
                     <>
-                        {activation?.completed && (
-                            <Collapsible
-                                title={<>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>}
-                                defaultExpanded={setupPercentage < 100}
-                                className="list-group-item e2e-site-admin-overview-menu"
-                                titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
-                                titleAtStart={true}
-                            >
-                                {activation.completed && (
-                                    <ActivationChecklist
-                                        history={history}
-                                        steps={activation.steps}
-                                        completed={activation.completed}
-                                    />
-                                )}
-                            </Collapsible>
-                        )}
                         {info.repositories !== null && (
                             <Link
                                 to="/site-admin/repositories"
@@ -189,7 +204,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                         {info.users > 1 &&
                             stats !== undefined &&
                             (isErrorLike(stats) ? (
-                                <ErrorAlert className="mb-3" error={stats} />
+                                <ErrorAlert className="mb-3" error={stats} history={history} />
                             ) : (
                                 <Collapsible
                                     title={

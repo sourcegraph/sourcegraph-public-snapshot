@@ -1,11 +1,11 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
 /** @internal */
-export interface ExtDocumentsAPI extends ProxyValue {
+export interface ExtDocumentsAPI extends ProxyMarked {
     $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
@@ -18,8 +18,8 @@ class DocumentNotFoundError extends Error {
 }
 
 /** @internal */
-export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     private documents = new Map<string, ExtDocument>()
 
@@ -44,6 +44,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
      *
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
+     *
+     * @deprecated `getSync()` makes no additional guarantees over `get()` anymore.
      */
     public async getSync(resource: string): Promise<ExtDocument> {
         const doc = this.documents.get(resource)

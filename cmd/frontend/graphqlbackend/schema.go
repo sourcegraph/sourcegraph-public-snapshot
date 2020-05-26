@@ -30,16 +30,15 @@ scalar JSONCString
 
 # A mutation.
 type Mutation {
-    # Creates a list of Changesets of a given repository in a code host (e.g.
-    # pull request on GitHub). If a changeset with the given input already
-    # exists, it's returned instead of a new entry being added to the database.
+    # Create a list of changesets in a specific repository on a code host (e.g.,
+    # pull requests on GitHub). If a changeset with the given input already
+    # exists, it is returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
-    # Adds a list of Changesets to a Campaign.
-    # The campaign must not have a PatchSet.
+    # Add a list of changesets to a campaign. The campaign must not have a patchset.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Create a patch set from patches (in unified diff format) that are computed by the caller.
+    # Create a patchset from patches (in unified diff format) that are computed by the caller.
     #
     # To create the campaign, call createCampaign with the returned PatchSet.id in the
     # CreateCampaignInput.patchSet field.
@@ -48,48 +47,41 @@ type Mutation {
         # created from this PatchSet.
         patches: [PatchInput!]!
     ): PatchSet!
-    # Updates a campaign.
-    # Note, updating is not allowed when:
-    # The campaign has already been closed.
-    # A plan is added to a manual campaign.
-    # A non-manual campaign is being published.
-    # The branch of a (partially-) published campaign is changed.
+    # Updates a campaign. Updating is not allowed when any of the following are true:
+    #
+    # - The campaign has already been closed.
+    # - A plan is added to a manual campaign.
+    # - A non-manual campaign is being published.
+    # - The branch of a (partially or fully) published campaign is changed.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retries creating changesets from the patches in the PatchSet that could not be successfully created on the code host.
-    # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
+    # Retry creating changesets from the patches in the campaign's patchset that could not be
+    # successfully created on the code host. Retrying will clear the errors list of a campaign.
     retryCampaign(campaign: ID!): Campaign!
-    # Deletes a campaign.
+    # Delete a campaign.
     deleteCampaign(
         campaign: ID!
-        # Whether to close the changesets associated with this campaign on their
-        # respective codehosts, where "close" means the appropriate final state
-        # on the codehost (e.g. "declined" on Bitbucket Server).
+        # Whether to close the changesets associated with this campaign on their respective code
+        # hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): EmptyResponse
-    # Closes a campaign.
-    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
-    # time and, if closeChangesets = true, closes associated changesets on the
-    # codehosts.
+    # Close a campaign.
     closeCampaign(
         campaign: ID!
-        # Whether to close the changesets associated with this campaign on their
-        # respective codehosts, where "close" means the appropriate final state
-        # on the codehost (e.g. "declined" on Bitbucket Server).
+        # Whether to close the changesets associated with this campaign on their respective code
+        # hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Publishes the Campaign by turning its patches into changesets on
-    # the codehosts.
-    # The Campaign.draft field will be set to false and Campaign.status will
-    # update according to the progress of turning the patches into
-    # changesets.
+    # Publish the campaign by turning its patches into changesets on the code hosts. The
+    # Campaign.draft field will be set to false and Campaign.status will update according to the
+    # progress of turning the patches into changesets.
     publishCampaign(campaign: ID!): Campaign!
-    # Creates an ExternalChangeset on the codehost asynchronously.
-    # The Patch has to belong to a PatchSet that has been attached
-    # to a Campaign. Otherwise an error is returned.
-    # Since this is an asynchronous operation, the Campaign.status field can be
-    # used to keep track of progress.
+    # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
+    # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
+    # query the campaign's status to track the progress of this async operation.
     publishChangeset(patch: ID!): EmptyResponse!
-    # Enqueues the given changeset for high-priority syncing.
+    # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
@@ -190,7 +182,6 @@ type Mutation {
     # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
     # - Sourcegraph extensions published by the user.
     # - User, Organization, or Global settings authored by the user.
-    # - Discussion threads and comments created by the user.
     #
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     # Updates the current user's password. The oldPassword arg must match the user's current password.
@@ -352,8 +343,6 @@ type Mutation {
         # with this new value.
         input: String!
     ): Boolean!
-    # Manages discussions.
-    discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
     #
     # Only site admins may perform this mutation.
@@ -401,19 +390,32 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
-    # Set permissions of a repository with a full set of users by their usernames or emails.
+    # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
+    # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
-        # The repository that the mutation is applied to.
+        # The repository whose permissions to set.
         repository: ID!
-        # A list of usernames or email addresses according to site configuration.
+        # A list of user identifiers, which define the set of users who may view the repository. All
+        # users not included in the list will not be permitted to view the repository on
+        # Sourcegraph. Depending on the bindID option in the permissions.userMapping site
+        # configuration property, the elements of the list are either all usernames (bindID of
+        # "username") or all email addresses (bindID of "email").
         bindIDs: [String!]!
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
+    # Schedule a permissions sync for given repository. This queries the repository's code host for
+    # all users' permissions associated with the repository, so that the current permissions apply
+    # to all users' operations on that repository on Sourcegraph.
+    scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
+    # Schedule a permissions sync for given user. This queries all code hosts for the user's current
+    # repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
+    # the user's operations on Sourcegraph.
+    scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created
-# from the parent patch set.
+# from the parent patchset.
 input PatchInput {
     # The repository that this patch is applied to.
     repository: ID!
@@ -441,25 +443,26 @@ input CreateCampaignInput {
     # The name of the campaign.
     name: String!
 
-    # The description of the campaign as Markdown.
-    description: String!
+    # The description of the campaign (as Markdown).
+    description: String
 
-    # The name of the branch that will be created for each changeset on the codehost if the patchSet attribute is specified.
-    # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
-    # This is required if the patchSet attribute is specified.
+    # The name of the branch that will be created for each changeset on the code host if the
+    # patchSet attribute is specified. If a branch with the given name already exists, a fallback
+    # name will be created by adding a count to the end of the branch name until the name doesn't
+    # exist. Example: "my-branch-name" becomes "my-branch-name-1". Required if the patchSet
+    # attribute is specified.
     branch: String
 
-    # An optional reference to a PatchSet that was created before this mutation.
-    # If null, existing changesets can be added manually.
-    # If set, no changesets can be added manually, they will be created by Sourcegraph
-    # based on the patches belonging to the PatchSet.
-    # Will error if the PatchSet has been purged already and needs to be recreated.
-    # Using a PatchSet for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
+    # An optional reference to a patchset that was created before this mutation. If null, existing
+    # changesets can be added manually. If set, no changesets can be added manually; they will be
+    # created. based on the patches belonging to the patchset. An error will be returned if the
+    # patchset has expired. Using a patchset to create or update a campaign will retain it for the
+    # lifetime of the campaign and prevent it from expiring.
     patchSet: ID
 
-    # Whether or not to create the Campaign in draft mode. Default is false.
-    # When a Campaign is created in draft mode, its patches are not
-    # created on the codehost, but only when publishing the Campaign.
+    # Whether to create the campaign in draft mode. Default is false. A draft campaign lets you
+    # preview the changesets before creating them on the code host. When you're ready, you can
+    # publish changesets individually or all at once.
     draft: Boolean
 }
 
@@ -471,31 +474,33 @@ input UpdateCampaignInput {
     # The updated name of the campaign (if non-null).
     name: String
 
-    # The branch name. This is not allowed if the campaign or any individual changesets have already been published.
+    # The branch name. This is not allowed if the campaign or any individual changesets have already
+    # been published.
     branch: String
 
-    # The updated description of the campaign as Markdown (if non-null).
+    # The updated description of the campaign (as Markdown), if non-null.
     description: String
 
-    # An optional reference to a completed PatchSet that was previewed
-    # before updating the Campaign.
-    # If set, the Campaign's changesets will be updated to the Changesets of the given PatchSet.
-    # The Campaign's status will be updated accordingly while possibly
-    # new ExternalChangesets are created/updated/closed on the codehosts.
+    # A patchset that describes a new set of changes to make. If set, the previous changesets are
+    # updated or closed, and new changesetes are created, to reflect the new patchset.
     patchSet: ID
 }
 
-# A set of Patches that will be turned into changesets by a campaign.
-# It is cached and addressable by its ID for a limited amount of time.
+# A set of patches that will be applied to code by a campaign. Each patch corresponds to a single
+# changeset that will be created on a code host. A patchset is cached and is addressable by its ID
+# for a limited amount of time.
 type PatchSet implements Node {
-    # The unique ID of this PatchSet.
+    # The unique ID of this patchset.
     id: ID!
 
     # The proposed patches for the changesets that will be created by the campaign.
     patches(first: Int): PatchConnection!
 
-    # The URL where the PatchSet can be previewed and a campaign can be created from it.
+    # The URL where the patchset preview is displayed (and where you can create a campaign from it).
     previewURL: String!
+
+    # The diff stat for all the patches in the patchset.
+    diffStat: DiffStat!
 }
 
 # A paginated list of repository diffs committed to git.
@@ -510,44 +515,43 @@ type RepositoryComparisonConnection {
     pageInfo: PageInfo!
 }
 
-# The state a background process can be in.
+# The state of a background process.
 enum BackgroundProcessState {
-    # The background process is processing items.
+    # The background process is currently processing items.
     PROCESSING
-    # The background process attempted processing all items, but some failed.
+    # The background process failed.
     ERRORED
-    # The background process completed processing all items successfully.
+    # The background process successfully completed the processing of all items.
     COMPLETED
-    # The background process was canceled.
+    # The background process was cancelled.
     CANCELED
 }
 
-# Reusable type to report progress of a background process.
+# The status of a background process.
 type BackgroundProcessStatus {
     # How many items were successfully completed.
     completedCount: Int!
 
-    # How many items are not done yet (including items that errored).
+    # How many items are not yet done (including items that errored).
     pendingCount: Int!
 
-    # The state the background process is currently in.
+    # The state of the background process.
     state: BackgroundProcessState!
 
     # Messages of errors that occurred since the current run of this process was started.
     errors: [String!]!
 }
 
-# A collection of changesets.
+# A campaign is a set of related changes to apply to code across one or more repositories.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
 
-    # The PatchSet that was used to create this campaign.
-    # If null, changesets are added to the campaign manually.
+    # The patchset that was used to create this campaign. If null, changesets are added to the
+    # campaign manually.
     patchSet: PatchSet
 
-    # The current status of creating or updating the campaigns changesets on
-    # the code host.
+    # The current status of creating or updating the campaign's changesets on the code host.
     status: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
@@ -556,8 +560,8 @@ type Campaign implements Node {
     # The name of the campaign.
     name: String!
 
-    # The description as Markdown.
-    description: String!
+    # The description (as Markdown).
+    description: String
 
     # The branch of the changesets.
     branch: String
@@ -577,48 +581,51 @@ type Campaign implements Node {
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
 
-    # The combined diff of all changesets across all repositories, already created on the code host.
+    # The combined diff of all changesets (that already exist on the code host) across all affected
+    # repositories.
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
-    # The changesets in this campaign, already created on the code host.
+    # The changesets in this campaign that already exist on the code host.
     changesets(
         first: Int
-        # Only include changesets with the given state
+        # Only include changesets with the given state.
         state: ChangesetState
-        # Only include changesets with the given review state
+        # Only include changesets with the given review state.
         reviewState: ChangesetReviewState
-        # Only include changesets with the given check state
+        # Only include changesets with the given check state.
         checkState: ChangesetCheckState
     ): ExternalChangesetConnection!
 
-    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    # All the changesets in this campaign whose state is ChangesetState.OPEN.
+    openChangesets: ExternalChangesetConnection!
+
+    # The changeset counts over time, in 1-day intervals backwards from the point in time given in
+    # the "to" parameter.
     changesetCountsOverTime(
-        # Only include changeset counts up to this point in time (inclusive).
-        # Defaults to createdAt.
+        # Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
         from: DateTime
-        # Only include changeset counts up to this point in time (inclusive).
-        # Defaults to now.
+        # Only include changeset counts up to this point in time (inclusive). Defaults to the
+        # current time.
         to: DateTime
     ): [ChangesetCounts!]!
 
     # The date and time when the campaign was closed.
     closedAt: DateTime
 
-    # The date and time when the Campaign changed from draft mode to published.
-    # If the Campaign has not been published yet (is still in draft mode) this
-    # is null.
-    # If the Campaign was never in draft mode the value is the same as createdAt.
+    # The date and time when the campaign changed from draft mode to published. If the campaign has
+    # not been published yet (i.e., it is still in draft mode), this is null. If the campaign was never in
+    # draft mode, the value is the same as Campaign.createdAt.
     publishedAt: DateTime
 
-    # The patches that will be turned into changesets on the code host when
-    # publishing the Campaign.
-    # If the Campaign is a "manual" campaign and doesn't have a PatchSet
-    # attached, there won't be any nodes returned by this connection.
-    # When publishing a Campaign, the number of nodes in changesets will
-    # increase with each decrease in patches. The Completed count in the
-    # Campaign.status increments with every Patch turned into an
-    # ExternalChangeset.
+    # The patches that will be turned into changesets on the code host when publishing the campaign.
+    # If the campaign is a "manual" campaign and doesn't have a patchset attached, there won't be
+    # any nodes returned by this connection. When publishing a campaign, the number of nodes in
+    # changesets will increase with each decrease in patches. The completed count in the
+    # Campaign.status field increments with every patch turned into an ExternalChangeset.
     patches(first: Int): PatchConnection!
+
+    # The diff stat for all the patches and changesets in the campaign.
+    diffStat: DiffStat!
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -653,7 +660,7 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# A Changeset's state
+# The state of a changeset.
 enum ChangesetState {
     OPEN
     CLOSED
@@ -661,7 +668,7 @@ enum ChangesetState {
     DELETED
 }
 
-# The state of a Changeset Review
+# The review state of a changeset.
 enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
@@ -670,7 +677,7 @@ enum ChangesetReviewState {
     DISMISSED
 }
 
-# The state of continuous integration checks on a changeset
+# The state of checks (e.g., for continuous integration) on a changeset.
 enum ChangesetCheckState {
     PENDING
     PASSED
@@ -679,14 +686,15 @@ enum ChangesetCheckState {
 
 # The input to the createChangesets mutation.
 input CreateChangesetInput {
-    # The repository ID that this Changeset belongs to.
+    # The ID of the repository that this changeset belongs to.
     repository: ID!
-    # The external ID that uniquely identifies this Changeset in the above repository.
-    # Github: PR number
+    # The external ID that uniquely identifies this changeset in the repository on the code host.
+    # For GitHub and Bitbucket Server, this is the pull request number (as a string).
     externalID: String!
 }
 
-# A Patch that can be used to create a changeset on a code host.
+# A patch is a code change on a repository branch. It is used to create a changeset on a code host
+# as part of a campaign.
 type Patch implements Node {
     # The id of the patch.
     id: ID!
@@ -697,42 +705,44 @@ type Patch implements Node {
     # The actual diff of the patch.
     diff: PreviewRepositoryComparison!
 
-    # Whether the Patch is enqueued for publication. Default is false.
-    # It will be true when:
-    # - a Campaign has been created with the PatchSet to which this Patch belongs.
-    # - when a Campaign with the PatchSet has been published after being in draft mode.
-    # - when the Patch has been individually published through the publishChangeset mutation.
+    # Whether the patch is enqueued for publication. Defaults to false. It will be true when any of
+    # the following has occurred:
+    #
+    # - A campaign has been created with the patchset to which this patch belongs.
+    # - A campaign with the patchset has been published after being in draft mode.
+    # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
 }
 
-# A label attached to a changeset on a codehost, mirrored
+# A label attached to a changeset on a code host.
 type ChangesetLabel {
-    # The labels text
+    # The label's text.
     text: String!
-    # Label color, defined in hex without the #. E.g., 93ba13
+    # The label's color, as a hex color code without the #. For example: "93ba13".
     color: String!
-    # Optional descriptive text to support the understandability of the labels meaning
+    # An optional description of the label.
     description: String
 }
 
-# A changeset in a code host (e.g. a PR on Github)
+# A changeset on a code host (e.g., a pull request on GitHub).
 type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
     # The external ID that uniquely identifies this ExternalChangeset on the
-    # codehost. For example, on GitHub this is the PR number.
+    # code host. For example, on GitHub this is the pull request number.
     externalID: String!
 
     # The repository changed by this changeset.
     repository: Repository!
 
-    # The campaigns that have this changeset in them.
+    # The campaigns that contain this changeset.
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Only return campaigns in this state.
         state: CampaignState
-        # Only return campaigns that have a patch set.
+        # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
     ): CampaignConnection!
 
@@ -745,13 +755,16 @@ type ExternalChangeset implements Node {
     # The date and time when the changeset was updated.
     updatedAt: DateTime!
 
-    # The title of the changeset
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+
+    # The title of the changeset.
     title: String!
 
-    # The body of the changeset
+    # The body of the changeset.
     body: String!
 
-    # The state of the changeset
+    # The state of the changeset.
     state: ChangesetState!
 
     # The labels attached to the changeset on the code host.
@@ -763,18 +776,19 @@ type ExternalChangeset implements Node {
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
 
-    # The head of the diff ("new" or "right-hand side").
-    head: GitRef!
+    # The base of the diff ("old" or "left-hand side"). It could be null in some cases, for example
+    # when a force push has occured.
+    base: GitRef
 
-    # The base of the diff ("old" or "left-hand side").
-    base: GitRef!
+    # The head of the diff ("new" or "right-hand side"). It is common for branches to be deleted
+    # after merge in which case head could be null.
+    head: GitRef
 
-    # The diff of this changeset.
-    # Only returned if the changeset has not been merged or closed.
+    # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
     diff: RepositoryComparison
 
-    # The state of the continuous integration checks on this changeset.
-    # It can be null if no checks have been configured.
+    # The state of the checks (e.g., for continuous integration) on this changeset, or null if no
+    # checks have been configured.
     checkState: ChangesetCheckState
 }
 
@@ -802,7 +816,7 @@ type PatchConnection {
     pageInfo: PageInfo!
 }
 
-# A changeset event in a code host (e.g. a comment on a PR on Github)
+# A changeset event in a code host (e.g., a comment on a pull request on GitHub).
 type ChangesetEvent implements Node {
     # The unique ID for the changeset event.
     id: ID!
@@ -846,167 +860,8 @@ input UpdateExternalServiceInput {
     config: String
 }
 
-# A selection within a file.
-input DiscussionThreadTargetRepoSelectionInput {
-    # The line that the selection started on (zero-based, inclusive).
-    startLine: Int!
-
-    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
-    startCharacter: Int!
-
-    # The line that the selection ends on (zero-based, exclusive).
-    endLine: Int!
-
-    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
-    endCharacter: Int!
-
-    # The literal textual (UTF-8) lines before the line the selection started
-    # on.
-    #
-    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    #
-    # If null, this information will be gathered from the repository itself
-    # automatically. This will result in an error if the selection is invalid or
-    # the DiscussionThreadTargetRepoInput specified an invalid path or
-    # branch/revision.
-    linesBefore: [String!]
-
-    # The literal textual (UTF-8) lines of the selection. i.e. all lines
-    # startLine through endLine.
-    #
-    # If null, this information will be gathered from the repository itself
-    # automatically. This will result in an error if the selection is invalid or
-    # the DiscussionThreadTargetRepoInput specified an invalid path or
-    # branch/revision.
-    lines: [String!]
-
-    # The literal textual (UTF-8) lines after the line the selection ended on.
-    #
-    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    #
-    # If null, this information will be gathered from the repository itself
-    # automatically. This will result in an error if the selection is invalid or
-    # the DiscussionThreadTargetRepoInput specified an invalid path or
-    # branch/revision.
-    linesAfter: [String!]
-}
-
-# A discussion thread that is centered around:
-#
-# - A repository.
-# - A directory inside a repository.
-# - A file inside a repository.
-# - A selection inside a file inside a repository.
-#
-input DiscussionThreadTargetRepoInput {
-    # The repository in which the thread was created.
-    #
-    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
-    repositoryID: ID
-
-    # The repository in which the thread was created.
-    #
-    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
-    repositoryName: String
-
-    # The repository in which the thread was created.
-    #
-    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
-    repositoryGitCloneURL: String
-
-    # The path (relative to the repository root) of the file or directory that
-    # the thread is referencing, if any. If the path is null, the thread is not
-    # talking about a specific path but rather just the repository generally.
-    path: String
-
-    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
-    # Git revision), that the thread was referencing, if any.
-    branch: String
-
-    # The exact Git object ID (OID / 40-character SHA-1 hash) which the thread
-    # was referencing, if any.
-    revision: GitObjectID
-
-    # The selection that the thread was referencing, if any.
-    selection: DiscussionThreadTargetRepoSelectionInput
-}
-
-# Describes the creation of a new thread around some target (e.g. a file in a repo).
-input DiscussionThreadCreateInput {
-    # An explicitly chosen title for the discussion thread. Otherwise, the title
-    # will be chosen based on the 'contents' (e.g. the first line).
-    title: String
-
-    # The contents of the thread's first comment (i.e. the threads comment).
-    contents: String!
-
-    # The target repo of this discussion thread. This is nullable so that in
-    # the future more target types may be added.
-    targetRepo: DiscussionThreadTargetRepoInput
-}
-
-# Describes an update mutation to an existing thread.
-input DiscussionThreadUpdateInput {
-    # The ID of the thread to update.
-    threadID: ID!
-
-    # When non-null, indicates that the thread's title should be updated to the specified value.
-    title: String
-
-    # When non-null, indicates that the thread should be archived.
-    archive: Boolean
-
-    # When non-null, indicates that the thread should be deleted. Only admins
-    # can perform this action.
-    delete: Boolean
-}
-
-# Describes an update mutation to an existing comment in a thread.
-input DiscussionCommentUpdateInput {
-    # The ID of the comment to update.
-    commentID: ID!
-
-    # When non-null, indicates that the comment's content should be updated. Only site admins and the
-    # original author can perform this action.
-    contents: String
-
-    # When non-null, indicates that the thread should be deleted. Only admins
-    # can perform this action.
-    delete: Boolean
-
-    # When non-null, reports the comment with the specified reason.
-    #
-    # An error will be returned if the comment's canReport field is false.
-    report: String
-
-    # When non-null, indicates that the reports on the thread should be
-    # cleared. Only admins can perform this action.
-    #
-    # An error will be returned if the comment's canClearReports field is false.
-    clearReports: Boolean
-}
-
-# Mutations for discussions.
-type DiscussionsMutation {
-    # Creates a new thread. Returns the new thread.
-    createThread(input: DiscussionThreadCreateInput!): DiscussionThread!
-
-    # Updates an existing thread. Returns the updated thread.
-    #
-    # Returns null if the thread was deleted.
-    updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread
-
-    # Adds a new comment to a thread. Returns the updated thread.
-    addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
-
-    # Updates an existing comment. Returns the updated thread.
-    updateComment(input: DiscussionCommentUpdateInput!): DiscussionThread!
-}
-
 # Describes options for rendering Markdown.
 input MarkdownOptions {
-    # TODO(slimsag:discussions): add option for controlling relative links
-
     # A dummy null value (empty input types are not allowed yet).
     alwaysNil: String
 }
@@ -1163,7 +1018,7 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a patch set.
+        # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
     ): CampaignConnection!
 
@@ -1254,46 +1109,6 @@ type Query {
         # Return organizations whose names or display names match the query.
         query: String
     ): OrgConnection!
-    # Lists discussion threads.
-    discussionThreads(
-        # Returns the first n threads from the list.
-        first: Int
-        # Return discussion threads matching the query.
-        query: String
-        # When present, lists only the thread with this ID.
-        #
-        # DEPRECATED: use Query#node instead.
-        threadID: ID
-        # When present, lists only the threads created by this author.
-        authorUserID: ID
-        # When present, lists only the threads whose target is a repository with this ID.
-        #
-        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
-        targetRepositoryID: ID
-        # When present, lists only the threads whose target is a repository with this name.
-        #
-        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
-        targetRepositoryName: String
-        # When present, lists only the threads whose target is a repository with this Git clone URL.
-        #
-        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
-        targetRepositoryGitCloneURL: String
-        # When present, lists only the threads whose target is a repository with this file path.
-        #
-        # If the path ends with "/**", any path below that is matched.
-        targetRepositoryPath: String
-    ): DiscussionThreadConnection!
-    # Looks up a discussion thread by its DiscussionThread#idWithoutKind value.
-    #
-    # To get a discussion thread by its globally unique GraphQL ID, use Query#node.
-    discussionThread(idWithoutKind: String!): DiscussionThread
-    # Lists discussion comments.
-    discussionComments(
-        # Returns the first n comments from the list.
-        first: Int
-        # When present, lists only the comments created by this author.
-        authorUserID: ID
-    ): DiscussionCommentConnection!
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
@@ -1322,6 +1137,10 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
+        # (experimental) Optionally specify the versionContext. If not specified the
+        # default version context is used (all repositories on the default branch).
+        versionContext: String
+
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
         # https://docs.sourcegraph.com/api/graphql/search
@@ -1346,6 +1165,8 @@ type Query {
     savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
+    # (experimental) All version contexts.
+    versionContexts: [VersionContext!]!
     # The current site.
     site: Site!
     # Retrieve responses to surveys.
@@ -1512,7 +1333,7 @@ type SearchResults {
     repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
-    # reached.
+    # reached, or because they were excluded due to being forks or archives.
     #
     # In paginated search requests, this represents the set of repositories searched for the
     # individual paginated request / input cursor and not the global set of repositories that
@@ -1613,10 +1434,8 @@ type SavedSearch implements Node {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
-    # The user ID of the owner if the owner is a user.
-    userID: ID
-    # The organization ID of the owner if the owner is an org.
-    orgID: ID
+    # The user or org that owns this saved search.
+    namespace: Namespace!
     # The Slack webhook URL associated with this saved search, if any.
     slackWebhookURL: String
 }
@@ -1751,6 +1570,8 @@ type ExternalService implements Node {
     createdAt: DateTime!
     # When the external service was last updated.
     updatedAt: DateTime!
+    # An optional URL that will be populated when webhooks have been configured for the external service.
+    webhookURL: String
     # This is an optional field that's populated when we ran into errors on the
     # backend side when trying to create/update an ExternalService, but the
     # create/update still succeeded.
@@ -1816,11 +1637,13 @@ type Repository implements Node & GenericSearchResultInterface {
     mirrorInfo: MirrorRepositoryInfo!
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
-    externalRepository: ExternalRepository
+    externalRepository: ExternalRepository!
     # Whether the repository is a fork.
     isFork: Boolean!
     # Whether the repository has been archived.
     isArchived: Boolean!
+    # Whether the repository is private.
+    isPrivate: Boolean!
     # Lists all external services which yield this repository.
     externalServices(
         # Returns the first n external services from the list.
@@ -1894,8 +1717,6 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
-    # Link to another Sourcegraph instance location where this repository is located.
-    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
@@ -1945,6 +1766,22 @@ type Repository implements Node & GenericSearchResultInterface {
         # Opaque pagination cursor.
         after: String
     ): UserConnection!
+
+    # The permissions information of the repository for the authenticated user.
+    # It is null when there is no permissions data stored for the repository.
+    permissionsInfo: PermissionsInfo
+}
+
+# Permissions information of a repository or a user.
+type PermissionsInfo {
+    # The permission levels that a user has on the repository.
+    permissions: [RepositoryPermission!]!
+    # The last complete synced time, the value is updated only after a user- or repo-
+    # centric sync of permissions. It is null when the complete sync never happened.
+    syncedAt: DateTime
+    # The last updated time of permissions, the value is updated whenever there is a
+    # change to the database row (i.e. incremental update).
+    updatedAt: DateTime!
 }
 
 # A reference to another Sourcegraph instance.
@@ -2031,6 +1868,22 @@ type ExternalRepository {
     serviceID: String!
 }
 
+# (experimental) A version context. Used to change the set of default repository and
+# revisions searched.
+#
+# Note: We do not expose the list of repositories and revisions in the version
+# context. This is intentional. However, if a need arises we can add it in.
+type VersionContext implements Node {
+    # The version context ID is its name.
+    id: ID!
+
+    # The name of the version context.
+    name: String!
+
+    # The description of the version context.
+    description: String!
+}
+
 # Information about a repository's text search index.
 type RepositoryTextSearchIndex {
     # The indexed repository.
@@ -2087,44 +1940,11 @@ type PreviewRepositoryComparison {
     baseRepository: Repository!
 
     # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
-}
-
-# A list of file diffs that might be applied.
-type PreviewFileDiffConnection {
-    # A list of file diffs that might be applied.
-    nodes: [PreviewFileDiff!]!
-    # The total count of file diffs in the connection, if available. This total count may be larger than the number
-    # of nodes in this object when the result is paginated.
-    totalCount: Int
-    # Pagination information.
-    pageInfo: PageInfo!
-    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    diffStat: DiffStat!
-    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
-    # paginated.
-    rawDiff: String!
-}
-
-# A diff for a single file that has not been applied yet.
-# Subset of the FileDiff type.
-type PreviewFileDiff {
-    # The old (original) path of the file, or null if the file was added.
-    oldPath: String
-    # The old file, or null if the file was created (oldFile.path == oldPath).
-    oldFile: File2
-    # The new path of the file if the diff was applied, or null if the file was deleted.
-    newPath: String
-    # Hunks that were would be changed from old to new.
-    hunks: [FileDiffHunk!]!
-    # The diff stat for the whole file.
-    stat: DiffStat!
-    # FOR INTERNAL USE ONLY.
-    #
-    # An identifier for the file diff that is unique among all other file diffs in the list that
-    # contains it.
-    internalID: String!
+    fileDiffs(
+        first: Int
+        # Return file diffs after the given cursor.
+        after: String
+    ): FileDiffConnection!
 }
 
 # The differences between two concrete Git commits in a repository.
@@ -2148,6 +1968,8 @@ type RepositoryComparison {
     fileDiffs(
         # Return the first n file diffs from the list.
         first: Int
+        # Return file diffs after the given cursor.
+        after: String
     ): FileDiffConnection!
 }
 
@@ -2192,6 +2014,33 @@ type FileDiff {
     internalID: String!
 }
 
+# The type of content in a hunk line.
+enum DiffHunkLineType {
+    # Added line.
+    ADDED
+    # Unchanged line.
+    UNCHANGED
+    # Deleted line.
+    DELETED
+}
+
+# A single highlighted line, including the kind of line.
+type HighlightedDiffHunkLine {
+    # The HTML containing the syntax-highlighted line of code.
+    html: String!
+    # The operation that happened on this line, in patches it is prefixed with '+', '-', ' '.
+    # Can be either add, delete, or no change.
+    kind: DiffHunkLineType!
+}
+
+# A highlighted hunk, consisting of all its lines.
+type HighlightedDiffHunkBody {
+    # Whether highlighting was aborted.
+    aborted: Boolean!
+    # The highlighted lines.
+    lines: [HighlightedDiffHunkLine!]!
+}
+
 # A changed region ("hunk") in a file diff.
 type FileDiffHunk {
     # The range of the old file that the hunk applies to.
@@ -2204,6 +2053,16 @@ type FileDiffHunk {
     section: String
     # The hunk body, with lines prefixed with '-', '+', or ' '.
     body: String!
+    # Highlight the hunk.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedDiffHunkBody!
 }
 
 # A hunk range in one side (old/new) of a diff.
@@ -2630,6 +2489,8 @@ interface TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2654,6 +2515,8 @@ type GitTree implements TreeEntry {
     canonicalURL: String!
     # The URLs to this tree on external services.
     externalURLs: [ExternalLink!]!
+    # The URL to this entry's raw contents as a Zip archive.
+    rawZipArchiveURL: String!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # A list of directories in this tree.
@@ -2694,6 +2557,8 @@ type GitTree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
     ): Boolean!
 }
 
@@ -2727,6 +2592,41 @@ interface File2 {
     # The canonical URL to this file (using an immutable revision specifier).
     canonicalURL: String!
     # The URLs to this file on external services.
+    externalURLs: [ExternalLink!]!
+    # Highlight the file.
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
+}
+
+# A virtual file is an arbitrary file that is generated in memory.
+type VirtualFile implements File2 {
+    # The full path (relative to the root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file.
+    name: String!
+    # False because this is a file, not a directory.
+    isDirectory: Boolean!
+    # The content of this file.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The file rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # Not implemented.
+    url: String!
+    # Not implemented.
+    canonicalURL: String!
+    # Not implemented.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(
@@ -2899,7 +2799,8 @@ type FileMatch {
 type LineMatch {
     # The preview.
     preview: String!
-    # The line number.
+    # The line number. 0-based. The first line will have lineNumber 0. Note: A
+    # UI will normally display line numbers 1-based.
     lineNumber: Int!
     # Tuples of [offset, length] measured in characters (not bytes).
     offsetAndLengths: [[Int!]!]!
@@ -3055,6 +2956,10 @@ type User implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For users, this is the username.
     namespaceName: String!
+
+    # The permissions information of the user over repositories.
+    # It is null when there is no permissions data stored for the user.
+    permissionsInfo: PermissionsInfo
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -3290,241 +3195,6 @@ enum OrganizationInvitationResponseType {
     REJECT
 }
 
-# An object defining a selection range within e.g. a file.
-type DiscussionSelectionRange {
-    # The line that the selection started on (zero-based, inclusive).
-    startLine: Int!
-
-    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
-    startCharacter: Int!
-
-    # The line that the selection ends on (zero-based, exclusive).
-    endLine: Int!
-
-    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
-    endCharacter: Int!
-}
-
-# A selection within a file.
-type DiscussionThreadTargetRepoSelection {
-    # The line that the selection started on (zero-based, inclusive).
-    startLine: Int!
-
-    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
-    startCharacter: Int!
-
-    # The line that the selection ends on (zero-based, exclusive).
-    endLine: Int!
-
-    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
-    endCharacter: Int!
-
-    # The literal textual (UTF-8) lines before the line the selection started
-    # on.
-    #
-    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    linesBefore: [String!]!
-
-    # The literal textual (UTF-8) lines of the selection. i.e. all lines
-    # startLine through endLine.
-    lines: [String!]!
-
-    # The literal textual (UTF-8) lines after the line the selection ended on.
-    #
-    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    linesAfter: [String!]!
-}
-
-# A discussion thread that is centered around:
-#
-# - A repository.
-# - A directory inside a repository.
-# - A file inside a repository.
-# - A selection inside a file inside a repository.
-#
-type DiscussionThreadTargetRepo {
-    # The repository in which the thread was created.
-    repository: Repository!
-
-    # The path (relative to the repository root) of the file or directory that
-    # the thread is referencing, if any. If the path is null, the thread is not
-    # talking about a specific path but rather just the repository generally.
-    path: String
-
-    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
-    # Git revision), that the thread was referencing, if any.
-    #
-    # TODO(slimsag:discussions): Consider renaming this to e.g. "ref" or
-    # something else which properly communicates "this can be any Git
-    # branch/tag/abbreviated revision/ref *except* an absolute Git revision"
-    branch: GitRef
-
-    # The exact revision that the thread was referencing, if any.
-    revision: GitRef
-
-    # The selection that the thread was referencing, if any.
-    selection: DiscussionThreadTargetRepoSelection
-
-    # Where the path would be relative to the given Git revision specifier
-    # (branch/commit/etc). i.e., accounting for file renames, deletions, etc.
-    #
-    # null is returned if there is no path relative to the specified revision,
-    # e.g. if the file was deleted or the path field was null.
-    relativePath(rev: String!): String
-
-    # Where the selection would be relative to the given Git revision specifier
-    # (branch/commit/etc).
-    #
-    # The implementation relies on a hueristic which is generally good enough,
-    # but under certain circumstances may not be as accurate as e.g. determining
-    # this placement by walking through the Git history.
-    #
-    # If determining the relative placement is not possible (file was renamed
-    # or removed, the selection no longer exists in the file, or the hueristic
-    # failed) null is returned and it should be assumed the selection does not
-    # exist in this revision.
-    relativeSelection(rev: String!): DiscussionSelectionRange
-}
-
-# The target of a discussion thread. Today, the only possible target is a
-# repository. In the future, this may be extended to include other targets such
-# as user profiles, extensions, etc. Clients should ignore target types they
-# do not understand gracefully.
-union DiscussionThreadTarget = DiscussionThreadTargetRepo
-
-# A discussion thread around some target (e.g. a file in a repo).
-type DiscussionThread implements Node {
-    # The discussion thread ID (globally unique).
-    id: ID!
-
-    # The discussion thread ID without its kind, which is globally unique among threads but not
-    # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionThread#id is
-    # a string like "RGlzY3Vzc2l...").
-    idWithoutKind: String!
-
-    # The user who authored this discussion thread.
-    author: User!
-
-    # The title of the thread.
-    #
-    # Note: the contents of the thread (its 'body') is always the first comment
-    # in the thread. It is always present, even if the user e.g. input no content.
-    title: String!
-
-    # The target of this discussion thread.
-    target: DiscussionThreadTarget!
-
-    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
-    #
-    # This will be null if the thread target is not DiscussionThreadTargetRepo
-    # OR if it was created without a path string.
-    inlineURL: String
-
-    # The date when the discussion thread was created.
-    createdAt: DateTime!
-
-    # The date when the discussion thread was last updated.
-    updatedAt: DateTime!
-
-    # The date when the discussion thread was archived (or null if it has not).
-    archivedAt: DateTime
-
-    # The comments in the discussion thread.
-    comments(
-        # Returns the first n comments from the list.
-        first: Int
-    ): DiscussionCommentConnection!
-}
-
-# A comment made within a discussion thread.
-type DiscussionComment implements Node {
-    # The discussion comment ID (globally unique).
-    id: ID!
-
-    # The discussion comment ID without its kind, which is globally unique among comments but not
-    # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionComment#id is
-    # a string like "RGlzY3Vzc2l...").
-    idWithoutKind: String!
-
-    # The discussion thread the comment was made in.
-    thread: DiscussionThread!
-
-    # The user who authored this discussion thread.
-    author: User!
-
-    # The actual markdown contents of the comment.
-    #
-    # If the comment was created without any contents (after trimming whitespace)
-    # then the title of the thread will be returned.
-    contents: String!
-
-    # The markdown contents rendered as an HTML string. It is already sanitized
-    # and escaped and thus is always safe to render.
-    #
-    # If the comment was created without any contents (after trimming whitespace)
-    # then the title of the thread will be returned.
-    html(options: MarkdownOptions): String!
-
-    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
-    #
-    # This will be null if the thread was created without a path string.
-    inlineURL: String
-
-    # The date when the discussion thread was created.
-    createdAt: DateTime!
-
-    # The date when the discussion thread was last updated.
-    updatedAt: DateTime!
-
-    # Reports filed by users about this comment. Only admins will receive a non
-    # empty list of reports.
-    #
-    # When discussions.abuseProtection in the site config is set to false, this
-    # will always be an empty list.
-    reports: [String!]!
-
-    # Whether or not the comment can be reported.
-    #
-    # This is always false when discussions.abuseProtection in the site config is set to false.
-    canReport: Boolean!
-
-    # Whether or not the comment can be deleted.
-    canDelete: Boolean!
-
-    # Whether or not the comment can have its reports be cleared.
-    #
-    # This is always false when discussions.abuseProtection in the site config is set to false.
-    canClearReports: Boolean!
-}
-
-# A list of discussion threads.
-type DiscussionThreadConnection {
-    # A list of discussion threads.
-    nodes: [DiscussionThread!]!
-
-    # The total count of discussion threads in the connection. This total
-    # count may be larger than the number of nodes in this object when the
-    # result is paginated.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A list of discussion comments.
-type DiscussionCommentConnection {
-    # A list of discussion comments.
-    nodes: [DiscussionComment!]!
-
-    # The total count of discussion comments in the connection. This total
-    # count may be larger than the number of nodes in this object when the
-    # result is paginated.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
 # RepositoryOrderBy enumerates the ways a repositories list can be ordered.
 enum RepositoryOrderBy {
     REPOSITORY_NAME
@@ -3662,6 +3332,19 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): CodeIntelUsageStatistics!
+    # Monitoring overview for this site.
+    #
+    # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
+    # is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
+    # order to ensure that if the frontend goes down you still recieve alerts:
+    #
+    # Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
+    # Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    #
+    monitoringStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+    ): MonitoringStatistics!
 }
 
 # The configuration for a site.
@@ -3960,6 +3643,26 @@ type DeploymentConfiguration {
     email: String
     # The site ID.
     siteID: String
+}
+
+# Monitoring overview.
+type MonitoringStatistics {
+    # Alerts fired in this time span.
+    alerts: [MonitoringAlert!]!
+}
+
+# A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+type MonitoringAlert {
+    # End time of this event, which describes the past 12h of recorded data.
+    timestamp: DateTime!
+    # Name of alert that the service fired.
+    name: String!
+    # Name of the service that fired the alert.
+    serviceName: String!
+    # Average percentage of time (between [0, 1]) that the event was firing over the 12h of recorded data. e.g.
+    # 1.0 if it was firing 100% of the time on average during that 12h window, 0.5 if it was firing 50% of the
+    # time on average, etc.
+    average: Float!
 }
 
 # A list of survey responses
@@ -4267,6 +3970,9 @@ enum LSIFUploadState {
 
     # This upload is queued to be processed later.
     QUEUED
+
+    # This upload is currently being transferred to Sourcegraph.
+    UPLOADING
 }
 
 # Metadata and status about an LSIF upload.
@@ -4395,8 +4101,9 @@ type DotcomMutation {
         accountID: ID!
         # The details of the product subscription.
         productSubscription: ProductSubscriptionInput!
-        # The token that represents the payment method used to purchase this product subscription.
-        paymentToken: String!
+        # The token that represents the payment method used to purchase this product subscription,
+        # or null if no payment is required.
+        paymentToken: String
     ): CreatePaidProductSubscriptionResult!
     # Updates a new product subscription and credits or debits the associated payment method.
     #
@@ -4412,8 +4119,8 @@ type DotcomMutation {
         # value").
         update: ProductSubscriptionInput!
         # The token that represents the payment method used to pay for (or receive credit for) this
-        # product subscription update.
-        paymentToken: String!
+        # product subscription update, or null if no payment is required.
+        paymentToken: String
     ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #
@@ -4619,6 +4326,8 @@ type ProductPlan {
     pricePerUserPerYear: Int!
     # The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
     minQuantity: Int
+    # The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    maxQuantity: Int
     # Defines if the tiering price should be graduated or volume based.
     tiersMode: String!
     # The tiered pricing for the plan.
@@ -4629,11 +4338,11 @@ type ProductPlan {
 #
 # FOR INTERNAL USE ONLY.
 type PlanTier {
-    # The per-user amount.
+    # The per-user amount for this tier.
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
-    # The base fee that this tier applies to.
+    # The flat fee for this tier.
     flatAmount: Int!
 }
 

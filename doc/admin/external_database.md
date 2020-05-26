@@ -22,13 +22,13 @@ Add the following to your `docker run` command:
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.14.2</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.16.0</code></pre>
 
 ### Docker Compose
 
 1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml): 
 
-    ```yaml
+    ```
     sourcegraph-frontend-0:
       # ...
       environment:
@@ -41,11 +41,11 @@ Add the following to your `docker run` command:
       # ...
     ```
 
-    - See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
+    See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
 1. Comment out / remove the internal `pgsql` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
-    ```yaml
+    ```
     # # Description: PostgreSQL database for various data.
     # #
     # # Disk: 128GB / persistent SSD
@@ -100,7 +100,7 @@ or follow the [IANA specification for Redis URLs](https://www.iana.org/assignmen
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>docker run [...]<span class="virtual-br"></span>   -e REDIS_ENDPOINT=redis.mycompany.org:6379<span class="virtual-br"></span>   sourcegraph/server:3.14.2</code></pre>
+<pre class="pre-wrap"><code>docker run [...]<span class="virtual-br"></span>   -e REDIS_ENDPOINT=redis.mycompany.org:6379<span class="virtual-br"></span>   sourcegraph/server:3.16.0</code></pre>
 
 > NOTE: On Mac/Windows, if trying to connect to a Redis server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
 

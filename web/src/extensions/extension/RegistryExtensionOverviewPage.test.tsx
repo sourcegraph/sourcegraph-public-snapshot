@@ -1,9 +1,10 @@
 import { noop } from 'lodash'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { PageTitle } from '../../components/PageTitle'
+import { createMemoryHistory } from 'history'
+import { Router } from 'react-router'
 
 jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
 
@@ -11,11 +12,12 @@ describe('RegistryExtensionOverviewPage', () => {
     afterEach(() => {
         PageTitle.titleSet = false
     })
-    test('renders', () =>
+    test('renders', () => {
+        const history = createMemoryHistory()
         expect(
             renderer
                 .create(
-                    <MemoryRouter>
+                    <Router history={history}>
                         <RegistryExtensionOverviewPage
                             eventLogger={{ logViewEvent: noop }}
                             extension={{
@@ -33,16 +35,19 @@ describe('RegistryExtensionOverviewPage', () => {
                                     },
                                 },
                             }}
+                            history={history}
                         />
-                    </MemoryRouter>
+                    </Router>
                 )
                 .toJSON()
-        ).toMatchSnapshot())
+        ).toMatchSnapshot()
+    })
 
     describe('categories', () => {
         test('filters out unrecognized categories', () => {
+            const history = createMemoryHistory()
             const x = renderer.create(
-                <MemoryRouter>
+                <Router history={history}>
                     <RegistryExtensionOverviewPage
                         eventLogger={{ logViewEvent: noop }}
                         extension={{
@@ -54,8 +59,9 @@ describe('RegistryExtensionOverviewPage', () => {
                                 categories: ['Programming languages', 'invalid', 'Other'],
                             },
                         }}
+                        history={createMemoryHistory()}
                     />
-                </MemoryRouter>
+                </Router>
             ).root
             expect(
                 toText(

@@ -7,14 +7,9 @@
         &:not(:last-child) {
             margin-right: 0.25rem;
         }
-    }
-
-    &__toggle-icon {
         border: 1px solid transparent;
-
         &--active {
             border: 1px solid $color-border-active;
-            padding-bottom: 0.25rem;
             border-radius: 2px;
             .theme-dark & {
                 background: $color-bg-5;
@@ -23,5 +18,9 @@
                 background: $color-light-bg-3;
             }
         }
+    }
+
+    &__copy-query-button {
+        opacity: 0;
     }
 }

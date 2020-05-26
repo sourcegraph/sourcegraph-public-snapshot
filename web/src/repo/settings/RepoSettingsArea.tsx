@@ -14,6 +14,7 @@ import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSid
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorMessage } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
+import * as H from 'history'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -36,6 +37,7 @@ interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycl
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    history: H.History
 }
 
 interface State {
@@ -80,7 +82,11 @@ export class RepoSettingsArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         if (this.state.error) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
+                />
             )
         }
 

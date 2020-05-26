@@ -44,6 +44,7 @@
 /internal/txemail @slimsag
 /internal/src-cli @efritz
 /internal/linkheader @efritz
+/internal/sqliteutil @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /.stylelintignore @felixfbecker
@@ -58,14 +59,15 @@
 /internal/buildkite @ggilmore
 /internal/httpcli @sourcegraph/core-services
 /dev/release-ping.sh @sourcegraph/distribution
-/dev/grafana.sh  @sourcegraph/distribution
-/dev/grafana  @sourcegraph/distribution
-/dev/prometheus.sh  @sourcegraph/distribution
-/dev/prometheus  @sourcegraph/distribution
+/dev/grafana.sh @sourcegraph/distribution
+/dev/grafana @sourcegraph/distribution
+/dev/prometheus.sh @sourcegraph/distribution
+/dev/prometheus @sourcegraph/distribution
 /dev/zoekt @sourcegraph/core-services
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash_migrations.sh @efritz
+/dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
 /SECURITY.md @beyang @nicksnyder
@@ -98,10 +100,10 @@
 /internal/eventlogger @dadlerj
 
 # Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
-/enterprise/internal/campaigns @sourcegraph/campaigns-core
-/internal/campaigns @sourcegraph/campaigns-core
-/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
@@ -116,7 +118,6 @@
 /internal/actor/ @beyang @unknwon
 
 # Core Services
-*git*/* @sourcegraph/core-services
 /cmd/frontend/authz/ @sourcegraph/core-services
 /cmd/frontend/db/ @sourcegraph/core-services
 /cmd/frontend/globals/ @sourcegraph/core-services @slimsag
@@ -142,14 +143,15 @@
 /schema/ @sourcegraph/core-services
 
 # Search and code mod
-*/search/**/* @sourcegraph/core-services
-/cmd/frontend/internal/pkg/search @sourcegraph/core-services
-/cmd/query-runner/ @sourcegraph/core-services
-/cmd/replacer/ @sourcegraph/core-services @rvantonder
-/cmd/searcher/ @sourcegraph/core-services
-/cmd/symbols/ @sourcegraph/core-services
-/internal/search/ @sourcegraph/core-services
-/internal/symbols/ @sourcegraph/core-services
+*/search/**/* @sourcegraph/search
+/cmd/frontend/internal/pkg/search @sourcegraph/search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/search
+/cmd/query-runner/ @sourcegraph/search
+/cmd/replacer/ @sourcegraph/search @rvantonder
+/cmd/searcher/ @sourcegraph/search
+/cmd/symbols/ @sourcegraph/search
+/internal/search/ @sourcegraph/search
+/internal/symbols/ @sourcegraph/search
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
@@ -168,17 +170,21 @@
 /cmd/frontend/types/saved_searches.go @attfarhan
 
 # Distribution
+/dev/ci @sourcegraph/distribution
+/enterprise/dev/ci @sourcegraph/distribution
 ## Deployment
 Dockerfile @sourcegraph/distribution
-/observability @sourcegraph/distribution
+/monitoring @slimsag @sourcegraph/distribution
 /docker-images @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
+/internal/prometheusutil @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
@@ -192,6 +198,7 @@ Dockerfile @sourcegraph/distribution
 /README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
+/doc/dev/web/ @felixfbecker @sourcegraph/web
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -208,20 +215,23 @@ Dockerfile @sourcegraph/distribution
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
+/internal/logging @keegancsmith @slimsag
+/internal/observation @keegancsmith @slimsag
 
 # Code discussions
 **/*discussion* @slimsag
-/web/src/discussions @slimsag
-/web/src/repo/blob/discussions @slimsag
 /cmd/frontend/types/discussions.go @slimsag
 /cmd/frontend/internal/pkg/discussions @slimsag
 /cmd/frontend/graphqlbackend/discussion* @slimsag
 /cmd/frontend/db/discussion* @slimsag
 
-# LSIF
-/cmd/precise-code-intel/ @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
+# Precise code intel
+/cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
+/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/internal/cmd/precise-code-intel-test @sourcegraph/code-intel
+/internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
@@ -235,6 +245,13 @@ Dockerfile @sourcegraph/distribution
 /babel.config.js @felixfbecker
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
+/dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
+/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
+
+# Third party license lists
+/ThirdPartyLicensesGo.csv @sourcegraph/core-services
+/ThirdPartyLicensesNpm.csv @sourcegraph/web
+/dev/licenses-npm.sh @sourcegraph/web
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
 /cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/core-services

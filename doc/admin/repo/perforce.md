@@ -20,8 +20,7 @@ Screenshot of using Sourcegraph for code navigation in a Perforce repository:
 For each Perforce repository you want to use with Sourcegraph, follow these steps:
 
 1. Create a local Git repository with the contents of your Perforce repository: `git p4 clone //DEPOT/PATH@all` (replace `//DEPOT/PATH` with the Perforce repository path).
-1. `cd PATH` to enter the directory of the new local Git repository.
-1. Run `src-expose serve dir1 dir2 dir3`, replacing the directories here with the directories that contain the new local Git repository.
+1. Run `src-expose serve` from the parent directory that holds all of the new local Git repositories.
 1. Follow the instructions in the [`src-expose` Quickstart](../external_service/non-git.md#quickstart) to add the repositories to your Sourcegraph instance.
 
 ### Updating Perforce repositories

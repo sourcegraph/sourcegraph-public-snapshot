@@ -7,7 +7,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/err
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
-import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -86,7 +86,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 if (isErrorLike(res)) {
                     this.setState({
                         status: 'error',
-                        connectionError: failedWithHTTPStatus(res, 401)
+                        connectionError: isHTTPAuthError(res)
                             ? ConnectionErrors.AuthError
                             : ConnectionErrors.UnableToConnect,
                     })

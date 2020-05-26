@@ -37,6 +37,18 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "mr:potato",
 			want:  `unrecognized field "mr"`,
 		},
+		{
+			input: "count:sedonuts",
+			want:  "field count has value sedonuts, sedonuts is not a number",
+		},
+		{
+			input: "count:10000000000000000",
+			want:  "field count has a value that is out of range, try making it smaller",
+		},
+		{
+			input: "count:-1",
+			want:  "field count requires a positive number",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
@@ -100,7 +112,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		want
 	}{
 		query: "r:a r:b -r:c",
-		field: "r",
+		field: "repo",
 		want: want{
 			values:        []string{"a", "b"},
 			negatedValues: []string{"c"},
@@ -118,15 +130,6 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		if diff := cmp.Diff(c.want.negatedValues, gotNegatedValues); diff != "" {
 			t.Error(diff)
 		}
-	})
-	t.Run("for unrecognized field", func(t *testing.T) {
-		query, err := ProcessAndOr("")
-		if err != nil {
-			t.Fatal(err)
-		}
-		checkPanic(t, "no such field: z", func() {
-			query.RegexpPatterns("z")
-		})
 	})
 }
 
@@ -240,5 +243,17 @@ func Test_PartitionSearchPattern(t *testing.T) {
 				t.Error(diff)
 			}
 		})
+	}
+}
+
+func Test_ContainsAndOrKeyword(t *testing.T) {
+	if !ContainsAndOrKeyword("foo OR bar") {
+		t.Errorf("Expected query to contain keyword")
+	}
+	if !ContainsAndOrKeyword("repo:foo AND bar") {
+		t.Errorf("Expected query to contain keyword")
+	}
+	if ContainsAndOrKeyword("repo:foo bar") {
+		t.Errorf("Did not expect query to contain keyword")
 	}
 }

@@ -263,7 +263,8 @@ describe('Core functionality regression test suite', () => {
         }
 
         const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
-        if (parse(oldContents).quicklinks) {
+        const parsedOldContents = parse(oldContents)
+        if (parsedOldContents?.quicklinks) {
             throw new Error('Global setting quicklinks already exists, aborting test')
         }
         const newContents = applyEdits(

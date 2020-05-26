@@ -10,14 +10,16 @@ import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
-import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
 import { HighlightRange } from './SearchResult'
 import { ThemeProps } from '../../../shared/src/theme'
+import * as H from 'history'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
     highlightRanges: HighlightRange[]
+    history: H.History
 }
 
 interface SearchResultMatchState {
@@ -55,12 +57,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(([props]) =>
-                        props.item.body.html
-                            ? of(sanitizeHtml(props.item.body.html))
-                            : renderMarkdown({ markdown: props.item.body.text })
-                    ),
-                    switchMap(markdownHTML => {
+                    switchMap(([props]) => {
+                        const markdownHTML = props.item.body.html
+                            ? sanitizeHtml(props.item.body.html)
+                            : renderMarkdown(props.item.body.text)
                         if (this.bodyIsCode()) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
@@ -73,7 +73,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     code: codeContent,
                                     fuzzyLanguage: lang,
                                     disableTimeout: false,
-                                    isLightTheme: this.props.isLightTheme,
+                                    isLightTheme: props.isLightTheme,
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
@@ -173,6 +173,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                         refFn={this.setTableContainerElement}
                                         className="search-result-match__markdown search-result-match__code-excerpt"
                                         dangerousInnerHTML={this.state.HTML}
+                                        history={this.props.history}
                                     />
                                 </code>
                             ) : (
@@ -180,6 +181,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     refFn={this.setTableContainerElement}
                                     className="search-result-match__markdown"
                                     dangerousInnerHTML={this.state.HTML}
+                                    history={this.props.history}
                                 />
                             )}
                         </Link>
@@ -189,7 +191,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(i => (
-                                        <tr key={`this.props.item.url#${i}`}>
+                                        <tr key={`${this.props.item.url}#${i}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">
                                                 <code>{i}</code>

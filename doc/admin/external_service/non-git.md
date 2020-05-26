@@ -77,8 +77,8 @@ While this syncing functionality means that the original change history will be 
 or
 
 ```bash
-# Serve local Git repositories over HTTP.
-./src-expose serve dir1 dir2 dir3
+# Serve local Git repositories over HTTP. This command automatically serves all Git repositories in the current working directory.
+./src-expose serve
 ```
 
 depending on whether you want to automatically sync and commit changes, or just serve the local directories.

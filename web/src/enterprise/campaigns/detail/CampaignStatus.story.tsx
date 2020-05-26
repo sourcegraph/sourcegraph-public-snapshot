@@ -2,12 +2,16 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { CampaignStatus } from './CampaignStatus'
 import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
-import '../../../main.scss'
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
+import { createMemoryHistory } from 'history'
+import webStyles from '../../../SourcegraphWebApp.scss'
 
 const { add } = storiesOf('CampaignStatus', module).addDecorator(story => (
-    <div className="theme-light container">{story()}</div>
+    <>
+        <style>{webStyles}</style>
+        <div className="theme-light container">{story()}</div>
+    </>
 ))
 
 add('Errored', () => (
@@ -37,5 +41,6 @@ add('Errored', () => (
         }}
         onPublish={action('Publish')}
         afterRetry={action('Retry')}
+        history={createMemoryHistory()}
     />
 ))

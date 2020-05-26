@@ -2,9 +2,8 @@ import { Position } from '@sourcegraph/extension-api-types'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
-import { KeyPath, SettingsEdit } from '../api/client/services/settings'
+import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
-import { gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -13,8 +12,8 @@ import { PlatformContext } from '../platform/context'
  * documentation.
  */
 export function registerBuiltinClientCommands(
-    { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService'>
+    { commands: commandRegistry, textDocumentLocations }: Services,
+    context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'settings' | 'updateSettings'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -71,7 +70,7 @@ export function registerBuiltinClientCommands(
                 const args = anyArgs as Evaluated<
                     ActionContributionClientCommandUpdateConfiguration
                 >['commandArguments']
-                return settingsService.update(convertUpdateConfigurationCommandArgs(args))
+                return updateSettings(context, convertUpdateConfigurationCommandArgs(args))
             },
         })
     )
@@ -91,9 +90,7 @@ export function registerBuiltinClientCommands(
                 // from being sent to Sourcegraph.com.
                 from(
                     context.requestGraphQL({
-                        request: gql`
-                            ${query}
-                        `,
+                        request: query,
                         variables,
                         mightContainPrivateInfo: true,
                     })

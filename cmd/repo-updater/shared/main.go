@@ -75,20 +75,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
-		for _, om := range []*repos.OperationMetrics{
-			m.Transact,
-			m.Done,
-			m.ListRepos,
-			m.UpsertRepos,
-			m.ListExternalServices,
-			m.UpsertExternalServices,
-			m.ListAllRepoNames,
-		} {
-			om.MustRegister(prometheus.DefaultRegisterer)
-		}
+		m.MustRegister(prometheus.DefaultRegisterer)
 
 		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
 			log15.Root(),
 			m,
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -100,7 +90,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
-		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Count)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Duration)
+		prometheus.DefaultRegisterer.MustRegister(m.ListRepos.Errors)
 
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
@@ -121,7 +113,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	var handler http.Handler
 	{
 		m := repoupdater.NewHandlerMetrics()
-		m.ServeHTTP.MustRegister(prometheus.DefaultRegisterer)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Count)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Duration)
+		prometheus.DefaultRegisterer.MustRegister(m.ServeHTTP.Errors)
 		handler = repoupdater.ObservedHandler(
 			log15.Root(),
 			m,
@@ -149,7 +143,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
-					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
+					server.GithubDotComSource, err = repos.NewGithubSource(e, cf, nil)
 				}
 			case *schema.GitLabConnection:
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
@@ -208,7 +202,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	log15.Info("server listening", "addr", addr)
+	log15.Info("repo-updater: listening", "addr", addr)
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 

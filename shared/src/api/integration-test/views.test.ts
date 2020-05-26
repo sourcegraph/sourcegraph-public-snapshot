@@ -1,4 +1,4 @@
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { ContributableViewContainer } from '../protocol'
 import { assertToJSON, integrationTestContext } from './testHelpers'
@@ -13,8 +13,8 @@ describe('Views (integration)', () => {
             panelView.priority = 3
             await extensionAPI.internal.sync()
 
-            const values = await services.views
-                .getViews(ContributableViewContainer.Panel)
+            const values = await services.panelViews
+                .getPanelViews(ContributableViewContainer.Panel)
                 .pipe(first(v => v.length > 0))
                 .toPromise()
             assertToJSON(values, [
@@ -42,8 +42,8 @@ describe('Views (integration)', () => {
             panelView.priority = 3
             panelView.component = { locationProvider: LOCATION_PROVIDER_ID }
 
-            const values = await services.views
-                .getViews(ContributableViewContainer.Panel)
+            const values = await services.panelViews
+                .getPanelViews(ContributableViewContainer.Panel)
                 .pipe(first(v => v.length > 0))
                 .toPromise()
             assertToJSON(
@@ -60,5 +60,20 @@ describe('Views (integration)', () => {
                 ]
             )
         })
+    })
+
+    test('app.registerViewProvider', async () => {
+        const { extensionAPI, services } = await integrationTestContext()
+
+        extensionAPI.app.registerViewProvider('v', {
+            where: ContributableViewContainer.GlobalPage,
+            provideView: params => of({ title: `t${params.x}`, content: [] }),
+        })
+
+        const view = await services.view
+            .get('v', { x: 'y' })
+            .pipe(first(v => v !== null))
+            .toPromise()
+        expect(view).toEqual({ title: 'ty', content: [] })
     })
 })

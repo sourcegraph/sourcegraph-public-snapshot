@@ -19,5 +19,12 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             condition: () => authExp,
         },
         ...userSettingsSideBarItems.account.slice(2),
+        {
+            label: 'Permissions',
+            to: '/permissions',
+            exact: true,
+            condition: ({ authenticatedUser }) =>
+                !!(window.context.site['permissions.backgroundSync']?.enabled && authenticatedUser.siteAdmin),
+        },
     ],
 }

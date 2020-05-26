@@ -27,7 +27,7 @@ Foreign-key constraints:
 -------------------+--------------------------+--------------------------------------------------------
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
- description       | text                     | not null
+ description       | text                     | 
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 
@@ -127,6 +127,8 @@ Foreign-key constraints:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
+ created_by_campaign   | boolean                  | not null default false
+ added_to_campaign     | boolean                  | not null default false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -280,6 +282,7 @@ Referenced by:
  timestamp         | timestamp with time zone | not null
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
+    "event_logs_anonymous_user_id" btree (anonymous_user_id)
     "event_logs_name" btree (name)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -342,6 +345,41 @@ Check constraints:
 
 ```
 
+# Table "public.lsif_indexable_repositories"
+```
+         Column         |           Type           |                                Modifiers                                 
+------------------------+--------------------------+--------------------------------------------------------------------------
+ id                     | integer                  | not null default nextval('lsif_indexable_repositories_id_seq'::regclass)
+ repository_id          | integer                  | not null
+ search_count           | integer                  | not null default 0
+ precise_count          | integer                  | not null default 0
+ last_index_enqueued_at | timestamp with time zone | 
+Indexes:
+    "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
+    "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+
+```
+
+# Table "public.lsif_indexes"
+```
+       Column       |           Type           |                         Modifiers                         
+--------------------+--------------------------+-----------------------------------------------------------
+ id                 | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
+ commit             | text                     | not null
+ queued_at          | timestamp with time zone | not null default now()
+ state              | lsif_index_state         | not null default 'queued'::lsif_index_state
+ failure_summary    | text                     | 
+ failure_stacktrace | text                     | 
+ started_at         | timestamp with time zone | 
+ finished_at        | timestamp with time zone | 
+ repository_id      | integer                  | not null
+Indexes:
+    "lsif_indexes_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+
+```
+
 # Table "public.lsif_packages"
 ```
  Column  |  Type   |                         Modifiers                          
@@ -391,9 +429,10 @@ Foreign-key constraints:
  failure_stacktrace | text                     | 
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
- tracing_context    | text                     | not null
  repository_id      | integer                  | not null
  indexer            | text                     | not null
+ num_parts          | integer                  | not null
+ uploaded_parts     | integer[]                | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
@@ -534,20 +573,22 @@ Referenced by:
 
 # Table "public.patches"
 ```
-    Column    |           Type           |                         Modifiers                          
---------------+--------------------------+------------------------------------------------------------
- id           | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
- patch_set_id | bigint                   | not null
- repo_id      | bigint                   | not null
- rev          | text                     | not null
- diff         | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- base_ref     | text                     | not null
+      Column       |           Type           |                         Modifiers                          
+-------------------+--------------------------+------------------------------------------------------------
+ id                | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
+ patch_set_id      | bigint                   | not null
+ repo_id           | bigint                   | not null
+ rev               | text                     | not null
+ diff              | text                     | not null
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ base_ref          | text                     | not null
+ diff_stat_added   | integer                  | 
+ diff_stat_changed | integer                  | 
+ diff_stat_deleted | integer                  | 
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (patch_set_id)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:
@@ -737,6 +778,7 @@ Indexes:
  permission | text                     | not null
  user_ids   | bytea                    | not null
  updated_at | timestamp with time zone | not null
+ synced_at  | timestamp with time zone | 
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -877,6 +919,7 @@ Foreign-key constraints:
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
+    "user_external_accounts_user_id" btree (user_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
@@ -908,6 +951,7 @@ Indexes:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
+ synced_at   | timestamp with time zone | 
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 

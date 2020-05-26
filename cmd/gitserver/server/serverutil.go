@@ -112,6 +112,11 @@ func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) (
 // If progress is not nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
+		// Inherit process environment. This allows admins to configure
+		// variables like http_proxy/etc.
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
 		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
 	}
 

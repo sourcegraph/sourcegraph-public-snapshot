@@ -1,22 +1,44 @@
+@import '../../src/global-styles/colors.scss';
+
 .badge-decoration-attachment {
+    &__icon-svg,
     &__contents {
         width: 1.75rem;
         height: 1.75rem;
-        padding: 0.25rem;
         background: transparent;
         z-index: 1;
         border: none;
         border-radius: 100%;
         background-color: rgba($body-bg-color-dark, 0.8);
     }
+    &__icon-svg {
+        // TODO is there a better way to style this? padding vs margin (see __contents)
+        margin: 0.25rem;
+    }
+    &__contents {
+        padding: 0.25rem;
+    }
 
     width: 100%;
     text-align: right;
+    color: inherit;
+
+    &:hover {
+        color: #ffffff;
+
+        .theme-light & {
+            color: $color-light-text-2;
+        }
+    }
 }
 
 .theme-light {
     .badge-decoration-attachment {
         &__contents {
+            background-color: rgba($body-bg-color-light, 0.8);
+        }
+
+        &__icon-svg {
             background-color: rgba($body-bg-color-light, 0.8);
         }
     }

@@ -4,14 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -38,6 +34,7 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 }
 
 func allowReadAccess(ctx context.Context) error {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if readAccess := conf.CampaignsReadAccessEnabled(); readAccess {
 		return nil
 	}
@@ -104,7 +101,7 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	job, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
+	patch, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -112,7 +109,7 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	return &patchResolver{store: r.store, job: job}, nil
+	return &patchResolver{store: r.store, patch: patch}, nil
 }
 
 func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {
@@ -185,6 +182,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	for _, c := range changesets {
 		delete(set, c.ID)
 		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
+		c.AddedToCampaign = true
 	}
 
 	if len(set) > 0 {
@@ -221,11 +219,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	campaign := &campaigns.Campaign{
-		Name:        args.Input.Name,
-		Description: args.Input.Description,
-		AuthorID:    user.ID,
+		Name:     args.Input.Name,
+		AuthorID: user.ID,
 	}
 
+	if args.Input.Description != nil {
+		campaign.Description = *args.Input.Description
+	}
 	if args.Input.Branch != nil {
 		campaign.Branch = *args.Input.Branch
 	}
@@ -256,7 +256,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign, draft)
 	if err != nil {
 		return nil, err
@@ -295,7 +295,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		updateArgs.PatchSet = &patchSetID
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
@@ -331,7 +331,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -460,17 +460,14 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	syncer := ee.ChangesetSyncer{
-		ReposStore:  store,
-		SyncStore:   tx,
-		HTTPFactory: r.httpFactory,
-	}
+
 	// NOTE: We are performing a blocking sync here in order to ensure
 	// that the remote changeset exists and also to remove the possibility
 	// of an unsynced changeset entering our database
-	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
+	if err = ee.SyncChangesets(ctx, store, tx, r.httpFactory, cs...); err != nil {
 		return nil, errors.Wrap(err, "syncing changesets")
 	}
+
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{
@@ -481,21 +478,6 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	return csr, nil
-}
-
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlbackend.ListChangesetsArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
-	if err := allowReadAccess(ctx); err != nil {
-		return nil, err
-	}
-	opts, err := listChangesetOptsFromArgs(args)
-	if err != nil {
-		return nil, err
-	}
-	return &changesetsConnectionResolver{
-		store: r.store,
-		opts:  opts,
-	}, nil
 }
 
 func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
@@ -558,27 +540,22 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			return nil, err
 		}
 
-		// Ensure patch is a valid unified diff.
-		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(patch.Patch))
-		for {
-			_, err := diffReader.ReadFile()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
-			}
-		}
-
-		patches[i] = &campaigns.Patch{
+		p := &campaigns.Patch{
 			RepoID:  repo,
 			Rev:     patch.BaseRevision,
 			BaseRef: patch.BaseRef,
 			Diff:    patch.Patch,
 		}
+		// Ensure patch is a valid unified diff by computing diff stats.
+		err = p.ComputeDiffStat()
+		if err != nil {
+			return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
+		}
+
+		patches[i] = p
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
@@ -604,7 +581,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
@@ -631,7 +608,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
@@ -657,7 +634,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.CreateChangesetJobForPatch(ctx, patchID)
 	if err != nil {
 		return nil, err

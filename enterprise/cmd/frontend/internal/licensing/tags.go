@@ -3,22 +3,9 @@ package licensing
 import "strings"
 
 const (
-	// EnterpriseStarterTag is the license tag for Enterprise Starter (which includes only a subset
-	// of Enterprise features).
-	EnterpriseStarterTag = "starter"
-
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
 	TrueUpUserCountTag = "true-up"
-)
-
-var (
-	// EnterpriseStarterTags is the license tags for Enterprise Starter.
-	EnterpriseStarterTags = []string{EnterpriseStarterTag}
-
-	// EnterpriseTags is the license tags for Enterprise (intentionally empty because it has no
-	// feature restrictions)
-	EnterpriseTags = []string{}
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based

@@ -11,7 +11,6 @@ import { publishChangeset as _publishChangeset, queryPatchFileDiffs } from '../b
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import classNames from 'classnames'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observer } from 'rxjs'
@@ -36,7 +35,10 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     const [isPublishing, setIsPublishing] = useState<boolean | Error>(false)
     useEffect(() => {
         setIsPublishing(node.publicationEnqueued)
-    }, [node.publicationEnqueued])
+        // Need to watch for the node to change, that means a refetch has happened.
+        // It can be that node.publicationEnqueued never got true,
+        // when it failed between the `publishChangeset` call and the first refetch.
+    }, [node])
 
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
@@ -61,7 +63,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                         <strong>
                             <Link
                                 to={node.repository.url}
-                                className={classNames(node.__typename === 'Patch' && 'text-muted')}
+                                className="text-muted"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -92,15 +94,17 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     )
 
     /** Fetches the file diffs for the changeset */
-    const queryFileDiffs = useCallback((args: FilteredConnectionQueryArgs) => queryPatchFileDiffs(node.id, args), [
-        node.id,
-    ])
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArgs) => queryPatchFileDiffs(node.id, { ...args, isLightTheme }),
+        [node.id, isLightTheme]
+    )
 
     return (
         <li className="list-group-item e2e-changeset-node">
             {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
+                    expandedButtonClassName="mb-3"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
@@ -118,12 +122,13 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                             lineNumbers: true,
                         }}
                         updateOnChange={node.repository.id}
-                        defaultFirst={25}
+                        defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         history={history}
                         location={location}
                         useURLQuery={false}
+                        cursorPaging={true}
                     />
                 </Collapsible>
             ) : (

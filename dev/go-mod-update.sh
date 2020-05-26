@@ -8,4 +8,4 @@ export GOPRIVATE=github.com/mattn/go-sqlite3
 
 go get -u all
 go mod tidy
-go test -short -failfast ./... > /dev/null
+go test -short -failfast ./... >/dev/null

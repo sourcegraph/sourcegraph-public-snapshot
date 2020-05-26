@@ -482,7 +482,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
 	}
 	return r
 }
@@ -533,7 +533,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 
 	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	rr.SetIndexedHEADCommit("abc")
 	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
 
 	tests := []struct {
@@ -878,7 +877,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 				Repo: r.Repo,
 				Revs: r.Revs,
 			}
-			rev.SetIndexedHEADCommit("deadbeef")
 			indexed = append(indexed, rev)
 		}
 		return indexed

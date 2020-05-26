@@ -1,0 +1,361 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProductSubscriptionForm edit existing subscription 1`] = `
+<div
+  className="product-subscription-form"
+>
+  <form
+    className=" "
+    onInvalid={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="row"
+    >
+      <div
+        className="col-md-6"
+      >
+        <ProductSubscriptionUserCountFormControl
+          onChange={[Function]}
+          value={123}
+        />
+        <h4
+          className="mt-2 mb-0"
+        >
+          Plan
+        </h4>
+        <ProductPlanFormControl
+          history={
+            Object {
+              "action": "POP",
+              "block": [Function],
+              "canGo": [Function],
+              "createHref": [Function],
+              "entries": Array [
+                Object {
+                  "hash": "",
+                  "key": undefined,
+                  "pathname": "/",
+                  "search": "",
+                  "state": undefined,
+                },
+              ],
+              "go": [Function],
+              "goBack": [Function],
+              "goForward": [Function],
+              "index": 0,
+              "length": 1,
+              "listen": [Function],
+              "location": Object {
+                "hash": "",
+                "key": undefined,
+                "pathname": "/",
+                "search": "",
+                "state": undefined,
+              },
+              "push": [Function],
+              "replace": [Function],
+            }
+          }
+          onChange={[Function]}
+          value="p"
+        />
+      </div>
+      <div
+        className="col-md-6 mt-3 mt-md-0"
+      >
+        <h3
+          className="mt-2 mb-0"
+        >
+          Billing
+        </h3>
+        <NewProductSubscriptionPaymentSection
+          accountID="a"
+          onValidityChange={[Function]}
+          productSubscription={
+            Object {
+              "billingPlanID": "p",
+              "userCount": 123,
+            }
+          }
+          subscriptionID="s"
+        />
+        <div
+          className="payment-token-form-control"
+        >
+          <CardElement
+            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            disabled={true}
+            style={
+              Object {
+                "base": Object {
+                  ":-webkit-autofill": Object {
+                    "color": "white",
+                  },
+                  "color": "white",
+                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                },
+              }
+            }
+          />
+        </div>
+        <div
+          className="form-group mt-3"
+        >
+          <button
+            className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+            disabled={true}
+            type="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+`;
+
+exports[`ProductSubscriptionForm new subscription for anonymous viewer (no account) 1`] = `
+<div
+  className="product-subscription-form"
+>
+  <form
+    className=" "
+    onInvalid={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="row"
+    >
+      <div
+        className="col-md-6"
+      >
+        <ProductSubscriptionUserCountFormControl
+          onChange={[Function]}
+        />
+        <h4
+          className="mt-2 mb-0"
+        >
+          Plan
+        </h4>
+        <ProductPlanFormControl
+          history={
+            Object {
+              "action": "POP",
+              "block": [Function],
+              "canGo": [Function],
+              "createHref": [Function],
+              "entries": Array [
+                Object {
+                  "hash": "",
+                  "key": undefined,
+                  "pathname": "/",
+                  "search": "",
+                  "state": undefined,
+                },
+              ],
+              "go": [Function],
+              "goBack": [Function],
+              "goForward": [Function],
+              "index": 0,
+              "length": 1,
+              "listen": [Function],
+              "location": Object {
+                "hash": "",
+                "key": undefined,
+                "pathname": "/",
+                "search": "",
+                "state": undefined,
+              },
+              "push": [Function],
+              "replace": [Function],
+            }
+          }
+          onChange={[Function]}
+          value={null}
+        />
+      </div>
+      <div
+        className="col-md-6 mt-3 mt-md-0"
+      >
+        <h3
+          className="mt-2 mb-0"
+        >
+          Billing
+        </h3>
+        <NewProductSubscriptionPaymentSection
+          accountID={null}
+          onValidityChange={[Function]}
+          productSubscription={null}
+          subscriptionID={null}
+        />
+        <div
+          className="form-group mt-3"
+        >
+          <a
+            className="btn btn-lg btn-primary w-100 center"
+            href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
+            onClick={[Function]}
+          >
+            Create account or sign in to continue
+          </a>
+          <small
+            className="form-text text-muted"
+          >
+            A user account on Sourcegraph.com is required to create a subscription so you can view the license key and invoice.
+          </small>
+          <hr
+            className="my-3"
+          />
+          <small
+            className="form-text text-muted"
+          >
+            Next, you'll enter payment information and buy the subscription.
+          </small>
+        </div>
+        <div
+          className="payment-token-form-control"
+        >
+          <CardElement
+            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            disabled={true}
+            style={
+              Object {
+                "base": Object {
+                  ":-webkit-autofill": Object {
+                    "color": "white",
+                  },
+                  "color": "white",
+                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                },
+              }
+            }
+          />
+        </div>
+        <div
+          className="form-group mt-3"
+        >
+          <button
+            className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+            disabled={true}
+            type="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+`;
+
+exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
+<div
+  className="product-subscription-form"
+>
+  <form
+    className=" "
+    onInvalid={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="row"
+    >
+      <div
+        className="col-md-6"
+      >
+        <ProductSubscriptionUserCountFormControl
+          onChange={[Function]}
+        />
+        <h4
+          className="mt-2 mb-0"
+        >
+          Plan
+        </h4>
+        <ProductPlanFormControl
+          history={
+            Object {
+              "action": "POP",
+              "block": [Function],
+              "canGo": [Function],
+              "createHref": [Function],
+              "entries": Array [
+                Object {
+                  "hash": "",
+                  "key": undefined,
+                  "pathname": "/",
+                  "search": "",
+                  "state": undefined,
+                },
+              ],
+              "go": [Function],
+              "goBack": [Function],
+              "goForward": [Function],
+              "index": 0,
+              "length": 1,
+              "listen": [Function],
+              "location": Object {
+                "hash": "",
+                "key": undefined,
+                "pathname": "/",
+                "search": "",
+                "state": undefined,
+              },
+              "push": [Function],
+              "replace": [Function],
+            }
+          }
+          onChange={[Function]}
+          value={null}
+        />
+      </div>
+      <div
+        className="col-md-6 mt-3 mt-md-0"
+      >
+        <h3
+          className="mt-2 mb-0"
+        >
+          Billing
+        </h3>
+        <NewProductSubscriptionPaymentSection
+          accountID="a"
+          onValidityChange={[Function]}
+          productSubscription={null}
+          subscriptionID={null}
+        />
+        <div
+          className="payment-token-form-control"
+        >
+          <CardElement
+            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            disabled={true}
+            style={
+              Object {
+                "base": Object {
+                  ":-webkit-autofill": Object {
+                    "color": "white",
+                  },
+                  "color": "white",
+                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
+                },
+              }
+            }
+          />
+        </div>
+        <div
+          className="form-group mt-3"
+        >
+          <button
+            className="btn btn-lg btn-secondary w-100 d-flex align-items-center justify-content-center"
+            disabled={true}
+            type="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+`;

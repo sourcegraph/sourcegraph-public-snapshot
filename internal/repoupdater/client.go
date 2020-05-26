@@ -25,18 +25,6 @@ var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "re
 
 var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of requests sent to repoupdater.")
 
-var (
-	// ErrNotFound is when a repository is not found.
-	ErrNotFound = errors.New("repository not found")
-
-	// ErrUnauthorized is when an authorization error occurred.
-	ErrUnauthorized = errors.New("not authorized")
-
-	// ErrTemporarilyUnavailable is when the repository was reported as being temporarily
-	// unavailable.
-	ErrTemporarilyUnavailable = errors.New("repository temporarily unavailable")
-)
-
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // REPO_UPDATER_URL environment variable.
 var DefaultClient = &Client{
@@ -120,11 +108,20 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if err == nil && result != nil {
 		switch {
 		case result.ErrorNotFound:
-			err = ErrNotFound
+			err = &ErrNotFound{
+				Repo:       args.Repo,
+				IsNotFound: true,
+			}
 		case result.ErrorUnauthorized:
-			err = ErrUnauthorized
+			err = &ErrUnauthorized{
+				Repo:    args.Repo,
+				NoAuthz: true,
+			}
 		case result.ErrorTemporarilyUnavailable:
-			err = ErrTemporarilyUnavailable
+			err = &ErrTemporary{
+				Repo:        args.Repo,
+				IsTemporary: true,
+			}
 		}
 	}
 	return result, err
@@ -198,6 +195,31 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	}
 
 	var res protocol.ChangesetSyncResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return err
+	}
+
+	if res.Error == "" {
+		return nil
+	}
+	return errors.New(res.Error)
+}
+
+func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "read response body")
+	}
+
+	var res protocol.PermsSyncResponse
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return errors.New(string(bs))
 	} else if err = json.Unmarshal(bs, &res); err != nil {

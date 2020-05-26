@@ -15,6 +15,10 @@
     }
 
     &__separator {
-        padding: 0 0.125rem;
+        // IMPORTANT
+        //
+        // This needs to be margin, not padding, because padding can become
+        // spaces when copy-pasted in Chrome, while margin is ignored.
+        margin: 0 0.125rem;
     }
 }

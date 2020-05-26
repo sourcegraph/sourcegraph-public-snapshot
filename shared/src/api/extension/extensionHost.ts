@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -7,18 +7,18 @@ import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
-import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtRoots } from './api/roots'
+import { ExtWorkspace } from './api/workspace'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
+import { initNewExtensionAPI } from './flatExtentionAPI'
 
 /**
  * Required information when initializing an extension host.
@@ -121,7 +121,9 @@ function createExtensionAPI(
     registerComlinkTransferHandlers()
 
     /** Proxy to main thread */
-    const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
+    const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
+    ;(endpoints.proxy as any).role = 'proxy'
+    ;(endpoints.proxy as any).side = 'ext-host'
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
@@ -133,25 +135,27 @@ function createExtensionAPI(
     const extensions = new ExtExtensions()
     subscription.add(extensions)
 
-    const roots = new ExtRoots()
+    const workspace = new ExtWorkspace()
     const windows = new ExtWindows(proxy, documents)
     const views = new ExtViews(proxy.views)
-    const configuration = new ExtConfiguration<any>(proxy.configuration)
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
 
+    const { configuration, exposedToMain } = initNewExtensionAPI(proxy)
+
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
-        [comlink.proxyValueSymbol]: true,
+        [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
-        configuration,
+
         documents,
         extensions,
-        roots,
+        workspace,
         windows,
+        ...exposedToMain,
     }
 
     // Expose the extension API to extensions
@@ -183,6 +187,7 @@ function createExtensionAPI(
             },
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
+            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
         workspace: {
@@ -192,15 +197,17 @@ function createExtensionAPI(
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
             get roots(): readonly sourcegraph.WorkspaceRoot[] {
-                return roots.getAll()
+                return workspace.getAllRoots()
             },
-            onDidChangeRoots: roots.changes,
-            rootChanges: roots.changes,
+            onDidChangeRoots: workspace.rootChanges,
+            rootChanges: workspace.rootChanges,
+            get versionContext(): string | undefined {
+                return workspace.versionContextChanges.value
+            },
+            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
-        configuration: Object.assign(configuration.changes.asObservable(), {
-            get: () => configuration.get(),
-        }),
+        configuration,
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>

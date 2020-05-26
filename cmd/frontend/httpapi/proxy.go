@@ -4,10 +4,5 @@ import (
 	"net/http"
 )
 
-type LSIFServerProxy struct {
-	UploadHandler    http.Handler
-	AllRoutesHandler http.Handler
-}
-
-// Set by enterprise frontend
-var NewLSIFServerProxy func() (*LSIFServerProxy, error)
+// NewCodeIntelUploadHandler is set by the enterprise frontend
+var NewCodeIntelUploadHandler func() http.Handler

@@ -5,11 +5,11 @@
   "captainGitHubUsername": "uwedeportivo",
 
   "majorVersion": "3",
-  "minorVersion": "15",
-  "releaseDateTime": "20 Apr 2020 10:00 PST",
-  "oneWorkingDayBeforeRelease": "17 Apr 2020 10:00 PST",
-  "fourWorkingDaysBeforeRelease": "14 Apr 2020 10:00 PST",
-  "fiveWorkingDaysBeforeRelease": "13 Apr 2020 10:00 PST",
+  "minorVersion": "17",
+  "releaseDateTime": "20 June 2020 10:00 PST",
+  "oneWorkingDayBeforeRelease": "19 June 2020 10:00 PST",
+  "fourWorkingDaysBeforeRelease": "16 June 2020 10:00 PST",
+  "fiveWorkingDaysBeforeRelease": "15 June 2020 10:00 PST",
 
   "slackAnnounceChannel": "dev-announce"
 }

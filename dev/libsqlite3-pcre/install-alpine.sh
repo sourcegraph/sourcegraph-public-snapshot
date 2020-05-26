@@ -8,14 +8,14 @@ set -eux
 SQLITE3_PCRE_VERSION=c98da412b431edb4db22d3245c99e6c198d49f7a
 
 apk --no-cache add \
-    --virtual build-deps \
-    curl \
-    gcc \
-    git \
-    libc-dev \
-    make \
-    pcre-dev \
-    sqlite-dev
+  --virtual build-deps \
+  curl \
+  gcc \
+  git \
+  libc-dev \
+  make \
+  pcre-dev \
+  sqlite-dev
 
 # Installation
 mkdir /sqlite3-pcre

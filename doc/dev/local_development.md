@@ -1,33 +1,59 @@
+<!-- omit in toc -->
 # Getting started with developing Sourcegraph
 
 Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph).
 
+<!-- omit in toc -->
 ## Outline
 
 - [Environment](#environment)
 - [Step 1: Install dependencies](#step-1-install-dependencies)
+  - [macOS](#macos)
+  - [Ubuntu](#ubuntu)
+  - [(optional) asdf](#optional-asdf)
 - [Step 2: Initialize your database](#step-2-initialize-your-database)
+  - [More info](#more-info)
 - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
 - [Step 4: Get the code](#step-4-get-the-code)
 - [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+  - [Prerequisites](#prerequisites)
+    - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
+    - [Initialize Caddy 2](#initialize-caddy-2)
 - [Step 6: Start the server](#step-6-start-the-server)
 - [Troubleshooting](#troubleshooting)
+    - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
+    - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
+    - [Database migration failures](#database-migration-failures)
+    - [Internal Server Error](#internal-server-error)
+    - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
+    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+    - [Running out of disk space](#running-out-of-disk-space)
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
+  - [Debug TypeScript code](#debug-typescript-code)
+  - [Debug Go code](#debug-go-code)
 - [Go dependency management](#go-dependency-management)
 - [Codegen](#codegen)
 - [Windows support](#windows-support)
 - [Other nice things](#other-nice-things)
+  - [Offline development](#offline-development)
 
 ## Environment
 
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
+<!-- omit in toc -->
+### For Sourcegraph employees
+
+[dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+
 ## Step 1: Install dependencies
 
-Sourcegraph has the following dependencies:
 
+> NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
+
+Sourcegraph has the following dependencies:
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.14 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
@@ -51,19 +77,19 @@ The following are two recommendations for installing these dependencies:
 
     optionally via `brew`
 
-    ```bash
+    ```
     brew cask install docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
-    ```bash
-    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    ```
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
 
-    ```bash
+    ```
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
     curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
     sh install-nvm.sh
@@ -81,7 +107,7 @@ The following are two recommendations for installing these dependencies:
 5.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
 
-    ```bash
+    ```
     nvm install
     nvm use --delete-prefix
     ```
@@ -95,7 +121,7 @@ The following are two recommendations for installing these dependencies:
 
 6.  Configure PostgreSQL and Redis to start automatically
 
-    ```bash
+    ```
     brew services start postgresql
     brew services start redis
     ```
@@ -105,7 +131,7 @@ The following are two recommendations for installing these dependencies:
 7.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
-    ```bash
+    ```
     hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
@@ -117,7 +143,7 @@ The following are two recommendations for installing these dependencies:
 
 1. Add package repositories:
 
-    ```bash
+    ```
     # Go
     sudo add-apt-repository ppa:longsleep/golang-backports
 
@@ -132,23 +158,25 @@ The following are two recommendations for installing these dependencies:
 
 2. Update repositories:
 
-    ```bash
+    ```
     sudo apt-get update
     ```
 
 3. Install dependencies:
 
-    ```bash
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
+    ```
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq
 
-    # install golang-migrate (you must move the extracted binary into your $PATH)
+    # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
 
-    # install comby (you must move the extracted binary into your $PATH)
+    # install comby (you must rename the extracted binary to `comby` and move the binary into your $PATH)
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
     # nvm (to manage Node.js)
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
+    NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
+    curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
+    sh install-nvm.sh
 
     # in repo dir: install current recommendend version of Node JS
     nvm install
@@ -156,7 +184,7 @@ The following are two recommendations for installing these dependencies:
 
 4. Configure startup services
 
-    ```bash
+    ```
     sudo systemctl enable postgresql
     sudo systemctl enable redis-server.service
     ```
@@ -165,7 +193,7 @@ The following are two recommendations for installing these dependencies:
 
     In this case you should not enable the `redis-server.service` from the previous step.
 
-    ```bash
+    ```
     dockerd # if docker isn't already running
     docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
     # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
@@ -182,12 +210,15 @@ The following are two recommendations for installing these dependencies:
 
 We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
 
+<!-- omit in toc -->
 #### Install
 
+<!-- omit in toc -->
 ##### asdf binary
 
 See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
 
+<!-- omit in toc -->
 ##### Plugins
 
 sourcegraph/sourcegraph uses the following plugins:
@@ -217,6 +248,7 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
+<!-- omit in toc -->
 #### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
@@ -226,29 +258,31 @@ You can install the all the versions specified in [.tool-versions](https://githu
 
 ## Step 2: Initialize your database
 
+### Without Docker
+
 You need a fresh Postgres database and a database user that has full ownership of that database.
 
 1. Create a database for the current Unix user
 
-    ```bash
+    ```
     # For Linux users, first access the postgres user shell
     sudo su - postgres
     ```
 
-    ```bash
+    ```
     createdb
     ```
 
 2. Create the Sourcegraph user and password
 
-    ```bash
+    ```
     createuser --superuser sourcegraph
     psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
     ```
 
 3. Create the Sourcegraph database
 
-    ```bash
+    ```
     createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
     ```
 
@@ -258,7 +292,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     Add these, for example, in your `~/.bashrc`:
 
-    ```bash
+    ```
     export PGPORT=5432
     export PGHOST=localhost
     export PGUSER=sourcegraph
@@ -273,6 +307,52 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
+### With Docker
+
+You may also want to run Postgres within a docker container instead of as a system service. Running within a container provides some advantages such as storing the data seperately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+
+1. Create a directory to store and mount the database from for persistence:
+
+    ```
+    # Create a seperate dir to store the database
+    mkdir PGDATA_DIR
+
+   # Also add this to your '~/.bashrc'
+    export PGDATA_DIR=/path/to/PGDATA_DIR/
+    ```
+
+2. Run the container:
+
+  ```
+   docker run -d  -p 5432:5432 -e POSTGRES_PASSWORD=sourcegraph \
+   -e POSTGRES_USER=sourcegraph -e POSTGRES_INITDB_ARGS=" --encoding=UTF8 " \
+   -v $PGDATA_DIR:/var/lib/postgresql/data postgres
+   ```
+
+3. Ensure you can connect to the database using `pgsql -U sourcegraph` and enter password `sourcegraph`.
+
+4. Configure database settings in your environment:
+
+    The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
+
+    Add these, for example, in your `~/.bashrc`:
+
+    ```
+    export PGPORT=5432
+    export PGHOST=localhost
+    export PGUSER=sourcegraph
+    export PGPASSWORD=sourcegraph
+    export PGDATABASE=sourcegraph
+    export PGSSLMODE=disable
+    ```
+
+    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to source these env vars on demand when you start the server.
+
+    [envdir]: https://cr.yp.to/daemontools/envdir.html
+    [dotenv]: https://github.com/joho/godotenv
+
+5. On restarting docker, you may need to start the container again. Find the image with `docker ps --all` and then `docker run <$containerID>` to start again.
+
 ### More info
 
 For more information about data storage, [read our full PostgreSQL Guide
@@ -282,10 +362,12 @@ Migrations are applied automatically.
 
 ## Step 3: (macOS) Start Docker
 
+<!-- omit in toc -->
 #### Option A: Docker for Mac
 
 This is the easy way - just launch Docker.app and wait for it to finish loading.
 
+<!-- omit in toc -->
 #### Option B: docker-machine
 
 The Docker daemon should be running in the background, which you can test by
@@ -335,23 +417,10 @@ Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
 #### Initialize Caddy 2
 
 [Caddy 2](https://caddyserver.com/) automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs `root/sudo` permissions to add
-its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password when prompted:
+its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:
 
 ```bash
-env SOURCEGRAPH_HTTPS_DOMAIN=sourcegraph.test SOURCEGRAPH_HTTPS_PORT=3443 ./dev/caddy.sh run --watch --config=dev/Caddyfile
-
-...
-2020/03/23 12:30:18 [INFO][cache:0xc0007879a0] Started certificate maintenance routine
-2020/03/23 19:30:18.079	INFO	http	enabling automatic HTTP->HTTPS redirects{"server_name": "srv0"}
-2020/03/23 19:30:18.192	WARN	pki.ca.local	trusting root certificate (you might be prompted for password)	{"path": "storage:pki/authorities/local/root.crt"}
-...
-Password:
-```
-
-`CTRL+C` out of this command when it prints that the certificates have been installed properly:
-
-```bash
-2020/03/23 12:30:51 certificate installed properly in macOS keychain
+./dev/caddy.sh trust
 ```
 
 You might need to restart your web browsers in order for them to recognize the certificates.
@@ -448,13 +517,29 @@ If you ever need to wipe your local database and Redis, run the following comman
 ./dev/drop-entire-local-database-and-redis.sh
 ```
 
-### Caddy 2 certificate problems
+#### Caddy 2 certificate problems
 
 We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
 
 1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `caddy reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
+
+#### Running out of disk space
+
+If you see errors similar to this:
+
+```
+gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
+```
+
+You are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
+You can override that by setting this env variable:
+
+```bash
+# means 5%. You may want to put that into .bashrc for convinience
+SRC_REPOS_DESIRED_PERCENT_FREE=5
+```
 
 ## How to Run Tests
 

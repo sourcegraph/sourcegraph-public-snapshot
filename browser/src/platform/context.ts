@@ -16,7 +16,7 @@ import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/c
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { requestGraphQLHelper } from '../shared/backend/requestGraphQL'
-import { failedWithHTTPStatus } from '../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../shared/src/backend/fetch'
 import { asError } from '../../../shared/src/util/errors'
 
 export interface SourcegraphIntegrationURLs {
@@ -82,10 +82,8 @@ export function createPlatformContext(
         /**
          * The active settings cascade.
          *
-         * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally
-         *   in the browser extension.
-         * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify
-         *   the UX).
+         * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally in the browser extension).
+         * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify the UX).
          */
         settings: combineLatest([updatedViewerSettings, storageSettingsCascade]).pipe(
             map(([gqlCascade, storageCascade]) =>
@@ -104,7 +102,7 @@ export function createPlatformContext(
                 const settings = await fetchViewerSettings(requestGraphQL).toPromise()
                 updatedViewerSettings.next(settings)
             } catch (error) {
-                if (failedWithHTTPStatus(error, 401)) {
+                if (isHTTPAuthError(error)) {
                     // User is not signed in
                     console.warn(
                         `Could not fetch Sourcegraph settings from ${sourcegraphURL} because user is not signed into Sourcegraph`

@@ -11,8 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
@@ -107,6 +107,8 @@ type LSIFUploadsListOptions struct {
 }
 
 type lsifUploadConnectionResolver struct {
+	lsifserverClient *client.Client
+
 	opt LSIFUploadsListOptions
 
 	// cache results because they are used by multiple fields
@@ -166,7 +168,7 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSI
 			return
 		}
 
-		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
+		r.uploads, r.nextURL, r.totalCount, r.err = r.lsifserverClient.GetUploads(ctx, &struct {
 			RepoID          api.RepoID
 			Query           *string
 			State           *string
