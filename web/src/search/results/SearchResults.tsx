@@ -102,7 +102,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
-    private locationUpdates = new Subject<SearchResultsProps['location']>()
 
     private subscriptions = new Subscription()
 
