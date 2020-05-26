@@ -25,10 +25,12 @@ export const CampaignDescriptionField: React.FunctionComponent<Props> = ({
         <div className="form-group">
             <label htmlFor="campaignDescription">
                 Description{' '}
-                <InformationOutlineIcon
-                    className="icon-inline cursor-pointer"
-                    data-tooltip="Purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc."
-                />
+                <small>
+                    <InformationOutlineIcon
+                        className="icon-inline"
+                        data-tooltip="Purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc."
+                    />
+                </small>
             </label>
             <TextareaAutosize
                 type="text"
