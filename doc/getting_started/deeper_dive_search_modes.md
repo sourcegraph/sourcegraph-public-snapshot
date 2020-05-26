@@ -7,8 +7,8 @@ Sourcegraph provides three search modes with different syntax:
 - **Exact string matching (literal)**<br/>
 The default and simplest search mode.<br/>
 
-- **Regular expressions (regexp)**<br/>
-More complex, but awesome when you need to match based on patterns instead of being limited to an exact string.<br/>
+- **Regexp**<br/>
+More complex but essential when you need to match based on patterns instead of being limited to an exact string.<br/>
 
 - **Structural search**<br/>
 A brand new type of language aware search that understands the syntactic structure of programming languages.
@@ -17,25 +17,25 @@ Learn more about each search mode and when to use them by watching the videos in
 
 ## Exact string search (literal search)
 
-The "literal search" mode is the default when first using Sourcegraph, and in this screencast, you'll learn when to use it, and how using the `content` filter can help you take your literal searches one step further.
+Learn when to use literal search and how the `content` filter handles searches that contain a colon such as [`content:"FROM python:3"`](https://sourcegraph.com/search?q=content:%22FROM+python:3%22&patternType=literal).
 
-<div style="padding:56.25% 0 0 0;position:relative;">
-    <iframe src="https://www.youtube.com/embed/CX6F5oCjfoc" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
+<div class="container my-4 video-embed embed-responsive embed-responsive-16by9">
+    <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/CX6F5oCjfoc?autoplay=0&amp;cc_load_policy=0&amp;start=0&amp;end=0&amp;loop=0&amp;controls=1&amp;modestbranding=0&amp;rel=0" allowfullscreen="" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" frameborder="0"></iframe>
 </div>
 
 ## Regular expression search
 
-Exact string (literal) searches are great for simple cases, but regular expressions in search queries and filters (such as `file`), amplify your ability to discover code in more places.
+Exact string searches are great for simple cases, but regexp queries and filters (such as `file` that accept regexp), amplify your ability to discover code by finding matches based on patterns.
 
-<div style="padding:56.25% 0 0 0;position:relative;">
-    <iframe src="https://www.youtube.com/embed/J9k7l5W1qbk" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
+<div class="container my-4 video-embed embed-responsive embed-responsive-16by9">
+    <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/J9k7l5W1qbk?autoplay=0&amp;cc_load_policy=0&amp;start=0&amp;end=0&amp;loop=0&amp;controls=1&amp;modestbranding=0&amp;rel=0" allowfullscreen="" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" frameborder="0"></iframe>
 </div>
 
 ## Structural search
 
-Sourcegraph structural search is a code-aware search syntax that when enabled, lets you match nested expressions and whole code blocks that can be difficult or awkward to match using regular expressions.
+Sourcegraph structural search is language structure and syntax aware search syntax that lets you match nested expressions and whole code blocks that can be difficult or impossible using regexp.
 
-Learn more by checking out the [structural search docs](../user/search/structural.md) and the [going beyond regular expressions with structural code search blog post](https://about.sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search/).
+Learn more by checking out the [structural search docs](../user/search/structural.md) and the [going beyond regexp with structural code search blog post](https://about.sourcegraph.com/blog/going-beyond-regular-expressions-with-structural-code-search/).
 
 <div style="padding:56.25% 0 0 0;position:relative;">
     <iframe src="https://www.youtube.com/embed/Lg4cYEoSHeo" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
@@ -43,5 +43,4 @@ Learn more by checking out the [structural search docs](../user/search/structura
 
 ---
 
-## Diving deeper into Universal Code Search
-
+[**» Next: Universal Code Intelligence**](universal_code_intelligence.md)

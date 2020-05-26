@@ -4,8 +4,8 @@ Once Sourcegraph is deployed and running, the installation process takes only a 
 
 It uses GitHub as the code host, but the steps are largely the same for other code hosts, the only major difference being that GitLab and Bitbucket Server provide native code intelligence integrations.
 
-<div style="padding:56.25% 0 0 0;position:relative;">
-    <iframe src="https://www.youtube.com/embed/iVTroSw9dhQ" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
+<div class="container my-4 video-embed embed-responsive embed-responsive-16by9">
+    <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/iVTroSw9dhQ?autoplay=0&amp;cc_load_policy=0&amp;start=0&amp;end=0&amp;loop=0&amp;controls=1&amp;modestbranding=0&amp;rel=0" allowfullscreen="" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" frameborder="0"></iframe>
 </div>
 
 ---
@@ -44,4 +44,4 @@ Below is a similar configuration example to the one used in the screencast.
 }
 ```
 
-[**» Next: Connecting your code host**](connecting_your_code_host.md)
+[**» Next: Connecting and integrating your code host**](connecting_integrating_your_code_host.md)
