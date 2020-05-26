@@ -8,13 +8,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// feederDB is a front to a sqlite DB that records ownerRepo processed, orgs created and whether
+// processing was successful or failed
 type feederDB struct {
+	// sqlite is not thread-safe, this mutex protects access to it
 	sync.Mutex
-	path   string
-	db     *sql.DB
+	// where the DB file is
+	path string
+	// the opened DB
+	db *sql.DB
+	// logger for this feeder DB
 	logger log15.Logger
 }
 
+// newFeederDB creates or opens the DB, creating the two tables if necessary
 func newFeederDB(path string) (*feederDB, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
@@ -45,6 +52,8 @@ func newFeederDB(path string) (*feederDB, error) {
 	}, nil
 }
 
+// declareRepo adds the ownerRepo to the DB when it gets pumped into the pipe and made available to the workers
+// for processing. if ownerRepo was already done in a previous run, then returns true, so pump can skip it.
 func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error) {
 	fdr.Lock()
 	defer fdr.Unlock()
@@ -75,6 +84,9 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error)
 	return
 }
 
+// failed records the fact that the worker processing the specified ownerRepo failed to succeed processing it.
+// errType is recorded because specific errTypes are not worth rerunning in a subsequent run (if repo is private
+// on github.com and we don't have credentials for it, it's not worth trying again in a next run).
 func (fdr *feederDB) failed(ownerRepo string, errType string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
@@ -92,6 +104,7 @@ func (fdr *feederDB) failed(ownerRepo string, errType string) error {
 	return nil
 }
 
+// succeeded records that a worker has successfully processed the specified ownerRepo.
 func (fdr *feederDB) succeeded(ownerRepo string, org string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
@@ -109,6 +122,7 @@ func (fdr *feederDB) succeeded(ownerRepo string, org string) error {
 	return nil
 }
 
+// declareOrg adds a newly created org from one of the workers.
 func (fdr *feederDB) declareOrg(org string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
