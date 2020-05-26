@@ -1740,7 +1740,10 @@ func getPatchSetQuery(opts *GetPatchSetOpts) *sqlf.Query {
 // GetCampaignStatusOpts captures the query options needed for getting the
 // BackgroundProcessStatus for a Campaign.
 type GetCampaignStatusOpts struct {
-	ID            int64
+	ID int64
+	// When ExcludeErrors is set the ProcessErrors slice of the
+	// BackgroundProcessStatus returned by GetCampaignStatus won't be
+	// populated.
 	ExcludeErrors bool
 }
 
