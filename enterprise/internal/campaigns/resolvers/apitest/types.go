@@ -104,7 +104,8 @@ type Campaign struct {
 	UpdatedAt           string
 	PublishedAt         string
 	Status              struct {
-		State string
+		State  string
+		Errors []string
 	}
 	Patches                 PatchConnection
 	Changesets              ChangesetConnection

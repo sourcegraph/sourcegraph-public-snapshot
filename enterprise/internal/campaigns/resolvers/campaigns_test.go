@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -23,6 +25,8 @@ func TestCampaignsPermissionLevels(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	ctx := context.Background()
 
 	dbtesting.SetupGlobalTestDB(t)
 	rcache.SetupForTest(t)
@@ -40,18 +44,20 @@ func TestCampaignsPermissionLevels(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
+	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+
+	// Wrap everything in the store in a transaction, so that the foreign-key
+	// constraints are deferred
+	tx := dbtest.NewTx(t, dbconn.Global)
+	store := ee.NewStoreWithClock(tx, clock)
+
 	sr := &Resolver{store: store}
 
 	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	ctx := context.Background()
-
-	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
 
 	adminCampaign := &campaigns.Campaign{
 		Name:            "Admin",
@@ -63,14 +69,32 @@ func TestCampaignsPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	adminChangsesetJob := &campaigns.ChangesetJob{
+		CampaignID: adminCampaign.ID,
+		PatchID:    999,
+		Error:      "This is an error",
+	}
+	if err := store.CreateChangesetJob(ctx, adminChangsesetJob); err != nil {
+		t.Fatal(err)
+	}
+
 	userCampaign := &campaigns.Campaign{
 		Name:            "User campaign",
 		AuthorID:        userID,
 		NamespaceUserID: userID,
 	}
 
-	err = store.CreateCampaign(ctx, adminCampaign)
+	err = store.CreateCampaign(ctx, userCampaign)
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	userChangsesetJob := &campaigns.ChangesetJob{
+		CampaignID: userCampaign.ID,
+		PatchID:    999,
+		Error:      "This is an error",
+	}
+	if err := store.CreateChangesetJob(ctx, userChangsesetJob); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,57 +103,68 @@ func TestCampaignsPermissionLevels(t *testing.T) {
 		currentUser             int32
 		campaign                int64
 		wantViewerCanAdminister bool
+		wantErrors              []string
 	}{
 		{
 			name:                    "site-admin viewing own campaign",
 			currentUser:             adminID,
 			campaign:                adminCampaign.ID,
 			wantViewerCanAdminister: true,
+			wantErrors:              []string{"This is an error"},
 		},
 		{
 			name:                    "non-site-admin viewing other's campaign",
 			currentUser:             userID,
 			campaign:                adminCampaign.ID,
 			wantViewerCanAdminister: false,
+			wantErrors:              []string{},
 		},
 		{
 			name:                    "site-admin viewing other's campaign",
 			currentUser:             adminID,
 			campaign:                userCampaign.ID,
 			wantViewerCanAdminister: true,
+			wantErrors:              []string{"This is an error"},
 		},
 		{
 			name:                    "non-site-admin viewing own campaign",
 			currentUser:             userID,
 			campaign:                userCampaign.ID,
-			wantViewerCanAdminister: false,
+			wantViewerCanAdminister: true,
+			wantErrors:              []string{"This is an error"},
 		},
 	}
 
 	for _, tc := range tests {
-		graphqlID := string(marshalCampaignID(tc.campaign))
-		var queriedCampaign struct{ Node apitest.Campaign }
+		t.Run(tc.name, func(t *testing.T) {
+			graphqlID := string(marshalCampaignID(tc.campaign))
 
-		input := map[string]interface{}{"campaign": graphqlID}
-		queryCampaign := `
+			var queriedCampaign struct{ Node apitest.Campaign }
+
+			input := map[string]interface{}{"campaign": graphqlID}
+			queryCampaign := `
 		query($campaign: ID!){
 			node(id: $campaign) {
 				... on Campaign {
-					id, viewerCanAdminister
+					id, viewerCanAdminister, status { errors }
 				}
 			}
 		}
 	`
 
-		actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-		apitest.MustExec(actorCtx, t, s, input, &queriedCampaign, queryCampaign)
+			actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+			apitest.MustExec(actorCtx, t, s, input, &queriedCampaign, queryCampaign)
 
-		if have, want := queriedCampaign.Node.ID, graphqlID; have != want {
-			t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
-		}
-		if have, want := queriedCampaign.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-			t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
-		}
+			if have, want := queriedCampaign.Node.ID, graphqlID; have != want {
+				t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
+			}
+			if have, want := queriedCampaign.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+				t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
+			}
+			if diff := cmp.Diff(queriedCampaign.Node.Status.Errors, tc.wantErrors); diff != "" {
+				t.Fatalf("queried campaign's Errors is wrong: %s", diff)
+			}
+		})
 	}
 }
 
