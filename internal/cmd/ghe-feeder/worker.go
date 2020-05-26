@@ -33,6 +33,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// randomOrgNameAndSize returns a random, unique name for an org and a random size of repos it should have
 func randomOrgNameAndSize() (string, int) {
 	size := rand.Intn(500)
 	if size < 5 {
@@ -42,9 +43,13 @@ func randomOrgNameAndSize() (string, int) {
 	return name, size
 }
 
+// feederError is an error while processing an ownerRepo line. errType partitions the errors in 4 major categories
+// to use in metrics in logging: api, clone, push and unknown.
 type feederError struct {
+	// one of: api, clone, push, unknown
 	errType string
-	err     error
+	// underlying error
+	err error
 }
 
 func (e *feederError) Error() string {
@@ -55,31 +60,61 @@ func (e *feederError) Unwrap() error {
 	return e.err
 }
 
+// worker processes ownerRepo strings, feeding them to GHE instance. it declares orgs if needed, clones from
+// github.com, adds GHE as a remote, declares repo in GHE through API and does a git push to the GHE.
+// there's many workers working at the same time, taking work from a work channel fed by a pump that reads lines
+// from the input.
 type worker struct {
-	name               string
-	client             *github.Client
-	index              int
-	scratchDir         string
-	work               <-chan string
-	wg                 *sync.WaitGroup
-	bar                *progressbar.ProgressBar
-	numFailed          int64
-	numSucceeded       int64
-	fdr                *feederDB
-	currentOrg         string
-	currentNumRepos    int
-	currentMaxRepos    int
-	logger             log15.Logger
-	rateLimiter        *rate.Limiter
-	admin              string
-	token              string
-	host               string
-	pushSem            chan struct{}
-	cloneSem           chan struct{}
-	cloneRepoTimeout   time.Duration
+	// used in logs and metrics
+	name string
+	// index of the worker (which one in range [0, numWorkers)
+	index int
+	// directory to use for cloning from github.com
+	scratchDir string
+
+	// GHE API client
+	client *github.Client
+	admin  string
+	token  string
+
+	// gets the lines of work from this channel (each line has a owner/repo string in some format)
+	work <-chan string
+	// wait group to decrement when this worker is done working
+	wg *sync.WaitGroup
+	// terminal UI progress bar
+	bar *progressbar.ProgressBar
+
+	// some stats
+	numFailed    int64
+	numSucceeded int64
+
+	// feeder DB is a sqlite DB, worker marks processed ownerRepos as successfully processed or failed
+	fdr *feederDB
+	// keeps track of org to which to add repos
+	// (when currentNumRepos reaches currentMaxRepos, it generates a new random triple of these)
+	currentOrg      string
+	currentNumRepos int
+	currentMaxRepos int
+
+	// logger has worker name inprinted
+	logger log15.Logger
+
+	// rate limiter for the GHE API calls
+	rateLimiter *rate.Limiter
+	// how many simultaneous `git push` operations to the GHE
+	pushSem chan struct{}
+	// how many simultaneous `git clone` operations from github.com
+	cloneSem chan struct{}
+	// how many times to try to clone from github.com
 	numCloningAttempts int
+	// how long to wait before cutting short a cloning from github.com
+	cloneRepoTimeout time.Duration
+
+	// host to add as a remote to a cloned repo pointing to GHE instance
+	host string
 }
 
+// run spins until work channel closes or context cancels
 func (wkr *worker) run(ctx context.Context) {
 	defer wkr.wg.Done()
 
@@ -87,6 +122,7 @@ func (wkr *worker) run(ctx context.Context) {
 
 	wkr.logger.Debug("switching to org", "org", wkr.currentOrg)
 
+	// declare the first org to start the worker processing
 	err := wkr.addGHEOrg(ctx)
 	if err != nil {
 		wkr.logger.Error("failed to create org", "org", wkr.currentOrg, "error", err)
@@ -113,6 +149,7 @@ func (wkr *worker) run(ctx context.Context) {
 		}
 		owner, repo := xs[0], xs[1]
 
+		// process one owner/repo
 		err := wkr.process(ctx, owner, repo)
 		reposProcessedCounter.With(prometheus.Labels{"worker": wkr.name}).Inc()
 		remainingWorkGauge.Add(-1.0)
@@ -135,6 +172,7 @@ func (wkr *worker) run(ctx context.Context) {
 				wkr.logger.Error("failed to mark succeeded repo", "ownerRepo", line, "error", err)
 			}
 
+			// switch to a new org
 			if wkr.currentNumRepos >= wkr.currentMaxRepos {
 				wkr.currentOrg, wkr.currentMaxRepos = randomOrgNameAndSize()
 				wkr.currentNumRepos = 0
@@ -154,6 +192,7 @@ func (wkr *worker) run(ctx context.Context) {
 		}
 		ownerDir := filepath.Join(wkr.scratchDir, owner)
 
+		// clean up clone on disk
 		err = os.RemoveAll(ownerDir)
 		if err != nil {
 			wkr.logger.Error("failed to clean up cloned repo", "ownerRepo", line, "error", err, "ownerDir", ownerDir)
@@ -161,6 +200,7 @@ func (wkr *worker) run(ctx context.Context) {
 	}
 }
 
+// process does the necessary work for one ownerRepo string: clone, declare repo in GHE through API, add remote and push
 func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 	err := wkr.cloneRepo(ctx, owner, repo)
 	if err != nil {
@@ -194,6 +234,7 @@ func (wkr *worker) process(ctx context.Context, owner, repo string) error {
 	return &feederError{"push", err}
 }
 
+// cloneRepo clones the specified repo from github.com into the scratchDir
 func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 	select {
 	case wkr.cloneSem <- struct{}{}:
@@ -222,6 +263,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 	}
 }
 
+// addRemote declares the GHE as a remote to the cloned repo
 func (wkr *worker) addRemote(ctx context.Context, gheRepo *github.Repository, owner, repo string) error {
 	repoDir := filepath.Join(wkr.scratchDir, owner, repo)
 
@@ -232,6 +274,7 @@ func (wkr *worker) addRemote(ctx context.Context, gheRepo *github.Repository, ow
 	return cmd.Run()
 }
 
+// pushToGHE does a `git push` command to the GHE remote
 func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 	select {
 	case wkr.pushSem <- struct{}{}:
@@ -252,6 +295,7 @@ func (wkr *worker) pushToGHE(ctx context.Context, owner, repo string) error {
 	}
 }
 
+// addGHEOrg uses the GHE API to declare the org at the GHE
 func (wkr *worker) addGHEOrg(ctx context.Context) error {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
@@ -270,6 +314,7 @@ func (wkr *worker) addGHEOrg(ctx context.Context) error {
 	return err
 }
 
+// addGHEOrg uses the GHE API to declare the repo at the GHE
 func (wkr *worker) addGHERepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
 	err := wkr.rateLimiter.Wait(ctx)
 	if err != nil {
