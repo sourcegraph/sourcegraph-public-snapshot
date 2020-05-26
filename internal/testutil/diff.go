@@ -1,9 +1,11 @@
 package testutil
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"testing"
 )
 
 func Diff(b1, b2 string) (string, error) {
@@ -35,4 +37,13 @@ func Diff(b1, b2 string) (string, error) {
 		err = nil
 	}
 	return string(data), err
+}
+
+// DeepCompare compares x and y using cmp.Diff and raises a fatal error
+// on t if there are any differences.
+func DeepCompare(t *testing.T, x, y interface{}, opts ...cmp.Option) {
+	t.Helper()
+	if diff := cmp.Diff(x, y, opts...); diff != "" {
+		t.Fatal(diff)
+	}
 }
