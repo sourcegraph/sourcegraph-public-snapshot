@@ -61,7 +61,11 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// TODO - document
+	// If there was a transient error while the worker was trying to access the upload
+	// file, it retries but indicates the number of bytes that it has received. We can
+	// fast-forward the file to this position and only give the worker the data that it
+	// still needs. This technique saves us from having to pre-chunk the file as we must
+	// do in the reverse direction.
 	if _, err := file.Seek(int64(getQueryInt(r, "seek")), 0); err != nil {
 		log15.Error("Failed to seek upload file", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -321,8 +325,6 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		}
 		span.Finish()
 	}()
-
-	fmt.Printf("DOING SOMETHING WITH %s\n", filename)
 
 	openDatabase := func() (database.Database, error) {
 		cached = false
