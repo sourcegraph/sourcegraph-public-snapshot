@@ -1312,6 +1312,10 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
 			// GitHub pull requests
 			"+refs/pull/*:refs/pull/*",
+			// GitLab merge requests
+			"+refs/merge-requests/*:refs/merge-requests/*",
+			// Bitbucket pull requests
+			"+refs/pull-requests/*:refs/pull-requests/*",
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
