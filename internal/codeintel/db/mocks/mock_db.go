@@ -101,6 +101,9 @@ type MockDB struct {
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBRepoNameFunc
+	// RepoUsageStatisticsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoUsageStatistics.
+	RepoUsageStatisticsFunc *DBRepoUsageStatisticsFunc
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *DBResetStalledFunc
@@ -284,6 +287,11 @@ func NewMockDB() *MockDB {
 				return "", nil
 			},
 		},
+		RepoUsageStatisticsFunc: &DBRepoUsageStatisticsFunc{
+			defaultHook: func(context.Context) ([]db.RepoUsageStatistics, error) {
+				return nil, nil
+			},
+		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: func(context.Context, time.Time) ([]int, error) {
 				return nil, nil
@@ -427,6 +435,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		RepoNameFunc: &DBRepoNameFunc{
 			defaultHook: i.RepoName,
+		},
+		RepoUsageStatisticsFunc: &DBRepoUsageStatisticsFunc{
+			defaultHook: i.RepoUsageStatistics,
 		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: i.ResetStalled,
@@ -3660,6 +3671,112 @@ func (c DBRepoNameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBRepoNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBRepoUsageStatisticsFunc describes the behavior when the
+// RepoUsageStatistics method of the parent MockDB instance is invoked.
+type DBRepoUsageStatisticsFunc struct {
+	defaultHook func(context.Context) ([]db.RepoUsageStatistics, error)
+	hooks       []func(context.Context) ([]db.RepoUsageStatistics, error)
+	history     []DBRepoUsageStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoUsageStatistics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RepoUsageStatistics(v0 context.Context) ([]db.RepoUsageStatistics, error) {
+	r0, r1 := m.RepoUsageStatisticsFunc.nextHook()(v0)
+	m.RepoUsageStatisticsFunc.appendCall(DBRepoUsageStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoUsageStatistics
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Context) ([]db.RepoUsageStatistics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoUsageStatistics method of the parent MockDB instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]db.RepoUsageStatistics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBRepoUsageStatisticsFunc) SetDefaultReturn(r0 []db.RepoUsageStatistics, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]db.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBRepoUsageStatisticsFunc) PushReturn(r0 []db.RepoUsageStatistics, r1 error) {
+	f.PushHook(func(context.Context) ([]db.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBRepoUsageStatisticsFunc) nextHook() func(context.Context) ([]db.RepoUsageStatistics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoUsageStatisticsFunc) appendCall(r0 DBRepoUsageStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoUsageStatisticsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRepoUsageStatisticsFunc) History() []DBRepoUsageStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoUsageStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoUsageStatisticsFuncCall is an object that describes an invocation
+// of method RepoUsageStatistics on an instance of MockDB.
+type DBRepoUsageStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []db.RepoUsageStatistics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoUsageStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoUsageStatisticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

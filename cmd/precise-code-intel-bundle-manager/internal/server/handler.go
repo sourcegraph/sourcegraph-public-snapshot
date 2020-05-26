@@ -59,7 +59,7 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	if n, err := io.Copy(limitTransferRate(file), file); err != nil {
+	if n, err := io.Copy(limitTransferRate(w), file); err != nil {
 		if isConnectionError(err) {
 			log15.Error("Failure to transfer upload from bundle from manager", "n", n)
 		}
