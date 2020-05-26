@@ -1,4 +1,4 @@
-# Integrating your code host with Sourcegraph
+# Connecting your code host
 
 Sourcegraph supports [every popular Git code host](#code-host-integrations) with flexible hosting options for [other git repository hosts](../admin/external_service/other.md) and [non-Git code hosts](../admin/external_service/non-git.md). Sourcegraph also  index and search across repositories from different code hosts, e.g., GitHub.com and GitLab CE, on a single instance.
 
@@ -31,4 +31,4 @@ Select your code host below for configuration instructions:
 
 ---
 
-[**» Next: Universal Code Search**](universal_code_search.md)
+[**» Next: Introduction to Universal Code Search**](intro_universal_code_search.md)

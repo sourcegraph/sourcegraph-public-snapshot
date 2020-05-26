@@ -34,4 +34,4 @@ GitLab supports native code intelligence on both GitLab.com, and GitLab CE/EE an
 
 ---
 
-[**» Next: Universal Code Search**](universal_code_search.md)
+[**» Next: Introduction to Universal Code Search**](intro_universal_code_search.md)

@@ -20,4 +20,4 @@ View the [GitHub integration docs](../admin/external_service/github.md) for full
 
 ---
 
-[**» Next: Universal Code Search**](universal_code_search.md)
+[**» Next: Introduction to Universal Code Search**](intro_universal_code_search.md)
