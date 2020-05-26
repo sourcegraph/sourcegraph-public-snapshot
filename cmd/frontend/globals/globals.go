@@ -117,7 +117,7 @@ func SetPermissionsUserMapping(u *schema.PermissionsUserMapping) {
 // This variable is used to monitor configuration change via conf.Watch and must be operated atomically.
 var permissionsBackgroundSync = func() atomic.Value {
 	var v atomic.Value
-	v.Store(&schema.PermissionsBackgroundSync{Enabled: false})
+	v.Store(&schema.PermissionsBackgroundSync{Enabled: true})
 	return v
 }()
 
