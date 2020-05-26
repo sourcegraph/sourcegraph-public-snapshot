@@ -4,9 +4,10 @@ package mocks
 
 import (
 	"context"
+	"sync"
+
 	reader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"sync"
 )
 
 // MockReader is a mock impelementation of the Reader interface (from the

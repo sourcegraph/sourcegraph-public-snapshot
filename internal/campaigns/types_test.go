@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestChangesetMetadata(t *testing.T) {
@@ -289,9 +289,7 @@ func TestChangesetEvents(t *testing.T) {
 			have := tc.changeset.Events()
 			want := tc.events
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 	}
 }

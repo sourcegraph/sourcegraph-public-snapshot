@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestPreSpansToTable_Simple(t *testing.T) {
@@ -181,9 +182,7 @@ func TestSplitHighlightedLines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, have, want)
 }
 
 func TestCodeAsLines(t *testing.T) {

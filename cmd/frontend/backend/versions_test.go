@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver"
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func init() {
@@ -48,9 +48,7 @@ func TestUpdateServiceVersion(t *testing.T) {
 		have := UpdateServiceVersion(ctx, "service", tc.version)
 		want := tc.err
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, have, want)
 
 		t.Logf("version = %q", tc.version)
 	}

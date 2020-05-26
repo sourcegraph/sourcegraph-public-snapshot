@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func Test_ScanParameter(t *testing.T) {
@@ -641,9 +642,7 @@ func Test_Parse(t *testing.T) {
 			check := func(result []Node, err error, want string) {
 				var resultStr []string
 				if err != nil {
-					if diff := cmp.Diff(want, err.Error()); diff != "" {
-						t.Fatal(diff)
-					}
+					testutil.DeepCompare(t, want, err.Error())
 					return
 				}
 				for _, node := range result {

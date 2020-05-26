@@ -4,8 +4,9 @@ package worker
 
 import (
 	"context"
-	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
+
+	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // MockProcessor is a mock impelementation of the Processor interface (from

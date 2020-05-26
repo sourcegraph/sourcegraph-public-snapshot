@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func init() {
@@ -1021,9 +1022,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			sort.Slice(wantIDs, func(i, j int) bool { return wantIDs[i] < wantIDs[j] })
 			sort.Slice(haveIDs, func(i, j int) bool { return haveIDs[i] < haveIDs[j] })
 
-			if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, wantIDs, haveIDs)
 		})
 	}
 }

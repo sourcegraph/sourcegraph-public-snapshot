@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -301,9 +302,7 @@ func TestRepositoryComparison(t *testing.T) {
 					t.Fatalf("pageInfo HasNextPage wrong. want=%t, have=%t", tc.wantHasNextPage, pageInfo.HasNextPage())
 				}
 
-				if diff := cmp.Diff(tc.wantEndCursor, pageInfo.EndCursor()); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, tc.wantEndCursor, pageInfo.EndCursor())
 
 				totalCount, err := conn.TotalCount(ctx)
 				if err != nil {
@@ -355,9 +354,7 @@ func TestDiffHunk(t *testing.T) {
 	})
 
 	t.Run("Body", func(t *testing.T) {
-		if diff := cmp.Diff(testDiffFirstHunk, hunk.Body()); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, testDiffFirstHunk, hunk.Body())
 	})
 
 	t.Run("Highlight", func(t *testing.T) {

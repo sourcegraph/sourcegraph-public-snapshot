@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestGroupSiteUsageStats(t *testing.T) {
@@ -79,9 +79,7 @@ func TestGroupSiteUsageStats(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedSiteUsageStats, siteUsageStats)
 }
 
 func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
@@ -132,9 +130,7 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedSiteUsageStats, siteUsageStats)
 }
 
 func TestGroupAggregatedStats(t *testing.T) {
@@ -283,9 +279,7 @@ func TestGroupAggregatedStats(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedCodeIntelStats, codeIntelStats); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedCodeIntelStats, codeIntelStats)
 
 	expectedSearchStats := &types.SearchUsageStatistics{
 		Daily: []*types.SearchUsagePeriod{
@@ -409,7 +403,5 @@ func TestGroupAggregatedStats(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedSearchStats, searchStats); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedSearchStats, searchStats)
 }

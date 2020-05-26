@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -889,9 +891,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		}
 
 		expRepos := []*types.Repo{publicRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expRepos, repos)
 	})
 
 	t.Run("authenticated user but no authz providers should only see public repos", func(t *testing.T) {
@@ -915,9 +915,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		}
 
 		expRepos := []*types.Repo{publicRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expRepos, repos)
 	})
 
 	t.Run("authenticated user with matching external account should see all repos", func(t *testing.T) {
@@ -975,9 +973,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		}
 
 		expRepos := []*types.Repo{publicRepo, privateRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expRepos, repos)
 	})
 
 	t.Run("authenticated user without an external account should fetch and grant", func(t *testing.T) {

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -1996,9 +1997,7 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
 		expIDs := []int32{1, 2}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expIDs, ids)
 
 		// Give "alice" some permissions
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
@@ -2017,9 +2016,7 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		}
 
 		expIDs = []int32{2}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expIDs, ids)
 	}
 }
 
@@ -2065,9 +2062,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
 		expIDs := []api.RepoID{1, 3}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expIDs, ids)
 
 		// Give "private_repo" regular permissions and "private_repo_2" pending permissions
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
@@ -2100,9 +2095,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		}
 
 		expIDs = []api.RepoID{}
-		if diff := cmp.Diff(expIDs, ids); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expIDs, ids)
 	}
 }
 
@@ -2147,9 +2140,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		expResults := map[int32]time.Time{1: {}}
-		if diff := cmp.Diff(expResults, results); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expResults, results)
 
 		// Should get both users back
 		results, err = s.UserIDsWithOldestPerms(ctx, 2)
@@ -2161,9 +2152,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 			1: {},
 			2: clock().AddDate(1, 0, 0),
 		}
-		if diff := cmp.Diff(expResults, results); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expResults, results)
 	}
 }
 
@@ -2226,9 +2215,7 @@ INSERT INTO repo(id, name, private, deleted_at)
 		}
 
 		expResults := map[api.RepoID]time.Time{1: clock()}
-		if diff := cmp.Diff(expResults, results); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expResults, results)
 
 		// Should get both repos back
 		results, err = s.ReposIDsWithOldestPerms(ctx, 2)
@@ -2240,9 +2227,7 @@ INSERT INTO repo(id, name, private, deleted_at)
 			1: clock(),
 			2: clock().AddDate(1, 0, 0),
 		}
-		if diff := cmp.Diff(expResults, results); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expResults, results)
 	}
 }
 
@@ -2297,8 +2282,6 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			ReposWithStalePerms:  1,
 			ReposPermsGapSeconds: 120,
 		}
-		if diff := cmp.Diff(expMetrics, m); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expMetrics, m)
 	}
 }

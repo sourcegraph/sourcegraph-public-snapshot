@@ -4,10 +4,11 @@ package mocks
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
 	"time"
+
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // MockDB is a mock impelementation of the DB interface (from the package

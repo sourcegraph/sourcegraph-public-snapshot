@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -456,9 +457,7 @@ func TestCampaigns(t *testing.T) {
 			c.ID = ""
 			have = append(have, c)
 		}
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, have, want)
 	}
 
 	var addChangesetsResult struct{ Campaign apitest.Campaign }

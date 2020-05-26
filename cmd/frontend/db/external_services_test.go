@@ -2,8 +2,9 @@ package db
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {

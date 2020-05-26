@@ -4,9 +4,10 @@ package mocks
 
 import (
 	"context"
+	"sync"
+
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"sync"
 )
 
 // MockReferencePager is a mock impelementation of the ReferencePager

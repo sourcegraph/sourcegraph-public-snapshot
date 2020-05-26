@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 type clock interface {
@@ -97,9 +98,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			campaigns = append(campaigns, c)
 		}
@@ -191,9 +190,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, have, want)
 			}
 		}
 
@@ -243,9 +240,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				if err != nil {
 					t.Fatal(err)
 				}
-				if diff := cmp.Diff(have, tc.want); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, have, tc.want)
 			})
 		}
 
@@ -255,9 +250,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(have, campaigns[1:]); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, campaigns[1:])
 		})
 
 		t.Run("ListCampaigns HasPatchSet false", func(t *testing.T) {
@@ -266,9 +259,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, campaigns[0:1])
 		})
 	})
 
@@ -297,9 +288,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			// Test that duplicates are not introduced.
 			have.ChangesetIDs = append(have.ChangesetIDs, have.ChangesetIDs...)
@@ -307,9 +296,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			// Test we can add to the set.
 			have.ChangesetIDs = append(have.ChangesetIDs, 42)
@@ -323,9 +310,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				return have.ChangesetIDs[a] < have.ChangesetIDs[b]
 			})
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			// Test we can remove from the set.
 			have.ChangesetIDs = have.ChangesetIDs[:0]
@@ -335,9 +320,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -351,9 +334,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByPatchSetID", func(t *testing.T) {
@@ -365,9 +346,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -488,9 +467,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -500,9 +477,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 		want := []string{"foobar-0", "foobar-1", "foobar-2"}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, have)
 	})
 
 	t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
@@ -516,9 +491,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 		want := []string{}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, have)
 	})
 
 	t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
@@ -532,9 +505,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 		want := []string{}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, have)
 	})
 
 	t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
@@ -548,9 +519,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 		want := []string{}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, have)
 	})
 
 	t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
@@ -589,9 +558,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("%d changesets already exist, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 
 		{
@@ -601,9 +568,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("created %d changesets, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -673,9 +638,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, have, want)
 			}
 		}
 
@@ -691,9 +654,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 
 			want := changesets
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 
 		{
@@ -884,9 +845,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByExternalID", func(t *testing.T) {
@@ -901,9 +860,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByRepoID", func(t *testing.T) {
@@ -917,9 +874,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -953,9 +908,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, have, want)
 
 		for i := range have {
 			// Test that duplicates are not introduced.
@@ -966,9 +919,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, have, want)
 
 		for i := range have {
 			// Test we can add to the set.
@@ -985,9 +936,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
 			})
 
-			if diff := cmp.Diff(have[i], want[i]); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have[i], want[i])
 		}
 
 		for i := range have {
@@ -1000,9 +949,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, have, want)
 	})
 }
 
@@ -1057,9 +1004,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -1093,9 +1038,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByKey", func(t *testing.T) {
@@ -1111,9 +1054,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -1199,9 +1140,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 						t.Fatalf("listed %d events, want: %d", len(have), len(want))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
+					testutil.DeepCompare(t, have, want)
 				}
 			}
 		})
@@ -1372,9 +1311,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				ExternalServiceIDs: []int64{extSvcID},
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, hs)
 	})
 
 	t.Run("ignore closed campaign", func(t *testing.T) {
@@ -1409,9 +1346,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				ExternalServiceIDs: []int64{extSvcID},
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, hs)
 
 		// If a changeset has ANY open campaigns we should list it
 		// Attach cs1 to both an open and closed campaign
@@ -1459,9 +1394,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 				ExternalServiceIDs: []int64{extSvcID},
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, hs)
 	})
 }
 
@@ -1488,9 +1421,7 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			patchSets = append(patchSets, c)
 		}
@@ -1551,9 +1482,7 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 					t.Fatalf("listed %d patchSets, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, have, want)
 			}
 		}
 
@@ -1590,9 +1519,7 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -1609,9 +1536,7 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -1688,9 +1613,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			patches = append(patches, p)
 		}
@@ -1765,9 +1688,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 						t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
+					testutil.DeepCompare(t, have, want)
 				}
 			}
 		})
@@ -1787,9 +1708,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("EmptyResultListingAll", func(t *testing.T) {
@@ -2006,9 +1925,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -2025,9 +1942,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
@@ -2238,9 +2153,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			want.CreatedAt = clock.now()
 			want.UpdatedAt = clock.now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 
 			changesetJobs = append(changesetJobs, c)
 		}
@@ -2315,9 +2228,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 						t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
-					}
+					testutil.DeepCompare(t, have, want)
 				}
 			}
 		})
@@ -2337,9 +2248,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("EmptyResultListingAll", func(t *testing.T) {
@@ -2437,9 +2346,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		}
 	})
 
@@ -2456,9 +2363,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByPatchID", func(t *testing.T) {
@@ -2473,9 +2378,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByChangesetID", func(t *testing.T) {
@@ -2490,9 +2393,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("ByCampaignID", func(t *testing.T) {
@@ -2509,9 +2410,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {

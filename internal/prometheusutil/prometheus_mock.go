@@ -4,9 +4,10 @@ package prometheusutil
 
 import (
 	"context"
+	"sync"
+
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	model "github.com/prometheus/common/model"
-	"sync"
 )
 
 // MockPrometheusQuerier is a mock impelementation of the PrometheusQuerier

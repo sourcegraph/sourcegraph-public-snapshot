@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestEventLogs_ValidInfo(t *testing.T) {
@@ -363,9 +364,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		VerifyUniquesWeek:       4,
 		MonitorUniquesWeek:      0,
 	}
-	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedSummary, summary)
 }
 
 func TestEventLogs_AggregatedEvents(t *testing.T) {
@@ -461,9 +460,7 @@ func TestEventLogs_AggregatedEvents(t *testing.T) {
 			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
 		},
 	}
-	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedEvents, events)
 }
 
 func TestEventLogs_AggregatedEventsSparseEvents(t *testing.T) {
@@ -519,9 +516,7 @@ func TestEventLogs_AggregatedEventsSparseEvents(t *testing.T) {
 			LatenciesDay:   nil,
 		},
 	}
-	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expectedEvents, events)
 }
 
 // makeTestEvent sets the required (uninteresting) fields that are required on insertion

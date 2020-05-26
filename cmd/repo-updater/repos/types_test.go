@@ -3,9 +3,10 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"

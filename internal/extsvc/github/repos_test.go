@@ -13,10 +13,10 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestSplitRepositoryNameWithOwner(t *testing.T) {
@@ -536,9 +536,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Fatal(err)
 	}
 	expRepo := &Repository{ID: "id0-tok1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepo, got)
 
 	// Verify c1 gets the "id0" from cache in subsequent calls
 	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
@@ -547,9 +545,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Fatal(err)
 	}
 	expRepo = &Repository{ID: "id0-tok1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepo, got)
 
 	// c2 should not get "id0" from cache
 	c2.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok2" } } }`, http.StatusOK)
@@ -558,9 +554,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Fatal(err)
 	}
 	expRepo = &Repository{ID: "id0-tok2"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepo, got)
 
 	// Let c1 cache "id1" as not found
 	c1.httpClient = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
@@ -583,9 +577,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Fatal(err)
 	}
 	expRepo = &Repository{ID: "id1-tok2"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepo, got)
 
 	// For sanity, c0 (unauthenticated) should get "id1" as usual
 	c0.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
@@ -594,9 +586,7 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Fatal(err)
 	}
 	expRepo = &Repository{ID: "id1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepo, got)
 }
 
 func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {

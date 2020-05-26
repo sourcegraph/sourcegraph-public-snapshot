@@ -1,11 +1,12 @@
 package testutil
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func Diff(b1, b2 string) (string, error) {
@@ -44,6 +45,6 @@ func Diff(b1, b2 string) (string, error) {
 func DeepCompare(t *testing.T, x, y interface{}, opts ...cmp.Option) {
 	t.Helper()
 	if diff := cmp.Diff(x, y, opts...); diff != "" {
-		t.Fatal(diff)
+		t.Fatalf(diff)
 	}
 }

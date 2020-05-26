@@ -1,12 +1,13 @@
 package campaigns
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+
 	"github.com/google/go-cmp/cmp/cmpopts"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -96,9 +97,7 @@ func TestChangesetEventsLabels(t *testing.T) {
 			want := tc.want
 			sort.Slice(have, func(i, j int) bool { return have[i].Name < have[j].Name })
 			sort.Slice(want, func(i, j int) bool { return want[i].Name < want[j].Name })
-			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, have, want, cmpopts.EquateEmpty())
 		})
 	}
 }

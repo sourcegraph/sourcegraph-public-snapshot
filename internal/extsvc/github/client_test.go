@@ -84,9 +84,7 @@ func Test_newRepoCache(t *testing.T) {
 		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, got, cmpOpts)
 	})
 
 	t.Run("GitHub Enterprise", func(t *testing.T) {
@@ -100,9 +98,7 @@ func Test_newRepoCache(t *testing.T) {
 		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
 		got := newRepoCache(url, token)
 		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, want, got, cmpOpts)
 	})
 }
 

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 // TestProvider_RepoPerms_cacheTTL tests that cache entries are invalidated after the cache TTL
@@ -49,9 +49,7 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if diff := cmp.Diff(wantPerms, perms); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, wantPerms, perms)
 		if cacheMisses != 1 {
 			t.Errorf("expected 1 cache misses, but got %d", cacheMisses)
 		}
@@ -62,9 +60,7 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 		if gotErr != nil {
 			t.Fatal(gotErr)
 		}
-		if diff := cmp.Diff(wantPerms, perms); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, wantPerms, perms)
 		if cacheMisses != 0 {
 			t.Errorf("expected 0 cache misses, but got %d", cacheMisses)
 		}
@@ -77,9 +73,7 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 		if gotErr != nil {
 			t.Fatal(gotErr)
 		}
-		if diff := cmp.Diff(wantPerms, perms); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, wantPerms, perms)
 		if cacheMisses != 1 {
 			t.Errorf("expected 1 cache misses, but got %d", cacheMisses)
 		}

@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
@@ -56,12 +58,8 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}
-			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
-				t.Fatal(diff)
-			}
-
+			testutil.DeepCompare(t, c.want, err.Error())
 		})
-
 	}
 }
 
@@ -225,9 +223,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 			q, _ := ParseAndOr(tt.input)
 			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
-				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {
-					t.Fatal(diff)
-				}
+				testutil.DeepCompare(t, tt.want, err.Error())
 				return
 			}
 			result := scopeParameters

@@ -1,8 +1,9 @@
 package extsvc
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestExtractRateLimitConfig(t *testing.T) {
@@ -115,9 +116,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(tc.want, rlc); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, tc.want, rlc)
 		})
 	}
 }

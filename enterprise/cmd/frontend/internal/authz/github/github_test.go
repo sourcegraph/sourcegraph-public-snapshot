@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"golang.org/x/oauth2"
 )
 
@@ -204,18 +204,14 @@ func TestProvider_RepoPerms(t *testing.T) {
 						}
 
 						perms, err := p.RepoPerms(context.Background(), c.userAccount, c.repos)
-						if diff := cmp.Diff(c.wantErr, err); diff != "" {
-							t.Fatal(diff)
-						}
+						testutil.DeepCompare(t, c.wantErr, err)
 
 						for _, ps := range [][]authz.RepoPerms{perms, c.wantPerms} {
 							sort.Slice(ps, func(i, j int) bool {
 								return ps[i].Repo.Name <= ps[j].Repo.Name
 							})
 						}
-						if diff := cmp.Diff(c.wantPerms, perms); diff != "" {
-							t.Fatal(diff)
-						}
+						testutil.DeepCompare(t, c.wantPerms, perms)
 
 						if j == 1 && called > 0 {
 							t.Fatal("expected entries to be fully cached")
@@ -272,12 +268,8 @@ func Test_fetchUserRepos(t *testing.T) {
 		"u99/public": true,
 	}
 
-	if diff := cmp.Diff(wantCanAccess, canAccess); diff != "" {
-		t.Fatal(diff)
-	}
-	if diff := cmp.Diff(wantIsPublic, isPublic); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, wantCanAccess, canAccess)
+	testutil.DeepCompare(t, wantIsPublic, isPublic)
 }
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -405,9 +397,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 	}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepoIDs, repoIDs)
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
@@ -477,7 +467,5 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 	}
-	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expAccountIDs, accountIDs)
 }

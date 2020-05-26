@@ -3,9 +3,10 @@
 package mocks
 
 import (
+	"sync"
+
 	serializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"sync"
 )
 
 // MockSerializer is a mock impelementation of the Serializer interface

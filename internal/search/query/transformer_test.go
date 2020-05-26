@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func prettyPrint(nodes []Node) string {
@@ -20,9 +21,7 @@ func Test_SubstituteAliases(t *testing.T) {
 	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
 	query, _ := ParseAndOr(input)
 	got := prettyPrint(SubstituteAliases(query))
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, got, want)
 }
 
 func Test_LowercaseFieldNames(t *testing.T) {
@@ -30,9 +29,7 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	want := `(and "repo:foo" "PATTERN")`
 	query, _ := ParseAndOr(input)
 	got := prettyPrint(LowercaseFieldNames(query))
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, got, want)
 }
 
 func Test_Hoist(t *testing.T) {
@@ -176,9 +173,7 @@ func TestSearchUppercase(t *testing.T) {
 		t.Run("searchUppercase", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
 			got := prettyPrint(SearchUppercase(query))
-			if diff := cmp.Diff(got, c.want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, got, c.want)
 		})
 	}
 }
@@ -204,9 +199,7 @@ func TestMap(t *testing.T) {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
 			got := prettyPrint(Map(query, c.fns...))
-			if diff := cmp.Diff(got, c.want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, got, c.want)
 		})
 	}
 }

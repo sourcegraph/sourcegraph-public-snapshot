@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 type mockDoer struct {
@@ -105,9 +105,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expRepoIDs, repoIDs)
 }
 
 func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
@@ -197,7 +195,5 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 
 	// 1 should not be included because of "access_level" < 20
 	expAccountIDs := []extsvc.AccountID{"2", "3"}
-	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
-		t.Fatal(diff)
-	}
+	testutil.DeepCompare(t, expAccountIDs, accountIDs)
 }

@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestNextSync(t *testing.T) {
@@ -81,9 +80,7 @@ func TestNextSync(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NextSync(clock, tt.h)
-			if diff := cmp.Diff(got, tt.want); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, got, tt.want)
 		})
 	}
 }
@@ -95,9 +92,7 @@ func TestChangesetPriorityQueue(t *testing.T) {
 		for i := range ids {
 			ids[i] = q.items[i].changesetID
 		}
-		if diff := cmp.Diff(expected, ids); diff != "" {
-			t.Fatal(diff)
-		}
+		testutil.DeepCompare(t, expected, ids)
 	}
 
 	now := time.Now()
@@ -342,9 +337,7 @@ func TestFilterSyncData(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			data := filterSyncData(tc.serviceID, tc.data)
-			if diff := cmp.Diff(tc.want, data); diff != "" {
-				t.Fatal(diff)
-			}
+			testutil.DeepCompare(t, tc.want, data)
 		})
 	}
 }
