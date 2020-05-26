@@ -20,6 +20,8 @@ export interface InitResult {
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtHostAPI
+    // todo this is needed as a temp solution to getter problem
+    state: Readonly<ExtState>
 }
 
 /**
@@ -27,7 +29,7 @@ export interface InitResult {
  */
 export type PartialWorkspaceNamespace = Omit<
     typeof sourcegraph['workspace'],
-    'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments'
+    'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments' | 'roots' | 'versionContext'
 >
 /**
  * Holds internally ExtState and manages communication with the Client
@@ -81,12 +83,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
 
     // Workspace
     const workspace: PartialWorkspaceNamespace = {
-        get roots() {
-            return state.roots
-        },
-        get versionContext() {
-            return state.versionContext
-        },
         onDidChangeRoots: rootChanges.asObservable(),
         rootChanges: rootChanges.asObservable(),
         versionContextChanges: versionContextChanges.asObservable(),
@@ -98,5 +94,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         }),
         exposedToMain,
         workspace,
+        state,
     }
 }

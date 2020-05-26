@@ -141,7 +141,7 @@ function createExtensionAPI(
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace } = initNewExtensionAPI(proxy)
+    const { configuration, exposedToMain, workspace, state } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -187,15 +187,23 @@ function createExtensionAPI(
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
-        // Note here we need to use Object.assign because 'workspace' object has getters
-        // that we need to preserve (for now)
-        workspace: Object.assign(workspace, {
+        workspace: {
             get textDocuments(): sourcegraph.TextDocument[] {
                 return documents.getAll()
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-        }),
+            ...workspace,
+            // we use state here directly because of getters
+            // getter are not preserved as functions via {...obj} syntax
+            // thus expose state until we migrate documents to the new model according RFC 155
+            get roots() {
+                return state.roots
+            },
+            get versionContext() {
+                return state.versionContext
+            },
+        },
 
         configuration,
 
