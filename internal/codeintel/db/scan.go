@@ -409,3 +409,31 @@ func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
 func scanFirstIndexDequeue(rows *sql.Rows, err error) (interface{}, bool, error) {
 	return scanFirstIndex(rows, err)
 }
+
+// scanRepoUsageStatistics populates a RepoUsageStatistics from the given scanner.
+func scanRepoUsageStatistics(scanner scanner) (stats RepoUsageStatistics, err error) {
+	err = scanner.Scan(&stats.RepositoryID, &stats.SearchCount, &stats.PreciseCount)
+	return stats, err
+}
+
+// scanRepoUsageStatisticsSlice reads the given set of repo usage stat rows and returns
+// a slice of RepoUsageStatistics values. This method should be called directly from the
+// return value of `*db.query`.
+func scanRepoUsageStatisticsSlice(rows *sql.Rows, err error) ([]RepoUsageStatistics, error) {
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []RepoUsageStatistics
+	for rows.Next() {
+		s, err := scanRepoUsageStatistics(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		stats = append(stats, s)
+	}
+
+	return stats, nil
+}
