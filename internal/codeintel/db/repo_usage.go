@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"sort"
 
 	"github.com/keegancsmith/sqlf"
 )
@@ -18,7 +17,7 @@ type RepoUsageStatistics struct {
 // code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 // by search then precise event counts.
 func (db *dbImpl) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistics, error) {
-	stats, err := scanRepoUsageStatisticsSlice(db.query(ctx, sqlf.Sprintf(`
+	return scanRepoUsageStatisticsSlice(db.query(ctx, sqlf.Sprintf(`
 		SELECT
 			r.id,
 			counts.search_count,
@@ -36,25 +35,6 @@ func (db *dbImpl) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistic
 		) counts
 		-- Cast allows use of the uri btree index
 		JOIN repo r ON r.uri = counts.repo_name::citext
+		ORDER BY search_count DESC, precise_count DESC
 	`)))
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Slice(stats, func(i, j int) bool {
-		comparisons := [2]int{
-			stats[j].SearchCount - stats[i].SearchCount,
-			stats[j].PreciseCount - stats[i].PreciseCount,
-		}
-
-		for _, cmp := range comparisons {
-			if cmp != 0 {
-				return cmp < 0
-			}
-		}
-
-		return false
-	})
-
-	return stats, nil
 }
