@@ -84,8 +84,8 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error)
 	return
 }
 
-// failed records the fact that the worker processing the specified ownerRepo failed to succeed processing it.
-// errType is recorded because specific errTypes are not worth rerunning in a subsequent run (if repo is private
+// failed records the fact that the worker processing the specified ownerRepo failed to process it.
+// errType is recorded because specific errTypes are not worth rerunning in a subsequent run (for example if repo is private
 // on github.com and we don't have credentials for it, it's not worth trying again in a next run).
 func (fdr *feederDB) failed(ownerRepo string, errType string) error {
 	fdr.Lock()
