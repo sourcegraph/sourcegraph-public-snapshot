@@ -13,6 +13,11 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+// extractOwnerRepoFromCSVLine extracts the owner and repo from a line that comes from a CSV file that a GHE instance
+// created in a repo report (so it has a certain number of fields).
+// for example: 2019-05-23 15:24:16 -0700,4,Organization,sourcegraph,9,tsenart-vegeta,public,1.64 MB,1683,0,false,false
+// we're looking for field number 6 (tsenart-vegeta in the example) and split it into owner/repo by replacing the first
+// '-' with a '/' (the owner and repo were merged when added, this is the owner on github.com, not in the GHE)
 func extractOwnerRepoFromCSVLine(line string) string {
 	if len(line) == 0 {
 		return line
@@ -27,16 +32,25 @@ func extractOwnerRepoFromCSVLine(line string) string {
 	return strings.Replace(ownerRepo, "-", "/", 1)
 }
 
+// producer is pumping input line by line into the pipe channel for processing by the workers.
 type producer struct {
-	remaining      int64
-	pipe           chan<- string
-	fdr            *feederDB
+	// how many lines are remaining to be processed
+	remaining int64
+	// where to send each ownerRepo. the workers expect 'owner/repo' strings
+	pipe chan<- string
+	// sqlite DB where each ownerRepo is declared (to keep progress and to implement resume functionality)
+	fdr *feederDB
+	// how many we have already processed
 	numAlreadyDone int64
-	logger         log15.Logger
-	bar            *progressbar.ProgressBar
-	skipNumLines   int64
+	// logger for the pump
+	logger log15.Logger
+	// terminal UI progress bar
+	bar *progressbar.ProgressBar
+	// skips this many lines from the input before starting to feed into the pipe
+	skipNumLines int64
 }
 
+// pumpFile reads the specified file line by line and feeds ownerRepo strings into the pipe
 func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -88,6 +102,8 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 	return scanner.Err()
 }
 
+// pump finds all the input files specified as command line by recursively going through all specified directories
+// and looking for '*.csv', '*.json' and '*.txt' files.
 func (prdc *producer) pump(ctx context.Context) error {
 	for _, root := range flag.Args() {
 		if ctx.Err() != nil || prdc.remaining <= 0 {
@@ -122,6 +138,8 @@ func (prdc *producer) pump(ctx context.Context) error {
 	return nil
 }
 
+// numLinesInFile counts how many lines are in the specified file (it starts counting only after skipNumLines have been
+// skipped from the file). Returns counted lines, how many lines were skipped and any errors.
 func numLinesInFile(path string, skipNumLines int64) (int64, int64, error) {
 	var numLines, skippedLines int64
 
@@ -148,6 +166,7 @@ func numLinesInFile(path string, skipNumLines int64) (int64, int64, error) {
 	return numLines, skippedLines, scanner.Err()
 }
 
+// numLinesTotal goes through all the inputs and counts how many lines are available for processing.
 func numLinesTotal(skipNumLines int64) (int64, error) {
 	var numLines int64
 	skippedLines := skipNumLines
