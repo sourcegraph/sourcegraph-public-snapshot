@@ -197,15 +197,19 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 	seek := int64(0)
 	for {
 		n, err := c.getUploadChunk(ctx, f, url, seek)
-		if err == nil {
-			return f.Name(), nil
-		}
-		if !isConnectionError(err) {
-			return "", err
+		if err != nil {
+			if !isConnectionError(err) {
+				return "", err
+			}
+
+			// We have a transient error. Make another request but skip the
+			// first seek + n bytes as we've already written these to disk.
+			seek += n
+			log15.Warn("Transient error while reading payload", "error", err)
+			continue
 		}
 
-		seek += n
-		log15.Warn("Transient error while reading payload", "error", err)
+		return f.Name(), nil
 	}
 }
 
