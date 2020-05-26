@@ -52,7 +52,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 		// token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth && isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
+		if conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
 			return
 		}
 	}
@@ -216,6 +216,13 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		return nil, err
 	}
 
+	log15.Info(
+		"Enqueued upload",
+		"id", id,
+		"repository_id", uploadArgs.RepositoryID,
+		"commit", uploadArgs.Commit,
+	)
+
 	// older versions of src-cli expect a string
 	return enqueuePayload{fmt.Sprintf("%d", id)}, nil
 }
@@ -236,6 +243,13 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 	if err != nil {
 		return nil, err
 	}
+
+	log15.Info(
+		"Enqueued upload",
+		"id", id,
+		"repository_id", uploadArgs.RepositoryID,
+		"commit", uploadArgs.Commit,
+	)
 
 	// older versions of src-cli expect a string
 	return enqueuePayload{fmt.Sprintf("%d", id)}, nil

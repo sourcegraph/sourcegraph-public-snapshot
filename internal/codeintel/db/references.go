@@ -40,7 +40,7 @@ func (db *dbImpl) SameRepoPager(ctx context.Context, repositoryID int, commit, s
 
 	totalCount, _, err := scanFirstInt(tx.query(
 		ctx,
-		sqlf.Sprintf(`SELECT COUNT(1) FROM lsif_references r WHERE %s`, sqlf.Join(conds, " AND ")),
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_references r WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return 0, nil, done(err)
@@ -85,7 +85,7 @@ func (db *dbImpl) PackageReferencePager(ctx context.Context, scheme, name, versi
 	totalCount, _, err := scanFirstInt(tx.query(
 		ctx,
 		sqlf.Sprintf(`
-			SELECT COUNT(1) FROM lsif_references r
+			SELECT COUNT(*) FROM lsif_references r
 			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
 			WHERE %s
 		`, sqlf.Join(conds, " AND ")),

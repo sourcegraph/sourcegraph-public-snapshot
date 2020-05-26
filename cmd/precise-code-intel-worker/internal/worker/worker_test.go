@@ -142,6 +142,7 @@ func TestDequeueAndProcessMarkErrorFailure(t *testing.T) {
 	}
 
 	mockDB := dbmocks.NewMockDB()
+	mockDB.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockProcessor := NewMockProcessor()
 	mockDB.DequeueFunc.SetDefaultReturn(upload, mockDB, true, nil)
 	mockDB.MarkErroredFunc.SetDefaultReturn(fmt.Errorf("db failure"))
@@ -360,7 +361,7 @@ func makeCommit(i int) string {
 }
 
 func copyTestDump(ctx context.Context, uploadID int, dir string) (string, error) {
-	src, err := os.Open("../../testdata/dump.lsif")
+	src, err := os.Open("../../testdata/dump1.lsif")
 	if err != nil {
 		return "", err
 	}

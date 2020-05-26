@@ -101,7 +101,7 @@ func serializeBundleDocuments(state *State) (map[string]types.DocumentData, erro
 	return out, nil
 }
 
-func serializeDocument(state *State, doc lsif.DocumentData) (types.DocumentData, error) {
+func serializeDocument(state *State, doc lsif.Document) (types.DocumentData, error) {
 	document := types.DocumentData{
 		Ranges:             map[types.ID]types.RangeData{},
 		HoverResults:       map[types.ID]string{},
@@ -206,11 +206,11 @@ func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[str
 }
 
 var (
-	getDefinitionResultID = func(r lsif.RangeData) string { return r.DefinitionResultID }
-	getReferenceResultID  = func(r lsif.RangeData) string { return r.ReferenceResultID }
+	getDefinitionResultID = func(r lsif.Range) string { return r.DefinitionResultID }
+	getReferenceResultID  = func(r lsif.Range) string { return r.ReferenceResultID }
 )
 
-func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.RangeData) string) ([]types.DefinitionReferenceRow, error) {
+func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) ([]types.DefinitionReferenceRow, error) {
 	var rows []types.DefinitionReferenceRow
 
 	monikers := datastructures.DefaultIDSetMap{}

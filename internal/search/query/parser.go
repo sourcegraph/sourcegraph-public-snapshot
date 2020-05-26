@@ -122,8 +122,15 @@ func skipSpace(buf []byte) int {
 }
 
 type heuristic struct {
-	parensAsPatterns    bool // if true, parses parens as patterns rather than expression groups.
-	allowDanglingParens bool // if true, disables parsing parentheses as expression groups.
+	// If true, parses parens as patterns rather than expression groups.
+	parensAsPatterns bool
+	// If true, disables parsing parentheses as expression groups.
+	allowDanglingParens bool
+	// If true, the parser accepts any characters (e.g., unbalanced quotes,
+	// parentheses, backslashes) if they can be associated with a pattern.
+	// Balanced quotes remain expected for non-empty fields like repo:"foo",
+	// if specified.
+	literalSearchPatterns bool
 }
 
 type parser struct {
@@ -199,12 +206,10 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after+1 > len(p.buf) || !isSpace(p.buf[after:after+1]) {
+	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
 		return false
 	}
-	// Bar
-	return strings.ToLower(v) == string(keyword)
-	// Foo
+	return strings.EqualFold(v, string(keyword))
 }
 
 // skipSpaces advances the input and places the parser position at the next
@@ -219,6 +224,31 @@ func (p *parser) skipSpaces() error {
 		return io.ErrShortBuffer
 	}
 	return nil
+}
+
+// ScanLiteral consumes all characters up to a whitespace character and returns
+// the string and how much it consumed.
+func ScanSearchPatternLiteral(buf []byte) (string, int) {
+	var count, advance int
+	var r rune
+	var result []rune
+
+	next := func() rune {
+		r, advance = utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+	for len(buf) > 0 {
+		start := count
+		r = next()
+		if unicode.IsSpace(r) {
+			count = start // Backtrack.
+			break
+		}
+		result = append(result, r)
+	}
+	return string(result), count
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -254,12 +284,20 @@ loop:
 			if len(buf[advance:]) > 0 {
 				r = next()
 				switch r {
-				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', delimiter:
+				case 'a', 'b', 'f', 'v':
+					result = append(result, '\\', r)
+				case 'n':
+					result = append(result, '\n')
+				case 'r':
+					result = append(result, '\r')
+				case 't':
+					result = append(result, '\t')
+				case '\\', delimiter:
 					result = append(result, r)
 				default:
 					return "", count, errors.New("unrecognized escape sequence")
 				}
-				if len(buf) <= 0 {
+				if len(buf) == 0 {
 					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
 				}
 			} else {
@@ -270,7 +308,7 @@ loop:
 		}
 	}
 
-	if r != delimiter {
+	if r != delimiter || (r == delimiter && count == 1) {
 		return "", count, errors.New("unterminated literal: expected " + string(delimiter))
 	}
 	return string(result), count, nil
@@ -404,7 +442,8 @@ loop:
 // parentheses at the current position. There are cases where we want to
 // interpret parentheses as part of a search pattern, rather than an and/or
 // expression group. For example, In the regex foo(a|b)bar, we want to preserve
-// parentheses as part of the pattern.
+// parentheses as part of the pattern. It only succeeds if the value parsed can
+// be interpreted as a pattern, and not, e.g., as a filter:value parameter.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
 		return Parameter{Field: "", Value: ""}, false
@@ -434,7 +473,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
-// to a search pattern). It's main function is to determine when to stop
+// to a search pattern). Its main function is to determine when to stop
 // scanning a value (e.g., at a parentheses), and which escape sequences to
 // interpret.
 func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
@@ -553,11 +592,34 @@ func (p *parser) ParseValue() (string, bool) {
 func (p *parser) ParseParameter() Parameter {
 	field, advance := ScanField(p.buf[p.pos:])
 	p.pos += advance
-	value, quoted := p.ParseValue()
+
 	negated := len(field) > 0 && field[0] == '-'
 	if negated {
 		field = field[1:]
 	}
+
+	if p.heuristic.literalSearchPatterns {
+		if field == "" {
+			// No foo: prefix was parsed, accept as pattern.
+			value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
+			p.pos += advance
+			return Parameter{Field: "", Value: value, Negated: false, Quoted: false}
+		}
+		if _, exists := allFields[field]; !exists {
+			// A foo: prefix was parsed, but it's not a recognized
+			// field. Accept as pattern.
+			value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
+			// Rebuild the (-?)foo:bar string.
+			value = field + ":" + value
+			if negated {
+				value = "-" + value
+			}
+			p.pos += advance
+			return Parameter{Field: "", Value: value, Negated: false, Quoted: false}
+		}
+	}
+
+	value, quoted := p.ParseValue()
 	return Parameter{Field: field, Value: value, Negated: negated, Quoted: quoted}
 }
 
@@ -819,17 +881,40 @@ func ParseAndOr(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
+func ParseLiteralSearch(in string) ([]Node, error) {
+	if strings.TrimSpace(in) == "" {
+		return nil, nil
+	}
+	parser := &parser{
+		buf: []byte(in),
+		heuristic: heuristic{
+			allowDanglingParens:   true,
+			literalSearchPatterns: true,
+		},
+	}
+	nodes, err := parser.parseOr()
+	if err != nil {
+		return nil, err
+	}
+	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
+	err = validate(nodes)
+	if err != nil {
+		return nil, err
+	}
+	return newOperator(nodes, And), nil
+}
+
 // ProcessAndOr query parses and validates an and/or query for a given search type.
 func ProcessAndOr(in string) (QueryInfo, error) {
 	query, err := ParseAndOr(in)
 	if err != nil {
 		return nil, err
 	}
-	query = LowercaseFieldNames(query)
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
 	err = validate(query)
 	if err != nil {
 		return nil, err
 	}
-	query = SubstituteAliases(query)
+
 	return &AndOrQuery{Query: query}, nil
 }

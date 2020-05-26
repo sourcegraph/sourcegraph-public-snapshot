@@ -577,7 +577,7 @@ func Test_Parse(t *testing.T) {
 		// Quotes and escape sequences.
 		{
 			Input:         `"`,
-			WantGrammar:   `""`,
+			WantGrammar:   `"\""`,
 			WantHeuristic: Same,
 		},
 		{
@@ -755,6 +755,157 @@ func Test_ScanDelimited(t *testing.T) {
 				t.Error(diff)
 			}
 
+		})
+	}
+}
+
+func Test_ParseLiteralSearch(t *testing.T) {
+	cases := []struct {
+		Input string
+		Want  string
+	}{
+		{
+			Input: "",
+			Want:  "",
+		},
+		{
+			Input: " ",
+			Want:  "",
+		},
+		{
+			Input: "  ",
+			Want:  "",
+		},
+		{
+			Input: "a",
+			Want:  `"a"`,
+		},
+		{
+			Input: " a",
+			Want:  `"a"`,
+		},
+		{
+			Input: `a `,
+			Want:  `"a"`,
+		},
+		{
+			Input: ` a b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `a  b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `:`,
+			Want:  `":"`,
+		},
+		{
+			Input: `:=`,
+			Want:  `":="`,
+		},
+		{
+			Input: `:= range`,
+			Want:  `(concat ":=" "range")`,
+		},
+		{
+			Input: "`",
+			Want:  "\"`\"",
+		},
+		{
+			Input: `'`,
+			Want:  `"'"`,
+		},
+		{
+			Input: "file:a",
+			Want:  `"file:a"`,
+		},
+		{
+			Input: `"file:a"`,
+			Want:  `"\"file:a\""`,
+		},
+		{
+			Input: `"x foo:bar`,
+			Want:  `(concat "\"x" "foo:bar")`,
+		},
+		// -repo:c" is considered valid. "repo:b is a literal pattern.
+		{
+			Input: `"repo:b -repo:c"`,
+			Want:  `(and "-repo:c\"" "\"repo:b")`,
+		},
+		{
+			Input: `".*"`,
+			Want:  `"\".*\""`,
+		},
+		{
+			Input: `-pattern: ok`,
+			Want:  `(concat "-pattern:" "ok")`,
+		},
+		{
+			Input: `a:b "patterntype:regexp"`,
+			Want:  `(concat "a:b" "\"patterntype:regexp\"")`,
+		},
+		// Whitespace is removed. content: exists for preserving whitespace.
+		{
+			Input: `lang:go func  main`,
+			Want:  `(and "lang:go" (concat "func" "main"))`,
+		},
+		{
+			Input: `\n`,
+			Want:  `"\\n"`,
+		},
+		{
+			Input: `\t`,
+			Want:  `"\\t"`,
+		},
+		{
+			Input: `\\`,
+			Want:  `"\\\\"`,
+		},
+		{
+			Input: `foo\d "bar*"`,
+			Want:  `(concat "foo\\d" "\"bar*\"")`,
+		},
+		{
+			Input: `\d`,
+			Want:  `"\\d"`,
+		},
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago"`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago")`,
+		},
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago" test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago' test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		{
+			Input: `type:commit message:"a com"mit message" after:"10 days ago"`,
+			Want:  `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\""))`,
+		},
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:'10" (concat "days" "ago\"" "test" "test2"))`,
+		},
+		{
+			Input: `bar and (foo or x\) ()`,
+			Want:  `(or (and "bar" "(foo") (concat "x\\)" "()"))`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run("literal search parse", func(t *testing.T) {
+			result, _ := ParseLiteralSearch(tt.Input)
+			var resultStr []string
+			for _, node := range result {
+				resultStr = append(resultStr, node.String())
+			}
+			got := strings.Join(resultStr, " ")
+			if diff := cmp.Diff(tt.Want, got); diff != "" {
+				t.Error(diff)
+			}
 		})
 	}
 }

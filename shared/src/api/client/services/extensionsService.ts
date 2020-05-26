@@ -12,7 +12,6 @@ import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
-import { SettingsService } from './settings'
 import { ModelService } from './modelService'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
@@ -52,7 +51,7 @@ const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Configure
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension'> {
+interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension' | 'settings'> {
     sideloadedExtensionURL: Subscribable<string | null>
 }
 
@@ -66,7 +65,6 @@ export class ExtensionsService {
     constructor(
         private platformContext: PartialContext,
         private modelService: Pick<ModelService, 'activeLanguages'>,
-        private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
             baseUrl: string
@@ -74,7 +72,7 @@ export class ExtensionsService {
     ) {}
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
-        settings: this.settingsService.data,
+        settings: this.platformContext.settings,
         requestGraphQL: this.platformContext.requestGraphQL,
     })
 
@@ -85,7 +83,7 @@ export class ExtensionsService {
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
         return combineLatest([
-            from(this.settingsService.data),
+            from(this.platformContext.settings),
             from(this.configuredExtensions),
             this.sideloadedExtension,
         ]).pipe(

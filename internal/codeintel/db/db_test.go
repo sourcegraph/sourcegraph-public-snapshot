@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "precise-code-intel-api-server"
+	dbtesting.DBNameSuffix = "codeintel"
 }
 
 func rawTestDB() *dbImpl {

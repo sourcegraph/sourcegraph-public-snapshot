@@ -380,8 +380,8 @@ func TestCampaigns(t *testing.T) {
 					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
 
 					Target: apitest.GitTarget{
-						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
-						AbbreviatedOID: "7db302f",
+						OID:            "23a5556c7e25aaab1f1529cee4efb90fe6fe3a30",
+						AbbreviatedOID: "23a5556",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
@@ -425,8 +425,8 @@ func TestCampaigns(t *testing.T) {
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
 					Target: apitest.GitTarget{
-						OID:            "mockcommitid",
-						AbbreviatedOID: "mockcom",
+						OID:            "be4d84e9c4b0a15e59c5f52900e6d55c7525b8d3",
+						AbbreviatedOID: "be4d84e",
 						TargetType:     "GIT_COMMIT",
 					},
 				},

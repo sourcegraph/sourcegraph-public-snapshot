@@ -209,20 +209,20 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldCase:
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
-		FieldRepo, "r":
+		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup, "g":
+		FieldRepoGroup:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldFile, "f":
+		FieldFile:
 		return satisfies(isValidRegexp)
 	case
 		FieldFork,
 		FieldArchived:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldLang, "l", "language":
+		FieldLang:
 		return satisfies(isLanguage)
 	case
 		FieldType:
@@ -238,13 +238,13 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepoHasCommitAfter:
 		return satisfies(isSingular, isNotNegated)
 	case
-		FieldBefore, "until",
-		FieldAfter, "since":
+		FieldBefore,
+		FieldAfter:
 		return satisfies(isNotNegated)
 	case
 		FieldAuthor,
 		FieldCommitter,
-		FieldMessage, "m", "msg":
+		FieldMessage:
 		return satisfies(isValidRegexp)
 	case
 		FieldIndex:
