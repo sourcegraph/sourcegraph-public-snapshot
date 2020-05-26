@@ -1737,12 +1737,30 @@ func getPatchSetQuery(opts *GetPatchSetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getPatchSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// GetCampaignStatusOpts captures the query options needed for getting the
+// BackgroundProcessStatus for a Campaign.
+type GetCampaignStatusOpts struct {
+	ID            int64
+	ExcludeErrors bool
+}
+
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
-func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_id = %s", id),
-	))
+func (s *Store) GetCampaignStatus(ctx context.Context, opts GetCampaignStatusOpts) (*campaigns.BackgroundProcessStatus, error) {
+	q := getCampaignStatusQuery(&opts)
+	return s.queryBackgroundProcessStatus(ctx, q)
+}
+
+func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getCampaignStatusQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
 func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*campaigns.BackgroundProcessStatus, error) {

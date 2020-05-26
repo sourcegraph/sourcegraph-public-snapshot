@@ -2548,6 +2548,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		tests := []struct {
 			jobs []*cmpgn.ChangesetJob
 			want *cmpgn.BackgroundProcessStatus
+			opts GetCampaignStatusOpts
 		}{
 			{
 				jobs: []*cmpgn.ChangesetJob{}, // no jobs
@@ -2634,7 +2635,10 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				}
 			}
 
-			status, err := s.GetCampaignStatus(ctx, int64(campaignID))
+			opts := tc.opts
+			opts.ID = int64(campaignID)
+
+			status, err := s.GetCampaignStatus(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
