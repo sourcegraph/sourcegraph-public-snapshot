@@ -73,9 +73,11 @@ type UserIDArgs struct {
 }
 
 type RepoPermsArgs struct {
-	Repository graphql.ID
-	BindIDs    []string
-	Perm       string
+	Repository      graphql.ID
+	UserPermissions []struct {
+		BindID     string
+		Permission string
+	}
 }
 
 type AuthorizedRepoArgs struct {

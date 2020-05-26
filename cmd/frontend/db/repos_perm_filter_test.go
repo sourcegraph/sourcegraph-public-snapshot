@@ -90,6 +90,10 @@ func getNames(rs []*types.Repo) []string {
 }
 
 func Test_authzFilter(t *testing.T) {
+	before := globals.PermissionsBackgroundSync()
+	globals.SetPermissionsBackgroundSync(&schema.PermissionsBackgroundSync{Enabled: false})
+	defer globals.SetPermissionsBackgroundSync(before)
+
 	repos := map[api.RepoName]*types.Repo{}
 	for _, r := range makeRepos(
 		"gitlab.mine/org/r0",
@@ -865,10 +869,6 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 }
 
 func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
-	before := globals.PermissionsBackgroundSync()
-	globals.SetPermissionsBackgroundSync(&schema.PermissionsBackgroundSync{Enabled: true})
-	defer globals.SetPermissionsBackgroundSync(before)
-
 	publicRepo := makeRepo("gitlab.mine/user/public", 1, false)
 	privateRepo := makeRepo("gitlab.mine/user/private", 2, true)
 

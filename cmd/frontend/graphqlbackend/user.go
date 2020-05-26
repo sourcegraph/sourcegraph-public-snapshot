@@ -177,12 +177,14 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
-func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
+type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
 	DisplayName *string
 	AvatarURL   *string
-}) (*EmptyResponse, error) {
+}
+
+func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -205,7 +207,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	}
 	if args.Username != nil {
 		if !viewerCanChangeUsername(ctx, userID) {
-			return nil, fmt.Errorf("unable to change username because auth.disableUsernameChanges is true in critical config")
+			return nil, fmt.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
 	}

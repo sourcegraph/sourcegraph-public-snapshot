@@ -2548,6 +2548,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		tests := []struct {
 			jobs []*cmpgn.ChangesetJob
 			want *cmpgn.BackgroundProcessStatus
+			opts GetCampaignStatusOpts
 		}{
 			{
 				jobs: []*cmpgn.ChangesetJob{}, // no jobs
@@ -2596,6 +2597,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 					ProcessState:  cmpgn.BackgroundProcessStateErrored,
 					Total:         1,
 					Completed:     1,
+					Failed:        1,
 					Pending:       0,
 					ProcessErrors: []string{"error1"},
 				},
@@ -2617,8 +2619,26 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 					ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 					Total:         5,
 					Completed:     3,
+					Failed:        2,
 					Pending:       2,
 					ProcessErrors: []string{"error1", "error2"},
+				},
+			},
+
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, error
+					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				// but we want to exclude errors
+				opts: GetCampaignStatusOpts{ExcludeErrors: true},
+				want: &cmpgn.BackgroundProcessStatus{
+					ProcessState:  cmpgn.BackgroundProcessStateErrored,
+					Total:         1,
+					Completed:     1,
+					Failed:        1,
+					Pending:       0,
+					ProcessErrors: nil,
 				},
 			},
 		}
@@ -2634,7 +2654,10 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				}
 			}
 
-			status, err := s.GetCampaignStatus(ctx, int64(campaignID))
+			opts := tc.opts
+			opts.ID = int64(campaignID)
+
+			status, err := s.GetCampaignStatus(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}

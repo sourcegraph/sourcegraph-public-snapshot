@@ -108,8 +108,6 @@ func main() {
 		bitbucketWebhookName,
 	)
 
-	go bitbucketServerWebhook.SyncWebhooks(ctx, 1*time.Minute)
-
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 

@@ -555,7 +555,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, nil
 	}
 
-	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
+	status, err := tx.GetCampaignStatus(ctx, GetCampaignStatusOpts{ID: campaign.ID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -885,7 +885,7 @@ func mergeByRepoID(
 }
 
 func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	status, err := store.GetCampaignStatus(ctx, campaign)
+	status, err := store.GetCampaignStatus(ctx, GetCampaignStatusOpts{ID: campaign})
 	if err != nil {
 		return false, err
 	}
