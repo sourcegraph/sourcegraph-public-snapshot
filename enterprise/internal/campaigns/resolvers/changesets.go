@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/pkg/errors"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -300,40 +301,37 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	// Only return diffs for open changesets, otherwise we can't guarantee that
-	// we have the refs on gitserver
-	if r.ExternalState != campaigns.ChangesetStateOpen {
-		return nil, nil
-	}
-
 	repo, err := r.computeRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	base, err := r.Changeset.BaseRefOid()
+	baseRef, err := r.Base(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if base == "" {
-		// Fallback to the ref if we can't get the OID
-		base, err = r.Changeset.BaseRef()
-		if err != nil {
-			return nil, err
-		}
+	if baseRef == nil {
+		return nil, nil
+	}
+	baseID, err := baseRef.Target().OID(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	head, err := r.Changeset.HeadRefOid()
+	headRef, err := r.Head(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if head == "" {
-		// Fallback to the ref if we can't get the OID
-		head, err = r.Changeset.HeadRef()
-		if err != nil {
-			return nil, err
-		}
+	if headRef == nil {
+		return nil, nil
 	}
+	headID, err := headRef.Target().OID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	base := string(baseID)
+	head := string(headID)
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
 		Base: &base,
