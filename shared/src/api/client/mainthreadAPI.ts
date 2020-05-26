@@ -28,8 +28,9 @@ export const initMainThreadAPI = (
     )
 
     // Workspace
-    // eslint-disable-next-line no-void
-    subscription.add(roots.subscribe(rs => void ext.syncRoots(rs || [])))
+    subscription.add(roots.subscribe(rs => {
+        ext.syncRoots(rs || [])
+    }))
 
     // eslint-disable-next-line no-void
     subscription.add(versionContext.subscribe(ctx => void ext.syncVersionContext(ctx)))

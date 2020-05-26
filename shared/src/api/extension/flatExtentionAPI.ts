@@ -23,13 +23,10 @@ export interface InitResult {
 /**
  * mimics sourcegraph.workspace namespace without documents
  */
-export interface PartialWorkspaceNamespace {
-    roots: readonly sourcegraph.WorkspaceRoot[]
-    onDidChangeRoots: sourcegraph.Subscribable<void>
-    rootChanges: sourcegraph.Subscribable<void>
-    versionContext: string | undefined
-    versionContextChanges: sourcegraph.Subscribable<string | undefined>
-}
+export type PartialWorkspaceNamespace = Omit<
+        typeof sourcegraph['workspace'],
+        'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments'
+    >
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns initialized public Ext API ready for consumption and API object marshaled into Client
@@ -87,8 +84,8 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         get versionContext() {
             return versionContextChanges.value
         },
-        onDidChangeRoots: rootChanges,
-        rootChanges,
+        onDidChangeRoots: rootChanges.asObservable(),
+        rootChanges: rootChanges.asObservable(),
         versionContextChanges: versionContextChanges.asObservable(),
     }
 
