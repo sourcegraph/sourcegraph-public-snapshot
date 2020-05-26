@@ -28,6 +28,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- Automatic syncing of Campaign webhooks for Bitbucket Server. [#10962](https://github.com/sourcegraph/sourcegraph/pull/10962)
+
 ## 3.16.0
 
 ### Added
