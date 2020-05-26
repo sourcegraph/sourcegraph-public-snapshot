@@ -22,11 +22,7 @@ type Resolver struct {
 
 var _ graphqlbackend.CodeIntelResolver = &Resolver{}
 
-func NewResolver(
-	db db.DB,
-	bundleManagerClient bundles.BundleManagerClient,
-	codeIntelAPI codeintelapi.CodeIntelAPI,
-) graphqlbackend.CodeIntelResolver {
+func NewResolver(db db.DB, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI) graphqlbackend.CodeIntelResolver {
 	return &Resolver{
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
@@ -104,18 +100,11 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	dumps, err := r.codeIntelAPI.FindClosestDumps(
-		ctx,
-		int(args.Repository.Type().ID),
-		string(args.Commit),
-		args.Path,
-	)
+	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path)
 	if err != nil {
 		return nil, err
 	}
-
-	us := dumps
-	if len(us) == 0 {
+	if len(dumps) == 0 {
 		return nil, nil
 	}
 
@@ -126,6 +115,6 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		repositoryResolver:  args.Repository,
 		commit:              args.Commit,
 		path:                args.Path,
-		uploads:             us,
+		uploads:             dumps,
 	}, nil
 }

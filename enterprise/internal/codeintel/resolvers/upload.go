@@ -24,25 +24,13 @@ func (r *lsifUploadResolver) InputIndexer() string  { return r.lsifUpload.Indexe
 func (r *lsifUploadResolver) State() string         { return strings.ToUpper(r.lsifUpload.State) }
 func (r *lsifUploadResolver) IsLatestForRepo() bool { return r.lsifUpload.VisibleAtTip }
 
-// TODO(efritz) - cleanup
 func (r *lsifUploadResolver) PlaceInQueue() *int32 {
-	if r.lsifUpload.Rank != nil {
-		v := int32(*r.lsifUpload.Rank)
-		return &v
-	}
-	return nil
-}
-
-func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	return resolvePath(ctx, api.RepoID(r.lsifUpload.RepositoryID), r.lsifUpload.Commit, r.lsifUpload.Root)
-}
-
-func (r *lsifUploadResolver) Failure() graphqlbackend.LSIFUploadFailureReasonResolver {
-	if r.lsifUpload.FailureSummary == nil {
+	if r.lsifUpload.Rank == nil {
 		return nil
 	}
 
-	return &lsifUploadFailureReasonResolver{r.lsifUpload}
+	v := int32(*r.lsifUpload.Rank)
+	return &v
 }
 
 func (r *lsifUploadResolver) UploadedAt() graphqlbackend.DateTime {
@@ -55,4 +43,16 @@ func (r *lsifUploadResolver) StartedAt() *graphqlbackend.DateTime {
 
 func (r *lsifUploadResolver) FinishedAt() *graphqlbackend.DateTime {
 	return graphqlbackend.DateTimeOrNil(r.lsifUpload.FinishedAt)
+}
+
+func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
+	return resolvePath(ctx, api.RepoID(r.lsifUpload.RepositoryID), r.lsifUpload.Commit, r.lsifUpload.Root)
+}
+
+func (r *lsifUploadResolver) Failure() graphqlbackend.LSIFUploadFailureReasonResolver {
+	if r.lsifUpload.FailureSummary == nil {
+		return nil
+	}
+
+	return &lsifUploadFailureReasonResolver{r.lsifUpload}
 }

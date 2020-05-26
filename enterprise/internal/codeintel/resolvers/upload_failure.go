@@ -12,17 +12,17 @@ type lsifUploadFailureReasonResolver struct {
 var _ graphqlbackend.LSIFUploadFailureReasonResolver = &lsifUploadFailureReasonResolver{}
 
 func (r *lsifUploadFailureReasonResolver) Summary() string {
-	return derefString(r.lsifUpload.FailureSummary)
+	return dereferenceString(r.lsifUpload.FailureSummary)
 }
 
 func (r *lsifUploadFailureReasonResolver) Stacktrace() string {
-	return derefString(r.lsifUpload.FailureStacktrace)
+	return dereferenceString(r.lsifUpload.FailureStacktrace)
 }
 
-func derefString(s *string) string {
-	if s == nil {
-		return ""
+func dereferenceString(s *string) string {
+	if s != nil {
+		return *s
 	}
 
-	return *s
+	return ""
 }

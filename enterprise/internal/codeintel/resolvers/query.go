@@ -14,11 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
-// TODO(efritz) - cleanup
 type lsifQueryResolver struct {
-	db                  db.DB                       // TODO
-	bundleManagerClient bundles.BundleManagerClient // TODO
-	codeIntelAPI        codeintelapi.CodeIntelAPI   // TODO
+	db                  db.DB
+	bundleManagerClient bundles.BundleManagerClient
+	codeIntelAPI        codeintelapi.CodeIntelAPI
 
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	// commit is the requested target commit
@@ -41,31 +40,16 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 			continue
 		}
 
-		defs, err := r.codeIntelAPI.Definitions(
-			ctx,
-			r.path,
-			int(adjustedPosition.Line),
-			int(adjustedPosition.Character),
-			int(upload.ID),
-		)
-		if err != nil {
-			if err == codeintelapi.ErrMissingDump {
-				// TODO
-			}
-
-			return nil, err
-		}
-
-		outers, err := serializeLocations(defs)
+		locations, err := r.codeIntelAPI.Definitions(ctx, r.path, adjustedPosition.Line, adjustedPosition.Character, upload.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(outers) > 0 {
+		if len(locations) > 0 {
 			return &locationConnectionResolver{
 				repo:      r.repositoryResolver.Type(),
 				commit:    r.commit,
-				locations: outers,
+				locations: locations,
 			}, nil
 		}
 	}
@@ -88,7 +72,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 	// this request.
 	newCursors := map[int]string{}
 
-	var allLocations []*APILocation
+	var allLocations []codeintelapi.ResolvedLocation
 	for _, upload := range r.uploads {
 		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
@@ -103,7 +87,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			limit = int(*args.First)
 		}
 		if limit <= 0 {
-			// TODO - check on defs too
+			// TODO(efritz) - check on defs too
 			return nil, errors.New("illegal limit")
 		}
 
@@ -117,20 +101,8 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			continue
 		}
 
-		cursor, err := codeintelapi.DecodeOrCreateCursor(
-			r.path,
-			int(adjustedPosition.Line),
-			int(adjustedPosition.Character),
-			int(upload.ID),
-			rawCursor,
-			r.db,
-			r.bundleManagerClient,
-		)
+		cursor, err := codeintelapi.DecodeOrCreateCursor(r.path, adjustedPosition.Line, adjustedPosition.Character, upload.ID, rawCursor, r.db, r.bundleManagerClient)
 		if err != nil {
-			if err == codeintelapi.ErrMissingDump {
-				// TODO
-			}
-
 			return nil, err
 		}
 
@@ -145,17 +117,12 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 			return nil, err
 		}
 
-		outers, err := serializeLocations(locations)
-		if err != nil {
-			return nil, err
-		}
-
 		cx := ""
 		if hasNewCursor {
 			cx = codeintelapi.EncodeCursor(newCursor)
 		}
 
-		allLocations = append(allLocations, outers...)
+		allLocations = append(allLocations, locations...)
 
 		if cx != "" {
 			newCursors[upload.ID] = cx
@@ -185,25 +152,13 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 			continue
 		}
 
-		text, rn, exists, err := r.codeIntelAPI.Hover(
-			ctx,
-			r.path,
-			adjustedPosition.Line,
-			adjustedPosition.Character,
-			int(upload.ID),
-		)
+		// TODO(efritz) - codeintelapi should just return an lsp.Hover
+		text, rn, exists, err := r.codeIntelAPI.Hover(ctx, r.path, adjustedPosition.Line, adjustedPosition.Character, int(upload.ID))
 		if err != nil || !exists {
-			if err == codeintelapi.ErrMissingDump {
-				// TODO
-			}
-
 			return nil, err
 		}
 
-		lspRange := lsp.Range{
-			Start: lsp.Position{Line: rn.Start.Line, Character: rn.Start.Character},
-			End:   lsp.Position{Line: rn.End.Line, Character: rn.End.Character},
-		}
+		lspRange := convertRange(rn)
 
 		if text != "" {
 			adjustedRange, ok, err := r.adjustRange(ctx, upload.Commit, lspRange)
