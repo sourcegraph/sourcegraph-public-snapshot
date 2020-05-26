@@ -182,7 +182,7 @@ func initCodeIntel() {
 		return codeintelResolvers.NewResolver(
 			db,
 			bundleManagerClient,
-			codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient),
+			api,
 		)
 	}
 
