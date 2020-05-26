@@ -15,11 +15,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Drop webhook sync error logs from Error to Debug level. [#10978](https://github.com/sourcegraph/sourcegraph/pull/10978)
-
 ### Fixed
 
 ### Removed
+
+## 3.16.1
+
+### Changed
+
+- Drop webhook sync error logs from Error to Debug level. [#10978](https://github.com/sourcegraph/sourcegraph/pull/10978)
 
 ## 3.16.0
 
