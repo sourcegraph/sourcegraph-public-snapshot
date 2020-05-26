@@ -2967,13 +2967,6 @@
   resolved "https://registry.npmjs.org/@types/history/-/history-4.7.2.tgz#0e670ea254d559241b6eeb3894f8754991e73220"
   integrity sha512-ui3WwXmjTaY73fOQ3/m3nnajU/Orhi6cEu5rzX+BrAAJxa3eITXZ5ch9suPqtM03OWhAHhPSyBGCN4UKoxO20Q==
 
-"@types/htmlparser2@*":
-  version "3.7.31"
-  resolved "https://registry.npmjs.org/@types/htmlparser2/-/htmlparser2-3.7.31.tgz#ae89353691ce37fa2463c3b8b4698f20ef67a59b"
-  integrity sha512-6Kjy02k+KfJJE2uUiCytS31SXCYnTjKA+G0ydb83DTlMFzorBlezrV2XiKazRO5HSOEvVW3cpzDFPoP9n/9rSA==
-  dependencies:
-    "@types/node" "*"
-
 "@types/http-cache-semantics@*":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@types/http-cache-semantics/-/http-cache-semantics-4.0.0.tgz#9140779736aa2655635ee756e2467d787cfe8a2a"
@@ -3361,12 +3354,12 @@
   resolved "https://registry.npmjs.org/@types/retry/-/retry-0.12.0.tgz#2b35eccfcee7d38cd72ad99232fbd58bffb3c84d"
   integrity sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==
 
-"@types/sanitize-html@1.22.0":
-  version "1.22.0"
-  resolved "https://registry.npmjs.org/@types/sanitize-html/-/sanitize-html-1.22.0.tgz#9bf3a13aeab6e38d130d8ba34bb443956b75bc3d"
-  integrity sha512-zRtkG+Z9ikdEyIQL6ZouqZIPWnzoioJxgxAUFOc91f+nC8yB4GOMzGpy9V3WYfmkjaVNL4zlsycwHWykFq1HNg==
+"@types/sanitize-html@1.23.0":
+  version "1.23.0"
+  resolved "https://registry.npmjs.org/@types/sanitize-html/-/sanitize-html-1.23.0.tgz#4ed2d6bdd44cb6ae027bd0a428142220da4334a7"
+  integrity sha512-yl0HvhWOZWzmkGEBQLKYf+BtotvbGLFhCejuBvwyM1Q23RliLXNfviuOMLQ/nCRFWR2yI0LRRiaH/Oz7CIpCGw==
   dependencies:
-    "@types/htmlparser2" "*"
+    htmlparser2 "^4.1.0"
 
 "@types/semver@7.1.0":
   version "7.1.0"
@@ -18320,10 +18313,10 @@ sane@^4.0.3:
     minimist "^1.1.1"
     walker "~1.0.5"
 
-sanitize-html@^1.22.1:
-  version "1.22.1"
-  resolved "https://registry.npmjs.org/sanitize-html/-/sanitize-html-1.22.1.tgz#5b36c92ab27917ddd2775396815c2bc1a6268310"
-  integrity sha512-++IMC00KfMQc45UWZJlhWOlS9eMrME38sFG9GXfR+k6oBo9JXSYQgTOZCl9j3v/smFTRNT9XNwz5DseFdMY+2Q==
+sanitize-html@^1.24.0:
+  version "1.24.0"
+  resolved "https://registry.npmjs.org/sanitize-html/-/sanitize-html-1.24.0.tgz#9cd42f236512bfcf6259424e958551148c165a7f"
+  integrity sha512-TAIFx39V/y06jDd4YUz7ntCdMUXN5Z28pSG7sTP2BCLXwHA9+ermacDpQs35Evo4p6YSgmaPdSbGiX4Fgptuuw==
   dependencies:
     chalk "^2.4.1"
     htmlparser2 "^4.1.0"
