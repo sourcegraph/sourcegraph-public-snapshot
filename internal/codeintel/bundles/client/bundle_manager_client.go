@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -275,7 +274,7 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 		span.Finish()
 	}()
 
-	req, err := http.NewRequest(method, url.String(), limitTransferRate(body))
+	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -342,19 +341,6 @@ func makeURL(baseURL, path string, qs map[string]interface{}) (*url.URL, error) 
 
 func makeBundleURL(baseURL string, bundleID int, op string, qs map[string]interface{}) (*url.URL, error) {
 	return makeURL(baseURL, fmt.Sprintf("dbs/%d/%s", bundleID, op), qs)
-}
-
-// limitTransferRate applies a transfer limit to the given reader.
-//
-// In the case that the bundle manager is running on the same host as this service, an unbounded
-// transfer rate can end up being so fast that we harm our own network connectivity. In order to
-// prevent the disruption of other in-flight requests, we cap the transfer rate of r to 1Gbps.
-func limitTransferRate(r io.Reader) io.ReadCloser {
-	if r == nil {
-		return nil
-	}
-
-	return flowrate.NewReader(r, 1000*1000*1000)
 }
 
 //
