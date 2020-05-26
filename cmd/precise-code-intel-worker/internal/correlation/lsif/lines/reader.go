@@ -24,7 +24,7 @@ var NumUnmarshalGoRoutines = runtime.NumCPU()
 
 // Read reads the given content as line-separated objects which are unmarshallable by the given function
 // and returns a channel of lsif.Pair values for each non-empty line.
-func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (_ lsif.Element, err error)) <-chan lsif.Pair {
+func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.Element, error)) <-chan lsif.Pair {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
