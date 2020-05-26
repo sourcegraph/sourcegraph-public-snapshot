@@ -199,6 +199,7 @@ type BackgroundProcessStatus struct {
 	Total         int32
 	Completed     int32
 	Pending       int32
+	Failed        int32
 	ProcessState  BackgroundProcessState
 	ProcessErrors []string
 }
