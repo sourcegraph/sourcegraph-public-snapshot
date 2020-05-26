@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
@@ -259,7 +260,7 @@ func (c *bundleManagerClientImpl) sendDB(ctx context.Context, bundleID int, file
 
 // TODO(efritz) - document
 func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID int, filename string) error {
-	files, cleanup, err := splitFile(filename, MaxPayloadSizeBytes)
+	files, cleanup, err := codeintelutils.SplitFile(filename, MaxPayloadSizeBytes)
 	if err != nil {
 		return err
 	}
@@ -268,7 +269,6 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 	}()
 
 	for i, file := range files {
-		fmt.Printf("SENDING PART\n")
 		f, err := os.Open(file)
 		if err != nil {
 			return err
@@ -285,14 +285,13 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 		}
 
 		// TODO(efritz) - will also need a way to clean up old dump files
-		body, err := c.do(ctx, "POST", url, gzipReader(f))
+		body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
 		if err != nil {
 			return err
 		}
 		body.Close()
 	}
 
-	fmt.Printf("SENDING STITCH REQUEST\n")
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/stitch", bundleID), nil)
 	if err != nil {
 		return err

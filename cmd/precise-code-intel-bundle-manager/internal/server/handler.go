@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
@@ -96,7 +97,13 @@ func (s *Server) handlePostUploadPart(w http.ResponseWriter, r *http.Request) {
 
 // POST /uploads/{id:[0-9]+}/stitch
 func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) {
-	if err := stitchMultipart(s.bundleDir, idFromRequest(r), paths.UploadFilename, paths.UploadPartFilename, true); err != nil {
+	id := idFromRequest(r)
+	filename := paths.UploadFilename(s.bundleDir, id)
+	makePartFilename := func(index int) string {
+		return paths.UploadPartFilename(s.bundleDir, id, int64(index))
+	}
+
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, true); err != nil {
 		log15.Error("Failed to stitch multipart upload", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -127,7 +134,13 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
-	if err := stitchMultipart(s.bundleDir, idFromRequest(r), paths.DBFilename, paths.DBPartFilename, false); err != nil {
+	id := idFromRequest(r)
+	filename := paths.DBFilename(s.bundleDir, id)
+	makePartFilename := func(index int) string {
+		return paths.DBPartFilename(s.bundleDir, id, int64(index))
+	}
+
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
 		log15.Error("Failed to stitch multipart database", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
