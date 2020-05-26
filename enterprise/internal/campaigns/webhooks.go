@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -190,9 +189,6 @@ type BitbucketServerWebhook struct {
 	// cache of config we've seen so that we can decide what changes
 	// need to be synced if any
 	configCache map[int64]*schema.BitbucketServerConnection
-
-	// Optional httpClient
-	httpClient httpcli.Doer
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
