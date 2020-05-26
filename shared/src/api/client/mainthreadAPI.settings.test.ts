@@ -5,6 +5,7 @@ import { pretendRemote } from '../util'
 import { SettingsEdit } from './services/settings'
 import { SettingsCascade } from '../../settings/settings'
 import { FlatExtHostAPI } from '../contract'
+import { createWorkspaceService } from './services/workspaceService'
 
 describe('configuration', () => {
     test('changeConfiguration goes to platform with the last settings subject', async () => {
@@ -33,7 +34,7 @@ describe('configuration', () => {
             updateSettings,
         }
 
-        const [api] = initMainThreadAPI(pretendRemote({}), platformContext)
+        const [api] = initMainThreadAPI(pretendRemote({}), platformContext, createWorkspaceService())
 
         const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
         await api.applySettingsEdit(edit)
@@ -69,7 +70,8 @@ describe('configuration', () => {
                     passedToExtHost.push(data)
                 },
             }),
-            platformContext
+            platformContext,
+            createWorkspaceService()
         )
 
         expect(passedToExtHost).toEqual<SettingsCascade<{ a: string }>[]>([values[0], values[2]])
@@ -89,7 +91,8 @@ describe('configuration', () => {
                     passedToExtHost.push(data)
                 },
             }),
-            platformContext
+            platformContext,
+            createWorkspaceService()
         )
 
         const one = {
