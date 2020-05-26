@@ -1760,11 +1760,25 @@ func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getCampaignStatusQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	var errorsPreds []*sqlf.Query
+	if opts.ExcludeErrors {
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
+	}
+
+	if len(errorsPreds) == 0 {
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
+	}
+
+	return sqlf.Sprintf(
+		getCampaignStatusQueryFmtstr,
+		sqlf.Join(errorsPreds, " AND "),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*campaigns.BackgroundProcessStatus, error) {
 	var status campaigns.BackgroundProcessStatus
+
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanBackgroundProcessStatus(&status, sc)
 	})
@@ -1778,9 +1792,9 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 		status.ProcessState = campaigns.BackgroundProcessStateCanceled
 	case status.Pending > 0:
 		status.ProcessState = campaigns.BackgroundProcessStateProcessing
-	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
+	case status.Completed == status.Total && status.Failed == 0:
 		status.ProcessState = campaigns.BackgroundProcessStateCompleted
-	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
+	case status.Completed == status.Total && status.Failed > 0:
 		status.ProcessState = campaigns.BackgroundProcessStateErrored
 	}
 	return &status, nil
@@ -1794,7 +1808,8 @@ SELECT
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
   COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
+  COUNT(*) FILTER (WHERE error != '') AS failed,
+  array_agg(error) FILTER (WHERE %s) AS errors
 FROM changeset_jobs
 WHERE %s
 LIMIT 1
@@ -2836,6 +2851,7 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 		&b.Total,
 		&b.Pending,
 		&b.Completed,
+		&b.Failed,
 		pq.Array(&b.ProcessErrors),
 	)
 }
