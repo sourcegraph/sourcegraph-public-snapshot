@@ -8,6 +8,7 @@
   { "Name": "replacer", "Host": "127.0.0.1:6076" },
   { "Name": "precise-code-intel-bundle-manager", "Host": "127.0.0.1:6087" },
   { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
+  { "Name": "precise-code-intel-indexer", "Host": "127.0.0.1:6089" },
   { "Name": "zoekt-indexserver", "Host": "127.0.0.1:6072" },
   { "Name": "zoekt-webserver", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" }
 ]
