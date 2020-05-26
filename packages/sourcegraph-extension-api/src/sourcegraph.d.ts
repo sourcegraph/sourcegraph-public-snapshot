@@ -1144,28 +1144,51 @@ declare module 'sourcegraph' {
      * A style for {@link BadgeAttachmentRenderOptions}.
      */
     export interface ThemableBadgeAttachmentStyle {
-        /** The icon (a base64-encoded image icon) to display next to the wrapped value. */
+        /**
+         * The icon (a base64-encoded image icon) to display next to the wrapped value.
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         icon?: string
 
-        /** The CSS background-color property value for the attachment. */
+        /**
+         * The CSS background-color property value for the attachment.
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         backgroundColor?: string
 
-        /** The CSS color property value for the attachment. */
+        /**
+         * The CSS color property value for the attachment.
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         color?: string
     }
 
     /** An attachment adds content to a hover tooltip or result in a locations panel. */
     export interface BadgeAttachmentRenderOptions extends ThemableBadgeAttachmentStyle {
+        /** Predefined icons for badge attachments */
+        kind: 'info' | 'error' | 'warning'
+
         /** Tooltip text to display when hovering over the attachment. */
         hoverMessage?: string
 
         /** If set, the attachment becomes a link with this destination URL. */
         linkURL?: string
 
-        /** Overwrite style for light themes. */
+        /**
+         * Overwrite style for light themes.
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         light?: ThemableBadgeAttachmentStyle
 
-        /** Overwrite style for dark themes. */
+        /**
+         * Overwrite style for dark themes.
+         *
+         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         */
         dark?: ThemableBadgeAttachmentStyle
     }
 

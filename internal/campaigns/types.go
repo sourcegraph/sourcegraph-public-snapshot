@@ -69,8 +69,8 @@ type Patch struct {
 }
 
 // Clone returns a clone of a Patch.
-func (c *Patch) Clone() *Patch {
-	cc := *c
+func (p *Patch) Clone() *Patch {
+	cc := *p
 	return &cc
 }
 

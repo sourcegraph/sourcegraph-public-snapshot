@@ -14,9 +14,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
@@ -178,6 +180,9 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 
 	body, err := c.do(ctx, "GET", url, nil)
 	if err != nil {
+		if isConnectionError(err) {
+			log15.Error("Failure to download bundle from manager - error occurred on request")
+		}
 		return "", err
 	}
 	defer body.Close()
@@ -192,7 +197,10 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		}
 	}()
 
-	if _, err := io.Copy(f, body); err != nil {
+	if n, err := io.Copy(f, body); err != nil {
+		if isConnectionError(err) {
+			log15.Error("Failure to download bundle from manager - error occurred on read", "n", n)
+		}
 		return "", err
 	}
 
@@ -333,4 +341,25 @@ func makeURL(baseURL, path string, qs map[string]interface{}) (*url.URL, error) 
 
 func makeBundleURL(baseURL string, bundleID int, op string, qs map[string]interface{}) (*url.URL, error) {
 	return makeURL(baseURL, fmt.Sprintf("dbs/%d/%s", bundleID, op), qs)
+}
+
+//
+// Temporary network debugging code
+
+var connectionErrors = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "src_bundle_manager_connection_reset_by_peer_read",
+	Help: "The total number connection reset by peer errors (client) when trying to transfer upload payloads.",
+})
+
+func init() {
+	prometheus.MustRegister(connectionErrors)
+}
+
+func isConnectionError(err error) bool {
+	if err != nil && strings.Contains(err.Error(), "read: connection reset by peer") {
+		connectionErrors.Inc()
+		return true
+	}
+
+	return false
 }

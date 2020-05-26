@@ -398,7 +398,7 @@ const SiteSchemaJSON = `{
         "enabled": {
           "description": "Whether syncing permissions in the background is enabled.",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "default": {

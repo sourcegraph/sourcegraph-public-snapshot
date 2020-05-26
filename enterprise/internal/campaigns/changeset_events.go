@@ -5,6 +5,7 @@ import (
 	"time"
 
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -60,4 +61,26 @@ func (ce *ChangesetEvents) UpdateLabelsSince(cs *cmpgn.Changeset) []cmpgn.Change
 		labels = append(labels, label)
 	}
 	return labels
+}
+
+// FindMergeCommit will return the merge commit from the given set of events, stopping
+// on the first it finds.
+// It returns an empty string if none are found.
+func (ce ChangesetEvents) FindMergeCommitID() string {
+	for _, event := range ce {
+		switch m := event.Metadata.(type) {
+		case *bitbucketserver.Activity:
+			if event.Kind != cmpgn.ChangesetEventKindBitbucketServerMerged {
+				continue
+			}
+			if m.Commit == nil {
+				continue
+			}
+			return m.Commit.ID
+
+		case *github.MergedEvent:
+			return m.Commit.OID
+		}
+	}
+	return ""
 }

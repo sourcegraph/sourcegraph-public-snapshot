@@ -39,7 +39,7 @@ var tests = []test{
 	},
 	{
 		Name:  `Global search, unindexed multiline search, nonzero result`,
-		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this index:no count:1`,
+		Query: `repo:^github\.com/facebook/react$ componentDidMount\(\) {\n\s*this index:no count:1 stable:yes`,
 	},
 	{
 		Name:  `Global search, unindexed multiline search, zero results`,
