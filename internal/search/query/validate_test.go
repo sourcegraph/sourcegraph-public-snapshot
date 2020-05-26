@@ -34,10 +34,6 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  `invalid boolean "???"`,
 		},
 		{
-			input: "mr:potato",
-			want:  `unrecognized field "mr"`,
-		},
-		{
 			input: "count:sedonuts",
 			want:  "field count has value sedonuts, sedonuts is not a number",
 		},
