@@ -258,7 +258,8 @@ func TestUpdateUser(t *testing.T) {
 			Query: `
 			mutation {
 				updateUser(
-					user: "VXNlcjox"
+					user: "VXNlcjox",
+					username: "alice.bob-chris-"
 				) {
 					alwaysNil
 				}
