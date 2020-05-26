@@ -306,7 +306,7 @@ func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQ
 
 type AuthorizedUserArgs struct {
 	RepositoryID graphql.ID
-	Perm         string
+	Permission   string
 	First        int32
 	After        *string
 }

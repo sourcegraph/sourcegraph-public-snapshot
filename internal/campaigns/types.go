@@ -69,8 +69,8 @@ type Patch struct {
 }
 
 // Clone returns a clone of a Patch.
-func (c *Patch) Clone() *Patch {
-	cc := *c
+func (p *Patch) Clone() *Patch {
+	cc := *p
 	return &cc
 }
 
@@ -199,6 +199,7 @@ type BackgroundProcessStatus struct {
 	Total         int32
 	Completed     int32
 	Pending       int32
+	Failed        int32
 	ProcessState  BackgroundProcessState
 	ProcessErrors []string
 }

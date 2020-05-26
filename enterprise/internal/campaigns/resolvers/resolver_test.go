@@ -19,6 +19,7 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -380,8 +381,8 @@ func TestCampaigns(t *testing.T) {
 					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
 
 					Target: apitest.GitTarget{
-						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
-						AbbreviatedOID: "7db302f",
+						OID:            "23a5556c7e25aaab1f1529cee4efb90fe6fe3a30",
+						AbbreviatedOID: "23a5556",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
@@ -425,8 +426,8 @@ func TestCampaigns(t *testing.T) {
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
 					Target: apitest.GitTarget{
-						OID:            "mockcommitid",
-						AbbreviatedOID: "mockcom",
+						OID:            "be4d84e9c4b0a15e59c5f52900e6d55c7525b8d3",
+						AbbreviatedOID: "be4d84e",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
@@ -752,6 +753,60 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
+	}
+}
+
+func TestNullIDResilience(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	sr := &Resolver{store: ee.NewStoreWithClock(dbconn.Global, clock)}
+
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	ids := []graphql.ID{
+		marshalPatchSetID(0),
+		marshalPatchID(0),
+		marshalCampaignID(0),
+		marshalChangesetID(0),
+	}
+
+	for _, id := range ids {
+		var response struct{ Node struct{ ID string } }
+
+		query := fmt.Sprintf(`query { node(id: %q) { id } }`, id)
+		apitest.MustExec(ctx, t, s, nil, &response, query)
+
+		if have, want := response.Node.ID, ""; have != want {
+			t.Fatalf("node has wrong ID. have=%q, want=%q", have, want)
+		}
+	}
+
+	mutations := []string{
+		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
+	}
+
+	for _, m := range mutations {
+		var response struct{}
+		errs := apitest.Exec(ctx, t, s, nil, &response, m)
+		if len(errs) == 0 {
+			t.Fatalf("expected errors but none returned (mutation: %q)", m)
+		}
+		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero.Error()); have != want {
+			t.Fatalf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
+		}
 	}
 }
 

@@ -584,7 +584,7 @@ describe('registerHoverContributions()', () => {
             {
                 getPartialModel: () => ({ languageId: 'x' }),
             },
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         commands = new CommandRegistry()

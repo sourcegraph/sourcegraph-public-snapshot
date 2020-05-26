@@ -141,7 +141,7 @@ func ExecChangesetJob(
 	}
 
 	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(patch.RepoID)}})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{patch.RepoID}})
 	if err != nil {
 		return err
 	}
@@ -331,5 +331,5 @@ func ExecChangesetJob(
 
 	job.ChangesetID = clone.ID
 	runFinalUpdate(ctx, store)
-	return
+	return err
 }

@@ -58,6 +58,12 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 <pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.16.0</code></pre>
 
+## Low resource environments
+
+To test sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+
+Add `-e DISABLE_OBSERVABILITY=true` to your docker run command
+
 ## Insiders build
 
 To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.

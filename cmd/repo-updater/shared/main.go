@@ -78,7 +78,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
 			log15.Root(),
 			m,
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},

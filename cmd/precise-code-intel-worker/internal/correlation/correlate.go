@@ -1,24 +1,20 @@
 package correlation
 
 import (
-	"bufio"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif/jsonlines"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 )
-
-// LineBufferSize is the maximum size of the buffer used to read each line of a raw LSIF index. Lines in
-// LSIF can get very long as it include escaped hover text (package documentation), as well as large edges
-// such as the contains edge of large documents.
-//
-// This corresponds a 10MB buffer that can accommodate 10 million characters.
-const LineBufferSize = 1e7
 
 // Correlate reads the given gzipped upload file and returns a correlation state object with the
 // same data canonicalized and pruned for storage.
@@ -59,31 +55,30 @@ func Correlate(filename string, dumpID int, root string, getChildren existence.G
 // correlateFromReader reads the given upload stream and returns a correlation state object.
 // The data in the correlation state is neither canonicalized nor pruned.
 func correlateFromReader(r io.Reader, root string) (*State, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := jsonlines.Read(ctx, r)
+	defer func() {
+		// stop producer from reading more input on correlation error
+		cancel()
+
+		for range ch {
+			// drain whatever is in the channel to help out GC
+		}
+	}()
+
 	wrappedState := newWrappedState(root)
-	scanner := bufio.NewScanner(r)
-	scanner.Split(bufio.ScanLines)
-	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
-	lineNumber := 0
-	for scanner.Scan() {
-		lineNumber++
-		line := scanner.Bytes()
-		if len(line) == 0 {
-			continue
+	i := 0
+	for pair := range ch {
+		i++
+
+		if pair.Err != nil {
+			return nil, fmt.Errorf("dump malformed on element %d: %s", i, pair.Err)
 		}
 
-		element, err := lsif.UnmarshalElement(line)
-		if err != nil {
-			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
+		if err := correlateElement(wrappedState, pair.Element); err != nil {
+			return nil, fmt.Errorf("dump malformed on element %d: %s", i, err)
 		}
-
-		if err := correlateElement(wrappedState, element); err != nil {
-			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 
 	if wrappedState.LSIFVersion == "" {
@@ -161,47 +156,83 @@ var edgeHandlers = map[string]func(state *wrappedState, id string, edge lsif.Edg
 
 // correlateElement maps a single edge element into the correlation state.
 func correlateEdge(state *wrappedState, element lsif.Element) error {
+	edge, ok := element.Payload.(lsif.Edge)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	handler, ok := edgeHandlers[element.Label]
 	if !ok {
 		// We don't care, can safely skip
 		return nil
 	}
 
-	edge, err := lsif.UnmarshalEdge(element)
-	if err != nil {
-		return err
-	}
-
 	return handler(state, element.ID, edge)
 }
 
 func correlateMetaData(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalMetaData(element, state.dumpRoot)
+	payload, ok := element.Payload.(lsif.MetaData)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	// We assume that the project root in the LSIF dump is either:
+	//
+	//   (1) the root of the LSIF dump, or
+	//   (2) the root of the repository
+	//
+	// These are the common cases and we don't explicitly support
+	// anything else. Here we normalize to (1) by appending the dump
+	// root if it's not already suffixed by it.
+
+	if !strings.HasSuffix(payload.ProjectRoot, "/") {
+		payload.ProjectRoot += "/"
+	}
+
+	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, state.dumpRoot) {
+		payload.ProjectRoot += state.dumpRoot
+	}
+
 	state.LSIFVersion = payload.Version
 	state.ProjectRoot = payload.ProjectRoot
-	return err
+	return nil
 }
 
 func correlateDocument(state *wrappedState, element lsif.Element) error {
+	payload, ok := element.Payload.(lsif.Document)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	if state.ProjectRoot == "" {
 		return ErrMissingMetaData
 	}
 
-	payload, err := lsif.UnmarshalDocumentData(element, state.ProjectRoot)
+	relativeURI, err := filepath.Rel(state.ProjectRoot, payload.URI)
+	if err != nil {
+		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload.URI, state.ProjectRoot, err)
+	}
+
+	payload.URI = relativeURI
 	state.DocumentData[element.ID] = payload
-	return err
+	return nil
 }
 
 func correlateRange(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalRangeData(element)
+	payload, ok := element.Payload.(lsif.Range)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	state.RangeData[element.ID] = payload
-	return err
+	return nil
 }
 
 func correlateResultSet(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalResultSetData(element)
-	state.ResultSetData[element.ID] = payload
-	return err
+	state.ResultSetData[element.ID] = lsif.ResultSet{
+		MonikerIDs: datastructures.IDSet{},
+	}
+	return nil
 }
 
 func correlateDefinitionResult(state *wrappedState, element lsif.Element) error {
@@ -215,21 +246,33 @@ func correlateReferenceResult(state *wrappedState, element lsif.Element) error {
 }
 
 func correlateHoverResult(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalHoverData(element)
+	payload, ok := element.Payload.(string)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	state.HoverData[element.ID] = payload
-	return err
+	return nil
 }
 
 func correlateMoniker(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalMonikerData(element)
+	payload, ok := element.Payload.(lsif.Moniker)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	state.MonikerData[element.ID] = payload
-	return err
+	return nil
 }
 
 func correlatePackageInformation(state *wrappedState, element lsif.Element) error {
-	payload, err := lsif.UnmarshalPackageInformationData(element)
+	payload, ok := element.Payload.(lsif.PackageInformation)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
 	state.PackageInformationData[element.ID] = payload
-	return err
+	return nil
 }
 
 func correlateContainsEdge(state *wrappedState, id string, edge lsif.Edge) error {

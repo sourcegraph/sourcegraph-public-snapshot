@@ -1,16 +1,7 @@
-import {
-    ProxyMarked,
-    transferHandlers,
-    ProxyMethods,
-    createEndpoint,
-    releaseProxy,
-    TransferHandler,
-    Remote,
-} from 'comlink'
+import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote } from 'comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
-import { noop } from 'lodash'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -76,8 +67,22 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
     hasProperty('subscribe')(value) &&
     typeof value.subscribe === 'function'
 
-export const addProxyMethods = <T>(value: T): T & ProxyMethods =>
-    Object.assign(value, {
-        [createEndpoint]: () => Promise.resolve(new MessagePort()),
-        [releaseProxy]: noop,
-    })
+/**
+ * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided
+ * NOTE: it does not handle ProxyMethods and callbacks yet
+ * NOTE2: for testing purposes only!!
+ */
+export const pretendRemote = <T>(obj: Partial<T>): Remote<T> =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    (new Proxy(obj, {
+        get: (a, prop) => {
+            if (prop in a) {
+                if (typeof (a as any)[prop] !== 'function') {
+                    return Promise.resolve((a as any)[prop])
+                }
+
+                return (...args: any[]) => Promise.resolve((a as any)[prop](...args))
+            }
+            throw new Error(`unspecified property in the stub ${prop.toString()}`)
+        },
+    }) as unknown) as Remote<T>
