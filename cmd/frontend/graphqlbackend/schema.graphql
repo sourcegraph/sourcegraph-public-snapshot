@@ -40,8 +40,10 @@ type Mutation {
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Add patches in batches to a campaign, resulting in a patchset. Specifying a patchset will append to an existing one.
-    addPatchesToCampaign(campaign: ID!, patchset: ID, patches: [PatchInputOrID!]!): Patchset!
+    # Add patches in batches to a campaign.
+    uploadPatchesForCampaign(campaign: ID!, patches: [PatchInput!]!): PatchConnection!
+    # Group patches into a patchset. Used to apply them in the setPatchesForCampaign mutation.
+    createPatchsetForCampaign(campaign: ID!, patches: [PatchInputOrID!]!): Patchset!
     # Generate a preview of changes to the campaign, possibly omitting some of them from `patches`.
     previewSetPatchesForCampaign(patchset: ID!, omitPatches: [ID!]): CampaignPreview!
     # Add the patches frmo patchset to the campaign, leaving out specified patches.
