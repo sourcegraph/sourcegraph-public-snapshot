@@ -41,7 +41,7 @@ func (*BaseMapper) MapParameter(visitor Mapper, field, value string, negated boo
 }
 
 // Base mapper for Patterns. It is the identity function.
-func (*BaseMapper) MapPattern(visitor Mapper, value string, negated bool, quoted bool) Node {
+func (*BaseMapper) MapPattern(visitor Mapper, value string, negated, quoted bool) Node {
 	return Pattern{Value: value, Negated: negated, Quoted: quoted}
 }
 

@@ -579,7 +579,7 @@ func (p *parser) TryParseDelimiter() (string, bool) {
 	return "", false
 }
 
-// ParseFieldValue parses a value followed by a field like "repo:". If the value
+// ParseFieldValue parses a value after a field like "repo:". If the value
 // starts with a recognized quoting delimiter but does not close it, an error is
 // returned.
 func (p *parser) ParseFieldValue() (string, error) {

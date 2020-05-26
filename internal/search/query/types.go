@@ -102,7 +102,7 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
-	if field == "" || field == "content" {
+	if field == "" {
 		VisitPattern(q.Query, func(value string, _, quoted bool) {
 			values = append(values, valueToTypedValue(field, value, quoted)...)
 		})
@@ -117,12 +117,10 @@ func (q AndOrQuery) Values(field string) []*types.Value {
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
 	VisitPattern(q.Query, func(value string, _, quoted bool) {
-		// FIXME. NOTE: overrides. Seems not good, how is Fields() used?
-		// For existence? What about "content"?
-		fields[""] = valueToTypedValue("", value, quoted)
+		fields[""] = q.Values("")
 	})
-	VisitParameter(q.Query, func(field, value string, _ bool) {
-		fields[field] = valueToTypedValue(field, value, false)
+	VisitParameter(q.Query, func(field, _ string, _ bool) {
+		fields[field] = q.Values(field)
 	})
 	return fields
 }
