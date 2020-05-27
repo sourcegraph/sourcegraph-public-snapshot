@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"compress/gzip"
 	"context"
 	"io"
 	"io/ioutil"
@@ -135,8 +134,15 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
+	// Create target file for converted database
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+	newFilename := filepath.Join(name, uuid.String())
+
 	// Pull raw uploaded data from bundle manager
-	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, name)
+	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -149,29 +155,11 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	gzipReader, err := gzip.NewReader(f)
-	if err != nil {
-		return err
-	}
-
-	// Create target file for converted database
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-	newFilename := filepath.Join(name, uuid.String())
-
 	// Read raw upload and write converted database to newFilename. This process also correlates
 	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
 		ctx,
-		gzipReader,
+		r,
 		newFilename,
 		upload.ID,
 		upload.Root,
