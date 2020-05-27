@@ -2,18 +2,21 @@
     margin: 0;
 }
 
-.hover-overlay__close-button--phabricator {
+.btn-icon--phabricator {
     // Fight Phabricator selector specificity
     background: transparent !important;
     border: none !important;
+    padding: 0 !important;
+
+    &:hover {
+        opacity: 0.7;
+    }
 }
 
 // Mimics Phabricator's font icon style
-.action-item__icon--phabricator {
+.icon--phabricator {
     height: 14px;
     width: 14px;
-    vertical-align: middle;
-    margin-top: -3px;
 }
 
 .action-item--phabricator.action-item--pressed {
@@ -26,6 +29,9 @@
     border-bottom: none !important;
     border-top: none !important;
     border-right: none !important;
+    .icon--phabricator {
+        vertical-align: middle;
+    }
     &:first-child {
         border-left: none !important;
     }

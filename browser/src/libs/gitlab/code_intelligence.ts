@@ -197,14 +197,15 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gitlab',
-        actionItemClass: 'btn btn-sm btn-secondary action-item--gitlab',
+        actionItemClass: 'btn btn-sm btn-secondary ml-2 action-item--gitlab',
         actionItemPressedClass: 'active',
     },
     hoverOverlayClassProps: {
-        className: 'card',
+        className: 'card hover-overlay--gitlab',
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
-        closeButtonClassName: 'btn',
+        iconButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
+        iconClassName: 'square s16',
         infoAlertClassName: notificationClassNames[NotificationType.Info],
         errorAlertClassName: notificationClassNames[NotificationType.Error],
     },
