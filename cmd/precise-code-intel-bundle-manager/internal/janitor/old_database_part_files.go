@@ -34,7 +34,7 @@ func (j *Janitor) removeOldDatabasePartFiles() error {
 		}
 
 		log15.Debug("Removed old database part file", "path", path, "age", age)
-		j.metrics.DatabasePartFilesRemoved.Add(1)
+		j.metrics.DatabasePartFilesRemoved.Inc()
 	}
 
 	return nil
