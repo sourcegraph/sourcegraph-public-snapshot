@@ -43,14 +43,15 @@ export const resolveRepoNamesForDiffOrFileInfo = (
                 head,
             }))
         )
+    } else if ('base' in diffOrFileInfo) {
+        return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(
+            map(base => ({
+                ...diffOrFileInfo,
+                base,
+            }))
+        )
     }
-    // Remaining case: diff has only a base.
-    return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(
-        map(base => ({
-            ...diffOrFileInfo,
-            base,
-        }))
-    )
+    throw new Error('Cannot resolve file info: must contain a blob, base, or head.')
 }
 
 /**
