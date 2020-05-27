@@ -277,26 +277,9 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 	}()
 
 	for i, file := range files {
-		f, err := os.Open(file)
-		if err != nil {
+		if err := c.sendPart(ctx, bundleID, file, i); err != nil {
 			return err
 		}
-		defer func() {
-			if closeErr := f.Close(); closeErr != nil {
-				err = multierror.Append(err, closeErr)
-			}
-		}()
-
-		url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, i), nil)
-		if err != nil {
-			return err
-		}
-
-		body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
-		if err != nil {
-			return err
-		}
-		body.Close()
 	}
 
 	// We've uploaded all of our parts, signal the bundle manager to concatenate all
@@ -311,6 +294,32 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 		return err
 	}
 	body.Close()
+	return nil
+}
+
+// sendPart sends a portion of the database to the bundle manager.
+func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, filename string, index int) (err error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, index), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
+	if err != nil {
+		return err
+	}
+	defer body.Close()
+
 	return nil
 }
 
