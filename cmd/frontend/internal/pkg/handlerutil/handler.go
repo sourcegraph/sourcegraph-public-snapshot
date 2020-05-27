@@ -7,28 +7,15 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"sync"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/gorilla/schema"
 	"github.com/pkg/errors"
 
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
-
-var (
-	schemaDecoder = schema.NewDecoder()
-	once          sync.Once
-)
-
-func init() {
-	once.Do(func() {
-		schemaDecoder.IgnoreUnknownKeys(true)
-	})
-}
 
 // HandlerWithErrorReturn wraps a http.HandlerFunc-like func that also
 // returns an error.  If the error is nil, this wrapper is a no-op. If
