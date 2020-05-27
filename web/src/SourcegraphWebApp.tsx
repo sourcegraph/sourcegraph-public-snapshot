@@ -445,6 +445,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
+                                    lastVersionContextKey={LAST_VERSION_CONTEXT_KEY}
                                 />
                             )}
                         />
