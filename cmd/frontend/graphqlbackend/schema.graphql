@@ -535,8 +535,13 @@ type BackgroundProcessStatus {
     errors: [String!]!
 }
 
+# A wrapper for passing the ID of a patch. This ensures the implied XOR constraint of PatchInputOrID.
+type PatchIDInput {
+    id: ID!
+}
+
 # Patch ID is a UUID, base64 encoded. That is, so the patch IDs can't be guessed.
-union PatchInputOrID = PatchInput | ID
+union PatchInputOrID = PatchInput | PatchIDInput
 
 type CampaignUpdatePreview {
     # URL where this preview can be looked at in the UI.
