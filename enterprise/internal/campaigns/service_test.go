@@ -35,11 +35,9 @@ func TestServicePermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	store := NewStore(dbconn.Global)
+	svc := NewService(store, nil)
 
 	admin := createTestUser(ctx, t)
 	if !admin.SiteAdmin {
@@ -90,8 +88,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
 		for _, p := range patches {
 			job := &campaigns.ChangesetJob{CampaignID: campaign.ID, PatchID: p.ID}
-			err = s.CreateChangesetJob(ctx, job)
-			if err != nil {
+			if err = s.CreateChangesetJob(ctx, job); err != nil {
 				t.Fatal(err)
 			}
 			changesetJobs = append(changesetJobs, job)
@@ -163,9 +160,6 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, cf, clock)
-
 			campaign, patches, _, changeset := createTestData(t, store, svc, tc.campaignAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
