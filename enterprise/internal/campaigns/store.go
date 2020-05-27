@@ -524,46 +524,45 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campa
 var getChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetChangeset
 SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state,
-  created_by_campaign,
-  added_to_campaign
+  changesets.id,
+  changesets.repo_id,
+  changesets.created_at,
+  changesets.updated_at,
+  changesets.metadata,
+  changesets.campaign_ids,
+  changesets.external_id,
+  changesets.external_service_type,
+  changesets.external_branch,
+  changesets.external_deleted_at,
+  changesets.external_updated_at,
+  changesets.external_state,
+  changesets.external_review_state,
+  changesets.external_check_state,
+  changesets.created_by_campaign,
+  changesets.added_to_campaign
 FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 LIMIT 1
 `
 
 func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ID))
 	}
 
 	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("repo_id = %s", opts.RepoID))
+		preds = append(preds, sqlf.Sprintf("changesets.repo_id = %s", opts.RepoID))
 	}
 
 	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
 		preds = append(preds,
-			sqlf.Sprintf("external_id = %s", opts.ExternalID),
-			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
+			sqlf.Sprintf("changesets.external_id = %s", opts.ExternalID),
+			sqlf.Sprintf("changesets.external_service_type = %s", opts.ExternalServiceType),
 		)
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -2096,30 +2095,29 @@ func (s *Store) GetPatch(ctx context.Context, opts GetPatchOpts) (*campaigns.Pat
 var getPatchesQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetPatch
 SELECT
-  id,
-  patch_set_id,
-  repo_id,
-  rev,
-  base_ref,
-  diff,
-  diff_stat_added,
-  diff_stat_deleted,
-  diff_stat_changed,
-  created_at,
-  updated_at
+  patches.id,
+  patches.patch_set_id,
+  patches.repo_id,
+  patches.rev,
+  patches.base_ref,
+  patches.diff,
+  patches.diff_stat_added,
+  patches.diff_stat_deleted,
+  patches.diff_stat_changed,
+  patches.created_at,
+  patches.updated_at
 FROM patches
+INNER JOIN repo ON repo.id = patches.repo_id
 WHERE %s
 LIMIT 1
 `
 
 func getPatchQuery(opts *GetPatchOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("patches.id = %s", opts.ID))
 	}
 
 	return sqlf.Sprintf(getPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))

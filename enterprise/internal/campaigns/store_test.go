@@ -429,6 +429,21 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 	changesets := make([]*cmpgn.Changeset, 0, 3)
 
+	deletedRepoChangeset := &cmpgn.Changeset{
+		RepoID:              deletedRepo.ID,
+		CreatedAt:           clock.now(),
+		UpdatedAt:           clock.now(),
+		Metadata:            githubPR,
+		CampaignIDs:         []int64{int64(cap(changesets))},
+		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
+		ExternalServiceType: "github",
+		ExternalBranch:      "campaigns/test",
+		ExternalUpdatedAt:   clock.now(),
+		ExternalState:       cmpgn.ChangesetStateOpen,
+		ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+		ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+	}
+
 	t.Run("Create", func(t *testing.T) {
 		var i int
 		for i = 0; i < cap(changesets); i++ {
@@ -455,20 +470,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		err = s.CreateChangesets(ctx, &cmpgn.Changeset{
-			RepoID:              deletedRepo.ID,
-			CreatedAt:           clock.now(),
-			UpdatedAt:           clock.now(),
-			Metadata:            githubPR,
-			CampaignIDs:         []int64{int64(i) + 1},
-			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: "github",
-			ExternalBranch:      "campaigns/test",
-			ExternalUpdatedAt:   clock.now(),
-			ExternalState:       cmpgn.ChangesetStateOpen,
-			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-		})
+		err = s.CreateChangesets(ctx, deletedRepoChangeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -919,6 +921,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("NoResults", func(t *testing.T) {
+			opts := GetChangesetOpts{ID: 0xdeadbeef}
+
+			_, have := s.GetChangeset(ctx, opts)
+			want := ErrNoResults
+
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
 
@@ -1703,18 +1716,16 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 	})
 
 	// Create patch to deleted repo.
-	{
-		p := &cmpgn.Patch{
-			PatchSetID: 1000,
-			RepoID:     deletedRepo.ID,
-			Rev:        api.CommitID("deadbeef"),
-			BaseRef:    "master",
-			Diff:       "+ foobar - barfoo",
-		}
-		err := s.CreatePatch(ctx, p)
-		if err != nil {
-			t.Fatal(err)
-		}
+	deletedRepoPatch := &cmpgn.Patch{
+		PatchSetID: 1000,
+		RepoID:     deletedRepo.ID,
+		Rev:        api.CommitID("deadbeef"),
+		BaseRef:    "master",
+		Diff:       "+ foobar - barfoo",
+	}
+	err := s.CreatePatch(ctx, deletedRepoPatch)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	t.Run("Count", func(t *testing.T) {
@@ -2053,6 +2064,17 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 
 		t.Run("NoResults", func(t *testing.T) {
 			opts := GetPatchOpts{ID: 0xdeadbeef}
+
+			_, have := s.GetPatch(ctx, opts)
+			want := ErrNoResults
+
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("RepoDeleted", func(t *testing.T) {
+			opts := GetPatchOpts{ID: deletedRepoPatch.ID}
 
 			_, have := s.GetPatch(ctx, opts)
 			want := ErrNoResults
