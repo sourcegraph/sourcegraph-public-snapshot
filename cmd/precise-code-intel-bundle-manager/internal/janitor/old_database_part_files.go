@@ -31,6 +31,7 @@ func (j *Janitor) removeOldDatabasePartFiles() error {
 		path := filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
 
 		if err := os.Remove(path); err != nil {
+			j.metrics.Errors.Inc()
 			log15.Error("Failed to remove file", "path", path, "err", err)
 			continue
 		}

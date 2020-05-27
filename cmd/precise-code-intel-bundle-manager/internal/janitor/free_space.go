@@ -76,6 +76,7 @@ func (j *Janitor) evictBundle() (uint64, bool, error) {
 	}
 
 	if err := os.Remove(path); err != nil {
+		j.metrics.Errors.Inc()
 		log15.Error("Failed to remove file", "path", path, "err", err)
 		return 0, true, nil
 	}

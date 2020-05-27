@@ -45,6 +45,7 @@ func (j *Janitor) removeOrphanedBundleFiles() error {
 	for id, path := range pathsByID {
 		if state, exists := states[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
+				j.metrics.Errors.Inc()
 				log15.Error("Failed to remove file", "path", path, "err", err)
 				continue
 			}
