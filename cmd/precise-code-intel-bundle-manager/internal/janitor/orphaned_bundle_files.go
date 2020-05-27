@@ -45,7 +45,9 @@ func (j *Janitor) removeOrphanedBundleFiles() error {
 	for id, path := range pathsByID {
 		if state, exists := states[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
-				return err
+				j.metrics.Errors.Inc()
+				log15.Error("Failed to remove file", "path", path, "err", err)
+				continue
 			}
 
 			log15.Debug("Removed orphaned bundle file", "id", id, "path", path)
@@ -66,7 +68,7 @@ func (j *Janitor) databasePathsByID() (map[int]string, error) {
 	pathsByID := map[int]string{}
 	for _, fileInfo := range fileInfos {
 		if id, err := strconv.Atoi(strings.Split(fileInfo.Name(), ".")[0]); err == nil {
-			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
+			pathsByID[id] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
 		}
 	}
 
