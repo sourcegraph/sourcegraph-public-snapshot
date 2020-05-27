@@ -1,13 +1,10 @@
 
 name: Resources Report
 on:
-  # schedule:
-  #  - cron: '0 9 * * *'
+  schedule:
+  - cron: '0 9 * * *'
   repository_dispatch:
     types: [ resources-report ]
-  # temporary for testing - remove before merge
-  push:
-    branches: [ distribution/resources-report ]
 
 jobs:
   resources-report:
