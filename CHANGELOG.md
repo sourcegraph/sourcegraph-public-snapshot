@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- An issue that caused campaigns to fail loading when a referenced repo was deleted has been fixed. [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021)
+
 ### Removed
 
 ## 3.16.1
