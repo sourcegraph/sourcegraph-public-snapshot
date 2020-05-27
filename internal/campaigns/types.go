@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
@@ -1366,6 +1368,17 @@ type ChangesetSyncData struct {
 	ExternalUpdatedAt time.Time
 	// ExternalServiceID is the ID of the external service to which the changeset belongs
 	ExternalServiceIDs []int64
+}
+
+const campaignIDKind = "Campaign"
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID(campaignIDKind, id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {
