@@ -33,7 +33,6 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import { LAST_VERSION_CONTEXT_KEY } from '../../SourcegraphWebApp'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 
@@ -64,6 +63,7 @@ export interface SearchResultsProps
     deployType: DeployType
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    lastVersionContextKey: string
 }
 
 interface SearchResultsState {
@@ -236,32 +236,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     const searchParams = new URLSearchParams(props.location.search)
                     const versionFromURL = searchParams.get('c')
 
-                    if (
-                        !searchParams.has('from-context-toggle') &&
-                        props.availableVersionContexts &&
-                        (versionFromURL
-                            ? versionFromURL !== localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-                            : localStorage.getItem(LAST_VERSION_CONTEXT_KEY) !== null)
-                    ) {
-                        this.setState({ showVersionContextWarning: true })
-                    }
-
                     if (searchParams.has('from-context-toggle')) {
+                        // The query param `from-context-toggle` indicates that the version context
+                        // changed from the version context toggle. In this case, we don't warn
+                        // users that the version context has changed.
                         searchParams.delete('from-context-toggle')
                         this.props.history.replace({
                             search: searchParams.toString(),
                             hash: this.props.history.location.hash,
                         })
                         this.setState({ showVersionContextWarning: false })
-                    }
-
-                    if (
-                        this.state.showVersionContextWarning &&
-                        (versionFromURL
-                            ? versionFromURL === localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-                            : localStorage.getItem(LAST_VERSION_CONTEXT_KEY) === null)
-                    ) {
-                        this.setState({ showVersionContextWarning: false })
+                    } else {
+                        this.setState({
+                            showVersionContextWarning:
+                                (props.availableVersionContexts &&
+                                    versionFromURL !== localStorage.getItem(props.lastVersionContextKey)) ||
+                                false,
+                        })
                     }
                 })
         )
