@@ -1690,7 +1690,7 @@ func TestPermissionLevels(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				graphqlID := string(marshalCampaignID(tc.campaign))
+				graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
 
 				var queriedCampaign struct{ Node apitest.Campaign }
 
@@ -1823,7 +1823,7 @@ func TestPermissionLevels(t *testing.T) {
 						}
 
 						mutation := m.mutationFunc(
-							string(marshalCampaignID(campaignID)),
+							string(campaigns.MarshalCampaignID(campaignID)),
 							string(marshalChangesetID(changeset.ID)),
 							string(marshalPatchID(patchID)),
 						)
