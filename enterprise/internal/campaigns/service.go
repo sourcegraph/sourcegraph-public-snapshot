@@ -209,7 +209,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return err
 		}
 		if processing {
-			err = ErrDeleteProcessingCampaign
+			err = ErrCloseProcessingCampaign
 			return err
 		}
 

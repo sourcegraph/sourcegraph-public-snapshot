@@ -171,8 +171,8 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err == nil {
-			t.Fatalf("deleting campaign should fail, since it's processing")
+		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != ErrDeleteProcessingCampaign {
+			t.Fatalf("DeleteCampaign returned unexpected error: %s", err)
 		}
 
 		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -221,8 +221,8 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if _, err = svc.CloseCampaign(ctx, campaign.ID, true); err == nil {
-			t.Fatalf("closing campaign should fail, since it's processing")
+		if _, err = svc.CloseCampaign(ctx, campaign.ID, true); err != ErrCloseProcessingCampaign {
+			t.Fatalf("CloseCampaign returned unexpected error: %s", err)
 		}
 
 		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
