@@ -48,10 +48,6 @@ func (s *Server) handler() http.Handler {
 
 // GET /uploads/{id:[0-9]+}
 func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
-	totalTransfers.Inc()
-	numConcurrentTransfers.Inc()
-	defer func() { numConcurrentTransfers.Dec() }()
-
 	file, err := os.Open(paths.UploadFilename(s.bundleDir, idFromRequest(r)))
 	if err != nil {
 		http.Error(w, "Upload not found.", http.StatusNotFound)
@@ -256,12 +252,6 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	totalTransfers.Inc()
-	numConcurrentTransfers.Inc()
-	defer func() {
-		numConcurrentTransfers.Dec()
-	}()
-
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
