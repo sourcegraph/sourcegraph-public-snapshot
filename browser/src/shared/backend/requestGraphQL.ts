@@ -1,7 +1,7 @@
 import { from } from 'rxjs'
 import { requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import { IQuery, IMutation } from '../../../../shared/src/graphql/schema'
-import { background } from '../../browser/runtime'
+import { background } from '../../browser-extension/web-extension-api/runtime'
 
 /**
  * Returns a platform-appropriate implementation of the function used to make requests to our GraphQL API.

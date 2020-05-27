@@ -26,8 +26,8 @@ It works as follows:
 - there is a background script running to access certain chrome APIs, like storage (background.bundle.js)
 - a "code view" contains rendered (syntax highlighted) code (in an HTML table); the extension adds event listeners to the code view which control the tooltip
 - when the user mouses over a code table cell, the extension modifies the DOM node:
-  - text nodes are wrapped in <span> (so hover/click events have appropriate specificity)
-  - element nodes may be recursively split into multiple element nodes (e.g. a <span>&Router{namedRoutes:<span> contains multiple code tokens, and event targets need more granular ranges)
+  - text nodes are wrapped in `<span>` (so hover/click events have appropriate specificity)
+  - element nodes may be recursively split into multiple element nodes (e.g. a `<span>&Router{namedRoutes:<span>` contains multiple code tokens, and event targets need more granular ranges)
   - We assume syntax highlighting takes care of the base case of wrapping a discrete language symbol
   - tooltip data is fetched from the Sourcegraph API
 - when an event occurs, we modify a central state store about what kind of tooltip to display
@@ -35,26 +35,29 @@ It works as follows:
 
 ## Project layout
 
-- `src/extension/`
-  - Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
-- `src/browser`
-  - [A wrapper around the browser APIs.](./src/browser/README.md)
-- `src/libs/`
-  - Isolated pieces of the browser extension. This contains code that is specific to code hosts and separate "mini applications" included in the browser extension such as the `src` omnibar cli.
-- `src/libs/phabricator/`
-  - Entrypoint for Phabricator extension. This is used by the browser extension and [sourcegraph/phabricator-extension](https://github.com/sourcegraph/phabricator-extension).
-- `src/shared/`
-  - Code shared by the extension and the libraries. Ideally, nothing in here should reach into any other directory.
-- `src/config/`
-  - Polyfills and configuration/plumbing code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
-- `src/e2e/`
-  - E2e test suite.
+- `src/`
+  - `browser-extension/`
+    Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
+    - `web-extension-api/`
+      [A wrapper around the web extension APIs.](./src/browser-extension/web-extension-api/README.md)
+  - `native-integration/`
+    Entrypoint for the native code host integrations (Phabricator, Gitlab and Bitbucket).
+  - `shared/`
+    Code shared by the browser extension and the native integrations. Ideally, nothing in here should reach into any other directory.
+    - `code-hosts/`
+      Contains the implementations of code-host specific features for each supported code host.
+      - `shared/`
+        Code shared between multiple code hosts.
+  - `config/`
+    Configuration code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+  - `e2e/`
+    E2E test suite.
 - `scripts/`
-  - Development scripts.
-- `webpack`
-  - Build configs.
-- `build`
-  - Generated directory containing the output from webpack and the generated bundles for each browser.
+  Build scripts.
+- `config/`
+  Build configs.
+- `build/`
+  Generated directory containing the output from webpack and the generated bundles for each browser.
 
 ## Requirements
 

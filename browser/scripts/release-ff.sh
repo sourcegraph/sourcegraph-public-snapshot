@@ -23,5 +23,5 @@ popd
 export TS_NODE_COMPILER_OPTIONS="{\"module\":\"commonjs\"}"
 
 gsutil ls gs://sourcegraph-for-firefox | xargs yarn ts-node scripts/build-updates-manifest.ts
-gsutil cp src/extension/updates.manifest.json gs://sourcegraph-for-firefox/updates.json
+gsutil cp src/browser-extension/updates.manifest.json gs://sourcegraph-for-firefox/updates.json
 gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/updates.json
