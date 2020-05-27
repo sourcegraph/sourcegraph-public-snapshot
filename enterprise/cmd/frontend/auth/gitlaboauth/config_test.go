@@ -14,7 +14,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func Test_parseConfig(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true

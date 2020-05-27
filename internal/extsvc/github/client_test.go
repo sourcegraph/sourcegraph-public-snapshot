@@ -71,7 +71,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func Test_newRepoCache(t *testing.T) {
+func TestNewRepoCache(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")

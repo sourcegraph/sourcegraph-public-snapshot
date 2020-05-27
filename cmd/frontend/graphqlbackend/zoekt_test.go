@@ -211,7 +211,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 	}
 }
 
-func Test_ZoektSingleIndexedRepo(t *testing.T) {
+func TestZoektSingleIndexedRepo(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},

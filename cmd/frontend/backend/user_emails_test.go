@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Test_checkEmailAbuse(t *testing.T) {
+func TestCheckEmailAbuse(t *testing.T) {
 	ctx := testContext()
 
 	cfg := conf.Get()

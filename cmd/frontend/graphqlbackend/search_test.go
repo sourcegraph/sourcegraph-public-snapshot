@@ -254,7 +254,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	return name
 }
 
-func Test_defaultRepositories(t *testing.T) {
+func TestDefaultRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
 		defaultsInDb     []string
@@ -339,7 +339,7 @@ func Test_defaultRepositories(t *testing.T) {
 	}
 }
 
-func Test_detectSearchType(t *testing.T) {
+func TestDetectSearchType(t *testing.T) {
 	typeRegexp := "regexp"
 	typeLiteral := "literal"
 	testCases := []struct {
@@ -376,7 +376,7 @@ func Test_detectSearchType(t *testing.T) {
 	}
 }
 
-func Test_exactlyOneRepo(t *testing.T) {
+func TestExactlyOneRepo(t *testing.T) {
 	cases := []struct {
 		repoFilters []string
 		want        bool
@@ -416,7 +416,7 @@ func Test_exactlyOneRepo(t *testing.T) {
 	}
 }
 
-func Test_QuoteSuggestions(t *testing.T) {
+func TestQuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
 		_, err := query.Process(raw, query.SearchTypeRegex)
@@ -468,7 +468,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 	})
 }
 
-func Test_queryForStableResults(t *testing.T) {
+func TestEueryForStableResults(t *testing.T) {
 	cases := []struct {
 		query           string
 		wantStableCount int32
@@ -659,7 +659,7 @@ func TestVersionContext(t *testing.T) {
 	}
 }
 
-func Test_computeExcludedRepositories(t *testing.T) {
+func TestComputeExcludedRepositories(t *testing.T) {
 	cases := []struct {
 		Name              string
 		Query             string

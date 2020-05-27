@@ -146,7 +146,7 @@ func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
 	}
 }
 
-func Test_PartitionSearchPattern(t *testing.T) {
+func TestPartitionSearchPattern(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -242,7 +242,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	}
 }
 
-func Test_ContainsAndOrKeyword(t *testing.T) {
+func TestContainsAndOrKeyword(t *testing.T) {
 	if !ContainsAndOrKeyword("foo OR bar") {
 		t.Errorf("Expected query to contain keyword")
 	}

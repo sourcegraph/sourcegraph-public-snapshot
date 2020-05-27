@@ -162,7 +162,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 	}
 }
 
-func Test_redirectTreeOrBlob(t *testing.T) {
+func TestRedirectTreeOrBlob(t *testing.T) {
 	tests := []struct {
 		name          string
 		route         string

@@ -355,7 +355,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	)
 }
 
-func Test_howManyBytesToFree(t *testing.T) {
+func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
 		DesiredPercentFree: 10,

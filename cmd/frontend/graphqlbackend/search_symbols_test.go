@@ -45,7 +45,7 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 }
 
-func Test_limitingSymbolResults(t *testing.T) {
+func TestLimitingSymbolResults(t *testing.T) {
 	t.Run("empty case", func(t *testing.T) {
 		var res []*FileMatchResolver
 
