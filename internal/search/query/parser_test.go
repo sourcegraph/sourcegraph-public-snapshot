@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_ScanParameter(t *testing.T) {
+func Test_parseParameterList(t *testing.T) {
 	cases := []struct {
 		Name  string
 		Input string
@@ -18,61 +18,64 @@ func Test_ScanParameter(t *testing.T) {
 		{
 			Name:  "Normal field:value",
 			Input: `file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":false,"quoted":false}`,
+			Want:  `[{"field":"file","value":"README.md","negated":false}]`,
 		},
 		{
 			Name:  "First char is colon",
 			Input: `:foo`,
-			Want:  `{"field":"","value":":foo","negated":false,"quoted":false}`,
+			Want:  `[{"value":":foo","negated":false,"quoted":false}]`,
 		},
 		{
 			Name:  "Last char is colon",
 			Input: `foo:`,
-			Want:  `{"field":"foo","value":"","negated":false,"quoted":false}`,
+			Want:  `[{"value":"foo:","negated":false,"quoted":false}]`,
 		},
 		{
 			Name:  "Match first colon",
-			Input: `foo:bar:baz`,
-			Want:  `{"field":"foo","value":"bar:baz","negated":false,"quoted":false}`,
+			Input: `file:bar:baz`,
+			Want:  `[{"field":"file","value":"bar:baz","negated":false}]`,
 		},
 		{
 			Name:  "No field, start with minus",
 			Input: `-:foo`,
-			Want:  `{"field":"","value":"-:foo","negated":false,"quoted":false}`,
+			Want:  `[{"value":"-:foo","negated":false,"quoted":false}]`,
 		},
 		{
 			Name:  "Minus prefix on field",
 			Input: `-file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":true,"quoted":false}`,
+			Want:  `[{"field":"file","value":"README.md","negated":true}]`,
 		},
 		{
 			Name:  "Double minus prefix on field",
 			Input: `--foo:bar`,
-			Want:  `{"field":"","value":"--foo:bar","negated":false,"quoted":false}`,
+			Want:  `[{"value":"--foo:bar","negated":false,"quoted":false}]`,
 		},
 		{
 			Name:  "Minus in the middle is not a valid field",
 			Input: `fie-ld:bar`,
-			Want:  `{"field":"","value":"fie-ld:bar","negated":false,"quoted":false}`,
+			Want:  `[{"value":"fie-ld:bar","negated":false,"quoted":false}]`,
 		},
 		{
 			Name:  "Interpret escaped whitespace",
 			Input: `a\ pattern`,
-			Want:  `{"field":"","value":"a pattern","negated":false,"quoted":false}`,
+			Want:  `[{"value":"a pattern","negated":false,"quoted":false}]`,
 		},
 		{
 			Input: `"quoted"`,
-			Want:  `{"field":"","value":"quoted","negated":false,"quoted":true}`,
+			Want:  `[{"value":"quoted","negated":false,"quoted":true}]`,
 		},
 		{
 			Input: `'\''`,
-			Want:  `{"field":"","value":"'","negated":false,"quoted":true}`,
+			Want:  `[{"value":"'","negated":false,"quoted":true}]`,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			parser := &parser{buf: []byte(tt.Input)}
-			result := parser.ParseParameter()
+			result, err := parser.parseParameterList()
+			if err != nil {
+				panic("ruh roh")
+			}
 			got, _ := json.Marshal(result)
 			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
 				t.Error(diff)
@@ -887,12 +890,17 @@ func Test_ParseLiteralSearch(t *testing.T) {
 			Want:  `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\""))`,
 		},
 		{
-			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
-			Want:  `(and "type:commit" "message:a commit message" "after:'10" (concat "days" "ago\"" "test" "test2"))`,
-		},
-		{
 			Input: `bar and (foo or x\) ()`,
 			Want:  `(or (and "bar" "(foo") (concat "x\\)" "()"))`,
+		},
+		// This test input should error because the single quote in 'after' is unclosed.
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
+			Want:  "",
+		},
+		{
+			Input: `"quoted"`,
+			Want:  `"\"quoted\""`,
 		},
 	}
 	for _, tt := range cases {

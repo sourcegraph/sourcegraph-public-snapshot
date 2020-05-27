@@ -142,6 +142,19 @@ var tests = []test{
 		Name:  `Global search, exclude counts for fork and archive`,
 		Query: `repo:mux|archive|caddy`,
 	},
+	// And/Or queries.
+	{
+		Name:  `Literals, escaped`,
+		Query: `repo:^github\.com/facebook/react$ (\(\) or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, no parens escaped`,
+		Query: `repo:^github\.com/facebook/react$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
+	},
+	{
+		Name:  `And operator, basic`,
+		Query: `repo:^github\.com/facebook/react$ func and main stable:yes type:file count:1 file:^dangerfile.js$`,
+	},
 }
 
 func sanitizeFilename(s string) string {

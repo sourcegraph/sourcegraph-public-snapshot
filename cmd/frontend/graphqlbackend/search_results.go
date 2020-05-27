@@ -740,7 +740,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	want := 5
 
 	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -812,7 +812,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -874,10 +874,13 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 			r.query = query.AndOrQuery{Query: q}
 			return r.evaluateLeaf(ctx)
 		}
-	case query.Parameter:
+	case query.Pattern:
 		q := append(scopeParameters, term)
 		r.query = query.AndOrQuery{Query: q}
 		return r.evaluateLeaf(ctx)
+	case query.Parameter:
+		// evaluatePatternExpression does not process Parameter nodes.
+		return nil, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
