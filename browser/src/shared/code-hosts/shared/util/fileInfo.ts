@@ -51,7 +51,7 @@ export const resolveRepoNamesForDiffOrFileInfo = (
             }))
         )
     }
-    throw new Error('Cannot resolve file info: must contain a blob, base, or head.')
+    throw new Error('resolveRepoNamesForDiffOrFileInfo cannot resolve file info: must contain a blob, base, or head.')
 }
 
 /**
