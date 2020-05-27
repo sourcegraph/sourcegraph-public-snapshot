@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -298,4 +300,87 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexe
 
 func (b suffixIndexers) Enabled() bool {
 	return bool(b)
+}
+
+func TestServeSearchConfiguration(t *testing.T) {
+	var cfg conf.Unified
+	cfg.SearchLargeFiles = []string{"**/*.jar", "*.bin"}
+	symbolsEnabled := true
+	cfg.SearchIndexSymbolsEnabled = &symbolsEnabled
+	cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{
+		VersionContexts: []*schema.VersionContext{
+			{
+				Name: "foo",
+				Revisions: []*schema.VersionContextRevision{
+					{Repo: "branch1"},
+					{Repo: "branch2", Rev: "abcde"},
+				},
+			},
+		},
+	}
+
+	conf.Mock(&cfg)
+
+	cases := []struct {
+		name string
+		repo string // optional repo query parameter
+		want string
+	}{
+		{
+			name: "default",
+			want: `{"LargeFiles":["**/*.jar","*.bin"],"Symbols":true}`,
+		},
+		{
+			name: "with valid repo",
+			repo: "foo",
+			want: `{"LargeFiles":["**/*.jar","*.bin"],"Symbols":true, "Branches": [{"Name": "branch1"}, {"Name": "branch2", "Version": "abcde"}]}`,
+		},
+		{
+			name: "with unknown repo",
+			repo: "bar",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			url := "/"
+			if tc.repo != "" {
+				url = "/?repo=" + tc.repo
+			}
+			req := httptest.NewRequest("POST", url, nil)
+			w := httptest.NewRecorder()
+			err := serveSearchConfiguration(w, req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("got status %v", resp.StatusCode)
+			}
+			if resp.StatusCode == http.StatusNotFound {
+				return
+			}
+
+			var got, want struct {
+				LargeFiles []string
+				Symbols    bool
+				Branches   []struct {
+					Name    string
+					Version string
+				}
+			}
+			if err := json.Unmarshal(body, &got); err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal(body, &want); err != nil {
+				t.Fatal(err)
+			}
+
+			if !cmp.Equal(want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+			}
+		})
+	}
 }

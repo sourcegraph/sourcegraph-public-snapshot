@@ -389,8 +389,6 @@ type ExperimentalFeatures struct {
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
-	// SearchMultipleBranchIndexing description: JSON array of repositories and branches to index
-	SearchMultipleBranchIndexing []*SearchMultipleBranchIndexing `json:"searchMultipleBranchIndexing,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -823,22 +821,6 @@ type SMTPServerConfig struct {
 	Port int `json:"port"`
 	// Username description: The username to use when communicating with the SMTP server.
 	Username string `json:"username,omitempty"`
-}
-
-// SearchMultipleBranchIndexing description: Repository and branches to index
-type SearchMultipleBranchIndexing struct {
-	// Branches description: List of branches to index
-	Branches []*SearchMultipleBranchIndexingConfig `json:"branches"`
-	// Name description: Name of the repository
-	Name string `json:"name"`
-}
-
-// SearchMultipleBranchIndexingConfig description: Configuration of the branch to index. Revisions or commit can optionally be specified.
-type SearchMultipleBranchIndexingConfig struct {
-	// Name description: Name of the branch to index
-	Name string `json:"name"`
-	// Version description: Revision or commit
-	Version string `json:"version,omitempty"`
 }
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
