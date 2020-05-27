@@ -231,7 +231,7 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 }
 
 // SendDB transfers a converted database to the bundle manager to be stored on disk.
-func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) error {
+func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) (err error) {
 	files, cleanup, err := codeintelutils.SplitFile(filename, c.maxPayloadSizeBytes)
 	if err != nil {
 		return err
