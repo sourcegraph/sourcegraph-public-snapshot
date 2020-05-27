@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package bundle;
+
+message DocumentData {
+    map<string, RangeData> ranges = 1;
+    map<string, string> hoverResults = 2;
+    map<string, MonikerData> monikers = 3;
+    map<string, PackageInformationData> packageInformation = 4;
+}
+
+message RangeData {
+    int32 StartLine = 1;
+    int32 StartCharacter = 2;
+    int32 EndLine = 3;
+    int32 EndCharacter = 4;
+    string DefinitionResultID = 5;
+    string ReferenceResultID = 6;
+    string HoverResultID = 7;
+    repeated string MonikerIDs = 8;
+}
+
+message MonikerData {
+    string Kind = 1;
+    string Scheme = 2;
+    string Identifier = 3;
+    string PackageInformationID = 4;
+}
+
+message PackageInformationData {
+    string name = 1;
+    string version = 2;
+}
+
+message ResultChunkData {
+    map<string, string> documentPaths = 1;
+    map<string, DocumentIDRangeIDs> documentIDRangeIDs = 2;
+}
+
+message DocumentIDRangeIDs {
+    repeated DocumentIDRangeID documentIDRangeID = 1;
+}
+
+message DocumentIDRangeID {
+    string DocumentID = 1;
+    string RangeID = 2;
+}
