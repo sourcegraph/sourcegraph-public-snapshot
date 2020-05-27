@@ -1109,7 +1109,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	q, _ := query.ProcessAndOr("file:foo or file:bar")
-	wantPrefix := "I'm having trouble understsanding that query."
+	wantPrefix := "I'm having trouble understanding that query."
 	andOrQuery, _ := q.(*query.AndOrQuery)
 	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {
