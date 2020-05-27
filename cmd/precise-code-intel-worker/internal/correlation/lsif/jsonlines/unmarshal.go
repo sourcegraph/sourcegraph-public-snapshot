@@ -12,14 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
 
-var ji = jsoniter.ConfigFastest
+var unmarshaller = jsoniter.ConfigFastest
 
 type ID string
 
 func (id *ID) UnmarshalJSON(raw []byte) error {
 	if raw[0] == '"' {
 		var v string
-		if err := ji.Unmarshal(raw, &v); err != nil {
+		if err := unmarshaller.Unmarshal(raw, &v); err != nil {
 			return err
 		}
 
@@ -28,7 +28,7 @@ func (id *ID) UnmarshalJSON(raw []byte) error {
 	}
 
 	var v int64
-	if err := ji.Unmarshal(raw, &v); err != nil {
+	if err := unmarshaller.Unmarshal(raw, &v); err != nil {
 		return err
 	}
 
@@ -42,7 +42,7 @@ func unmarshalElement(line []byte) (_ lsif.Element, err error) {
 		Type  string `json:"type"`
 		Label string `json:"label"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return lsif.Element{}, err
 	}
 
@@ -70,7 +70,7 @@ func unmarshalEdge(line []byte) (interface{}, error) {
 		InVs     []ID `json:"inVs"`
 		Document ID   `json:"document"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return lsif.Edge{}, err
 	}
 
@@ -101,7 +101,7 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 		Version     string `json:"version"`
 		ProjectRoot string `json:"projectRoot"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 	var payload struct {
 		URI string `json:"uri"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
@@ -134,7 +134,7 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		Start position `json:"start"`
 		End   position `json:"end"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
@@ -154,12 +154,12 @@ func unmarshalHover(line []byte) (interface{}, error) {
 	var payload struct {
 		Result hoverResult `json:"result"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
 	var target []json.RawMessage
-	if err := ji.Unmarshal(payload.Result.Contents, &target); err != nil {
+	if err := unmarshaller.Unmarshal(payload.Result.Contents, &target); err != nil {
 		return unmarshalHoverPart(payload.Result.Contents)
 	}
 
@@ -178,7 +178,7 @@ func unmarshalHover(line []byte) (interface{}, error) {
 
 func unmarshalHoverPart(raw json.RawMessage) (string, error) {
 	var strPayload string
-	if err := ji.Unmarshal(raw, &strPayload); err == nil {
+	if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
 		return strings.TrimSpace(strPayload), nil
 	}
 
@@ -187,7 +187,7 @@ func unmarshalHoverPart(raw json.RawMessage) (string, error) {
 		Language string `json:"language"`
 		Value    string `json:"value"`
 	}
-	if err := ji.Unmarshal(raw, &objPayload); err != nil {
+	if err := unmarshaller.Unmarshal(raw, &objPayload); err != nil {
 		return "", errors.New("unrecognized hover format")
 	}
 
@@ -204,7 +204,7 @@ func unmarshalMoniker(line []byte) (interface{}, error) {
 		Scheme     string `json:"scheme"`
 		Identifier string `json:"identifier"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
@@ -224,7 +224,7 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 		Name    string `json:"name"`
 		Version string `json:"version"`
 	}
-	if err := ji.Unmarshal(line, &payload); err != nil {
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
