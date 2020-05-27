@@ -45,7 +45,7 @@ describe('SearchResults', () => {
         versionContext: undefined,
         setVersionContext: () => undefined,
         availableVersionContexts: undefined,
-        lastVersionContextName: 'sg-last-version-context',
+        previousVersionContext: 'sg-last-version-context',
     }
 
     it('calls the search request once', () => {
