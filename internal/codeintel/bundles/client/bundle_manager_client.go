@@ -19,7 +19,6 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -435,21 +434,8 @@ func limitTransferRate(r io.Reader) io.ReadCloser {
 	return flowrate.NewReader(r, 1000*1000*1000)
 }
 
-//
-// Temporary network debugging code
-
-var connectionErrors = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_bundle_manager_connection_reset_by_peer_read",
-	Help: "The total number connection reset by peer errors (client) when trying to transfer upload payloads.",
-})
-
-func init() {
-	prometheus.MustRegister(connectionErrors)
-}
-
 func isConnectionError(err error) bool {
 	if err != nil && strings.Contains(err.Error(), "read: connection reset by peer") {
-		connectionErrors.Inc()
 		return true
 	}
 
