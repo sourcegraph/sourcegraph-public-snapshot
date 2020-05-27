@@ -186,7 +186,7 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
 // been published at the time of closing but its ChangesetJobs have not
 // finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
+var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -209,7 +209,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 			return err
 		}
 		if processing {
-			err = ErrDeleteProcessingCampaign
+			err = ErrCloseProcessingCampaign
 			return err
 		}
 
@@ -320,7 +320,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 
 		// First load the Changesets with the given campaignID, before deleting
 		// the campaign would remove the association.
-		cs, _, err = s.store.ListChangesets(ctx, ListChangesetsOpts{
+		cs, _, err = tx.ListChangesets(ctx, ListChangesetsOpts{
 			CampaignID: id,
 			Limit:      -1,
 		})
@@ -335,7 +335,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 			c.RemoveCampaignID(id)
 		}
 
-		return cs, s.store.DeleteCampaign(ctx, id)
+		return cs, tx.DeleteCampaign(ctx, id)
 	}
 
 	cs, err := transaction()

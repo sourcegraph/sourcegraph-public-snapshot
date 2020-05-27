@@ -152,6 +152,110 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("DeleteCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := testPatch(patchSet.ID, rs[0].ID, now)
+		if err := store.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		// This creates processing ChangesetJobs.
+		if err = svc.CreateCampaign(ctx, campaign, false); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != ErrDeleteProcessingCampaign {
+			t.Fatalf("DeleteCampaign returned unexpected error: %s", err)
+		}
+
+		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(jobs) != 1 {
+			t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
+		}
+
+		for _, j := range jobs {
+			j.Error = "failed"
+			j.FinishedAt = clock()
+			if err := store.UpdateChangesetJob(ctx, j); err != nil {
+				t.Fatalf("updating changeset job failed: %s\n", err)
+			}
+		}
+
+		// Now it should work, since the jobs failed to execute and campaign is
+		// no longer processing.
+		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != nil {
+			t.Fatalf("campaign not deleted: %s", err)
+		}
+	})
+
+	t.Run("CloseCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := testPatch(patchSet.ID, rs[0].ID, now)
+		if err := store.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		// This creates processing ChangesetJobs.
+		if err = svc.CreateCampaign(ctx, campaign, false); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err = svc.CloseCampaign(ctx, campaign.ID, true); err != ErrCloseProcessingCampaign {
+			t.Fatalf("CloseCampaign returned unexpected error: %s", err)
+		}
+
+		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(jobs) != 1 {
+			t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
+		}
+
+		for _, j := range jobs {
+			j.Error = "failed"
+			j.FinishedAt = clock()
+			if err := store.UpdateChangesetJob(ctx, j); err != nil {
+				t.Fatalf("updating changeset job failed: %s\n", err)
+			}
+		}
+
+		// Now it should work, since the jobs failed to execute and campaign is
+		// no longer processing.
+		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
+		if err != nil {
+			t.Fatalf("campaign not closed: %s", err)
+		}
+		if campaign.ClosedAt.IsZero() {
+			t.Fatalf("campaign ClosedAt is zero")
+		}
+	})
+
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
