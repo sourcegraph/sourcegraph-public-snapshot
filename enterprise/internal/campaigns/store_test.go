@@ -431,17 +431,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 	deletedRepoChangeset := &cmpgn.Changeset{
 		RepoID:              deletedRepo.ID,
-		CreatedAt:           clock.now(),
-		UpdatedAt:           clock.now(),
-		Metadata:            githubPR,
-		CampaignIDs:         []int64{int64(cap(changesets))},
 		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
 		ExternalServiceType: "github",
-		ExternalBranch:      "campaigns/test",
-		ExternalUpdatedAt:   clock.now(),
-		ExternalState:       cmpgn.ChangesetStateOpen,
-		ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-		ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -935,8 +926,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		})
 
-		t.Run("NoResults", func(t *testing.T) {
-			opts := GetChangesetOpts{ID: 0xdeadbeef}
+		t.Run("RepoDeleted", func(t *testing.T) {
+			opts := GetChangesetOpts{ID: deletedRepoChangeset.ID}
 
 			_, have := s.GetChangeset(ctx, opts)
 			want := ErrNoResults
