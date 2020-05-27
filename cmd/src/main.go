@@ -18,10 +18,13 @@ Usage:
 
 	src [options] command [command options]
 
+Environment variables
+	SRC_ACCESS_TOKEN  Sourcegraph access token
+	SRC_ENDPOINT      endpoint to use, if unset will default to "https://sourcegraph.com"
+
 The options are:
 
-	-config=$HOME/src-config.json    specifies a file containing {"accessToken": "<secret>", "endpoint": "https://sourcegraph.com"}
-	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides -config, if any)
+	-endpoint=                       specifies the endpoint to use e.g. "https://sourcegraph.com" (overrides SRC_ENDPOINT if set)
 	-v                               print verbose output
 
 The commands are:

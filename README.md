@@ -73,16 +73,6 @@ Point `src` to your instance and access token using environment variables:
 SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN="secret" src search 'foobar'
 ```
 
-### Via global configuration file
-
-Create a `$HOME/src-config.json` with:
-
-```sh
-{"endpoint": "https://sourcegraph.example.com", "accessToken": "secret"}
-```
-
-Then `src search 'foobar'` and other commands will automatically use that configuration!
-
 ### Where to get an access token
 
 Visit your Sourcegraph instance (or https://sourcegraph.com), click your username in the top right to open the user menu, select **Settings**, and then select **Access tokens** in the left hand menu.
