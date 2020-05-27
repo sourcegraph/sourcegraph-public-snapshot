@@ -130,7 +130,7 @@ func TestExecChangesetJob(t *testing.T) {
 			}
 
 			err := ExecChangesetJob(ctx, campaign, changesetJob, ExecChangesetJobOpts{
-				clock: clock, store: s, gitClient: gitClient, sourcer: sourcer, externalURL: "http://localhost",
+				Clock: clock, Store: s, GitClient: gitClient, Sourcer: sourcer, ExternalURL: "http://localhost",
 			})
 			if err != nil {
 				t.Fatal(err)

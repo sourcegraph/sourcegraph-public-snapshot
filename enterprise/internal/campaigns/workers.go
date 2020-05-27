@@ -59,11 +59,11 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		}
 
 		if runErr := ExecChangesetJob(ctx, c, &job, ExecChangesetJobOpts{
-			clock:       clock,
-			externalURL: externalURL(),
-			gitClient:   gitClient,
-			sourcer:     sourcer,
-			store:       s,
+			Clock:       clock,
+			ExternalURL: externalURL(),
+			GitClient:   gitClient,
+			Sourcer:     sourcer,
+			Store:       s,
 		}); runErr != nil {
 			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", runErr)
 		}
@@ -94,11 +94,11 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 }
 
 type ExecChangesetJobOpts struct {
-	clock       func() time.Time
-	store       *Store
-	gitClient   GitserverClient
-	sourcer     repos.Sourcer
-	externalURL string
+	Clock       func() time.Time
+	Store       *Store
+	GitClient   GitserverClient
+	Sourcer     repos.Sourcer
+	ExternalURL string
 }
 
 // ExecChangesetJob will execute the given ChangesetJob for the given campaign.
@@ -138,7 +138,7 @@ func ExecChangesetJob(
 		if err != nil {
 			job.Error = err.Error()
 		}
-		job.FinishedAt = opts.clock()
+		job.FinishedAt = opts.Clock()
 
 		if e := store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
@@ -149,16 +149,16 @@ func ExecChangesetJob(
 		}
 		changesetJobUpdated = true
 	}
-	defer runFinalUpdate(ctx, opts.store)
+	defer runFinalUpdate(ctx, opts.Store)
 
-	job.StartedAt = opts.clock()
+	job.StartedAt = opts.Clock()
 
-	patch, err := opts.store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
+	patch, err := opts.Store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
 	if err != nil {
 		return err
 	}
 
-	reposStore := repos.NewDBStore(opts.store.DB(), sql.TxOptions{})
+	reposStore := repos.NewDBStore(opts.Store.DB(), sql.TxOptions{})
 	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{patch.RepoID}})
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func ExecChangesetJob(
 		ensureUniqueRef = false
 	}
 
-	ref, err := opts.gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	ref, err := opts.GitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: patch.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
@@ -250,7 +250,7 @@ func ExecChangesetJob(
 		return errors.Errorf("no external services found for repo %q", repo.Name)
 	}
 
-	sources, err := opts.sourcer(externalService)
+	sources, err := opts.Sourcer(externalService)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func ExecChangesetJob(
 
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    c.GenChangesetBody(opts.externalURL),
+		Body:    c.GenChangesetBody(opts.ExternalURL),
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
@@ -309,7 +309,7 @@ func ExecChangesetJob(
 	clone := cs.Changeset.Clone()
 	events := clone.Events()
 	SetDerivedState(clone, events)
-	if err = opts.store.CreateChangesets(ctx, clone); err != nil {
+	if err = opts.Store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
 		}
@@ -329,7 +329,7 @@ func ExecChangesetJob(
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
 		clone.CreatedByCampaign = true
 
-		if err = opts.store.UpdateChangesets(ctx, clone); err != nil {
+		if err = opts.Store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
 	}
@@ -337,17 +337,17 @@ func ExecChangesetJob(
 	for _, e := range events {
 		e.ChangesetID = clone.ID
 	}
-	if err := opts.store.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := opts.Store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
-	if err = opts.store.UpdateCampaign(ctx, c); err != nil {
+	if err = opts.Store.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	job.ChangesetID = clone.ID
-	runFinalUpdate(ctx, opts.store)
+	runFinalUpdate(ctx, opts.Store)
 	return err
 }
