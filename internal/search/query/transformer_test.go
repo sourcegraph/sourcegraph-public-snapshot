@@ -15,7 +15,7 @@ func prettyPrint(nodes []Node) string {
 	return strings.Join(resultStr, " ")
 }
 
-func Test_SubstituteAliases(t *testing.T) {
+func TestSubstituteAliases(t *testing.T) {
 	input := "r:repo g:repogroup f:file"
 	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
 	query, _ := ParseAndOr(input)
@@ -25,7 +25,7 @@ func Test_SubstituteAliases(t *testing.T) {
 	}
 }
 
-func Test_LowercaseFieldNames(t *testing.T) {
+func TestLowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
 	query, _ := ParseAndOr(input)
@@ -35,7 +35,7 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	}
 }
 
-func Test_Hoist(t *testing.T) {
+func TestHoist(t *testing.T) {
 	cases := []struct {
 		input      string
 		want       string

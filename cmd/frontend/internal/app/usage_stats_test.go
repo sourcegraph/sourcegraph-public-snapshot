@@ -16,7 +16,7 @@ func init() {
 	dbtesting.DBNameSuffix = "app"
 }
 
-func Test_usageStatsArchiveHandler(t *testing.T) {
+func TestUsageStatsArchiveHandler(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
