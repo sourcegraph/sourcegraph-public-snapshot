@@ -21,6 +21,7 @@ interface SubmitSearchParams
     history: H.History
     query: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
+    queryParams?: { key: string; value: string }[]
 }
 
 /**
@@ -36,8 +37,16 @@ export function submitSearch({
     activation,
     filtersInQuery,
     source,
+    queryParams,
 }: SubmitSearchParams): void {
-    const searchQueryParam = buildSearchURLQuery(query, patternType, caseSensitive, versionContext, filtersInQuery)
+    const searchQueryParam = buildSearchURLQuery(
+        query,
+        patternType,
+        caseSensitive,
+        versionContext,
+        filtersInQuery,
+        queryParams
+    )
 
     // Go to search results page
     const path = '/search?' + searchQueryParam

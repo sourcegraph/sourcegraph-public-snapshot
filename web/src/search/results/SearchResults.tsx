@@ -33,6 +33,8 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
+import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -61,6 +63,7 @@ export interface SearchResultsProps
     deployType: DeployType
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    lastVersionContextKey: string
 }
 
 interface SearchResultsState {
@@ -74,6 +77,12 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
+
+    /** Whether to show a warning saying that the URL has changed the version context. */
+    showVersionContextWarning: boolean
+
+    /** Whether the user has dismissed the version context warning. */
+    dismissedVersionContextWarning?: boolean
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
@@ -89,6 +98,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
+        showVersionContextWarning: false,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -217,6 +227,37 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
 
         this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(this.props),
+                    distinctUntilChanged((a, b) => isEqual(a.location, b.location))
+                )
+                .subscribe(props => {
+                    const searchParams = new URLSearchParams(props.location.search)
+                    const versionFromURL = searchParams.get('c')
+
+                    if (searchParams.has('from-context-toggle')) {
+                        // The query param `from-context-toggle` indicates that the version context
+                        // changed from the version context toggle. In this case, we don't warn
+                        // users that the version context has changed.
+                        searchParams.delete('from-context-toggle')
+                        this.props.history.replace({
+                            search: searchParams.toString(),
+                            hash: this.props.history.location.hash,
+                        })
+                        this.setState({ showVersionContextWarning: false })
+                    } else {
+                        this.setState({
+                            showVersionContextWarning:
+                                (props.availableVersionContexts &&
+                                    versionFromURL !== localStorage.getItem(props.lastVersionContextKey)) ||
+                                false,
+                        })
+                    }
+                })
+        )
+
+        this.subscriptions.add(
             this.props.extensionsController.services.contribution
                 .getContributions()
                 .subscribe(contributions => this.setState({ contributions }))
@@ -245,6 +286,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
+    private onDismissWarning = (): void => {
+        this.setState({ showVersionContextWarning: false })
+    }
+
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
@@ -267,6 +312,21 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         onShowMoreResultsClick={this.showMoreResults}
                         calculateShowMoreResultsCount={this.calculateCount}
                     />
+                )}
+                {this.state.showVersionContextWarning && (
+                    <div className="mt-2 mx-2">
+                        <div className="d-flex alert alert-warning mb-0 justify-content-between">
+                            <div>
+                                <AlertOutlineIcon className="icon-inline mr-2" />
+                                This link changed your version context to{' '}
+                                <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with
+                                the selector to the left of the search bar.
+                            </div>
+                            <div onClick={this.onDismissWarning}>
+                                <CloseIcon className="icon-inline ml-2" />
+                            </div>
+                        </div>
+                    </div>
                 )}
                 <SearchResultTypeTabs
                     {...this.props}
