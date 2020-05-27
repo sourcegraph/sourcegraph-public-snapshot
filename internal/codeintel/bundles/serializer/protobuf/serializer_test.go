@@ -1,3 +1,3 @@
-package proto
+package protobuf
 
 // TODO(efritz) - test
