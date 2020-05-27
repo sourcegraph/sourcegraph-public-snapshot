@@ -1616,11 +1616,46 @@ func testStore(db *sql.DB) func(*testing.T) {
 		t.Run("Patches", func(t *testing.T) {
 			patches := make([]*cmpgn.Patch, 0, 3)
 
+			// Create a test repo
+			reposStore := repos.NewDBStore(db, sql.TxOptions{})
+			repo := &repos.Repo{
+				Name: "github.com/sourcegraph/sourcegraph",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "external-id",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:github:4": {
+						ID:       "extsvc:github:4",
+						CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+					},
+				},
+			}
+			deletedRepo := &repos.Repo{
+				Name: "github.com/sourcegraph/sourcegraph-old",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "external-id",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*repos.SourceInfo{
+					"extsvc:github:4": {
+						ID:       "extsvc:github:4",
+						CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph-old",
+					},
+				},
+				DeletedAt: time.Now(),
+			}
+			if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+				t.Fatal(err)
+			}
+
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(patches); i++ {
 					p := &cmpgn.Patch{
 						PatchSetID: int64(i + 1),
-						RepoID:     1,
+						RepoID:     repo.ID,
 						Rev:        api.CommitID("deadbeef"),
 						BaseRef:    "master",
 						Diff:       "+ foobar - barfoo",
@@ -1649,6 +1684,21 @@ func testStore(db *sql.DB) func(*testing.T) {
 					patches = append(patches, p)
 				}
 			})
+
+			// Create patch to deleted repo.
+			{
+				p := &cmpgn.Patch{
+					PatchSetID: 1000,
+					RepoID:     deletedRepo.ID,
+					Rev:        api.CommitID("deadbeef"),
+					BaseRef:    "master",
+					Diff:       "+ foobar - barfoo",
+				}
+				err := s.CreatePatch(ctx, p)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 
 			t.Run("Count", func(t *testing.T) {
 				count, err := s.CountPatches(ctx, CountPatchesOpts{})
