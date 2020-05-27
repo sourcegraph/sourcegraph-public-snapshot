@@ -555,6 +555,21 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 	return events
 }
 
+// HiddenHeadRef returns the hidden ref on the code host where the PR code is stored.
+// Note: GitHub persists these forever, but Bitbucket prunes them, so there is no
+// guarantee they exist.
+func (c *Changeset) HiddenHeadRef() (changesetRef string, err error) {
+	switch strings.ToLower(c.ExternalServiceType) {
+	case "github":
+		changesetRef = fmt.Sprintf("refs/pull/%s/head", c.ExternalID)
+	case "bitbucketserver":
+		changesetRef = fmt.Sprintf("refs/pull-requests/%s/from", c.ExternalID)
+	default:
+		err = errors.Errorf("invalid service type %q", c.ExternalServiceType)
+	}
+	return
+}
+
 // HeadRefOid returns the git ObjectID of the HEAD reference associated with
 // Changeset on the codehost. If the codehost doesn't include the ObjectID, an
 // empty string is returned.

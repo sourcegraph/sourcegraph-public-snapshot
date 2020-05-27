@@ -348,6 +348,27 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset head ref could not be determined")
 	}
 
+	fetchByHiddenHeadRef := func() (*graphqlbackend.GitRefResolver, error) {
+		// If the revision is not found on the branch, that could
+		// indicate the branch was deleted. Try to use the hidden
+		// ref instead.
+		changesetRef, err := r.Changeset.HiddenHeadRef()
+		if err != nil {
+			return nil, err
+		}
+		// The hidden refs are fetched automatically, so we don't
+		// need to ensure that revision. If it doesn't exist, the
+		// code host pruned it.
+		resolver, err := r.gitRef(ctx, changesetRef, "", true)
+		if err != nil {
+			if gitserver.IsRevisionNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return resolver, nil
+	}
+
 	var oid string
 	if r.ExternalState == campaigns.ChangesetStateMerged {
 		// The PR was merged, find the merge commit
@@ -356,6 +377,12 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 			return nil, errors.Wrap(err, "fetching changeset events")
 		}
 		oid = ee.ChangesetEvents(events).FindMergeCommitID()
+		// If the changeset is closed, fall back to the hidden ref immediately.
+		// There is a chance the branch still exists, but it could have been
+		// modified since it was closed, and we are only interested in the state
+		// at the point where this changeset was open.
+	} else if r.ExternalState == campaigns.ChangesetStateClosed {
+		return fetchByHiddenHeadRef()
 	}
 	if oid == "" {
 		// Fall back to the head ref
@@ -365,10 +392,10 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 		}
 	}
 
-	resolver, err := r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid, false)
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) {
-			return nil, nil
+			return fetchByHiddenHeadRef()
 		}
 		return nil, err
 	}
@@ -384,12 +411,29 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset base ref could not be determined")
 	}
 
-	oid, err := r.Changeset.BaseRefOid()
-	if err != nil {
-		return nil, err
+	var oid string
+	if r.ExternalState == campaigns.ChangesetStateMerged {
+		// The PR was merged, find the merge commit
+		events, err := r.computeEvents(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching changeset events")
+		}
+		oid = ee.ChangesetEvents(events).FindMergeCommitID()
+		// We actually want the parent of that commit, so base...head
+		// returns exactly the changes from the merged changeset.
+		if oid != "" {
+			oid += "^"
+		}
+	}
+	if oid == "" {
+		// Fall back to the base ref
+		oid, err = r.Changeset.BaseRefOid()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	resolver, err := r.gitRef(ctx, name, oid)
+	resolver, err := r.gitRef(ctx, name, oid, false)
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) {
 			return nil, nil
@@ -399,14 +443,14 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 	return resolver, nil
 }
 
-func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
+func (r *changesetResolver) gitRef(ctx context.Context, name, oid string, noEnsureRevision bool) (*graphqlbackend.GitRefResolver, error) {
 	repo, err := r.computeRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if oid == "" {
-		commitID, err := r.commitID(ctx, repo, name)
+		commitID, err := r.commitID(ctx, repo, name, noEnsureRevision)
 		if err != nil {
 			return nil, err
 		}
@@ -416,7 +460,7 @@ func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*grap
 	return graphqlbackend.NewGitRefResolver(repo, name, graphqlbackend.GitObjectID(oid)), nil
 }
 
-func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string) (api.CommitID, error) {
+func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string, noEnsureRevision bool) (api.CommitID, error) {
 	grepo, err := backend.CachedGitRepo(ctx, &types.Repo{
 		ExternalRepo: *repo.ExternalRepo(),
 		Name:         api.RepoName(repo.Name()),
@@ -426,7 +470,7 @@ func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.R
 	}
 	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 	// exist).
-	return git.ResolveRevision(ctx, *grepo, nil, refName, nil)
+	return git.ResolveRevision(ctx, *grepo, nil, refName, &git.ResolveRevisionOptions{NoEnsureRevision: noEnsureRevision})
 }
 
 func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
