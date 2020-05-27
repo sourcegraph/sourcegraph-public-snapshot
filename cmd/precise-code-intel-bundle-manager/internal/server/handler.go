@@ -66,7 +66,7 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 	// fast-forward the file to this position and only give the worker the data that it
 	// still needs. This technique saves us from having to pre-chunk the file as we must
 	// do in the reverse direction.
-	if _, err := file.Seek(int64(getQueryInt(r, "seek")), 0); err != nil {
+	if _, err := file.Seek(int64(getQueryInt(r, "seek")), io.SeekStart); err != nil {
 		log15.Error("Failed to seek upload file", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
