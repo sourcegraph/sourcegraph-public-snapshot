@@ -417,6 +417,13 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 // It updates the campaign and the changesets in the database.
 // If one of the changeset IDs is invalid an error is returned.
 func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64, changesetIDs []int64) (campaign *campaigns.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d, changesets: %v", campaignID, changesetIDs)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -471,7 +478,14 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 // EnqueueChangesetSync loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a sync and then
 // enqueues a sync by calling the repoupdater client.
-func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) error {
+func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
+	traceTitle := fmt.Sprintf("changeset: %d", id)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Check for existence of changeset so we don't swallow that error.
 	if _, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id}); err != nil {
 		return err
