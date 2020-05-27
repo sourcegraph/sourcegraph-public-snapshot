@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { DiffResolvedRevSpec } from '../../../shared/repo'
+import { DiffResolvedRevSpec } from '../../repo'
 import { FileInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {

@@ -1,8 +1,8 @@
 import { take } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { createSuggestionFetcher } from '../../shared/backend/search'
-import { observeSourcegraphURL } from '../../shared/util/context'
+import { createSuggestionFetcher } from '../backend/search'
+import { observeSourcegraphURL } from '../util/context'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 const isURL = /^https?:\/\//

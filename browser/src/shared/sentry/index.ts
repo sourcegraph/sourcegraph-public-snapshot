@@ -4,7 +4,7 @@ import { once } from 'lodash'
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 import { featureFlagDefaults } from '../../browser-extension/web-extension-api/types'
 import { isInPage } from '../context'
-import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../util/context'
 
 const IS_EXTENSION = true
 
