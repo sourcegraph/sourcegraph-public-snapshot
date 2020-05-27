@@ -330,8 +330,14 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		go func(w func() error) { errs <- w() }(w)
 	}
 
-	if err := firstError(errs, len(writers)); err != nil {
-		return err
+	var writeErr error
+	for i := 0; i < len(writers); i++ {
+		if err := <-errs; err != nil {
+			writeErr = multierror.Append(writeErr, err)
+		}
+	}
+	if writeErr != nil {
+		return writeErr
 	}
 
 	if err := writer.Flush(ctx); err != nil {
@@ -339,16 +345,4 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 	}
 
 	return nil
-}
-
-// firstError reads n values off of the given channel and returns the first error value that was non-nil.
-func firstError(ch chan error, n int) (firstErr error) {
-	for i := 0; i < n; i++ {
-		err := <-ch
-		if firstErr == nil {
-			firstErr = err
-		}
-	}
-
-	return firstErr
 }
