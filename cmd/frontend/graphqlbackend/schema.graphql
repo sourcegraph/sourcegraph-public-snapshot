@@ -473,7 +473,7 @@ input UpdateCampaignInput {
 
     # A patchset that describes a new set of changes to make. If set, the previous changesets are
     # updated or closed, and new changesets are created, to reflect the new patchset.
-    patchset: ID!
+    patchset: ID
 }
 
 # A set of patches that will be applied to code by a campaign. Each patch corresponds to a single
