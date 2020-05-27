@@ -14,7 +14,8 @@ import (
 var partFilenamePattern = regexp.MustCompile(`[0-9]+.[0-9]+.lsif.gz`)
 
 // removeOldDatabasePartFiles removes all database part files that are older than the configured
-// max database part age.
+// max database part age. These files are left on disk if a worker does not successfully complete
+// all requests of a SendDB command.
 func (j *Janitor) removeOldDatabasePartFiles() error {
 	fileInfos, err := ioutil.ReadDir(paths.DBsDir(j.bundleDir))
 	if err != nil {

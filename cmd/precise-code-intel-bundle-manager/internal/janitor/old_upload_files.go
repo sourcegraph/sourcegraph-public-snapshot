@@ -11,7 +11,10 @@ import (
 )
 
 // removeOldUploadFiles removes all upload files that are older than the configured
-// max unconverted upload age.
+// max unconverted upload age. These files are left on disk when an upload fails to
+// process. These files can also be cleaned up by removeOrphanedBundleFiles when the
+// upload is properly in an errored state, but we keep this cleanup routine here as
+// well for good measure.
 func (j *Janitor) removeOldUploadFiles() error {
 	fileInfos, err := ioutil.ReadDir(paths.UploadsDir(j.bundleDir))
 	if err != nil {
