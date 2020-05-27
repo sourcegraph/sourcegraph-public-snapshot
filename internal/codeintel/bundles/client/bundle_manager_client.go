@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
@@ -191,7 +191,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		return "", err
 	}
 
-	f, err := openRandomFile(dir)
+	f, err := ioutil.TempFile(dir, "")
 	if err != nil {
 		return "", err
 	}
@@ -402,15 +402,6 @@ func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *ur
 	}
 
 	return resp.Body, nil
-}
-
-func openRandomFile(dir string) (*os.File, error) {
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-
-	return os.Create(filepath.Join(dir, uuid.String()))
 }
 
 func makeURL(baseURL, path string, qs map[string]interface{}) (*url.URL, error) {
