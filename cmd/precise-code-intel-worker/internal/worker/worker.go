@@ -1,7 +1,9 @@
 package worker
 
 import (
+	"compress/gzip"
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -147,6 +149,17 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	gzipReader, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+
 	// Create target file for converted database
 	uuid, err := uuid.NewRandom()
 	if err != nil {
@@ -158,7 +171,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
 		ctx,
-		filename,
+		gzipReader,
 		newFilename,
 		upload.ID,
 		upload.Root,
@@ -269,13 +282,13 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 // convert correlates the raw input data and commits the correlated data to disk.
 func convert(
 	ctx context.Context,
-	filename string,
+	r io.Reader,
 	newFilename string,
 	dumpID int,
 	root string,
 	getChildren existence.GetChildrenFunc,
 ) (_ []types.Package, _ []types.PackageReference, err error) {
-	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
+	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
