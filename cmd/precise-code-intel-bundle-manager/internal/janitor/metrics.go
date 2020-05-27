@@ -4,6 +4,7 @@ import "github.com/prometheus/client_golang/prometheus"
 
 type JanitorMetrics struct {
 	UploadFilesRemoved         prometheus.Counter
+	DatabasePartFilesRemoved   prometheus.Counter
 	OrphanedBundleFilesRemoved prometheus.Counter
 	EvictedBundleFilesRemoved  prometheus.Counter
 	UploadRecordsRemoved       prometheus.Counter
@@ -16,6 +17,12 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 		Help: "Total number of upload files removed (due to age)",
 	})
 	r.MustRegister(uploadFilesRemoved)
+
+	databasePartFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_bundle_manager_janitor_database_part_files_removed_total",
+		Help: "Total number of database part files removed (due to age)",
+	})
+	r.MustRegister(databasePartFilesRemoved)
 
 	orphanedBundleFilesRemoved := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_bundle_manager_janitor_orphaned_bundle_files_removed_total",
@@ -43,6 +50,7 @@ func NewJanitorMetrics(r prometheus.Registerer) JanitorMetrics {
 
 	return JanitorMetrics{
 		UploadFilesRemoved:         uploadFilesRemoved,
+		DatabasePartFilesRemoved:   databasePartFilesRemoved,
 		OrphanedBundleFilesRemoved: orphanedBundleFilesRemoved,
 		EvictedBundleFilesRemoved:  evictedBundleFilesRemoved,
 		UploadRecordsRemoved:       uploadRecordsRemoved,

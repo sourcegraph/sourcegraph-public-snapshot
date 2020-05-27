@@ -273,7 +273,7 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
-const iconClassName = 'action-item__icon--github v-align-text-bottom'
+const iconClassName = 'icon--github v-align-text-bottom'
 
 export const githubCodeHost: CodeHost = {
     type: 'github',
@@ -324,7 +324,7 @@ export const githubCodeHost: CodeHost = {
         listItemClass: 'code-view-toolbar__item--github BtnGroup',
         actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
         actionItemPressedClass: 'selected',
-        actionItemIconClass: 'action-item__icon--github v-align-text-bottom',
+        actionItemIconClass: 'icon--github v-align-text-bottom',
     },
     completionWidgetClassProps: {
         widgetClassName: 'suggester-container',
@@ -337,7 +337,7 @@ export const githubCodeHost: CodeHost = {
         className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
-        closeButtonClassName: 'btn',
+        iconButtonClassName: 'btn-octicon p-0',
         infoAlertClassName: 'flash flash-full',
         errorAlertClassName: 'flash flash-full flash-error',
         iconClassName,

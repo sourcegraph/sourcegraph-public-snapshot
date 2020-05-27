@@ -77,6 +77,18 @@
     }
 }
 
+.btn-icon--bitbucket-server {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    height: 16px !important;
+    line-height: 16px !important;
+
+    &:hover {
+        opacity: 0.7;
+    }
+}
+
 // Bitbucket's style is copied here because adding the aui-dropdown2-trigger class
 // to the command palette causes exceptions in Atlassian's JS.
 .command-list-popover-button--bitbucket-server {

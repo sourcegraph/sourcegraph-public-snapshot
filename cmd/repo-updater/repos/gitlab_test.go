@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Test_projectQueryToURL(t *testing.T) {
+func TestProjectQueryToURL(t *testing.T) {
 	tests := []struct {
 		projectQuery string
 		perPage      int

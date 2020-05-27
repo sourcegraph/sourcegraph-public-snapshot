@@ -520,7 +520,7 @@ func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt
 	return nil, es.err
 }
 
-func Test_zoektSearchHEAD(t *testing.T) {
+func TestZoektSearchHEAD(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -725,7 +725,7 @@ func (repoURLsFakeSearcher) Close() {
 	panic("unimplemented")
 }
 
-func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
+func TestCreateNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	searcher := repoURLsFakeSearcher{
 		"github.com/test/1": []string{"1.md"},
 		"github.com/test/2": []string{"2.md"},
@@ -831,7 +831,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	}
 }
 
-func Test_zoektIndexedRepos(t *testing.T) {
+func TestZoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
 		"foo/indexed-one@",
 		"foo/indexed-two@",

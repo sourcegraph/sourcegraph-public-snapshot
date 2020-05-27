@@ -774,7 +774,7 @@ func TestNullIDResilience(t *testing.T) {
 	ids := []graphql.ID{
 		marshalPatchSetID(0),
 		marshalPatchID(0),
-		marshalCampaignID(0),
+		campaigns.MarshalCampaignID(0),
 		marshalChangesetID(0),
 	}
 
@@ -790,10 +790,10 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 	}
@@ -1435,7 +1435,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job)
+	err = ee.ExecChangesetJob(ctx, c, job, ee.ExecChangesetJobOpts{
+		Clock: clock, Store: store, GitClient: gitClient, Sourcer: sourcer, ExternalURL: "http://localhost",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

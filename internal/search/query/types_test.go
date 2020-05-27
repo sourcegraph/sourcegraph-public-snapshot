@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
-func Test_valueToTypedValue(t *testing.T) {
+func TestValueToTypedValue(t *testing.T) {
 	value := ".*"
 	t.Run("is quoted is string", func(t *testing.T) {
 		inputQuoted := true

@@ -720,7 +720,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 }
 
-func Test_longer(t *testing.T) {
+func TestLonger(t *testing.T) {
 	N := 2
 	noise := time.Nanosecond
 	for dt := time.Millisecond + noise; dt < time.Hour; dt += time.Millisecond {
@@ -738,7 +738,7 @@ func Test_longer(t *testing.T) {
 	}
 }
 
-func Test_roundStr(t *testing.T) {
+func TestRoundStr(t *testing.T) {
 	tests := []struct {
 		name string
 		s    string
@@ -925,7 +925,7 @@ func TestDedupSort(t *testing.T) {
 	}
 }
 
-func Test_commitAndDiffSearchLimits(t *testing.T) {
+func TestCommitAndDiffSearchLimits(t *testing.T) {
 	cases := []struct {
 		name                 string
 		resultTypes          []string
@@ -1109,7 +1109,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	q, _ := query.ProcessAndOr("file:foo or file:bar")
-	wantPrefix := "I'm having trouble understsanding that query."
+	wantPrefix := "I'm having trouble understanding that query."
 	andOrQuery, _ := q.(*query.AndOrQuery)
 	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {

@@ -220,14 +220,8 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		return errors.Wrap(err, "updateCommitsAndVisibility")
 	}
 
-	f, err := os.Open(newFilename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
 	// Send converted database file to bundle manager
-	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, f); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, newFilename); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 

@@ -66,7 +66,7 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 			},
 		},
 		SendDBFunc: &BundleManagerClientSendDBFunc{
-			defaultHook: func(context.Context, int, io.Reader) error {
+			defaultHook: func(context.Context, int, string) error {
 				return nil
 			},
 		},
@@ -560,15 +560,15 @@ func (c BundleManagerClientGetUploadFuncCall) Results() []interface{} {
 // BundleManagerClientSendDBFunc describes the behavior when the SendDB
 // method of the parent MockBundleManagerClient instance is invoked.
 type BundleManagerClientSendDBFunc struct {
-	defaultHook func(context.Context, int, io.Reader) error
-	hooks       []func(context.Context, int, io.Reader) error
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
 	history     []BundleManagerClientSendDBFuncCall
 	mutex       sync.Mutex
 }
 
 // SendDB delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBundleManagerClient) SendDB(v0 context.Context, v1 int, v2 io.Reader) error {
+func (m *MockBundleManagerClient) SendDB(v0 context.Context, v1 int, v2 string) error {
 	r0 := m.SendDBFunc.nextHook()(v0, v1, v2)
 	m.SendDBFunc.appendCall(BundleManagerClientSendDBFuncCall{v0, v1, v2, r0})
 	return r0
@@ -577,7 +577,7 @@ func (m *MockBundleManagerClient) SendDB(v0 context.Context, v1 int, v2 io.Reade
 // SetDefaultHook sets function that is called when the SendDB method of the
 // parent MockBundleManagerClient instance is invoked and the hook queue is
 // empty.
-func (f *BundleManagerClientSendDBFunc) SetDefaultHook(hook func(context.Context, int, io.Reader) error) {
+func (f *BundleManagerClientSendDBFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -585,7 +585,7 @@ func (f *BundleManagerClientSendDBFunc) SetDefaultHook(hook func(context.Context
 // SendDB method of the parent MockBundleManagerClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *BundleManagerClientSendDBFunc) PushHook(hook func(context.Context, int, io.Reader) error) {
+func (f *BundleManagerClientSendDBFunc) PushHook(hook func(context.Context, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -594,7 +594,7 @@ func (f *BundleManagerClientSendDBFunc) PushHook(hook func(context.Context, int,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *BundleManagerClientSendDBFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, io.Reader) error {
+	f.SetDefaultHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
@@ -602,12 +602,12 @@ func (f *BundleManagerClientSendDBFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *BundleManagerClientSendDBFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, io.Reader) error {
+	f.PushHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
 
-func (f *BundleManagerClientSendDBFunc) nextHook() func(context.Context, int, io.Reader) error {
+func (f *BundleManagerClientSendDBFunc) nextHook() func(context.Context, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -648,7 +648,7 @@ type BundleManagerClientSendDBFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 io.Reader
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

@@ -84,7 +84,7 @@ func PreciseCodeIntelBundleManager() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_old_uploads",
+							Name:              "janitor_old_uploads_removed",
 							Description:       "upload files removed (due to age) every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_upload_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
@@ -93,7 +93,16 @@ func PreciseCodeIntelBundleManager() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_old_dumps",
+							Name:              "janitor_old_database_parts_removed",
+							Description:       "database part files removed (due to age) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_database_part_files_removed_total[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           Alert{GreaterOrEqual: 20},
+							PanelOptions:      PanelOptions().LegendFormat("files removed"),
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "janitor_old_dumps_removed",
 							Description:       "bundle files removed (due to low disk space) every 5m",
 							Query:             `sum(increase(src_bundle_manager_janitor_evicted_bundle_files_removed_total[5m]))`,
 							DataMayNotExist:   true,

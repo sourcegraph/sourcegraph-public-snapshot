@@ -6,12 +6,12 @@
 .action-item--github {
     // Match GitHub's button height even if button only contains icon
     // (no text that would push the height)
-    // stylelint-disable-next-line declaration-property-unit-whitelist
     height: 28px;
 }
 
-.action-item__icon--github {
+.icon--github {
     height: 16px;
+    width: 16px;
 }
 
 .code-view-toolbar--github {

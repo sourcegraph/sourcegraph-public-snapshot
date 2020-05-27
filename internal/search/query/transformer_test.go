@@ -15,7 +15,7 @@ func prettyPrint(nodes []Node) string {
 	return strings.Join(resultStr, " ")
 }
 
-func Test_SubstituteAliases(t *testing.T) {
+func TestSubstituteAliases(t *testing.T) {
 	input := "r:repo g:repogroup f:file"
 	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
 	query, _ := ParseAndOr(input)
@@ -25,7 +25,7 @@ func Test_SubstituteAliases(t *testing.T) {
 	}
 }
 
-func Test_LowercaseFieldNames(t *testing.T) {
+func TestLowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
 	query, _ := ParseAndOr(input)
@@ -35,7 +35,7 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	}
 }
 
-func Test_Hoist(t *testing.T) {
+func TestHoist(t *testing.T) {
 	cases := []struct {
 		input      string
 		want       string
@@ -141,11 +141,11 @@ func TestSearchUppercase(t *testing.T) {
 		},
 		{
 			input: `content:TeSt`,
-			want:  `(and "content:TeSt" "case:yes")`,
+			want:  `(and "TeSt" "case:yes")`,
 		},
 		{
 			input: `content:test`,
-			want:  `"content:test"`,
+			want:  `"test"`,
 		},
 		{
 			input: `repo:foo TeSt`,
@@ -157,11 +157,11 @@ func TestSearchUppercase(t *testing.T) {
 		},
 		{
 			input: `repo:foo content:TeSt`,
-			want:  `(and "repo:foo" "content:TeSt" "case:yes")`,
+			want:  `(and "repo:foo" "TeSt" "case:yes")`,
 		},
 		{
 			input: `repo:foo content:test`,
-			want:  `(and "repo:foo" "content:test")`,
+			want:  `(and "repo:foo" "test")`,
 		},
 		{
 			input: `TeSt1 TesT2`,
@@ -175,8 +175,8 @@ func TestSearchUppercase(t *testing.T) {
 	for _, c := range cases {
 		t.Run("searchUppercase", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
-			got := prettyPrint(SearchUppercase(query))
-			if diff := cmp.Diff(got, c.want); diff != "" {
+			got := prettyPrint(SearchUppercase(SubstituteAliases(query)))
+			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -204,7 +204,7 @@ func TestMap(t *testing.T) {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
 			got := prettyPrint(Map(query, c.fns...))
-			if diff := cmp.Diff(got, c.want); diff != "" {
+			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
 		})

@@ -68,7 +68,7 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 
 // AndOrQuery satisfies the interface for QueryInfo close to that of OrdinaryQuery.
 func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
@@ -79,7 +79,7 @@ func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string
 }
 
 func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
@@ -90,7 +90,7 @@ func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) 
 }
 
 func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValue = visitedValue
 		} else {
@@ -102,16 +102,25 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
-	VisitField(q.Query, field, func(value string, _, quoted bool) {
-		values = append(values, valueToTypedValue(field, value, quoted)...)
-	})
+	if field == "" {
+		VisitPattern(q.Query, func(value string, _, quoted bool) {
+			values = append(values, valueToTypedValue(field, value, quoted)...)
+		})
+	} else {
+		VisitField(q.Query, field, func(value string, _ bool) {
+			values = append(values, valueToTypedValue(field, value, false)...)
+		})
+	}
 	return values
 }
 
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
-	VisitParameter(q.Query, func(field, value string, _, quoted bool) {
-		fields[field] = valueToTypedValue(field, value, quoted)
+	VisitPattern(q.Query, func(value string, _, quoted bool) {
+		fields[""] = q.Values("")
+	})
+	VisitParameter(q.Query, func(field, _ string, _ bool) {
+		fields[field] = q.Values(field)
 	})
 	return fields
 }
@@ -121,7 +130,15 @@ func (q AndOrQuery) Fields() map[string][]*types.Value {
 // not is significant for surfacing suggestions.
 func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
-	VisitParameter(q.Query, func(field, value string, negated, _ bool) {
+	VisitPattern(q.Query, func(value string, negated, _ bool) {
+		expr := &syntax.Expr{
+			Field: "",
+			Value: value,
+			Not:   negated,
+		}
+		tree = append(tree, expr)
+	})
+	VisitParameter(q.Query, func(field, value string, negated bool) {
 		expr := &syntax.Expr{
 			Field: field,
 			Value: value,
@@ -134,7 +151,7 @@ func (q AndOrQuery) ParseTree() syntax.ParseTree {
 
 func (q AndOrQuery) BoolValue(field string) bool {
 	result := false
-	VisitField(q.Query, field, func(value string, _, _ bool) {
+	VisitField(q.Query, field, func(value string, _ bool) {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result

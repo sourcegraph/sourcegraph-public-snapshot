@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func Test_customCloneURLToRepoName(t *testing.T) {
+func TestCustomCloneURLToRepoName(t *testing.T) {
 	tests := []struct {
 		cloneURLResolvers  []*cloneURLResolver
 		cloneURLToRepoName map[string]string
