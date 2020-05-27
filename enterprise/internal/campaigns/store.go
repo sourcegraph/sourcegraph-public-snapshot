@@ -2043,25 +2043,27 @@ func (s *Store) CountPatches(ctx context.Context, opts CountPatchesOpts) (count 
 
 var countPatchesQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountPatches
-SELECT COUNT(id) FROM patches WHERE %s
+SELECT
+	COUNT(patches.id)
+FROM patches
+INNER JOIN repo on repo.id = patches.repo_id
+WHERE %s
 `
 
 func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
 	if opts.PatchSetID != 0 {
-		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
+		preds = append(preds, sqlf.Sprintf("patches.patch_set_id = %s", opts.PatchSetID))
 	}
 
 	if opts.OnlyWithDiff {
-		preds = append(preds, sqlf.Sprintf("diff != ''"))
+		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(countPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -2166,18 +2168,19 @@ func (s *Store) ListPatches(ctx context.Context, opts ListPatchesOpts) (cs []*ca
 var listPatchesQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListPatches
 SELECT
-  id,
-  patch_set_id,
-  repo_id,
-  rev,
-  base_ref,
-  diff,
-  diff_stat_added,
-  diff_stat_deleted,
-  diff_stat_changed,
-  created_at,
-  updated_at
+  patches.id,
+  patches.patch_set_id,
+  patches.repo_id,
+  patches.rev,
+  patches.base_ref,
+  patches.diff,
+  patches.diff_stat_added,
+  patches.diff_stat_deleted,
+  patches.diff_stat_changed,
+  patches.created_at,
+  patches.updated_at
 FROM patches
+INNER JOIN repo ON repo.id = patches.repo_id
 WHERE %s
 ORDER BY id ASC
 `
@@ -2194,15 +2197,16 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("patches.id >= %s", opts.Cursor),
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
 	if opts.PatchSetID != 0 {
-		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
+		preds = append(preds, sqlf.Sprintf("patches.patch_set_id = %s", opts.PatchSetID))
 	}
 
 	if opts.OnlyWithDiff {
-		preds = append(preds, sqlf.Sprintf("diff != ''"))
+		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
@@ -2210,7 +2214,7 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 	}
 
 	if opts.OnlyWithoutDiffStats {
-		preds = append(preds, sqlf.Sprintf("(diff_stat_added IS NULL OR diff_stat_deleted IS NULL OR diff_stat_changed IS NULL)"))
+		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
 
 	return sqlf.Sprintf(
@@ -2224,11 +2228,11 @@ NOT EXISTS (
   SELECT 1
   FROM changeset_jobs
   WHERE
-    patch_id = patches.id
+    changeset_jobs.patch_id = patches.id
   AND
-    campaign_id = %s
+    changeset_jobs.campaign_id = %s
   AND
-    changeset_id IS NOT NULL
+    changeset_jobs.changeset_id IS NOT NULL
 )
 `
 
