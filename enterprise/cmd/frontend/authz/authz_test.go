@@ -53,7 +53,7 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
-func Test_authzProvidersFromConfig(t *testing.T) {
+func TestAuthzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}

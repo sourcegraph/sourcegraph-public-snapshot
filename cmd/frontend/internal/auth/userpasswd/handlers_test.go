@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
-func Test_checkEmailAbuse(t *testing.T) {
+func TestCheckEmailAbuse(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()

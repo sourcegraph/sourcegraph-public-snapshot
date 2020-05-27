@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_parseParameterList(t *testing.T) {
+func TestScanParameter(t *testing.T) {
 	cases := []struct {
 		Name  string
 		Input string
@@ -84,7 +84,7 @@ func Test_parseParameterList(t *testing.T) {
 	}
 }
 
-func Test_ScanField(t *testing.T) {
+func TestScanField(t *testing.T) {
 	type value struct {
 		Field   string
 		Advance int
@@ -215,7 +215,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-func Test_Parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	type relation string         // a relation for comparing test outputs of queries parsed according to grammar and heuristics.
 	const Same relation = "Same" // a constant that says heuristic output is interpreted the same as the grammar spec.
 	type Spec = relation         // constructor for expected output of the grammar spec without heuristics.
@@ -671,7 +671,7 @@ func Test_Parse(t *testing.T) {
 	}
 }
 
-func Test_ScanDelimited(t *testing.T) {
+func TestScanDelimited(t *testing.T) {
 	type result struct {
 		Value  string
 		Count  int
@@ -762,7 +762,7 @@ func Test_ScanDelimited(t *testing.T) {
 	}
 }
 
-func Test_ParseLiteralSearch(t *testing.T) {
+func TestParseLiteralSearch(t *testing.T) {
 	cases := []struct {
 		Input string
 		Want  string
