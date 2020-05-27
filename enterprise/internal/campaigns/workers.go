@@ -254,13 +254,9 @@ func ExecChangesetJob(
 		baseRef = patch.BaseRef
 	}
 
-	campaignID := campaigns.MarshalCampaignID(c.ID)
-	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
-	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
-
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    description,
+		Body:    c.GenChangesetBody(externalURL),
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,

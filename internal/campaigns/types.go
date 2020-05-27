@@ -1,6 +1,7 @@
 package campaigns
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -153,6 +154,15 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 			c.ChangesetIDs = append(c.ChangesetIDs[:i], c.ChangesetIDs[i+1:]...)
 		}
 	}
+}
+
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
 }
 
 // ChangesetState defines the possible states of a Changeset.
