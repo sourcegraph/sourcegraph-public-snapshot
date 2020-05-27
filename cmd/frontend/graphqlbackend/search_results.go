@@ -874,10 +874,13 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 			r.query = query.AndOrQuery{Query: q}
 			return r.evaluateLeaf(ctx)
 		}
-	case query.Parameter:
+	case query.Pattern:
 		q := append(scopeParameters, term)
 		r.query = query.AndOrQuery{Query: q}
 		return r.evaluateLeaf(ctx)
+	case query.Parameter:
+		// evaluatePatternExpression does not process Parameter nodes.
+		return nil, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
