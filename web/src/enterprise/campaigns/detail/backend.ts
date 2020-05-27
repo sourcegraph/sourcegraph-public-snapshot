@@ -34,6 +34,7 @@ const campaignFragment = gql`
             state
             errors
         }
+        branch
         createdAt
         updatedAt
         publishedAt
