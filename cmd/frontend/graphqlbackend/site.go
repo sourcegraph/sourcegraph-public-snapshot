@@ -179,7 +179,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	} else if len(problems) > 0 {
 		return false, fmt.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
 	}
-	
+
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
