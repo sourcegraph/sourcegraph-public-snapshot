@@ -58,7 +58,13 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 			return errors.Wrap(err, "getting campaign")
 		}
 
-		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, c, &job, externalURL()); runErr != nil {
+		if runErr := ExecChangesetJob(ctx, c, &job, ExecChangesetJobOpts{
+			clock:       clock,
+			externalURL: externalURL(),
+			gitClient:   gitClient,
+			sourcer:     sourcer,
+			store:       s,
+		}); runErr != nil {
 			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", runErr)
 		}
 		// We don't assign to err here so that we don't roll back the transaction
@@ -87,6 +93,14 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 	}
 }
 
+type ExecChangesetJobOpts struct {
+	clock       func() time.Time
+	store       *Store
+	gitClient   GitserverClient
+	sourcer     repos.Sourcer
+	externalURL string
+}
+
 // ExecChangesetJob will execute the given ChangesetJob for the given campaign.
 // It must be executed inside a transaction.
 // It is idempotent and if the job has already been executed it will not be
@@ -96,13 +110,9 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 // transaction needs to be opened.
 func ExecChangesetJob(
 	ctx context.Context,
-	clock func() time.Time,
-	store *Store,
-	gitClient GitserverClient,
-	sourcer repos.Sourcer,
 	c *campaigns.Campaign,
 	job *campaigns.ChangesetJob,
-	externalURL string,
+	opts ExecChangesetJobOpts,
 ) (err error) {
 	tr, ctx := trace.New(ctx, "service.ExecChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
@@ -128,7 +138,7 @@ func ExecChangesetJob(
 		if err != nil {
 			job.Error = err.Error()
 		}
-		job.FinishedAt = clock()
+		job.FinishedAt = opts.clock()
 
 		if e := store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
@@ -139,16 +149,16 @@ func ExecChangesetJob(
 		}
 		changesetJobUpdated = true
 	}
-	defer runFinalUpdate(ctx, store)
+	defer runFinalUpdate(ctx, opts.store)
 
-	job.StartedAt = clock()
+	job.StartedAt = opts.clock()
 
-	patch, err := store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
+	patch, err := opts.store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
 	if err != nil {
 		return err
 	}
 
-	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
+	reposStore := repos.NewDBStore(opts.store.DB(), sql.TxOptions{})
 	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{patch.RepoID}})
 	if err != nil {
 		return err
@@ -168,7 +178,7 @@ func ExecChangesetJob(
 		ensureUniqueRef = false
 	}
 
-	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	ref, err := opts.gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: patch.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
@@ -240,7 +250,7 @@ func ExecChangesetJob(
 		return errors.Errorf("no external services found for repo %q", repo.Name)
 	}
 
-	sources, err := sourcer(externalService)
+	sources, err := opts.sourcer(externalService)
 	if err != nil {
 		return err
 	}
@@ -256,7 +266,7 @@ func ExecChangesetJob(
 
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    c.GenChangesetBody(externalURL),
+		Body:    c.GenChangesetBody(opts.externalURL),
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
@@ -299,7 +309,7 @@ func ExecChangesetJob(
 	clone := cs.Changeset.Clone()
 	events := clone.Events()
 	SetDerivedState(clone, events)
-	if err = store.CreateChangesets(ctx, clone); err != nil {
+	if err = opts.store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
 		}
@@ -319,7 +329,7 @@ func ExecChangesetJob(
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
 		clone.CreatedByCampaign = true
 
-		if err = store.UpdateChangesets(ctx, clone); err != nil {
+		if err = opts.store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
 	}
@@ -327,17 +337,17 @@ func ExecChangesetJob(
 	for _, e := range events {
 		e.ChangesetID = clone.ID
 	}
-	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := opts.store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
-	if err = store.UpdateCampaign(ctx, c); err != nil {
+	if err = opts.store.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	job.ChangesetID = clone.ID
-	runFinalUpdate(ctx, store)
+	runFinalUpdate(ctx, opts.store)
 	return err
 }
