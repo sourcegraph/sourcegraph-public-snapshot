@@ -161,7 +161,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:%22no%22&patternType=literal')
+            await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
             // Edit filter
             await driver.page.waitForSelector('.filter-input')
             await driver.page.waitForSelector('.e2e-filter-input__button-text-fork')
@@ -169,7 +169,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-filter-input-radio-button-only')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:%22only%22&patternType=literal')
+            await driver.assertWindowLocation('/search?q=fork:%22only%22+test&patternType=literal')
             // Edit filter by clicking dropdown menu
             await driver.page.waitForSelector('.e2e-filter-dropdown')
             await driver.page.click('.e2e-filter-dropdown')
@@ -178,7 +178,7 @@ describeIntegration('Search', ({ initGeneration, describe }) => {
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-confirm-filter-button')
-            await driver.assertWindowLocation('/search?q=test+fork:%22no%22&patternType=literal')
+            await driver.assertWindowLocation('/search?q=fork:%22no%22+test&patternType=literal')
         })
     })
 

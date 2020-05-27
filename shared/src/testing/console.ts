@@ -1,4 +1,4 @@
-import { ConsoleMessage, ConsoleMessageType } from 'puppeteer'
+import { ConsoleMessage /* , ConsoleMessageType  */ } from 'puppeteer'
 import chalk, { Chalk } from 'chalk'
 import * as util from 'util'
 import terminalSize from 'term-size'
