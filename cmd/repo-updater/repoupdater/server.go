@@ -701,7 +701,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		region := splittedARN[0]
 		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s", region, repo.Name)
 		info.Links = &protocol.RepoLinks{
-			Root:   webURL,
+			Root:   webURL + "/browse",
 			Tree:   webURL + "/browse/{rev}/--/{path}",
 			Blob:   webURL + "/browse/{rev}/--/{path}",
 			Commit: webURL + "/commit/{commit}",
