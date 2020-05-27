@@ -33,7 +33,6 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/uploads/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUploadPart)
 	mux.Path("/uploads/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostUploadStitch)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
-	mux.Path("/dbs/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabase)
 	mux.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
 	mux.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
@@ -113,14 +112,6 @@ func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUpload(w http.ResponseWriter, r *http.Request) {
 	s.deleteUpload(w, r)
-}
-
-// POST /dbs/{id:[0-9]+}
-func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
-	if s.doUpload(w, r, paths.DBFilename) {
-		// Once we have a database, we no longer need the upload file
-		s.deleteUpload(w, r)
-	}
 }
 
 // POST /dbs/{id:[0-9]+}/{index:[0-9]+}

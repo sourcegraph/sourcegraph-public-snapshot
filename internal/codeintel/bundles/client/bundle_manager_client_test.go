@@ -311,18 +311,36 @@ func TestGetUploadBadResponse(t *testing.T) {
 }
 
 func TestSendDB(t *testing.T) {
+	var paths []string
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			t.Errorf("unexpected method. want=%s have=%s", "POST", r.Method)
-		}
-		if r.URL.Path != "/dbs/42" {
-			t.Errorf("unexpected method. want=%s have=%s", "/dbs/42", r.URL.Path)
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/dbs/42/stitch" {
+			return
 		}
 
-		if content, err := ioutil.ReadAll(r.Body); err != nil {
+		if r.URL.Path != "/dbs/42/0" {
+			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/0", r.URL.Path)
+		}
+
+		rawContent, err := ioutil.ReadAll(r.Body)
+		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
-		} else if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
-			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
+		}
+
+		gzipReader, err := gzip.NewReader(bytes.NewReader(rawContent))
+		if err != nil {
+			t.Fatalf("unexpected error decompressing payload: %s", err)
+		}
+		defer gzipReader.Close()
+
+		content, err := ioutil.ReadAll(gzipReader)
+		if err != nil {
+			t.Fatalf("unexpected error reading decompressed payload: %s", err)
+		}
+
+		if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
+			t.Errorf("unexpected contents (-want +got):\n%s", diff)
 		}
 	}))
 	defer ts.Close()
@@ -334,6 +352,7 @@ func TestSendDB(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	filename := filepath.Join(tempDir, "test.db")
+
 	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
 		t.Fatalf("unexpected error writing file: %s", err)
 	}

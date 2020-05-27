@@ -232,42 +232,6 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 
 // SendDB transfers a converted database to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) error {
-	fileInfo, err := os.Stat(filename)
-	if err != nil {
-		return err
-	}
-
-	if fileInfo.Size() <= int64(c.maxPayloadSizeBytes) {
-		return c.sendDB(ctx, bundleID, filename)
-	}
-
-	return c.sendDBMultipart(ctx, bundleID, filename)
-}
-
-// sendDB performs a single request to the bundle manager.
-func (c *bundleManagerClientImpl) sendDB(ctx context.Context, bundleID int, filename string) error {
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d", bundleID), nil)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	body, err := c.do(ctx, "POST", url, file)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
-}
-
-// sendDBMultipart splits the database file into chunks small enough to upload, then performs a
-// series of request to the bundle manager.
-func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID int, filename string) error {
 	files, cleanup, err := codeintelutils.SplitFile(filename, c.maxPayloadSizeBytes)
 	if err != nil {
 		return err
