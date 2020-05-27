@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -1622,16 +1621,32 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID, patch.ID
 	}
 
-	t.Run("queries", func(t *testing.T) {
-		// Wrap everything in the store in a transaction, so that the foreign-key
-		// constraints are deferred
-		tx := dbtest.NewTx(t, dbconn.Global)
-		store := ee.NewStoreWithClock(tx, clock)
-		sr := &Resolver{store: store}
-		s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
+		t.Helper()
+
+		campaigns, next, err := store.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if next != 0 {
+			t.Fatalf("more campaigns in store")
+		}
+
+		for _, c := range campaigns {
+			if err := store.DeleteCampaign(ctx, c.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	sr := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("queries", func(t *testing.T) {
+		cleanUpCampaigns(t, store)
 
 		adminCampaign, _ := createTestData(t, store, "admin", adminID)
 		userCampaign, _ := createTestData(t, store, "user", userID)
@@ -1754,68 +1769,88 @@ func TestPermissionLevels(t *testing.T) {
 					)
 				},
 			},
-			// TODO: syncChangeset
+			{
+				name: "syncChangeset",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { syncChangeset(changeset: %q) { alwaysNil } }`,
+						changesetID,
+					)
+				},
+			},
 		}
 
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
 				tests := []struct {
+					name           string
 					currentUser    int32
 					campaignAuthor int32
 					wantAuthErr    bool
 				}{
-					{currentUser: userID, campaignAuthor: adminID, wantAuthErr: true},
-					{currentUser: userID, campaignAuthor: userID, wantAuthErr: false},
-					{currentUser: adminID, campaignAuthor: userID, wantAuthErr: false},
+					{
+						name:           "unauthorized",
+						currentUser:    userID,
+						campaignAuthor: adminID,
+						wantAuthErr:    true,
+					},
+					{
+						name:           "authorized campaign owner",
+						currentUser:    userID,
+						campaignAuthor: userID,
+						wantAuthErr:    false,
+					},
+					{
+						name:           "authorized site-admin",
+						currentUser:    adminID,
+						campaignAuthor: userID,
+						wantAuthErr:    false,
+					},
 				}
 
 				for _, tc := range tests {
-					tx := dbtest.NewTx(t, dbconn.Global)
-					store := ee.NewStoreWithClock(tx, clock)
-					sr := &Resolver{store: store}
-					s, err := graphqlbackend.NewSchema(sr, nil, nil)
-					if err != nil {
-						t.Fatal(err)
-					}
+					t.Run(tc.name, func(t *testing.T) {
+						cleanUpCampaigns(t, store)
 
-					campaignID, patchID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
+						campaignID, patchID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
 
-					changeset.CampaignIDs = []int64{campaignID}
-					if err := store.UpdateChangesets(ctx, changeset); err != nil {
-						t.Fatal(err)
-					}
-					// We add the changeset to the campaign. It doesn't matter
-					// for the addChangesetsToCampaign mutation, since that is
-					// idempotent and we want to solely check for auth errors.
-
-					mutation := m.mutationFunc(
-						string(marshalCampaignID(campaignID)),
-						string(marshalChangesetID(changeset.ID)),
-						string(marshalPatchID(patchID)),
-					)
-
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-					var response struct{}
-					errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-					if tc.wantAuthErr {
-						if len(errs) != 1 {
-							t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+						// We add the changeset to the campaign. It doesn't matter
+						// for the addChangesetsToCampaign mutation, since that is
+						// idempotent and we want to solely check for auth errors.
+						changeset.CampaignIDs = []int64{campaignID}
+						if err := store.UpdateChangesets(ctx, changeset); err != nil {
+							t.Fatal(err)
 						}
-						if !strings.Contains(errs[0].Error(), "must be authenticated") {
-							t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-						}
-					} else {
-						// We don't care about other errors, we only want to
-						// check that we didn't get an auth error.
-						for _, e := range errs {
-							if strings.Contains(e.Error(), "must be authenticated") {
-								t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+
+						mutation := m.mutationFunc(
+							string(marshalCampaignID(campaignID)),
+							string(marshalChangesetID(changeset.ID)),
+							string(marshalPatchID(patchID)),
+						)
+
+						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+						var response struct{}
+						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+						if tc.wantAuthErr {
+							if len(errs) != 1 {
+								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+							}
+							if !strings.Contains(errs[0].Error(), "must be authenticated") {
+								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+							}
+						} else {
+							// We don't care about other errors, we only want to
+							// check that we didn't get an auth error.
+							for _, e := range errs {
+								if strings.Contains(e.Error(), "must be authenticated") {
+									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+								}
 							}
 						}
-					}
 
+					})
 				}
 			})
 		}

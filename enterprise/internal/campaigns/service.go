@@ -487,6 +487,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) error {
 		authErr        error
 		hasAdminRights bool
 	)
+
 	for _, c := range campaigns {
 		err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID)
 		if err != nil {

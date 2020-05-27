@@ -179,6 +179,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: AddChangesetsToCampaign checks whether current user is authorized.
 	campaign, err := svc.AddChangesetsToCampaign(ctx, campaignID, changesetIDs)
 	if err != nil {
 		return nil, err
@@ -267,18 +268,6 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, nil
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		if err == ee.ErrNoResults {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-		return nil, err
-	}
-
 	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
 	updateArgs.Name = args.Input.Name
 	updateArgs.Description = args.Input.Description
@@ -294,8 +283,8 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 
 	svc := ee.NewService(r.store, r.httpFactory)
 
-	var detachedChangesets []*campaigns.Changeset
-	campaign, detachedChangesets, err = svc.UpdateCampaign(ctx, updateArgs)
+	// 🚨 SECURITY: UpdateCampaign checks whether current user is authorized.
+	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -329,19 +318,8 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, ErrIDIsZero
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		if err == ee.ErrNoResults {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-		return nil, err
-	}
-
 	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -363,17 +341,9 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, ErrIDIsZero
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-		return nil, err
-	}
-
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err = svc.RetryPublishCampaign(ctx, campaignID)
+	// 🚨 SECURITY: RetryPublishCampaign checks whether current user is authorized.
+	campaign, err := svc.RetryPublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
@@ -594,21 +564,9 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, ErrIDIsZero
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		if err == ee.ErrNoResults {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-		return nil, err
-	}
-
 	svc := ee.NewService(r.store, r.httpFactory)
-
-	campaign, err = svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
+	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}
@@ -632,20 +590,9 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, ErrIDIsZero
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		if err == ee.ErrNoResults {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
-		return nil, err
-	}
-
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err = svc.PublishCampaign(ctx, campaignID)
+	// 🚨 SECURITY: PublishCampaign checks whether current user is authorized.
+	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
@@ -669,14 +616,11 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, ErrIDIsZero
 	}
 
-	fmt.Println("we are here")
+	// 🚨 SECURITY: CreateChangesetJobForPatch checks whether current user is authorized.
 	svc := ee.NewService(r.store, r.httpFactory)
-	err = svc.CreateChangesetJobForPatch(ctx, patchID)
-	if err != nil {
-		fmt.Printf("err: %s\n", err)
+	if err = svc.CreateChangesetJobForPatch(ctx, patchID); err != nil {
 		return nil, err
 	}
-	fmt.Println("no err")
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }
@@ -688,11 +632,6 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, errors.Wrap(err, "checking if user is admin")
-	}
-
 	changesetID, err := unmarshalChangesetID(args.Changeset)
 	if err != nil {
 		return nil, err
@@ -702,6 +641,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		return nil, ErrIDIsZero
 	}
 
+	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
 	svc := ee.NewService(r.store, r.httpFactory)
 	if err = svc.EnqueueChangesetSync(ctx, changesetID); err != nil {
 		return nil, err
