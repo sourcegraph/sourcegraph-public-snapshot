@@ -901,7 +901,7 @@ func TestRepoLookup(t *testing.T) {
 				Description: "The stripe-go lib",
 				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
 				Links: &protocol.RepoLinks{
-					Root:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go",
+					Root:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse",
 					Tree:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
 					Blob:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
 					Commit: "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/commit/{commit}",
