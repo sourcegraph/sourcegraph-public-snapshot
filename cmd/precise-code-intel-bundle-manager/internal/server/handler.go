@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
@@ -32,7 +33,8 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/uploads/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostUploadPart)
 	mux.Path("/uploads/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostUploadStitch)
 	mux.Path("/uploads/{id:[0-9]+}").Methods("DELETE").HandlerFunc(s.handleDeleteUpload)
-	mux.Path("/dbs/{id:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabase)
+	mux.Path("/dbs/{id:[0-9]+}/{index:[0-9]+}").Methods("POST").HandlerFunc(s.handlePostDatabasePart)
+	mux.Path("/dbs/{id:[0-9]+}/stitch").Methods("POST").HandlerFunc(s.handlePostDatabaseStitch)
 	mux.Path("/dbs/{id:[0-9]+}/exists").Methods("GET").HandlerFunc(s.handleExists)
 	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
@@ -59,6 +61,17 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// If there was a transient error while the worker was trying to access the upload
+	// file, it retries but indicates the number of bytes that it has received. We can
+	// fast-forward the file to this position and only give the worker the data that it
+	// still needs. This technique saves us from having to pre-chunk the file as we must
+	// do in the reverse direction.
+	if _, err := file.Seek(int64(getQueryInt(r, "seek")), io.SeekStart); err != nil {
+		log15.Error("Failed to seek upload file", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if n, err := io.Copy(limitTransferRate(w), file); err != nil {
 		if isConnectionError(err) {
 			log15.Error("Failure to transfer upload from bundle from manager", "n", n)
@@ -72,32 +85,60 @@ func (s *Server) handlePostUpload(w http.ResponseWriter, r *http.Request) {
 	_ = s.doUpload(w, r, paths.UploadFilename)
 }
 
+// POST /uploads/{id:[0-9]+}/{index:[0-9]+}
+func (s *Server) handlePostUploadPart(w http.ResponseWriter, r *http.Request) {
+	makeFilename := func(bundleDir string, id int64) string {
+		return paths.UploadPartFilename(bundleDir, id, indexFromRequest(r))
+	}
+
+	_ = s.doUpload(w, r, makeFilename)
+}
+
+// POST /uploads/{id:[0-9]+}/stitch
+func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) {
+	id := idFromRequest(r)
+	filename := paths.UploadFilename(s.bundleDir, id)
+	makePartFilename := func(index int) string {
+		return paths.UploadPartFilename(s.bundleDir, id, int64(index))
+	}
+
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, true); err != nil {
+		log15.Error("Failed to stitch multipart upload", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUpload(w http.ResponseWriter, r *http.Request) {
 	s.deleteUpload(w, r)
 }
 
-// POST /uploads/{id:[0-9]+}/{index:[0-9]+}
-func (s *Server) handlePostUploadPart(w http.ResponseWriter, r *http.Request) {
-	_ = s.doUpload(w, r, func(bundleDir string, id int64) string {
-		return paths.UploadPartFilename(bundleDir, id, indexFromRequest(r))
-	})
+// POST /dbs/{id:[0-9]+}/{index:[0-9]+}
+func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) {
+	makeFilename := func(bundleDir string, id int64) string {
+		return paths.DBPartFilename(bundleDir, id, indexFromRequest(r))
+	}
+
+	_ = s.doUpload(w, r, makeFilename)
 }
 
-// POST /uploads/{id:[0-9]+}/stitch
-func (s *Server) handlePostUploadStitch(w http.ResponseWriter, r *http.Request) {
-	if err := stitchMultipart(s.bundleDir, idFromRequest(r)); err != nil {
-		log15.Error("Failed to stitch multipart upload", "err", err)
+// POST /dbs/{id:[0-9]+}/stitch
+func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
+	id := idFromRequest(r)
+	filename := paths.DBFilename(s.bundleDir, id)
+	makePartFilename := func(index int) string {
+		return paths.DBPartFilename(s.bundleDir, id, int64(index))
+	}
+
+	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
+		log15.Error("Failed to stitch multipart database", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-}
 
-// POST /dbs/{id:[0-9]+}
-func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
-	if s.doUpload(w, r, paths.DBFilename) {
-		// Once we have a database, we no longer need the upload file
-		s.deleteUpload(w, r)
-	}
+	// Once we have a database, we no longer need the upload file
+	s.deleteUpload(w, r)
 }
 
 // GET /dbs/{id:[0-9]+}/exists

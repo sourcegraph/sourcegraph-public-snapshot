@@ -15,6 +15,7 @@ type Janitor struct {
 	desiredPercentFree int
 	janitorInterval    time.Duration
 	maxUploadAge       time.Duration
+	maxDatabasePartAge time.Duration
 	metrics            JanitorMetrics
 	done               chan struct{}
 	once               sync.Once
@@ -26,6 +27,7 @@ func New(
 	desiredPercentFree int,
 	janitorInterval time.Duration,
 	maxUploadAge time.Duration,
+	maxDatabasePartAge time.Duration,
 	metrics JanitorMetrics,
 ) *Janitor {
 	return &Janitor{
@@ -34,6 +36,7 @@ func New(
 		desiredPercentFree: desiredPercentFree,
 		janitorInterval:    janitorInterval,
 		maxUploadAge:       maxUploadAge,
+		maxDatabasePartAge: maxDatabasePartAge,
 		metrics:            metrics,
 		done:               make(chan struct{}),
 	}
@@ -67,6 +70,10 @@ func (j *Janitor) run() error {
 
 	if err := j.removeOldUploadFiles(); err != nil {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
+	}
+
+	if err := j.removeOldDatabasePartFiles(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldDatabasePartFiles")
 	}
 
 	if err := j.removeOrphanedBundleFiles(); err != nil {
