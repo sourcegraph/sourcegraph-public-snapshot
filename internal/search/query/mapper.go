@@ -7,6 +7,7 @@ type Mapper interface {
 	MapNodes(v Mapper, node []Node) []Node
 	MapOperator(v Mapper, kind operatorKind, operands []Node) []Node
 	MapParameter(v Mapper, field, value string, negated bool) Node
+	MapPattern(v Mapper, value string, negated, quoted bool) Node
 }
 
 // The BaseMapper is a mapper that recursively visits each node in a query and
@@ -18,6 +19,8 @@ func (*BaseMapper) MapNodes(visitor Mapper, nodes []Node) []Node {
 	mapped := []Node{}
 	for _, node := range nodes {
 		switch v := node.(type) {
+		case Pattern:
+			mapped = append(mapped, visitor.MapPattern(visitor, v.Value, v.Negated, v.Quoted))
 		case Parameter:
 			mapped = append(mapped, visitor.MapParameter(visitor, v.Field, v.Value, v.Negated))
 		case Operator:
@@ -35,6 +38,11 @@ func (*BaseMapper) MapOperator(visitor Mapper, kind operatorKind, operands []Nod
 // Base mapper for Parameters. It is the identity function.
 func (*BaseMapper) MapParameter(visitor Mapper, field, value string, negated bool) Node {
 	return Parameter{Field: field, Value: value, Negated: negated}
+}
+
+// Base mapper for Patterns. It is the identity function.
+func (*BaseMapper) MapPattern(visitor Mapper, value string, negated, quoted bool) Node {
+	return Pattern{Value: value, Negated: negated, Quoted: quoted}
 }
 
 // ParameterMapper is a helper mapper that only maps parameters in a query. It

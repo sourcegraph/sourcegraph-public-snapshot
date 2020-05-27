@@ -33,15 +33,22 @@ type Node interface {
 }
 
 // All terms that implement Node.
+func (Pattern) node()   {}
 func (Parameter) node() {}
 func (Operator) node()  {}
 
-// Parameter is a leaf node of expressions.
+// Pattern is a leaf node of expressions representing a search pattern fragment.
+type Pattern struct {
+	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
+	Negated bool   `json:"negated"` // True if this pattern is negated.
+	Quoted  bool   `json:"quoted"`  // True if the parsed value was quoted.
+}
+
+// Parameter is a leaf node of expressions representing a parameter of format "repo:foo".
 type Parameter struct {
 	Field   string `json:"field"`   // The repo part in repo:sourcegraph.
 	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
 	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
-	Quoted  bool   `json:"quoted"`  // True if the parsed value was quoted.
 }
 
 type operatorKind int
@@ -56,6 +63,16 @@ const (
 type Operator struct {
 	Kind     operatorKind
 	Operands []Node
+}
+
+func (node Pattern) String() string {
+	var v string
+	if node.Negated {
+		v = fmt.Sprintf("NOT %s", node.Value)
+	} else {
+		v = node.Value
+	}
+	return strconv.Quote(v)
 }
 
 func (node Parameter) String() string {
@@ -446,10 +463,10 @@ loop:
 // be interpreted as a pattern, and not, e.g., as a filter:value parameter.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
-		return Parameter{Field: "", Value: ""}, false
+		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Parameter{Field: "", Value: value}, true
+		return Pattern{Value: value}, true
 	}
 
 	start := p.pos
@@ -458,18 +475,18 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) {
 		// We tried validating the pattern but it is either unbalanced
 		// or malformed, empty, or an invalid and/or expression.
-		return Parameter{Field: "", Value: ""}, false
+		return Pattern{}, false
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
 	if len(pieces) == 1 {
-		return Parameter{Field: "", Value: pieces[0]}, true
+		return Pattern{Value: pieces[0]}, true
 	}
-	parameters := []Node{}
+	patterns := []Node{}
 	for _, piece := range pieces {
-		parameters = append(parameters, Parameter{Field: "", Value: piece})
+		patterns = append(patterns, Pattern{Value: piece})
 	}
-	return Operator{Kind: Concat, Operands: parameters}, true
+	return Operator{Kind: Concat, Operands: patterns}, true
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
@@ -536,8 +553,8 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 	return string(result), count
 }
 
-// TryParseDelimiter tries to parse a delimited, returning whether it succeeded,
-// and the interpreted (i.e., unquoted) value if it succeeds.
+// TryParseDelimiter tries to parse a delimited string, returning whether it
+// succeeded, and the interpreted (i.e., unquoted) value if it succeeds.
 func (p *parser) TryParseDelimiter() (string, bool) {
 	delimited := func(delimiter rune) (string, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
@@ -562,72 +579,86 @@ func (p *parser) TryParseDelimiter() (string, bool) {
 	return "", false
 }
 
-// ParseValue parses a value at the current position and whether it was quoted.
-// A value may belong to a parameter like repo:<value> or the <value> may be a
-// search pattern. Values may be quoted. ParseValue cannot fail: it will first
-// try to scan well-formed delimiters, like quoted strings. If that fails, it
-// will accept unbalanced strings as patterns. Uses of value can then be
-// validated along other concerns for different search types (literal, regexp,
-// etc.).
-func (p *parser) ParseValue() (string, bool) {
-	if value, ok := p.TryParseDelimiter(); ok {
-		return value, true
+// ParseFieldValue parses a value after a field like "repo:". If the value
+// starts with a recognized quoting delimiter but does not close it, an error is
+// returned.
+func (p *parser) ParseFieldValue() (string, error) {
+	delimited := func(delimiter rune) (string, error) {
+		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
+		if err != nil {
+			return "", err
+		}
+		p.pos += advance
+		return value, nil
+	}
+	if p.match(SQUOTE) {
+		return delimited('\'')
+	}
+	if p.match(DQUOTE) {
+		return delimited('"')
 	}
 	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
 	p.pos += advance
-	return value, false
+	return value, nil
 }
 
-// ParseParameter returns a leaf node usable by _any_ kind of search (e.g.,
-// literal or regexp, or...) and always succeeds.
-//
-// A parameter is a contiguous sequence of characters, where the following two forms are distinguished:
-// (1) a string of syntax field:<string> where : matches the first encountered colon, and field must match ^-?[a-zA-Z]+
-// (2) <string>
-//
-// When a parameter is of form (1), the <string> corresponds to Parameter.Value,
-// field corresponds to Parameter.Field and Parameter.Negated is set if Field
-// starts with '-'. When form (1) does not match, Value corresponds to <string>
-// and Field is the empty string.
-func (p *parser) ParseParameter() Parameter {
-	field, advance := ScanField(p.buf[p.pos:])
-	p.pos += advance
+// ParsePattern parses a leaf node Pattern that corresponds to a search pattern.
+// Note that ParsePattern may be called multiple times (a query can have
+// multiple Patterns concatenated together).
+func (p *parser) ParsePattern() Pattern {
+	if p.heuristic.literalSearchPatterns {
+		// Accept unconditionally as pattern, even if the pattern
+		// contains dangling quotes like " or ', and do not interpret
+		// quoted strings as quoted, but interpret them literally.
+		value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
+		p.pos += advance
+		return Pattern{Value: value, Negated: false, Quoted: false}
+	}
 
-	negated := len(field) > 0 && field[0] == '-'
+	// If we can parse a well-delimited value, that takes precedence, and we
+	// denote it with Quoted set to true.
+	if value, ok := p.TryParseDelimiter(); ok {
+		return Pattern{Value: value, Negated: false, Quoted: true}
+	}
+
+	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
+	p.pos += advance
+	// Invariant: the pattern can't be quoted since we checked for that.
+	return Pattern{Value: value, Negated: false, Quoted: false}
+}
+
+// ParseParameter returns a leaf node corresponding to the syntax
+// (-?)field:<string> where : matches the first encountered colon, and field
+// must match ^[a-zA-Z]+ and be whitelisted by allFields. Field may optionally
+// be preceded by '-' which means the parameter is negated.
+func (p *parser) ParseParameter() (Parameter, bool, error) {
+	field, advance := ScanField(p.buf[p.pos:])
+	if len(field) == 0 {
+		return Parameter{}, false, nil
+	}
+
+	negated := field[0] == '-'
 	if negated {
 		field = field[1:]
 	}
 
-	if p.heuristic.literalSearchPatterns {
-		if field == "" {
-			// No foo: prefix was parsed, accept as pattern.
-			value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
-			p.pos += advance
-			return Parameter{Field: "", Value: value, Negated: false, Quoted: false}
-		}
-		if _, exists := allFields[field]; !exists {
-			// A foo: prefix was parsed, but it's not a recognized
-			// field. Accept as pattern.
-			value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
-			// Rebuild the (-?)foo:bar string.
-			value = field + ":" + value
-			if negated {
-				value = "-" + value
-			}
-			p.pos += advance
-			return Parameter{Field: "", Value: value, Negated: false, Quoted: false}
-		}
+	if _, exists := allFields[strings.ToLower(field)]; !exists {
+		// Not a recognized parameter field.
+		return Parameter{}, false, nil
 	}
 
-	value, quoted := p.ParseValue()
-	return Parameter{Field: field, Value: value, Negated: negated, Quoted: quoted}
+	p.pos += advance
+	value, err := p.ParseFieldValue()
+	if err != nil {
+		return Parameter{}, false, err
+	}
+	return Parameter{Field: field, Value: value, Negated: negated}, true, nil
 }
 
-// containsPattern returns true if any descendent of nodes is a search pattern
-// (i.e., a parameter where the field is the empty string).
+// containsPattern returns true if any descendent of nodes is a search pattern.
 func containsPattern(node Node) bool {
 	var result bool
-	VisitField([]Node{node}, "", func(_ string, _, _ bool) {
+	VisitPattern([]Node{node}, func(_ string, _, _ bool) {
 		result = true
 	})
 	return result
@@ -646,8 +677,7 @@ func containsAndOrExpression(nodes []Node) bool {
 
 // partitionParameters constructs a parse tree to distinguish terms where
 // ordering is insignificant (e.g., "repo:foo file:bar") versus terms where
-// ordering may be significant (e.g., search patterns like "foo bar"). Search
-// patterns are parameters whose field is the empty string.
+// ordering may be significant (e.g., search patterns like "foo bar").
 //
 // The resulting tree defines an ordering relation on nodes in the following cases:
 // (1) When more than one search patterns exist at the same operator level, they
@@ -657,13 +687,11 @@ func containsAndOrExpression(nodes []Node) bool {
 func partitionParameters(nodes []Node) []Node {
 	var patterns, unorderedParams []Node
 	for _, n := range nodes {
-		switch v := n.(type) {
+		switch n.(type) {
+		case Pattern:
+			patterns = append(patterns, n)
 		case Parameter:
-			if v.Field == "" {
-				patterns = append(patterns, n)
-			} else {
-				unorderedParams = append(unorderedParams, n)
-			}
+			unorderedParams = append(unorderedParams, n)
 		case Operator:
 			if containsPattern(n) {
 				patterns = append(patterns, n)
@@ -714,10 +742,10 @@ loop:
 				// We parsed "()".
 				if p.heuristic.parensAsPatterns {
 					// Interpret literally.
-					nodes = []Node{Parameter{Value: "()"}}
+					nodes = []Node{Pattern{Value: "()"}}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
-					nodes = []Node{Parameter{Value: ""}}
+					nodes = []Node{Parameter{}}
 				}
 			}
 			break loop
@@ -726,11 +754,19 @@ loop:
 			break loop
 		default:
 			// First try parse a parameter as a search pattern containing parens.
-			if parameter, ok := p.ParseSearchPatternHeuristic(); ok {
-				nodes = append(nodes, parameter)
+			if pattern, ok := p.ParseSearchPatternHeuristic(); ok {
+				nodes = append(nodes, pattern)
 			} else {
-				parameter := p.ParseParameter()
-				nodes = append(nodes, parameter)
+				parameter, ok, err := p.ParseParameter()
+				if err != nil {
+					return nil, err
+				}
+				if ok {
+					nodes = append(nodes, parameter)
+				} else {
+					pattern := p.ParsePattern()
+					nodes = append(nodes, pattern)
+				}
 			}
 		}
 	}
@@ -759,6 +795,18 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	case Parameter:
 		if term.Value == "" {
 			// Remove empty string parameter.
+			if len(right) > 1 {
+				return append(left, right[1:]...), true
+			}
+			return left, true
+		}
+		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+			// Reduce left node.
+			return append(operator.Operands, right...), true
+		}
+	case Pattern:
+		if term.Value == "" {
+			// Remove empty string pattern.
 			if len(right) > 1 {
 				return append(left, right[1:]...), true
 			}
