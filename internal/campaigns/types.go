@@ -1380,10 +1380,8 @@ type ChangesetSyncData struct {
 	ExternalServiceIDs []int64
 }
 
-const campaignIDKind = "Campaign"
-
 func MarshalCampaignID(id int64) graphql.ID {
-	return relay.MarshalID(campaignIDKind, id)
+	return relay.MarshalID("Campaign", id)
 }
 
 func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
