@@ -44,10 +44,10 @@ type Mutation {
     uploadPatchesForCampaign(campaign: ID!, patches: [PatchInput!]!): PatchConnection!
     # Group patches into a patchset. Used to apply them in the setPatchesForCampaign mutation.
     createPatchsetForCampaign(campaign: ID!, patches: [PatchInputOrID!]!): Patchset!
-    # Generate a preview of changes to the campaign, possibly omitting some of them from `patches`.
-    previewSetPatchesForCampaign(patchset: ID!, omitPatches: [ID!]): CampaignPreview!
-    # Add the patches frmo patchset to the campaign, leaving out specified patches.
-    setPatchesForCampaign(campaign: ID!, patchset: ID!, omitPatches: [ID!]): Campaign!
+    # Generate a preview of changes to the campaign.
+    previewSetPatchesForCampaign(patchset: ID!): CampaignUpdatePreview!
+    # Add the patches frmo patchset to the campaign.
+    setPatchesForCampaign(campaign: ID!, patchset: ID!): Campaign!
     # Updates a campaign. Updating is not allowed when any of the following are true:
     #
     # - The campaign has already been closed.
@@ -538,7 +538,7 @@ type BackgroundProcessStatus {
 # Patch ID is a UUID, base64 encoded. That is, so the patch IDs can't be guessed.
 union PatchInputOrID = PatchInput | ID
 
-type CampaignPreview {
+type CampaignUpdatePreview {
     # URL where this preview can be looked at in the UI.
     url: String!
     unchanged(first: Int, after: String): ExternalChangesetConnection!
