@@ -320,7 +320,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 
 		// First load the Changesets with the given campaignID, before deleting
 		// the campaign would remove the association.
-		cs, _, err = s.store.ListChangesets(ctx, ListChangesetsOpts{
+		cs, _, err = tx.ListChangesets(ctx, ListChangesetsOpts{
 			CampaignID: id,
 			Limit:      -1,
 		})
@@ -335,7 +335,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 			c.RemoveCampaignID(id)
 		}
 
-		return cs, s.store.DeleteCampaign(ctx, id)
+		return cs, tx.DeleteCampaign(ctx, id)
 	}
 
 	cs, err := transaction()
