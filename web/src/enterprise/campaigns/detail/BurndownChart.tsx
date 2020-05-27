@@ -110,16 +110,16 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                 />
 
                 {Object.entries(states)
-                    .sort(([, aDef], [, bDef]) => bDef.sortOrder - aDef.sortOrder)
-                    .map(([dataKey, area]) => (
+                    .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                    .map(([dataKey, state]) => (
                         <Area
-                            key={area.sortOrder}
+                            key={state.sortOrder}
                             dataKey={dataKey}
-                            name={area.label}
-                            fill={area.fill}
+                            name={state.label}
+                            fill={state.fill}
                             // The stroke is used to colour the legend, which we
                             // want to match the fill colour for each area.
-                            stroke={area.fill}
+                            stroke={state.fill}
                             {...commonAreaProps}
                         />
                     ))}
