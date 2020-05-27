@@ -305,20 +305,33 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		}
 	}()
 
-	if err := writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks); err != nil {
-		return errors.Wrap(err, "writer.WriteMeta")
+	writers := []func() error{
+		func() error {
+			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks), "writer.WriteMeta")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks), "writer.WriteResultChunks")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteDefinitions(ctx, groupedBundleData.Definitions), "writer.WriteDefinitions")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteReferences(ctx, groupedBundleData.References), "writer.WriteReferences")
+		},
 	}
-	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
-		return errors.Wrap(err, "writer.WriteDocuments")
+
+	errs := make(chan error, len(writers))
+	defer close(errs)
+
+	for _, w := range writers {
+		go func(w func() error) { errs <- w() }(w)
 	}
-	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
-		return errors.Wrap(err, "writer.WriteResultChunks")
-	}
-	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
-		return errors.Wrap(err, "writer.WriteDefinitions")
-	}
-	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
-		return errors.Wrap(err, "writer.WriteReferences")
+
+	if err := firstError(errs, len(writers)); err != nil {
+		return err
 	}
 
 	if err := writer.Flush(ctx); err != nil {
@@ -326,4 +339,16 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 	}
 
 	return nil
+}
+
+// firstError reads n values off of the given channel and returns the first error value that was non-nil.
+func firstError(ch chan error, n int) (firstErr error) {
+	for i := 0; i < n; i++ {
+		err := <-ch
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	return firstErr
 }
