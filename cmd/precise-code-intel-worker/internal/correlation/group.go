@@ -40,31 +40,11 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 		),
 	))
 
-	documents, err := serializeBundleDocuments(state)
-	if err != nil {
-		return nil, err
-	}
-
-	resultChunks, err := serializeResultChunks(state, numResultChunks)
-	if err != nil {
-		return nil, err
-	}
-
-	definitionRows, err := gatherMonikersByResult(state, state.DefinitionData, getDefinitionResultID)
-	if err != nil {
-		return nil, err
-	}
-
-	referenceRows, err := gatherMonikersByResult(state, state.ReferenceData, getReferenceResultID)
-	if err != nil {
-		return nil, err
-	}
-
-	packages, err := gatherPackages(state, dumpID)
-	if err != nil {
-		return nil, err
-	}
-
+	documents := serializeBundleDocuments(state)
+	resultChunks := serializeResultChunks(state, numResultChunks)
+	definitionRows := gatherMonikersByResult(state, state.DefinitionData, getDefinitionResultID)
+	referenceRows := gatherMonikersByResult(state, state.ReferenceData, getReferenceResultID)
+	packages := gatherPackages(state, dumpID)
 	packageReferences, err := gatherPackageReferences(state, dumpID)
 	if err != nil {
 		return nil, err
@@ -82,26 +62,20 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	}, nil
 }
 
-func serializeBundleDocuments(state *State) (map[string]types.DocumentData, error) {
+func serializeBundleDocuments(state *State) map[string]types.DocumentData {
 	out := map[string]types.DocumentData{}
 	for _, doc := range state.DocumentData {
 		if strings.HasPrefix(doc.URI, "..") {
 			continue
 		}
 
-		data, err := serializeDocument(state, doc)
-		if err != nil {
-			return nil, err
-		}
-
-		out[doc.URI] = data
-
+		out[doc.URI] = serializeDocument(state, doc)
 	}
 
-	return out, nil
+	return out
 }
 
-func serializeDocument(state *State, doc lsif.Document) (types.DocumentData, error) {
+func serializeDocument(state *State, doc lsif.Document) types.DocumentData {
 	document := types.DocumentData{
 		Ranges:             map[types.ID]types.RangeData{},
 		HoverResults:       map[types.ID]string{},
@@ -153,10 +127,10 @@ func serializeDocument(state *State, doc lsif.Document) (types.DocumentData, err
 		}
 	}
 
-	return document, nil
+	return document
 }
 
-func serializeResultChunks(state *State, numResultChunks int) (map[int]types.ResultChunkData, error) {
+func serializeResultChunks(state *State, numResultChunks int) map[int]types.ResultChunkData {
 	var resultChunks []types.ResultChunkData
 	for i := 0; i < numResultChunks; i++ {
 		resultChunks = append(resultChunks, types.ResultChunkData{
@@ -177,7 +151,7 @@ func serializeResultChunks(state *State, numResultChunks int) (map[int]types.Res
 		out[id] = resultChunk
 	}
 
-	return out, nil
+	return out
 }
 
 func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[string]datastructures.DefaultIDSetMap) {
@@ -210,7 +184,7 @@ var (
 	getReferenceResultID  = func(r lsif.Range) string { return r.ReferenceResultID }
 )
 
-func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) ([]types.DefinitionReferenceRow, error) {
+func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) []types.DefinitionReferenceRow {
 	var rows []types.DefinitionReferenceRow
 
 	monikers := datastructures.DefaultIDSetMap{}
@@ -257,11 +231,11 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 		}
 	}
 
-	return rows, nil
+	return rows
 }
 
 // TODO(efritz) - document
-func gatherPackages(state *State, dumpID int) ([]types.Package, error) {
+func gatherPackages(state *State, dumpID int) []types.Package {
 	uniques := map[string]types.Package{}
 	for id := range state.ExportedMonikers {
 		source := state.MonikerData[id]
@@ -280,7 +254,7 @@ func gatherPackages(state *State, dumpID int) ([]types.Package, error) {
 		packages = append(packages, v)
 	}
 
-	return packages, nil
+	return packages
 }
 
 // TODO(efritz) - document
