@@ -33,6 +33,9 @@ var ErrNotFound = errors.New("data does not exist")
 // the client from receiving a raw upload payload from the bundle manager.
 var ErrNoDownloadProgress = errors.New("no download progress")
 
+// The maximum number of iterations where we make no progress while fetching an upload.
+const MaxZeroPayloadIterations = 3
+
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
 type BundleManagerClient interface {
 	// BundleClient creates a client that can answer intelligence queries for a single dump.
@@ -215,7 +218,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 				// happens at the beginning of the requested payload. We'll just
 				// give up if this happens a few times in a row, which should be
 				// very unlikely.
-				if zeroPayloadIterations > 3 {
+				if zeroPayloadIterations > MaxZeroPayloadIterations {
 					return "", ErrNoDownloadProgress
 				}
 			} else {
