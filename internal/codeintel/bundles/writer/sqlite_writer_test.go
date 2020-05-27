@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
@@ -28,7 +28,7 @@ func TestWrite(t *testing.T) {
 
 	ctx := context.Background()
 	filename := filepath.Join(tempDir, "test.db")
-	serializer := serializer.NewDefaultSerializer()
+	serializer := jsonserializer.New()
 
 	writer, err := NewSQLiteWriter(filename, serializer)
 	if err != nil {

@@ -1,4 +1,4 @@
-package serializer
+package json
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ func TestDefaultSerializerDocumentData(t *testing.T) {
 		},
 	}
 
-	for _, file := range []string{"../testdata/documentdata-strings.json", "../testdata/documentdata-ints.json"} {
+	for _, file := range []string{"../../testdata/documentdata-strings.json", "../../testdata/documentdata-ints.json"} {
 		name := fmt.Sprintf("file=%s", file)
 
 		t.Run(name, func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestDefaultSerializerDocumentData(t *testing.T) {
 				t.Fatalf("unexpected error compressing file contents: %s", err)
 			}
 
-			serializer := &defaultSerializer{}
+			serializer := &jsonSerializer{}
 			actual, err := serializer.UnmarshalDocumentData(compressed)
 			if err != nil {
 				t.Fatalf("unexpected error unmarshalling document data: %s", err)
@@ -123,7 +123,7 @@ func TestDefaultSerializerResultChunkData(t *testing.T) {
 		},
 	}
 
-	for _, file := range []string{"../testdata/resultchunkdata-strings.json", "../testdata/resultchunkdata-ints.json"} {
+	for _, file := range []string{"../../testdata/resultchunkdata-strings.json", "../../testdata/resultchunkdata-ints.json"} {
 		name := fmt.Sprintf("file=%s", file)
 
 		t.Run(name, func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestDefaultSerializerResultChunkData(t *testing.T) {
 				t.Fatalf("unexpected error compressing file contents: %s", err)
 			}
 
-			serializer := &defaultSerializer{}
+			serializer := &jsonSerializer{}
 			actual, err := serializer.UnmarshalResultChunkData(compressed)
 			if err != nil {
 				t.Fatalf("unexpected error unmarshalling result chunk data: %s", err)

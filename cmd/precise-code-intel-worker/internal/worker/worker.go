@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -289,7 +289,7 @@ func convert(
 
 // write commits the correlated data to disk.
 func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
-	writer, err := writer.NewSQLiteWriter(filename, serializer.NewDefaultSerializer())
+	writer, err := writer.NewSQLiteWriter(filename, jsonserializer.New())
 	if err != nil {
 		return err
 	}
