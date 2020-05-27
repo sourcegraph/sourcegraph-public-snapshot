@@ -23,7 +23,7 @@ func (j *Janitor) freeSpace() error {
 	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.desiredPercentFree) / 100.0)
 
 	if freeBytes < desiredFreeBytes {
-		return j.evictBundles(uint64(desiredFreeBytes - freeBytes))
+		return j.evictBundles(desiredFreeBytes - freeBytes)
 	}
 
 	return nil

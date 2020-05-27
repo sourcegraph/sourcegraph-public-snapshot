@@ -66,7 +66,7 @@ func (j *Janitor) databasePathsByID() (map[int]string, error) {
 	pathsByID := map[int]string{}
 	for _, fileInfo := range fileInfos {
 		if id, err := strconv.Atoi(strings.Split(fileInfo.Name(), ".")[0]); err == nil {
-			pathsByID[int(id)] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
+			pathsByID[id] = filepath.Join(paths.DBsDir(j.bundleDir), fileInfo.Name())
 		}
 	}
 
