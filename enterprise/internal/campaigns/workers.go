@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -255,7 +254,7 @@ func ExecChangesetJob(
 		baseRef = patch.BaseRef
 	}
 
-	campaignID := relay.MarshalID("Campaign", c.ID)
+	campaignID := campaigns.MarshalCampaignID(c.ID)
 	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
 	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
 
