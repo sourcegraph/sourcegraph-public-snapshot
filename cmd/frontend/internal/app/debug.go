@@ -113,9 +113,6 @@ func addJaeger(r *mux.Router) {
 				Director: func(req *http.Request) {
 					req.URL.Scheme = "http"
 					req.URL.Host = jaegerURL.Host
-					//if i := strings.Index(req.URL.Path, prefix); i >= 0 {
-					//	req.URL.Path = req.URL.Path[i+len(prefix):]
-					//}
 				},
 				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
 			}))
