@@ -402,6 +402,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         const { children, ...props } = this.props
 
+        const lastVersionContextName = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
+
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
@@ -445,7 +447,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     versionContext={this.state.versionContext}
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
-                                    lastVersionContextKey={localStorage.getItem(LAST_VERSION_CONTEXT_KEY)}
+                                    lastVersionContextName={lastVersionContextName}
                                 />
                             )}
                         />
