@@ -1538,25 +1538,16 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.Background()
-
 	dbtesting.SetupGlobalTestDB(t)
-	rcache.SetupForTest(t)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
+	store := ee.NewStore(dbconn.Global)
+	sr := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	// We need to enable read access so that non-site-admin users can access
-	// the API and we can check for their admin rights.
-	// This can be removed once we enable campaigns for all users and only
-	// check for permissions.
-	readAccessEnabled := true
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CampaignsReadAccessEnabled: &readAccessEnabled,
-	}})
-	defer conf.Mock(nil)
+	ctx := context.Background()
 
 	// Global test data that we reuse in every test
 	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
@@ -1568,15 +1559,10 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// We create the changeset globally since we don't need to modify it in
-	// every test
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	changeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: "github",
-		ExternalID:          fmt.Sprintf("ext-id-%d", 9999),
-		Metadata:            &github.PullRequest{State: string(campaigns.ChangesetStateOpen)},
-		ExternalState:       campaigns.ChangesetStateOpen,
+		ExternalID:          "1234",
 	}
 	if err := store.CreateChangesets(ctx, changeset); err != nil {
 		t.Fatal(err)
@@ -1593,9 +1579,7 @@ func TestPermissionLevels(t *testing.T) {
 		patch := &campaigns.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
-			Rev:        "12",
 			BaseRef:    "refs/heads/master",
-			Diff:       "",
 		}
 		if err := s.CreatePatch(ctx, patch); err != nil {
 			t.Fatal(err)
@@ -1639,13 +1623,17 @@ func TestPermissionLevels(t *testing.T) {
 		}
 	}
 
-	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("queries", func(t *testing.T) {
+		// We need to enable read access so that non-site-admin users can access
+		// the API and we can check for their admin rights.
+		// This can be removed once we enable campaigns for all users and only
+		// check for permissions.
+		readAccessEnabled := true
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+			CampaignsReadAccessEnabled: &readAccessEnabled,
+		}})
+		defer conf.Mock(nil)
+
 		cleanUpCampaigns(t, store)
 
 		adminCampaign, _ := createTestData(t, store, "admin", adminID)
@@ -1692,23 +1680,25 @@ func TestPermissionLevels(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
 
-				var queriedCampaign struct{ Node apitest.Campaign }
+				var res struct{ Node apitest.Campaign }
 
 				input := map[string]interface{}{"campaign": graphqlID}
-				queryCampaign := `query($campaign: ID!) {
-				node(id: $campaign) { ... on Campaign { id, viewerCanAdminister, status { errors } } }
-			}`
+				queryCampaign := `
+				  query($campaign: ID!) {
+				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister, status { errors } } }
+				  }
+                `
 
 				actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-				apitest.MustExec(actorCtx, t, s, input, &queriedCampaign, queryCampaign)
+				apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
 
-				if have, want := queriedCampaign.Node.ID, graphqlID; have != want {
+				if have, want := res.Node.ID, graphqlID; have != want {
 					t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
 				}
-				if have, want := queriedCampaign.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+				if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
 					t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
 				}
-				if diff := cmp.Diff(queriedCampaign.Node.Status.Errors, tc.wantErrors); diff != "" {
+				if diff := cmp.Diff(res.Node.Status.Errors, tc.wantErrors); diff != "" {
 					t.Fatalf("queried campaign's Errors is wrong: %s", diff)
 				}
 			})
@@ -1849,7 +1839,6 @@ func TestPermissionLevels(t *testing.T) {
 								}
 							}
 						}
-
 					})
 				}
 			})
