@@ -64,7 +64,7 @@ func (*jsonSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error)
 	return compress(encoded)
 }
 
-func (jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
+func (*jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
 	documentPathPairs := make([]interface{}, 0, len(rc.DocumentPaths))
 	for k, v := range rc.DocumentPaths {
 		documentPathPairs = append(documentPathPairs, []interface{}{k, v})
@@ -86,7 +86,7 @@ func (jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, 
 	return compress(encoded)
 }
 
-func (jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
+func (*jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
 	var payload SerializedDocument
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.DocumentData{}, err
@@ -120,7 +120,7 @@ func (jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, er
 	}, nil
 }
 
-func (jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
+func (*jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
 	var payload SerializedResultChunk
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.ResultChunkData{}, err
