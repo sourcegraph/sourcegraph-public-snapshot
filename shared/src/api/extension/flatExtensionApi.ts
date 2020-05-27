@@ -1,8 +1,9 @@
 import { SettingsCascade } from '../../settings/settings'
-import { Remote } from 'comlink'
+import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ReplaySubject, Subject } from 'rxjs'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
+import { syncSubscription } from '../util'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -22,6 +23,7 @@ export interface InitResult {
     exposedToMain: FlatExtHostAPI
     // todo this is needed as a temp solution to getter problem
     state: Readonly<ExtState>
+    commands: typeof sourcegraph['commands']
 }
 
 /**
@@ -88,6 +90,12 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         versionContextChanges: versionContextChanges.asObservable(),
     }
 
+    // Commands
+    const commands: typeof sourcegraph['commands'] = {
+        executeCommand: (cmd, args) => mainAPI.executeCommand(cmd, args),
+        registerCommand: (cmd, callback) => syncSubscription(mainAPI.registerCommand(cmd, proxy(callback))),
+    }
+
     return {
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
@@ -95,5 +103,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         exposedToMain,
         workspace,
         state,
+        commands,
     }
 }

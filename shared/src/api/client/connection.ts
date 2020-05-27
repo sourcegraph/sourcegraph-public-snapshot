@@ -132,12 +132,11 @@ export async function createExtensionHostClientConnection(
         services.completionItems
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
-    const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const [newAPI, sub] = initMainThreadAPI(proxy, platformContext, services.workspace)
+    const [newAPI, sub] = initMainThreadAPI(proxy, platformContext, services.workspace, services.commands)
 
     subscription.add(sub)
 
@@ -146,7 +145,6 @@ export async function createExtensionHostClientConnection(
         context: clientContext,
         search: clientSearch,
         languageFeatures: clientLanguageFeatures,
-        commands: clientCommands,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
         views: clientViews,
