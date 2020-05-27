@@ -274,6 +274,38 @@ func TestGetUploadTransientErrors(t *testing.T) {
 	}
 }
 
+func TestGetUploadReadNothingLoop(t *testing.T) {
+	var fullContents []byte
+	for i := 0; i < 1000; i++ {
+		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seek, _ := strconv.Atoi(r.URL.Query().Get("seek"))
+
+		if _, err := w.Write(fullContents[seek:]); err != nil {
+			t.Fatalf("unexpected error writing to client: %s", err)
+		}
+	}))
+	defer ts.Close()
+
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp directory: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Ensure that no progress transient errors do not cause an infinite loop
+	mockCopy := func(w io.Writer, r io.Reader) (int64, error) {
+		return 0, errors.New("read: connection reset by peer")
+	}
+
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: mockCopy}
+	if _, err := client.GetUpload(context.Background(), 42, tempDir); err != ErrNoDownloadProgress {
+		t.Fatalf("unexpected error getting upload. want=%q have=%q", ErrNoDownloadProgress, err)
+	}
+}
+
 func TestGetUploadNotFound(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

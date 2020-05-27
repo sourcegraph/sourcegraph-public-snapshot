@@ -29,6 +29,10 @@ import (
 // ErrNotFound occurs when the requested upload or bundle was evicted from disk.
 var ErrNotFound = errors.New("data does not exist")
 
+// ErrNoDownloadProgress occurs when there are multiple transient errors in a row that prevent
+// the client from receiving a raw upload payload from the bundle manager.
+var ErrNoDownloadProgress = errors.New("no download progress")
+
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
 type BundleManagerClient interface {
 	// BundleClient creates a client that can answer intelligence queries for a single dump.
@@ -195,11 +199,27 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 	}()
 
 	seek := int64(0)
+	zeroPayloadIterations := 0
+
 	for {
 		n, err := c.getUploadChunk(ctx, f, url, seek)
 		if err != nil {
 			if !isConnectionError(err) {
 				return "", err
+			}
+
+			if n == 0 {
+				zeroPayloadIterations++
+
+				// Ensure that we don't spin infinitely when when a reset error
+				// happens at the beginning of the requested payload. We'll just
+				// give up if this happens a few times in a row, which should be
+				// very unlikely.
+				if zeroPayloadIterations > 3 {
+					return "", ErrNoDownloadProgress
+				}
+			} else {
+				zeroPayloadIterations = 0
 			}
 
 			// We have a transient error. Make another request but skip the
