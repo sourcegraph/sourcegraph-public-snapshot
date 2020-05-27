@@ -44,10 +44,8 @@ type Mutation {
     uploadPatchesForCampaign(campaign: ID!, patches: [PatchInput!]!): PatchConnection!
     # Group patches into a patchset. Used to apply them in the setPatchesForCampaign mutation.
     createPatchsetForCampaign(campaign: ID!, patches: [PatchInputOrID!]!): Patchset!
-    # Generate a preview of changes to the campaign.
-    previewSetPatchesForCampaign(patchset: ID!): CampaignUpdatePreview!
-    # Add the patches frmo patchset to the campaign.
-    setPatchesForCampaign(campaign: ID!, patchset: ID!): Campaign!
+    # Previews an update to the campaign.
+    previewUpdateCampaign(input: UpdateCampaignInput!): CampaignUpdatePreview!
     # Updates a campaign. Updating is not allowed when any of the following are true:
     #
     # - The campaign has already been closed.
@@ -472,6 +470,10 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign (as Markdown), if non-null.
     description: String
+
+    # A patchset that describes a new set of changes to make. If set, the previous changesets are
+    # updated or closed, and new changesets are created, to reflect the new patchset.
+    patchset: ID!
 }
 
 # A set of patches that will be applied to code by a campaign. Each patch corresponds to a single
@@ -544,11 +546,21 @@ type PatchIDInput {
 union PatchInputOrID = PatchInput | PatchIDInput
 
 type CampaignUpdatePreview {
+    # The updated name of the campaign.
+    name: String!
+    # The branch name.
+    branch: String!
+    # The updated description of the campaign.
+    description: String!
     # URL where this preview can be looked at in the UI.
     url: String!
+    # List of unchanged changesets.
     unchanged(first: Int, after: String): ExternalChangesetConnection!
-    changed(first: Int, after: String): ExternalChangesetConnection!
+    # List of patches that change a changeset.
+    changed(first: Int, after: String): PatchConnection!
+    # List of deleted changesets.
     deleted(first: Int, after: String): ExternalChangesetConnection!
+    # List of added patches.
     added(first: Int, after: String): PatchConnection!
 }
 
@@ -738,6 +750,9 @@ type ExternalChangeset implements Node {
     # The external ID that uniquely identifies this ExternalChangeset on the
     # code host. For example, on GitHub this is the pull request number.
     externalID: String!
+
+    # The patch this changeset was created from. Null, when added manually.
+    patch: ID
 
     # The repository changed by this changeset.
     repository: Repository!
