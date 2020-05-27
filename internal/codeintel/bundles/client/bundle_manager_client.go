@@ -292,7 +292,6 @@ func (c *bundleManagerClientImpl) sendDBMultipart(ctx context.Context, bundleID 
 			return err
 		}
 
-		// TODO(efritz) - will also need a way to clean up old dump files
 		body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
 		if err != nil {
 			return err
