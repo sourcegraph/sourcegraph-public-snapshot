@@ -1,12 +1,15 @@
 package campaigns
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
@@ -151,6 +154,15 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 			c.ChangesetIDs = append(c.ChangesetIDs[:i], c.ChangesetIDs[i+1:]...)
 		}
 	}
+}
+
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
 }
 
 // ChangesetState defines the possible states of a Changeset.
@@ -1366,6 +1378,15 @@ type ChangesetSyncData struct {
 	ExternalUpdatedAt time.Time
 	// ExternalServiceID is the ID of the external service to which the changeset belongs
 	ExternalServiceIDs []int64
+}
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID("Campaign", id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {

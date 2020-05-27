@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -68,19 +67,8 @@ type campaignResolver struct {
 	*campaigns.Campaign
 }
 
-const campaignIDKind = "Campaign"
-
-func marshalCampaignID(id int64) graphql.ID {
-	return relay.MarshalID(campaignIDKind, id)
-}
-
-func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
-	err = relay.UnmarshalSpec(id, &campaignID)
-	return
-}
-
 func (r *campaignResolver) ID() graphql.ID {
-	return marshalCampaignID(r.Campaign.ID)
+	return campaigns.MarshalCampaignID(r.Campaign.ID)
 }
 
 func (r *campaignResolver) Name() string {

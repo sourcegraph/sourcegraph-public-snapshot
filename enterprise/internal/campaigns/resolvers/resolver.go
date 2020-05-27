@@ -80,7 +80,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(id)
+	campaignID, err := campaigns.UnmarshalCampaignID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +302,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Input.ID)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +382,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
@@ -613,7 +613,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
@@ -644,7 +644,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
