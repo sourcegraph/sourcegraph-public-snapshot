@@ -152,11 +152,6 @@ func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	// 🚨 SECURITY: Only site admins may modify changesets and campaigns for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
 	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
@@ -183,42 +178,9 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		}
 	}
 
-	tx, err := r.store.Transact(ctx)
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.AddChangesetsToCampaign(ctx, campaignID, changesetIDs)
 	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, err
-	}
-
-	if campaign.PatchSetID != 0 {
-		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
-	}
-
-	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, c := range changesets {
-		delete(set, c.ID)
-		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
-		c.AddedToCampaign = true
-	}
-
-	if len(set) > 0 {
-		return nil, errors.Errorf("changesets %v not found", set)
-	}
-
-	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
-		return nil, err
-	}
-
-	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changesetIDs...)
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
 
@@ -698,11 +660,6 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may update campaigns for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, errors.Wrap(err, "checking if user is admin")
-	}
-
 	patchID, err := unmarshalPatchID(args.Patch)
 	if err != nil {
 		return nil, err
@@ -712,11 +669,14 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, ErrIDIsZero
 	}
 
+	fmt.Println("we are here")
 	svc := ee.NewService(r.store, r.httpFactory)
 	err = svc.CreateChangesetJobForPatch(ctx, patchID)
 	if err != nil {
+		fmt.Printf("err: %s\n", err)
 		return nil, err
 	}
+	fmt.Println("no err")
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }

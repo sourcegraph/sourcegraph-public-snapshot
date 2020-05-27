@@ -20,6 +20,7 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -32,7 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -1529,6 +1532,307 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	if have, want := campaign.DiffStat, changeset.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 	}
+}
+
+func TestPermissionLevels(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+
+	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	// We need to enable read access so that non-site-admin users can access
+	// the API and we can check for their admin rights.
+	// This can be removed once we enable campaigns for all users and only
+	// check for permissions.
+	readAccessEnabled := true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		CampaignsReadAccessEnabled: &readAccessEnabled,
+	}})
+	defer conf.Mock(nil)
+
+	// Global test data that we reuse in every test
+	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
+	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// We create the changeset globally since we don't need to modify it in
+	// every test
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	changeset := &campaigns.Changeset{
+		RepoID:              repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          fmt.Sprintf("ext-id-%d", 9999),
+		Metadata:            &github.PullRequest{State: string(campaigns.ChangesetStateOpen)},
+		ExternalState:       campaigns.ChangesetStateOpen,
+	}
+	if err := store.CreateChangesets(ctx, changeset); err != nil {
+		t.Fatal(err)
+	}
+
+	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64, patchID int64) {
+		t.Helper()
+
+		patchSet := &campaigns.PatchSet{UserID: userID}
+		if err := s.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := &campaigns.Patch{
+			PatchSetID: patchSet.ID,
+			RepoID:     repo.ID,
+			Rev:        "12",
+			BaseRef:    "refs/heads/master",
+			Diff:       "",
+		}
+		if err := s.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		c := &campaigns.Campaign{
+			PatchSetID:      patchSet.ID,
+			Name:            name,
+			AuthorID:        userID,
+			NamespaceUserID: userID,
+			// We attach the changeset to the campaign so we can test syncChangeset
+			ChangesetIDs: []int64{changeset.ID},
+		}
+		if err := s.CreateCampaign(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		job := &campaigns.ChangesetJob{CampaignID: c.ID, PatchID: patch.ID, Error: "This is an error"}
+		if err := s.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		return c.ID, patch.ID
+	}
+
+	t.Run("queries", func(t *testing.T) {
+		// Wrap everything in the store in a transaction, so that the foreign-key
+		// constraints are deferred
+		tx := dbtest.NewTx(t, dbconn.Global)
+		store := ee.NewStoreWithClock(tx, clock)
+		sr := &Resolver{store: store}
+		s, err := graphqlbackend.NewSchema(sr, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		adminCampaign, _ := createTestData(t, store, "admin", adminID)
+		userCampaign, _ := createTestData(t, store, "user", userID)
+
+		tests := []struct {
+			name                    string
+			currentUser             int32
+			campaign                int64
+			wantViewerCanAdminister bool
+			wantErrors              []string
+		}{
+			{
+				name:                    "site-admin viewing own campaign",
+				currentUser:             adminID,
+				campaign:                adminCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+			{
+				name:                    "non-site-admin viewing other's campaign",
+				currentUser:             userID,
+				campaign:                adminCampaign,
+				wantViewerCanAdminister: false,
+				wantErrors:              []string{},
+			},
+			{
+				name:                    "site-admin viewing other's campaign",
+				currentUser:             adminID,
+				campaign:                userCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+			{
+				name:                    "non-site-admin viewing own campaign",
+				currentUser:             userID,
+				campaign:                userCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				graphqlID := string(marshalCampaignID(tc.campaign))
+
+				var queriedCampaign struct{ Node apitest.Campaign }
+
+				input := map[string]interface{}{"campaign": graphqlID}
+				queryCampaign := `query($campaign: ID!) {
+				node(id: $campaign) { ... on Campaign { id, viewerCanAdminister, status { errors } } }
+			}`
+
+				actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+				apitest.MustExec(actorCtx, t, s, input, &queriedCampaign, queryCampaign)
+
+				if have, want := queriedCampaign.Node.ID, graphqlID; have != want {
+					t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
+				}
+				if have, want := queriedCampaign.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+					t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
+				}
+				if diff := cmp.Diff(queriedCampaign.Node.Status.Errors, tc.wantErrors); diff != "" {
+					t.Fatalf("queried campaign's Errors is wrong: %s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("mutations", func(t *testing.T) {
+		mutations := []struct {
+			name         string
+			mutationFunc func(campaignID string, changesetID string, patchID string) string
+		}{
+			{
+				name: "closeCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "deleteCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q, closeChangesets: false) { alwaysNil } } `, campaignID)
+				},
+			},
+			{
+				name: "retryCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "publishCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "updateCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { updateCampaign(input: {id: %q, name: "new name"}) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "addChangesetsToCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { addChangesetsToCampaign(campaign: %q, changesets: [%q]) { id } }`,
+						campaignID,
+						changesetID,
+					)
+				},
+			},
+			{
+				name: "publishChangeset",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { publishChangeset(patch: %q) { alwaysNil } }`,
+						patchID,
+					)
+				},
+			},
+			// TODO: syncChangeset
+		}
+
+		for _, m := range mutations {
+			t.Run(m.name, func(t *testing.T) {
+				tests := []struct {
+					currentUser    int32
+					campaignAuthor int32
+					wantAuthErr    bool
+				}{
+					{currentUser: userID, campaignAuthor: adminID, wantAuthErr: true},
+					{currentUser: userID, campaignAuthor: userID, wantAuthErr: false},
+					{currentUser: adminID, campaignAuthor: userID, wantAuthErr: false},
+				}
+
+				for _, tc := range tests {
+					tx := dbtest.NewTx(t, dbconn.Global)
+					store := ee.NewStoreWithClock(tx, clock)
+					sr := &Resolver{store: store}
+					s, err := graphqlbackend.NewSchema(sr, nil, nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					campaignID, patchID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
+
+					changeset.CampaignIDs = []int64{campaignID}
+					if err := store.UpdateChangesets(ctx, changeset); err != nil {
+						t.Fatal(err)
+					}
+					// We add the changeset to the campaign. It doesn't matter
+					// for the addChangesetsToCampaign mutation, since that is
+					// idempotent and we want to solely check for auth errors.
+
+					mutation := m.mutationFunc(
+						string(marshalCampaignID(campaignID)),
+						string(marshalChangesetID(changeset.ID)),
+						string(marshalPatchID(patchID)),
+					)
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+					var response struct{}
+					errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+					if tc.wantAuthErr {
+						if len(errs) != 1 {
+							t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+						}
+						if !strings.Contains(errs[0].Error(), "must be authenticated") {
+							t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+						}
+					} else {
+						// We don't care about other errors, we only want to
+						// check that we didn't get an auth error.
+						for _, e := range errs {
+							if strings.Contains(e.Error(), "must be authenticated") {
+								t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+							}
+						}
+					}
+
+				}
+			})
+		}
+	})
+}
+
+func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
+	t.Helper()
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+
+	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return userID
 }
 
 func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
