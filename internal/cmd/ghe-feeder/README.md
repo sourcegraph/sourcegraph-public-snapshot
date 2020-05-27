@@ -1,16 +1,16 @@
 # GHE feeder tool
 
-Feeds repositories into a destination GHE instance. Input are files with owner/repo strings on each line and/or 
+Feeds repositories into a destination GHE instance. Input are files with owner/repo strings on each line and/or
 directories containing such files (see below for details about the expected input).
 
 The https://github.com/owner/repo repositories specified on the input lines are cloned and then pushed to a destination
-GHE instance. Every once in a while new orgs are created and the repos are added to those orgs. 
+GHE instance. Every once in a while new orgs are created and the repos are added to those orgs.
 
 ## Usage
 
 ```shell script
 ghe-feeder -admin milton -token <xxxxxxx> -scratchDir clones -numWorkers 20 -limit 100000 -baseURL https://ghe.sgdev.org/api/v3 dir1 file2 file3 dir4
-``` 
+```
 
 ```
 ghe-feeder -help
@@ -51,7 +51,7 @@ ghe-feeder -help
 
 ## Inputs
 
-Inputs are command line arguments consisting of files and directories. Files need to end in .json, .txt or .csv. 
+Inputs are command line arguments consisting of files and directories. Files need to end in .json, .txt or .csv.
 Directories are traversed recursively for such files.
 
 If the input file is a .json or .txt file it expects an owner/repo string per line (and nothing else). For example:
@@ -76,7 +76,7 @@ If the input file is a .json or .txt file it expects an owner/repo string per li
 "BitterPepper/StoreExample"
 "dnilsson1/React_Dashboard"
 "direwolf-github/my-app-ec4f431a"
-``` 
+```
 
 Lines can be quoted or not (quotes will be stripped).
 
