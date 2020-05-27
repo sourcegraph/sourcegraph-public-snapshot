@@ -51,6 +51,10 @@ func TestValidateCustom(t *testing.T) {
 			rawSite:     `{"externalURL":"http://example.com/sourcegraph"}`,
 			wantProblem: "externalURL must not be a non-root URL",
 		},
+		"invalid license key": {
+			rawSite:     `{"licenseKey":"<license key>"}`,
+			wantProblem: "should provide a valid license key",
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

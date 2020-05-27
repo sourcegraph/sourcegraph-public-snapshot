@@ -62,6 +62,11 @@ func validateCustom(cfg Unified) (problems Problems) {
 		}
 	}
 
+	// Prevent default licence key from being set
+	if cfg.LicenseKey == "<license key>" {
+		invalid(NewSiteProblem("should provide a valid license key"))
+	}
+
 	for _, f := range contributedValidators {
 		problems = append(problems, f(cfg)...)
 	}
