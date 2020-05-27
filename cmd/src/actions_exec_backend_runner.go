@@ -253,7 +253,9 @@ func runAction(ctx context.Context, prefix, repoName, rev string, steps []*Actio
 	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
 	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
 	//
-	diffOut, err := runGitCmd("diff", "--cached", "--no-prefix")
+	// Also, we need to add --binary so binary file changes are inlined in the patch.
+	//
+	diffOut, err := runGitCmd("diff", "--cached", "--no-prefix", "--binary")
 	if err != nil {
 		return nil, errors.Wrap(err, "git diff failed")
 	}
