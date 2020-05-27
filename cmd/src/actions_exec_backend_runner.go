@@ -66,7 +66,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 	runCtx, cancel := context.WithTimeout(ctx, x.opt.timeout)
 	defer cancel()
 
-	patch, err := runAction(runCtx, prefix, repo.ID, repo.Name, repo.Rev, x.action.Steps, x.logger)
+	patch, err := runAction(runCtx, prefix, repo.Name, repo.Rev, x.action.Steps, x.logger)
 	status := ActionRepoStatus{
 		FinishedAt: time.Now(),
 	}
@@ -119,7 +119,7 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(err, context.DeadlineExceeded)
 }
 
-func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps []*ActionStep, logger *actionLogger) ([]byte, error) {
+func runAction(ctx context.Context, prefix, repoName, rev string, steps []*ActionStep, logger *actionLogger) ([]byte, error) {
 	logger.RepoStarted(repoName, rev, steps)
 
 	zipFile, err := fetchRepositoryArchive(ctx, repoName, rev)
