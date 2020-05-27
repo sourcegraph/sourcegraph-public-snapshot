@@ -47,6 +47,7 @@ describe('CampaignBurndownChart', () => {
                             },
                         ]}
                         history={history}
+                        locales="en-US"
                     />,
                     { createNodeMock }
                 )

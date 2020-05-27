@@ -1,5 +1,5 @@
 import H from 'history'
-import React from 'react'
+import React, { useCallback, useMemo } from 'react'
 import {
     Area,
     ComposedChart,
@@ -14,16 +14,8 @@ import { ICampaign } from '../../../../../shared/src/graphql/schema'
 
 interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
     history: H.History
+    locales?: string | string[]
 }
-
-const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-const dateTickFormatter = (timestamp: number): string => dateTickFormat.format(timestamp)
-
-// const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
-const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-const tooltipLabelFormatter = (date: number): string => tooltipLabelFormat.format(date)
-
-const toLocaleString = (value: number): string => value.toLocaleString()
 
 const tooltipStyle: React.CSSProperties = {
     color: 'var(--body-color)',
@@ -51,7 +43,21 @@ const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[ite
 /**
  * A burndown chart showing progress of the campaigns changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime }) => {
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changesetCountsOverTime, locales }) => {
+    const dateTickFormat = useMemo(() => new Intl.DateTimeFormat(locales, { month: 'long', day: 'numeric' }), [locales])
+    const dateTickFormatter = useCallback((timestamp: number): string => dateTickFormat.format(timestamp), [
+        dateTickFormat,
+    ])
+    // const tooltipLabelFormat = useMemo(() => new Intl.DateTimeFormat(locales, { dateStyle: 'medium' }), [locales])
+    const tooltipLabelFormat = useMemo(
+        () => new Intl.DateTimeFormat(locales, { month: 'short', day: 'numeric', year: 'numeric' }),
+        [locales]
+    )
+    const tooltipLabelFormatter = useCallback((date: number): string => tooltipLabelFormat.format(date), [
+        tooltipLabelFormat,
+    ])
+    const toLocaleString = useCallback((value: number): string => value.toLocaleString(locales), [locales])
+
     if (changesetCountsOverTime.length <= 1) {
         return (
             <p>
