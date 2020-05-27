@@ -6,38 +6,33 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 <!-- omit in toc -->
 ## Outline
 
-- [Environment](#environment)
-- [Step 1: Install dependencies](#step-1-install-dependencies)
-  - [macOS](#macos)
-  - [Ubuntu](#ubuntu)
-  - [(optional) asdf](#optional-asdf)
-- [Step 2: Initialize your database](#step-2-initialize-your-database)
-  - [More info](#more-info)
-- [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
-- [Step 4: Get the code](#step-4-get-the-code)
-- [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
-  - [Prerequisites](#prerequisites)
-    - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
-    - [Initialize Caddy 2](#initialize-caddy-2)
-- [Step 6: Start the server](#step-6-start-the-server)
-- [Troubleshooting](#troubleshooting)
-    - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
-    - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
-    - [Database migration failures](#database-migration-failures)
-    - [Internal Server Error](#internal-server-error)
-    - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
-    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
-    - [Running out of disk space](#running-out-of-disk-space)
-- [How to Run Tests](#how-to-run-tests)
-- [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
-- [How to debug live code](#how-to-debug-live-code)
-  - [Debug TypeScript code](#debug-typescript-code)
-  - [Debug Go code](#debug-go-code)
-- [Go dependency management](#go-dependency-management)
-- [Codegen](#codegen)
-- [Windows support](#windows-support)
-- [Other nice things](#other-nice-things)
-  - [Offline development](#offline-development)
+- [Also add this to your '~/.bashrc'](#also-add-this-to-your-bashrc)
+    - [More info](#more-info)
+  - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
+  - [Step 4: Get the code](#step-4-get-the-code)
+  - [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+    - [Prerequisites](#prerequisites)
+      - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
+      - [Initialize Caddy 2](#initialize-caddy-2)
+  - [Step 6: Start the server](#step-6-start-the-server)
+  - [Troubleshooting](#troubleshooting)
+      - [Problems with node_modules or Javascript packages](#problems-with-node_modules-or-javascript-packages)
+      - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
+      - [Database migration failures](#database-migration-failures)
+      - [Internal Server Error](#internal-server-error)
+      - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
+      - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+      - [Running out of disk space](#running-out-of-disk-space)
+  - [How to Run Tests](#how-to-run-tests)
+  - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
+  - [How to debug live code](#how-to-debug-live-code)
+    - [Debug TypeScript code](#debug-typescript-code)
+    - [Debug Go code](#debug-go-code)
+  - [Go dependency management](#go-dependency-management)
+  - [Codegen](#codegen)
+  - [Windows support](#windows-support)
+  - [Other nice things](#other-nice-things)
+    - [Offline development](#offline-development)
 
 ## Environment
 
@@ -46,7 +41,15 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 <!-- omit in toc -->
 ### For Sourcegraph employees
 
-[dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) (which has convenient preconfigured settings and external services on an enterprise account) alongside the `sourcegraph/sourcegraph` repository, for example:
+
+```
+/dir
+ |-- dev-private
+ +-- sourcegraph
+```
+
+After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
 
 ## Step 1: Install dependencies
 
