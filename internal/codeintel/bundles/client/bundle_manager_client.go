@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -263,7 +264,7 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, file
 	}()
 
 	for i, file := range files {
-		if err := c.sendPart(ctx, bundleID, file, i); err != nil {
+		if err := c.sendPartWithRetry(ctx, bundleID, file, i); err != nil {
 			return err
 		}
 	}
@@ -281,6 +282,21 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, file
 	}
 	body.Close()
 	return nil
+}
+
+const MaxAttempts = 5
+const AttemptInterval = time.Second
+
+func (c *bundleManagerClientImpl) sendPartWithRetry(ctx context.Context, bundleID int, filename string, index int) (err error) {
+	for i := 0; i < MaxAttempts; i++ {
+		if err = c.sendPart(ctx, bundleID, filename, index); err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return err
 }
 
 // sendPart sends a portion of the database to the bundle manager.
