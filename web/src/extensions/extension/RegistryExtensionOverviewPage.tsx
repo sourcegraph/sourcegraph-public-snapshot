@@ -1,7 +1,7 @@
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject, truncate } from 'lodash'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
@@ -188,7 +188,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 {repositoryURL && (
                                     <div className="d-flex">
                                         {repositoryURL.hostname === 'github.com' && (
-                                            <GithubCircleIcon className="icon-inline mr-1" />
+                                            <GithubIcon className="icon-inline mr-1" />
                                         )}
                                         <a
                                             href={repositoryURL.href}
