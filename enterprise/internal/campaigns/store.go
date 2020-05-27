@@ -1737,16 +1737,51 @@ func getPatchSetQuery(opts *GetPatchSetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getPatchSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// GetCampaignStatusOpts captures the query options needed for getting the
+// BackgroundProcessStatus for a Campaign.
+type GetCampaignStatusOpts struct {
+	ID int64
+	// When ExcludeErrors is set the ProcessErrors slice of the
+	// BackgroundProcessStatus returned by GetCampaignStatus won't be
+	// populated.
+	ExcludeErrors bool
+}
+
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
-func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
+func (s *Store) GetCampaignStatus(ctx context.Context, opts GetCampaignStatusOpts) (*campaigns.BackgroundProcessStatus, error) {
+	q := getCampaignStatusQuery(&opts)
+	return s.queryBackgroundProcessStatus(ctx, q)
+}
+
+func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	var errorsPreds []*sqlf.Query
+	if opts.ExcludeErrors {
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
+	}
+
+	if len(errorsPreds) == 0 {
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
+	}
+
+	return sqlf.Sprintf(
 		getCampaignStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_id = %s", id),
-	))
+		sqlf.Join(errorsPreds, " AND "),
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*campaigns.BackgroundProcessStatus, error) {
 	var status campaigns.BackgroundProcessStatus
+
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanBackgroundProcessStatus(&status, sc)
 	})
@@ -1760,9 +1795,9 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 		status.ProcessState = campaigns.BackgroundProcessStateCanceled
 	case status.Pending > 0:
 		status.ProcessState = campaigns.BackgroundProcessStateProcessing
-	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
+	case status.Completed == status.Total && status.Failed == 0:
 		status.ProcessState = campaigns.BackgroundProcessStateCompleted
-	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
+	case status.Completed == status.Total && status.Failed > 0:
 		status.ProcessState = campaigns.BackgroundProcessStateErrored
 	}
 	return &status, nil
@@ -1776,7 +1811,8 @@ SELECT
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
   COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
+  COUNT(*) FILTER (WHERE error != '') AS failed,
+  array_agg(error) FILTER (WHERE %s) AS errors
 FROM changeset_jobs
 WHERE %s
 LIMIT 1
@@ -2818,6 +2854,7 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 		&b.Total,
 		&b.Pending,
 		&b.Completed,
+		&b.Failed,
 		pq.Array(&b.ProcessErrors),
 	)
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -58,7 +59,7 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	if n, err := io.Copy(w, file); err != nil {
+	if n, err := io.Copy(limitTransferRate(w), file); err != nil {
 		if isConnectionError(err) {
 			log15.Error("Failure to transfer upload from bundle from manager", "n", n)
 		}
@@ -342,6 +343,15 @@ func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
 
 func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {
 	return database.NewObserved(innerDatabase, filename, s.observationContext)
+}
+
+// limitTransferRate applies a transfer limit to the given writer.
+//
+// In the case that the remote server is running on the same host as this service, an unbounded
+// transfer rate can end up being so fast that we harm our own network connectivity. In order to
+// prevent the disruption of other in-flight requests, we cap the transfer rate of w to 1Gbps.
+func limitTransferRate(w io.Writer) io.Writer {
+	return flowrate.NewWriter(w, 1000*1000*1000)
 }
 
 //

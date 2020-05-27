@@ -333,7 +333,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
+	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{ID: r.Campaign.ID})
 }
 
 type changesetDiffsConnectionResolver struct {

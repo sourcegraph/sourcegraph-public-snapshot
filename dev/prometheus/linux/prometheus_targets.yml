@@ -45,6 +45,11 @@
     # precise-code-intel-worker
     - 127.0.0.1:6088
 - labels:
+    job: precise-code-intel-indexer
+  targets:
+    # precise-code-intel-indexer
+    - 127.0.0.1:6089
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

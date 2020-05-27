@@ -1,5 +1,6 @@
 import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
+import * as clientType from '@sourcegraph/extension-api-types'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -11,6 +12,9 @@ export interface FlatExtHostAPI {
      * Updates the settings exposed to extensions.
      */
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
+
+    syncRoots(roots: readonly clientType.WorkspaceRoot[]): void
+    syncVersionContext(versionContext: string | undefined): void
 }
 
 /**

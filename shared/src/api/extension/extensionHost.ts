@@ -13,7 +13,6 @@ import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtWorkspace } from './api/workspace'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
@@ -135,7 +134,6 @@ function createExtensionAPI(
     const extensions = new ExtExtensions()
     subscription.add(extensions)
 
-    const workspace = new ExtWorkspace()
     const windows = new ExtWindows(proxy, documents)
     const views = new ExtViews(proxy.views)
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
@@ -143,7 +141,7 @@ function createExtensionAPI(
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
 
-    const { configuration, exposedToMain } = initNewExtensionAPI(proxy)
+    const { configuration, exposedToMain, workspace, state } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -153,7 +151,6 @@ function createExtensionAPI(
 
         documents,
         extensions,
-        workspace,
         windows,
         ...exposedToMain,
     }
@@ -196,15 +193,16 @@ function createExtensionAPI(
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-            get roots(): readonly sourcegraph.WorkspaceRoot[] {
-                return workspace.getAllRoots()
+            ...workspace,
+            // we use state here directly because of getters
+            // getter are not preserved as functions via {...obj} syntax
+            // thus expose state until we migrate documents to the new model according RFC 155
+            get roots() {
+                return state.roots
             },
-            onDidChangeRoots: workspace.rootChanges,
-            rootChanges: workspace.rootChanges,
-            get versionContext(): string | undefined {
-                return workspace.versionContextChanges.value
+            get versionContext() {
+                return state.versionContext
             },
-            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
         configuration,

@@ -21,6 +21,7 @@ var allDockerImages = []string{
 	"symbols",
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
+	"precise-code-intel-indexer",
 
 	// Images under docker-images/
 	"cadvisor",

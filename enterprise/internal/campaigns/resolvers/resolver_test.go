@@ -19,6 +19,7 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -752,6 +753,60 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
+	}
+}
+
+func TestNullIDResilience(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	sr := &Resolver{store: ee.NewStoreWithClock(dbconn.Global, clock)}
+
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	ids := []graphql.ID{
+		marshalPatchSetID(0),
+		marshalPatchID(0),
+		marshalCampaignID(0),
+		marshalChangesetID(0),
+	}
+
+	for _, id := range ids {
+		var response struct{ Node struct{ ID string } }
+
+		query := fmt.Sprintf(`query { node(id: %q) { id } }`, id)
+		apitest.MustExec(ctx, t, s, nil, &response, query)
+
+		if have, want := response.Node.ID, ""; have != want {
+			t.Fatalf("node has wrong ID. have=%q, want=%q", have, want)
+		}
+	}
+
+	mutations := []string{
+		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
+	}
+
+	for _, m := range mutations {
+		var response struct{}
+		errs := apitest.Exec(ctx, t, s, nil, &response, m)
+		if len(errs) == 0 {
+			t.Fatalf("expected errors but none returned (mutation: %q)", m)
+		}
+		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero.Error()); have != want {
+			t.Fatalf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
+		}
 	}
 }
 
