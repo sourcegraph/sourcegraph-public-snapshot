@@ -53,6 +53,9 @@ or seeing the same error in the "Code host status panel" (Clicking the cloud ico
 The fix is to increase the memory on Postgres DB which will increase certain Postgres-internal limits and will allow
 the queries from repo-updater to go through.
 
+Another cause could be that the `repo-updater` is in a crash loop for some reason. If there are large numbers of repos
+to be updated it could be from `Out of memory` errors. A fix here is to increase the memory for `repo-updater` too.
+
 ## General scenarios
 
 This section contains a list of scenarios, each of which contains instructions that include
