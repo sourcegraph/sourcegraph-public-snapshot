@@ -31,6 +31,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Automatic syncing of Campaign webhooks for Bitbucket Server. [#10962](https://github.com/sourcegraph/sourcegraph/pull/10962)
 
+## 3.16.1
+
+### Fixed
+
+- Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
+- Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
+
 ## 3.16.0
 
 ### Added
