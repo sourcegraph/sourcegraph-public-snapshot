@@ -34,11 +34,11 @@ interface Props {
     allExpanded?: boolean
 }
 
-export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
-    const logClick = (): void => {
-        eventLogger.log('CommitSearchResultClicked')
-    }
+const logClick = (): void => {
+    eventLogger.log('CommitSearchResultClicked')
+}
 
+export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink

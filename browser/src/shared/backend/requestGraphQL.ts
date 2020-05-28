@@ -10,7 +10,7 @@ import { background } from '../../browser-extension/web-extension-api/runtime'
  *
  * In the native integration, the returned function will rely on the `requestGraphQL` implementation from `/shared`.
  */
-export const requestGraphQLHelper = (isExtension: boolean, baseUrl: string) => <T extends IQuery | IMutation>({
+export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <T extends IQuery | IMutation>({
     request,
     variables,
 }: {

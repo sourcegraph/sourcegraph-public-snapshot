@@ -22,7 +22,7 @@ function init(): void {
 
     const assetsURL = getAssetsURL(sourcegraphURL)
 
-    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
+    if (document.querySelector(`#${EXTENSION_MARKER_ID}`) !== null) {
         // If the extension marker already exists, it means the browser extension is currently executing.
         // Dispatch a custom event to signal that browser extension resources should be cleaned up.
         document.dispatchEvent(new CustomEvent<{}>(NATIVE_INTEGRATION_ACTIVATED))

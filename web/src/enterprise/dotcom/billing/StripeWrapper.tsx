@@ -17,7 +17,7 @@ export const StripeWrapper = <P extends object>(props: Props<P>): JSX.Element | 
         const initStripe = (): void => setStripe((window as any).Stripe(billingPublishableKey))
 
         const id = 'stripe-script'
-        if (document.getElementById(id)) {
+        if (document.querySelector(`#${id}`)) {
             initStripe()
             return // already loaded
         }

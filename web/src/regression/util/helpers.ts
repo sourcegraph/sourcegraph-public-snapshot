@@ -1,5 +1,5 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { GraphQLClient } from './GraphQLClient'
+import { GraphQLClient } from './GraphQlClient'
 import { Driver } from '../../../../shared/src/e2e/driver'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { catchError, map } from 'rxjs/operators'

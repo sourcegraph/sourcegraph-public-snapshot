@@ -1,7 +1,7 @@
 import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'

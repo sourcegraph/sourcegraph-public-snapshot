@@ -54,7 +54,7 @@ interface Parameters {
 /**
  * Component to show the GraphQL API console.
  */
-export class APIConsole extends React.PureComponent<Props, State> {
+export class ApiConsole extends React.PureComponent<Props, State> {
     public state: State = { parameters: {} }
 
     private updates = new Subject<Parameters>()
@@ -84,7 +84,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('APIConsole')
+        eventLogger.logViewEvent('ApiConsole')
 
         // Update the browser URL bar when query/variables/operation name are
         // changed so that the page can be easily shared.

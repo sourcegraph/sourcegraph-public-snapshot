@@ -174,8 +174,8 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
         return null
     }
 
-    const baseCommitID = pageSource.substr(baseIndex + baseShaComment.length, 40)
-    const headCommitID = pageSource.substr(headIndex + headShaComment.length, 40)
+    const baseCommitID = pageSource.slice(baseIndex + baseShaComment.length, 40)
+    const headCommitID = pageSource.slice(headIndex + headShaComment.length, 40)
     return {
         baseCommitID,
         headCommitID,
@@ -205,6 +205,7 @@ export function getFilePath(): string {
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
+    // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(

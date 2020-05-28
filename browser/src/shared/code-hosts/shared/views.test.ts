@@ -278,7 +278,7 @@ describe('delayUntilIntersecting()', () => {
         let observerCallback: IntersectionObserverCallbackLike = noop
         const views = ['view1', 'view2', 'view3'].map(
             (id: string): ViewWithSubscriptions<{ element: HTMLElement }> => ({
-                element: document.getElementById(id)!,
+                element: document.querySelector<HTMLElement>(`#${id}`)!,
                 subscriptions: new Subscription(),
             })
         )

@@ -51,7 +51,7 @@ function getDiffIdFromDifferentialPage(): number {
 }
 
 // https://phabricator.sgdev.org/source/gorilla/browse/master/mux.go
-const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([\w\-]+)\/browse\/([\w-]+\/)?([^$;]+)(;[\da-f]{40})?(?:\$\d+)?/i
+const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([\w-]+)\/browse\/([\w-]+\/)?([^$;]+)(;[\da-f]{40})?(?:\$\d+)?/i
 // https://phabricator.sgdev.org/D2
 const PHAB_DIFFERENTIAL_REGEX = /^\/?(d\d+)(?:\?(?:(?:id=(\d+))|(vs=(?:\d+|on)&id=\d+)))?/i
 // https://phabricator.sgdev.org/rMUXfb619131e25d82897c9de11789aa479941cfd415

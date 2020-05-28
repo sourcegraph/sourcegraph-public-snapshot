@@ -21,7 +21,7 @@ const statusClassNames = {
  */
 const zeroWidthNbsp = '\u2060'
 
-export interface ServerURLFormProps {
+export interface ServerUrlFormProps {
     className?: string
     status: keyof typeof statusClassNames
     connectionError?: ConnectionErrors
@@ -43,7 +43,7 @@ interface State {
     isUpdating: boolean
 }
 
-export class ServerURLForm extends React.Component<ServerURLFormProps> {
+export class ServerUrlForm extends React.Component<ServerUrlFormProps> {
     public state: State = { isUpdating: false }
 
     private inputElement = React.createRef<HTMLInputElement>()
@@ -54,7 +54,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
 
     private subscriptions = new Subscription()
 
-    constructor(props: ServerURLFormProps) {
+    constructor(props: ServerUrlFormProps) {
         super(props)
 
         this.subscriptions.add(
@@ -179,7 +179,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     private get isUpdating(): boolean {
         if (typeof this.props.overrideUpdatingState !== 'undefined') {
             console.warn(
-                '<ServerURLForm /> - You are using the `overrideUpdatingState` prop which is ' +
+                '<ServerUrlForm /> - You are using the `overrideUpdatingState` prop which is ' +
                     'only intended for use with storybooks. Keeping this state in multiple places can ' +
                     'lead to race conditions and will be hard to maintain.'
             )

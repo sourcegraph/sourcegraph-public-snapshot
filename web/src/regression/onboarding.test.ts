@@ -1,7 +1,7 @@
 import { describe, before, after, test } from 'mocha'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'

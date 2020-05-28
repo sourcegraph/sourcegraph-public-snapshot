@@ -1,6 +1,6 @@
 import { describe, before, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'

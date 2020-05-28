@@ -300,13 +300,14 @@ export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
     }
 }
 
+// `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
+const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
+
 export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
     const range = lprToRange(lpr)
     if (range === undefined) {
         return []
     }
-    // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
-    const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
     const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
     const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
     return [
@@ -659,7 +660,7 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
             ) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                 }
             }
         }
@@ -676,7 +677,7 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
             if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
                 return {
                     range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                 }
             }
         }

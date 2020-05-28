@@ -47,7 +47,7 @@ export const singleFileDOMFunctions: DOMFunctions = {
 }
 
 const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement => {
-    for (const lineNumElem of codeView.getElementsByClassName(`line-number-${part === 'head' ? 'to' : 'from'}`)) {
+    for (const lineNumElem of codeView.querySelectorAll(`.line-number-${part === 'head' ? 'to' : 'from'}`)) {
         const lineNum = parseInt((lineNumElem.textContent || '').trim(), 10)
         if (!isNaN(lineNum) && lineNum === line) {
             const lineElem = lineNumElem.closest<HTMLElement>('.line')

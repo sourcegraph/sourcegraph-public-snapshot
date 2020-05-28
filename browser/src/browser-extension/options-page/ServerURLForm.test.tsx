@@ -5,9 +5,9 @@ import { switchMap, tap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import sinon from 'sinon'
 
-import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
+import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
 
-describe('ServerURLForm', () => {
+describe('ServerUrlForm', () => {
     afterAll(cleanup)
 
     test('fires the onChange prop handler', () => {
@@ -15,7 +15,7 @@ describe('ServerURLForm', () => {
         const onSubmit = sinon.spy()
 
         const { container } = render(
-            <ServerURLForm
+            <ServerUrlForm
                 value="https://sourcegraph.com"
                 status="connected"
                 onChange={onChange}
@@ -36,7 +36,7 @@ describe('ServerURLForm', () => {
     })
 
     test('updates the input value when the url changes', () => {
-        const props: ServerURLFormProps = {
+        const props: ServerUrlFormProps = {
             value: 'https://sourcegraph.com',
             status: 'connected',
             onChange: noop,
@@ -45,11 +45,11 @@ describe('ServerURLForm', () => {
             requestPermissions: noop,
         }
 
-        const { container, rerender } = render(<ServerURLForm {...props} />)
+        const { container, rerender } = render(<ServerUrlForm {...props} />)
 
         const urlInput = container.querySelector('input')!
 
-        rerender(<ServerURLForm {...props} value="https://different.com" />)
+        rerender(<ServerUrlForm {...props} value="https://different.com" />)
 
         const newValue = urlInput.value
 
@@ -60,7 +60,7 @@ describe('ServerURLForm', () => {
         const onSubmit = sinon.spy()
 
         const { container } = render(
-            <ServerURLForm
+            <ServerUrlForm
                 value="https://sourcegraph.com"
                 status="connected"
                 onChange={noop}
@@ -85,7 +85,7 @@ describe('ServerURLForm', () => {
             const nextSubmit = (): void => submits.next()
 
             const { container } = render(
-                <ServerURLForm
+                <ServerUrlForm
                     value="https://sourcegraph.com"
                     status="connected"
                     onChange={noop}
@@ -128,7 +128,7 @@ describe('ServerURLForm', () => {
             const submits = new Subject<void>()
             const nextSubmit = (): void => submits.next()
 
-            const props: ServerURLFormProps = {
+            const props: ServerUrlFormProps = {
                 value: 'https://sourcegraph.com',
                 status: 'connected',
                 onChange: nextChange,
@@ -137,7 +137,7 @@ describe('ServerURLForm', () => {
                 requestPermissions: noop,
             }
 
-            const { container } = render(<ServerURLForm {...props} />)
+            const { container } = render(<ServerUrlForm {...props} />)
             const form = container.querySelector('input')!
 
             changes.subscribe(url => {

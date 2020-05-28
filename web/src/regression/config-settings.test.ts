@@ -10,7 +10,7 @@ import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
 import { fetchSiteConfiguration } from './util/api'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 describe('Site config test suite', () => {

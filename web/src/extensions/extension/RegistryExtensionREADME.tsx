@@ -26,7 +26,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
     </div>
 )
 
-export const ExtensionREADME: React.FunctionComponent<{
+export const ExtensionReadme: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
     history: H.History
 }> = ({ extension, history }) => {

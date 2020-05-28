@@ -20,6 +20,17 @@ import execa from 'execa'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+const formatDate = (d: Date): string =>
+    `${d.toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (SF time) / ${d.toLocaleString('en-US', {
+        timeZone: 'Europe/Berlin',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (Berlin time)`
+
 interface Config {
     teamEmail: string
 
@@ -186,16 +197,6 @@ const steps: Step[] = [
                     `Tracking issue for version ${c.majorVersion}.${c.minorVersion} not found--has it been create yet?`
                 )
             }
-            const formatDate = (d: Date): string =>
-                `${d.toLocaleString('en-US', {
-                    timeZone: 'America/Los_Angeles',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (SF time) / ${d.toLocaleString('en-US', {
-                    timeZone: 'Europe/Berlin',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (Berlin time)`
             await postMessage(
                 `:captain: ${c.majorVersion}.${c.minorVersion} Release :captain:
 Release captain: @${c.captainSlackUsername}

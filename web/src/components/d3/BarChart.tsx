@@ -68,7 +68,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
         const yValues = data.map(({ yValues }) => yValues)
         const yHeights = data.map(({ yValues }) => Object.keys(yValues).reduce((acc, k) => acc + yValues[k], 0))
 
-        if (!data.length) {
+        if (data.length === 0) {
             return
         }
 

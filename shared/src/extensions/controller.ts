@@ -54,6 +54,10 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
     extensionsController: Pick<Controller, K>
 }
 
+function messageFromExtension(message: string): string {
+    return `From extension:\n\n${message}`
+}
+
 /**
  * Creates the controller, which handles all communication between the client application and extensions.
  *
@@ -86,10 +90,6 @@ export function createController(context: PlatformContext): Controller {
             notifications.next({ message: title, progress, type: NotificationType.Log })
         })
     )
-
-    function messageFromExtension(message: string): string {
-        return `From extension:\n\n${message}`
-    }
     subscriptions.add(
         services.notifications.showMessageRequests.subscribe(({ message, actions, resolve }) => {
             if (!actions || actions.length === 0) {

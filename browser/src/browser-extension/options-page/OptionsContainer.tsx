@@ -6,7 +6,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, concat
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
-import { ConnectionErrors } from './ServerURLForm'
+import { ConnectionErrors } from './ServerUrlForm'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface OptionsContainerProps {

@@ -74,7 +74,7 @@ function highlightNodeHelper(
                     const rest = nodeText.slice(start - currOffset)
 
                     const containerNode = document.createElement('span')
-                    if (nodeText.slice(0, Math.max(0, start - currOffset)) !== '') {
+                    if (nodeText.slice(0, Math.max(0, start - currOffset))) {
                         // If characters were consumed leading up to the start of highlighting, add them to the parent.
                         containerNode.append(
                             document.createTextNode(nodeText.slice(0, Math.max(0, start - currOffset)))

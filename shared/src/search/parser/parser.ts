@@ -171,7 +171,7 @@ const quoted: Parser<Quoted> = (input, start) => {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
         range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.substring(start + 1, end) },
+        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
     }
 }
 

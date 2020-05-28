@@ -9,7 +9,7 @@ import {
     isErrorGraphQLResult,
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { GraphQLClient } from './GraphQLClient'
+import { GraphQLClient } from './GraphQlClient'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import {
