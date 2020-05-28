@@ -81,7 +81,7 @@ func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error)
 	}
 
 	alreadyDone = !failed || (failed && errType == "clone")
-	return
+	return alreadyDone, nil
 }
 
 // failed records the fact that the worker processing the specified ownerRepo failed to process it.
