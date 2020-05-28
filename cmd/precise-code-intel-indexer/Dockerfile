@@ -11,7 +11,16 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-  tini
+    tini
+
+RUN mkdir temp && \
+    curl -L https://github.com/sourcegraph/src-cli/releases/download/3.12.0/src-cli_3.12.0_linux_amd64.tar.gz -o src-cli.tar.gz && \
+    tar -C temp -zvxf src-cli.tar.gz && \
+    mv temp/src /usr/local/bin && \
+    curl -L https://github.com/sourcegraph/lsif-go/releases/download/v0.8.0/lsif-go_0.8.0_linux_amd64.tar.gz -o lsif-go.tar.gz && \
+    tar -C temp -zvxf lsif-go.tar.gz && \
+    mv temp/lsif-go /usr/local/bin && \
+    rm -rf temp src-cli.tar.gz lsif-go.tar.gz
 
 USER sourcegraph
 EXPOSE 3189

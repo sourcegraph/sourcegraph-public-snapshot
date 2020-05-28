@@ -42,7 +42,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
             if (manifest?.icon) {
                 iconURL = new URL(manifest.icon)
             }
-        } catch (e) {
+        } catch {
             // noop
         }
 

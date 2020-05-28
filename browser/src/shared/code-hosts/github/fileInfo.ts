@@ -57,7 +57,7 @@ export const resolveFileInfo = (): DiffOrBlobInfo => {
     }
 }
 
-const COMMIT_HASH_REGEX = /\/([0-9a-f]{40})$/i
+const COMMIT_HASH_REGEX = /\/([\da-f]{40})$/i
 
 export const resolveSnippetFileInfo = (codeView: HTMLElement): DiffOrBlobInfo => {
     // A snippet code view contains a link to the snippet's commit.

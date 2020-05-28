@@ -1,7 +1,7 @@
 import { describe, before, after, test } from 'mocha'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
@@ -36,9 +36,9 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
         if (!dropdownMenu) {
             throw new Error('No activation status dropdown menu')
         }
-        const lineItems = Array.from(dropdownMenu.querySelectorAll('.activation-dropdown-item'))
-        const complete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-success'))).length
-        const incomplete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-muted'))).length
+        const lineItems = [...dropdownMenu.querySelectorAll('.activation-dropdown-item')]
+        const complete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-success')]).length
+        const incomplete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-muted')]).length
         return {
             complete,
             total: complete + incomplete,

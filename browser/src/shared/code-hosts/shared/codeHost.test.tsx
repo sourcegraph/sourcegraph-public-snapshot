@@ -53,7 +53,7 @@ const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toE
 const createTestElement = (): HTMLElement => {
     const el = document.createElement('div')
     el.className = `test test-${uniqueId()}`
-    document.body.appendChild(el)
+    document.body.append(el)
     return el
 }
 
@@ -200,7 +200,7 @@ describe('codeHost', () => {
             const codeView = createTestElement()
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
-            codeView.appendChild(toolbarMount)
+            codeView.append(toolbarMount)
             const blobInfo: DiffOrBlobInfo = {
                 blob: {
                     rawRepoName: 'foo',
@@ -282,7 +282,7 @@ describe('codeHost', () => {
                 }
                 // For this test, we pretend bar.ts only has one line of code
                 const line = document.createElement('div')
-                codeView.appendChild(line)
+                codeView.append(line)
                 subscriptions.add(
                     handleCodeHost({
                         ...commonArgs(),
@@ -624,8 +624,8 @@ describe('codeHost', () => {
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
-            codeElement.innerText = 'alert(1)'
-            codeView.appendChild(codeElement)
+            codeElement.textContent = 'alert(1)'
+            codeView.append(codeElement)
             const dom = {
                 getCodeElementFromTarget: sinon.spy(() => codeElement),
                 getCodeElementFromLineNumber: sinon.spy(() => codeElement),
@@ -669,8 +669,8 @@ describe('codeHost', () => {
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
-            codeElement.innerText = 'alert(1)'
-            codeView.appendChild(codeElement)
+            codeElement.textContent = 'alert(1)'
+            codeView.append(codeElement)
             const dom = {
                 getCodeElementFromTarget: sinon.spy(() => codeElement),
                 getCodeElementFromLineNumber: sinon.spy(() => codeElement),
@@ -726,8 +726,8 @@ describe('codeHost', () => {
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
-            codeElement.innerText = 'alert(1)'
-            codeView.appendChild(codeElement)
+            codeElement.textContent = 'alert(1)'
+            codeView.append(codeElement)
             const nativeTooltip = createTestElement()
             nativeTooltip.classList.add('native')
             const dom = {
@@ -886,7 +886,7 @@ describe('codeHost', () => {
             const el = createTestElement()
             const nested = document.createElement('div')
             nested.classList.add('nested')
-            el.appendChild(nested)
+            el.append(nested)
             scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     observeHoverOverlayMountLocation(

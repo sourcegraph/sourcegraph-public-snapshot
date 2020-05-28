@@ -30,7 +30,7 @@ function getRevSpecFromRevisionSelector(): RevSpec {
     if (revisionRefStr) {
         try {
             revisionRefInfo = JSON.parse(revisionRefStr)
-        } catch (err) {
+        } catch {
             throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
         }
     }
@@ -47,7 +47,7 @@ export function getContext(): CodeHostContext {
     let revSpec: Partial<RevSpec> = {}
     try {
         revSpec = getRevSpecFromRevisionSelector()
-    } catch (err) {
+    } catch {
         // RevSpec is optional in CodeHostContext
     }
     return {

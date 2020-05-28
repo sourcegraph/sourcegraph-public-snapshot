@@ -99,7 +99,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		if info != nil && info.IsExpiredWithGracePeriod() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Core features.",
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
 			}}
 		}
 		return nil
@@ -129,7 +129,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 

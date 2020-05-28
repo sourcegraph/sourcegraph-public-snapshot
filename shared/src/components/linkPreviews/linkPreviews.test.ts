@@ -3,8 +3,7 @@ import { LinkPreviewMerged } from '../../api/client/services/linkPreview'
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
 const OPTIONS: ApplyLinkPreviewOptions = {
-    setElementTooltip: (e, text) =>
-        text !== null ? e.setAttribute('data-tooltip', text) : e.removeAttribute('data-tooltip'),
+    setElementTooltip: (e, text) => (text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip')),
 }
 
 describe('applyLinkPreview', () => {
@@ -12,7 +11,7 @@ describe('applyLinkPreview', () => {
         const div = document.createElement('div')
         const link = document.createElement('a')
         link.href = 'u'
-        link.innerText = 'b'
+        link.textContent = 'b'
         div.append(link)
 
         const LINK_PREVIEW_MERGED: LinkPreviewMerged = {
@@ -31,7 +30,7 @@ describe('applyLinkPreview', () => {
         }
         applyLinkPreview(OPTIONS, link, LINK_PREVIEW_MERGED)
         const WANT =
-            '<a href="u" data-tooltip="y"></a><span class="sg-link-preview-content" data-tooltip="y"><strong>x</strong></span>'
+            '<a href="u" data-tooltip="y">b</a><span class="sg-link-preview-content" data-tooltip="y"><strong>x</strong></span>'
         expect(div.innerHTML).toBe(WANT)
 
         // Check for idempotence.

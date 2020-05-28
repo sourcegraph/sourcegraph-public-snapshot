@@ -9,7 +9,7 @@ import { applyEdits } from '@sqs/jsonc-parser'
 import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { getTestTools } from './util/init'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { ensureTestExternalService, getUser, setUserSiteAdmin } from './util/api'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
@@ -226,7 +226,7 @@ describe('Code intelligence regression test suite', () => {
             await driver.page.waitForFunction(
                 () => {
                     const sidebar = document.querySelector<HTMLElement>('.e2e-repo-rev-sidebar')
-                    return sidebar && !sidebar.innerText.includes('backgroundEntry')
+                    return sidebar && !sidebar.textContent?.includes('backgroundEntry')
                 },
                 { timeout: 2 * 1000 }
             )
@@ -265,10 +265,7 @@ describe('Code intelligence regression test suite', () => {
                         repository: `github.com/sourcegraph-testing/${repository}`,
                         commit,
                         root: '/',
-                        filename: `lsif-data/github.com/sourcegraph-testing/${repository}@${commit.substring(
-                            0,
-                            12
-                        )}.lsif`,
+                        filename: `lsif-data/github.com/sourcegraph-testing/${repository}@${commit.slice(0, 12)}.lsif`,
                     })
                 )
 
@@ -556,7 +553,7 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
  */
 function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
     return driver.page.evaluate(() =>
-        Array.from(document.querySelectorAll<HTMLElement>('.e2e-file-match-children-item-wrapper')).map(a => ({
+        [...document.querySelectorAll<HTMLElement>('.e2e-file-match-children-item-wrapper')].map(a => ({
             url: a.querySelector('.e2e-file-match-children-item')?.getAttribute('href') || '',
             precise: a.querySelector('.e2e-badge-row')?.childElementCount === 0,
         }))
@@ -584,7 +581,7 @@ async function findTokenElement(driver: Driver, line: number, token: string): Pr
         // token. This condition was reproducible in the code navigation test that searches
         // for the identifier `StdioLogger`.
         await driver.page.click('.e2e-close-toast')
-    } catch (error) {
+    } catch {
         // No toast open, this is fine
     }
 
@@ -614,7 +611,7 @@ async function waitForHover(driver: Driver, expectedHoverContains: string, preci
  * Return the currently visible hover text.
  */
 async function getTooltip(driver: Driver): Promise<string> {
-    return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
+    return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).textContent || '')
 }
 
 /**
@@ -765,7 +762,7 @@ async function performUpload(
         try {
             // See if the error is due to a missing utility
             await child_process.exec('which src')
-        } catch (error) {
+        } catch {
             throw new Error('src-cli is not available on PATH')
         }
 

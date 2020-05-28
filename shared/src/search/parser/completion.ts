@@ -239,7 +239,7 @@ export async function getCompletionItems(
             return null
         }
         if (resolvedFilter.definition.suggestions) {
-            if (resolvedFilter.definition.suggestions instanceof Array) {
+            if (Array.isArray(resolvedFilter.definition.suggestions)) {
                 return {
                     suggestions: resolvedFilter.definition.suggestions.map(label => ({
                         label,

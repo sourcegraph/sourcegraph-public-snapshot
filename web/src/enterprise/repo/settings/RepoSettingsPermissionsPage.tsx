@@ -56,6 +56,9 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IR
                     <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} history={history} />
                 </div>
             )}
+            <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                Learn more about background permissions synching.
+            </a>
         </div>
     )
 }

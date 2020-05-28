@@ -105,7 +105,7 @@ function synchronizeTextField(
     // Show completions in the text field.
     const completionWidgetMount = document.createElement('div')
     completionWidgetMount.classList.add('sg-text-field-editor-completion-widget')
-    element.insertAdjacentElement('beforebegin', completionWidgetMount)
+    element.before(completionWidgetMount)
     render(
         <EditorCompletionWidget
             {...completionWidgetClassProps}

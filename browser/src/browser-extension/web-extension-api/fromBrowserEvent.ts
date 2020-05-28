@@ -12,8 +12,8 @@ export const fromBrowserEvent = <F extends (...args: any[]) => void>(
         const handler: any = (...args: any) => subscriber.next(args)
         try {
             emitter.addListener(handler)
-        } catch (err) {
-            subscriber.error(err)
+        } catch (error) {
+            subscriber.error(error)
             return undefined
         }
         return () => emitter.removeListener(handler)

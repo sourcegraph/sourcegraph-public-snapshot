@@ -194,7 +194,7 @@ export const applyDecorations = (
                     link.setAttribute('rel', 'noreferrer noopener')
 
                     link.style.color = style.color || ''
-                    link.appendChild(e)
+                    link.append(e)
                     return link
                 }
 
@@ -209,7 +209,7 @@ export const applyDecorations = (
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
                 annotation.dataset.part = String(part)
                 annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
-                codeElement.appendChild(annotation)
+                codeElement.append(annotation)
             }
         }
     }

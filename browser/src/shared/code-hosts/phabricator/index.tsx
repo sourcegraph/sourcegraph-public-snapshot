@@ -67,7 +67,7 @@ export function spacesToTabsAdjustment(text: string): number {
 
     while (suffix.length >= 2 && suffix.startsWith('  ')) {
         ++adjustment
-        suffix = suffix.substr(2)
+        suffix = suffix.slice(2)
     }
     return adjustment
 }

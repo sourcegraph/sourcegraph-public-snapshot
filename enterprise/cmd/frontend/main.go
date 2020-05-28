@@ -37,7 +37,6 @@ import (
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
-	lsifserverclient "github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -176,10 +175,13 @@ func initCodeIntel() {
 	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
-	client := lsifserverclient.New(db, bundleManagerClient, api)
 
 	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
-		return codeintelResolvers.NewResolver(client)
+		return codeintelResolvers.NewResolver(
+			db,
+			bundleManagerClient,
+			api,
+		)
 	}
 
 	httpapi.NewCodeIntelUploadHandler = func() http.Handler {

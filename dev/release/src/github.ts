@@ -103,7 +103,7 @@ async function getContent(
 ): Promise<string> {
     const resp = await octokit.repos.getContents(params)
     if (Array.isArray(resp.data)) {
-        throw new Error(`${params.path} is a directory`)
+        throw new TypeError(`${params.path} is a directory`)
     }
     return Buffer.from(resp.data.content as string, 'base64').toString()
 }

@@ -23,7 +23,7 @@ describe('contentViews', () => {
         const createTestElement = (): HTMLElement => {
             const el = document.createElement('div')
             el.className = `test test-${uniqueId()}`
-            document.body.appendChild(el)
+            document.body.append(el)
             return el
         }
 
@@ -76,7 +76,7 @@ describe('contentViews', () => {
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
                         setElementTooltip: (e, text) =>
-                            text !== null ? e.setAttribute('data-tooltip', text) : e.removeAttribute('data-tooltip'),
+                            text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip'),
                     }
                 )
             )
@@ -125,7 +125,7 @@ describe('contentViews', () => {
                     {
                         contentViewResolvers: [{ selector: 'div', resolveView: () => ({ element }) }],
                         setElementTooltip: (e, text) =>
-                            text !== null ? e.setAttribute('data-tooltip', text) : e.removeAttribute('data-tooltip'),
+                            text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip'),
                     }
                 )
             )

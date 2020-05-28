@@ -4,9 +4,9 @@ import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitH
 import { map } from 'rxjs/operators'
 import { Observable, throwError } from 'rxjs'
 
-const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
+const TAG_PATTERN = /r([\dA-z]+)([\da-f]{40})/
 function matchPageTag(): RegExpExecArray | null {
-    const el = document.getElementsByClassName('phui-tag-core').item(0)
+    const el = document.querySelectorAll('.phui-tag-core').item(0)
     if (!el) {
         throw new Error('Could not find Phabricator page tag')
     }
@@ -29,9 +29,9 @@ function getCommitIDFromPageTag(): string {
     return match[2]
 }
 
-const DIFF_PATTERN = /Diff ([0-9]+)/
+const DIFF_PATTERN = /Diff (\d+)/
 function getDiffIdFromDifferentialPage(): number {
-    const diffsContainer = document.getElementById('differential-review-stage')
+    const diffsContainer = document.querySelector('#differential-review-stage')
     if (!diffsContainer) {
         throw new Error('no element with id differential-review-stage found on page.')
     }
@@ -39,7 +39,7 @@ function getDiffIdFromDifferentialPage(): number {
     if (!wrappingDiffBox) {
         throw new Error('parent container of diff container not found.')
     }
-    const diffTitle = wrappingDiffBox.children[0].getElementsByClassName('phui-header-header').item(0)
+    const diffTitle = wrappingDiffBox.children[0].querySelectorAll('.phui-header-header').item(0)
     if (!diffTitle || !diffTitle.textContent) {
         throw new Error('Could not find diffTitle element, or it had no text content')
     }
@@ -51,19 +51,19 @@ function getDiffIdFromDifferentialPage(): number {
 }
 
 // https://phabricator.sgdev.org/source/gorilla/browse/master/mux.go
-const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9\-_]+)\/browse\/([\w-]+\/)?([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i
+const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([\w-]+)\/browse\/([\w-]+\/)?([^$;]+)(;[\da-f]{40})?(?:\$\d+)?/i
 // https://phabricator.sgdev.org/D2
-const PHAB_DIFFERENTIAL_REGEX = /^\/?(D[0-9]+)(?:\?(?:(?:id=([0-9]+))|(vs=(?:[0-9]+|on)&id=[0-9]+)))?/i
+const PHAB_DIFFERENTIAL_REGEX = /^\/?(d\d+)(?:\?(?:(?:id=(\d+))|(vs=(?:\d+|on)&id=\d+)))?/i
 // https://phabricator.sgdev.org/rMUXfb619131e25d82897c9de11789aa479941cfd415
-const PHAB_REVISION_REGEX = /^\/?r([0-9A-z]+)([0-9a-f]{40})/i
+const PHAB_REVISION_REGEX = /^\/?r([\dA-z]+)([\da-f]{40})/i
 // https://phabricator.sgdev.org/source/gorilla/change/master/mux.go
-const PHAB_CHANGE_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9]+)\/change\/([\w-]+)\/([^;]+)(;[0-9a-f]{40})?/i
+const PHAB_CHANGE_REGEX = /^\/?(source|diffusion)\/([\da-z]+)\/change\/([\w-]+)\/([^;]+)(;[\da-f]{40})?/i
 const PHAB_CHANGESET_REGEX = /^\/?\/differential\/changeset.*/i
-const COMPARISON_REGEX = /^vs=((?:[0-9]+|on))&id=([0-9]+)/i
+const COMPARISON_REGEX = /^vs=((?:\d+|on))&id=(\d+)/i
 
 function getBaseCommitIDFromRevisionPage(): string {
-    const keyElements = document.getElementsByClassName('phui-property-list-key')
-    for (const keyElement of Array.from(keyElements)) {
+    const keyElements = document.querySelectorAll('.phui-property-list-key')
+    for (const keyElement of keyElements) {
         if (keyElement.textContent === 'Parents ') {
             const parentUrl = ((keyElement.nextSibling as HTMLElement).children[0].children[0] as HTMLLinkElement).href
             const url = new URL(parentUrl)
@@ -204,8 +204,8 @@ export function getPhabricatorState(
         }
 
         throw new Error(`Could not determine Phabricator state from stateUrl ${stateUrl}`)
-    } catch (err) {
-        return throwError(err)
+    } catch (error) {
+        return throwError(error)
     }
 }
 
@@ -213,12 +213,12 @@ export function normalizeRepoName(origin: string): string {
     let repoName = origin
     repoName = repoName.replace('\\', '')
     if (origin.startsWith('git@')) {
-        repoName = origin.substr('git@'.length)
+        repoName = origin.slice('git@'.length)
         repoName = repoName.replace(':', '/')
     } else if (origin.startsWith('git://')) {
-        repoName = origin.substr('git://'.length)
+        repoName = origin.slice('git://'.length)
     } else if (origin.startsWith('https://')) {
-        repoName = origin.substr('https://'.length)
+        repoName = origin.slice('https://'.length)
     } else if (origin.includes('@')) {
         // Assume the origin looks like `username@host:repo/path`
         const split = origin.split('@')

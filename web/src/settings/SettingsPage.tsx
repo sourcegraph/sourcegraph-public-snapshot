@@ -55,9 +55,9 @@ export class SettingsPage extends React.PureComponent<Props, State> {
             }
             this.setState({ commitError: undefined })
             this.props.onUpdate()
-        } catch (err) {
-            this.setState({ commitError: err })
-            console.error(err)
+        } catch (commitError) {
+            this.setState({ commitError })
+            console.error(commitError)
         }
     }
 

@@ -15,9 +15,9 @@ import { noop } from 'lodash'
 
 const FIXTURE_HTML = `
     <div id="parent">
-        <div class="view" id="1"></div>
-        <div class="view" id="2"></div>
-        <div class="view" id="3"></div>
+        <div class="view" id="view1"></div>
+        <div class="view" id="view2"></div>
+        <div class="view" id="view3"></div>
     </div>
 `
 
@@ -39,12 +39,12 @@ describe('trackViews()', () => {
         const views = await mutations
             .pipe(trackViews([{ selector: '.view', resolveView: element => ({ element }) }]), toArray())
             .toPromise()
-        expect(views.map(({ element }) => element.id)).toEqual(['1', '2', '3'])
+        expect(views.map(({ element }) => element.id)).toEqual(['view1', 'view2', 'view3'])
     })
 
     test('detects a view if it is the added element itself', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([
-            { addedNodes: [document.getElementById('1')!], removedNodes: [] },
+            { addedNodes: [document.querySelector<HTMLElement>('#view1')!], removedNodes: [] },
         ])
         expect(
             await mutations
@@ -54,12 +54,12 @@ describe('trackViews()', () => {
                     toArray()
                 )
                 .toPromise()
-        ).toEqual(['1'])
+        ).toEqual(['view1'])
     })
 
     test('detects a view if it is the added element itself', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([
-            { addedNodes: [document.getElementById('1')!], removedNodes: [] },
+            { addedNodes: [document.querySelector<HTMLElement>('#view1')!], removedNodes: [] },
         ])
         expect(
             await mutations
@@ -69,14 +69,14 @@ describe('trackViews()', () => {
                     toArray()
                 )
                 .toPromise()
-        ).toEqual(['1'])
+        ).toEqual(['view1'])
     })
 
     test('emits the element returned by the resolver', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([{ addedNodes: [document.body], removedNodes: [] }])
         const selectorTarget = document.createElement('div')
         selectorTarget.className = 'selector-target'
-        document.getElementById('1')!.append(selectorTarget)
+        document.querySelector<HTMLElement>('#view1')!.append(selectorTarget)
         expect(
             await mutations
                 .pipe(
@@ -90,7 +90,7 @@ describe('trackViews()', () => {
                     toArray()
                 )
                 .toPromise()
-        ).toEqual(['1'])
+        ).toEqual(['view1'])
     })
 
     test("doesn't emit duplicate views", async () => {
@@ -99,13 +99,18 @@ describe('trackViews()', () => {
             await mutations
                 .pipe(
                     trackViews([
-                        { selector: '.view', resolveView: () => ({ element: document.getElementById('1')! }) },
+                        {
+                            selector: '.view',
+                            resolveView: () => ({
+                                element: document.querySelector<HTMLElement>('#view1')!,
+                            }),
+                        },
                     ]),
                     map(({ element }) => element.id),
                     toArray()
                 )
                 .toPromise()
-        ).toEqual(['1'])
+        ).toEqual(['view1'])
     })
 
     test('detects views added later', async () => {
@@ -167,7 +172,7 @@ describe('trackViews()', () => {
         // Add code view to DOM
         const element = document.createElement('div')
         element.className = 'test-code-view'
-        const container = document.getElementById('parent')!
+        const container = document.querySelector<HTMLElement>('#parent')!
         container.append(element)
         mutations.next([{ addedNodes: [container], removedNodes: [] }])
         await wait
@@ -178,8 +183,8 @@ describe('trackViews()', () => {
     test('removes views', async () => {
         const mutations = from<MutationRecordLike[][]>([
             [{ addedNodes: [document.body], removedNodes: [] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('1')!] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('3')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector<HTMLElement>('#view1')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector<HTMLElement>('#view3')!] }],
         ])
         await mutations
             .pipe(
@@ -200,7 +205,7 @@ describe('trackViews()', () => {
     test('removes all nested views', async () => {
         const mutations = from<MutationRecordLike[][]>([
             [{ addedNodes: [document.body], removedNodes: [] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('parent')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector<HTMLElement>('#parent')!] }],
         ])
         await mutations
             .pipe(
@@ -237,7 +242,7 @@ describe('trackViews()', () => {
         // Add code view to DOM
         const testElement = document.createElement('div')
         testElement.className = 'test-code-view'
-        const container = document.getElementById('1')!
+        const container = document.querySelector<HTMLElement>('#view1')!
         container.append(testElement)
         mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
         await wait
@@ -271,9 +276,9 @@ describe('delayUntilIntersecting()', () => {
 
     test('delays emitting views until they intersect and stops observing views as soon as they intersect', () => {
         let observerCallback: IntersectionObserverCallbackLike = noop
-        const views = ['1', '2', '3'].map(
+        const views = ['view1', 'view2', 'view3'].map(
             (id: string): ViewWithSubscriptions<{ element: HTMLElement }> => ({
-                element: document.getElementById(id)!,
+                element: document.querySelector<HTMLElement>(`#${id}`)!,
                 subscriptions: new Subscription(),
             })
         )
@@ -299,16 +304,18 @@ describe('delayUntilIntersecting()', () => {
         sinon.assert.calledThrice(observe)
         expect(emittedViews.length).toBe(0)
         sinon.assert.notCalled(unobserve)
-        observerCallback([{ target: document.getElementById('2')!, isIntersecting: true }], { unobserve })
+        observerCallback([{ target: document.querySelector<HTMLElement>('#view2')!, isIntersecting: true }], {
+            unobserve,
+        })
         observerCallback(
             [
-                { target: document.getElementById('3')!, isIntersecting: true },
-                { target: document.getElementById('1')!, isIntersecting: true },
+                { target: document.querySelector<HTMLElement>('#view3')!, isIntersecting: true },
+                { target: document.querySelector<HTMLElement>('#view1')!, isIntersecting: true },
             ],
             { unobserve }
         )
         sinon.assert.calledThrice(unobserve)
-        expect(emittedViews).toStrictEqual(['2', '3', '1'])
+        expect(emittedViews).toStrictEqual(['view2', 'view3', 'view1'])
     })
 
     test('disconnects from the intersection observer on unsubscription', () => {
@@ -328,7 +335,7 @@ describe('delayUntilIntersecting()', () => {
 
     test('stops observing a view when its subscriptions are unsubscribed from', () => {
         const unobserve = sinon.spy((target: HTMLElement) => undefined)
-        const element = document.getElementById('1')!
+        const element = document.querySelector<HTMLElement>('#view1')!
         const view = { element, subscriptions: new Subscription() }
         subscriptions.add(
             of(view)
