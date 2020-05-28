@@ -40,14 +40,17 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffOrBlo
             diffID: getDiffID(),
         })
     ).pipe(
-        map(info => {
-            const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+        map(
+            (info): DiffOrBlobInfo => {
+                const { rawRepoName, baseRawRepoName, commitID, baseCommitID } = info
+                const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
 
-            return {
-                head: { ...info, filePath: headFilePath },
-                base: { ...info, filePath: baseFilePath },
+                return {
+                    head: { rawRepoName, filePath: headFilePath, commitID },
+                    base: { rawRepoName: baseRawRepoName, filePath: baseFilePath, commitID: baseCommitID },
+                }
             }
-        })
+        )
     )
 
 /**

@@ -129,7 +129,8 @@ export const fetchFileContentForDiffOrFileInfo = (
         return fetchFileContentForFileInfo(diffOrBlobInfo.blob, requestGraphQL).pipe(
             map(fileInfo => ({ ...diffOrBlobInfo, blob: fileInfo }))
         )
-    } else if ('head' in diffOrBlobInfo && 'base' in diffOrBlobInfo) {
+    }
+    if ('head' in diffOrBlobInfo && 'base' in diffOrBlobInfo) {
         const fetchingBaseFile = fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL)
         const fetchingHeadFile = fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL)
 
@@ -142,11 +143,13 @@ export const fetchFileContentForDiffOrFileInfo = (
                 })
             )
         )
-    } else if ('head' in diffOrBlobInfo) {
+    }
+    if ('head' in diffOrBlobInfo) {
         return fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL).pipe(
             map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ ...diffOrBlobInfo, head }))
         )
-    } else if ('base' in diffOrBlobInfo) {
+    }
+    if ('base' in diffOrBlobInfo) {
         return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(
             map(base => ({ ...diffOrBlobInfo, base }))
         )

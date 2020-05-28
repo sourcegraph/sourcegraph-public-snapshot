@@ -30,6 +30,9 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): DiffOrBlobInfo => {
     }
 }
 
+/**
+ * Resolve file info entirely from the parsed URL, not relying on the DOM.
+ */
 export const resolveFileInfo = (): DiffOrBlobInfo => {
     const parsedURL = parseURL()
     if (parsedURL.pageType !== 'blob' && parsedURL.pageType !== 'tree') {

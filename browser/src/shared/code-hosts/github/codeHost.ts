@@ -285,9 +285,14 @@ export const githubCodeHost: CodeHost = {
     getContext: () => {
         const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
         const parsedURL = parseURL()
+        const diffOrBlobInfo = resolveFileInfo()
+        const rev =
+            (parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree') && 'blob' in diffOrBlobInfo
+                ? diffOrBlobInfo.blob.rev
+                : undefined
         return {
             ...parsedURL,
-            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
+            rev,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },

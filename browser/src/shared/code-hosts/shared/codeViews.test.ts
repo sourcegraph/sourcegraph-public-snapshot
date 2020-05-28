@@ -2,7 +2,7 @@ import { of } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Omit } from 'utility-types'
-import { FileInfo } from './codeHost'
+import { DiffOrBlobInfo } from './codeHost'
 import { CodeView, toCodeViewResolver, trackCodeViews } from './codeViews'
 
 describe('codeViews', () => {
@@ -10,10 +10,12 @@ describe('codeViews', () => {
         document.body.innerHTML = ''
     })
     describe('trackCodeViews()', () => {
-        const fileInfo: FileInfo = {
-            rawRepoName: 'foo',
-            filePath: '/bar.ts',
-            commitID: '1',
+        const fileInfo: DiffOrBlobInfo = {
+            blob: {
+                rawRepoName: 'foo',
+                filePath: '/bar.ts',
+                commitID: '1',
+            },
         }
         const codeViewSpec: Omit<CodeView, 'element'> = {
             dom: {
