@@ -32,12 +32,12 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.16.0")
+	latestReleaseDockerServerImageBuild = newBuild("3.16.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.16.0")
+	latestReleaseKubernetesBuild = newBuild("3.16.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
