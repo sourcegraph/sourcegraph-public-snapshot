@@ -949,7 +949,7 @@ export function handleCodeHost({
                     return ensureRev(diffOrBlobInfo.base)
                 }
                 // TODO: confirm if we should throw an error here.
-                throw new Error(`Could not resolve context for diff part "${part}"`)
+                throw new Error(`Could not resolve context for diff part ${JSON.stringify(part)}`)
             }
 
             const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
