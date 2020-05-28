@@ -15,16 +15,16 @@ Need to use your own infrastructure? Please [contact us](https://about.sourcegra
 With a managed instance, Sourcegraph's Distribution Engineering team manages the full lifecycle of your Sourcegraph deployment. This includes:
 
 - Creating and providing a transparent deployment plan with cost estimates
-- [Selecting the appropriate deployment model (Docker, Docker Compose, Kubernetes), depending on code and user scale](/admin/install)
+- [Selecting the appropriate deployment model (Docker, Docker Compose, Kubernetes), depending on code and user scale](../install/index.md)
 - Installing and configuring Sourcegraph
-  - [Adding repositories from all of your code hosts to Sourcegraph](/admin/external_service/index.md)
-  - [Integrating your single sign-on provider with Sourcegraph](/admin/auth/index.md)
-  - [Providing a valid certificate and setting up HTTPS/TLS access](/admin/http_https_configuration.md)
-  - [Configuring Sourcegraph](/admin/config/index.md)
-- [Supporting your team in installing code host and code review integrations](/integration/index.md)
-- [Performing monthly upgrades and maintenance](/admin/updates.md)
+  - [Adding repositories from all of your code hosts to Sourcegraph](../external_service/index.md)
+  - [Integrating your single sign-on provider with Sourcegraph](../auth/index.md)
+  - [Providing a valid certificate and setting up HTTPS/TLS access](../http_https_configuration.md)
+  - [Configuring Sourcegraph](../config/index.md)
+- [Supporting your team in installing code host and code review integrations](../../integration/index.md)
+- [Performing monthly upgrades and maintenance](../updates.md)
   - Running smoke tests to validate functionality after upgrades
-- [Monitoring performance](/admin/observability/index.md)
+- [Monitoring performance](../observability/index.md)
 - Monitoring and aggregating user feedback and usage statistics
 - [Responding to support requests and maintaining SLAs](https://about.sourcegraph.com/handbook/support#for-customers-with-managed-instances)
 
@@ -49,7 +49,7 @@ Additionally, Sourcegraph would support your internal rollout programs, includin
 
 ## Security
 
-Your managed instance would be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and would have access restricted using your internal [single sign-on provider](/admin/auth/index.md) of choice.
+Your managed instance would be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and would have access restricted using your internal [single sign-on provider](../auth/index.md) of choice.
 
 Only essential Sourcegraph teammates would have access to your instance frontend, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access would be bound by the same terms as Sourcegraph itself.
 
