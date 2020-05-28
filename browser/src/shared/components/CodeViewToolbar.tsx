@@ -70,7 +70,6 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             ) : null
         ) : (
             <>
-                /* TODO: should OpenDiffOnSourcegraph only exist for `modified` diffs? */
                 {'head' in props.fileInfoOrError && 'base' in props.fileInfoOrError && (
                     <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
                         <OpenDiffOnSourcegraph
