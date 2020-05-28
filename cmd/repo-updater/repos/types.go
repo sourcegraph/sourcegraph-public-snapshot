@@ -802,6 +802,31 @@ func (rs Repos) Names() []string {
 	return names
 }
 
+func (rs Repos) NamesSummary() string {
+	sb := strings.Builder{}
+
+	capped := false
+	n := len(rs)
+	if n > 20 {
+		n = 20
+		capped = true
+	}
+
+	first := true
+	for i := 0; i < n; i++ {
+		if first {
+			first = false
+		} else {
+			sb.WriteString(" ")
+		}
+		sb.WriteString(rs[i].Name)
+	}
+	if capped {
+		sb.WriteString(" ...")
+	}
+	return sb.String()
+}
+
 // Kinds returns the unique set of kinds from all Repos.
 func (rs Repos) Kinds() (kinds []string) {
 	set := map[string]bool{}
