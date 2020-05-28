@@ -2,9 +2,11 @@ package lines
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"io"
 	"runtime"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
 )
@@ -29,15 +31,21 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 	scanner.Split(bufio.ScanLines)
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
-	// Read the document in a separate go-routine
-	lineCh := make(chan []byte, ChannelBufferSize)
+	// Pool of buffers used to transfer copies of the scanner slice to unmarshal workers
+	pool := sync.Pool{New: func() interface{} { return new(bytes.Buffer) }}
+
+	// Read the document in a separate go-routine.
+	lineCh := make(chan *bytes.Buffer, ChannelBufferSize)
 	go func() {
 		defer close(lineCh)
 
 		for scanner.Scan() {
 			if line := scanner.Bytes(); len(line) != 0 {
+				buf := pool.Get().(*bytes.Buffer)
+				_, _ = buf.Write(line)
+
 				select {
-				case lineCh <- line:
+				case lineCh <- buf:
 				case <-ctx.Done():
 					return
 				}
@@ -60,7 +68,7 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 		defer close(signal)
 
 		// The input slice
-		lines := make([][]byte, NumUnmarshalGoRoutines)
+		lines := make([]*bytes.Buffer, NumUnmarshalGoRoutines)
 
 		// The result slice
 		pairs := make([]lsif.Pair, NumUnmarshalGoRoutines)
@@ -68,7 +76,7 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 		for i := 0; i < NumUnmarshalGoRoutines; i++ {
 			go func() {
 				for idx := range work {
-					element, err := unmarshal(lines[idx])
+					element, err := unmarshal(lines[idx].Bytes())
 					pairs[idx].Element = element
 					pairs[idx].Err = err
 					signal <- struct{}{}
@@ -98,6 +106,12 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 			// Wait until the current batch has been completely unmarshalled
 			for j := 0; j < i; j++ {
 				<-signal
+			}
+
+			// Return each buffer to the pool for reuse
+			for j := 0; j < i; j++ {
+				lines[j].Reset()
+				pool.Put(lines[j])
 			}
 
 			// Read the result array in order. If the caller context has completed,
