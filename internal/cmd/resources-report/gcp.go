@@ -165,7 +165,7 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 				wait.Add(1)
 				go func(resourceID string, fetchResource GCPResourceFetchFunc, project string) {
 					if err := fetchResource(ctx, results, project, since); err != nil {
-						errs <- fmt.Errorf("project %s, resource %s: %w", project, resourceID)
+						errs <- fmt.Errorf("project %s, resource %s: %w", project, resourceID, err)
 					}
 					wait.Done()
 				}(resourceID, fetchResource, project.ProjectId)
