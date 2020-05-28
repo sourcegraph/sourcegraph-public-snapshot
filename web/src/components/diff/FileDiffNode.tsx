@@ -107,10 +107,10 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         <div className="file-diff-node__header-path-stat align-items-baseline">
                             {stat}
                             {!node.oldPath && (
-                                <span className="file-diff-node__header-path-info text-success mr-2">New file</span>
+                                <span className="badge badge-success mr-2">New file</span>
                             )}
                             {!node.newPath && (
-                                <span className="file-diff-node__header-path-info text-danger mr-2">Deleted file</span>
+                                <span className="badge badge-danger mr-2">Deleted file</span>
                             )}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
                                 {path}
