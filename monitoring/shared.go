@@ -74,11 +74,13 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 		Description:     "container memory usage by instance (not available on k8s or server)",
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}`, containerName),
 		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 90},
+		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 5},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
+		If usage is high:
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+		If usage is low, consider decreasing the above values instead.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
@@ -89,11 +91,13 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 		Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}`, containerName),
 		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 90},
+		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 5},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 		PossibleSolutions: strings.Replace(`
+		If usage is high:
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+		If usage is low, consider decreasing the above values instead.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
