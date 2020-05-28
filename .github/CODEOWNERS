@@ -242,7 +242,6 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
-/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services
