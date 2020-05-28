@@ -10,7 +10,7 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
     const createCommandList = (): HTMLElement => {
         const mount = document.createElement('div')
         mount.className = commandListClass
-        headerElem.prepend(mount)
+        headerElem.insertAdjacentElement('afterbegin', mount)
         return mount
     }
     return headerElem.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()

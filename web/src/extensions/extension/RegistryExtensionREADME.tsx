@@ -26,7 +26,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
     </div>
 )
 
-export const ExtensionReadme: React.FunctionComponent<{
+export const ExtensionREADME: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
     history: H.History
 }> = ({ extension, history }) => {
@@ -62,7 +62,7 @@ export const ExtensionReadme: React.FunctionComponent<{
     try {
         const html = renderMarkdown(manifest.readme)
         return <Markdown dangerousInnerHTML={html} history={history} />
-    } catch {
+    } catch (err) {
         return (
             <PublishNewManifestAlert
                 extension={extension}

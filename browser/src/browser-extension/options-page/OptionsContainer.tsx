@@ -6,7 +6,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, concat
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
-import { ConnectionErrors } from './ServerUrlForm'
+import { ConnectionErrors } from './ServerURLForm'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface OptionsContainerProps {
@@ -62,7 +62,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 let validURL = false
                 try {
                     validURL = !!new URL(maybeURL)
-                } catch {
+                } catch (e) {
                     validURL = false
                 }
 
@@ -106,8 +106,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         props
             .fetchCurrentTabStatus()
             .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
-            .catch(error => {
-                console.error('Error fetching current tab status', error)
+            .catch(err => {
+                console.error('Error fetching current tab status', err)
             })
     }
 

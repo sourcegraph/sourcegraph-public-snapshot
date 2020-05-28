@@ -73,5 +73,5 @@ refreshSiteFlags()
     .toPromise()
     .then(
         () => undefined,
-        error => console.error(error)
+        err => console.error(err)
     )

@@ -118,7 +118,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/api/console',
-        render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
+        render: lazyComponent(() => import('./api/APIConsole'), 'APIConsole'),
         exact: true,
     },
     {

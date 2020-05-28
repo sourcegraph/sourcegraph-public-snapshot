@@ -47,7 +47,7 @@ export function applyLinkPreview(
             if (linkPreviewContentClass) {
                 afterElement.classList.add(...linkPreviewContentClass.split(' '))
             }
-            link.after(afterElement)
+            link.insertAdjacentElement('afterend', afterElement)
         }
         for (const c of renderMarkupContents(linkPreview.content)) {
             if (typeof c === 'string') {
@@ -58,7 +58,7 @@ export function applyLinkPreview(
                 // Use while-loop instead of iterating over span.childNodes because the loop body
                 // mutates span.childNodes, so nodes would be skipped.
                 while (span.hasChildNodes()) {
-                    afterElement.append(span.childNodes[0])
+                    afterElement.appendChild(span.childNodes[0])
                 }
             }
         }

@@ -42,7 +42,7 @@ export async function onHoverAlertDismissed(alertType: ExtensionHoverAlertType):
         }
         partialStorageItems.dismissedHoverAlerts[alertType] = true
         await storage.sync.set(partialStorageItems)
-    } catch (error) {
-        console.error('Error dismissing alert', error)
+    } catch (err) {
+        console.error('Error dismissing alert', err)
     }
 }

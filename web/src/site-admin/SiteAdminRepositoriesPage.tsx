@@ -130,14 +130,14 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         // Refresh global alert about enabling repositories when the user visits here.
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, err => console.error(err))
     }
 
     public componentWillUnmount(): void {
         // Remove global alert about enabling repositories when the user navigates away from here.
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, err => console.error(err))
     }
 
     public render(): JSX.Element | null {

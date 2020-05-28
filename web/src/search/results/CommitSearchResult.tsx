@@ -34,11 +34,11 @@ interface Props {
     allExpanded?: boolean
 }
 
-const logClick = (): void => {
-    eventLogger.log('CommitSearchResultClicked')
-}
-
 export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props) => {
+    const logClick = (): void => {
+        eventLogger.log('CommitSearchResultClicked')
+    }
+
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink
@@ -166,9 +166,9 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                             rhsCtx.position = { line: rhsLine - 1, character: 0 }
                         }
                     }
-                } catch (error) {
+                } catch (err) {
                     // TODO(sqs)
-                    console.error(error)
+                    console.error(err)
                 }
 
                 lineClasses.push({ line: i + 1, className: 'hunk-header', url: toPrettyBlobURL(rhsCtx) })

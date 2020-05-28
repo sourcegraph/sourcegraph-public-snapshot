@@ -1,14 +1,14 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { CampaignCliHelp } from './CampaignCliHelp'
+import { CampaignCLIHelp } from './CampaignCLIHelp'
 import { registerHighlightContributions } from '../../../../../../shared/src/highlight/contributions'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
 
-describe('CampaignCliHelp', () => {
+describe('CampaignCLIHelp', () => {
     test('renders', () => {
-        const result = renderer.create(<CampaignCliHelp className="test" />)
+        const result = renderer.create(<CampaignCLIHelp className="test" />)
         expect(result.toJSON()).toMatchSnapshot()
     })
 })

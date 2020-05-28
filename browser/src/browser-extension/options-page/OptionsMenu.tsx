@@ -2,7 +2,7 @@ import { lowerCase, upperFirst } from 'lodash'
 import * as React from 'react'
 
 import { OptionsHeader, OptionsHeaderProps } from './OptionsHeader'
-import { ServerUrlForm, ServerUrlFormProps } from './ServerUrlForm'
+import { ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
 interface ConfigurableFeatureFlag {
     key: string
@@ -11,10 +11,10 @@ interface ConfigurableFeatureFlag {
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
-        Pick<ServerUrlFormProps, Exclude<keyof ServerUrlFormProps, 'value' | 'onChange' | 'onSubmit'>> {
-    sourcegraphURL: ServerUrlFormProps['value']
-    onURLChange: ServerUrlFormProps['onChange']
-    onURLSubmit: ServerUrlFormProps['onSubmit']
+        Pick<ServerURLFormProps, Exclude<keyof ServerURLFormProps, 'value' | 'onChange' | 'onSubmit'>> {
+    sourcegraphURL: ServerURLFormProps['value']
+    onURLChange: ServerURLFormProps['onChange']
+    onURLSubmit: ServerURLFormProps['onSubmit']
 
     isSettingsOpen?: boolean
     isActivated: boolean
@@ -43,7 +43,7 @@ const buildRequestPermissionsHandler = (
 /**
  * A list of protocols where we should *not* show the permissions notification.
  */
-const PERMISSIONS_PROTOCOL_BLACKLIST = new Set(['chrome:', 'about:'])
+const PERMISSIONS_PROTOCOL_BLACKLIST = ['chrome:', 'about:']
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
@@ -60,7 +60,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
 }) => (
     <div className={`options-menu ${isFullPage() ? 'options-menu--full' : ''}`}>
         <OptionsHeader {...props} isActivated={isActivated} className="options-menu__section" />
-        <ServerUrlForm
+        <ServerURLForm
             {...props}
             value={sourcegraphURL}
             onChange={onURLChange}
@@ -72,7 +72,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
         {status === 'connected' &&
             currentTabStatus &&
             !currentTabStatus.hasPermissions &&
-            !PERMISSIONS_PROTOCOL_BLACKLIST.has(currentTabStatus.protocol) && (
+            !PERMISSIONS_PROTOCOL_BLACKLIST.includes(currentTabStatus.protocol) && (
                 <div className="options-menu__section">
                     <div className="alert alert-info">
                         <p>

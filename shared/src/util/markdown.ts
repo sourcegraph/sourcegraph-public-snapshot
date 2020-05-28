@@ -33,8 +33,8 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
             return highlight(language, code, true).value
         }
         return highlightAuto(code).value
-    } catch (error) {
-        console.warn('Error syntax-highlighting hover markdown code block', error)
+    } catch (err) {
+        console.warn('Error syntax-highlighting hover markdown code block', err)
         return escapeHTML(code)
     }
 }

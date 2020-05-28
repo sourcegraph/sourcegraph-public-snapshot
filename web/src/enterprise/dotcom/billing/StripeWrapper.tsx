@@ -17,7 +17,7 @@ export const StripeWrapper = <P extends object>(props: Props<P>): JSX.Element | 
         const initStripe = (): void => setStripe((window as any).Stripe(billingPublishableKey))
 
         const id = 'stripe-script'
-        if (document.querySelector(`#${id}`)) {
+        if (document.getElementById(id)) {
             initStripe()
             return // already loaded
         }
@@ -26,8 +26,8 @@ export const StripeWrapper = <P extends object>(props: Props<P>): JSX.Element | 
         script.id = id
         script.src = 'https://js.stripe.com/v3/'
         script.async = true
-        script.addEventListener('load', initStripe)
-        document.body.append(script)
+        script.onload = () => initStripe()
+        document.body.appendChild(script)
     }, [stripe])
 
     // Ensure that injectStripe gets called exactly once for each props.component, or else there

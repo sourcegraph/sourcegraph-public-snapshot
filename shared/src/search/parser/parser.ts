@@ -171,7 +171,7 @@ const quoted: Parser<Quoted> = (input, start) => {
         type: 'success',
         // end + 1 as `end` is currently the index of the quote in the string.
         range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
+        token: { type: 'quoted', quotedValue: input.substring(start + 1, end) },
     }
 }
 
@@ -199,7 +199,7 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
         p = new RegExp(`^${p.source}`)
     }
     return (input, start) => {
-        const matchTarget = input.slice(Math.max(0, start))
+        const matchTarget = input.substring(start)
         if (!matchTarget) {
             return { type: 'error', expected: expected || `/${p.source}/`, at: start }
         }
@@ -217,9 +217,9 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
 
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
-const literal = pattern(/\S+/)
+const literal = pattern(/[^\s]+/)
 
-const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
+const filterKeyword = pattern(/-?[a-zA-Z]+(?=:)/)
 
 const filterDelimiter = character(':')
 

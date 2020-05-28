@@ -1,6 +1,6 @@
 import { createDriverForTest, Driver } from '../../../../shared/src/e2e/driver'
 import { Config } from '../../../../shared/src/e2e/config'
-import { GraphQLClient, createGraphQLClient } from './GraphQlClient'
+import { GraphQLClient, createGraphQLClient } from './GraphQLClient'
 import { TestResourceManager } from './TestResourceManager'
 
 /**

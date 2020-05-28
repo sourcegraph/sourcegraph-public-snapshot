@@ -10,8 +10,8 @@ import { DiffResolvedRevSpec } from '../../repo'
  * 3. PR conversation view: snippets with inline comments
  * 4. PR unified/split view: one or more file diffs
  */
-export function getFileContainers(): NodeListOf<HTMLElement> {
-    return document.querySelectorAll<HTMLElement>('.file')
+export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
+    return document.getElementsByClassName('file') as HTMLCollectionOf<HTMLElement>
 }
 
 /**
@@ -62,7 +62,9 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
 
     let baseCommitID = ''
     let headCommitID = ''
-    const fetchContainers = document.querySelectorAll('.js-socket-channel.js-updatable-content.js-pull-refresh-on-pjax')
+    const fetchContainers = document.getElementsByClassName(
+        'js-socket-channel js-updatable-content js-pull-refresh-on-pjax'
+    )
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (pageType === 'pull') {
         if (fetchContainers && fetchContainers.length === 1) {
@@ -147,12 +149,9 @@ function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolve
 }
 
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
-    const [base, head] = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
-    if (base && head && base.textContent && head.textContent) {
-        return {
-            baseCommitID: base.textContent,
-            headCommitID: head.textContent,
-        }
+    const branchElements = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
+    if (branchElements && branchElements.length === 2) {
+        return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
     }
     return undefined
 }
@@ -174,8 +173,8 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
         return null
     }
 
-    const baseCommitID = pageSource.slice(baseIndex + baseShaComment.length, 40)
-    const headCommitID = pageSource.slice(headIndex + headShaComment.length, 40)
+    const baseCommitID = pageSource.substr(baseIndex + baseShaComment.length, 40)
+    const headCommitID = pageSource.substr(headIndex + headShaComment.length, 40)
     return {
         baseCommitID,
         headCommitID,
@@ -205,7 +204,6 @@ export function getFilePath(): string {
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
-    // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(

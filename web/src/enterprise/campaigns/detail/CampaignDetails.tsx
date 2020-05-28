@@ -201,7 +201,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onNameChange = useCallback(
         (newName: string): void => {
             if (!branchModified) {
-                setBranch(slugify(newName, { remove: /[!"'()*+.:@\\^~]/g, lower: true }))
+                setBranch(slugify(newName, { remove: /[*+~\\^.()'"!:@]/g, lower: true }))
             }
             setName(newName)
         },
@@ -266,9 +266,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('viewing')
             setAlertError(undefined)
             campaignUpdates.next()
-        } catch (error) {
+        } catch (err) {
             setMode('editing')
-            setAlertError(asError(error))
+            setAlertError(asError(err))
         }
     }
 
@@ -278,8 +278,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             await publishCampaign(campaign!.id)
             setAlertError(undefined)
             campaignUpdates.next()
-        } catch (error) {
-            setAlertError(asError(error))
+        } catch (err) {
+            setAlertError(asError(err))
         } finally {
             setMode('viewing')
         }
@@ -318,9 +318,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('viewing')
             setAlertError(undefined)
             campaignUpdates.next()
-        } catch (error) {
+        } catch (err) {
             setMode('editing')
-            setAlertError(asError(error))
+            setAlertError(asError(err))
         }
     }
 
@@ -353,8 +353,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         try {
             await closeCampaign(campaign!.id, closeChangesets)
             campaignUpdates.next()
-        } catch (error) {
-            setAlertError(asError(error))
+        } catch (err) {
+            setAlertError(asError(err))
         } finally {
             setMode('viewing')
         }
@@ -368,8 +368,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         try {
             await deleteCampaign(campaign!.id, closeChangesets)
             history.push('/campaigns')
-        } catch (error) {
-            setAlertError(asError(error))
+        } catch (err) {
+            setAlertError(asError(err))
             setMode('viewing')
         }
     }

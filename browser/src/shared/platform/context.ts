@@ -15,7 +15,7 @@ import { CodeHost } from '../code-hosts/shared/codeHost'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
-import { requestGraphQlHelper } from '../backend/requestGraphQl'
+import { requestGraphQLHelper } from '../backend/requestGraphQL'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 import { asError } from '../../../../shared/src/util/errors'
 
@@ -74,7 +74,7 @@ export function createPlatformContext(
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                return requestGraphQlHelper(isExtension, sourcegraphURL)<T>({ request, variables })
+                return requestGraphQLHelper(isExtension, sourcegraphURL)<T>({ request, variables })
             })
         )
 

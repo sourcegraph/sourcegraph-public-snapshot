@@ -34,9 +34,7 @@ class RepoHeaderContributionStore {
             throw new Error('RepoHeaderContribution has no element')
         }
         if (typeof item.element.key !== 'string') {
-            throw new TypeError(
-                `RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`
-            )
+            throw new Error(`RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`)
         }
 
         this.setState((prevState: RepoHeaderContributionsProps) => ({

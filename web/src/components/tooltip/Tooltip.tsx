@@ -151,7 +151,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
  */
 export function setElementTooltip(element: HTMLElement, tooltip: string | null): void {
     if (tooltip) {
-        element.dataset.tooltip = tooltip
+        element.setAttribute('data-tooltip', tooltip)
     } else {
         element.removeAttribute('data-tooltip')
     }

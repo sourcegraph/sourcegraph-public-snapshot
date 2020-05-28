@@ -445,7 +445,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         portalNode.id = id
         portalNode.classList.add('line-decoration-attachment-portal')
 
-        codeCell.append(portalNode)
+        codeCell.appendChild(portalNode)
 
         this.setState(state => ({
             lineDecorationAttachmentIDs: {

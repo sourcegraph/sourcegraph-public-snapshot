@@ -35,7 +35,7 @@ describe('textFields', () => {
         const createTestElement = (): HTMLTextAreaElement => {
             const el = document.createElement('textarea')
             el.className = `test test-${uniqueId()}`
-            document.body.append(el)
+            document.body.appendChild(el)
             return el
         }
 

@@ -211,7 +211,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                error => this.setState({ loading: false, errorDescription: asError(error).message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 
@@ -239,7 +239,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         resetPasswordURL,
                     })
                 },
-                error => this.setState({ loading: false, errorDescription: asError(error).message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 
@@ -270,7 +270,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                error => this.setState({ loading: false, errorDescription: asError(error).message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 }

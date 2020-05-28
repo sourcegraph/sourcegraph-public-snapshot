@@ -127,11 +127,11 @@ export function fromFetch<T>(
                     subscriber.complete()
                 }
             })
-            .catch(error => {
+            .catch(err => {
                 abortable = false
                 if (!unsubscribed) {
                     // Only forward the error if it wasn't an abort.
-                    subscriber.error(error)
+                    subscriber.error(err)
                 }
             })
 

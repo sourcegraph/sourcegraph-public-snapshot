@@ -21,7 +21,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, classNa
                 urlObj.searchParams.set('s', size.toString())
             }
             url = urlObj.href
-        } catch {
+        } catch (e) {
             // noop
         }
         return <img className={`user-avatar ${className || ''}`} src={url} {...otherProps} />

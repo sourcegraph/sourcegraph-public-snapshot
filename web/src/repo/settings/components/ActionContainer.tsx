@@ -120,7 +120,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 }
                 this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
             },
-            error => this.setState({ loading: false, error: asError(error).message })
+            err => this.setState({ loading: false, error: asError(err).message })
         )
     }
 }

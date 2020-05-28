@@ -50,11 +50,11 @@ async function init(): Promise<void> {
     style.setAttribute('type', 'text/css')
     style.id = 'sourcegraph-styles'
     style.textContent = css
-    document.head.append(style)
+    document.head.appendChild(style)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()
     injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
-init().catch(error => console.error('Error initializing Phabricator integration', error))
+init().catch(err => console.error('Error initializing Phabricator integration', err))

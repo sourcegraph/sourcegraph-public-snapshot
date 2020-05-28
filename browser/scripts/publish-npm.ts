@@ -15,12 +15,12 @@ async function main(): Promise<void> {
         const currentVersion = await latestVersion(name)
         signale.info(`Current version is ${currentVersion}`)
         version = semver.inc(currentVersion, 'patch')!
-    } catch (error) {
-        if (error && error.name === 'PackageNotFoundError') {
+    } catch (err) {
+        if (err && err.name === 'PackageNotFoundError') {
             signale.info('Package is not released yet')
             version = '0.0.0'
         } else {
-            throw error
+            throw err
         }
     }
     const packageJson = {
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
     // Publish
     await execa('npm', ['publish', '--access', 'public'], { cwd: packagePath, stdio: 'inherit' })
 }
-main().catch(error => {
+main().catch(err => {
     process.exitCode = 1
-    console.error(error)
+    console.error(err)
 })

@@ -73,7 +73,7 @@ if (window.context && window.context.isAuthenticatedUser) {
         .toPromise()
         .then(
             () => undefined,
-            error => console.error(error)
+            err => console.error(err)
         )
 } else {
     authenticatedUser.next(null)

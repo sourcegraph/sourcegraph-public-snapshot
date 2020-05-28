@@ -195,7 +195,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
             const action = editor.getAction(id)
             action.run().then(
                 () => undefined,
-                error => console.error(error)
+                err => console.error(err)
             )
         } else {
             alert('Wait for editor to load before running action.')

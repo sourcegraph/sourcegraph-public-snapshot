@@ -52,7 +52,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     mount.classList.add('sg-toolbar-mount')
     mount.classList.add('sg-toolbar-mount-gitlab')
 
-    fileActions.prepend(mount)
+    fileActions.insertAdjacentElement('afterbegin', mount)
 
     return mount
 }

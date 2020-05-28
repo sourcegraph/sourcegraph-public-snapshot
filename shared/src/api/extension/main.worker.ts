@@ -30,8 +30,8 @@ async function extensionHostMain(): Promise<void> {
         const { endpoints } = event.data
         const extensionHost = startExtensionHost(endpoints)
         self.addEventListener('unload', () => extensionHost.unsubscribe())
-    } catch (error) {
-        console.error('Error starting the extension host:', error)
+    } catch (err) {
+        console.error('Error starting the extension host:', err)
         self.close()
     }
 }

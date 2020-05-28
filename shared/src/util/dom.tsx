@@ -68,37 +68,35 @@ function highlightNodeHelper(
 
                 if (currOffset <= start && currOffset + nodeText.length > start) {
                     // Current node overlaps start of highlighting.
-                    child.remove()
+                    currNode.removeChild(child)
 
                     // The characters beginning at the start of highlighting and extending to the end of the node.
-                    const rest = nodeText.slice(start - currOffset)
+                    const rest = nodeText.substr(start - currOffset)
 
                     const containerNode = document.createElement('span')
-                    if (nodeText.slice(0, Math.max(0, start - currOffset))) {
+                    if (nodeText.substr(0, start - currOffset) !== '') {
                         // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                        containerNode.append(
-                            document.createTextNode(nodeText.slice(0, Math.max(0, start - currOffset)))
-                        )
+                        containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - currOffset)))
                     }
 
                     if (rest.length >= length) {
                         // The highlighted range is fully contained within the node.
                         if (currNode.classList.contains('selection-highlight')) {
                             // Nothing to do; it's already highlighted.
-                            currNode.append(child)
+                            currNode.appendChild(child)
                         } else {
-                            const text = rest.slice(0, Math.max(0, length))
+                            const text = rest.substr(0, length)
                             const highlight = document.createElement('span')
                             highlight.className = 'selection-highlight'
-                            highlight.append(document.createTextNode(text))
-                            containerNode.append(highlight)
+                            highlight.appendChild(document.createTextNode(text))
+                            containerNode.appendChild(highlight)
                             if (rest.length > length) {
                                 // There is more in the span than the highlighted chars.
-                                containerNode.append(document.createTextNode(rest.slice(length)))
+                                containerNode.appendChild(document.createTextNode(rest.substr(length)))
                             }
 
                             if (currNode.childNodes.length === 0 || isLastNode) {
-                                currNode.append(containerNode)
+                                currNode.appendChild(containerNode)
                             } else {
                                 currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
                             }
@@ -112,15 +110,15 @@ function highlightNodeHelper(
 
                     const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.append(document.createTextNode(rest))
-                    containerNode.append(highlight)
+                    highlight.appendChild(document.createTextNode(rest))
+                    containerNode.appendChild(highlight)
 
                     if (currNode.childNodes.length === 0 || isLastNode) {
                         if (currNode.classList.contains('selection-highlight')) {
                             // Nothing to do; it's already highlighted.
-                            currNode.append(child)
+                            currNode.appendChild(child)
                         } else {
-                            currNode.append(containerNode)
+                            currNode.appendChild(containerNode)
                         }
                     } else {
                         currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)

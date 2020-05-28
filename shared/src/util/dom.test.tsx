@@ -8,7 +8,7 @@ describe('util/dom', () => {
 
         beforeEach(() => {
             document.body.innerHTML = `<table><tbody><td id="cell">${cellInnerHTML}</td></tbody></table>`
-            cell = window.document.querySelector<HTMLTableCellElement>('#cell')!
+            cell = window.document.getElementById('cell') as HTMLTableCellElement
         })
 
         test('highlights no characters', () => {

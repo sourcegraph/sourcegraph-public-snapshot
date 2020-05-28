@@ -111,7 +111,7 @@ function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement
                 // Ignore hidden elements
                 continue
             }
-            if (el.textContent && el.textContent.match(regexp)) {
+            if (el.innerText && el.innerText.match(regexp)) {
                 return el
             }
         }
@@ -202,13 +202,13 @@ export class Driver {
         }
         console.log(
             '\nVisited routes:\n' +
-                [
-                    ...new Set(
+                Array.from(
+                    new Set(
                         this.visitedPages
                             .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
                             .map(url => url.pathname)
-                    ),
-                ].join('\n')
+                    )
+                ).join('\n')
         )
     }
 
@@ -399,7 +399,7 @@ export class Driver {
 
     public async assertAllHighlightedTokens(label: string): Promise<void> {
         const highlightedTokens = await this.page.evaluate(() =>
-            [...document.querySelectorAll('.selection-highlight')].map(el => el.textContent || '')
+            Array.from(document.querySelectorAll('.selection-highlight')).map(el => el.textContent || '')
         )
         expect(highlightedTokens.every(txt => txt === label)).toBeTruthy()
     }
@@ -607,8 +607,8 @@ export class Driver {
                               tag,
                               regexps
                           )
-                          .catch(error => {
-                              throw notFoundErr(error)
+                          .catch(err => {
+                              throw notFoundErr(err)
                           })
                     : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 

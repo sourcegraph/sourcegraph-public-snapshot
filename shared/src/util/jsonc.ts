@@ -10,8 +10,8 @@ import { asError, createAggregateError, ErrorLike } from './errors'
 export function parseJSONCOrError<T>(input: string): T | ErrorLike {
     try {
         return parseJSON(input) as T
-    } catch (error) {
-        return asError(error)
+    } catch (err) {
+        return asError(err)
     }
 }
 

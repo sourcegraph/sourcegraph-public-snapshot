@@ -107,10 +107,10 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     resp.text()
                         .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
-                        .catch(error => console.error(error))
+                        .catch(err => console.error(err))
                 }
             })
-            .catch(error => this.setState({ submitOrError: asError(error) }))
+            .catch(err => this.setState({ submitOrError: asError(err) }))
     }
 }
 
@@ -204,7 +204,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                     this.setState({ submitOrError: new Error('Password reset failed.') })
                 }
             })
-            .catch(error => this.setState({ submitOrError: asError(error) }))
+            .catch(err => this.setState({ submitOrError: asError(err) }))
     }
 }
 
