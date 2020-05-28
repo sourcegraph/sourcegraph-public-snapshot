@@ -1,8 +1,8 @@
 import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable } from 'sourcegraph'
+// import { Remote, ProxyMarked } from 'comlink'
+// import { Unsubscribable } from 'sourcegraph'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -15,8 +15,14 @@ export interface FlatExtHostAPI {
      */
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
-    syncRoots(roots: readonly clientType.WorkspaceRoot[]): void
-    syncVersionContext(versionContext: string | undefined): void
+    syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
+    syncVersionContext: (versionContext: string | undefined) => void
+
+    executeExtensionCommand: (handle: CommandHandle, args: any[]) => unknown | Promise<unknown>
+}
+
+export interface CommandHandle {
+    readonly opaque: unique symbol
 }
 
 /**
@@ -32,5 +38,6 @@ export interface MainThreadAPI {
 
     // Commands
     executeCommand: (command: string, args: any[]) => Promise<any>
-    registerCommand(name: string, command: Remote<((...args: any) => any) & ProxyMarked>): Unsubscribable & ProxyMarked
+    registerCommand: (name: string) => CommandHandle
+    unregisterCommand: (handle: CommandHandle) => boolean
 }
