@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -33,18 +32,18 @@ type processor struct {
 // process converts a raw upload into a dump within the given transaction context.
 func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {
 	// Create scratch directory that we can clean on completion/failure
-	name, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if cleanupErr := os.RemoveAll(name); cleanupErr != nil {
-			log15.Warn("Failed to remove temporary directory", "path", name, "err", cleanupErr)
+		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
+			log15.Warn("Failed to remove temporary directory", "path", tempDir, "err", cleanupErr)
 		}
 	}()
 
 	// Pull raw uploaded data from bundle manager
-	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, name)
+	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, tempDir)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -57,19 +56,10 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	// Create target file for converted database
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-	newFilename := filepath.Join(name, uuid.String())
-
-	// Read raw upload and write converted database to newFilename. This process also correlates
-	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
-	packages, packageReferences, err := convert(
+	dbPath, packages, packageReferences, err := convert(
 		ctx,
 		filename,
-		newFilename,
+		tempDir,
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
@@ -131,7 +121,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, newFilename); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, dbPath); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
@@ -176,32 +166,33 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 	return nil
 }
 
-// convert correlates the raw input data and commits the correlated data to disk.
-func convert(
-	ctx context.Context,
-	filename string,
-	newFilename string,
-	dumpID int,
-	root string,
-	getChildren existence.GetChildrenFunc,
-) (_ []types.Package, _ []types.PackageReference, err error) {
+// convert correlates the raw input data, commits the correlated data to disk, and
+// returns the path to the directory to archive/send to the bundle manager.
+func convert(ctx context.Context, filename string, dirname string, dumpID int, root string, getChildren existence.GetChildrenFunc) (string, []types.Package, []types.PackageReference, error) {
 	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "correlation.Correlate")
+		return "", nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := write(ctx, newFilename, groupedBundleData); err != nil {
-		return nil, nil, err
+	dbPath, err := write(ctx, dirname, groupedBundleData)
+	if err != nil {
+		return "", nil, nil, err
 	}
 
-	return groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
+	return dbPath, groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
 }
 
-// write commits the correlated data to disk.
-func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
+// write commits the correlated data to disk and returns the path to the directory to archive/send to the bundle manager.
+func write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (string, error) {
+	dbPath := filepath.Join(dirname, "sqlite")
+	filename := filepath.Join(dbPath, "sqlite.db")
+	if err := os.MkdirAll(dbPath, os.ModePerm); err != nil {
+		return "", err
+	}
+
 	writer, err := writer.NewSQLiteWriter(filename, jsonserializer.New())
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil {
@@ -241,12 +232,12 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		}
 	}
 	if writeErr != nil {
-		return writeErr
+		return "", writeErr
 	}
 
 	if err := writer.Flush(ctx); err != nil {
-		return errors.Wrap(err, "writer.Flush")
+		return "", errors.Wrap(err, "writer.Flush")
 	}
 
-	return nil
+	return dbPath, nil
 }
