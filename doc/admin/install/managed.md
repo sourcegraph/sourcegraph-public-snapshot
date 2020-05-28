@@ -47,7 +47,7 @@ Additionally, Sourcegraph would support your internal rollout programs, includin
 
 - A dedicated technical point of contact for the installation process
 - [Tokens with read access to your code hosts](../external_service/index.md)
-- [Keys or tokens required to integrate your single sign-on provider with Sourcegraph](../auth/index.md)
+- [Keys, access tokens, or any other setup required to integrate your single sign-on provider with Sourcegraph](../auth/index.md), as well as support from a member of your team with administrator access to your single sign-on provider to help set up and test the integration
 
 ## Security
 
@@ -57,4 +57,6 @@ Only essential Sourcegraph teammates would have access to your instance frontend
 
 Learn more in our [network security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security).
 
->NOTE: Questions about managed Sourcegraph instances? [Contact us to learn more](https://about.sourcegraph.com/contact/sales).
+## Other requests
+
+Special requests, including non-standard network access policies or integration with your VPN, hosting on custom infrastructure or with non-standard software, custom version control systems, and more, may require additional time, support, and fees. [Contact us to discuss your needs](https://about.sourcegraph.com/contact/sales).
