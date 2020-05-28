@@ -550,12 +550,12 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	return campaign, nil
 }
 
-// CreateChangesetJobForPatch creates a ChangesetJob for the
-// Patch with the given ID. The Patch has to belong to a
-// PatchSet that was attached to a Campaign.
-func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
+// QueueChangesetJobForPatch queues a ChangesetJob for the Patch with the given
+// ID, creating it if necessary. The Patch has to belong to a PatchSet that was
+// attached to a Campaign.
+func (s *Service) QueueChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
 	traceTitle := fmt.Sprintf("patch: %d", patchID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForPatch", traceTitle)
+	tr, ctx := trace.New(ctx, "service.QueueChangesetJobForPatch", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
