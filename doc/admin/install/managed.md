@@ -38,14 +38,16 @@ Additionally, Sourcegraph would support your internal rollout programs, includin
 ## Requirements
 
 **Business**
-- A dedicated business point of contact for the rollout process
+
+- A dedicated project manager point of contact for the rollout process
 - A mutual non-disclosure agreement, and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below)
 - Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract
 
 **Technical**
-- A dedicated technical points of contact for the installation process
-- Tokens with read access to your code hosts
-- Keys or tokens required to integrate your single sign-on provider with Sourcegraph
+
+- A dedicated technical point of contact for the installation process
+- [Tokens with read access to your code hosts](../external_service/index.md)
+- [Keys or tokens required to integrate your single sign-on provider with Sourcegraph](../auth/index.md)
 
 ## Security
 
