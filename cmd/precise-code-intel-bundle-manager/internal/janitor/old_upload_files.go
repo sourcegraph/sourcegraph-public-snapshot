@@ -28,8 +28,11 @@ func (j *Janitor) removeOldUploadFiles() error {
 		}
 
 		path := filepath.Join(paths.UploadsDir(j.bundleDir), fileInfo.Name())
+
 		if err := os.Remove(path); err != nil {
-			return err
+			j.metrics.Errors.Inc()
+			log15.Error("Failed to remove file", "path", path, "err", err)
+			continue
 		}
 
 		log15.Debug("Removed old upload file", "path", path, "age", age)

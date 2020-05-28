@@ -9,7 +9,7 @@ const entries = entry as webpack.Entry
 
 const entriesWithAutoReload = {
     ...entries,
-    background: [path.join(__dirname, '../../src/extension/scripts/auto-reloading.ts'), ...entries.background],
+    background: [path.join(__dirname, '../../src/browser-extension/scripts/auto-reloading.ts'), ...entries.background],
 }
 
 const config: webpack.Configuration = {

@@ -13,12 +13,17 @@ const extEntry = '../../src/config/extension.entry.js'
 
 const config: webpack.Configuration = {
     entry: {
-        background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.ts'),
-        options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
-        inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.ts'),
-        phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.ts'),
-        integration: buildEntry(pageEntry, '../../src/integration/integration.ts'),
+        // Browser extension
+        background: buildEntry(extEntry, backgroundEntry, '../../src/browser-extension/scripts/backgroundPage.main.ts'),
+        options: buildEntry(extEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
+        inject: buildEntry(extEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
 
+        // Common native integration entry point (Gitlab, Bitbucket)
+        integration: buildEntry(pageEntry, '../../src/native-integration/integration.main.ts'),
+        // Phabricator-only native integration entry point
+        phabricator: buildEntry(pageEntry, '../../src/native-integration/phabricator/integration.main.ts'),
+
+        // Styles
         style: path.join(__dirname, '../../src/app.scss'),
         'options-style': path.join(__dirname, '../../src/options.scss'),
     },

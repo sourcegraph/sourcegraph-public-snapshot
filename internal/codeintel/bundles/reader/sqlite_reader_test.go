@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
@@ -144,7 +144,7 @@ func TestReadReferences(t *testing.T) {
 }
 
 func testReader(t *testing.T) Reader {
-	reader, err := NewSQLiteReader("../testdata/lsif-go@ad3507cb.lsif.db", serializer.NewDefaultSerializer())
+	reader, err := NewSQLiteReader("../testdata/lsif-go@ad3507cb.lsif.db", jsonserializer.New())
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
