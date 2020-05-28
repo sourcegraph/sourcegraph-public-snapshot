@@ -169,8 +169,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of frontend container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # frontend: container_cpu_usage
 
@@ -180,8 +182,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # gitserver: disk_space_remaining
 
@@ -288,8 +292,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # gitserver: container_cpu_usage
 
@@ -299,8 +305,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # github-proxy: container_restarts
 
@@ -325,8 +333,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # github-proxy: container_cpu_usage
 
@@ -336,8 +346,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-bundle-manager: disk_space_remaining
 
@@ -391,8 +403,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-bundle-manager: container_cpu_usage
 
@@ -402,8 +416,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-worker: frontend_internal_api_error_responses
 
@@ -444,8 +460,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-worker: container_cpu_usage
 
@@ -455,8 +473,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-indexer: frontend_internal_api_error_responses
 
@@ -497,8 +517,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # precise-code-intel-indexer: container_cpu_usage
 
@@ -508,8 +530,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # query-runner: frontend_internal_api_error_responses
 
@@ -550,8 +574,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # query-runner: container_cpu_usage
 
@@ -561,8 +587,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # replacer: frontend_internal_api_error_responses
 
@@ -603,8 +631,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of replacer container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # replacer: container_cpu_usage
 
@@ -614,8 +644,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the replacer container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # repo-updater: frontend_internal_api_error_responses
 
@@ -656,8 +688,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # repo-updater: container_cpu_usage
 
@@ -667,8 +701,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # searcher: frontend_internal_api_error_responses
 
@@ -709,8 +745,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # searcher: container_cpu_usage
 
@@ -720,8 +758,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # symbols: frontend_internal_api_error_responses
 
@@ -762,8 +802,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # symbols: container_cpu_usage
 
@@ -773,8 +815,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # syntect-server: container_restarts
 
@@ -799,8 +843,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # syntect-server: container_cpu_usage
 
@@ -810,8 +856,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # zoekt-indexserver: container_restarts
 
@@ -836,8 +884,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # zoekt-indexserver: container_cpu_usage
 
@@ -847,8 +897,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # zoekt-webserver: container_restarts
 
@@ -873,8 +925,10 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
 # zoekt-webserver: container_cpu_usage
 
@@ -884,6 +938,8 @@ for assistance.
 
 **Possible solutions:**
 
+If usage is high:
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+If usage is low, consider decreasing the above values instead.
 
