@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"strconv"
 
 	badger "github.com/dgraph-io/badger/v2"
 	pkgerrors "github.com/pkg/errors"
@@ -33,40 +32,14 @@ func NewBadgerReader(dirname string, serializer serializer.Serializer) (_ Reader
 
 func (r *badgerReader) ReadMeta(ctx context.Context) (lsifVersion string, sourcegraphVersion string, numResultChunks int, _ error) {
 	err := r.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte("lsifVersion"))
+		item, err := txn.Get([]byte("0:metaData"))
 		if err != nil {
 			return err
 		}
-		if err := item.Value(func(val []byte) error {
-			lsifVersion = string(val)
+		return item.Value(func(val []byte) error {
+			lsifVersion, sourcegraphVersion, numResultChunks = unmarshalMetaData(val)
 			return nil
-		}); err != nil {
-			return err
-		}
-
-		item, err = txn.Get([]byte("internalVersion"))
-		if err != nil {
-			return err
-		}
-		if err := item.Value(func(val []byte) error {
-			sourcegraphVersion = string(val)
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		item, err = txn.Get([]byte("numResultChunks"))
-		if err != nil {
-			return err
-		}
-		if err := item.Value(func(val []byte) error {
-			numResultChunks, _ = strconv.Atoi(string(val))
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		return nil
+		})
 	})
 
 	return lsifVersion, sourcegraphVersion, numResultChunks, err
@@ -75,7 +48,7 @@ func (r *badgerReader) ReadMeta(ctx context.Context) (lsifVersion string, source
 func (r *badgerReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
 	var documentData types.DocumentData
 	err := r.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(makeKey("document", path))
+		item, err := txn.Get(makeKey("1:document", path))
 		if err != nil {
 			return err
 		}
@@ -102,7 +75,7 @@ func (r *badgerReader) ReadDocument(ctx context.Context, path string) (types.Doc
 func (r *badgerReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
 	var resultChunkData types.ResultChunkData
 	err := r.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(makeKey("resultChunk", fmt.Sprintf("%d", id)))
+		item, err := txn.Get(makeKey("2:resultChunk", fmt.Sprintf("%05d", id)))
 		if err != nil {
 			return err
 		}
@@ -126,11 +99,11 @@ func (r *badgerReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 }
 
 func (r *badgerReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	return r.readDefinitionReferences(ctx, "definition", scheme, identifier, skip, take)
+	return r.readDefinitionReferences(ctx, "3:definition", scheme, identifier, skip, take)
 }
 
 func (r *badgerReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
-	return r.readDefinitionReferences(ctx, "reference", scheme, identifier, skip, take)
+	return r.readDefinitionReferences(ctx, "4:reference", scheme, identifier, skip, take)
 }
 
 func (r *badgerReader) readDefinitionReferences(ctx context.Context, prefix, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
@@ -161,24 +134,7 @@ func (r *badgerReader) readDefinitionReferences(ctx context.Context, prefix, sch
 			}
 
 			if err := it.Item().Value(func(val []byte) error {
-				if len(val) < 17 {
-					return fmt.Errorf("Short key")
-				}
-
-				startLine := int(binary.LittleEndian.Uint32(val[0:]))
-				startCharacter := int(binary.LittleEndian.Uint32(val[4:]))
-				endLine := int(binary.LittleEndian.Uint32(val[8:]))
-				endCharacter := int(binary.LittleEndian.Uint32(val[12:]))
-
-				rows = append(rows, types.DefinitionReferenceRow{
-					Scheme:         scheme,
-					Identifier:     identifier,
-					URI:            string(val[16:]),
-					StartLine:      startLine,
-					StartCharacter: startCharacter,
-					EndLine:        endLine,
-					EndCharacter:   endCharacter,
-				})
+				rows = append(rows, unmarshalDefinitionReferenceRow(scheme, identifier, val))
 				return nil
 			}); err != nil {
 				return err
@@ -213,4 +169,28 @@ func makeKey(values ...string) []byte {
 	}
 
 	return buf
+}
+
+func unmarshalMetaData(val []byte) (string, string, int) {
+	x := int(binary.LittleEndian.Uint32(val[0:]))
+	z := int(binary.LittleEndian.Uint32(val[8:]))
+
+	return string(val[12 : 12+x]), string(val[12+x:]), z
+}
+
+func unmarshalDefinitionReferenceRow(scheme, identifier string, val []byte) types.DefinitionReferenceRow {
+	startLine := int(binary.LittleEndian.Uint32(val[0:]))
+	startCharacter := int(binary.LittleEndian.Uint32(val[4:]))
+	endLine := int(binary.LittleEndian.Uint32(val[8:]))
+	endCharacter := int(binary.LittleEndian.Uint32(val[12:]))
+
+	return types.DefinitionReferenceRow{
+		Scheme:         scheme,
+		Identifier:     identifier,
+		URI:            string(val[16:]),
+		StartLine:      startLine,
+		StartCharacter: startCharacter,
+		EndLine:        endLine,
+		EndCharacter:   endCharacter,
+	}
 }

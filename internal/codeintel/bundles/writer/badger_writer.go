@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	badger "github.com/dgraph-io/badger/v2"
+	badgeroptions "github.com/dgraph-io/badger/v2/options"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -13,104 +14,126 @@ import (
 
 type badgerWriter struct {
 	db         *badger.DB
-	wb         *badger.WriteBatch
 	serializer serializer.Serializer
 }
 
 var _ Writer = &badgerWriter{}
 
 func NewBadgerWriter(dirname string, serializer serializer.Serializer) (Writer, error) {
-	db, err := badger.Open(badger.DefaultOptions(dirname).WithSyncWrites(false))
+	options := badger.DefaultOptions(dirname).
+		WithCompression(badgeroptions.None).
+		WithLogger(nil).
+		WithSyncWrites(false).
+		WithTableLoadingMode(badgeroptions.MemoryMap).
+		WithValueThreshold(1 << 10) // 1kb
+
+	db, err := badger.Open(options)
 	if err != nil {
 		return nil, err
 	}
 
 	return &badgerWriter{
 		db:         db,
-		wb:         db.NewWriteBatch(),
 		serializer: serializer,
 	}, nil
 }
 
+type bytePair struct {
+	Key   []byte
+	Value []byte
+}
+
 func (w *badgerWriter) WriteMeta(ctx context.Context, lsifVersion string, numResultChunks int) error {
-	// TODO - make a type for this instead
-	if err := w.wb.Set(makeKey("lsifVersion"), []byte(lsifVersion)); err != nil {
-		return err
-	}
-	if err := w.wb.Set(makeKey("internalVersion"), []byte(InternalVersion)); err != nil {
-		return err
-	}
-	if err := w.wb.Set(makeKey("numResultChunks"), []byte(fmt.Sprintf("%d", numResultChunks))); err != nil {
-		return err
-	}
-	return nil
+	return w.write([]bytePair{
+		bytePair{
+			Key:   makeKey("0:metaData"),
+			Value: marshalMetaData(lsifVersion, InternalVersion, numResultChunks),
+		},
+	})
 }
 
 func (w *badgerWriter) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
-	for key, value := range documents {
-		ser, err := w.serializer.MarshalDocumentData(value)
+	pairs := make([]bytePair, 0, len(documents))
+	for path, document := range documents {
+		ser, err := w.serializer.MarshalDocumentData(document)
 		if err != nil {
 			return errors.Wrap(err, "serializer.MarshalDocumentData")
 		}
 
-		if err := w.wb.Set(makeKey("document", key), ser); err != nil {
-			return err
-		}
+		pairs = append(pairs, bytePair{
+			Key:   makeKey("1:document", path),
+			Value: ser,
+		})
 	}
 
-	return nil
+	return w.write(pairs)
 }
 
 func (w *badgerWriter) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
+	pairs := make([]bytePair, 0, len(resultChunks))
 	for key, value := range resultChunks {
 		ser, err := w.serializer.MarshalResultChunkData(value)
 		if err != nil {
 			return errors.Wrap(err, "serializer.MarshalResultChunkData")
 		}
 
-		if err := w.wb.Set(makeKey("resultChunk", fmt.Sprintf("%d", key)), ser); err != nil {
-			return err
-		}
+		pairs = append(pairs, bytePair{
+			Key:   makeKey("2:resultChunk", fmt.Sprintf("%d", key)),
+			Value: ser,
+		})
 	}
 
-	return nil
+	return w.write(pairs)
 }
 
 func (w *badgerWriter) WriteDefinitions(ctx context.Context, definitions []types.DefinitionReferenceRow) error {
-	return w.writeDefinitionReferences(ctx, "definition", definitions)
+	return w.writeDefinitionReferences(ctx, "3:definition", definitions)
 }
 
 func (w *badgerWriter) WriteReferences(ctx context.Context, references []types.DefinitionReferenceRow) error {
-	return w.writeDefinitionReferences(ctx, "reference", references)
+	return w.writeDefinitionReferences(ctx, "4:reference", references)
 }
 
 func (w *badgerWriter) writeDefinitionReferences(ctx context.Context, prefix string, rows []types.DefinitionReferenceRow) error {
+	pairs := make([]bytePair, 0, len(rows))
 	for i, r := range rows {
-		ser := make([]byte, 4*4+len(r.URI))
-		binary.LittleEndian.PutUint32(ser[0:], uint32(r.StartLine))
-		binary.LittleEndian.PutUint32(ser[4:], uint32(r.StartCharacter))
-		binary.LittleEndian.PutUint32(ser[8:], uint32(r.EndLine))
-		binary.LittleEndian.PutUint32(ser[12:], uint32(r.EndCharacter))
-		copy(ser[16:], r.URI)
+		pairs = append(pairs, bytePair{
+			Key:   makeKey(prefix, r.Scheme, r.Identifier, fmt.Sprintf("%d", i)),
+			Value: marshalDefinitionReferenceRow(r),
+		})
+	}
 
-		// TODO - make type
-		// ser := makeKey(r.URI, fmt.Sprintf("%d", r.StartLine), fmt.Sprintf("%d", r.StartCharacter), fmt.Sprintf("%d", r.EndLine), fmt.Sprintf("%d", r.EndCharacter))
+	return w.write(pairs)
+}
 
-		if err := w.wb.Set(makeKey(prefix, r.Scheme, r.Identifier, fmt.Sprintf("%d", i)), ser); err != nil {
+func (w *badgerWriter) Flush(ctx context.Context) error {
+	return nil
+}
+
+func (w *badgerWriter) Close() error {
+	return w.db.Close()
+}
+
+func (w *badgerWriter) write(pairs []bytePair) error {
+	txn := w.db.NewTransaction(true)
+	defer txn.Discard()
+
+	for _, e := range pairs {
+		err := txn.Set(e.Key, e.Value)
+		if err == badger.ErrTxnTooBig {
+			if commitErr := txn.Commit(); commitErr != nil {
+				return commitErr
+			}
+
+			txn = w.db.NewTransaction(true)
+			err = txn.Set(e.Key, e.Value)
+		}
+		if err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func (w *badgerWriter) Flush(ctx context.Context) error {
-	return w.wb.Flush()
-}
-
-func (w *badgerWriter) Close() error {
-	w.wb.Cancel()
-	return w.db.Close()
+	return txn.Commit()
 }
 
 func makeKey(values ...string) []byte {
@@ -126,5 +149,25 @@ func makeKey(values ...string) []byte {
 		idx += len(v) + 1
 	}
 
+	return buf
+}
+
+func marshalMetaData(lsifVersion, internalVersion string, numResultChunks int) []byte {
+	buf := make([]byte, 4*3+len(lsifVersion)+len(internalVersion))
+	binary.LittleEndian.PutUint32(buf[0:], uint32(len(lsifVersion)))
+	binary.LittleEndian.PutUint32(buf[4:], uint32(len(internalVersion)))
+	binary.LittleEndian.PutUint32(buf[8:], uint32(numResultChunks))
+	copy(buf[12:], lsifVersion)
+	copy(buf[12+len(lsifVersion):], internalVersion)
+	return buf
+}
+
+func marshalDefinitionReferenceRow(row types.DefinitionReferenceRow) []byte {
+	buf := make([]byte, 4*4+len(row.URI))
+	binary.LittleEndian.PutUint32(buf[0:], uint32(row.StartLine))
+	binary.LittleEndian.PutUint32(buf[4:], uint32(row.StartCharacter))
+	binary.LittleEndian.PutUint32(buf[8:], uint32(row.EndLine))
+	binary.LittleEndian.PutUint32(buf[12:], uint32(row.EndCharacter))
+	copy(buf[16:], row.URI)
 	return buf
 }
