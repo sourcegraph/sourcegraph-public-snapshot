@@ -3,18 +3,18 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lsif"
+	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 )
 
 type locationConnectionResolver struct {
 	repo      *types.Repo
 	commit    api.CommitID
-	locations []*lsif.LSIFLocation
+	locations []codeintelapi.ResolvedLocation
 	endCursor string
 }
 
@@ -32,7 +32,7 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 			return nil, err
 		}
 
-		treeResolver, err := collectionResolver.resolve(ctx, location.RepositoryID, adjustedCommit, location.Path)
+		treeResolver, err := collectionResolver.resolve(ctx, api.RepoID(location.Dump.RepositoryID), adjustedCommit, location.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -63,21 +63,21 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 //
 // A non-nil error means the connection resolver was unable to load the diff between
 // the requested commit and location's commit.
-func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location *lsif.LSIFLocation) (string, lsp.Range, error) {
-	if location.RepositoryID != r.repo.ID {
-		return location.Commit, location.Range, nil
+func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location codeintelapi.ResolvedLocation) (string, lsp.Range, error) {
+	if api.RepoID(location.Dump.RepositoryID) != r.repo.ID {
+		return location.Dump.Commit, convertRange(location.Range), nil
 	}
 
-	adjuster, err := newPositionAdjuster(ctx, r.repo, location.Commit, string(r.commit), location.Path)
+	adjuster, err := newPositionAdjuster(ctx, r.repo, location.Dump.Commit, string(r.commit), location.Path)
 	if err != nil {
 		return "", lsp.Range{}, err
 	}
 
-	if adjustedRange, ok := adjuster.adjustRange(location.Range); ok {
+	if adjustedRange, ok := adjuster.adjustRange(convertRange(location.Range)); ok {
 		return string(r.commit), adjustedRange, nil
 	}
 
 	// Couldn't adjust range, return original result which is precise but
 	// jump the user to another into another commit context on navigation.
-	return location.Commit, location.Range, nil
+	return location.Dump.Commit, convertRange(location.Range), nil
 }

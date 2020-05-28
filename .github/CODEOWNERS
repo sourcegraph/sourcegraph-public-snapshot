@@ -233,7 +233,6 @@ Dockerfile @sourcegraph/distribution
 /internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
