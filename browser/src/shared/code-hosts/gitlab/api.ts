@@ -5,8 +5,6 @@ import { map, switchMap } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { GitLabInfo } from './scrape'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
-import { FileInfo } from '../shared/codeHost'
-import { Omit } from 'utility-types'
 import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
 
 /**
