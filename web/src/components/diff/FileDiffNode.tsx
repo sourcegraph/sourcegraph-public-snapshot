@@ -48,12 +48,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         let path: React.ReactFragment
         if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
-            path = (
-                <span title={node.newPath}>
-                    {!node.oldPath && <span className="text-success">New file </span>}
-                    {node.newPath}
-                </span>
-            )
+            path = <span title={node.newPath}>{node.newPath}</span>
         } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
             path = (
                 <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
@@ -65,11 +60,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             // by reorganizing this code in a way that's much more complex to humans), node.oldPath
             // is non-null.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            path = (
-                <span title={node.oldPath!}>
-                    <span className="text-danger">Deleted file</span> {node.oldPath}
-                </span>
-            )
+            path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
         let stat: React.ReactFragment
@@ -81,7 +72,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             const formattedSize =
                 (sizeChange / Math.pow(1024, sizeThousands)).toFixed(2) + ['B', 'kB', 'MB', 'GB', 'TB'][sizeThousands]
             stat = (
-                <strong className={classNames(className, 'mr-2 file-diff-node__header-path-size')}>
+                <strong className={classNames(className, 'mr-2 file-diff-node__header-path-info')}>
                     {sizeChange >= 0 ? '+' : '-'}
                     {formattedSize}
                 </strong>
@@ -111,8 +102,14 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                 <ChevronRightIcon className="icon-inline" />
                             )}
                         </button>
-                        <div className="file-diff-node__header-path-stat">
+                        <div className="file-diff-node__header-path-stat align-items-baseline">
                             {stat}
+                            {!node.oldPath && (
+                                <span className="file-diff-node__header-path-info text-success mr-2">New file</span>
+                            )}
+                            {!node.newPath && (
+                                <span className="file-diff-node__header-path-info text-danger mr-2">Deleted file</span>
+                            )}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
                                 {path}
                             </Link>
