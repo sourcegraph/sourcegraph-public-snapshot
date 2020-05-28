@@ -20,6 +20,17 @@ import execa from 'execa'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+const formatDate = (d: Date): string =>
+    `${d.toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (SF time) / ${d.toLocaleString('en-US', {
+        timeZone: 'Europe/Berlin',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (Berlin time)`
+
 interface Config {
     teamEmail: string
 
@@ -186,16 +197,6 @@ const steps: Step[] = [
                     `Tracking issue for version ${c.majorVersion}.${c.minorVersion} not found--has it been create yet?`
                 )
             }
-            const formatDate = (d: Date): string =>
-                `${d.toLocaleString('en-US', {
-                    timeZone: 'America/Los_Angeles',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (SF time) / ${d.toLocaleString('en-US', {
-                    timeZone: 'Europe/Berlin',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (Berlin time)`
             await postMessage(
                 `:captain: ${c.majorVersion}.${c.minorVersion} Release :captain:
 Release captain: @${c.captainSlackUsername}
@@ -301,7 +302,7 @@ Key dates:
             for (const cmd of requiredCommands) {
                 try {
                     await commandExists(cmd)
-                } catch (err) {
+                } catch {
                     throw new Error(`Required command ${cmd} does not exist`)
                 }
             }
@@ -378,7 +379,7 @@ async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): 
 async function main(): Promise<void> {
     const config = persistedConfig
     const args = process.argv.slice(2)
-    if (args.length < 1) {
+    if (args.length === 0) {
         console.error('This command expects at least 1 argument')
         await run(config, 'help')
         return
@@ -392,4 +393,4 @@ async function main(): Promise<void> {
     await run(config, step as StepID, ...stepArgs)
 }
 
-main().catch(err => console.error(err))
+main().catch(error => console.error(error))

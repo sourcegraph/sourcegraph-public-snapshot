@@ -11,6 +11,7 @@
     "**/.cache": true,
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
+    "**/.eslintcache": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",

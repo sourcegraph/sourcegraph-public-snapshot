@@ -102,7 +102,7 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     }
 
     // Scope exists in the search query, so remove it now.
-    return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
+    return (query.slice(0, idx).trim() + ' ' + query.slice(idx + searchFilter.length).trim()).trim()
 }
 
 export function getSearchTypeFromQuery(query: string): SearchType {
@@ -161,8 +161,8 @@ const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
  * E.g: ('query', 3) => { firstPart: 'que', lastPart: 'ry' }
  */
 const splitStringAtPosition = (value: string, position: number): { firstPart: string; lastPart: string } => ({
-    firstPart: value.substring(0, position),
-    lastPart: value.substring(position),
+    firstPart: value.slice(0, Math.max(0, position)),
+    lastPart: value.slice(Math.max(0, position)),
 })
 
 interface FilterAndValueMatch {
@@ -288,17 +288,12 @@ export const insertSuggestionInQuery = (
         // e.g: (with "|" being the cursor)
         // without: "archived:Yes Query|" -> selection -> "archived:QueryInput"
         // with: "archived:Yes Query|" -> selection -> "archived:Yes QueryInput"
-        if (
-            !isFiltersSuggestion &&
-            isSeparateWordSuggestion &&
-            lastWordOfFirstPartMatch &&
-            lastWordOfFirstPartMatch.index
-        ) {
+        if (!isFiltersSuggestion && isSeparateWordSuggestion && lastWordOfFirstPartMatch?.index) {
             // adds a space because a separate word was being typed
-            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
+            return firstPart.slice(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
         }
 
-        return firstPart.substring(0, separatorIndex + 1) + valueToAppend
+        return firstPart.slice(0, separatorIndex + 1) + valueToAppend
     })()
 
     return {
@@ -317,7 +312,7 @@ export const insertSuggestionInQuery = (
  */
 export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
+    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^\s:]+$/))
     return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
 
@@ -362,7 +357,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     // Split the query so `formattedFilterAndValue` can be placed in between
     const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
-    return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
+    return firstPart.slice(0, filterIndex) + formattedFilterAndValue + lastPart
 }
 
 /**

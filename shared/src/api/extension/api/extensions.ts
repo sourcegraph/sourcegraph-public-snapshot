@@ -39,11 +39,11 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyMar
             self.exports = exports
             self.module = { exports }
             self.importScripts(bundleURL)
-        } catch (err) {
+        } catch (error) {
             throw new Error(
                 `error thrown while executing extension ${JSON.stringify(
                     extensionID
-                )} bundle (in importScripts of ${bundleURL}): ${String(err)}`
+                )} bundle (in importScripts of ${bundleURL}): ${String(error)}`
             )
         }
         const extensionExports = self.module.exports
@@ -113,8 +113,8 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyMar
     public unsubscribe(): void {
         for (const [extensionID, deactivate] of this.extensionDeactivate.entries()) {
             this.extensionDeactivate.delete(extensionID)
-            tryCatchPromise(deactivate).catch(err => {
-                console.warn(`Error deactivating extension ${JSON.stringify(extensionID)}:`, err)
+            tryCatchPromise(deactivate).catch(error => {
+                console.warn(`Error deactivating extension ${JSON.stringify(extensionID)}:`, error)
             })
         }
     }

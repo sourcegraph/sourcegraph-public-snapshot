@@ -2,7 +2,7 @@ import expect from 'expect'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { PhabricatorMapping } from '../browser/types'
+import { PhabricatorMapping } from '../browser-extension/web-extension-api/types'
 import { isEqual } from 'lodash'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
@@ -92,7 +92,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await driver.page.goto(PHABRICATOR_BASE_URL + '/config/application/')
     try {
         await driver.page.waitForSelector('a[href="/config/group/sourcegraph/"]', { timeout: 2000 })
-    } catch (err) {
+    } catch {
         throw new Error(
             `The Sourcegraph native integration is not installed on ${PHABRICATOR_BASE_URL}. Please see https://docs.sourcegraph.com/dev/phabricator_gitolite#install-the-sourcegraph-phabricator-extension`
         )

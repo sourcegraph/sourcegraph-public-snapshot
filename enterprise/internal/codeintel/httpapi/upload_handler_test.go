@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"flag"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,6 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
+}
 
 func TestHandleEnqueueSinglePayload(t *testing.T) {
 	setupRepoMocks(t)

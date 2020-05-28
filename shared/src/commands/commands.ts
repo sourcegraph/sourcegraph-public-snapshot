@@ -157,7 +157,7 @@ export function convertUpdateConfigurationCommandArgs(
         // object property.
         keyPath = [args[0]]
     } else {
-        throw new Error(
+        throw new TypeError(
             `invalid updateConfiguration arguments: ${JSON.stringify(
                 args
             )} (1st element, the key path, must be a string (referring to a settings property) or an array of type (string|number)[] (referring to a deeply nested settings property))`

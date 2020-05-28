@@ -199,8 +199,8 @@ function extensionsWithMatchedActivationEvent(
                 return false
             }
             return x.manifest.activationEvents.some(e => e === '*' || languageActivationEvents.has(e))
-        } catch (err) {
-            console.error(err)
+        } catch (error) {
+            console.error(error)
         }
         return false
     })

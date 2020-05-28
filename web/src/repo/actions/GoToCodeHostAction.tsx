@@ -2,7 +2,7 @@ import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -121,7 +121,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
             // If showing a comparison, add comparison specifier to the code host URL.
             if (this.props.commitRange) {
-                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
+                url += `/compare/${this.props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
             }
             // Add range or position path to the code host URL.
             if (this.props.range) {
@@ -144,7 +144,7 @@ function serviceTypeDisplayNameAndIcon(
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     switch (serviceType) {
         case 'github':
-            return { displayName: 'GitHub', icon: GithubCircleIcon }
+            return { displayName: 'GitHub', icon: GithubIcon }
         case 'gitlab':
             return { displayName: 'GitLab' }
         case 'bitbucketServer':

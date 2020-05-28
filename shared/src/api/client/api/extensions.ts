@@ -44,15 +44,15 @@ export class ClientExtensions {
                      * called (in the current implementation).
                      */
                     for (const x of toDeactivate) {
-                        this.proxy.$deactivateExtension(x.id).catch(err => {
-                            console.warn(`Error deactivating extension ${JSON.stringify(x.id)}:`, err)
+                        this.proxy.$deactivateExtension(x.id).catch(error => {
+                            console.warn(`Error deactivating extension ${JSON.stringify(x.id)}:`, error)
                         })
                     }
 
                     // Activate extensions that haven't yet been activated.
                     for (const x of toActivate) {
-                        this.proxy.$activateExtension(x.id, x.scriptURL).catch(err => {
-                            console.error(`Error activating extension ${JSON.stringify(x.id)}:`, err)
+                        this.proxy.$activateExtension(x.id, x.scriptURL).catch(error => {
+                            console.error(`Error activating extension ${JSON.stringify(x.id)}:`, error)
                         })
                     }
                 })

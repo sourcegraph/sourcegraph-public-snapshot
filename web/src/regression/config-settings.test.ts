@@ -10,7 +10,7 @@ import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
 import { fetchSiteConfiguration } from './util/api'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient } from './util/GraphQlClient'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
 
 describe('Site config test suite', () => {
@@ -103,7 +103,7 @@ describe('Site config test suite', () => {
                 await driver.page.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
-                expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeFalsy()
+                expect(await driver.page.evaluate(() => document.body.textContent?.includes('Sign up'))).toBeFalsy()
             },
             { retries: 5 } // configuration propagation is eventually consistent
         )
@@ -114,7 +114,7 @@ describe('Site config test suite', () => {
                 await driver.page.goto(config.sourcegraphBaseUrl)
                 await driver.page.reload()
                 await driver.findElementWithText('Sign in', { wait: { timeout: 2000 } })
-                expect(await driver.page.evaluate(() => document.body.innerText.includes('Sign up'))).toBeTruthy()
+                expect(await driver.page.evaluate(() => document.body.textContent?.includes('Sign up'))).toBeTruthy()
             },
             { retries: 5 } // configuration propagation is eventually consistent
         )

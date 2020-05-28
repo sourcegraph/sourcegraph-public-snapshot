@@ -28,10 +28,10 @@ interface Props extends RouteComponentProps<{ id: string }> {
     history: H.History
 }
 
-const terminalStates = [GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED]
+const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
 
 function shouldReload(v: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
-    return !isErrorLike(v) && !(v && terminalStates.includes(v.state))
+    return !isErrorLike(v) && !(v && terminalStates.has(v.state))
 }
 
 /**
@@ -65,7 +65,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
             return
         }
 
-        let description = `commit ${uploadOrError.inputCommit.substring(0, 7)}`
+        let description = `commit ${uploadOrError.inputCommit.slice(0, 7)}`
         if (uploadOrError.inputRoot) {
             description += ` rooted at ${uploadOrError.inputRoot}`
         }
@@ -79,8 +79,8 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
         try {
             await deleteLsifUpload({ id }).toPromise()
             setDeletionOrError('deleted')
-        } catch (err) {
-            setDeletionOrError(err)
+        } catch (error) {
+            setDeletionOrError(error)
         }
     }
 
@@ -102,7 +102,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                             Upload for commit{' '}
                             {uploadOrError.projectRoot
                                 ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                : uploadOrError.inputCommit.substring(0, 7)}{' '}
+                                : uploadOrError.inputCommit.slice(0, 7)}{' '}
                             indexed by {uploadOrError.inputIndexer} rooted at{' '}
                             {uploadOrError.projectRoot?.path || uploadOrError.inputRoot || '/'}
                         </h2>

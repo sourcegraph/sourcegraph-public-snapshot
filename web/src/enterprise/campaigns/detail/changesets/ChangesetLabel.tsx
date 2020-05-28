@@ -14,7 +14,7 @@ interface Props {
  * @returns The perceived brightness from 0 to 255
  */
 export function colorBrightness(color: string): number {
-    const [r, g, b] = [color.substr(0, 2), color.substr(2, 2), color.substr(4, 2)].map(value => parseInt(value, 16))
+    const [r, g, b] = [color.slice(0, 2), color.slice(2, 4), color.slice(4, 6)].map(value => parseInt(value, 16))
     return (r * 299 + g * 587 + b * 114) / 1000
 }
 

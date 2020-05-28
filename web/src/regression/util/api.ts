@@ -9,7 +9,7 @@ import {
     isErrorGraphQLResult,
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { GraphQLClient } from './GraphQLClient'
+import { GraphQLClient } from './GraphQlClient'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import {
@@ -325,9 +325,9 @@ export async function deleteUser(
     let user: GQL.IUser | null
     try {
         user = await getUser({ requestGraphQL }, username)
-    } catch (err) {
+    } catch (error) {
         if (mustAlreadyExist) {
-            throw err
+            throw error
         } else {
             return
         }

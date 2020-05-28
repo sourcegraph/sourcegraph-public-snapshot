@@ -173,6 +173,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if strings.TrimSpace(args.Input) == "" {
 		return false, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
+
+	if problems, err := conf.ValidateSite(args.Input); err != nil {
+		return false, fmt.Errorf("failed to validate site configuration: %w", err)
+	} else if len(problems) > 0 {
+		return false, fmt.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
+	}
+
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions

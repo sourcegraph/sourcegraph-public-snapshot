@@ -40,7 +40,7 @@ function parseValue<T>(v: string | null, defaultValue: T): T {
     }
     try {
         return JSON.parse(v) as T
-    } catch (err) {
+    } catch {
         return defaultValue
     }
 }

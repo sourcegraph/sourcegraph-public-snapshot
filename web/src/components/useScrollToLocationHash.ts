@@ -23,7 +23,7 @@ export const useScrollToLocationHash = (location: H.Location): void => {
         if (location.hash) {
             const idOrName = location.hash.slice(1)
             if (idOrName !== scrolledTo) {
-                const element = document.getElementById(idOrName) || document.getElementsByName(idOrName).item(0)
+                const element = document.querySelector(`#${idOrName}`) || document.getElementsByName(idOrName).item(0)
                 if (element) {
                     element.scrollIntoView()
                     setScrolledTo(idOrName)
