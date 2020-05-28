@@ -35,6 +35,7 @@
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @slimsag
+/internal/cmd/ghe-feeder @uwedeportivo
 /internal/comby @rvantonder
 /internal/db/ @keegancsmith
 /internal/processrestart @slimsag @keegancsmith
