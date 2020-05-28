@@ -569,6 +569,14 @@ func (d *dummyFileResolver) Content(ctx context.Context) (string, error) {
 	return d.content(ctx)
 }
 
+func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
+	content, err := d.content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len([]byte(content))), nil
+}
+
 func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
 	return false, nil
 }
