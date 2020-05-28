@@ -144,9 +144,12 @@ export async function integrationTestContext(
  *
  * @internal
  */
-export function createBarrier(): { wait: Promise<void>; done: () => void } {
-    let done!: () => void
-    const wait = new Promise<void>(resolve => (done = resolve))
+export function createBarrier<T = void>(): {
+    wait: Promise<T>
+    done: T extends void ? () => void : (value: T) => void
+} {
+    let done!: T extends void ? () => void : (value: T) => void
+    const wait = new Promise<T>(resolve => (done = resolve as any))
     return { wait, done }
 }
 
