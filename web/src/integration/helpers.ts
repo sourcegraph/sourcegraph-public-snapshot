@@ -6,10 +6,10 @@ import * as path from 'path'
 import mkdirp from 'mkdirp-promise'
 import express from 'express'
 import { Polly } from '@pollyjs/core'
-import PuppeteerAdapter from '@pollyjs/adapter-puppeteer'
+import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 import FSPersister from '@pollyjs/persister-fs'
 
-Polly.register(PuppeteerAdapter)
+Polly.register(PuppeteerAdapter as any)
 Polly.register(FSPersister)
 
 const FIXTURES_DIRECTORY = `${__dirname}/__fixtures__`
@@ -72,11 +72,13 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                 await driver.newPage()
                 await driver.page.setRequestInterception(true)
                 const recordingsDir = path.join(FIXTURES_DIRECTORY, ...prefixes.map(snakeCase))
-                await mkdirp(recordingsDir)
+                if (record) {
+                    await mkdirp(recordingsDir)
+                }
                 const polly = new Polly(snakeCase(testName), {
                     adapters: ['puppeteer'],
                     adapterOptions: {
-                        puppeteer: { page: driver.page },
+                        puppeteer: { page: driver.page, requestResourceTypes: ['xhr', 'fetch', 'document'] },
                     },
                     persister: 'fs',
                     persisterOptions: {
@@ -84,19 +86,35 @@ export function describeIntegration(description: string, testSuite: IntegrationT
                             recordingsDir,
                         },
                     },
+                    expiryStrategy: 'warn',
+                    recordIfMissing: record,
                     matchRequestsBy: {
+                        method: true,
+                        body: true,
+                        order: true,
+                        // Origin header will change when running against a test instance
+                        headers: false,
                         url: {
+                            pathname: true,
+                            query: true,
+                            hash: true,
+                            // Allow recording tests against https://sourcegraph.test
+                            // but running them against http:://localhost:8000
+                            protocol: false,
+                            port: false,
                             hostname: false,
+                            username: false,
+                            password: false,
                         },
                     },
                     mode: record ? 'record' : 'replay',
+                    logging: false,
                 })
-
                 const { server } = polly
                 server.get('/.assets/*path').passthrough()
                 server
-                    .post('/.api')
-                    .filter(req => new URL(req.url).search === '?logEvent')
+                    .post('/.api/graphql')
+                    .filter(req => req.url.includes('?logEvent') || req.url.includes('?logUserEvent'))
                     .intercept((_, res) => {
                         res.sendStatus(200)
                     })
