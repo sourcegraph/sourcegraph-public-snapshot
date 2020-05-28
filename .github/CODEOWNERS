@@ -71,7 +71,7 @@
 /dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
-/SECURITY.md @beyang @nicksnyder
+/SECURITY.md @sourcegraph/security
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
@@ -248,7 +248,6 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
-/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services
