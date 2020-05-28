@@ -70,7 +70,7 @@
 /dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
-/SECURITY.md @beyang @nicksnyder
+/SECURITY.md @sourcegraph/security
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
