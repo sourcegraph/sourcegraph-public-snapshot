@@ -42,9 +42,13 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 		for scanner.Scan() {
 			if line := scanner.Bytes(); len(line) != 0 {
 				buf := pool.Get().(*bytes.Buffer)
-				// buf := make([]byte, len(line))
-				_, _ = buf.Write(line) // TODO
-				lineCh <- buf
+				_, _ = buf.Write(line)
+
+				select {
+				case lineCh <- buf:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()
@@ -99,7 +103,7 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 				i++
 			}
 
-			// Wait until the current batch has bee completely unmarshalled
+			// Wait until the current batch has been completely unmarshalled
 			for j := 0; j < i; j++ {
 				<-signal
 			}
