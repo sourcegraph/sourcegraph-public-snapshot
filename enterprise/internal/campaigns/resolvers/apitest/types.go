@@ -60,6 +60,8 @@ type PatchConnection struct {
 }
 
 type Patch struct {
+	Typename            string `json:"__typename"`
+	ID                  string
 	PublicationEnqueued bool
 	Repository          struct{ Name, URL string }
 	Diff                struct {
@@ -126,9 +128,15 @@ type ChangesetEventConnection struct {
 	TotalCount int
 }
 
+type Repository struct {
+	ID   string
+	Name string
+}
+
 type Changeset struct {
+	Typename    string `json:"__typename"`
 	ID          string
-	Repository  struct{ ID string }
+	Repository  Repository
 	Campaigns   CampaignConnection
 	CreatedAt   string
 	UpdatedAt   string

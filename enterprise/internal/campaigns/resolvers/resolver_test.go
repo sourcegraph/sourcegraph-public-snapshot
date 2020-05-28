@@ -359,7 +359,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []apitest.Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
+				Repository: apitest.Repository{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
@@ -405,7 +405,7 @@ func TestCampaigns(t *testing.T) {
 				},
 			},
 			{
-				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
+				Repository: apitest.Repository{ID: graphqlBBSRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "Release testing pr",
