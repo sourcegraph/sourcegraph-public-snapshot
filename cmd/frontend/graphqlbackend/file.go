@@ -14,6 +14,7 @@ type FileResolver interface {
 	Name() string
 	IsDirectory() bool
 	Content(ctx context.Context) (string, error)
+	ByteSize(ctx context.Context) (int32, error)
 	Binary(ctx context.Context) (bool, error)
 	RichHTML(ctx context.Context) (string, error)
 	URL(ctx context.Context) (string, error)

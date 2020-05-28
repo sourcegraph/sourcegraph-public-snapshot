@@ -62,6 +62,14 @@ func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { retur
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 
+func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len([]byte(content))), nil
+}
+
 func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)

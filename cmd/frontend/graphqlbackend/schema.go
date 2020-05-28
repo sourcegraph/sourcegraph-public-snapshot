@@ -2586,6 +2586,8 @@ interface File2 {
     isDirectory: Boolean!
     # The content of this file.
     content: String!
+    # The file size in bytes.
+    byteSize: Int!
     # Whether or not it is binary.
     binary: Boolean!
     # The file rendered as rich HTML, or an empty string if it is not a supported
@@ -2621,6 +2623,8 @@ type VirtualFile implements File2 {
     isDirectory: Boolean!
     # The content of this file.
     content: String!
+    # The file size in bytes.
+    byteSize: Int!
     # Whether or not it is binary.
     binary: Boolean!
     # The file rendered as rich HTML, or an empty string if it is not a supported
@@ -2670,6 +2674,8 @@ type GitBlob implements TreeEntry & File2 {
     isDirectory: Boolean!
     # The content of this blob.
     content: String!
+    # The file size in bytes.
+    byteSize: Int!
     # Whether or not it is binary.
     binary: Boolean!
     # The blob contents rendered as rich HTML, or an empty string if it is not a supported
