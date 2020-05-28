@@ -545,6 +545,102 @@ type PatchIDInput {
 # Patch ID is a UUID, base64 encoded. That is, so the patch IDs can't be guessed.
 union PatchInputOrID = PatchInput | PatchIDInput
 
+interface Changeset {
+    # The patch this changeset was created from. Null, when added manually.
+    patch: ID
+
+    # The repository changed by this changeset.
+    repository: Repository!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef
+
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef
+
+    # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
+    diff: RepositoryComparison
+}
+
+type PreviewChangeset implements Changeset {
+    # The patch this changeset was created from. Null, when added manually.
+    patch: ID
+
+    # The repository changed by this changeset.
+    repository: Repository!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef
+
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef
+
+    # The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
+    diff: RepositoryComparison
+}
+
+type PreviewChangesetConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [PreviewChangeset!]!
+}
+
+type ChangesetConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [Changeset!]!
+}
+
+# A changeset delta represents the potential change to a changeset.
+type ChangesetDelta {
+    old: ChangesetOrChangesetPreview!
+    new: ChangesetOrChangesetPreview!
+    isTitleChanged: Boolean!
+    isDescriptionChanged: Boolean!
+    isPatchChanged: Boolean!
+    # True of old.__typename == 'ExternalChangeset'
+    willPerformExternalOperation: Boolean!
+}
+
+# List of changeset deltas.
+type ChangesetDeltaConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [ChangesetDelta!]!
+}
+
 type CampaignUpdatePreview {
     # The updated name of the campaign.
     name: String!
@@ -554,14 +650,15 @@ type CampaignUpdatePreview {
     description: String!
     # URL where this preview can be looked at in the UI.
     url: String!
-    # List of unchanged changesets.
-    unchanged(first: Int, after: String): ExternalChangesetConnection!
-    # List of patches that change a changeset.
-    changed(first: Int, after: String): PatchConnection!
-    # List of deleted changesets.
-    deleted(first: Int, after: String): ExternalChangesetConnection!
-    # List of added patches.
-    added(first: Int, after: String): PatchConnection!
+
+    # List of unchanged changesets and patches.
+    unchanged(first: Int, after: String): ChangesetConnection!
+    # List of changesets and patches that will be updated.
+    changed: ChangesetDeltaConnection!
+    # List of changesets to be closed.
+    deleted: ExternalChangesetConnection!
+    # List of changesets to be added.
+    added: PreviewChangesetConnection!
 }
 
 # A campaign is a set of related changes to apply to code across one or more repositories.
@@ -743,7 +840,7 @@ type ChangesetLabel {
 }
 
 # A changeset on a code host (e.g., a pull request on GitHub).
-type ExternalChangeset implements Node {
+type ExternalChangeset implements Node & Changeset {
     # The unique ID for the changeset.
     id: ID!
 
