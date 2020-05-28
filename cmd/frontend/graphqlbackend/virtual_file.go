@@ -49,6 +49,14 @@ func (r *virtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink
 	return []*externallink.Resolver{}, nil
 }
 
+func (r *virtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len([]byte(content))), nil
+}
+
 func (r *virtualFileResolver) Content(ctx context.Context) (string, error) {
 	return r.fileContent(ctx)
 }

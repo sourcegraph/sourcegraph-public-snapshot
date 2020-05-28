@@ -12,6 +12,7 @@ import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import classNames from 'classnames'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: GQL.IFileDiff
@@ -47,7 +48,12 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
         let path: React.ReactFragment
         if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
-            path = <span title={node.newPath}>{node.newPath}</span>
+            path = (
+                <span title={node.newPath}>
+                    {!node.oldPath && <span className="text-success">New file </span>}
+                    {node.newPath}
+                </span>
+            )
         } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
             path = (
                 <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
@@ -59,7 +65,36 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             // by reorganizing this code in a way that's much more complex to humans), node.oldPath
             // is non-null.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            path = <span title={node.oldPath!}>{node.oldPath}</span>
+            path = (
+                <span title={node.oldPath!}>
+                    <span className="text-danger">Deleted file</span> {node.oldPath}
+                </span>
+            )
+        }
+
+        let stat: React.ReactFragment
+        // If one of the files was binary, display file size change instead of DiffStat.
+        if ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary)) {
+            const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
+            const className = sizeChange >= 0 ? 'text-success' : 'text-danger'
+            const sizeThousands = Math.floor(Math.log(sizeChange) / Math.log(1024))
+            const formattedSize =
+                (sizeChange / Math.pow(1024, sizeThousands)).toFixed(2) + ['B', 'kB', 'MB', 'GB', 'TB'][sizeThousands]
+            stat = (
+                <strong className={classNames(className, 'mr-2 file-diff-node__header-path-size')}>
+                    {sizeChange >= 0 ? '+' : '-'}
+                    {formattedSize}
+                </strong>
+            )
+        } else {
+            stat = (
+                <DiffStat
+                    added={node.stat.added}
+                    changed={node.stat.changed}
+                    deleted={node.stat.deleted}
+                    className="file-diff-node__header-stat"
+                />
+            )
         }
 
         const anchor = `diff-${node.internalID}`
@@ -77,12 +112,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             )}
                         </button>
                         <div className="file-diff-node__header-path-stat">
-                            <DiffStat
-                                added={node.stat.added}
-                                changed={node.stat.changed}
-                                deleted={node.stat.deleted}
-                                className="file-diff-node__header-stat"
-                            />
+                            {stat}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
                                 {path}
                             </Link>
