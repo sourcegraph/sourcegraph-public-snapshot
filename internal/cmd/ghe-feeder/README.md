@@ -98,3 +98,35 @@ by the first dash. For example:
 ```
 
 The CSV files are from reports in the GHE instance which explains the field format.
+
+## Resuming from previous runs and other input controls
+
+The `ghe-feeder` command keeps track of processed ownerRepos strings in a sqlite DB 
+(by default called `feeder.db` in the current directory).
+It records in a table called `repos` all the ownerRepos with their success or failure status and for failure the errType.
+It also records the orgs it creates in an additional table called `orgs`.
+
+The errType in the `repos` table is has these possible values:
+
+- `api` for errors using the GHE API talking to the destination GHE (creating repos and orgs)
+- `clone` for errors while cloning from github.com.
+- `push` for errors doing a git push command with the destination GHE as a remote
+- `unknown` for all other errors
+
+The `feeder.db` can be used to replay and skip the already done ownerRepos. Note that it also skips ownerRepos with
+errType == `clone` (the assumption is that those are either private repos for which no credentials are available or
+404 for repos that got deleted since).
+
+In addition to the `feeder.db` one can control which inputs get processed by specifying a limit on the number of lines
+being processed and also by specifying how many lines to skip before starting to process. Make sure you use the same
+inputs declared in the same way if you want to skip this way.
+
+## Monitoring progress
+
+The `ghe-feeder` command shows progress in the terminal with a progress bar, 
+writes into a log file (by default `feeder.log` in the current directory). In addition to that it runs a webserver and
+exports metrics. By pointing a prometheus/grafana pair at it one can see progress metrics, successes vs failures etc.
+The provided dashboard `ghe-feeder-dashboard.json` can be used for that once imported into the grafana.
+
+
+
