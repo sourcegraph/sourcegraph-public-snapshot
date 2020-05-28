@@ -20,3 +20,9 @@ func TestEnvironMap(t *testing.T) {
 		t.Fatalf("mismatch (-want, +got):\n%s", diff)
 	}
 }
+
+func TestLock(t *testing.T) {
+	// Test that calling lock won't panic. This will be the only caller for
+	// Lock in our test.
+	Lock()
+}
