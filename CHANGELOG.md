@@ -72,6 +72,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The deprecated feature discussions has been removed. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
 
+## 3.15.2
+
+### Fixed
+
+- Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
+- Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
+
 ## 3.15.1
 
 ### Fixed
