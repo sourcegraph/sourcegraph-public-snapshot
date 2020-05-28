@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -127,19 +127,20 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
 	id := idFromRequest(r)
-	filename := paths.SQLiteDBFilename(s.bundleDir, id)
+	filename := paths.DBDir(s.bundleDir, id)
 	makePartFilename := func(index int) string {
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-		log15.Error("Failed to create directory", "err", err)
+	stitchedReader, err := codeintelutils.StitchFilesReader(makePartFilename, false)
+	if err != nil {
+		log15.Error("Failed to stitch multipart database", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
-		log15.Error("Failed to stitch multipart database", "err", err)
+	if err := tar.Extract(filename, stitchedReader); err != nil {
+		log15.Error("Failed to extract database archive", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
