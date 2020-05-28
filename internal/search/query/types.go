@@ -38,7 +38,8 @@ type OrdinaryQuery struct {
 
 // A query containing and/or expressions.
 type AndOrQuery struct {
-	Query []Node
+	Query             []Node
+	HeuristicsApplied map[heuristic]bool
 }
 
 func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
@@ -104,11 +105,11 @@ func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
 	if field == "" {
 		VisitPattern(q.Query, func(value string, _, quoted bool) {
-			values = append(values, valueToTypedValue(field, value, quoted)...)
+			values = append(values, q.valueToTypedValue(field, value, quoted)...)
 		})
 	} else {
 		VisitField(q.Query, field, func(value string, _ bool) {
-			values = append(values, valueToTypedValue(field, value, false)...)
+			values = append(values, q.valueToTypedValue(field, value, false)...)
 		})
 	}
 	return values
@@ -172,16 +173,20 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func valueToTypedValue(field, value string, quoted bool) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, quoted bool) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
-		if quoted {
+		// If a pattern is quoted, or we applied heuristics to interpret
+		// valid regexp metasyntax literally instead, this pattern is a
+		// string.
+		if quoted || q.HeuristicsApplied[parensAsPatterns] {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {
 			return []*types.Value{{Regexp: regexp}}
 		}
+		// If the regexp does not compile, treat it as a string.
 		return []*types.Value{{String: &value}}
 
 	case

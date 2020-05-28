@@ -218,7 +218,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run("partition search pattern", func(t *testing.T) {
-			q, _ := ParseAndOr(tt.input)
+			q, _, _ := ParseAndOr(tt.input)
 			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
 				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {

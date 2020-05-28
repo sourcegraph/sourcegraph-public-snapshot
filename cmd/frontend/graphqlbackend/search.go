@@ -971,7 +971,7 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 	var queryInfo query.QueryInfo
 	var err error
 	if conf.AndOrQueryEnabled() {
-		andOrQuery, err := query.ParseAndOr(plainQuery)
+		andOrQuery, _, err := query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}
