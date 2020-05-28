@@ -36,7 +36,9 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 
 		for scanner.Scan() {
 			if line := scanner.Bytes(); len(line) != 0 {
-				lineCh <- line
+				buf := make([]byte, len(line))
+				copy(buf, line)
+				lineCh <- buf
 			}
 		}
 	}()
