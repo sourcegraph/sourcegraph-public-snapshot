@@ -101,7 +101,7 @@ The CSV files are from reports in the GHE instance which explains the field form
 
 ## Resuming from previous runs and other input controls
 
-The `ghe-feeder` command keeps track of processed ownerRepos strings in a sqlite DB 
+The `ghe-feeder` command keeps track of processed ownerRepos strings in a sqlite DB
 (by default called `feeder.db` in the current directory).
 It records in a table called `repos` all the ownerRepos with their success or failure status and for failure the errType.
 It also records the orgs it creates in an additional table called `orgs`.
@@ -123,10 +123,7 @@ inputs declared in the same way if you want to skip this way.
 
 ## Monitoring progress
 
-The `ghe-feeder` command shows progress in the terminal with a progress bar, 
+The `ghe-feeder` command shows progress in the terminal with a progress bar,
 writes into a log file (by default `feeder.log` in the current directory). In addition to that it runs a webserver and
 exports metrics. By pointing a prometheus/grafana pair at it one can see progress metrics, successes vs failures etc.
 The provided dashboard `ghe-feeder-dashboard.json` can be used for that once imported into the grafana.
-
-
-
