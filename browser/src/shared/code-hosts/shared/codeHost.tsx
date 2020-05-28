@@ -870,11 +870,13 @@ export function handleCodeHost({
             ): CodeEditorWithPartialModel => {
                 if ('blob' in diffOrFileInfo) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
-                } else if ('head' in diffOrFileInfo && 'base' in diffOrFileInfo) {
+                }
+                if ('head' in diffOrFileInfo && 'base' in diffOrFileInfo) {
                     const editor = initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
                     initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
                     return editor
-                } else if ('base' in diffOrFileInfo) {
+                }
+                if ('base' in diffOrFileInfo) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
                 }
                 return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
@@ -895,7 +897,7 @@ export function handleCodeHost({
                         : codeViewEvent.dom.getCodeElementFromTarget(target),
             }
 
-            const applyDecorationsForFileInfo = (fileInfo: FileInfoWithContent, diffPart?: DiffPart) => {
+            const applyDecorationsForFileInfo = (fileInfo: FileInfoWithContent, diffPart?: DiffPart): void => {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
                     try {
@@ -907,7 +909,7 @@ export function handleCodeHost({
                             diffPart
                         )
                     } catch (err) {
-                        console.error('Could not apply head decorations to code view', codeViewEvent.element, err)
+                        console.error('Could not apply decorations to code view', codeViewEvent.element, err)
                     }
                 }
                 codeViewEvent.subscriptions.add(
@@ -926,9 +928,11 @@ export function handleCodeHost({
             if (!minimalUI) {
                 if ('blob' in diffOrBlobInfo) {
                     applyDecorationsForFileInfo(diffOrBlobInfo.blob)
-                } else if ('head' in diffOrBlobInfo) {
+                }
+                if ('head' in diffOrBlobInfo) {
                     applyDecorationsForFileInfo(diffOrBlobInfo.head, 'head')
-                } else if ('base' in diffOrBlobInfo) {
+                }
+                if ('base' in diffOrBlobInfo) {
                     applyDecorationsForFileInfo(diffOrBlobInfo.base, 'base')
                 }
             }
@@ -937,7 +941,8 @@ export function handleCodeHost({
             const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({ part }) => {
                 if ('blob' in diffOrBlobInfo) {
                     return ensureRev(diffOrBlobInfo.blob)
-                } else if ('head' in diffOrBlobInfo && part === 'head') {
+                }
+                if ('head' in diffOrBlobInfo && part === 'head') {
                     return ensureRev(diffOrBlobInfo.head)
                 }
                 if ('base' in diffOrBlobInfo && part === 'base') {
