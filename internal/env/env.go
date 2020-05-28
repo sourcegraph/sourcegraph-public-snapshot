@@ -92,12 +92,7 @@ func Get(name, defaultValue, description string) string {
 	// packages. This leads to it being the main contributer to init being
 	// slow. So we avoid the constant syscalls by checking env once.
 	if environ == nil {
-		li := os.Environ()
-		environ = make(map[string]string, len(li))
-		for _, e := range environ {
-			i := strings.Index(e, "=")
-			environ[e[:i]] = e[i+1:]
-		}
+		environ = environMap(os.Environ())
 	}
 
 	// Allow per-process override. For instance, SRC_LOG_LEVEL_repo_updater would
@@ -118,6 +113,15 @@ func Get(name, defaultValue, description string) string {
 	})
 
 	return value
+}
+
+func environMap(environ []string) map[string]string {
+	m := make(map[string]string, len(environ))
+	for _, e := range environ {
+		i := strings.Index(e, "=")
+		m[e[:i]] = e[i+1:]
+	}
+	return m
 }
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
