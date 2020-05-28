@@ -15,15 +15,15 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
-            renderer
-                .create(
+            toJson(
+                mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
                         isSiteAdmin={false}
                         history={createMemoryHistory()}
                     />
                 )
-                .toJSON()
+            )
         ).toMatchSnapshot()
     })
 
@@ -43,8 +43,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
@@ -58,8 +57,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
@@ -92,8 +90,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
@@ -107,8 +104,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
@@ -130,8 +126,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
@@ -145,8 +140,7 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    ),
-                    { mode: 'deep' }
+                    )
                 )
             ).toMatchSnapshot()
         })
