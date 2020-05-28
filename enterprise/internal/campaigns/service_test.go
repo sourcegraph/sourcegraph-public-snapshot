@@ -174,9 +174,9 @@ func TestServicePermissionLevels(t *testing.T) {
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("QueueChangesetJobForPatch", func(t *testing.T) {
+			t.Run("EnqueueChangesetJobForPatch", func(t *testing.T) {
 				for _, p := range patches {
-					err = svc.QueueChangesetJobForPatch(currentUserCtx, p.ID)
+					err = svc.EnqueueChangesetJobForPatch(currentUserCtx, p.ID)
 					tc.assertFunc(t, err)
 				}
 			})
@@ -513,7 +513,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("QueueChangesetJobForPatch", func(t *testing.T) {
+	t.Run("EnqueueChangesetJobForPatch", func(t *testing.T) {
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
@@ -533,7 +533,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.QueueChangesetJobForPatch(ctx, patch.ID)
+		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -547,7 +547,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.QueueChangesetJobForPatch(ctx, patch.ID)
+		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -564,7 +564,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Error out the changeset job and verify that
-		// QueueChangesetJobForPatch updates the job to force a retry.
+		// EnqueueChangesetJobForPatch updates the job to force a retry.
 		haveJob.Error = "ruh roh"
 		haveJob.StartedAt = time.Now()
 		haveJob.FinishedAt = time.Now()
@@ -576,7 +576,7 @@ func TestService(t *testing.T) {
 		if !haveJob.UnsuccessfullyCompleted() {
 			t.Error("tried to error out the changesetJob and failed")
 		}
-		if err := svc.QueueChangesetJobForPatch(ctx, patch.ID); err != nil {
+		if err := svc.EnqueueChangesetJobForPatch(ctx, patch.ID); err != nil {
 			t.Fatal(err)
 		}
 		haveJob3, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
@@ -1121,7 +1121,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 						if j.RepoID == repo.ID {
 							toPublish[j.ID] = j
 
-							err = svc.QueueChangesetJobForPatch(ctx, j.ID)
+							err = svc.EnqueueChangesetJobForPatch(ctx, j.ID)
 							if err != nil {
 								t.Fatalf("Failed to individually created ChangesetJob: %s", err)
 							}
