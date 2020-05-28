@@ -1,4 +1,4 @@
-package indexabilityscheduler
+package scheduler
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -10,8 +10,8 @@ type SchedulerMetrics struct {
 
 func NewSchedulerMetrics(r prometheus.Registerer) SchedulerMetrics {
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_indexability_scheduler_errors_total",
-		Help: "Total number of errors when running the indexability scheduler",
+		Name: "src_index_scheduler_errors_total",
+		Help: "Total number of errors when running the index scheduler",
 	})
 	r.MustRegister(errors)
 

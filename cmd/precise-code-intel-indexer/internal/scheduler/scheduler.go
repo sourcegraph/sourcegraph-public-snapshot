@@ -1,4 +1,4 @@
-package indexscheduler
+package scheduler
 
 import (
 	"context"

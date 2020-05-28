@@ -1,4 +1,4 @@
-package indexabilityscheduler
+package indexabilityupdater
 
 import (
 	"context"
@@ -11,22 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
-type Scheduler struct {
+type Updater struct {
 	db              db.DB
 	gitserverClient gitserver.Client
 	interval        time.Duration
-	metrics         SchedulerMetrics
+	metrics         UpdaterMetrics
 	done            chan struct{}
 	once            sync.Once
 }
 
-func NewScheduler(
+func NewUpdater(
 	db db.DB,
 	gitserverClient gitserver.Client,
 	interval time.Duration,
-	metrics SchedulerMetrics,
-) *Scheduler {
-	return &Scheduler{
+	metrics UpdaterMetrics,
+) *Updater {
+	return &Updater{
 		db:              db,
 		gitserverClient: gitserverClient,
 		interval:        interval,
@@ -35,35 +35,35 @@ func NewScheduler(
 	}
 }
 
-func (s *Scheduler) Start() {
+func (u *Updater) Start() {
 	for {
-		if err := s.update(context.Background()); err != nil {
-			s.metrics.Errors.Inc()
+		if err := u.update(context.Background()); err != nil {
+			u.metrics.Errors.Inc()
 			log15.Error("Failed to update index queue", "err", err)
 		}
 
 		select {
-		case <-time.After(s.interval):
-		case <-s.done:
+		case <-time.After(u.interval):
+		case <-u.done:
 			return
 		}
 	}
 }
 
-func (s *Scheduler) Stop() {
-	s.once.Do(func() {
-		close(s.done)
+func (u *Updater) Stop() {
+	u.once.Do(func() {
+		close(u.done)
 	})
 }
 
-func (s *Scheduler) update(ctx context.Context) error {
-	stats, err := s.db.RepoUsageStatistics(ctx)
+func (u *Updater) update(ctx context.Context) error {
+	stats, err := u.db.RepoUsageStatistics(ctx)
 	if err != nil {
 		return errors.Wrap(err, "db.RepoUsageStatistics")
 	}
 
 	for _, stat := range stats {
-		if err := s.queueRepository(ctx, stat); err != nil {
+		if err := u.queueRepository(ctx, stat); err != nil {
 			return err
 		}
 	}
@@ -71,18 +71,18 @@ func (s *Scheduler) update(ctx context.Context) error {
 	return nil
 }
 
-func (s *Scheduler) queueRepository(ctx context.Context, repoUsageStatistics db.RepoUsageStatistics) error {
-	commit, err := s.gitserverClient.Head(ctx, s.db, repoUsageStatistics.RepositoryID)
+func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics db.RepoUsageStatistics) error {
+	commit, err := u.gitserverClient.Head(ctx, u.db, repoUsageStatistics.RepositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	exists, err := s.gitserverClient.FileExists(ctx, s.db, repoUsageStatistics.RepositoryID, commit, "go.mod")
+	exists, err := u.gitserverClient.FileExists(ctx, u.db, repoUsageStatistics.RepositoryID, commit, "go.mod")
 	if err != nil || !exists {
 		return errors.Wrap(err, "gitserver.FileExists")
 	}
 
-	// TODO - also check repo size
+	// TODO(efritz) - also check repo size
 
 	indexableRepository := db.UpdateableIndexableRepository{
 		RepositoryID: repoUsageStatistics.RepositoryID,
@@ -90,7 +90,7 @@ func (s *Scheduler) queueRepository(ctx context.Context, repoUsageStatistics db.
 		PreciseCount: &repoUsageStatistics.PreciseCount,
 	}
 
-	if err := s.db.UpdateIndexableRepository(ctx, indexableRepository); err != nil {
+	if err := u.db.UpdateIndexableRepository(ctx, indexableRepository); err != nil {
 		return errors.Wrap(err, "db.UpdateIndexableRepository")
 	}
 

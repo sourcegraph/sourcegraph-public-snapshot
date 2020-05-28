@@ -1,4 +1,4 @@
-package indexabilityscheduler
+package indexabilityupdater
 
 import (
 	"context"
@@ -41,13 +41,13 @@ func TestUpdate(t *testing.T) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
-	scheduler := &Scheduler{
+	updater := &Updater{
 		db:              mockDB,
 		gitserverClient: mockGitserverClient,
-		metrics:         NewSchedulerMetrics(metrics.TestRegisterer),
+		metrics:         NewUpdaterMetrics(metrics.TestRegisterer),
 	}
 
-	if err := scheduler.update(context.Background()); err != nil {
+	if err := updater.update(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
