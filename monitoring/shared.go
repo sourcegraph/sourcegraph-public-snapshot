@@ -52,7 +52,7 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 var sharedContainerRestarts sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_restarts",
-		Description:     "container restarts every 5m by instance (not available on k8s or server)",
+		Description:     "container restarts every 5m by instance (not available on server)",
 		Query:           fmt.Sprintf(`increase(cadvisor_container_restart_count{name=~".*%s.*"}[5m])`, containerName),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 1},
@@ -71,7 +71,7 @@ var sharedContainerRestarts sharedObservable = func(containerName string) Observ
 var sharedContainerMemoryUsage sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_memory_usage",
-		Description:     "container memory usage by instance (not available on k8s or server)",
+		Description:     "container memory usage by instance (not available on server)",
 		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}`, containerName),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 5},
@@ -88,7 +88,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 var sharedContainerCPUUsage sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_cpu_usage",
-		Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
+		Description:     "container cpu usage total (5m average) across all cores by instance (not available on server)",
 		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}`, containerName),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 5},

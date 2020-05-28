@@ -120,7 +120,7 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not available on k8s or server)",
+				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
 				Rows: []Row{
 					{
