@@ -1,4 +1,4 @@
-import { initNewExtensionAPI } from '../flatExtentionApi'
+import { initNewExtensionAPI } from '../flatExtensionApi'
 import { SettingsEdit } from '../../client/services/settings'
 import { pretendRemote } from '../../util'
 import { MainThreadAPI } from '../../contract'
