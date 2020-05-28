@@ -123,11 +123,9 @@ func TestServicePermissionLevels(t *testing.T) {
 	assertNoAuthError := func(t *testing.T, err error) {
 		t.Helper()
 
-		if err != nil {
-			if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
-				t.Fatalf("got auth error")
-			}
-			// Ignore other errors, we only want to check whether it's an auth error
+		// Ignore other errors, we only want to check whether it's an auth error
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			t.Fatalf("got auth error")
 		}
 	}
 
