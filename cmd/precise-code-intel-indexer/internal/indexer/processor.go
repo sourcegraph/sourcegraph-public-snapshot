@@ -41,9 +41,17 @@ func (p *processor) Process(ctx context.Context, index db.Index) error {
 }
 
 func (p *processor) index(ctx context.Context, repoDir string, index db.Index) error {
+	tag, exact, err := p.gitserverClient.Tags(ctx, p.db, index.RepositoryID, index.Commit)
+	if err != nil {
+		return err
+	}
+	if !exact {
+		tag = fmt.Sprintf("%s-%s", tag, index.Commit[:12])
+	}
+
 	args := []string{
 		"--repositoryRoot=.",
-		"--moduleVersion=NONE", // TODO - find git tags on this commit to support module version
+		fmt.Sprintf("--moduleVersion=%s", tag),
 	}
 
 	return command(repoDir, "lsif-go", args...)
