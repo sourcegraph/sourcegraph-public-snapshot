@@ -102,11 +102,7 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     }
 
     // Scope exists in the search query, so remove it now.
-    return (
-        query.slice(0, Math.max(0, idx)).trim() +
-        ' ' +
-        query.slice(Math.max(0, idx + searchFilter.length)).trim()
-    ).trim()
+    return (query.slice(0, idx).trim() + ' ' + query.slice(idx + searchFilter.length).trim()).trim()
 }
 
 export function getSearchTypeFromQuery(query: string): SearchType {
@@ -292,17 +288,12 @@ export const insertSuggestionInQuery = (
         // e.g: (with "|" being the cursor)
         // without: "archived:Yes Query|" -> selection -> "archived:QueryInput"
         // with: "archived:Yes Query|" -> selection -> "archived:Yes QueryInput"
-        if (
-            !isFiltersSuggestion &&
-            isSeparateWordSuggestion &&
-            lastWordOfFirstPartMatch &&
-            lastWordOfFirstPartMatch.index
-        ) {
+        if (!isFiltersSuggestion && isSeparateWordSuggestion && lastWordOfFirstPartMatch?.index) {
             // adds a space because a separate word was being typed
-            return firstPart.slice(0, Math.max(0, lastWordOfFirstPartMatch.index)) + ' ' + valueToAppend + lastPart
+            return firstPart.slice(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
         }
 
-        return firstPart.slice(0, Math.max(0, separatorIndex + 1)) + valueToAppend
+        return firstPart.slice(0, separatorIndex + 1) + valueToAppend
     })()
 
     return {

@@ -63,7 +63,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const loc = new URL(href, window.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
-        pathname = pathname.slice(0, Math.max(0, pathname.length - 1)) // trim trailing '/'
+        pathname = pathname.slice(0, -1) // trim trailing '/'
     }
 
     const indexOfSep = pathname.indexOf('/-/')
@@ -79,7 +79,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     if (indexOfSep === -1) {
         repoRev = pathname // the whole string
     } else {
-        repoRev = pathname.slice(0, Math.max(0, indexOfSep)) // the whole string leading up to the separator (allows rev to be multiple path parts)
+        repoRev = pathname.slice(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
     const { repoName, rev } = parseRepoRev(repoRev)
     if (!repoName) {
