@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React from 'react'
-import { render } from 'enzyme'
+import { mount } from 'enzyme'
+import toJson from 'enzyme-to-json'
 import { ActivationDropdown } from './ActivationDropdown'
 import sinon from 'sinon'
 import { Activation } from './Activation'
@@ -46,12 +47,14 @@ const baseActivation: Activation = {
 
 describe('ActivationDropdown', () => {
     it('renders the activation dropdown', () => {
-        const wrapper = render(
-            <ActivationDropdown
-                activation={baseActivation}
-                history={H.createMemoryHistory({ keyLength: 0 })}
-                alwaysShow={true}
-            />
+        const wrapper = toJson(
+            mount(
+                <ActivationDropdown
+                    activation={baseActivation}
+                    history={H.createMemoryHistory({ keyLength: 0 })}
+                    alwaysShow={true}
+                />
+            )
         )
         expect(wrapper).toMatchSnapshot()
     })
