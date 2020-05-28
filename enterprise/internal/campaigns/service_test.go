@@ -562,6 +562,42 @@ func TestService(t *testing.T) {
 		if haveJob2.ID != haveJob.ID {
 			t.Errorf("wrong changesetJob: %d. want=%d", haveJob2.ID, haveJob.ID)
 		}
+
+		// Error out the changeset job and verify that
+		// CreateChangesetJobForPatch updates the job to force a retry.
+		haveJob.Error = "ruh roh"
+		haveJob.StartedAt = time.Now()
+		haveJob.FinishedAt = time.Now()
+		if err := store.UpdateChangesetJob(ctx, haveJob); err != nil {
+			t.Fatal(err)
+		}
+		// Sanity check: did this result in the job being considered
+		// unsuccessfully completed?
+		if !haveJob.UnsuccessfullyCompleted() {
+			t.Error("tried to error out the changesetJob and failed")
+		}
+		if err := svc.CreateChangesetJobForPatch(ctx, patch.ID); err != nil {
+			t.Fatal(err)
+		}
+		haveJob3, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID: campaign.ID,
+			PatchID:    patch.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if haveJob3.ID != haveJob.ID {
+			t.Errorf("wrong changesetJob: %d. want=%d", haveJob3.ID, haveJob.ID)
+		}
+		if haveJob3.Error != "" {
+			t.Errorf("unexpected changesetJob Error value: %s. want=%s", haveJob3.Error, "")
+		}
+		if !haveJob3.StartedAt.IsZero() {
+			t.Errorf("unexpected changesetJob StartedAt value: %v. want=%v", haveJob3.StartedAt, time.Time{})
+		}
+		if !haveJob3.FinishedAt.IsZero() {
+			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
+		}
 	})
 
 	t.Run("UpdateCampaign", func(t *testing.T) {

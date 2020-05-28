@@ -590,7 +590,13 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		return err
 	}
 	if existing != nil {
-		// Already exists
+		// An extant changeset job that failed should be reset so
+		// ProcessPendingChangesetJobs can try to publish it again.
+		if existing.UnsuccessfullyCompleted() {
+			existing.Reset()
+			return tx.UpdateChangesetJob(ctx, existing)
+		}
+
 		return nil
 	}
 
@@ -598,11 +604,7 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		CampaignID: campaign.ID,
 		PatchID:    job.ID,
 	}
-	err = tx.CreateChangesetJob(ctx, changesetJob)
-	if err != nil {
-		return err
-	}
-	return nil
+	return tx.CreateChangesetJob(ctx, changesetJob)
 }
 
 // ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
