@@ -16,7 +16,8 @@ var (
 	rawDesiredPercentFree   = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	rawJanitorInterval      = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
 	rawMaxUploadAge         = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
-	rawMaxDatabasePartAge   = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time an database part file can sit on disk.")
+	rawMaxUploadPartAge     = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE", "2h", "The maximum time an upload part file can sit on disk.")
+	rawMaxDatabasePartAge   = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time a database part file can sit on disk.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.

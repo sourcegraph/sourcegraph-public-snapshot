@@ -33,18 +33,23 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir             = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		databaseCacheSize     = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
-		documentCacheSize     = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
-		resultChunkCacheSize  = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
-		desiredPercentFree    = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval       = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge          = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
-		rawMaxDatabasePartAge = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
+		bundleDir            = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		databaseCacheSize    = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
+		documentCacheSize    = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
+		resultChunkCacheSize = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
+		desiredPercentFree   = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval      = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge         = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		maxUploadPartAge     = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
+		maxDatabasePartAge   = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
 		log.Fatalf("failed to prepare directories: %s", err)
+	}
+
+	if err := paths.Migrate(bundleDir); err != nil {
+		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
 	observationContext := &observation.Context{
@@ -64,7 +69,7 @@ func main() {
 	metrics.MustRegisterDiskMonitor(bundleDir)
 	server := server.New(bundleDir, databaseCache, documentCache, resultChunkCache, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, rawMaxDatabasePartAge, janitorMetrics)
+	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
 	go janitor.Run()

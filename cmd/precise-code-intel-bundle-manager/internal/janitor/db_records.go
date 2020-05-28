@@ -15,6 +15,14 @@ import (
 func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	ctx := context.Background()
 
+	getTipCommit := func(repositoryID int) (string, error) {
+		tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
+		if err != nil && !vcs.IsRepoNotExist(err) {
+			return "", errors.Wrap(err, "gitserver.Head")
+		}
+		return tipCommit, nil
+	}
+
 	// TODO(efritz) - request in batches
 	ids, err := j.db.GetDumpIDs(ctx)
 	if err != nil {
@@ -22,31 +30,23 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	}
 
 	for _, id := range ids {
-		exists, err := paths.PathExists(paths.DBFilename(j.bundleDir, int64(id)))
+		exists, err := paths.PathExists(paths.DBDir(j.bundleDir, int64(id)))
 		if err != nil {
 			return errors.Wrap(err, "paths.PathExists")
 		}
-
 		if exists {
 			continue
 		}
 
-		deleted, err := j.db.DeleteUploadByID(ctx, id, func(repositoryID int) (string, error) {
-			tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
-			if err != nil && !vcs.IsRepoNotExist(err) {
-				return "", errors.Wrap(err, "gitserver.Head")
-			}
-			return tipCommit, nil
-		})
+		deleted, err := j.db.DeleteUploadByID(ctx, id, getTipCommit)
 		if err != nil {
 			return errors.Wrap(err, "db.DeleteUploadByID")
 		}
-		if !deleted {
-			continue
-		}
 
-		log15.Debug("Removed upload record with no bundle file", "id", id)
-		j.metrics.UploadRecordsRemoved.Add(1)
+		if deleted {
+			log15.Debug("Removed upload record with no bundle file", "id", id)
+			j.metrics.UploadRecordsRemoved.Inc()
+		}
 	}
 
 	return nil

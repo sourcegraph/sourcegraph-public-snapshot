@@ -1,6 +1,7 @@
 package janitor
 
 import (
+	"os"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ type Janitor struct {
 	desiredPercentFree int
 	janitorInterval    time.Duration
 	maxUploadAge       time.Duration
+	maxUploadPartAge   time.Duration
 	maxDatabasePartAge time.Duration
 	metrics            JanitorMetrics
 	done               chan struct{}
@@ -27,6 +29,7 @@ func New(
 	desiredPercentFree int,
 	janitorInterval time.Duration,
 	maxUploadAge time.Duration,
+	maxUploadPartAge time.Duration,
 	maxDatabasePartAge time.Duration,
 	metrics JanitorMetrics,
 ) *Janitor {
@@ -36,6 +39,7 @@ func New(
 		desiredPercentFree: desiredPercentFree,
 		janitorInterval:    janitorInterval,
 		maxUploadAge:       maxUploadAge,
+		maxUploadPartAge:   maxUploadPartAge,
 		maxDatabasePartAge: maxDatabasePartAge,
 		metrics:            metrics,
 		done:               make(chan struct{}),
@@ -66,14 +70,21 @@ func (j *Janitor) Stop() {
 
 func (j *Janitor) run() error {
 	// TODO(efritz) - use cancellable context for API calls
-	// TODO(efritz) - should also remove orphaned upload files
 
 	if err := j.removeOldUploadFiles(); err != nil {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
 	}
 
+	if err := j.removeOldUploadPartFiles(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldUploadPartFiles")
+	}
+
 	if err := j.removeOldDatabasePartFiles(); err != nil {
 		return errors.Wrap(err, "janitor.removeOldDatabasePartFiles")
+	}
+
+	if err := j.removeOrphanedUploadFiles(); err != nil {
+		return errors.Wrap(err, "janitor.removeOrphanedUploadFiles")
 	}
 
 	if err := j.removeOrphanedBundleFiles(); err != nil {
@@ -89,4 +100,17 @@ func (j *Janitor) run() error {
 	}
 
 	return nil
+}
+
+// remove unlinks the file or directory at the given path. Returns a boolean indicating
+// success. If unsuccessful, the path and error will be logged and the error counter will
+// be incremented.
+func (j *Janitor) remove(path string) bool {
+	if err := os.RemoveAll(path); err != nil {
+		j.metrics.Errors.Inc()
+		log15.Error("Failed to remove path", "path", path, "err", err)
+		return false
+	}
+
+	return true
 }

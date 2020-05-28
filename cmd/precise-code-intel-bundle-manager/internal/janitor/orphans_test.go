@@ -13,12 +13,74 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
+func TestRemoveOrphanedUploadFile(t *testing.T) {
+	bundleDir := testRoot(t)
+	ids := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+	for _, id := range ids {
+		path := filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.gz", id))
+		if err := makeFile(path, time.Now().Local().Add(-2*time.Minute)); err != nil {
+			t.Fatalf("unexpected error creating file %s: %s", path, err)
+		}
+	}
+
+	// Add a new file that should be skipped
+	path := filepath.Join(bundleDir, "uploads", "0.gz")
+	if err := makeFile(path, time.Now().Local()); err != nil {
+		t.Fatalf("unexpected error creating file %s: %s", path, err)
+	}
+
+	mockDB := dbmocks.NewMockDB()
+	mockDB.GetStatesFunc.SetDefaultHook(func(ctx context.Context, ids []int) (map[int]string, error) {
+		sort.Ints(ids)
+		return map[int]string{
+			1:  "completed",
+			2:  "queued",
+			3:  "completed",
+			4:  "processing",
+			5:  "completed",
+			9:  "errored",
+			10: "errored",
+		}, nil
+	})
+
+	j := &Janitor{
+		db:        mockDB,
+		bundleDir: bundleDir,
+		metrics:   NewJanitorMetrics(metrics.TestRegisterer),
+	}
+
+	if err := j.removeOrphanedUploadFiles(); err != nil {
+		t.Fatalf("unexpected error removing orphaned upload files: %s", err)
+	}
+
+	names, err := getFilenames(filepath.Join(bundleDir, "uploads"))
+	if err != nil {
+		t.Fatalf("unexpected error listing directory: %s", err)
+	}
+
+	expectedNames := []string{"0.gz", "1.gz", "2.gz", "3.gz", "4.gz", "5.gz"}
+	if diff := cmp.Diff(expectedNames, names); diff != "" {
+		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
+	}
+
+	var idArgs [][]int
+	for _, call := range mockDB.GetStatesFunc.History() {
+		idArgs = append(idArgs, call.Arg1)
+	}
+
+	expectedArgs := [][]int{ids}
+	if diff := cmp.Diff(expectedArgs, idArgs); diff != "" {
+		t.Errorf("unexpected arguments to statesFn (-want +got):\n%s", diff)
+	}
+}
+
 func TestRemoveOrphanedBundleFile(t *testing.T) {
 	bundleDir := testRoot(t)
 	ids := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	for _, id := range ids {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -53,7 +115,7 @@ func TestRemoveOrphanedBundleFile(t *testing.T) {
 		t.Fatalf("unexpected error listing directory: %s", err)
 	}
 
-	expectedNames := []string{"1.lsif.db", "2.lsif.db", "3.lsif.db", "4.lsif.db", "5.lsif.db"}
+	expectedNames := []string{"1/sqlite.db", "2/sqlite.db", "3/sqlite.db", "4/sqlite.db", "5/sqlite.db"}
 	if diff := cmp.Diff(expectedNames, names); diff != "" {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 	}
@@ -77,7 +139,7 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 	}
 
 	for _, id := range ids {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -115,8 +177,8 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 
 	var allArgs []int
 	for _, call := range mockDB.GetStatesFunc.History() {
-		if len(call.Arg1) > OrphanedBundleBatchSize {
-			t.Errorf("unexpected large slice: want < %d have=%d", OrphanedBundleBatchSize, len(call.Arg1))
+		if len(call.Arg1) > GetStateBatchSize {
+			t.Errorf("unexpected large slice: want < %d have=%d", GetStateBatchSize, len(call.Arg1))
 		}
 
 		allArgs = append(allArgs, call.Arg1...)
@@ -125,14 +187,5 @@ func TestRemoveOrphanedBundleFilesMaxRequestBatchSize(t *testing.T) {
 
 	if diff := cmp.Diff(ids, allArgs); diff != "" {
 		t.Errorf("unexpected flattened arguments to statesFn (-want +got):\n%s", diff)
-	}
-}
-
-func TestBatchIntSlice(t *testing.T) {
-	batches := batchIntSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 2)
-	expected := [][]int{{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9}}
-
-	if diff := cmp.Diff(expected, batches); diff != "" {
-		t.Errorf("unexpected batch layout (-want +got):\n%s", diff)
 	}
 }

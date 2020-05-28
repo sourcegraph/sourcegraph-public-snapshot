@@ -1,4 +1,4 @@
-package janitor
+package paths
 
 import (
 	"io/ioutil"
@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 func testRoot(t *testing.T) string {
@@ -28,7 +27,7 @@ func testRoot(t *testing.T) string {
 	return bundleDir
 }
 
-func makeFile(path string, mtimes time.Time) error {
+func makeFile(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
 		return err
 	}
@@ -39,15 +38,7 @@ func makeFile(path string, mtimes time.Time) error {
 	}
 	file.Close()
 
-	return os.Chtimes(path, mtimes, mtimes)
-}
-
-func makeFileWithSize(path string, size int) error {
-	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(path, make([]byte, size), 0600)
+	return nil
 }
 
 func getFilenames(root string) ([]string, error) {
