@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -289,7 +289,7 @@ func convert(
 
 // write commits the correlated data to disk.
 func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
-	writer, err := writer.NewSQLiteWriter(filename, serializer.NewDefaultSerializer())
+	writer, err := writer.NewSQLiteWriter(filename, jsonserializer.New())
 	if err != nil {
 		return err
 	}
@@ -299,20 +299,39 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		}
 	}()
 
-	if err := writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks); err != nil {
-		return errors.Wrap(err, "writer.WriteMeta")
+	writers := []func() error{
+		func() error {
+			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks), "writer.WriteMeta")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks), "writer.WriteResultChunks")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteDefinitions(ctx, groupedBundleData.Definitions), "writer.WriteDefinitions")
+		},
+		func() error {
+			return errors.Wrap(writer.WriteReferences(ctx, groupedBundleData.References), "writer.WriteReferences")
+		},
 	}
-	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
-		return errors.Wrap(err, "writer.WriteDocuments")
+
+	errs := make(chan error, len(writers))
+	defer close(errs)
+
+	for _, w := range writers {
+		go func(w func() error) { errs <- w() }(w)
 	}
-	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
-		return errors.Wrap(err, "writer.WriteResultChunks")
+
+	var writeErr error
+	for i := 0; i < len(writers); i++ {
+		if err := <-errs; err != nil {
+			writeErr = multierror.Append(writeErr, err)
+		}
 	}
-	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
-		return errors.Wrap(err, "writer.WriteDefinitions")
-	}
-	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
-		return errors.Wrap(err, "writer.WriteReferences")
+	if writeErr != nil {
+		return writeErr
 	}
 
 	if err := writer.Flush(ctx); err != nil {

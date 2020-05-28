@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // removeProcessedUploadsWithoutBundleFile removes all processed upload records
@@ -32,7 +33,7 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 
 		deleted, err := j.db.DeleteUploadByID(ctx, id, func(repositoryID int) (string, error) {
 			tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
-			if err != nil {
+			if err != nil && !vcs.IsRepoNotExist(err) {
 				return "", errors.Wrap(err, "gitserver.Head")
 			}
 			return tipCommit, nil

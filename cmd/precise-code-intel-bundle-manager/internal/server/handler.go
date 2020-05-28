@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -340,7 +340,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
+		sqliteReader, err := reader.NewSQLiteReader(filename, jsonserializer.New())
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
 		}
