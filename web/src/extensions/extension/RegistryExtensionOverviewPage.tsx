@@ -13,7 +13,7 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { EventLogger } from '../../tracking/eventLogger'
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import { ExtensionREADME } from './RegistryExtensionREADME'
+import { ExtensionReadme } from './RegistryExtensionReadme'
 import * as H from 'history'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension'> {
@@ -39,7 +39,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
             ) {
                 repositoryURL = new URL(this.props.extension.manifest.repository.url)
             }
-        } catch (e) {
+        } catch {
             // noop
         }
 
@@ -59,7 +59,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
             <div className="registry-extension-overview-page d-flex flex-wrap">
                 <PageTitle title={this.props.extension.id} />
                 <div className="registry-extension-overview-page__readme mr-3">
-                    <ExtensionREADME extension={this.props.extension} history={this.props.history} />
+                    <ExtensionReadme extension={this.props.extension} history={this.props.history} />
                 </div>
                 <aside className="registry-extension-overview-page__sidebar">
                     {categories && (

@@ -54,7 +54,7 @@ interface Parameters {
 /**
  * Component to show the GraphQL API console.
  */
-export class APIConsole extends React.PureComponent<Props, State> {
+export class ApiConsole extends React.PureComponent<Props, State> {
     public state: State = { parameters: {} }
 
     private updates = new Subject<Parameters>()
@@ -74,7 +74,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         if (parameters.variables) {
             try {
                 parameters.variables = JSON.stringify(JSON.parse(parameters.variables), null, 2)
-            } catch (e) {
+            } catch {
                 // The parse error can be safely ignored because the string
                 // will still be forwarded to the UI where the user will see
                 // invalid JSON errors in the GraphiQL editor.
@@ -84,7 +84,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('APIConsole')
+        eventLogger.logViewEvent('ApiConsole')
 
         // Update the browser URL bar when query/variables/operation name are
         // changed so that the page can be easily shared.
@@ -238,7 +238,7 @@ async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<st
     const responseBody = await response.text()
     try {
         return JSON.parse(responseBody)
-    } catch (error) {
+    } catch {
         return responseBody
     }
 }

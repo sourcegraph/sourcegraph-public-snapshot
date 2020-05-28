@@ -34,7 +34,7 @@ export function convertPlainTextToInteractiveQuery(
                 const filterType = member.token.filterType.token.value as FilterType
                 newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
-                    value: query.substring(member.token.filterValue.range.start, member.token.filterValue.range.end),
+                    value: query.slice(member.token.filterValue.range.start, member.token.filterValue.range.end),
                     editable: false,
                     negated: isNegatedFilter(filterType),
                 }
@@ -44,7 +44,7 @@ export function convertPlainTextToInteractiveQuery(
                 (member.token.type === 'filter' &&
                     !validateFilter(member.token.filterType.token.value, member.token.filterValue).valid)
             ) {
-                newNavbarQuery = [newNavbarQuery, query.substring(member.range.start, member.range.end)]
+                newNavbarQuery = [newNavbarQuery, query.slice(member.range.start, member.range.end)]
                     .filter(query => query.length > 0)
                     .join(' ')
             }

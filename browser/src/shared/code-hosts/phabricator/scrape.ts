@@ -6,7 +6,7 @@ export function getFilepathFromFileForDiff(fileContainer: HTMLElement): { filePa
     for (const meta of metas) {
         let metaText = meta.textContent!
         if (metaText.startsWith(movedFilePrefix)) {
-            metaText = metaText.substr(0, metaText.length - 1) // remove trailing '.'
+            metaText = metaText.slice(0, -1) // remove trailing '.'
             baseFilePath = metaText.split(movedFilePrefix)[1]
             break
         }

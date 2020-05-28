@@ -36,7 +36,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private propsChanges = new Subject<SearchResultMatchProps>()
 
     private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.body.text)
+        const matches = /```(\S+)\s/.exec(this.props.item.body.text)
         if (!matches) {
             return undefined
         }
@@ -65,7 +65,8 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Extract the text content of the result.
-                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
+                            const codeContent =
+                                parser.parseFromString(markdownHTML, 'text/html').body.textContent?.trim() || ''
                             // Match the code content and any trailing newlines if any.
                             const codeContentAndAnyNewLines = new RegExp(escapeRegExp(codeContent) + '\\n*')
                             if (codeContent) {

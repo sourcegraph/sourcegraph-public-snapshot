@@ -60,7 +60,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
     public render(): JSX.Element | null {
         const extensionsOrError: (typeof LOADING | GQL.IRegistryExtension)[] | ErrorLike =
             this.state.extensionsOrError === LOADING
-                ? Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
+                ? new Array(ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).fill(LOADING)
                 : isErrorLike(this.state.extensionsOrError)
                 ? this.state.extensionsOrError
                 : this.state.extensionsOrError.nodes

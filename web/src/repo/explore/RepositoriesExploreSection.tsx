@@ -61,7 +61,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     public render(): JSX.Element | null {
         const repositoriesOrError: (typeof LOADING | GQL.IRepository)[] | ErrorLike =
             this.state.repositoriesOrError === LOADING
-                ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
+                ? new Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
                 ? this.state.repositoriesOrError
                 : this.state.repositoriesOrError.nodes

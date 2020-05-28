@@ -28,13 +28,13 @@ const getTextContent = (element: HTMLElement): { textContent: string; adjust: nu
         adjust = pre.replace(/^(\+|-)/, '').length
 
         // Get rid of the characters we have adjusted for.
-        textContent = textContent.substr(pre.length - adjust)
+        textContent = textContent.slice(pre.length - adjust)
     }
 
     // Phabricator adds a no-width-space to the beginning of the line in some cases.
     // We need to strip that and account for it here.
     if (textContent.charCodeAt(0) === 8203) {
-        textContent = textContent.substr(1)
+        textContent = textContent.slice(1)
         adjust++
     }
 
@@ -97,7 +97,7 @@ export const commitCodeView = {
         mount.style.display = 'inline-block'
         mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
-        actions.insertAdjacentElement('afterbegin', mount)
+        actions.prepend(mount)
 
         return mount
     },
@@ -154,7 +154,7 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
         mount.style.display = 'inline-block'
         mount.classList.add('sourcegraph-phabricator-code-view-toolbar-mount')
 
-        actions.insertAdjacentElement('afterbegin', mount)
+        actions.prepend(mount)
 
         return mount
     },

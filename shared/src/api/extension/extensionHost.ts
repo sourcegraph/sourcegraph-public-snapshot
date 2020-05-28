@@ -17,7 +17,7 @@ import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
-import { initNewExtensionAPI } from './flatExtentionAPI'
+import { initNewExtensionAPI } from './flatExtensionApi'
 
 /**
  * Required information when initializing an extension host.

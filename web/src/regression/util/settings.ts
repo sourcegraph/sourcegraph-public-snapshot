@@ -1,4 +1,4 @@
-import { GraphQLClient } from './GraphQLClient'
+import { GraphQLClient } from './GraphQlClient'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { mutateSettings } from '../../../../shared/src/settings/edit'
 import { getUser } from './api'

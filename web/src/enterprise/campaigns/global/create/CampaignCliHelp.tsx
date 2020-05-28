@@ -37,7 +37,7 @@ interface Props {
 /**
  * A tutorial and a list of examples for campaigns using src CLI
  */
-export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) => (
+export const CampaignCliHelp: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
         <h1>
             Create a campaign <span className="badge badge-info">Beta</span>

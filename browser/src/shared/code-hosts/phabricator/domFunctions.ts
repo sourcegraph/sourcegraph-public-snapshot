@@ -176,13 +176,15 @@ export const diffusionDOMFns: DOMFunctions = {
         if (lineAnchor.dataset.n !== undefined) {
             const lineNumber = parseInt(lineAnchor.dataset.n, 10)
             if (isNaN(lineNumber)) {
-                throw new Error(`Could not parse lineNumber from data-n attribute: ${lineAnchor.dataset.n}`)
+                throw new TypeError(`Could not parse lineNumber from data-n attribute: ${lineAnchor.dataset.n}`)
             }
             return lineNumber
         }
         const lineNumber = parseInt(lineAnchor.textContent || '', 10)
         if (isNaN(lineNumber)) {
-            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${String(lineAnchor.textContent)}`)
+            throw new TypeError(
+                `Could not parse lineNumber from lineAnchor.textContent: ${String(lineAnchor.textContent)}`
+            )
         }
         return lineNumber
     },

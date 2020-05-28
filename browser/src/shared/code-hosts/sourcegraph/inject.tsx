@@ -20,7 +20,7 @@ export function injectExtensionMarker(): void {
     const extensionMarker = document.createElement('div')
     extensionMarker.id = EXTENSION_MARKER_ID
     extensionMarker.style.display = 'none'
-    document.body.appendChild(extensionMarker)
+    document.body.append(extensionMarker)
 }
 
 /**
@@ -43,4 +43,4 @@ function dispatchSourcegraphEvents(): void {
 export const checkIsSourcegraph = (sourcegraphServerUrl: string): boolean =>
     window.location.origin === sourcegraphServerUrl ||
     /^https?:\/\/(www.)?sourcegraph.com/.test(location.href) ||
-    !!document.getElementById('sourcegraph-chrome-webstore-item')
+    !!document.querySelector('#sourcegraph-chrome-webstore-item')

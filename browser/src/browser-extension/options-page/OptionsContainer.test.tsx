@@ -121,7 +121,7 @@ describe('OptionsContainer', () => {
                     setSourcegraphURL={() => Promise.resolve()}
                 />
             )
-        } catch (err) {
+        } catch {
             throw new Error("shouldn't be hit")
         }
     })

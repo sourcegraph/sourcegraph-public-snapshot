@@ -131,8 +131,8 @@ export function createModelService(): ModelService {
                     map(() => getModel(uri)),
                     startWith(model)
                 )
-            } catch (err) {
-                return throwError(err)
+            } catch (error) {
+                return throwError(error)
             }
         },
         addModel: model => {

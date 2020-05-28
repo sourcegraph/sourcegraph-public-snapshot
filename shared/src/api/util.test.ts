@@ -15,8 +15,8 @@ describe('tryCatchPromise', () => {
         })
         let rejected: any
         return p
-            .then(undefined, v => {
-                rejected = v
+            .then(undefined, error => {
+                rejected = error
             })
             .then(() => {
                 expect(rejected).toBe(ERROR)
@@ -27,8 +27,8 @@ describe('tryCatchPromise', () => {
         const p = tryCatchPromise(() => Promise.reject(ERROR))
         let rejected: any
         return p
-            .then(undefined, v => {
-                rejected = v
+            .then(undefined, error => {
+                rejected = error
             })
             .then(() => {
                 expect(rejected).toBe(ERROR)

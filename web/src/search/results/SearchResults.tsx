@@ -382,7 +382,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             }
         }
 
-        return Array.from(filters.values())
+        return [...filters.values()]
     }
     private showMoreResults = (): void => {
         // Requery with an increased max result count.

@@ -92,7 +92,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await driver.page.goto(PHABRICATOR_BASE_URL + '/config/application/')
     try {
         await driver.page.waitForSelector('a[href="/config/group/sourcegraph/"]', { timeout: 2000 })
-    } catch (err) {
+    } catch {
         throw new Error(
             `The Sourcegraph native integration is not installed on ${PHABRICATOR_BASE_URL}. Please see https://docs.sourcegraph.com/dev/phabricator_gitolite#install-the-sourcegraph-phabricator-extension`
         )
