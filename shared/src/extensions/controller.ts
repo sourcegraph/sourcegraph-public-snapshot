@@ -131,15 +131,15 @@ export function createController(context: PlatformContext): Controller {
         notifications,
         services,
         executeCommand: (params, suppressNotificationOnError) =>
-            services.commands.executeCommand(params).catch(err => {
+            services.commands.executeCommand(params).catch(error => {
                 if (!suppressNotificationOnError) {
                     notifications.next({
-                        message: asError(err).message,
+                        message: asError(error).message,
                         type: NotificationType.Error,
                         source: params.command,
                     })
                 }
-                return Promise.reject(err)
+                return Promise.reject(error)
             }),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
@@ -162,12 +162,12 @@ export function registerExtensionContributions(
                 .map(contributions => {
                     try {
                         return parseContributionExpressions(contributions)
-                    } catch (err) {
+                    } catch (error) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
                         console.warn('Discarding contributions: parsing expressions or templates failed.', {
                             contributions,
-                            err,
+                            error,
                         })
                         return {}
                     }

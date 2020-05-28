@@ -144,12 +144,12 @@ export class ContributionRegistry {
                 return multiContributions.flat().map(contributions => {
                     try {
                         return filterContributions(evaluateContributions(computedContext, contributions))
-                    } catch (err) {
+                    } catch (error) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
                         logWarning('Discarding contributions: evaluating expressions or templates failed.', {
                             contributions,
-                            err,
+                            error,
                         })
                         return {}
                     }

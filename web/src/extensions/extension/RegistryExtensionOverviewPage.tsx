@@ -39,7 +39,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
             ) {
                 repositoryURL = new URL(this.props.extension.manifest.repository.url)
             }
-        } catch (e) {
+        } catch {
             // noop
         }
 

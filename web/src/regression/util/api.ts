@@ -325,9 +325,9 @@ export async function deleteUser(
     let user: GQL.IUser | null
     try {
         user = await getUser({ requestGraphQL }, username)
-    } catch (err) {
+    } catch (error) {
         if (mustAlreadyExist) {
-            throw err
+            throw error
         } else {
             return
         }

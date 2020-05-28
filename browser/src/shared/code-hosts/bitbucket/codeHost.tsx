@@ -38,7 +38,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     mount.classList.add('sg-toolbar-mount')
     mount.classList.add('sg-toolbar-mount-bitbucket-server')
 
-    fileActions.insertAdjacentElement('afterbegin', mount)
+    fileActions.prepend(mount)
 
     return mount
 }
@@ -160,7 +160,7 @@ const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElemen
     const create = (): HTMLElement => {
         const mount = document.createElement('li')
         mount.className = classes.join(' ')
-        headerElement.insertAdjacentElement('beforeend', mount)
+        headerElement.append(mount)
         return mount
     }
     const preexisting = headerElement.querySelector<HTMLElement>(classes.map(c => `.${c}`).join(''))
@@ -179,7 +179,7 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     const mount = document.createElement('span')
     mount.id = 'open-on-sourcegraph'
     mount.className = 'open-on-sourcegraph--bitbucket-server'
-    branchSelectorButtons.insertAdjacentElement('beforeend', mount)
+    branchSelectorButtons.append(mount)
     return mount
 }
 

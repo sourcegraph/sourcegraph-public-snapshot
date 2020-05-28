@@ -62,7 +62,7 @@ export const ExtensionREADME: React.FunctionComponent<{
     try {
         const html = renderMarkdown(manifest.readme)
         return <Markdown dangerousInnerHTML={html} history={history} />
-    } catch (err) {
+    } catch {
         return (
             <PublishNewManifestAlert
                 extension={extension}

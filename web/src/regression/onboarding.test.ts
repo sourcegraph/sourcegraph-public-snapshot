@@ -36,9 +36,9 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
         if (!dropdownMenu) {
             throw new Error('No activation status dropdown menu')
         }
-        const lineItems = Array.from(dropdownMenu.querySelectorAll('.activation-dropdown-item'))
-        const complete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-success'))).length
-        const incomplete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-muted'))).length
+        const lineItems = [...dropdownMenu.querySelectorAll('.activation-dropdown-item')]
+        const complete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-success')]).length
+        const incomplete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-muted')]).length
         return {
             complete,
             total: complete + incomplete,

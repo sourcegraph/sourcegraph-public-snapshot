@@ -43,7 +43,7 @@ const buildRequestPermissionsHandler = (
 /**
  * A list of protocols where we should *not* show the permissions notification.
  */
-const PERMISSIONS_PROTOCOL_BLACKLIST = ['chrome:', 'about:']
+const PERMISSIONS_PROTOCOL_BLACKLIST = new Set(['chrome:', 'about:'])
 
 export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     sourcegraphURL,
@@ -72,7 +72,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
         {status === 'connected' &&
             currentTabStatus &&
             !currentTabStatus.hasPermissions &&
-            !PERMISSIONS_PROTOCOL_BLACKLIST.includes(currentTabStatus.protocol) && (
+            !PERMISSIONS_PROTOCOL_BLACKLIST.has(currentTabStatus.protocol) && (
                 <div className="options-menu__section">
                     <div className="alert alert-info">
                         <p>

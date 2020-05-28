@@ -62,8 +62,8 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                                 ).jsonValue()
                                 const parsed: unknown = JSON.parse(json)
                                 return parsed
-                            } catch (err) {
-                                return chalk.italic(`[Could not serialize: ${asError(err).message}]`)
+                            } catch (error) {
+                                return chalk.italic(`[Could not serialize: ${asError(error).message}]`)
                             }
                         })
                     )

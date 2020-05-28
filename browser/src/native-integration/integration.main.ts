@@ -34,7 +34,7 @@ function init(): void {
     link.setAttribute('type', 'text/css')
     link.setAttribute('href', new URL('css/style.bundle.css', assetsURL).href)
     link.id = 'sourcegraph-styles'
-    document.getElementsByTagName('head')[0].appendChild(link)
+    document.head.append(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription

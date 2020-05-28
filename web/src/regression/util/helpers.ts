@@ -61,9 +61,11 @@ export async function ensureLoggedInOrCreateTestUser(
         try {
             await driver.ensureLoggedIn({ username, password: testUserPassword })
             return userDestructor
-        } catch (err) {
+        } catch (error) {
             console.log(
-                `Login failed (error: ${asError(err).message}), will attempt to create user ${JSON.stringify(username)}`
+                `Login failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
+                    username
+                )}`
             )
         }
     }
@@ -151,9 +153,9 @@ export async function ensureNewUser(
         if (user) {
             await deleteUser({ requestGraphQL }, username)
         }
-    } catch (err) {
-        if (!asError(err).message.includes('user not found')) {
-            throw err
+    } catch (error) {
+        if (!asError(error).message.includes('user not found')) {
+            throw error
         }
     }
     await createUser({ requestGraphQL }, username, email).toPromise()
@@ -272,7 +274,7 @@ export async function login(
                 { timeout: 5 * 1000 },
                 sourcegraphBaseUrl + '/search'
             )
-        } catch (err) {
+        } catch {
             throw new Error('unsuccessful login')
         }
     }

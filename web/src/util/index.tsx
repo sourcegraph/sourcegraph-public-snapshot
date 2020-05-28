@@ -9,9 +9,9 @@
 export function limitString(s: string, n: number, ellipsis: boolean): string {
     if (s.length > n) {
         if (ellipsis) {
-            return s.substring(0, n - 1) + '…'
+            return s.slice(0, Math.max(0, n - 1)) + '…'
         }
-        return s.substring(0, n)
+        return s.slice(0, Math.max(0, n))
     }
     return s
 }

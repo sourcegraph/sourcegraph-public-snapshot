@@ -170,12 +170,12 @@ const parsePosition = (str: string): Position => {
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
     const repoName = parsed.hostname + parsed.pathname
-    const rev = parsed.search.substr('?'.length) || undefined
+    const rev = parsed.search.slice('?'.length) || undefined
     let commitID: string | undefined
-    if (rev?.match(/[0-9a-fA-f]{40}/)) {
+    if (rev?.match(/[\dA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
+    const fragmentSplit = parsed.hash.slice('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -327,7 +327,7 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
  */
 export function isLegacyFragment(hash: string): boolean {
     if (hash.startsWith('#')) {
-        hash = hash.substr('#'.length)
+        hash = hash.slice('#'.length)
     }
     return (
         hash !== '' &&
@@ -350,7 +350,7 @@ export function isLegacyFragment(hash: string): boolean {
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
     if (hash.startsWith('#')) {
-        hash = hash.substr('#'.length)
+        hash = hash.slice('#'.length)
     }
 
     if (!isLegacyFragment(hash)) {
@@ -366,7 +366,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     }
 
     // Legacy hash parsing logic (e.g. for hashes like "#L17:19-21:23$foo:bar" where the "viewState" is "foo:bar"):
-    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?(\$.*)?$/.test(hash)) {
+    if (!/^(L\d+(:\d+)?(-\d+(:\d+)?)?)?(\$.*)?$/.test(hash)) {
         // invalid or empty hash
         return {}
     }
@@ -382,7 +382,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
  * Parses a string like "L1-2:3", a range from a line to a position.
  */
 function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
-    if (!/^(L[0-9]+(:[0-9]+)?(-L?[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
+    if (!/^(L\d+(:\d+)?(-L?\d+(:\d+)?)?)?$/.test(lineChar)) {
         return {} // invalid
     }
 

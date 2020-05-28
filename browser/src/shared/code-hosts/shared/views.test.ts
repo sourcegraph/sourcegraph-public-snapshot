@@ -44,7 +44,7 @@ describe('trackViews()', () => {
 
     test('detects a view if it is the added element itself', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([
-            { addedNodes: [document.getElementById('1')!], removedNodes: [] },
+            { addedNodes: [document.querySelector('#1')!], removedNodes: [] },
         ])
         expect(
             await mutations
@@ -59,7 +59,7 @@ describe('trackViews()', () => {
 
     test('detects a view if it is the added element itself', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([
-            { addedNodes: [document.getElementById('1')!], removedNodes: [] },
+            { addedNodes: [document.querySelector('#1')!], removedNodes: [] },
         ])
         expect(
             await mutations
@@ -76,7 +76,7 @@ describe('trackViews()', () => {
         const mutations: Observable<MutationRecordLike[]> = of([{ addedNodes: [document.body], removedNodes: [] }])
         const selectorTarget = document.createElement('div')
         selectorTarget.className = 'selector-target'
-        document.getElementById('1')!.append(selectorTarget)
+        document.querySelector('#1')!.append(selectorTarget)
         expect(
             await mutations
                 .pipe(
@@ -99,7 +99,7 @@ describe('trackViews()', () => {
             await mutations
                 .pipe(
                     trackViews([
-                        { selector: '.view', resolveView: () => ({ element: document.getElementById('1')! }) },
+                        { selector: '.view', resolveView: () => ({ element: document.querySelector('#1')! }) },
                     ]),
                     map(({ element }) => element.id),
                     toArray()
@@ -167,7 +167,7 @@ describe('trackViews()', () => {
         // Add code view to DOM
         const element = document.createElement('div')
         element.className = 'test-code-view'
-        const container = document.getElementById('parent')!
+        const container = document.querySelector('#parent')!
         container.append(element)
         mutations.next([{ addedNodes: [container], removedNodes: [] }])
         await wait
@@ -178,8 +178,8 @@ describe('trackViews()', () => {
     test('removes views', async () => {
         const mutations = from<MutationRecordLike[][]>([
             [{ addedNodes: [document.body], removedNodes: [] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('1')!] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('3')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector('#1')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector('#3')!] }],
         ])
         await mutations
             .pipe(
@@ -200,7 +200,7 @@ describe('trackViews()', () => {
     test('removes all nested views', async () => {
         const mutations = from<MutationRecordLike[][]>([
             [{ addedNodes: [document.body], removedNodes: [] }],
-            [{ addedNodes: [], removedNodes: [document.getElementById('parent')!] }],
+            [{ addedNodes: [], removedNodes: [document.querySelector('#parent')!] }],
         ])
         await mutations
             .pipe(
@@ -237,7 +237,7 @@ describe('trackViews()', () => {
         // Add code view to DOM
         const testElement = document.createElement('div')
         testElement.className = 'test-code-view'
-        const container = document.getElementById('1')!
+        const container = document.querySelector('#1')!
         container.append(testElement)
         mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
         await wait
@@ -299,11 +299,11 @@ describe('delayUntilIntersecting()', () => {
         sinon.assert.calledThrice(observe)
         expect(emittedViews.length).toBe(0)
         sinon.assert.notCalled(unobserve)
-        observerCallback([{ target: document.getElementById('2')!, isIntersecting: true }], { unobserve })
+        observerCallback([{ target: document.querySelector('#2')!, isIntersecting: true }], { unobserve })
         observerCallback(
             [
-                { target: document.getElementById('3')!, isIntersecting: true },
-                { target: document.getElementById('1')!, isIntersecting: true },
+                { target: document.querySelector('#3')!, isIntersecting: true },
+                { target: document.querySelector('#1')!, isIntersecting: true },
             ],
             { unobserve }
         )
@@ -328,7 +328,7 @@ describe('delayUntilIntersecting()', () => {
 
     test('stops observing a view when its subscriptions are unsubscribed from', () => {
         const unobserve = sinon.spy((target: HTMLElement) => undefined)
-        const element = document.getElementById('1')!
+        const element = document.querySelector('#1')!
         const view = { element, subscriptions: new Subscription() }
         subscriptions.add(
             of(view)

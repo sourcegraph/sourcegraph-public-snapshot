@@ -13,7 +13,7 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
     if (gheHeaderElement) {
         const mount = document.createElement('div')
         mount.classList.add(className)
-        gheHeaderElement.insertAdjacentElement('afterbegin', mount)
+        gheHeaderElement.prepend(mount)
         return mount
     }
     // github.com doesn't use HeaderMenu to wrap the right-hand-side menu anymore,
@@ -28,7 +28,7 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
         }
         const mount = document.createElement('div')
         mount.classList.add('Header-item', 'mr-0', 'mr-lg-3', className)
-        rightNeighbor.insertAdjacentElement('beforebegin', mount)
+        rightNeighbor.before(mount)
         return mount
     }
     return null

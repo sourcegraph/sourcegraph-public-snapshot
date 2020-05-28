@@ -47,12 +47,12 @@ export const DiffStat: React.FunctionComponent<{
         }
     }
 
-    const squares: ('added' | 'changed' | 'deleted')[] = Array(addedSquares)
+    const squares: ('added' | 'changed' | 'deleted')[] = new Array(addedSquares)
         .fill('added')
         .concat(
-            Array(changedSquares).fill('changed'),
-            Array(deletedSquares).fill('deleted'),
-            Array(NUM_SQUARES - numSquares).fill('empty')
+            new Array(changedSquares).fill('changed'),
+            new Array(deletedSquares).fill('deleted'),
+            new Array(NUM_SQUARES - numSquares).fill('empty')
         )
 
     const labels: string[] = []

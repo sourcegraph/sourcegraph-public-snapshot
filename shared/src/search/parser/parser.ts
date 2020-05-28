@@ -199,7 +199,7 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
         p = new RegExp(`^${p.source}`)
     }
     return (input, start) => {
-        const matchTarget = input.substring(start)
+        const matchTarget = input.slice(Math.max(0, start))
         if (!matchTarget) {
             return { type: 'error', expected: expected || `/${p.source}/`, at: start }
         }
@@ -217,9 +217,9 @@ const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<
 
 const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
 
-const literal = pattern(/[^\s]+/)
+const literal = pattern(/\S+/)
 
-const filterKeyword = pattern(/-?[a-zA-Z]+(?=:)/)
+const filterKeyword = pattern(/-?[A-Za-z]+(?=:)/)
 
 const filterDelimiter = character(':')
 

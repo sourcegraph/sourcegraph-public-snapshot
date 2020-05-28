@@ -29,7 +29,7 @@ export class ExtWindow implements sourcegraph.Window {
     public readonly activeViewComponentChanges = new BehaviorSubject<sourcegraph.ViewComponent | undefined>(undefined)
 
     public get visibleViewComponents(): sourcegraph.ViewComponent[] {
-        const entries = Array.from(this.viewComponents.entries())
+        const entries = [...this.viewComponents.entries()]
         return sortBy(entries, 0).map(([, viewComponent]) => viewComponent)
     }
 
@@ -59,9 +59,9 @@ export class ExtWindow implements sourcegraph.Window {
             const result = await task(reporter)
             reporter.complete()
             return result
-        } catch (err) {
-            reporter.error(err)
-            throw err
+        } catch (error) {
+            reporter.error(error)
+            throw error
         }
     }
 

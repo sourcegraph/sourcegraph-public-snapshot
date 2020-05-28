@@ -89,7 +89,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                             const tokenElement = (
                                 await driver.page.evaluateHandle(
                                     (row: Element, token: string) =>
-                                        Array.from(row.querySelectorAll('span')).find(
+                                        [...row.querySelectorAll('span')].find(
                                             element => element.textContent === token
                                         ),
                                     row,

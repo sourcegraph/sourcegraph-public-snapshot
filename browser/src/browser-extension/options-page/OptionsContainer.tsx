@@ -62,7 +62,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 let validURL = false
                 try {
                     validURL = !!new URL(maybeURL)
-                } catch (e) {
+                } catch {
                     validURL = false
                 }
 
@@ -106,8 +106,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         props
             .fetchCurrentTabStatus()
             .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
-            .catch(err => {
-                console.error('Error fetching current tab status', err)
+            .catch(error => {
+                console.error('Error fetching current tab status', error)
             })
     }
 

@@ -147,7 +147,9 @@ describe('Organizations regression test suite', () => {
             })
             await driver.findElementWithText('Leave organization', { action: 'click', wait: { timeout: 1000 } })
 
-            await driver.page.waitForFunction(() => !document.body.innerText.includes('Leave organization'))
+            await driver.page.waitForFunction(
+                () => document.body.textContent && !document.body.textContent.includes('Leave organization')
+            )
 
             {
                 const quicklinks = await getQuickLinks()

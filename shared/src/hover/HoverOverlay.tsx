@@ -223,10 +223,10 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             />
                                         </React.Fragment>
                                     )
-                                } catch (err) {
+                                } catch (error) {
                                     return (
                                         <div className={classNames(this.props.errorAlertClassName)} key={i}>
-                                            {upperFirst(asError(err).message)}
+                                            {upperFirst(asError(error).message)}
                                         </div>
                                     )
                                 }

@@ -20,7 +20,7 @@ import assert from 'assert'
  */
 function getNumResults() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matches = document.body.textContent!.match(/([0-9]+)\+?\sresults?/)
+    const matches = document.body.textContent!.match(/(\d+)\+?\sresults?/)
     if (!matches || matches.length < 2) {
         return null
     }
@@ -41,7 +41,7 @@ function hasNoResultsOrError(): boolean {
     if (!resultsElem) {
         return false
     }
-    const resultsText = (resultsElem as HTMLElement).innerText
+    const resultsText = (resultsElem as HTMLElement).textContent
     if (!resultsText) {
         return false
     }
@@ -207,7 +207,7 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"+-repo:google')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
             await driver.page.waitForFunction(() => {
-                const results = Array.from(document.querySelectorAll('.e2e-search-result'))
+                const results = [...document.querySelectorAll('.e2e-search-result')]
                 if (results.length === 0) {
                     return false
                 }
@@ -296,7 +296,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
             const filenames: string[] = await driver.page.evaluate(
                 () =>
-                    Array.from(document.querySelectorAll('.e2e-search-result'))
+                    [...document.querySelectorAll('.e2e-search-result')]
                         .map(el => {
                             const header = el.querySelector('[data-testid="result-container-header"')
                             if (!header?.textContent) {

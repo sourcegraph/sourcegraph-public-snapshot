@@ -121,7 +121,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
             // If showing a comparison, add comparison specifier to the code host URL.
             if (this.props.commitRange) {
-                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
+                url += `/compare/${this.props.commitRange.replace(/^\.{3}/, 'HEAD...').replace(/\.{3}$/, '...HEAD')}`
             }
             // Add range or position path to the code host URL.
             if (this.props.range) {

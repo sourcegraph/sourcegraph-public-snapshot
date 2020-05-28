@@ -166,9 +166,9 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
                             rhsCtx.position = { line: rhsLine - 1, character: 0 }
                         }
                     }
-                } catch (err) {
+                } catch (error) {
                     // TODO(sqs)
-                    console.error(err)
+                    console.error(error)
                 }
 
                 lineClasses.push({ line: i + 1, className: 'hunk-header', url: toPrettyBlobURL(rhsCtx) })

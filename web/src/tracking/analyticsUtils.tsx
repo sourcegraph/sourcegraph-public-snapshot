@@ -16,7 +16,7 @@ interface EventQueryParameters {
  * You should likely use browserExtensionInstalled, rather than _browserExtensionMessageReceived,
  * which may never emit or complete.
  */
-export const browserExtensionMessageReceived = (document.getElementById('sourcegraph-app-background')
+export const browserExtensionMessageReceived = (document.querySelector('#sourcegraph-app-background')
     ? // If the marker exists, the extension is installed
       of(true)
     : // If not, listen for a registration event

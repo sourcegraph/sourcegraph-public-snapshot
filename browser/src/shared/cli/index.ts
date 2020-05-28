@@ -7,8 +7,8 @@ export function initializeOmniboxInterface(requestGraphQL: PlatformContext['requ
         try {
             const suggestions = await searchCommand.getSuggestions(query)
             suggest(suggestions)
-        } catch (err) {
-            console.error('error getting suggestions', err)
+        } catch (error) {
+            console.error('error getting suggestions', error)
         }
     })
 

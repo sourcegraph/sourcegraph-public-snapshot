@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
     // annoying flash/jitter when the stylesheet loads shortly thereafter).
     const styleSheet = (() => {
-        let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+        let styleSheet = document.querySelector('#ext-style-sheet') as HTMLLinkElement | null
         // If does not exist, create
         if (!styleSheet) {
             styleSheet = document.createElement('link')
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
             styleSheet.addEventListener('load', resolve, { once: true })
             // If not appended yet, append to <head>
             if (!styleSheet.parentNode) {
-                document.head.appendChild(styleSheet)
+                document.head.append(styleSheet)
             }
         })
     }

@@ -301,7 +301,7 @@ Key dates:
             for (const cmd of requiredCommands) {
                 try {
                     await commandExists(cmd)
-                } catch (err) {
+                } catch {
                     throw new Error(`Required command ${cmd} does not exist`)
                 }
             }
@@ -378,7 +378,7 @@ async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): 
 async function main(): Promise<void> {
     const config = persistedConfig
     const args = process.argv.slice(2)
-    if (args.length < 1) {
+    if (args.length === 0) {
         console.error('This command expects at least 1 argument')
         await run(config, 'help')
         return
@@ -392,4 +392,4 @@ async function main(): Promise<void> {
     await run(config, step as StepID, ...stepArgs)
 }
 
-main().catch(err => console.error(err))
+main().catch(error => console.error(error))
