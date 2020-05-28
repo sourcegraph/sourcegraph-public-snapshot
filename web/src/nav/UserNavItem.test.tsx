@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
-import { render } from 'enzyme'
+import { mount } from 'enzyme'
 
 describe('UserNavItem', () => {
     const ORG_CONNECTION = {
@@ -21,7 +21,7 @@ describe('UserNavItem', () => {
 
     test('simple', () => {
         expect(
-            render(
+            mount(
                 <MemoryRouter>
                     <UserNavItem
                         isLightTheme={true}
