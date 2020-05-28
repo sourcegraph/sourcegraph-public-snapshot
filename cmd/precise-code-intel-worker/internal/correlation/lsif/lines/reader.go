@@ -29,7 +29,7 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 	scanner.Split(bufio.ScanLines)
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
 
-	// Read the document in a separate go-routine.
+	// Read the document in a separate go-routine
 	lineCh := make(chan []byte, ChannelBufferSize)
 	go func() {
 		defer close(lineCh)
@@ -38,7 +38,12 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 			if line := scanner.Bytes(); len(line) != 0 {
 				buf := make([]byte, len(line))
 				copy(buf, line)
-				lineCh <- buf
+        
+				select {
+				case lineCh <- buf:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()
@@ -93,7 +98,7 @@ func Read(ctx context.Context, r io.Reader, unmarshal func(line []byte) (lsif.El
 				i++
 			}
 
-			// Wait until the current batch has bee completely unmarshalled
+			// Wait until the current batch has been completely unmarshalled
 			for j := 0; j < i; j++ {
 				<-signal
 			}
