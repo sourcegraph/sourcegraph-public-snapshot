@@ -198,7 +198,7 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 /README.md @sqs
-/doc/ @sourcegraph/distribution @ryan-blunden
+/doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
 /doc/dev/web/ @felixfbecker @sourcegraph/web
 
