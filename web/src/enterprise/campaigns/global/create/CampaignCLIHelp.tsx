@@ -1,6 +1,6 @@
 import React from 'react'
 import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
 import { highlightCodeSafe } from '../../../../../../shared/src/util/markdown'
@@ -127,7 +127,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
         <ul className="list-group mb-3">
             <li className="list-group-item p-2">
                 <h3 className="mb-0">
-                    <GithubCircleIcon className="icon-inline ml-1 mr-2" />{' '}
+                    <GithubIcon className="icon-inline ml-1 mr-2" />{' '}
                     <a
                         href="https://docs.sourcegraph.com/user/campaigns/examples/lsif_action"
                         rel="noopener noreferrer"
