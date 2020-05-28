@@ -366,7 +366,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     // Split the query so `formattedFilterAndValue` can be placed in between
     const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
-    return firstPart.slice(0, Math.max(0, filterIndex)) + formattedFilterAndValue + lastPart
+    return firstPart.slice(0, filterIndex) + formattedFilterAndValue + lastPart
 }
 
 /**

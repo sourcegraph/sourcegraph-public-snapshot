@@ -101,11 +101,11 @@ describe('e2e test suite', () => {
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
             await driver.page.evaluate(message => {
-                const elem = document.querySelector('.e2e-global-alert .notices .global-alerts__alert')
+                const elem = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
                 if (!elem) {
                     throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
-                if (!(elem as HTMLElement).textContent?.includes(message)) {
+                if (!elem.textContent?.includes(message)) {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
             }, message)

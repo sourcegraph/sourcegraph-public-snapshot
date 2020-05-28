@@ -30,7 +30,7 @@ describe('applyLinkPreview', () => {
         }
         applyLinkPreview(OPTIONS, link, LINK_PREVIEW_MERGED)
         const WANT =
-            '<a href="u" data-tooltip="y"></a><span class="sg-link-preview-content" data-tooltip="y"><strong>x</strong></span>'
+            '<a href="u" data-tooltip="y">b</a><span class="sg-link-preview-content" data-tooltip="y"><strong>x</strong></span>'
         expect(div.innerHTML).toBe(WANT)
 
         // Check for idempotence.
