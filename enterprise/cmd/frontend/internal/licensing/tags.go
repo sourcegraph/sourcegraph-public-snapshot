@@ -12,7 +12,7 @@ const (
 // on the license info.
 func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	if !hasLicense {
-		return "Sourcegraph Core"
+		return "Sourcegraph Free"
 	}
 
 	hasTag := func(tag string) bool {
@@ -22,6 +22,10 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 			}
 		}
 		return false
+	}
+
+	if hasTag("team") {
+		return "Sourcegraph Team"
 	}
 
 	var name string
