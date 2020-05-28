@@ -8,13 +8,13 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -92,7 +92,7 @@ func main() {
 		*scratchDir = d
 	}
 
-	u, err := urlx.Parse(*baseURL)
+	u, err := url.Parse(*baseURL)
 	if err != nil {
 		log15.Error("failed to parse base URL", "baseURL", *baseURL, "error", err)
 		os.Exit(1)
