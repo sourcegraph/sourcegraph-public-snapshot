@@ -165,7 +165,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: 90%+ container memory usage by instance (not available on server)_
+- _frontend: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -178,7 +178,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _frontend: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _frontend: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -288,7 +288,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container memory usage by instance (not available on server)_
+- _gitserver: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -301,7 +301,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _gitserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _gitserver: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -329,7 +329,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container memory usage by instance (not available on server)_
+- _github-proxy: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -342,7 +342,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _github-proxy: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _github-proxy: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -399,7 +399,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -412,7 +412,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -456,7 +456,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-worker: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -469,7 +469,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-worker: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -513,7 +513,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container memory usage by instance (not available on server)_
+- _precise-code-intel-indexer: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -526,7 +526,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _precise-code-intel-indexer: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -570,7 +570,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container memory usage by instance (not available on server)_
+- _query-runner: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -583,7 +583,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _query-runner: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _query-runner: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -627,7 +627,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _replacer: 90%+ container memory usage by instance (not available on server)_
+- _replacer: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -640,7 +640,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _replacer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _replacer: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -684,7 +684,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container memory usage by instance (not available on server)_
+- _repo-updater: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -697,7 +697,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _repo-updater: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _repo-updater: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -741,7 +741,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _searcher: 90%+ container memory usage by instance (not available on server)_
+- _searcher: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -754,7 +754,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _searcher: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _searcher: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -798,7 +798,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _symbols: 90%+ container memory usage by instance (not available on server)_
+- _symbols: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -811,7 +811,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _symbols: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _symbols: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -839,7 +839,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container memory usage by instance (not available on server)_
+- _syntect-server: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -852,7 +852,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _syntect-server: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _syntect-server: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -880,7 +880,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container memory usage by instance (not available on server)_
+- _zoekt-indexserver: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -893,7 +893,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _zoekt-indexserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _zoekt-indexserver: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -921,7 +921,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container memory usage by instance (not available on server)_
+- _zoekt-webserver: 90%+ or less than 5% container memory usage by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -934,7 +934,7 @@ If usage is low, consider decreasing the above values instead.
 
 **Descriptions:**
 
-- _zoekt-webserver: 90%+ container cpu usage total (5m average) across all cores by instance (not available on server)_
+- _zoekt-webserver: 90%+ or less than 5% container cpu usage total (5m average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
