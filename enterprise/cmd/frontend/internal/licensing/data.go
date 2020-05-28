@@ -15,7 +15,7 @@ const (
 var allPlans = []Plan{
 	oldEnterpriseStarter,
 	oldEnterprise,
-	team
+	team,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
