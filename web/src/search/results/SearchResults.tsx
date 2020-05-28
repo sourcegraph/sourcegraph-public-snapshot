@@ -63,7 +63,7 @@ export interface SearchResultsProps
     deployType: DeployType
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
-    lastVersionContextKey: string
+    previousVersionContext: string | null
 }
 
 interface SearchResultsState {
@@ -249,8 +249,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     } else {
                         this.setState({
                             showVersionContextWarning:
-                                (props.availableVersionContexts &&
-                                    versionFromURL !== localStorage.getItem(props.lastVersionContextKey)) ||
+                                (props.availableVersionContexts && versionFromURL !== props.previousVersionContext) ||
                                 false,
                         })
                     }
