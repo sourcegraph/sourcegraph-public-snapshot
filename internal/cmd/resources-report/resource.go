@@ -22,6 +22,8 @@ type Resource struct {
 	Owner      string
 	Created    time.Time
 	Meta       map[string]interface{}
+
+	Whitelisted bool
 }
 
 type Resources []Resource
@@ -74,4 +76,14 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 	}
 
 	return nil
+}
+
+// hasKeyValue returns true if the given data has a key-value entry matching one in kvs
+func hasKeyValue(data, kvs map[string]string) bool {
+	for key, value := range kvs {
+		if data[key] == value {
+			return true
+		}
+	}
+	return false
 }

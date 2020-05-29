@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -15,9 +16,13 @@ const resultsBuffer = 5
 type options struct {
 	slackWebhook *string
 	sheetID      *string
-	gcp          *bool
-	aws          *bool
 	window       *time.Duration
+
+	gcp                *bool
+	gcpLabelsWhitelist map[string]string
+
+	aws              *bool
+	awsTagsWhitelist map[string]string
 
 	runID   *string
 	dry     *bool
@@ -27,6 +32,8 @@ type options struct {
 
 func main() {
 	help := flag.Bool("help", false, "Show help text")
+	gcpWhitelistLabelsStr := flag.String("gcp.whitelist", "", "GCP labels to whitelist (comma-separated key:value pairs)")
+	awsWhitelistTagsStr := flag.String("aws.whitelist", "", "AWS tags to whitelist (comma-separated key:value pairs)")
 	opts := options{
 		slackWebhook: flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
 		sheetID:      flag.String("sheet.id", os.Getenv("SHEET_ID"), "Slack webhook to post updates to"),
@@ -43,6 +50,12 @@ func main() {
 	if *help {
 		flag.CommandLine.Usage()
 		return
+	}
+	if *gcpWhitelistLabelsStr != "" {
+		opts.gcpLabelsWhitelist = stringToMap(*gcpWhitelistLabelsStr)
+	}
+	if *awsWhitelistTagsStr != "" {
+		opts.awsTagsWhitelist = stringToMap(*awsWhitelistTagsStr)
 	}
 	if err := run(opts); err != nil {
 		log.Fatal(err)
@@ -61,7 +74,7 @@ func run(opts options) error {
 	var resources Resources
 	since := time.Now().UTC().Add(-*opts.window)
 	if *opts.gcp {
-		rs, err := collectGCPResources(ctx, since, *opts.verbose)
+		rs, err := collectGCPResources(ctx, since, *opts.verbose, opts.gcpLabelsWhitelist)
 		if err != nil {
 			reportError(ctx, opts, err, "gcp")
 			return fmt.Errorf("gcp: failed to collect resources")
@@ -69,7 +82,7 @@ func run(opts options) error {
 		resources = append(resources, rs...)
 	}
 	if *opts.aws {
-		rs, err := collectAWSResources(ctx, since, *opts.verbose)
+		rs, err := collectAWSResources(ctx, since, *opts.verbose, opts.awsTagsWhitelist)
 		if err != nil {
 			reportError(ctx, opts, err, "aws")
 			return fmt.Errorf("aws: failed to collect resources")
@@ -98,4 +111,13 @@ func reportString(resources Resources) string {
 		output += fmt.Sprintf(" * %+v\n", r)
 	}
 	return output
+}
+
+func stringToMap(str string) map[string]string {
+	m := map[string]string{}
+	for _, pair := range strings.Split(str, ",") {
+		keyValue := strings.Split(pair, ":")
+		m[keyValue[0]] = keyValue[1]
+	}
+	return m
 }
