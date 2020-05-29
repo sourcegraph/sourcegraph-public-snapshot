@@ -71,7 +71,7 @@ func TestScanParameter(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input)}
+			parser := &parser{buf: []byte(tt.Input), heuristicsApplied: map[heuristic]bool{}}
 			result, err := parser.parseParameterList()
 			if err != nil {
 				panic("ruh roh")
@@ -202,8 +202,9 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: heuristic{parensAsPatterns: false},
+		buf:               []byte(in),
+		heuristic:         map[heuristic]bool{parensAsPatterns: false},
+		heuristicsApplied: map[heuristic]bool{},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
