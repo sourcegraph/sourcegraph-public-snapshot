@@ -474,7 +474,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value}, true
+		return Pattern{Value: value, Quoted: true}, true
 	}
 
 	start := p.pos
