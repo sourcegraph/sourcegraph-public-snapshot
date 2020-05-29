@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { DiffInfo, BlobInfo } from '../shared/codeHost'
 import { getBaseCommit, getCommitsForPR } from './api'
@@ -57,24 +57,19 @@ export const resolveSingleFileDiffFileInfo = (codeView: HTMLElement): Observable
         rev,
         ...bitbucketInfo
     } = getFileInfoFromSingleFileDiffCodeView(codeView)
-    // TODO: this could be further refactored to skip getBaseCommit if we don't need the baseCommitID.
+    if (changeType === 'ADD') {
+        return of({ head: { rawRepoName, filePath, commitID } })
+    }
+
     return getBaseCommit({ commitID, ...bitbucketInfo }).pipe(
         map(
             (baseCommitID): DiffInfo => {
-                switch (changeType) {
-                    case 'ADD':
-                        return { head: { rawRepoName, filePath, commitID } }
-                    case 'DELETE':
-                        return { base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID } }
-
-                    case 'RENAME':
-                    case 'MOVE':
-                    case 'COPY':
-                    case 'MODIFY':
-                        return {
-                            base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
-                            head: { rawRepoName, filePath, commitID },
-                        }
+                if (changeType === 'DELETE') {
+                    return { base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID } }
+                }
+                return {
+                    base: { rawRepoName, filePath: baseFilePath, commitID: baseCommitID },
+                    head: { rawRepoName, filePath, commitID },
                 }
             }
         )
