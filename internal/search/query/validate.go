@@ -33,9 +33,16 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 
 // forAll traverses every node in nodes and returns whether all nodes satisfy fn.
 func forAll(nodes []Node, fn func(node Node) bool) bool {
-	return exists(nodes, func(node Node) bool {
-		return !fn(node)
-	})
+	sat := true
+	for _, node := range nodes {
+		if !fn(node) {
+			return false
+		}
+		if operator, ok := node.(Operator); ok {
+			return forAll(operator.Operands, fn)
+		}
+	}
+	return sat
 }
 
 // isPatternExpression returns true if every leaf node in nodes is a search
