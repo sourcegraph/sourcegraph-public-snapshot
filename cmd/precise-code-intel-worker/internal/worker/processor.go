@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -42,8 +43,15 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
+	// Create target file for converted database
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+	newFilename := filepath.Join(name, uuid.String())
+
 	// Pull raw uploaded data from bundle manager
-	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, name)
+	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -56,18 +64,11 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	// Create target file for converted database
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-	newFilename := filepath.Join(name, uuid.String())
-
 	// Read raw upload and write converted database to newFilename. This process also correlates
 	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
 		ctx,
-		filename,
+		r,
 		newFilename,
 		upload.ID,
 		upload.Root,
@@ -178,13 +179,13 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 // convert correlates the raw input data and commits the correlated data to disk.
 func convert(
 	ctx context.Context,
-	filename string,
+	r io.Reader,
 	newFilename string,
 	dumpID int,
 	root string,
 	getChildren existence.GetChildrenFunc,
 ) (_ []types.Package, _ []types.PackageReference, err error) {
-	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
+	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
@@ -200,7 +201,7 @@ func convert(
 func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
 	writer, err := sqlitewriter.NewWriter(filename)
 	if err != nil {
-		return errors.Wrap(err, "sqlitewriter.NewWriter")
+		return err
 	}
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil {

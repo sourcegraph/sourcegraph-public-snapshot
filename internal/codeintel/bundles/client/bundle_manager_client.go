@@ -1,12 +1,12 @@
 package client
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,9 +53,9 @@ type BundleManagerClient interface {
 	// DeleteUpload removes the upload file with the given identifier from disk.
 	DeleteUpload(ctx context.Context, bundleID int) error
 
-	// GetUploads retrieves a raw LSIF upload from the bundle manager. The file is written to a file
-	// in the given directory with a random filename. The generated filename is returned on success.
-	GetUpload(ctx context.Context, bundleID int, dir string) (string, error)
+	// GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
+	// from the bundle manager.
+	GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error)
 
 	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
 	// will also remove the original upload file with the same identifier from disk.
@@ -183,57 +183,57 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 	return nil
 }
 
-// GetUploads retrieves a raw LSIF upload from the bundle manager. The file is written to a file
-// in the given directory with a random filename. The generated filename is returned on success.
-func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, dir string) (_ string, err error) {
+// GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
+// from the bundle manager.
+func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error) {
 	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	f, err := ioutil.TempFile(dir, "")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
+	pr, pw := io.Pipe()
+
+	go func() {
+		defer pw.Close()
+
+		seek := int64(0)
+		zeroPayloadIterations := 0
+
+		for {
+			n, err := c.getUploadChunk(ctx, pw, url, seek)
+			if err != nil {
+				if !isConnectionError(err) {
+					_ = pw.CloseWithError(err)
+					return
+				}
+
+				if n == 0 {
+					zeroPayloadIterations++
+
+					// Ensure that we don't spin infinitely when when a reset error
+					// happens at the beginning of the requested payload. We'll just
+					// give up if this happens a few times in a row, which should be
+					// very unlikely.
+					if zeroPayloadIterations > MaxZeroPayloadIterations {
+						_ = pw.CloseWithError(ErrNoDownloadProgress)
+						return
+					}
+				} else {
+					zeroPayloadIterations = 0
+				}
+
+				// We have a transient error. Make another request but skip the
+				// first seek + n bytes as we've already written these to disk.
+				seek += n
+				log15.Warn("Transient error while reading payload", "error", err)
+				continue
+			}
+
+			return
 		}
 	}()
 
-	seek := int64(0)
-	zeroPayloadIterations := 0
-
-	for {
-		n, err := c.getUploadChunk(ctx, f, url, seek)
-		if err != nil {
-			if !isConnectionError(err) {
-				return "", err
-			}
-
-			if n == 0 {
-				zeroPayloadIterations++
-
-				// Ensure that we don't spin infinitely when when a reset error
-				// happens at the beginning of the requested payload. We'll just
-				// give up if this happens a few times in a row, which should be
-				// very unlikely.
-				if zeroPayloadIterations > MaxZeroPayloadIterations {
-					return "", ErrNoDownloadProgress
-				}
-			} else {
-				zeroPayloadIterations = 0
-			}
-
-			// We have a transient error. Make another request but skip the
-			// first seek + n bytes as we've already written these to disk.
-			seek += n
-			log15.Warn("Transient error while reading payload", "error", err)
-			continue
-		}
-
-		return f.Name(), nil
-	}
+	return gzip.NewReader(pr)
 }
 
 // getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as

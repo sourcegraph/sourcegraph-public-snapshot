@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -179,29 +178,19 @@ func TestGetUpload(t *testing.T) {
 			t.Errorf("unexpected method. want=%s have=%s", "/uploads/42", r.URL.Path)
 		}
 
-		if _, err := w.Write(fullContents); err != nil {
+		if _, err := w.Write(compress(fullContents)); err != nil {
 			t.Fatalf("unexpected error writing to client: %s", err)
 		}
 	}))
 	defer ts.Close()
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: io.Copy}
-	path, err := client.GetUpload(context.Background(), 42, tempDir)
+	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	}
 
-	if !strings.HasPrefix(path, tempDir) {
-		t.Errorf("unexpected path location, want child of %s, got=%s", tempDir, path)
-	}
-
-	contents, err := ioutil.ReadFile(path)
+	contents, err := ioutil.ReadAll(r)
 	if err != nil {
 		t.Fatalf("unexpected error reading file: %s", err)
 	}
@@ -220,17 +209,11 @@ func TestGetUploadTransientErrors(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seek, _ := strconv.Atoi(r.URL.Query().Get("seek"))
 
-		if _, err := w.Write(fullContents[seek:]); err != nil {
+		if _, err := w.Write(compress(fullContents)[seek:]); err != nil {
 			t.Fatalf("unexpected error writing to client: %s", err)
 		}
 	}))
 	defer ts.Close()
-
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
 
 	// mockCopy is like io.Copy but it will read 50 bytes and return an error
 	// that appears to be a transient connection error.
@@ -255,16 +238,12 @@ func TestGetUploadTransientErrors(t *testing.T) {
 	}
 
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: mockCopy}
-	path, err := client.GetUpload(context.Background(), 42, tempDir)
+	r, err := client.GetUpload(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	}
 
-	if !strings.HasPrefix(path, tempDir) {
-		t.Errorf("unexpected path location, want child of %s, got=%s", tempDir, path)
-	}
-
-	contents, err := ioutil.ReadFile(path)
+	contents, err := ioutil.ReadAll(r)
 	if err != nil {
 		t.Fatalf("unexpected error reading file: %s", err)
 	}
@@ -283,17 +262,11 @@ func TestGetUploadReadNothingLoop(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seek, _ := strconv.Atoi(r.URL.Query().Get("seek"))
 
-		if _, err := w.Write(fullContents[seek:]); err != nil {
+		if _, err := w.Write(compress(fullContents)[seek:]); err != nil {
 			t.Fatalf("unexpected error writing to client: %s", err)
 		}
 	}))
 	defer ts.Close()
-
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
 
 	// Ensure that no progress transient errors do not cause an infinite loop
 	mockCopy := func(w io.Writer, r io.Reader) (int64, error) {
@@ -301,7 +274,7 @@ func TestGetUploadReadNothingLoop(t *testing.T) {
 	}
 
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, ioCopy: mockCopy}
-	if _, err := client.GetUpload(context.Background(), 42, tempDir); err != ErrNoDownloadProgress {
+	if _, err := client.GetUpload(context.Background(), 42); err != ErrNoDownloadProgress {
 		t.Fatalf("unexpected error getting upload. want=%q have=%q", ErrNoDownloadProgress, err)
 	}
 }
@@ -312,14 +285,8 @@ func TestGetUploadNotFound(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	if _, err := client.GetUpload(context.Background(), 42, tempDir); err != ErrNotFound {
+	if _, err := client.GetUpload(context.Background(), 42); err != ErrNotFound {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrNotFound, err)
 	}
 }
@@ -330,15 +297,10 @@ func TestGetUploadBadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL}
-	if _, err := client.GetUpload(context.Background(), 42, tempDir); err == nil {
-		t.Fatalf("unexpected nil error sending db")
+
+	if _, err := client.GetUpload(context.Background(), 42); err == nil {
+		t.Fatalf("unexpected nil reading upload: %s", err)
 	}
 }
 
@@ -540,4 +502,12 @@ func TestBulkExistsBadResponse(t *testing.T) {
 	if err == nil {
 		t.Fatalf("unexpected nil error checking bulk exists")
 	}
+}
+
+func compress(payload []byte) []byte {
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	_, _ = io.Copy(gzipWriter, bytes.NewReader(payload))
+	_ = gzipWriter.Close()
+	return buf.Bytes()
 }

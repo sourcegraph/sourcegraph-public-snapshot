@@ -1,12 +1,10 @@
 package worker
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -194,26 +192,6 @@ func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-func copyTestDump(ctx context.Context, uploadID int, dir string) (string, error) {
-	src, err := os.Open("../../testdata/dump1.lsif")
-	if err != nil {
-		return "", err
-	}
-	defer src.Close()
-
-	filename := filepath.Join(dir, "dump.lsif")
-	dst, err := os.Create(filename)
-	if err != nil {
-		return "", err
-	}
-	defer dst.Close()
-
-	gzipWriter := gzip.NewWriter(dst)
-	defer gzipWriter.Close()
-
-	if _, err := io.Copy(gzipWriter, src); err != nil {
-		return "", err
-	}
-
-	return filename, nil
+func copyTestDump(ctx context.Context, uploadID int) (io.ReadCloser, error) {
+	return os.Open("../../testdata/dump1.lsif")
 }
