@@ -17,8 +17,7 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
-// exists traverses every node in nodes and returns early as soon as fn is
-// satisfied.
+// exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
 	for _, node := range nodes {
@@ -32,8 +31,7 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 	return found
 }
 
-// forAll traverses every node in nodes and returns whether all nodes satisfy
-// fn.
+// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
 func forAll(nodes []Node, fn func(node Node) bool) bool {
 	return exists(nodes, func(node Node) bool {
 		return !fn(node)
@@ -47,6 +45,22 @@ func isPatternExpression(nodes []Node) bool {
 		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
 		_, ok := node.(Parameter)
 		return ok
+	})
+}
+
+// containsPattern returns true if any descendent of nodes is a search pattern.
+func containsPattern(node Node) bool {
+	return exists([]Node{node}, func(node Node) bool {
+		_, ok := node.(Pattern)
+		return ok
+	})
+}
+
+// returns true if descendent of node contains and/or expressions.
+func containsAndOrExpression(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		term, ok := node.(Operator)
+		return ok && (term.Kind == And || term.Kind == Or)
 	})
 }
 
