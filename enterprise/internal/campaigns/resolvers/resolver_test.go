@@ -1214,17 +1214,26 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	testBaseRevision := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
 	testBaseRef := "refs/heads/master"
+	testHeadRef := "refs/heads/my-cool-branch"
 
 	// gitserver Mocks
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
 		return testBaseRevision, nil
 	}
-	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
 	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
 		return &git.Commit{ID: testBaseRevision}, nil
 	}
-	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
+
+	git.Mocks.ExecSafe = func(args []string) (stdout, stderr []byte, exitCode int, err error) {
+		if len(args) < 3 || args[0] != "merge-base" || args[1] != testBaseRef || args[2] != testHeadRef {
+			t.Fatalf("gitserver.ExecSafe received wrong args: %v", args)
+		}
+		return []byte(testBaseRevision), []byte{}, 0, nil
+	}
+	t.Cleanup(func() { git.Mocks.ExecSafe = nil })
 
 	// repo & external service setup
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -1405,6 +1414,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		ID:          "FOOBARID",
 		Title:       campaign.Name,
 		Body:        campaign.Description,
+		BaseRefName: git.AbbreviateRef(testBaseRef),
 		HeadRefName: git.AbbreviateRef(headRef),
 		Number:      12345,
 		State:       "OPEN",

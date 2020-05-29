@@ -51,7 +51,7 @@ func TestRepositoryComparison(t *testing.T) {
 	defer func() { git.Mocks.ExecReader = nil }()
 
 	git.Mocks.ExecSafe = func(args []string) (stdout, stderr []byte, exitCode int, err error) {
-		if len(args) < 3 && args[0] != "merge-base" && args[1] != wantBaseRevision && args[2] != wantHeadRevision {
+		if len(args) < 3 || args[0] != "merge-base" || args[1] != wantBaseRevision || args[2] != wantHeadRevision {
 			t.Fatalf("gitserver.ExecSafe received wrong args: %v", args)
 		}
 		return []byte(wantMergeBaseRevision), []byte{}, 0, nil
