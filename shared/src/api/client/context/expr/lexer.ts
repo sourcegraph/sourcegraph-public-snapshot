@@ -96,21 +96,21 @@ export const OPERATOR_CHARS: { [ch: string]: OperatorTree } = {
     '&': { '&': true },
     '|': { '|': true },
     '=': {
-        '\x00': true,
+        '\u0000': true,
         '=': {
-            '\x00': true,
+            '\u0000': true,
             '=': true,
         },
     },
     '!': {
-        '\x00': true,
+        '\u0000': true,
         '=': {
-            '\x00': true,
+            '\u0000': true,
             '=': true,
         },
     },
-    '<': { '\x00': true, '=': true },
-    '>': { '\x00': true, '=': true },
+    '<': { '\u0000': true, '=': true },
+    '>': { '\u0000': true, '=': true },
     '^': true,
     '}': true,
     '(': true,
@@ -189,7 +189,7 @@ export class Lexer {
                 delete token.start
                 delete token.end
             }
-        } catch (e) {
+        } catch {
             token = undefined
         }
         this._index = savedIndex
@@ -229,11 +229,11 @@ export class Lexer {
 
     private peekNextChar(advance = 0): string {
         const idx = this._index + advance
-        return idx < this.length ? this.expression.charAt(idx) : '\x00'
+        return idx < this.length ? this.expression.charAt(idx) : '\u0000'
     }
 
     private getNextChar(): string {
-        let ch = '\x00'
+        let ch = '\u0000'
         const idx = this._index
         if (idx < this.length) {
             ch = this.expression.charAt(idx)

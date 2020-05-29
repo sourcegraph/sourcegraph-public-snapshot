@@ -1,5 +1,6 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
+import prettyBytes from 'pretty-bytes'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -12,6 +13,7 @@ import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import classNames from 'classnames'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: GQL.IFileDiff
@@ -62,6 +64,23 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
+        let stat: React.ReactFragment
+        // If one of the files was binary, display file size change instead of DiffStat.
+        if ((node.oldFile && node.oldFile.binary) || (node.newFile && node.newFile.binary)) {
+            const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
+            const className = sizeChange >= 0 ? 'text-success' : 'text-danger'
+            stat = <strong className={classNames(className, 'mr-2 code')}>{prettyBytes(sizeChange)}</strong>
+        } else {
+            stat = (
+                <DiffStat
+                    added={node.stat.added}
+                    changed={node.stat.changed}
+                    deleted={node.stat.deleted}
+                    className="file-diff-node__header-stat"
+                />
+            )
+        }
+
         const anchor = `diff-${node.internalID}`
 
         return (
@@ -76,13 +95,10 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                 <ChevronRightIcon className="icon-inline" />
                             )}
                         </button>
-                        <div className="file-diff-node__header-path-stat">
-                            <DiffStat
-                                added={node.stat.added}
-                                changed={node.stat.changed}
-                                deleted={node.stat.deleted}
-                                className="file-diff-node__header-stat"
-                            />
+                        <div className="file-diff-node__header-path-stat align-items-baseline">
+                            {!node.oldPath && <span className="badge badge-success mr-2">Added file</span>}
+                            {!node.newPath && <span className="badge badge-danger mr-2">Deleted file</span>}
+                            {stat}
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
                                 {path}
                             </Link>

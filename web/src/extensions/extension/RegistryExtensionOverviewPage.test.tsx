@@ -6,7 +6,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
 
-jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
+jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 
 describe('RegistryExtensionOverviewPage', () => {
     afterEach(() => {

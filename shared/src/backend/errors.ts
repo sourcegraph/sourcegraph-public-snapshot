@@ -58,7 +58,7 @@ export const isRepoSeeOtherErrorLike = (value: unknown): string | false => {
     ) {
         return value.redirectURL
     }
-    const match = value.message.match(/Repository not found at this location, but might exist at (\S+)/i)
+    const match = value.message.match(/repository not found at this location, but might exist at (\S+)/i)
     if (match) {
         return match[1]
     }
@@ -86,6 +86,6 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
 export const isPrivateRepoPublicSourcegraphComErrorLike = (value: unknown): boolean =>
     isErrorLike(value) &&
     (value.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME ||
-        /GraphQL request to the public Sourcegraph.com was blocked because the current repository is private/i.test(
+        /graphql request to the public sourcegraph.com was blocked because the current repository is private/i.test(
             value.message
         ))

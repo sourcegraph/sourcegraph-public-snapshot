@@ -100,7 +100,7 @@ const prevChild = (node: TreeNode, index: number): TreeNode => {
 
     const prev = validChildNodes[index - 1]
     if (prev) {
-        if (prev.childNodes && prev.childNodes.length) {
+        if (prev.childNodes && prev.childNodes.length > 0) {
             return getDeepestDescendant(prev)
         }
 

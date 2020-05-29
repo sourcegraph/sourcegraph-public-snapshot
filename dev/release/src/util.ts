@@ -10,7 +10,7 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
 
     try {
         return await readFile(cacheFile, { encoding: 'utf8' })
-    } catch (err) {
+    } catch {
         const userInput = await readLineNoCache(prompt)
         await mkdirp(path.dirname(cacheFile))
         await writeFile(cacheFile, userInput)

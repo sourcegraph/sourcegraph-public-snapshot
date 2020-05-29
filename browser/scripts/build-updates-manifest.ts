@@ -2,7 +2,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const updatesManifestPath = path.resolve(__dirname, '..', 'src/extension/updates.manifest.json')
+const updatesManifestPath = path.resolve(__dirname, '..', 'src/browser-extension/updates.manifest.json')
 
 interface Update {
     version: string

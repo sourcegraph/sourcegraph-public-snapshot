@@ -38,7 +38,7 @@ async function createProject(driver: Driver): Promise<void> {
     await driver.page.goto(BITBUCKET_BASE_URL + '/projects')
     await driver.page.waitForSelector('.entity-table')
     const existingProject = await driver.page.evaluate(() =>
-        Array.from(document.querySelectorAll('span.project-name')).some(p => p.textContent === 'SOURCEGRAPH')
+        [...document.querySelectorAll('span.project-name')].some(p => p.textContent === 'SOURCEGRAPH')
     )
     if (existingProject) {
         return

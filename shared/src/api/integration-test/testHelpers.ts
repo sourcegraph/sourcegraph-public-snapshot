@@ -105,7 +105,7 @@ export async function integrationTestContext(
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
-    if (initModel.viewers.length) {
+    if (initModel.viewers.length > 0) {
         await Promise.all([
             from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.viewers.length)).toPromise(),
             from(extensionAPI.app.activeWindowChanges)

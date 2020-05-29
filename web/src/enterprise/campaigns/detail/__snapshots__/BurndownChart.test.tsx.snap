@@ -334,7 +334,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             fill="none"
             fillOpacity={0.6}
             height={260}
-            stroke="#3182bd"
+            stroke="var(--warning)"
             strokeWidth={0}
             width={430}
           />
@@ -363,7 +363,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             fill="none"
             fillOpacity={0.6}
             height={260}
-            stroke="#3182bd"
+            stroke="var(--danger)"
             strokeWidth={0}
             width={430}
           />
@@ -392,7 +392,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             fill="none"
             fillOpacity={0.6}
             height={260}
-            stroke="#3182bd"
+            stroke="var(--success)"
             strokeWidth={0}
             width={430}
           />
@@ -421,7 +421,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             fill="none"
             fillOpacity={0.6}
             height={260}
-            stroke="#3182bd"
+            stroke="var(--secondary)"
             strokeWidth={0}
             width={430}
           />
@@ -450,13 +450,217 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             fill="none"
             fillOpacity={0.6}
             height={260}
-            stroke="#3182bd"
+            stroke="var(--merged)"
             strokeWidth={0}
             width={430}
           />
         </g>
       </g>
     </svg>
+    <div
+      className="recharts-legend-wrapper"
+      style={
+        Object {
+          "bottom": 5,
+          "height": "auto",
+          "left": 5,
+          "position": "absolute",
+          "width": 490,
+        }
+      }
+    >
+      <ul
+        className="recharts-default-legend"
+        style={
+          Object {
+            "margin": 0,
+            "padding": 0,
+            "textAlign": "center",
+          }
+        }
+      >
+        <li
+          className="recharts-legend-item legend-item-0"
+          style={
+            Object {
+              "display": "inline-block",
+              "marginRight": 10,
+            }
+          }
+        >
+          <svg
+            className="recharts-surface"
+            height={14}
+            style={
+              Object {
+                "display": "inline-block",
+                "marginRight": 4,
+                "verticalAlign": "middle",
+              }
+            }
+            version="1.1"
+            viewBox="0 0 32 32"
+            width={14}
+          >
+            <path
+              className="recharts-symbols"
+              d="M-16,-16h32v32h-32Z"
+              fill="var(--warning)"
+              transform="translate(16, 16)"
+            />
+          </svg>
+          <span
+            className="recharts-legend-item-text"
+          >
+            Open & awaiting review
+          </span>
+        </li>
+        <li
+          className="recharts-legend-item legend-item-1"
+          style={
+            Object {
+              "display": "inline-block",
+              "marginRight": 10,
+            }
+          }
+        >
+          <svg
+            className="recharts-surface"
+            height={14}
+            style={
+              Object {
+                "display": "inline-block",
+                "marginRight": 4,
+                "verticalAlign": "middle",
+              }
+            }
+            version="1.1"
+            viewBox="0 0 32 32"
+            width={14}
+          >
+            <path
+              className="recharts-symbols"
+              d="M-16,-16h32v32h-32Z"
+              fill="var(--danger)"
+              transform="translate(16, 16)"
+            />
+          </svg>
+          <span
+            className="recharts-legend-item-text"
+          >
+            Open & changes requested
+          </span>
+        </li>
+        <li
+          className="recharts-legend-item legend-item-2"
+          style={
+            Object {
+              "display": "inline-block",
+              "marginRight": 10,
+            }
+          }
+        >
+          <svg
+            className="recharts-surface"
+            height={14}
+            style={
+              Object {
+                "display": "inline-block",
+                "marginRight": 4,
+                "verticalAlign": "middle",
+              }
+            }
+            version="1.1"
+            viewBox="0 0 32 32"
+            width={14}
+          >
+            <path
+              className="recharts-symbols"
+              d="M-16,-16h32v32h-32Z"
+              fill="var(--success)"
+              transform="translate(16, 16)"
+            />
+          </svg>
+          <span
+            className="recharts-legend-item-text"
+          >
+            Open & approved
+          </span>
+        </li>
+        <li
+          className="recharts-legend-item legend-item-3"
+          style={
+            Object {
+              "display": "inline-block",
+              "marginRight": 10,
+            }
+          }
+        >
+          <svg
+            className="recharts-surface"
+            height={14}
+            style={
+              Object {
+                "display": "inline-block",
+                "marginRight": 4,
+                "verticalAlign": "middle",
+              }
+            }
+            version="1.1"
+            viewBox="0 0 32 32"
+            width={14}
+          >
+            <path
+              className="recharts-symbols"
+              d="M-16,-16h32v32h-32Z"
+              fill="var(--secondary)"
+              transform="translate(16, 16)"
+            />
+          </svg>
+          <span
+            className="recharts-legend-item-text"
+          >
+            Closed
+          </span>
+        </li>
+        <li
+          className="recharts-legend-item legend-item-4"
+          style={
+            Object {
+              "display": "inline-block",
+              "marginRight": 10,
+            }
+          }
+        >
+          <svg
+            className="recharts-surface"
+            height={14}
+            style={
+              Object {
+                "display": "inline-block",
+                "marginRight": 4,
+                "verticalAlign": "middle",
+              }
+            }
+            version="1.1"
+            viewBox="0 0 32 32"
+            width={14}
+          >
+            <path
+              className="recharts-symbols"
+              d="M-16,-16h32v32h-32Z"
+              fill="var(--merged)"
+              transform="translate(16, 16)"
+            />
+          </svg>
+          <span
+            className="recharts-legend-item-text"
+          >
+            Merged
+          </span>
+        </li>
+      </ul>
+    </div>
     <div
       className="recharts-tooltip-wrapper"
       style={

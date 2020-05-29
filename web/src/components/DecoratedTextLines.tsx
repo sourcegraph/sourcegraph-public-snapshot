@@ -82,7 +82,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
             for (const [i, row] of rows.entries()) {
                 const elem = row.firstChild as HTMLTableDataCellElement
                 const data = this.state.lines[i]
-                if (data.highlights && data.highlights.length) {
+                if (data.highlights && data.highlights.length > 0) {
                     // TODO(sqs): only supports 1 highlight per line
                     const highlight = data.highlights[0]
                     highlightNode(elem, highlight.character, highlight.length)

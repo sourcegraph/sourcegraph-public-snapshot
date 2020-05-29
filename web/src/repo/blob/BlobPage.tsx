@@ -240,6 +240,14 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
+                <BlobPanel
+                    {...this.props}
+                    position={
+                        lprToRange(parseHash(this.props.location.hash))
+                            ? lprToRange(parseHash(this.props.location.hash))!.start
+                            : undefined
+                    }
+                />
             </>
         )
 
@@ -317,14 +325,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         renderMode={renderMode}
                     />
                 )}
-                <BlobPanel
-                    {...this.props}
-                    position={
-                        lprToRange(parseHash(this.props.location.hash))
-                            ? lprToRange(parseHash(this.props.location.hash))!.start
-                            : undefined
-                    }
-                />
             </>
         )
     }

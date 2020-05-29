@@ -93,8 +93,8 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 return recentActions as string[]
             }
             return null
-        } catch (err) {
-            console.error('Error reading recent actions:', err)
+        } catch (error) {
+            console.error('Error reading recent actions:', error)
         }
         CommandList.writeRecentActions(null)
         return null
@@ -107,8 +107,8 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 const value = JSON.stringify(recentActions)
                 localStorage.setItem(CommandList.RECENT_ACTIONS_STORAGE_KEY, value)
             }
-        } catch (err) {
-            console.error('Error writing recent actions:', err)
+        } catch (error) {
+            console.error('Error writing recent actions:', error)
         }
     }
 

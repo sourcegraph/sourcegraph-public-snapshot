@@ -101,11 +101,11 @@ describe('e2e test suite', () => {
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
             await driver.page.evaluate(message => {
-                const elem = document.querySelector('.e2e-global-alert .notices .global-alerts__alert')
+                const elem = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
                 if (!elem) {
                     throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
-                if (!(elem as HTMLElement).innerText.includes(message)) {
+                if (!elem.textContent?.includes(message)) {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
             }, message)
@@ -369,7 +369,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 1)
 
             const privateResults = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.e2e-search-result-label')).map(t => (t.textContent || '').trim())
+                [...document.querySelectorAll('.e2e-search-result-label')].map(t => (t.textContent || '').trim())
             )
             expect(privateResults).toEqual(expect.arrayContaining(privateRepos))
 
@@ -377,9 +377,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
 
             const publicResults = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.ee2e-search-result-label')).map(t =>
-                    (t.textContent || '').trim()
-                )
+                [...document.querySelectorAll('.ee2e-search-result-label')].map(t => (t.textContent || '').trim())
             )
             expect(publicResults).not.toEqual(expect.arrayContaining(privateRepos))
 
@@ -387,7 +385,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
 
             const anyResults = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.e2e-search-result-label')).map(t => (t.textContent || '').trim())
+                [...document.querySelectorAll('.e2e-search-result-label')].map(t => (t.textContent || '').trim())
             )
             expect(anyResults).toEqual(expect.arrayContaining(privateRepos))
         })
@@ -417,7 +415,7 @@ describe('e2e test suite', () => {
 
             const getActiveThemeClasses = (): Promise<string[]> =>
                 driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                    [...document.querySelector('.theme')!.classList].filter(c => c.startsWith('theme-'))
                 )
 
             expect(await getActiveThemeClasses()).toHaveLength(1)
@@ -453,7 +451,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector(selector, { visible: true })
             return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
-                Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent || '')
+                [...document.querySelectorAll('.e2e-tooltip-content')].map(t => t.textContent || '')
             )
         }
         const assertHoverContentContains = async (val: string, count?: number): Promise<void> => {
@@ -723,10 +721,10 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
                     const symbolNames = await driver.page.evaluate(() =>
-                        Array.from(document.querySelectorAll('.e2e-symbol-name')).map(t => t.textContent || '')
+                        [...document.querySelectorAll('.e2e-symbol-name')].map(t => t.textContent || '')
                     )
                     const symbolTypes = await driver.page.evaluate(() =>
-                        Array.from(document.querySelectorAll('.e2e-symbol-icon')).map(
+                        [...document.querySelectorAll('.e2e-symbol-icon')].map(
                             t => t.getAttribute('data-tooltip') || ''
                         )
                     )
@@ -1303,7 +1301,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-search-result-type-tabs', { visible: true })
             await driver.page.waitForSelector('.e2e-search-result-tab--active', { visible: true })
             const tabs = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.e2e-search-result-tab'), tab => tab.textContent)
+                [...document.querySelectorAll('.e2e-search-result-tab')].map(tab => tab.textContent)
             )
 
             expect(tabs.length).toEqual(6)

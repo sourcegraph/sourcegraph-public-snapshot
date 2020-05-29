@@ -32,7 +32,7 @@ export function readEnvBoolean({
 
     try {
         return Boolean(JSON.parse(value))
-    } catch (e) {
+    } catch {
         throw new Error(`Incorrect environment variable ${variable}=${value}. Must be truthy or not set at all.`)
     }
 }

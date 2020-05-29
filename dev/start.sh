@@ -66,6 +66,9 @@ export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
 export PROMETHEUS_URL="${PROMETHEUS_URL:-"http://localhost:9090"}"
 
+# Jaeger config to get UI to work with reverse proxy, see https://www.jaegertracing.io/docs/1.11/deployment/#ui-base-path
+export JAEGER_SERVER_URL=http://localhost:16686
+
 # Caddy / HTTPS configuration
 export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
 export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
