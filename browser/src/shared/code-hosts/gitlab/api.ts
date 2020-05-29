@@ -84,7 +84,7 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
     }: Pick<GitLabInfo, 'owner' | 'projectName' | 'rawRepoName'> & {
         mergeRequestID: string
         diffID?: string
-    }) =>
+    }): Observable<{ baseCommitID: string; commitID: string; rawRepoName: string; baseRawRepoName: string }> =>
         zip(
             get<MergeRequestResponse>(buildURL(owner, projectName, `/merge_requests/${mergeRequestID}`)),
             getBaseCommitIDFromDiffID({ owner, projectName, mergeRequestID, diffID })
