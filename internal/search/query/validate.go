@@ -17,15 +17,37 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
-// isPatternExpression returns true if every leaf node in a tree root at node is
-// a search pattern.
-func isPatternExpression(nodes []Node) bool {
-	result := true
-	// Any non-pattern, i.e., Parameter, falsifies the predicate.
-	VisitParameter(nodes, func(_, _ string, _ bool) {
-		result = false
+// exists traverses every node in nodes and returns early as soon as fn is
+// satisfied.
+func exists(nodes []Node, fn func(node Node) bool) bool {
+	found := false
+	for _, node := range nodes {
+		if fn(node) {
+			return true
+		}
+		if operator, ok := node.(Operator); ok {
+			return exists(operator.Operands, fn)
+		}
+	}
+	return found
+}
+
+// forAll traverses every node in nodes and returns whether all nodes satisfy
+// fn.
+func forAll(nodes []Node, fn func(node Node) bool) bool {
+	return exists(nodes, func(node Node) bool {
+		return !fn(node)
 	})
-	return result
+}
+
+// isPatternExpression returns true if every leaf node in nodes is a search
+// pattern expression.
+func isPatternExpression(nodes []Node) bool {
+	return !exists(nodes, func(node Node) bool {
+		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
+		_, ok := node.(Parameter)
+		return ok
+	})
 }
 
 // ContainsAndOrKeyword returns true if this query contains or- or and-

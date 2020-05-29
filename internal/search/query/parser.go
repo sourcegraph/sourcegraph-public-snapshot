@@ -670,22 +670,18 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 
 // containsPattern returns true if any descendent of nodes is a search pattern.
 func containsPattern(node Node) bool {
-	var result bool
-	VisitPattern([]Node{node}, func(_ string, _, _ bool) {
-		result = true
+	return exists([]Node{node}, func(node Node) bool {
+		_, ok := node.(Pattern)
+		return ok
 	})
-	return result
 }
 
 // returns true if descendent of node contains and/or expressions.
 func containsAndOrExpression(nodes []Node) bool {
-	var result bool
-	VisitOperator(nodes, func(kind operatorKind, _ []Node) {
-		if kind == And || kind == Or {
-			result = true
-		}
+	return exists(nodes, func(node Node) bool {
+		term, ok := node.(Operator)
+		return ok && (term.Kind == And || term.Kind == Or)
 	})
-	return result
 }
 
 // partitionParameters constructs a parse tree to distinguish terms where
