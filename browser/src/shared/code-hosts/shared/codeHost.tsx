@@ -736,7 +736,7 @@ export function handleCodeHost({
                     throw err
                 }),
                 tap({
-                    error: (error: ErrorLike) => {
+                    error: error => {
                         if (codeViewEvent.getToolbarMount) {
                             const mount = codeViewEvent.getToolbarMount(codeViewEvent.element)
                             render(
