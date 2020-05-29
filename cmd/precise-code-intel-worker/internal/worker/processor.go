@@ -30,7 +30,6 @@ type processor struct {
 	gitserverClient     gitserver.Client
 }
 
-
 // process converts a raw upload into a dump within the given transaction context.
 func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {
 	// Create scratch directory that we can clean on completion/failure
