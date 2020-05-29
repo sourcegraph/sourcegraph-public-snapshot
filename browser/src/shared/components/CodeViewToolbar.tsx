@@ -70,7 +70,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             ) : null
         ) : (
             <>
-                {'head' in props.fileInfoOrError && 'base' in props.fileInfoOrError && (
+                {!('blob' in props.fileInfoOrError) && props.fileInfoOrError.head && props.fileInfoOrError.base && (
                     <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"

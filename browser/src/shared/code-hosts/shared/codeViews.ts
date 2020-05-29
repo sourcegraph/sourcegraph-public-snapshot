@@ -127,32 +127,29 @@ export const fetchFileContentForDiffOrFileInfo = (
 ): Observable<DiffOrBlobInfo<FileInfoWithContent>> => {
     if ('blob' in diffOrBlobInfo) {
         return fetchFileContentForFileInfo(diffOrBlobInfo.blob, requestGraphQL).pipe(
-            map(fileInfo => ({ ...diffOrBlobInfo, blob: fileInfo }))
+            map(fileInfo => ({ blob: fileInfo }))
         )
     }
-    if ('head' in diffOrBlobInfo && 'base' in diffOrBlobInfo) {
+    if (diffOrBlobInfo.head && diffOrBlobInfo.base) {
         const fetchingBaseFile = fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL)
         const fetchingHeadFile = fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL)
 
         return zip(fetchingBaseFile, fetchingHeadFile).pipe(
             map(
                 ([base, head]): DiffOrBlobInfo<FileInfoWithContent> => ({
-                    ...diffOrBlobInfo,
                     head,
                     base,
                 })
             )
         )
     }
-    if ('head' in diffOrBlobInfo) {
+    if (diffOrBlobInfo.head) {
         return fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL).pipe(
-            map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ ...diffOrBlobInfo, head }))
+            map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ head }))
         )
     }
-    if ('base' in diffOrBlobInfo) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(
-            map(base => ({ ...diffOrBlobInfo, base }))
-        )
+    if (diffOrBlobInfo.base) {
+        return fetchFileContentForFileInfo(diffOrBlobInfo.base, requestGraphQL).pipe(map(base => ({ base })))
     }
     throw new Error('fetchFileContentForDiffOrFileInfo failed: must contain a blob, base, or head.')
 }

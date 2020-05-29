@@ -58,36 +58,20 @@ export const resolveRepoNamesForDiffOrFileInfo = (
 ): Observable<DiffOrBlobInfo<FileInfoWithRepoName>> => {
     if ('blob' in diffOrFileInfo) {
         return resolveRepoNameForFileInfo(diffOrFileInfo.blob, requestGraphQL).pipe(
-            map(fileInfo => ({ ...diffOrFileInfo, blob: { ...diffOrFileInfo.blob, ...fileInfo } }))
+            map(fileInfo => ({ blob: { ...diffOrFileInfo.blob, ...fileInfo } }))
         )
     }
-    if ('head' in diffOrFileInfo && 'base' in diffOrFileInfo) {
+    if (diffOrFileInfo.head && diffOrFileInfo.base) {
         const resolvingHeadWithRepoName = resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL)
         const resolvingBaseWithRepoName = resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL)
 
-        return zip(resolvingHeadWithRepoName, resolvingBaseWithRepoName).pipe(
-            map(([head, base]) => ({
-                ...diffOrFileInfo,
-                head,
-                base,
-            }))
-        )
+        return zip(resolvingHeadWithRepoName, resolvingBaseWithRepoName).pipe(map(([head, base]) => ({ head, base })))
     }
-    if ('head' in diffOrFileInfo) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL).pipe(
-            map(head => ({
-                ...diffOrFileInfo,
-                head,
-            }))
-        )
+    if (diffOrFileInfo.head) {
+        return resolveRepoNameForFileInfo(diffOrFileInfo.head, requestGraphQL).pipe(map(head => ({ head })))
     }
-    if ('base' in diffOrFileInfo) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(
-            map(base => ({
-                ...diffOrFileInfo,
-                base,
-            }))
-        )
+    if (diffOrFileInfo.base) {
+        return resolveRepoNameForFileInfo(diffOrFileInfo.base, requestGraphQL).pipe(map(base => ({ base })))
     }
     throw new Error('resolveRepoNamesForDiffOrFileInfo cannot resolve file info: must contain a blob, base, or head.')
 }

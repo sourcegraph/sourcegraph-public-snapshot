@@ -110,7 +110,7 @@ import { delayUntilIntersecting, ViewResolver } from './views'
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError } from '../../../../../shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevToCommitID } from './util/fileInfo'
 
 registerHighlightContributions()
@@ -265,9 +265,9 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
  */
 export type DiffOrBlobInfo<T extends FileInfo = FileInfo> =
     | { blob: T }
-    | { head: T }
+    | { head: T; base?: undefined }
     | { head: T; base: T }
-    | { base: T }
+    | { head?: undefined; base: T }
 
 export interface FileInfo {
     /**
@@ -871,12 +871,12 @@ export function handleCodeHost({
                 if ('blob' in diffOrFileInfo) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
                 }
-                if ('head' in diffOrFileInfo && 'base' in diffOrFileInfo) {
+                if (diffOrFileInfo.head && diffOrFileInfo.base) {
                     const editor = initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
                     initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
                     return editor
                 }
-                if ('base' in diffOrFileInfo) {
+                if (diffOrFileInfo.base) {
                     return initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
                 }
                 return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
@@ -928,12 +928,13 @@ export function handleCodeHost({
             if (!minimalUI) {
                 if ('blob' in diffOrBlobInfo) {
                     applyDecorationsForFileInfo(diffOrBlobInfo.blob)
-                }
-                if ('head' in diffOrBlobInfo) {
-                    applyDecorationsForFileInfo(diffOrBlobInfo.head, 'head')
-                }
-                if ('base' in diffOrBlobInfo) {
-                    applyDecorationsForFileInfo(diffOrBlobInfo.base, 'base')
+                } else {
+                    if (diffOrBlobInfo.head) {
+                        applyDecorationsForFileInfo(diffOrBlobInfo.head, 'head')
+                    }
+                    if (diffOrBlobInfo.base) {
+                        applyDecorationsForFileInfo(diffOrBlobInfo.base, 'base')
+                    }
                 }
             }
 
@@ -942,10 +943,10 @@ export function handleCodeHost({
                 if ('blob' in diffOrBlobInfo) {
                     return defaultRevToCommitID(diffOrBlobInfo.blob)
                 }
-                if ('head' in diffOrBlobInfo && part === 'head') {
+                if (diffOrBlobInfo.head && part === 'head') {
                     return defaultRevToCommitID(diffOrBlobInfo.head)
                 }
-                if ('base' in diffOrBlobInfo && part === 'base') {
+                if (diffOrBlobInfo.base && part === 'base') {
                     return defaultRevToCommitID(diffOrBlobInfo.base)
                 }
                 // TODO: confirm if we should throw an error here.
