@@ -66,6 +66,7 @@ func generateReport(ctx context.Context, opts options, resources []Resource) err
 	if *opts.slackWebhook != "" {
 		buttons := []slackBlock{
 			newSlackButtonSheet(*opts.sheetID),
+			newSlackButtonDocs(),
 		}
 		if *opts.runID != "" {
 			buttons = append(buttons, newSlackButtonRun(*opts.runID))

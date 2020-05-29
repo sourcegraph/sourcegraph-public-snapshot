@@ -35,6 +35,17 @@ func newSlackButtonRun(runID string) slackBlock {
 	}
 }
 
+func newSlackButtonDocs() slackBlock {
+	return slackBlock{
+		"type": "button",
+		"text": slackText{
+			Type: "plain_text",
+			Text: "Docs",
+		},
+		"url": "https://about.sourcegraph.com/handbook/engineering/distribution/tools/resources_report",
+	}
+}
+
 func newSlackButtonSheet(sheetID string) slackBlock {
 	return slackBlock{
 		"type": "button",
@@ -59,7 +70,7 @@ func reportError(ctx context.Context, opts options, err error, scope string) {
 		if *opts.runID != "" {
 			blocks = append(blocks, slackBlock{
 				"type":     "actions",
-				"elements": []slackBlock{newSlackButtonRun(*opts.runID)},
+				"elements": []slackBlock{newSlackButtonRun(*opts.runID), newSlackButtonDocs()},
 			})
 		}
 		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, blocks)
