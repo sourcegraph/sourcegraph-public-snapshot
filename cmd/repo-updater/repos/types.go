@@ -802,29 +802,13 @@ func (rs Repos) Names() []string {
 	return names
 }
 
+// NamesSummary caps the number of repos to 20 when composing a space-separated list string.
+// Used in logging statements.
 func (rs Repos) NamesSummary() string {
-	sb := strings.Builder{}
-
-	capped := false
-	n := len(rs)
-	if n > 20 {
-		n = 20
-		capped = true
+	if len(rs) > 20 {
+		return strings.Join(rs[:20].Names(), " ") + "..."
 	}
-
-	first := true
-	for i := 0; i < n; i++ {
-		if first {
-			first = false
-		} else {
-			sb.WriteString(" ")
-		}
-		sb.WriteString(rs[i].Name)
-	}
-	if capped {
-		sb.WriteString(" ...")
-	}
-	return sb.String()
+	return strings.Join(rs.Names(), " ")
 }
 
 // Kinds returns the unique set of kinds from all Repos.
