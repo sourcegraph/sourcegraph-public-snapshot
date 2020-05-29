@@ -24,7 +24,7 @@ type sqliteReader struct {
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(filename string) (_ persistence.Reader, err error) {
+func NewReader(filename string) (persistence.Reader, error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 	return resultChunkData, true, nil
 }
 
-func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
+func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
 	var query *sqlf.Query
 	if take == 0 && skip == 0 {
 		query = sqlf.Sprintf(`
@@ -101,7 +101,7 @@ func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier s
 		`, scheme, identifier, take, skip)
 	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
+	locations, err := scanLocations(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -116,10 +116,10 @@ func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier s
 		return nil, 0, err
 	}
 
-	return rows, count, err
+	return locations, count, err
 }
 
-func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.DefinitionReferenceRow, int, error) {
+func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
 	var query *sqlf.Query
 	if take == 0 && skip == 0 {
 		query = sqlf.Sprintf(`
@@ -136,7 +136,7 @@ func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier st
 		`, scheme, identifier, take, skip)
 	}
 
-	rows, err := scanDefinitionReferenceRows(r.query(ctx, query))
+	locations, err := scanLocations(r.query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -151,7 +151,7 @@ func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier st
 		return nil, 0, err
 	}
 
-	return rows, count, err
+	return locations, count, err
 }
 
 func (r *sqliteReader) Close() error {
@@ -159,8 +159,6 @@ func (r *sqliteReader) Close() error {
 }
 
 var definitionReferenceColumns = []string{
-	"scheme",
-	"identifier",
 	"documentPath",
 	"startLine",
 	"startCharacter",
@@ -190,11 +188,9 @@ func scanInt(scanner *sql.Row) (value int, err error) {
 	return value, err
 }
 
-// scanDefinitionReferenceRow populates a DefinitionReferenceRow value from the given scanner.
-func scanDefinitionReferenceRow(rows *sql.Rows) (row types.DefinitionReferenceRow, err error) {
+// scanLocation populates a Location value from the given scanner.
+func scanLocation(rows *sql.Rows) (row types.Location, err error) {
 	err = rows.Scan(
-		&row.Scheme,
-		&row.Identifier,
 		&row.URI,
 		&row.StartLine,
 		&row.StartCharacter,
@@ -204,24 +200,23 @@ func scanDefinitionReferenceRow(rows *sql.Rows) (row types.DefinitionReferenceRo
 	return row, err
 }
 
-// scanDefinitionReferenceRows reads the given set of definition/reference rows and returns
-// a slice of resulting values. This method should be called directly with the return value
-// of `*db.query`.
-func scanDefinitionReferenceRows(rows *sql.Rows, err error) ([]types.DefinitionReferenceRow, error) {
+// scanLocations reads the given set of definition/reference rows and returns a slice of resulting
+// values. This method should be called directly with the return value of `*db.query`.
+func scanLocations(rows *sql.Rows, err error) ([]types.Location, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var dumps []types.DefinitionReferenceRow
+	var locations []types.Location
 	for rows.Next() {
-		dump, err := scanDefinitionReferenceRow(rows)
+		location, err := scanLocation(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		dumps = append(dumps, dump)
+		locations = append(locations, location)
 	}
 
-	return dumps, nil
+	return locations, nil
 }

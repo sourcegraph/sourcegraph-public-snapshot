@@ -20,8 +20,8 @@ type GroupedBundleData struct {
 	NumResultChunks   int
 	Documents         map[string]types.DocumentData
 	ResultChunks      map[int]types.ResultChunkData
-	Definitions       []types.DefinitionReferenceRow
-	References        []types.DefinitionReferenceRow
+	Definitions       []types.MonikerLocations
+	References        []types.MonikerLocations
 	Packages          []types.Package
 	PackageReferences []types.PackageReference
 }
@@ -184,8 +184,8 @@ var (
 	getReferenceResultID  = func(r lsif.Range) string { return r.ReferenceResultID }
 )
 
-func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) []types.DefinitionReferenceRow {
-	var rows []types.DefinitionReferenceRow
+func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) []types.MonikerLocations {
+	var rows []types.MonikerLocations
 
 	monikers := datastructures.DefaultIDSetMap{}
 	for _, r := range state.RangeData {
@@ -205,7 +205,7 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 		}
 
 		for monikerID := range monikerIDs {
-			moniker := state.MonikerData[monikerID]
+			var locations []types.Location
 
 			for documentID, rangeIDs := range documentRanges {
 				document := state.DocumentData[documentID]
@@ -217,9 +217,7 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 				for id := range rangeIDs {
 					r := state.RangeData[id]
 
-					rows = append(rows, types.DefinitionReferenceRow{
-						Scheme:         moniker.Scheme,
-						Identifier:     moniker.Identifier,
+					locations = append(locations, types.Location{
 						URI:            document.URI,
 						StartLine:      r.StartLine,
 						StartCharacter: r.StartCharacter,
@@ -228,6 +226,13 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 					})
 				}
 			}
+
+			// TODO - deduplicate
+			rows = append(rows, types.MonikerLocations{
+				Scheme:     state.MonikerData[monikerID].Scheme,
+				Identifier: state.MonikerData[monikerID].Identifier,
+				Locations:  locations,
+			})
 		}
 	}
 

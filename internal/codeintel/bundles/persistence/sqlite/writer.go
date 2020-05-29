@@ -105,19 +105,23 @@ func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[i
 	return nil
 }
 
-func (w *sqliteWriter) WriteDefinitions(ctx context.Context, definitions []types.DefinitionReferenceRow) error {
-	for _, r := range definitions {
-		if err := w.definitionInserter.Insert(ctx, r.Scheme, r.Identifier, r.URI, r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter); err != nil {
-			return errors.Wrap(err, "definitionInserter.Insert")
+func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
+	for _, ml := range monikerLocations {
+		for _, l := range ml.Locations {
+			if err := w.definitionInserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
+				return errors.Wrap(err, "definitionInserter.Insert")
+			}
 		}
 	}
 	return nil
 }
 
-func (w *sqliteWriter) WriteReferences(ctx context.Context, references []types.DefinitionReferenceRow) error {
-	for _, r := range references {
-		if err := w.referenceInserter.Insert(ctx, r.Scheme, r.Identifier, r.URI, r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter); err != nil {
-			return errors.Wrap(err, "referenceInserter.Insert")
+func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
+	for _, ml := range monikerLocations {
+		for _, l := range ml.Locations {
+			if err := w.referenceInserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
+				return errors.Wrap(err, "referenceInserter.Insert")
+			}
 		}
 	}
 	return nil

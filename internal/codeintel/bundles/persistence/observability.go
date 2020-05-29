@@ -88,16 +88,16 @@ func (r *ObservedReader) ReadResultChunk(ctx context.Context, id int) (_ types.R
 }
 
 // ReadDefinitions calls into the inner Reader and registers the observed results.
-func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) (definitions []types.DefinitionReferenceRow, _ int, err error) {
+func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
 	ctx, endObservation := r.readDefinitionsOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(definitions)), observation.Args{}) }()
+	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
 	return r.reader.ReadDefinitions(ctx, scheme, identifier, skip, take)
 }
 
 // ReadReferences calls into the inner Reader and registers the observed results.
-func (r *ObservedReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) (references []types.DefinitionReferenceRow, _ int, err error) {
+func (r *ObservedReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) (locations []types.Location, _ int, err error) {
 	ctx, endObservation := r.readReferencesOperation.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(references)), observation.Args{}) }()
+	defer func() { endObservation(float64(len(locations)), observation.Args{}) }()
 	return r.reader.ReadReferences(ctx, scheme, identifier, skip, take)
 }
 

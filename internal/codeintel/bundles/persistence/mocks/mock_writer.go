@@ -52,7 +52,7 @@ func NewMockWriter() *MockWriter {
 			},
 		},
 		WriteDefinitionsFunc: &WriterWriteDefinitionsFunc{
-			defaultHook: func(context.Context, []types.DefinitionReferenceRow) error {
+			defaultHook: func(context.Context, []types.MonikerLocations) error {
 				return nil
 			},
 		},
@@ -67,7 +67,7 @@ func NewMockWriter() *MockWriter {
 			},
 		},
 		WriteReferencesFunc: &WriterWriteReferencesFunc{
-			defaultHook: func(context.Context, []types.DefinitionReferenceRow) error {
+			defaultHook: func(context.Context, []types.MonikerLocations) error {
 				return nil
 			},
 		},
@@ -311,15 +311,15 @@ func (c WriterFlushFuncCall) Results() []interface{} {
 // WriterWriteDefinitionsFunc describes the behavior when the
 // WriteDefinitions method of the parent MockWriter instance is invoked.
 type WriterWriteDefinitionsFunc struct {
-	defaultHook func(context.Context, []types.DefinitionReferenceRow) error
-	hooks       []func(context.Context, []types.DefinitionReferenceRow) error
+	defaultHook func(context.Context, []types.MonikerLocations) error
+	hooks       []func(context.Context, []types.MonikerLocations) error
 	history     []WriterWriteDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockWriter) WriteDefinitions(v0 context.Context, v1 []types.DefinitionReferenceRow) error {
+func (m *MockWriter) WriteDefinitions(v0 context.Context, v1 []types.MonikerLocations) error {
 	r0 := m.WriteDefinitionsFunc.nextHook()(v0, v1)
 	m.WriteDefinitionsFunc.appendCall(WriterWriteDefinitionsFuncCall{v0, v1, r0})
 	return r0
@@ -328,7 +328,7 @@ func (m *MockWriter) WriteDefinitions(v0 context.Context, v1 []types.DefinitionR
 // SetDefaultHook sets function that is called when the WriteDefinitions
 // method of the parent MockWriter instance is invoked and the hook queue is
 // empty.
-func (f *WriterWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, []types.DefinitionReferenceRow) error) {
+func (f *WriterWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, []types.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -336,7 +336,7 @@ func (f *WriterWriteDefinitionsFunc) SetDefaultHook(hook func(context.Context, [
 // WriteDefinitions method of the parent MockWriter instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *WriterWriteDefinitionsFunc) PushHook(hook func(context.Context, []types.DefinitionReferenceRow) error) {
+func (f *WriterWriteDefinitionsFunc) PushHook(hook func(context.Context, []types.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -345,7 +345,7 @@ func (f *WriterWriteDefinitionsFunc) PushHook(hook func(context.Context, []types
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *WriterWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []types.DefinitionReferenceRow) error {
+	f.SetDefaultHook(func(context.Context, []types.MonikerLocations) error {
 		return r0
 	})
 }
@@ -353,12 +353,12 @@ func (f *WriterWriteDefinitionsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *WriterWriteDefinitionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []types.DefinitionReferenceRow) error {
+	f.PushHook(func(context.Context, []types.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *WriterWriteDefinitionsFunc) nextHook() func(context.Context, []types.DefinitionReferenceRow) error {
+func (f *WriterWriteDefinitionsFunc) nextHook() func(context.Context, []types.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -396,7 +396,7 @@ type WriterWriteDefinitionsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []types.DefinitionReferenceRow
+	Arg1 []types.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -631,15 +631,15 @@ func (c WriterWriteMetaFuncCall) Results() []interface{} {
 // WriterWriteReferencesFunc describes the behavior when the WriteReferences
 // method of the parent MockWriter instance is invoked.
 type WriterWriteReferencesFunc struct {
-	defaultHook func(context.Context, []types.DefinitionReferenceRow) error
-	hooks       []func(context.Context, []types.DefinitionReferenceRow) error
+	defaultHook func(context.Context, []types.MonikerLocations) error
+	hooks       []func(context.Context, []types.MonikerLocations) error
 	history     []WriterWriteReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteReferences delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockWriter) WriteReferences(v0 context.Context, v1 []types.DefinitionReferenceRow) error {
+func (m *MockWriter) WriteReferences(v0 context.Context, v1 []types.MonikerLocations) error {
 	r0 := m.WriteReferencesFunc.nextHook()(v0, v1)
 	m.WriteReferencesFunc.appendCall(WriterWriteReferencesFuncCall{v0, v1, r0})
 	return r0
@@ -648,7 +648,7 @@ func (m *MockWriter) WriteReferences(v0 context.Context, v1 []types.DefinitionRe
 // SetDefaultHook sets function that is called when the WriteReferences
 // method of the parent MockWriter instance is invoked and the hook queue is
 // empty.
-func (f *WriterWriteReferencesFunc) SetDefaultHook(hook func(context.Context, []types.DefinitionReferenceRow) error) {
+func (f *WriterWriteReferencesFunc) SetDefaultHook(hook func(context.Context, []types.MonikerLocations) error) {
 	f.defaultHook = hook
 }
 
@@ -656,7 +656,7 @@ func (f *WriterWriteReferencesFunc) SetDefaultHook(hook func(context.Context, []
 // WriteReferences method of the parent MockWriter instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WriterWriteReferencesFunc) PushHook(hook func(context.Context, []types.DefinitionReferenceRow) error) {
+func (f *WriterWriteReferencesFunc) PushHook(hook func(context.Context, []types.MonikerLocations) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -665,7 +665,7 @@ func (f *WriterWriteReferencesFunc) PushHook(hook func(context.Context, []types.
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *WriterWriteReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []types.DefinitionReferenceRow) error {
+	f.SetDefaultHook(func(context.Context, []types.MonikerLocations) error {
 		return r0
 	})
 }
@@ -673,12 +673,12 @@ func (f *WriterWriteReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *WriterWriteReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []types.DefinitionReferenceRow) error {
+	f.PushHook(func(context.Context, []types.MonikerLocations) error {
 		return r0
 	})
 }
 
-func (f *WriterWriteReferencesFunc) nextHook() func(context.Context, []types.DefinitionReferenceRow) error {
+func (f *WriterWriteReferencesFunc) nextHook() func(context.Context, []types.MonikerLocations) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -716,7 +716,7 @@ type WriterWriteReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []types.DefinitionReferenceRow
+	Arg1 []types.MonikerLocations
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
