@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -77,6 +81,11 @@ func TestRepositoryPermissions(t *testing.T) {
 	}
 
 	// Create 2 changesets for 2 repositories
+	changesetBaseRefOid := "f00b4r"
+	changesetHeadRefOid := "b4rf00"
+	mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
+	changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
+
 	changesets := make([]*campaigns.Changeset, 0, 2)
 	changesetIDs := make([]int64, 0, cap(changesets))
 	for _, r := range repos[0:2] {
@@ -84,6 +93,11 @@ func TestRepositoryPermissions(t *testing.T) {
 			RepoID:              r.ID,
 			ExternalServiceType: "github",
 			ExternalID:          fmt.Sprintf("external-%d", r.ID),
+			ExternalState:       campaigns.ChangesetStateOpen,
+			Metadata: &github.PullRequest{
+				BaseRefOid: changesetBaseRefOid,
+				HeadRefOid: changesetHeadRefOid,
+			},
 		}
 		if err := store.CreateChangesets(ctx, c); err != nil {
 			t.Fatal(err)
@@ -99,13 +113,17 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	// Create 2 patches for the other repositories
 	patches := make([]*campaigns.Patch, 0, 2)
+	patchesDiffStat := apitest.DiffStat{Added: 88, Changed: 66, Deleted: 22}
 	for _, r := range repos[2:4] {
 		p := &campaigns.Patch{
-			PatchSetID: patchSet.ID,
-			RepoID:     r.ID,
-			Rev:        api.CommitID(testRev),
-			BaseRef:    "refs/heads/master",
-			Diff:       "+ foo - bar",
+			PatchSetID:      patchSet.ID,
+			RepoID:          r.ID,
+			Rev:             api.CommitID(testRev),
+			BaseRef:         "refs/heads/master",
+			Diff:            "+ foo - bar",
+			DiffStatAdded:   &patchesDiffStat.Added,
+			DiffStatChanged: &patchesDiffStat.Changed,
+			DiffStatDeleted: &patchesDiffStat.Deleted,
 		}
 		if err := store.CreatePatch(ctx, p); err != nil {
 			t.Fatal(err)
@@ -160,6 +178,16 @@ func TestRepositoryPermissions(t *testing.T) {
 			fmt.Sprintf("error patch %d", patches[1].ID),
 		},
 		patchTypes: map[string]int{"Patch": 2},
+		campaignDiffStat: apitest.DiffStat{
+			Added:   2*patchesDiffStat.Added + 2*changesetDiffStat.Added,
+			Changed: 2*patchesDiffStat.Changed + 2*changesetDiffStat.Changed,
+			Deleted: 2*patchesDiffStat.Deleted + 2*changesetDiffStat.Deleted,
+		},
+		patchSetDiffStat: apitest.DiffStat{
+			Added:   2 * patchesDiffStat.Added,
+			Changed: 2 * patchesDiffStat.Changed,
+			Deleted: 2 * patchesDiffStat.Deleted,
+		},
 	})
 
 	// Now we add the authzFilter and filter out 2 repositories
@@ -195,17 +223,28 @@ func TestRepositoryPermissions(t *testing.T) {
 			"Patch":       1,
 			"HiddenPatch": 1,
 		},
+		campaignDiffStat: apitest.DiffStat{
+			Added:   1*patchesDiffStat.Added + 1*changesetDiffStat.Added,
+			Changed: 1*patchesDiffStat.Changed + 1*changesetDiffStat.Changed,
+			Deleted: 1*patchesDiffStat.Deleted + 1*changesetDiffStat.Deleted,
+		},
+		patchSetDiffStat: apitest.DiffStat{
+			Added:   1 * patchesDiffStat.Added,
+			Changed: 1 * patchesDiffStat.Changed,
+			Deleted: 1 * patchesDiffStat.Deleted,
+		},
 	})
 
-	// TODO: Test that the diffStat on `patchset` doesn't include the filtered patches diff stats
-	// TODO: Test that the diffStat on `campaign` doesn't include the filtered changesets diff stats
 	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
+	// TODO: test that the patches on campaign.patchset.patches are also hidden
 }
 
 type wantCampaignResponse struct {
-	patchTypes     map[string]int
-	changesetTypes map[string]int
-	errors         []string
+	patchTypes       map[string]int
+	changesetTypes   map[string]int
+	errors           []string
+	campaignDiffStat apitest.DiffStat
+	patchSetDiffStat apitest.DiffStat
 }
 
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, w wantCampaignResponse) {
@@ -220,7 +259,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
 	}
 
-	if diff := cmp.Diff(response.Node.Status.Errors, w.errors); diff != "" {
+	if diff := cmp.Diff(w.errors, response.Node.Status.Errors); diff != "" {
 		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
 	}
 
@@ -238,6 +277,14 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 	}
 	if diff := cmp.Diff(w.patchTypes, patchTypes); diff != "" {
 		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(w.campaignDiffStat, response.Node.DiffStat); diff != "" {
+		t.Fatalf("unexpected campaign diff stat (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff(w.patchSetDiffStat, response.Node.PatchSet.DiffStat); diff != "" {
+		t.Fatalf("unexpected patch set diff stat (-want +got):\n%s", diff)
 	}
 }
 
@@ -283,6 +330,20 @@ query {
           }
         }
       }
+
+      diffStat {
+        added
+        changed
+        deleted
+      }
+
+      patchSet {
+        diffStat {
+          added
+          changed
+          deleted
+        }
+      }
     }
   }
 }
@@ -306,4 +367,30 @@ func mockBackendCommit(t *testing.T, rev string) {
 		return &git.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
+}
+
+func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
+	t.Helper()
+
+	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
+
+	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
+		if string(id) != baseRev && string(id) != headRev {
+			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
+		}
+		return &git.Commit{ID: api.CommitID(id)}, nil
+	}
+	t.Cleanup(func() { git.Mocks.GetCommit = nil })
+
+	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		if len(args) < 1 && args[0] != "diff" {
+			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+		}
+
+		if have, want := args[len(args)-2], spec; have != want {
+			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
+		}
+		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+	}
+	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 }

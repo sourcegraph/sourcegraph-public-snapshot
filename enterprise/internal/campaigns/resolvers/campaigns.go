@@ -393,6 +393,9 @@ func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.Backgroun
 		}
 	}
 
+	// TODO(thorsten): Another idea: change this to be ExcludeErrorsForPatches
+	// and pass in the patch IDs that should be filtered out, since we can use
+	// the accessibleRepoIDs map to filter out patches.
 	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
 		ID:                   r.Campaign.ID,
 		ExcludeErrorsInRepos: excludedRepos,
@@ -408,20 +411,26 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
 	for _, c := range changesets {
-		changesetResolver, ok := c.(*changesetResolver)
-		if !ok {
-			return nil, fmt.Errorf("not a changeset resolver: %T", c)
+		switch c := c.(type) {
+		case *changesetResolver:
+			comp, err := c.Diff(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if comp != nil {
+				resolvers = append(resolvers, comp)
+			}
+		case *hiddenChangesetResolver:
+			// Do not include hidden changesets in diff and diffstats
+			continue
+		default:
+			return nil, fmt.Errorf("changesetResolver has unknown type: %T", c)
 		}
 
-		comp, err := changesetResolver.Diff(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if comp != nil {
-			resolvers = append(resolvers, comp)
-		}
 	}
 	return resolvers, nil
 }

@@ -83,8 +83,31 @@ func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesO
 		return nil, err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
 	total := &graphqlbackend.DiffStat{}
 	for _, p := range patches {
+		// 🚨 SECURITY: We filter out the patches that belong to repositories the
+		// user does NOT have access to.
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
 		s, ok := p.DiffStat()
 		if !ok {
 			return nil, fmt.Errorf("patch %d has no diff stat", p.ID)

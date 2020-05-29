@@ -1182,7 +1182,7 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	// Each patch has testDiff as diff, each with 2 lines changed
-	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
+	if have, want := response.Node.DiffStat.Changed, int32(len(patches)*2); have != want {
 		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
@@ -1195,7 +1195,7 @@ func TestPatchSetResolver(t *testing.T) {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, int32(2); have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 

@@ -21,7 +21,7 @@ type GitRef struct {
 
 type DiffRange struct{ StartLine, Lines int }
 
-type DiffStat struct{ Added, Deleted, Changed int }
+type DiffStat struct{ Added, Deleted, Changed int32 }
 
 type FileDiffHunk struct {
 	Body, Section      string
@@ -114,6 +114,7 @@ type Campaign struct {
 	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
+	PatchSet                PatchSet
 }
 
 type CampaignConnection struct {
