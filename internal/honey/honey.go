@@ -39,6 +39,13 @@ func init() {
 	}
 	err := libhoney.Init(libhoney.Config{
 		APIKey: apiKey,
+		// Send 1 in 4 events. This is hardcoded since we only use this for
+		// Sourcegraph.com. 2020-05-29 We are currently at the top tier for
+		// honeycomb (before enterprise) and using double our quota. This
+		// gives us room to grow. If you find we keep bumping this / missing
+		// data we care about we can look into more dynamic ways to sample in
+		// our application code.
+		SampleRate: 4,
 	})
 	if err != nil {
 		log.Println("Failed to init libhoney:", err)
