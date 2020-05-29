@@ -411,26 +411,9 @@ func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefRes
 		return nil, errors.New("changeset base ref could not be determined")
 	}
 
-	var oid string
-	if r.ExternalState == campaigns.ChangesetStateMerged {
-		// The PR was merged, find the merge commit
-		events, err := r.computeEvents(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching changeset events")
-		}
-		oid = ee.ChangesetEvents(events).FindMergeCommitID()
-		// We actually want the parent of that commit, so base...head
-		// returns exactly the changes from the merged changeset.
-		if oid != "" {
-			oid += "^"
-		}
-	}
-	if oid == "" {
-		// Fall back to the base ref
-		oid, err = r.Changeset.BaseRefOid()
-		if err != nil {
-			return nil, err
-		}
+	oid, err := r.Changeset.BaseRefOid()
+	if err != nil {
+		return nil, err
 	}
 
 	resolver, err := r.gitRef(ctx, name, oid, false)
