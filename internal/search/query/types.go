@@ -163,11 +163,11 @@ func (q AndOrQuery) IsCaseSensitive() bool {
 }
 
 func parseRegexpOrPanic(field, value string) *regexp.Regexp {
-	regexp, err := regexp.Compile(value)
+	r, err := regexp.Compile(value)
 	if err != nil {
 		panic(fmt.Sprintf("Value %s for field %s invalid regex: %s", field, value, err.Error()))
 	}
-	return regexp
+	return r
 }
 
 // valueToTypedValue approximately preserves the field validation for

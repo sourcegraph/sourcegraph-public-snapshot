@@ -253,8 +253,8 @@ func (p *parser) skipSpaces() error {
 
 // ScanLiteral consumes all characters up to a whitespace character and returns
 // the string and how much it consumed.
-func ScanSearchPatternLiteral(buf []byte) (string, int) {
-	var count, advance int
+func ScanSearchPatternLiteral(buf []byte) (scanned string, count int) {
+	var advance int
 	var r rune
 	var result []rune
 
@@ -273,7 +273,8 @@ func ScanSearchPatternLiteral(buf []byte) (string, int) {
 		}
 		result = append(result, r)
 	}
-	return string(result), count
+	scanned = string(result)
+	return scanned, count
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -455,7 +456,6 @@ loop:
 		default:
 			piece = append(piece, r)
 		}
-
 	}
 	if len(piece) > 0 {
 		pieces = append(pieces, string(piece))
@@ -646,7 +646,7 @@ func (p *parser) ParsePattern() Pattern {
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	field, advance := ScanField(p.buf[p.pos:])
-	if len(field) == 0 {
+	if field == "" {
 		return Parameter{}, false, nil
 	}
 
