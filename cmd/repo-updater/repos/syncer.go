@@ -362,9 +362,6 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-	defer cancel()
-
 	return listAll(ctx, srcs, observe...)
 }
 
