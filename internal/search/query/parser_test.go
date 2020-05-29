@@ -662,7 +662,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input)
+			result, _, err = ParseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {

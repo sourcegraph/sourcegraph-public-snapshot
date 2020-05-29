@@ -896,7 +896,7 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-func tryFallbackParser(in string) ([]Node, error) {
+func tryFallbackParser(in string) ([]Node, map[heuristic]bool, error) {
 	parser := &parser{
 		buf:               []byte(in),
 		heuristic:         map[heuristic]bool{allowDanglingParens: true},
@@ -904,18 +904,18 @@ func tryFallbackParser(in string) ([]Node, error) {
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
-		return nil, err
+		return nil, parser.heuristicsApplied, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
+		return newOperator(hoistedNodes, And), parser.heuristicsApplied, nil
 	}
-	return newOperator(nodes, And), nil
+	return newOperator(nodes, And), parser.heuristicsApplied, nil
 }
 
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string) ([]Node, error) {
+func ParseAndOr(in string) ([]Node, map[heuristic]bool, error) {
 	if strings.TrimSpace(in) == "" {
-		return nil, nil
+		return nil, map[heuristic]bool{}, nil
 	}
 	parser := &parser{
 		buf:               []byte(in),
@@ -925,16 +925,16 @@ func ParseAndOr(in string) ([]Node, error) {
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		if nodes, err := tryFallbackParser(in); err == nil {
-			return nodes, nil
+		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
+			return nodes, heuristicsApplied, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	if parser.balanced != 0 {
-		if nodes, err := tryFallbackParser(in); err == nil {
-			return nodes, nil
+		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
+			return nodes, heuristicsApplied, nil
 		}
-		return nil, errors.New("unbalanced expression")
+		return nil, nil, errors.New("unbalanced expression")
 	}
 	if !parser.heuristic[unambiguated] {
 		// Hoist or expressions if this query is potential ambiguous.
@@ -942,7 +942,7 @@ func ParseAndOr(in string) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	return newOperator(nodes, And), nil
+	return newOperator(nodes, And), parser.heuristicsApplied, nil
 }
 
 func ParseLiteralSearch(in string) ([]Node, error) {
@@ -971,7 +971,7 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
 func ProcessAndOr(in string) (QueryInfo, error) {
-	query, err := ParseAndOr(in)
+	query, heuristicsApplied, err := ParseAndOr(in)
 	if err != nil {
 		return nil, err
 	}
@@ -981,5 +981,5 @@ func ProcessAndOr(in string) (QueryInfo, error) {
 		return nil, err
 	}
 
-	return &AndOrQuery{Query: query}, nil
+	return &AndOrQuery{Query: query, HeuristicsApplied: heuristicsApplied}, nil
 }
