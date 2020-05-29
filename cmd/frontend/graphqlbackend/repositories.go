@@ -218,7 +218,6 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		if args.Precise {
 			return nil, err
 		}
-		return nil, nil
 	}
 
 	i32ptr := func(v int32) *int32 {
