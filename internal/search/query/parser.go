@@ -668,26 +668,6 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	return Parameter{Field: field, Value: value, Negated: negated}, true, nil
 }
 
-// containsPattern returns true if any descendent of nodes is a search pattern.
-func containsPattern(node Node) bool {
-	var result bool
-	VisitPattern([]Node{node}, func(_ string, _, _ bool) {
-		result = true
-	})
-	return result
-}
-
-// returns true if descendent of node contains and/or expressions.
-func containsAndOrExpression(nodes []Node) bool {
-	var result bool
-	VisitOperator(nodes, func(kind operatorKind, _ []Node) {
-		if kind == And || kind == Or {
-			result = true
-		}
-	})
-	return result
-}
-
 // partitionParameters constructs a parse tree to distinguish terms where
 // ordering is insignificant (e.g., "repo:foo file:bar") versus terms where
 // ordering may be significant (e.g., search patterns like "foo bar").

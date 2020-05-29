@@ -17,15 +17,58 @@ func (e *UnsupportedError) Error() string {
 	return e.Msg
 }
 
-// isPatternExpression returns true if every leaf node in a tree root at node is
-// a search pattern.
+// exists traverses every node in nodes and returns early as soon as fn is satisfied.
+func exists(nodes []Node, fn func(node Node) bool) bool {
+	found := false
+	for _, node := range nodes {
+		if fn(node) {
+			return true
+		}
+		if operator, ok := node.(Operator); ok {
+			return exists(operator.Operands, fn)
+		}
+	}
+	return found
+}
+
+// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
+func forAll(nodes []Node, fn func(node Node) bool) bool {
+	sat := true
+	for _, node := range nodes {
+		if !fn(node) {
+			return false
+		}
+		if operator, ok := node.(Operator); ok {
+			return forAll(operator.Operands, fn)
+		}
+	}
+	return sat
+}
+
+// isPatternExpression returns true if every leaf node in nodes is a search
+// pattern expression.
 func isPatternExpression(nodes []Node) bool {
-	result := true
-	// Any non-pattern, i.e., Parameter, falsifies the predicate.
-	VisitParameter(nodes, func(_, _ string, _ bool) {
-		result = false
+	return !exists(nodes, func(node Node) bool {
+		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
+		_, ok := node.(Parameter)
+		return ok
 	})
-	return result
+}
+
+// containsPattern returns true if any descendent of nodes is a search pattern.
+func containsPattern(node Node) bool {
+	return exists([]Node{node}, func(node Node) bool {
+		_, ok := node.(Pattern)
+		return ok
+	})
+}
+
+// returns true if descendent of node contains and/or expressions.
+func containsAndOrExpression(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		term, ok := node.(Operator)
+		return ok && (term.Kind == And || term.Kind == Or)
+	})
 }
 
 // ContainsAndOrKeyword returns true if this query contains or- or and-
