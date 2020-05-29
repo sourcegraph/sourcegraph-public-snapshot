@@ -758,7 +758,6 @@ func TestScanDelimited(t *testing.T) {
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
 			}
-
 		})
 	}
 }
