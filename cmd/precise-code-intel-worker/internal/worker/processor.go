@@ -13,10 +13,23 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	sqlitewriter "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
+
+// Processor converts raw uploads into dumps.
+type Processor interface {
+	Process(ctx context.Context, tx db.DB, upload db.Upload) error
+}
+
+type processor struct {
+	bundleManagerClient bundles.BundleManagerClient
+	gitserverClient     gitserver.Client
+}
+
 
 // process converts a raw upload into a dump within the given transaction context.
 func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {

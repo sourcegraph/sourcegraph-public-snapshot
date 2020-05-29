@@ -99,13 +99,3 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 
 	return true, nil
 }
-
-// Processor converts raw uploads into dumps.
-type Processor interface {
-	Process(ctx context.Context, tx db.DB, upload db.Upload) error
-}
-
-type processor struct {
-	bundleManagerClient bundles.BundleManagerClient
-	gitserverClient     gitserver.Client
-}
