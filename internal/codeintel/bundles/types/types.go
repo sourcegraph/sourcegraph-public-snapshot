@@ -80,7 +80,8 @@ type Location struct {
 	EndCharacter   int
 }
 
-// TODO
+// MonikerLocations pairs a moniker scheme and identifier with the set of locations
+// with that within a particular bundle.
 type MonikerLocations struct {
 	Scheme     string
 	Identifier string
