@@ -150,48 +150,57 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetJobs = append(changesetJobs, job)
 	}
 
-	// TODO: Do we also need failed ChangesetJobs to check for hidden errors
+	type want struct {
+		patchTypes     map[string]int
+		changesetTypes map[string]int
+		errors         []string
+	}
 
-	var response struct{ Node apitest.Campaign }
+	testCampaign := func(t *testing.T, ctx context.Context, id int64, w want) {
+		t.Helper()
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	query := fmt.Sprintf(queryCampaignPermLevels, campaigns.MarshalCampaignID(campaign.ID))
+		var response struct{ Node apitest.Campaign }
+		query := fmt.Sprintf(queryCampaignPermLevels, campaigns.MarshalCampaignID(id))
+
+		apitest.MustExec(ctx, t, s, nil, &response, query)
+
+		if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(id)); have != want {
+			t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
+		}
+
+		if diff := cmp.Diff(response.Node.Status.Errors, w.errors); diff != "" {
+			t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
+		}
+
+		changesetTypes := map[string]int{}
+		for _, c := range response.Node.Changesets.Nodes {
+			changesetTypes[c.Typename]++
+		}
+		if diff := cmp.Diff(w.changesetTypes, changesetTypes); diff != "" {
+			t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
+		}
+
+		patchTypes := map[string]int{}
+		for _, p := range response.Node.Patches.Nodes {
+			patchTypes[p.Typename]++
+		}
+		if diff := cmp.Diff(w.patchTypes, patchTypes); diff != "" {
+			t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
+		}
+	}
 
 	// Query campaign and check that we get all changesets and all patches
-	apitest.MustExec(userCtx, t, s, nil, &response, query)
-
-	if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(campaign.ID)); have != want {
-		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
-	}
-
-	wantErrors := []string{
-		fmt.Sprintf("error patch %d", patches[0].ID),
-		fmt.Sprintf("error patch %d", patches[1].ID),
-	}
-	if diff := cmp.Diff(response.Node.Status.Errors, wantErrors); diff != "" {
-		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
-	}
-
-	changesetTypes := map[string]int{}
-	for _, c := range response.Node.Changesets.Nodes {
-		changesetTypes[c.Typename]++
-	}
-	wantChangesetTypes := map[string]int{"ExternalChangeset": 2}
-	if diff := cmp.Diff(wantChangesetTypes, changesetTypes); diff != "" {
-		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
-	}
-
-	patchTypes := map[string]int{}
-	for _, p := range response.Node.Patches.Nodes {
-		patchTypes[p.Typename]++
-	}
-	wantPatchTypes := map[string]int{"Patch": 2}
-	if diff := cmp.Diff(wantPatchTypes, patchTypes); diff != "" {
-		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
-	}
+	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	testCampaign(t, userCtx, campaign.ID, want{
+		changesetTypes: map[string]int{"ExternalChangeset": 2},
+		errors: []string{
+			fmt.Sprintf("error patch %d", patches[0].ID),
+			fmt.Sprintf("error patch %d", patches[1].ID),
+		},
+		patchTypes: map[string]int{"Patch": 2},
+	})
 
 	// Now we add the authzFilter and filter out 2 repositories
-
 	filteredRepoIDs := map[api.RepoID]bool{
 		patches[0].RepoID:    true,
 		changesets[0].RepoID: true,
@@ -210,38 +219,21 @@ func TestRepositoryPermissions(t *testing.T) {
 	defer func() { db.MockAuthzFilter = nil }()
 
 	// Send query again and check that for each filtered repository we get a
-	// HiddenChangeset/HiddenPatch
-	apitest.MustExec(userCtx, t, s, nil, &response, query)
-	if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(campaign.ID)); have != want {
-		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
-	}
-
-	wantErrors = []string{
-		// patches[0] is filtered out
-		fmt.Sprintf("error patch %d", patches[1].ID),
-	}
-	if diff := cmp.Diff(response.Node.Status.Errors, wantErrors); diff != "" {
-		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
-	}
-
-	changesetTypes = map[string]int{}
-	for _, c := range response.Node.Changesets.Nodes {
-		changesetTypes[c.Typename]++
-	}
-	wantChangesetTypes = map[string]int{"ExternalChangeset": 1, "HiddenExternalChangeset": 1}
-	if diff := cmp.Diff(wantChangesetTypes, changesetTypes); diff != "" {
-		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
-	}
-
-	patchTypes = map[string]int{}
-	for _, p := range response.Node.Patches.Nodes {
-		patchTypes[p.Typename]++
-	}
-
-	wantPatchTypes = map[string]int{"Patch": 1, "HiddenPatch": 1}
-	if diff := cmp.Diff(wantPatchTypes, patchTypes); diff != "" {
-		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
-	}
+	// HiddenChangeset/HiddenPatch and that errors are filtered out
+	testCampaign(t, userCtx, campaign.ID, want{
+		changesetTypes: map[string]int{
+			"ExternalChangeset":       1,
+			"HiddenExternalChangeset": 1,
+		},
+		errors: []string{
+			// patches[0] is filtered out
+			fmt.Sprintf("error patch %d", patches[1].ID),
+		},
+		patchTypes: map[string]int{
+			"Patch":       1,
+			"HiddenPatch": 1,
+		},
+	})
 
 	// TODO: Test that the diffStat on `patchset` doesn't include the filtered patches diff stats
 	// TODO: Test that the diffStat on `campaign` doesn't include the filtered changesets diff stats
