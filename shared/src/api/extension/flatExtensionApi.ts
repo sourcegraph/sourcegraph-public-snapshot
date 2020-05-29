@@ -1,8 +1,9 @@
 import { SettingsCascade } from '../../settings/settings'
-import { Remote } from 'comlink'
+import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ReplaySubject, Subject, Unsubscribable } from 'rxjs'
-import { FlatExtHostAPI, MainThreadAPI, CommandHandle } from '../contract'
+import { ReplaySubject, Subject } from 'rxjs'
+import { FlatExtHostAPI, MainThreadAPI } from '../contract'
+import { syncSubscription } from '../util'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -14,7 +15,6 @@ export interface ExtState {
     // Workspace
     roots: readonly sourcegraph.WorkspaceRoot[]
     versionContext: string | undefined
-    registeredCommands: Map<CommandHandle, (...args: any[]) => unknown>
 }
 
 export interface InitResult {
@@ -35,13 +35,13 @@ export type PartialWorkspaceNamespace = Omit<
 >
 /**
  * Holds internally ExtState and manages communication with the Client
- * Returns initialized public Ext API ready for consumption and API object ready to be passed to the main thread
+ * Returns initialized public Ext API ready for consumption and API object marshaled into Client
  * NOTE that this function will slowly merge with the one in extensionHost.ts
  *
  * @param mainAPI
  */
 export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined, registeredCommands: new Map() }
+    const state: ExtState = { roots: [], versionContext: undefined }
 
     const configChanges = new ReplaySubject<void>(1)
 
@@ -64,10 +64,6 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
             state.versionContext = ctx
             versionContextChanges.next(ctx)
         },
-
-        // Commands
-        // note that it is noop if there is an error or race condition with unregistering commands
-        executeExtensionCommand: (handle, args) => state.registeredCommands.get(handle)?.(...args),
     }
 
     // Configuration
@@ -97,15 +93,7 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
         executeCommand: (cmd, args) => mainAPI.executeCommand(cmd, args),
-        registerCommand: (cmd, callback) =>
-            unsubPromise(mainAPI.registerCommand(cmd), {
-                ok: handle => state.registeredCommands.set(handle, callback),
-                unsub: handle => {
-                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    mainAPI.unregisterCommand(handle)
-                    state.registeredCommands.delete(handle)
-                },
-            }),
+        registerCommand: (cmd, callback) => syncSubscription(mainAPI.registerCommand(cmd, proxy(callback))),
     }
 
     return {
@@ -116,66 +104,5 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
         workspace,
         state,
         commands,
-    }
-}
-
-/**
- * a function that handles a promise and sync returns an Unsubscribable
- * This is needed to be able to do this:
- * ```
- * const {unsubscribe} = subscribePromise(promise, {
- *      ok: ()=> log('ok'),
- *      unsub: ()=>log('unsub')
- * })
- * unsubscribe()
- * ```
- * Note that in the example above log('ok') wont be called but log('unsub') will when the promise resolves
- *
- *
- * @param promise {@link Promise} that will result in a value
- * @param handlers for success and proper cleanup. Note: cleanup will be called even after unsubscribe()
- */
-function unsubPromise<T>(
-    promise: Promise<T>,
-    {
-        ok,
-        unsub,
-    }: {
-        ok: (data: T) => void
-        unsub: (data: T) => void
-    }
-): Unsubscribable {
-    // state machine
-    // keeps track of the current state of the promise execution
-    let state: 'ok' | 'pending' | 'unsubbed' = 'pending'
-    // valid only in ok state, would be nice to use descriminated union
-    // but probably too much boilerplate to be worth it without a library
-    let data: T | undefined
-
-    promise
-        .then(val => {
-            if (state === 'pending') {
-                state = 'ok'
-                data = val
-                ok(val)
-            }
-            if (state === 'unsubbed') {
-                // even though we didn't call ok() we still might want to perform other cleanups
-                unsub(val)
-            }
-        })
-        .catch(e => {
-            // Err?
-        })
-
-    return {
-        unsubscribe: () => {
-            const prev = state
-            state = 'unsubbed'
-            if (prev === 'ok') {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                unsub(data!)
-            }
-        },
     }
 }
