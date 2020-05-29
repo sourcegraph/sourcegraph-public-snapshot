@@ -154,9 +154,9 @@ const (
 	// Balanced quotes remain expected for non-empty fields like repo:"foo",
 	// if specified.
 	literalSearchPatterns = "LiteralSearchPatterns"
-	// If present, implies that at least one expression was unambiguated by
+	// If present, implies that at least one expression was disambiguated by
 	// explicit parentheses.
-	unambiguated = "Unambiguated"
+	disambiguated = "Disambiguated"
 )
 
 type parser struct {
@@ -741,7 +741,7 @@ loop:
 				// group as part of an and/or expression.
 				_ = p.expect(LPAREN) // Guaranteed to succeed.
 				p.balanced++
-				p.heuristic[unambiguated] = true
+				p.heuristic[disambiguated] = true
 				result, err := p.parseOr()
 				if err != nil {
 					return nil, err
@@ -750,7 +750,7 @@ loop:
 			}
 		case p.expect(RPAREN) && !p.heuristic[allowDanglingParens]:
 			p.balanced--
-			p.heuristic[unambiguated] = true
+			p.heuristic[disambiguated] = true
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if p.heuristic[parensAsPatterns] {
@@ -936,7 +936,7 @@ func ParseAndOr(in string) ([]Node, map[heuristic]bool, error) {
 		}
 		return nil, nil, errors.New("unbalanced expression")
 	}
-	if !parser.heuristic[unambiguated] {
+	if !parser.heuristic[disambiguated] {
 		// Hoist or expressions if this query is potential ambiguous.
 		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
