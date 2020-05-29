@@ -3,26 +3,32 @@ import { updateSettings } from './services/settings'
 import { Subscription, from } from 'rxjs'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { switchMap } from 'rxjs/operators'
+import { switchMap, concatMap } from 'rxjs/operators'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
-import { WorkspaceService } from './services/workspaceService'
-import { CommandRegistry } from './services/command'
 import { ProxySubscription } from './api/common'
+import { Services } from './services'
+
+// for now it will partially mimic Services object but hopefully will be incrementally reworked in the process
+export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
 
 export const initMainThreadAPI = (
-    ext: Remote<FlatExtHostAPI>,
+    extentionHost: Remote<FlatExtHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
-    { roots, versionContext }: WorkspaceService,
-    cmdRegistry: Pick<CommandRegistry, 'executeCommand' | 'registerCommand'>
-): [MainThreadAPI, Subscription] => {
-    const sub = new Subscription()
+    dependencies: MainThreadAPIDependencies
+): { api: MainThreadAPI; subscription: Subscription } => {
+    const {
+        workspace: { roots, versionContext },
+        commands,
+    } = dependencies
+
+    const subscription = new Subscription()
     // Settings
-    sub.add(
+    subscription.add(
         from(platformContext.settings)
             .pipe(
                 switchMap(settings => {
                     if (isSettingsValid(settings)) {
-                        return ext.syncSettingsData(settings)
+                        return extentionHost.syncSettingsData(settings)
                     }
                     return []
                 })
@@ -31,30 +37,28 @@ export const initMainThreadAPI = (
     )
 
     // Workspace
-    sub.add(
-        roots.subscribe(rs => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            ext.syncRoots(rs || [])
-        })
+    subscription.add(
+        from(roots)
+            .pipe(concatMap(rs => extentionHost.syncRoots(rs)))
+            .subscribe()
     )
-    sub.add(
-        versionContext.subscribe(ctx => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            ext.syncVersionContext(ctx)
-        })
+    subscription.add(
+        from(versionContext)
+            .pipe(concatMap(ctx => extentionHost.syncVersionContext(ctx)))
+            .subscribe()
     )
 
     // Commands
-    const mainAPI: MainThreadAPI = {
+    const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
-        executeCommand: (command, args) => cmdRegistry.executeCommand({ command, arguments: args }),
+        executeCommand: (command, args) => commands.executeCommand({ command, arguments: args }),
         registerCommand: (command, run) => {
             const subscription = new Subscription()
-            subscription.add(cmdRegistry.registerCommand({ command, run }))
+            subscription.add(commands.registerCommand({ command, run }))
             subscription.add(new ProxySubscription(run))
             return proxy(subscription)
         },
     }
 
-    return [mainAPI, sub]
+    return { api, subscription }
 }
