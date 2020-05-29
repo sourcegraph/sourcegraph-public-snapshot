@@ -20,6 +20,15 @@
     {
       "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
       "reviewers": ["beyang"]
+    },
+    {
+      "packageNames": ["index.docker.io/sourcegraph/grafana", "index.docker.io/sourcegraph/prometheus"],
+      "groupName": "Sourcegraph Prometheus / Grafana Docker images",
+      "allowedVersions": "<10.0",
+      "versionScheme": "semver",
+      "ignoreUnstable": false,
+      "semanticCommits": false,
+      "automerge": false
     }
   ]
 }
