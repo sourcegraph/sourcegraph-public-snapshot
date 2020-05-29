@@ -13,7 +13,7 @@ import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
-import { ensureRev } from '../code-hosts/shared/util/fileInfo'
+import { defaultRevToCommitID } from '../code-hosts/shared/util/fileInfo'
 
 export interface ButtonProps {
     className?: string
@@ -81,15 +81,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                 sourcegraphURL: props.sourcegraphURL,
                                 repoName: props.fileInfoOrError.base.repoName,
                                 filePath: props.fileInfoOrError.base.filePath,
-                                rev: ensureRev(props.fileInfoOrError.base).rev,
+                                rev: defaultRevToCommitID(props.fileInfoOrError.base).rev,
                                 query: {
                                     diff: {
                                         rev: props.fileInfoOrError.base.commitID,
                                     },
                                 },
                                 commit: {
-                                    baseRev: ensureRev(props.fileInfoOrError.base).rev,
-                                    headRev: ensureRev(props.fileInfoOrError.head).rev,
+                                    baseRev: defaultRevToCommitID(props.fileInfoOrError.base).rev,
+                                    headRev: defaultRevToCommitID(props.fileInfoOrError.head).rev,
                                 },
                             }}
                         />
@@ -108,7 +108,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                     sourcegraphURL: props.sourcegraphURL,
                                     repoName: props.fileInfoOrError.blob.repoName,
                                     filePath: props.fileInfoOrError.blob.filePath,
-                                    rev: ensureRev(props.fileInfoOrError.blob).rev,
+                                    rev: defaultRevToCommitID(props.fileInfoOrError.blob).rev,
                                 }}
                             />
                         </li>

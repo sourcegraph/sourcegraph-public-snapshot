@@ -36,7 +36,7 @@ const resolveRepoNameForFileInfo = (
         })
     )
 
-export const ensureRev = <T extends FileInfo>(fileInfo: T): T & { rev: string } => ({
+export const defaultRevToCommitID = <T extends FileInfo>(fileInfo: T): T & { rev: string } => ({
     ...fileInfo,
     rev: fileInfo.rev || fileInfo.commitID,
 })

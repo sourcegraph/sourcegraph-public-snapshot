@@ -111,7 +111,7 @@ import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
-import { resolveRepoNamesForDiffOrFileInfo, ensureRev } from './util/fileInfo'
+import { resolveRepoNamesForDiffOrFileInfo, defaultRevToCommitID } from './util/fileInfo'
 
 registerHighlightContributions()
 
@@ -940,13 +940,13 @@ export function handleCodeHost({
             // Add hover code intelligence
             const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({ part }) => {
                 if ('blob' in diffOrBlobInfo) {
-                    return ensureRev(diffOrBlobInfo.blob)
+                    return defaultRevToCommitID(diffOrBlobInfo.blob)
                 }
                 if ('head' in diffOrBlobInfo && part === 'head') {
-                    return ensureRev(diffOrBlobInfo.head)
+                    return defaultRevToCommitID(diffOrBlobInfo.head)
                 }
                 if ('base' in diffOrBlobInfo && part === 'base') {
-                    return ensureRev(diffOrBlobInfo.base)
+                    return defaultRevToCommitID(diffOrBlobInfo.base)
                 }
                 // TODO: confirm if we should throw an error here.
                 throw new Error(`Could not resolve context for diff part ${JSON.stringify(part)}`)
