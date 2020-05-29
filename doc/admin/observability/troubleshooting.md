@@ -54,7 +54,7 @@ The fix is to increase the memory on Postgres DB which will increase certain Pos
 the queries from repo-updater to go through.
 
 Another cause could be that the `repo-updater` is in a crash loop for some reason. If there are large numbers of repos
-to be updated it could be from `Out of memory` errors. A fix here is to increase the memory for `repo-updater` too.
+to be updated it could be from `Out of memory` errors. A fix here is to increase the memory for `repo-updater` instead.
 
 ## General scenarios
 
