@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -139,7 +138,7 @@ func TestReadReferences(t *testing.T) {
 }
 
 func testReader(t *testing.T) persistence.Reader {
-	reader, err := NewReader("./testdata/lsif-go@ad3507cb.lsif.db", jsonserializer.New())
+	reader, err := NewReader("./testdata/lsif-go@ad3507cb.lsif.db")
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

@@ -9,8 +9,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/schema"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
@@ -18,9 +19,9 @@ import (
 const InternalVersion = "0.1.0"
 
 type sqliteWriter struct {
-	serializer          serialization.Serializer
 	db                  *sqlx.DB
 	tx                  *sql.Tx
+	serializer          serialization.Serializer
 	metaInserter        *sqliteutil.BatchInserter
 	documentInserter    *sqliteutil.BatchInserter
 	resultChunkInserter *sqliteutil.BatchInserter
@@ -30,7 +31,7 @@ type sqliteWriter struct {
 
 var _ persistence.Writer = &sqliteWriter{}
 
-func NewWriter(filename string, serializer serialization.Serializer) (_ persistence.Writer, err error) {
+func NewWriter(filename string) (_ persistence.Writer, err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err
@@ -58,9 +59,9 @@ func NewWriter(filename string, serializer serialization.Serializer) (_ persiste
 	definitionsReferencesColumns := []string{"scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter"}
 
 	return &sqliteWriter{
-		serializer:          serializer,
 		db:                  db,
 		tx:                  tx,
+		serializer:          jsonserializer.New(),
 		metaInserter:        sqliteutil.NewBatchInserter(tx, "meta", metaColumns...),
 		documentInserter:    sqliteutil.NewBatchInserter(tx, "documents", documentsColumns...),
 		resultChunkInserter: sqliteutil.NewBatchInserter(tx, "resultChunks", resultChunksColumns...),
