@@ -213,11 +213,9 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
-	// 🚨 SECURITY: Only site admins can perform precise counts, because it is a slow operation.
+	// 🚨 SECURITY: Only site admins can do this, because a total repository count does not respect repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if args.Precise {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	i32ptr := func(v int32) *int32 {

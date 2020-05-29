@@ -32,7 +32,7 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": 3,
+						"totalCount": null,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
