@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -21,9 +20,8 @@ func TestWrite(t *testing.T) {
 
 	ctx := context.Background()
 	filename := filepath.Join(tempDir, "test.db")
-	serializer := jsonserializer.New()
 
-	writer, err := NewWriter(filename, serializer)
+	writer, err := NewWriter(filename)
 	if err != nil {
 		t.Fatalf("unexpected error while opening writer: %s", err)
 	}
@@ -107,7 +105,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 
-	reader, err := NewReader(filename, serializer)
+	reader, err := NewReader(filename)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

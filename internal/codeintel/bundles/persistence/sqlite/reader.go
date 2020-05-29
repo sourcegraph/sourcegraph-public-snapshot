@@ -10,7 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	pkgerrors "github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -23,7 +24,7 @@ type sqliteReader struct {
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(filename string, serializer serialization.Serializer) (_ persistence.Reader, err error) {
+func NewReader(filename string) (_ persistence.Reader, err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func NewReader(filename string, serializer serialization.Serializer) (_ persiste
 
 	return &sqliteReader{
 		db:         db,
-		serializer: serializer,
+		serializer: jsonserializer.New(),
 	}, nil
 }
 

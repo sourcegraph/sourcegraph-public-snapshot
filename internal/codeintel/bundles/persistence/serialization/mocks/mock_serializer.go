@@ -3,14 +3,14 @@
 package mocks
 
 import (
-	serialization "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
+	serialization "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"sync"
 )
 
 // MockSerializer is a mock impelementation of the Serializer interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization)
 // used for unit testing.
 type MockSerializer struct {
 	// MarshalDocumentDataFunc is an instance of a mock function object
