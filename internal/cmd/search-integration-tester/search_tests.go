@@ -186,8 +186,19 @@ func runSearchTests() error {
 		}
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
-		if err := assertGolden(test.Name, goldenPath, got, update); err != nil {
-			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err)
+		if err := assertGolden(test.Name, goldenPath, got); err != nil {
+			if update || updateAll {
+				err := assertUpdate(goldenPath, got)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("Updated Test %s\n", test.Name)
+				if update {
+					return nil
+				}
+				continue
+			}
+			return fmt.Errorf("TEST FAILURE: %s\nQuery: %s\n%s", test.Name, test.Query, err)
 		}
 	}
 	return nil
