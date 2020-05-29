@@ -578,7 +578,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 	case *github.PullRequest:
 		return m.HeadRefOid, nil
 	case *bitbucketserver.PullRequest:
-		return "", nil
+		return m.Commits[len(m.Commits)-1].ID, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}

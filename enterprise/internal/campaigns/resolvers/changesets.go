@@ -340,6 +340,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	// The best bet is to use the head ref + head ref oid we get from the codehost.
 	name, err := r.Changeset.HeadRef()
 	if err != nil {
 		return nil, err
@@ -347,59 +348,43 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 	if name == "" {
 		return nil, errors.New("changeset head ref could not be determined")
 	}
-
-	fetchByHiddenHeadRef := func() (*graphqlbackend.GitRefResolver, error) {
-		// If the revision is not found on the branch, that could
-		// indicate the branch was deleted. Try to use the hidden
-		// ref instead.
-		changesetRef, err := r.Changeset.HiddenHeadRef()
-		if err != nil {
-			return nil, err
-		}
-		// The hidden refs are fetched automatically, so we don't
-		// need to ensure that revision. If it doesn't exist, the
-		// code host pruned it.
-		resolver, err := r.gitRef(ctx, changesetRef, "", true)
-		if err != nil {
-			if gitserver.IsRevisionNotFound(err) {
-				return nil, nil
-			}
-			return nil, err
-		}
-		return resolver, nil
-	}
-
-	var oid string
-	if r.ExternalState == campaigns.ChangesetStateMerged {
-		// The PR was merged, find the merge commit
-		events, err := r.computeEvents(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "fetching changeset events")
-		}
-		oid = ee.ChangesetEvents(events).FindMergeCommitID()
-		// If the changeset is closed, fall back to the hidden ref immediately.
-		// There is a chance the branch still exists, but it could have been
-		// modified since it was closed, and we are only interested in the state
-		// at the point where this changeset was open.
-	} else if r.ExternalState == campaigns.ChangesetStateClosed {
-		return fetchByHiddenHeadRef()
-	}
-	if oid == "" {
-		// Fall back to the head ref
-		oid, err = r.Changeset.HeadRefOid()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	resolver, err := r.gitRef(ctx, name, oid, false)
+	oid, err := r.Changeset.HeadRefOid()
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
-			return fetchByHiddenHeadRef()
-		}
 		return nil, err
 	}
-	return resolver, nil
+	resolver, err := r.gitRef(ctx, name, oid, false)
+	if err == nil {
+		return resolver, nil
+	}
+	if !gitserver.IsRevisionNotFound(err) {
+		return nil, err
+	}
+	// Otherwise, try to use the hidden ref.
+	changesetRef, err := r.Changeset.HiddenHeadRef()
+	if err != nil {
+		return nil, err
+	}
+	// The hidden refs are fetched automatically, so we don't
+	// need to ensure that revision. If it doesn't exist, the
+	// code host pruned it.
+	resolver, err = r.gitRef(ctx, changesetRef, "", true)
+	if err == nil {
+		return resolver, nil
+	}
+	if !gitserver.IsRevisionNotFound(err) {
+		return nil, err
+	}
+	// The last option is to directly reference the commit outside
+	// of any branch, hoping it has not been GC'd.
+	resolver, err = r.gitRef(ctx, "", oid, false)
+	if err == nil {
+		return resolver, nil
+	}
+	if !gitserver.IsRevisionNotFound(err) {
+		return nil, err
+	}
+	// Otherwise we need to give up.
+	return nil, nil
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
