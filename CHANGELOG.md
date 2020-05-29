@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
 - Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
+- Sourcegraph is now built with Go 1.14.3, fixing issues running Sourcegraph onUbuntu 19 and 20. [#10447](https://github.com/sourcegraph/sourcegraph/issues/10447)
 
 ## 3.16.0
 
