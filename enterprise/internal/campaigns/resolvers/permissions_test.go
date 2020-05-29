@@ -236,7 +236,6 @@ func TestRepositoryPermissions(t *testing.T) {
 	})
 
 	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
-	// TODO: test that the patches on campaign.patchset.patches are also hidden
 }
 
 type wantCampaignResponse struct {
@@ -283,6 +282,13 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected campaign diff stat (-want +got):\n%s", diff)
 	}
 
+	patchSetPatchTypes := map[string]int{}
+	for _, p := range response.Node.PatchSet.Patches.Nodes {
+		patchSetPatchTypes[p.Typename]++
+	}
+	if diff := cmp.Diff(w.patchTypes, patchSetPatchTypes); diff != "" {
+		t.Fatalf("unexpected patch set patch types (-want +got):\n%s", diff)
+	}
 	if diff := cmp.Diff(w.patchSetDiffStat, response.Node.PatchSet.DiffStat); diff != "" {
 		t.Fatalf("unexpected patch set diff stat (-want +got):\n%s", diff)
 	}
@@ -342,6 +348,22 @@ query {
           added
           changed
           deleted
+        }
+
+        patches(first: 100) {
+          nodes {
+            __typename
+            ... on HiddenPatch {
+              id
+            }
+            ... on Patch {
+              id
+              repository {
+                id
+                name
+              }
+            }
+          }
         }
       }
     }
