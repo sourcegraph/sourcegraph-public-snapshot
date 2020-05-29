@@ -11,7 +11,10 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-    tini
+    tini musl-dev go
+
+ENV GOROOT=/usr/lib/go GOPATH=/go PATH=/go/bin:$PATH
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 
 RUN mkdir temp && \
     curl -L https://github.com/sourcegraph/src-cli/releases/download/3.12.0/src-cli_3.12.0_linux_amd64.tar.gz -o src-cli.tar.gz && \
