@@ -41,38 +41,58 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 	return cfg, nil
 }
 
-// requireRestart describes the list of config properties that require
-// restarting the Sourcegraph Server in order for the change to take effect.
-//
-// Experimental features are special in that they are denoted individually
-// via e.g. "experimentalFeatures::myFeatureFlag".
-var requireRestart = []string{
-	"auth.accessTokens",
-	"auth.sessionExpiry",
-	"git.cloneURLToRepositoryName",
-	"searchScopes",
-	"extensions",
-	"disablePublicRepoRedirects",
-	"auth.userOrgMap",
-	"auth.providers",
-	"externalURL",
-	"update.channel",
-	"useJaeger",
-	"lightstepAccessToken",
-	"lightstepProject",
+// PostConfigWriteActions defines actions that should be taken after a config
+// property is changed in order for the user to see the change take effect.
+type PostConfigWriteActions struct {
+	FrontendReloadRequired bool
+	ServerRestartRequired  bool
 }
 
-// NeedRestartToApply determines if a restart is needed to apply the changes
-// between the two configurations.
-func NeedRestartToApply(before, after *Unified) bool {
-	// Check every option that changed to determine whether or not a server
-	// restart is required.
+type configPropertyActionSchema map[string]PostConfigWriteActions
+
+// configPropertiesRequiringAction describes the list of config properties that
+// require action to be taken after being changed.
+//
+// Experimental features are special in that they are denoted individually via
+// e.g. "experimentalFeatures::myFeatureFlag".
+var configPropertiesRequiringAction = configPropertyActionSchema{
+	"auth.accessTokens":                {ServerRestartRequired: true},
+	"auth.providers":                   {ServerRestartRequired: true},
+	"auth.sessionExpiry":               {ServerRestartRequired: true},
+	"auth.userOrgMap":                  {ServerRestartRequired: true},
+	"disablePublicRepoRedirects":       {ServerRestartRequired: true},
+	"experimentalFeatures::automation": {FrontendReloadRequired: true},
+	"extensions":                       {ServerRestartRequired: true},
+	"externalURL":                      {ServerRestartRequired: true},
+	"git.cloneURLToRepositoryName":     {ServerRestartRequired: true},
+	"lightstepAccessToken":             {ServerRestartRequired: true},
+	"lightstepProject":                 {ServerRestartRequired: true},
+	"searchScopes":                     {ServerRestartRequired: true},
+	"update.channel":                   {ServerRestartRequired: true},
+	"useJaeger":                        {ServerRestartRequired: true},
+}
+
+func needActionToApply(before, after *Unified, schema configPropertyActionSchema) PostConfigWriteActions {
+	actions := PostConfigWriteActions{}
+
+	// Check every option that changed to determine whether or not action should
+	// be taken.
 	for option := range diff(before, after) {
-		for _, requireRestartOption := range requireRestart {
-			if option == requireRestartOption {
-				return true
+		if action, ok := schema[option]; ok {
+			if action.FrontendReloadRequired {
+				actions.FrontendReloadRequired = true
+			}
+			if action.ServerRestartRequired {
+				actions.ServerRestartRequired = true
 			}
 		}
 	}
-	return false
+
+	return actions
+}
+
+// NeedActionToApply determines if action needs to be taken to apply the changes
+// between the two configurations.
+func NeedActionToApply(before, after *Unified) PostConfigWriteActions {
+	return needActionToApply(before, after, configPropertiesRequiringAction)
 }

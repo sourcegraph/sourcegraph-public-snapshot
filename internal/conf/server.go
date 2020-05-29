@@ -26,8 +26,8 @@ type Server struct {
 
 	store *store
 
-	needRestartMu sync.RWMutex
-	needRestart   bool
+	needServerRestartMu sync.RWMutex
+	needServerRestart   bool
 
 	// fileWrite signals when our app writes to the configuration file. The
 	// secondary channel is closed when server.Raw() would return the new
@@ -184,9 +184,14 @@ func (s *Server) updateFromSource(ctx context.Context) error {
 		return nil
 	}
 
-	// Update global "needs restart" state.
-	if NeedRestartToApply(configChange.Old, configChange.New) {
+	// Update global "action has to be taken for the configuration to apply"
+	// state.
+	actions := NeedActionToApply(configChange.Old, configChange.New)
+	if actions.ServerRestartRequired {
 		s.markNeedServerRestart()
+	}
+	if actions.FrontendReloadRequired {
+		// TODO: take appropriate action.
 	}
 
 	return nil
@@ -195,15 +200,15 @@ func (s *Server) updateFromSource(ctx context.Context) error {
 // NeedServerRestart tells if the server needs to restart for pending configuration
 // changes to take effect.
 func (s *Server) NeedServerRestart() bool {
-	s.needRestartMu.RLock()
-	defer s.needRestartMu.RUnlock()
-	return s.needRestart
+	s.needServerRestartMu.RLock()
+	defer s.needServerRestartMu.RUnlock()
+	return s.needServerRestart
 }
 
 // markNeedServerRestart marks the server as needing a restart so that pending
 // configuration changes can take effect.
 func (s *Server) markNeedServerRestart() {
-	s.needRestartMu.Lock()
-	s.needRestart = true
-	s.needRestartMu.Unlock()
+	s.needServerRestartMu.Lock()
+	defer s.needServerRestartMu.Unlock()
+	s.needServerRestart = true
 }
