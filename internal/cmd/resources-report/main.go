@@ -14,9 +14,10 @@ import (
 const resultsBuffer = 5
 
 type options struct {
-	slackWebhook *string
-	sheetID      *string
-	window       *time.Duration
+	slackWebhook    *string
+	sheetID         *string
+	window          *time.Duration
+	highlightWindow *time.Duration
 
 	gcp                *bool
 	gcpLabelsWhitelist map[string]string
@@ -35,11 +36,12 @@ func main() {
 	gcpWhitelistLabelsStr := flag.String("gcp.whitelist", "", "GCP labels to whitelist (comma-separated key:value pairs)")
 	awsWhitelistTagsStr := flag.String("aws.whitelist", "", "AWS tags to whitelist (comma-separated key:value pairs)")
 	opts := options{
-		slackWebhook: flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
-		sheetID:      flag.String("sheet.id", os.Getenv("SHEET_ID"), "Slack webhook to post updates to"),
-		gcp:          flag.Bool("gcp", false, "Report on Google Cloud resources"),
-		aws:          flag.Bool("aws", false, "Report on Amazon Web Services resources"),
-		window:       flag.Duration("window", 48*time.Hour, "Restrict results to resources created within a period"),
+		slackWebhook:    flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
+		sheetID:         flag.String("sheet.id", os.Getenv("SHEET_ID"), "Slack webhook to post updates to"),
+		gcp:             flag.Bool("gcp", false, "Report on Google Cloud resources"),
+		aws:             flag.Bool("aws", false, "Report on Amazon Web Services resources"),
+		window:          flag.Duration("window", 48*time.Hour, "Restrict results to resources created within a period"),
+		highlightWindow: flag.Duration("window.highlight", 24*time.Hour, "Highlight resources created within a period"),
 
 		runID:   flag.String("run.id", os.Getenv("GITHUB_RUN_ID"), "ID of workflow run"),
 		dry:     flag.Bool("dry", false, "Do not post updates to slack, but print them to stdout"),
@@ -96,7 +98,7 @@ func run(opts options) error {
 		log.Println("collected resources:\n", reportString(resources))
 		log.Printf("found a total of %d resources created since %s", len(resources), since.String())
 	}
-	if !*opts.dry && *opts.slackWebhook != "" && *opts.sheetID != "" {
+	if !*opts.dry {
 		if err := generateReport(ctx, opts, resources); err != nil {
 			return fmt.Errorf("report: %w", err)
 		}
