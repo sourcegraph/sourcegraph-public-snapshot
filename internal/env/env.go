@@ -1,7 +1,6 @@
 package env
 
 import (
-	"encoding/json"
 	"expvar"
 	"fmt"
 	"io"
@@ -16,9 +15,15 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-var descriptions = make(map[string]string)
+type envflag struct {
+	name        string
+	description string
+	value       string
+}
+
+var env []envflag
+var environ map[string]string
 var locked = false
-var env = expvar.NewMap("env")
 
 var (
 	// MyName represents the name of the current process.
@@ -83,52 +88,64 @@ func Get(name, defaultValue, description string) string {
 		panic("env.Get has to be called on package initialization")
 	}
 
-	if _, ok := descriptions[name]; ok {
-		panic(fmt.Sprintf("%q already registered", name))
+	// os.LookupEnv is a syscall. We use Get a lot on startup in many
+	// packages. This leads to it being the main contributer to init being
+	// slow. So we avoid the constant syscalls by checking env once.
+	if environ == nil {
+		environ = environMap(os.Environ())
 	}
-
-	if defaultValue != "" {
-		description = fmt.Sprintf("%s (default: %q)", description, defaultValue)
-	}
-	descriptions[name] = description
 
 	// Allow per-process override. For instance, SRC_LOG_LEVEL_repo_updater would
 	// apply to repo-updater, but not to anything else.
 	perProg := name + "_" + envVarName
-	value, ok := os.LookupEnv(perProg)
+	value, ok := environ[perProg]
 	if !ok {
-		value, ok = os.LookupEnv(name)
+		value, ok = environ[name]
 		if !ok {
 			value = defaultValue
 		}
 	}
-	env.Set(name, jsonStringer(value))
+
+	env = append(env, envflag{
+		name:        name,
+		description: description,
+		value:       value,
+	})
+
 	return value
 }
 
-type jsonStringer string
-
-func (s jsonStringer) String() string {
-	v, _ := json.Marshal(s)
-	return string(v)
+func environMap(environ []string) map[string]string {
+	m := make(map[string]string, len(environ))
+	for _, e := range environ {
+		i := strings.Index(e, "=")
+		m[e[:i]] = e[i+1:]
+	}
+	return m
 }
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
 func Lock() {
 	locked = true
+
+	sort.Slice(env, func(i, j int) bool { return env[i].name < env[j].name })
+
+	for i := 1; i < len(env); i++ {
+		if env[i-1].name == env[i].name {
+			panic(fmt.Sprintf("%q already registered", env[i].name))
+		}
+	}
+
+	expvar.Publish("env", expvar.Func(func() interface{} {
+		return env
+	}))
 }
 
 // PrintHelp prints a list of all registered environment variables and their descriptions.
 func PrintHelp() {
-	var names []string
-	for name := range descriptions {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
 	log.Print("Environment variables:")
-	for _, name := range names {
-		log.Printf("  %-40s %s", name, descriptions[name])
+	for _, e := range env {
+		log.Printf("  %-40s %s (value: %q)", e.name, e.description, e.value)
 	}
 }
 

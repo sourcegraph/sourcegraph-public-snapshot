@@ -204,8 +204,8 @@ export function createViewerService(modelService: Pick<ModelService, 'removeMode
                     map(() => getViewer(viewerId)),
                     startWith(viewer)
                 )
-            } catch (err) {
-                return throwError(err)
+            } catch (error) {
+                return throwError(error)
             }
         },
         setSelections({ viewerId }: ViewerId, selections: Selection[]): void {

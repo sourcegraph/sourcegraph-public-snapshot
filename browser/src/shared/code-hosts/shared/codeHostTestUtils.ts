@@ -62,7 +62,7 @@ export async function getFixtureBody({
         )
     }
     if (!(template.content.firstElementChild instanceof HTMLElement)) {
-        throw new Error(`Fixture must be HTML: ${htmlFixturePath}`)
+        throw new TypeError(`Fixture must be HTML: ${htmlFixturePath}`)
     }
     return template.content.firstElementChild
 }
@@ -111,9 +111,9 @@ export function testMountGetter(
             try {
                 getMount(container)
                 assert.fail('Expected function to throw an Error')
-            } catch (err) {
+            } catch (error) {
                 // "Cannot read property foo of null" does not count!
-                expect(err).not.toBeInstanceOf(TypeError)
+                expect(error).not.toBeInstanceOf(TypeError)
             }
         })
     }

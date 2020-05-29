@@ -25,7 +25,7 @@ import {
 import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
-import { initMainThreadAPI } from './mainthreadAPI'
+import { initMainThreadAPI } from './mainthreadApi'
 
 export interface ExtensionHostClientConnection {
     /**

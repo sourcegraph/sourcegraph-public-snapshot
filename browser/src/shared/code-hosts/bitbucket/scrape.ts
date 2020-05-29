@@ -65,8 +65,8 @@ const getFileInfoFromLinkInSingleFileView = (
                 project,
                 repoSlug,
             }
-        } catch (err) {
-            errors.push(err)
+        } catch (error) {
+            errors.push(error)
             continue
         }
     }
@@ -97,7 +97,7 @@ const getCommitIDFromRevisionSelector = (): string => {
     try {
         const { latestCommit }: { latestCommit: string } = JSON.parse(revisionSelectorSpan.dataset.revisionRef!)
         return latestCommit
-    } catch (err) {
+    } catch {
         throw new Error('Could not parse JSON from revision selector')
     }
 }
@@ -161,7 +161,7 @@ const getChangeType = ({ changeTypeElement }: { changeTypeElement: HTMLElement |
     if (!changeTypeElement) {
         return 'MODIFY'
     }
-    const className = Array.from(changeTypeElement.classList).find(c => /^change-type-[A-Z]+/.test(c))
+    const className = [...changeTypeElement.classList].find(c => /^change-type-[A-Z]+/.test(c))
     if (!className) {
         throw new Error('Could not detect change type from change type element')
     }
@@ -269,7 +269,7 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     }
     const filePath = breadcrumbsElement.textContent
     if (!filePath) {
-        throw Error('Unexpected empty file path in breadcrumbs')
+        throw new Error('Unexpected empty file path in breadcrumbs')
     }
 
     // Get project and repo from the URL

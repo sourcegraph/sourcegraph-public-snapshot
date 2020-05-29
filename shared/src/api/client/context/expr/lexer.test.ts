@@ -149,14 +149,14 @@ describe('Lexer', () => {
                 if (op.length === 1) {
                     expect(
                         OPERATOR_CHARS[op] === true ||
-                            (OPERATOR_CHARS[op] as { [ch: string]: OperatorTree })['\x00'] === true
+                            (OPERATOR_CHARS[op] as { [ch: string]: OperatorTree })['\u0000'] === true
                     ).toBeTruthy()
                 } else if (op.length === 2) {
                     expect(
                         (OPERATOR_CHARS[op.charAt(0)] as { [ch: string]: OperatorTree })[op.charAt(1)] === true ||
                             ((OPERATOR_CHARS[op.charAt(0)] as { [ch: string]: OperatorTree })[op.charAt(1)] as {
                                 [ch: string]: OperatorTree
-                            })['\x00'] === true
+                            })['\u0000'] === true
                     ).toBeTruthy()
                 } else if (op.length === 3) {
                     expect(
@@ -165,7 +165,7 @@ describe('Lexer', () => {
                         })[op.charAt(2)] === true ||
                             (((OPERATOR_CHARS[op.charAt(0)] as { [ch: string]: OperatorTree })[op.charAt(1)] as {
                                 [ch: string]: OperatorTree
-                            })[op.charAt(2)] as { [ch: string]: OperatorTree })['\x00'] === true
+                            })[op.charAt(2)] as { [ch: string]: OperatorTree })['\u0000'] === true
                     ).toBeTruthy()
                 } else if (op.length > maxOpLength) {
                     throw new Error(`operators of length ${op.length} are not yet supported`)

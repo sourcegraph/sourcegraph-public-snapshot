@@ -35,6 +35,7 @@
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @slimsag
+/internal/cmd/ghe-feeder @uwedeportivo
 /internal/comby @rvantonder
 /internal/db/ @keegancsmith
 /internal/processrestart @slimsag @keegancsmith
@@ -70,7 +71,7 @@
 /dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
-/SECURITY.md @beyang @nicksnyder
+/SECURITY.md @sourcegraph/security
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
@@ -198,7 +199,7 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 /README.md @sqs
-/doc/ @sourcegraph/distribution @ryan-blunden
+/doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
 /doc/dev/web/ @felixfbecker @sourcegraph/web
 
@@ -233,7 +234,6 @@ Dockerfile @sourcegraph/distribution
 /internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
@@ -248,7 +248,6 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
-/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services

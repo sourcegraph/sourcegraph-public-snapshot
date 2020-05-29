@@ -20,7 +20,7 @@ export function formatHash(lpr: LineOrPositionOrRange, searchParams: URLSearchPa
     if (!lpr.line) {
         return `#${searchParams.toString()}`
     }
-    const anyParams = Array.from(searchParams).length > 0
+    const anyParams = [...searchParams].length > 0
     return `#L${formatLineOrPositionOrRange(lpr)}${anyParams ? '&' + searchParams.toString() : ''}`
 }
 
@@ -63,7 +63,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const loc = new URL(href, window.location.href)
     let pathname = loc.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
-        pathname = pathname.substr(0, pathname.length - 1) // trim trailing '/'
+        pathname = pathname.slice(0, -1) // trim trailing '/'
     }
 
     const indexOfSep = pathname.indexOf('/-/')
@@ -79,13 +79,13 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     if (indexOfSep === -1) {
         repoRev = pathname // the whole string
     } else {
-        repoRev = pathname.substring(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
+        repoRev = pathname.slice(0, indexOfSep) // the whole string leading up to the separator (allows rev to be multiple path parts)
     }
     const { repoName, rev } = parseRepoRev(repoRev)
     if (!repoName) {
         throw new Error('unexpected repo url: ' + href)
     }
-    const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
+    const commitID = rev && /^[\da-f]{40}$/i.test(rev) ? rev : undefined
 
     let filePath: string | undefined
     let commitRange: string | undefined
@@ -93,18 +93,18 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const blobSep = pathname.indexOf('/-/blob/')
     const comparisonSep = pathname.indexOf('/-/compare/')
     if (treeSep !== -1) {
-        filePath = pathname.substr(treeSep + '/-/tree/'.length)
+        filePath = pathname.slice(treeSep + '/-/tree/'.length)
     }
     if (blobSep !== -1) {
-        filePath = pathname.substr(blobSep + '/-/blob/'.length)
+        filePath = pathname.slice(blobSep + '/-/blob/'.length)
     }
     if (comparisonSep !== -1) {
-        commitRange = pathname.substr(comparisonSep + '/-/compare/'.length)
+        commitRange = pathname.slice(comparisonSep + '/-/compare/'.length)
     }
     let position: Position | undefined
     let range: Range | undefined
     if (loc.hash) {
-        const parsedHash = parseHash(loc.hash.substr('#'.length))
+        const parsedHash = parseHash(loc.hash.slice('#'.length))
         if (parsedHash.line) {
             position = {
                 line: parsedHash.line,

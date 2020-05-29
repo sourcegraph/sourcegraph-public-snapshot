@@ -62,7 +62,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      * @internal
      */
     public getAll(): ExtDocument[] {
-        return Array.from(this.documents.values())
+        return [...this.documents.values()]
     }
 
     public openedTextDocuments = new Subject<TextDocument>()

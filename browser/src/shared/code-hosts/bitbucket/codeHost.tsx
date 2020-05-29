@@ -1,7 +1,6 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -38,7 +37,7 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     mount.classList.add('sg-toolbar-mount')
     mount.classList.add('sg-toolbar-mount-bitbucket-server')
 
-    fileActions.insertAdjacentElement('afterbegin', mount)
+    fileActions.prepend(mount)
 
     return mount
 }
@@ -47,8 +46,8 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
  * Sometimes tabs are converted to spaces so we need to adjust. Luckily, there
  * is an attribute `cm-text` that contains the real text.
  */
-const createPositionAdjuster = (dom: DOMFunctions) => (
-    requestGraphQL: PlatformContext['requestGraphQL']
+const createPositionAdjuster = (
+    dom: DOMFunctions
 ): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) => {
     const codeElement = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
     if (!codeElement) {
@@ -84,14 +83,14 @@ const singleFileSourceCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount,
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
-    getPositionAdjuster: createPositionAdjuster(singleFileDOMFunctions),
+    getPositionAdjuster: () => createPositionAdjuster(singleFileDOMFunctions),
     toolbarButtonProps,
 }
 
 const baseDiffCodeView: Omit<CodeView, 'element' | 'resolveFileInfo'> = {
     getToolbarMount,
     dom: diffDOMFunctions,
-    getPositionAdjuster: createPositionAdjuster(diffDOMFunctions),
+    getPositionAdjuster: () => createPositionAdjuster(diffDOMFunctions),
     toolbarButtonProps,
 }
 /**
@@ -160,7 +159,7 @@ const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElemen
     const create = (): HTMLElement => {
         const mount = document.createElement('li')
         mount.className = classes.join(' ')
-        headerElement.insertAdjacentElement('beforeend', mount)
+        headerElement.append(mount)
         return mount
     }
     const preexisting = headerElement.querySelector<HTMLElement>(classes.map(c => `.${c}`).join(''))
@@ -179,7 +178,7 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     const mount = document.createElement('span')
     mount.id = 'open-on-sourcegraph'
     mount.className = 'open-on-sourcegraph--bitbucket-server'
-    branchSelectorButtons.insertAdjacentElement('beforeend', mount)
+    branchSelectorButtons.append(mount)
     return mount
 }
 

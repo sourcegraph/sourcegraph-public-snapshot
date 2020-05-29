@@ -550,12 +550,12 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	return campaign, nil
 }
 
-// CreateChangesetJobForPatch creates a ChangesetJob for the
-// Patch with the given ID. The Patch has to belong to a
-// PatchSet that was attached to a Campaign.
-func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
+// EnqueueChangesetJobForPatch queues a ChangesetJob for the Patch with the
+// given ID, creating it if necessary. The Patch has to belong to a PatchSet
+// that was attached to a Campaign.
+func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
 	traceTitle := fmt.Sprintf("patch: %d", patchID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForPatch", traceTitle)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobForPatch", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -590,7 +590,13 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		return err
 	}
 	if existing != nil {
-		// Already exists
+		// An extant changeset job that failed should be reset so
+		// ProcessPendingChangesetJobs can try to publish it again.
+		if existing.UnsuccessfullyCompleted() {
+			existing.Reset()
+			return tx.UpdateChangesetJob(ctx, existing)
+		}
+
 		return nil
 	}
 
@@ -598,11 +604,7 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		CampaignID: campaign.ID,
 		PatchID:    job.ID,
 	}
-	err = tx.CreateChangesetJob(ctx, changesetJob)
-	if err != nil {
-		return err
-	}
-	return nil
+	return tx.CreateChangesetJob(ctx, changesetJob)
 }
 
 // ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign

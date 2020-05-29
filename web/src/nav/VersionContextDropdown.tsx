@@ -103,12 +103,14 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         show: isExpanded,
                                     })}
                                 >
-                                    <div className="version-context-dropdown__title pl-2 mb-1">
-                                        <span className="text-nowrap">Select version context</span>
-                                        <button type="button" className="btn btn-icon" onClick={showInfo}>
-                                            <HelpCircleOutlineIcon className="icon-inline small" />
-                                        </button>
-                                    </div>
+                                    {hasDismissedInfo === 'true' && (
+                                        <div className="version-context-dropdown__title pl-2 mb-1">
+                                            <span className="text-nowrap">Select version context</span>
+                                            <button type="button" className="btn btn-icon" onClick={showInfo}>
+                                                <HelpCircleOutlineIcon className="icon-inline small" />
+                                            </button>
+                                        </div>
+                                    )}
                                     {hasDismissedInfo !== 'true' && (
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>

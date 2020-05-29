@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -64,7 +65,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err == ErrMetadataExceedsBuffer {
+		if err == codeintelutils.ErrMetadataExceedsBuffer {
 			http.Error(w, "Could not read indexer name from metaData vertex. Please supply it explicitly.", http.StatusBadRequest)
 			return
 		}
@@ -180,7 +181,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 			return nil, err
 		}
 
-		name, err := readIndexerName(gzipReader)
+		name, err := codeintelutils.ReadIndexerName(gzipReader)
 		if err != nil {
 			return nil, err
 		}

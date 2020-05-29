@@ -36,7 +36,7 @@ type codeIntelAPI struct {
 
 var _ CodeIntelAPI = &codeIntelAPI{}
 
-var ErrMissingDump = errors.New("no dump")
+var ErrMissingDump = errors.New("missing dump")
 
 func New(db db.DB, bundleManagerClient bundles.BundleManagerClient, gitserverClient gitserver.Client) CodeIntelAPI {
 	return &codeIntelAPI{

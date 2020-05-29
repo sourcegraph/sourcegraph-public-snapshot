@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
@@ -242,10 +241,10 @@ func TestDatabasePackageInformation(t *testing.T) {
 }
 
 func openTestDatabase(t *testing.T) Database {
-	filename := "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db"
+	filename := "../../../../internal/codeintel/bundles/persistence/sqlite/testdata/lsif-go@ad3507cb.lsif.db"
 
 	// TODO(efritz) - rewrite test not to require actual reader
-	reader, err := reader.NewSQLiteReader(filename, jsonserializer.New())
+	reader, err := sqlitereader.NewReader(filename)
 	if err != nil {
 		t.Fatalf("unexpected error creating reader: %s", err)
 	}

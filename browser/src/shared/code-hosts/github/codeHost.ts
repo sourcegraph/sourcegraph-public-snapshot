@@ -48,7 +48,7 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
     // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
     const showCommentsElement = codeView.querySelector('.show-file-notes')
     if (showCommentsElement) {
-        showCommentsElement.insertAdjacentElement('afterend', mountEl)
+        showCommentsElement.after(mountEl)
     } else {
         fileActions.prepend(mountEl)
     }
@@ -209,8 +209,8 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
         const { pageType } = parseURL()
         const isSingleCodeFile =
             pageType === 'blob' &&
-            document.getElementsByClassName('file').length === 1 &&
-            document.getElementsByClassName('diff-view').length === 0
+            document.querySelectorAll('.file').length === 1 &&
+            document.querySelectorAll('.diff-view').length === 0
 
         if (isSingleCodeFile) {
             return { element: elem, ...singleFileCodeView }
@@ -264,7 +264,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     // Create new
     mount = document.createElement('li')
     mount.id = OPEN_ON_SOURCEGRAPH_ID
-    pageheadActions.insertAdjacentElement('afterbegin', mount)
+    pageheadActions.prepend(mount)
     return mount
 }
 

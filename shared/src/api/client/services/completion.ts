@@ -63,9 +63,7 @@ export function getCompletionItems(
 }
 
 function mergeCompletionLists(values: (CompletionList | null | undefined)[]): CompletionList | null {
-    const items = values
-        .filter(isDefined)
-        .map(({ items }) => items)
-        .flat()
+    const items = values.filter(isDefined).flatMap(({ items }) => items)
+
     return items.length > 0 ? { items } : null
 }

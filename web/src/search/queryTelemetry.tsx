@@ -96,13 +96,13 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean) {
                   count_alias: count(q, /(^|\s)-?f:/g),
 
                   // likely regexp char
-                  value_regexp: count(q, /(^|\s)-?f(ile)?:[^\s]*[$?[\]|()*^]/g),
+                  value_regexp: count(q, /(^|\s)-?f(ile)?:\S*[$()*?[\]^|]/g),
 
                   // likely regexp matching a file ext
-                  value_regexp_file_ext: count(q, /(^|\s)-?f(ile)?:[^\s]*\.\w+\$\b/g),
+                  value_regexp_file_ext: count(q, /(^|\s)-?f(ile)?:\S*\.\w+\$\b/g),
 
                   // oops! user tried to use a (likely) glob
-                  value_glob: count(q, /(^|\s)-?f(ile)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
+                  value_glob: count(q, /(^|\s)-?f(ile)?:\S*(\*\.|\.{[A-Za-z]|\*\*|\/\*)/g),
               }
             : undefined,
         field_fork: filterExistsInQuery(parsedQuery, 'fork')
@@ -146,10 +146,10 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean) {
                   value_rev_caret: count(q, /(^|\s)-?r(epo)?:[^s]*@[^s]*\^/g),
 
                   // likely regexp char
-                  value_regexp: count(q, /(^|\s)-?r(epo)?:[^\s]*[$?[\]|()*^]/g),
+                  value_regexp: count(q, /(^|\s)-?r(epo)?:\S*[$()*?[\]^|]/g),
 
                   // oops! user tried to use a (likely) glob
-                  value_glob: count(q, /(^|\s)-?r(epo)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
+                  value_glob: count(q, /(^|\s)-?r(epo)?:\S*(\*\.|\.{[A-Za-z]|\*\*|\/\*)/g),
               }
             : undefined,
         field_repogroup: filterExistsInQuery(parsedQuery, 'repogroup')
@@ -187,12 +187,12 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean) {
             : undefined,
         field_default: defaultQueryFieldTelemetryData(q),
         fields: {
-            count: count(q, /(^|\s)(\w+:)?([^:"'/\s]+|"[^"]*"|'[^']*'|\/[^/]*\/)/g),
-            count_non_default: count(q, /(^|\s)\w+:([^:"'/\s]+|"[^"]*"|'[^']*')/g),
+            count: count(q, /(^|\s)(\w+:)?([^\s"'/:]+|"[^"]*"|'[^']*'|\/[^/]*\/)/g),
+            count_non_default: count(q, /(^|\s)\w+:([^\s"'/:]+|"[^"]*"|'[^']*')/g),
         },
         chars: {
             count: q.length,
-            non_ascii: count(q, /[^ -~\t\n\r]/g),
+            non_ascii: count(q, /[^\t\n\r -~]/g),
             space: count(q, /\s/g),
             double_quote: count(q, /"/g),
             single_quote: count(q, /'/g),
@@ -204,14 +204,14 @@ function defaultQueryFieldTelemetryData(q: string): { [key: string]: any } {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
 
     // Strip non-default fields. Does not account for backslashes.
-    q = q.replace(/(^|\s)\w+:([^:"'/\s]+|"[^"]*"|'[^']*')/g, ' ')
+    q = q.replace(/(^|\s)\w+:([^\s"'/:]+|"[^"]*"|'[^']*')/g, ' ')
 
     return {
-        count: count(q, /(^|\s)([^:"'/\s]+|"[^"]*"|'[^']*'|\/[^/]*\/)/g),
-        count_literal: count(q, /(^|\s)[^:"'/\s]+/g),
+        count: count(q, /(^|\s)([^\s"'/:]+|"[^"]*"|'[^']*'|\/[^/]*\/)/g),
+        count_literal: count(q, /(^|\s)[^\s"'/:]+/g),
         count_double_quote: count(q, /(^|\s)"[^"]*"/g),
         count_single_quote: count(q, /(^|\s)'[^']*'/g),
         count_pattern: count(q, /(^|\s)\/[^/]*\//g),
-        count_regexp: count(q, /(^|\s)[$?[\]|()*^]/g),
+        count_regexp: count(q, /(^|\s)[$()*?[\]^|]/g),
     }
 }

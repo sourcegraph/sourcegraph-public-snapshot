@@ -320,14 +320,14 @@ export interface CodeIntelligenceProps extends TelemetryProps {
 export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
     mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`, 'theme-light')
-    container.appendChild(mount)
+    container.append(mount)
     return mount
 }
 
 export const createGlobalDebugMount = (): HTMLElement => {
     const mount = document.createElement('div')
     mount.className = 'global-debug'
-    document.body.appendChild(mount)
+    document.body.append(mount)
     return mount
 }
 
@@ -927,8 +927,8 @@ export function handleCodeHost({
                             decorationsByLine,
                             fileInfo.baseCommitID ? 'head' : undefined
                         )
-                    } catch (err) {
-                        console.error('Could not apply head decorations to code view', codeViewEvent.element, err)
+                    } catch (error) {
+                        console.error('Could not apply head decorations to code view', codeViewEvent.element, error)
                     }
                 }
                 codeViewEvent.subscriptions.add(
@@ -953,8 +953,8 @@ export function handleCodeHost({
                             decorationsByLine,
                             'base'
                         )
-                    } catch (err) {
-                        console.error('Could not apply base decorations to code view', codeViewEvent.element, err)
+                    } catch (error) {
+                        console.error('Could not apply base decorations to code view', codeViewEvent.element, error)
                     }
                 }
                 codeViewEvent.subscriptions.add(
