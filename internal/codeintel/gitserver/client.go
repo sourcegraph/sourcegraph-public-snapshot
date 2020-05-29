@@ -27,6 +27,11 @@ type Client interface {
 
 	// FileExists determines whether a file exists in a particular commit of a repository.
 	FileExists(ctx context.Context, db db.DB, repositoryID int, commit, file string) (bool, error)
+
+	// Tags returns the git tags associated with the given commit along with a boolean indicating whether
+	// or not the tag was attached directly to the commit. If no tags exist at or before this commit, the
+	// tag is an empty string.
+	Tags(ctx context.Context, db db.DB, repositoryID int, commit string) (string, bool, error)
 }
 
 type defaultClient struct{}
@@ -51,4 +56,8 @@ func (c *defaultClient) Archive(ctx context.Context, db db.DB, repositoryID int,
 
 func (c *defaultClient) FileExists(ctx context.Context, db db.DB, repositoryID int, commit, file string) (bool, error) {
 	return FileExists(ctx, db, repositoryID, commit, file)
+}
+
+func (c *defaultClient) Tags(ctx context.Context, db db.DB, repositoryID int, commit string) (string, bool, error) {
+	return Tags(ctx, db, repositoryID, commit)
 }
