@@ -11,11 +11,11 @@ import (
 	libhoney "github.com/honeycombio/libhoney-go"
 )
 
-var writeKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
+var apiKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
 
 // Enabled returns true if honeycomb has been configured to run.
 func Enabled() bool {
-	return writeKey != ""
+	return apiKey != ""
 }
 
 // Event creates an event for logging to dataset. Event.Send will only work if
@@ -34,15 +34,15 @@ func Builder(dataset string) *libhoney.Builder {
 }
 
 func init() {
-	if writeKey == "" {
+	if apiKey == "" {
 		return
 	}
 	err := libhoney.Init(libhoney.Config{
-		WriteKey: writeKey,
+		APIKey: apiKey,
 	})
 	if err != nil {
 		log.Println("Failed to init libhoney:", err)
-		writeKey = ""
+		apiKey = ""
 		return
 	}
 	// HOSTNAME is the name of the pod on kubernetes.
