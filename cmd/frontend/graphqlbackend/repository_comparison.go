@@ -103,10 +103,20 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		baseErr, headErr error
 	)
 
+	// Find the common merge-base for the diff. That's what the diff will actually need to be applied to,
+	// not the baseRevspec.
+	mergeBaseCommit, _, _, err := git.ExecSafe(ctx, *grepo, []string{"merge-base", baseRevspec, headRevspec})
+	if err != nil {
+		return nil, err
+	}
+
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		base, baseErr = getCommit(ctx, *grepo, baseRevspec)
+		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+		// applicable to the file from that revision.
+		commitString := strings.TrimSpace(string(mergeBaseCommit))
+		base, baseErr = getCommit(ctx, *grepo, commitString)
 	}()
 	go func() {
 		defer wg.Done()
@@ -357,7 +367,7 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	if !hasNextPage {
 		return graphqlutil.HasNextPage(hasNextPage), nil
 	}
-	next := int32(afterIdx)
+	next := afterIdx
 	if r.first != nil {
 		next += *r.first
 	}
@@ -542,7 +552,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
-		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
+		if hunkLine[0] == ' ' {
 			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
 			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
 			baseLine++

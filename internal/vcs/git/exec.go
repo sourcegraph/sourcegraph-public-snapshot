@@ -118,6 +118,7 @@ var (
 		"rev-list":     {"--max-parents", "--reverse", "--max-count"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
+		"merge-base":   {},
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of whitelisted args.
