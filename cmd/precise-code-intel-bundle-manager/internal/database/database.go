@@ -251,7 +251,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
 func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
 	// TODO(efritz) - gross
-	var rows []types.DefinitionReferenceRow
+	var rows []types.Location
 	var totalCount int
 	var err error
 	if tableName == "definitions" {

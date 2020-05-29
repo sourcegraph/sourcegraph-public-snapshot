@@ -70,6 +70,24 @@ type DocumentIDRangeID struct {
 	RangeID ID
 }
 
+// Loocation represents a range within a particular document relative to its
+// containing bundle.
+type Location struct {
+	URI            string
+	StartLine      int
+	StartCharacter int
+	EndLine        int
+	EndCharacter   int
+}
+
+// MonikerLocations pairs a moniker scheme and identifier with the set of locations
+// with that within a particular bundle.
+type MonikerLocations struct {
+	Scheme     string
+	Identifier string
+	Locations  []Location
+}
+
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	DumpID  int
@@ -85,17 +103,4 @@ type PackageReference struct {
 	Name    string
 	Version string
 	Filter  []byte // a bloom filter of identifiers imported by this dependent
-}
-
-// DefinitionReferenceRow represents a linking between a definition of a symbol or
-// a reference of an externally defined symbol the source location in which the
-// symbol definition or use can be found within a particular bundle.
-type DefinitionReferenceRow struct {
-	Scheme         string
-	Identifier     string
-	URI            string
-	StartLine      int
-	StartCharacter int
-	EndLine        int
-	EndCharacter   int
 }

@@ -80,21 +80,37 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while writing result chunks: %s", err)
 	}
 
-	expectedDefinitions := []types.DefinitionReferenceRow{
-		{Scheme: "scheme A", Identifier: "ident A", URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-		{Scheme: "scheme A", Identifier: "ident A", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-		{Scheme: "scheme A", Identifier: "ident A", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+	expectedDefinitions := []types.Location{
+		{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
-	if err := writer.WriteDefinitions(ctx, expectedDefinitions); err != nil {
+
+	definitionMonikerLocations := []types.MonikerLocations{
+		{
+			Scheme:     "scheme A",
+			Identifier: "ident A",
+			Locations:  expectedDefinitions,
+		},
+	}
+	if err := writer.WriteDefinitions(ctx, definitionMonikerLocations); err != nil {
 		t.Fatalf("unexpected error while writing definitions: %s", err)
 	}
 
-	expectedReferences := []types.DefinitionReferenceRow{
-		{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-		{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-		{Scheme: "scheme C", Identifier: "ident C", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+	expectedReferences := []types.Location{
+		{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+		{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+		{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
 	}
-	if err := writer.WriteReferences(ctx, expectedReferences); err != nil {
+
+	referenceMonikerLocations := []types.MonikerLocations{
+		{
+			Scheme:     "scheme C",
+			Identifier: "ident C",
+			Locations:  expectedReferences,
+		},
+	}
+	if err := writer.WriteReferences(ctx, referenceMonikerLocations); err != nil {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 

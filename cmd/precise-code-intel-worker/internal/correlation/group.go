@@ -1,7 +1,6 @@
 package correlation
 
 import (
-	"fmt"
 	"math"
 	"strings"
 
@@ -20,8 +19,8 @@ type GroupedBundleData struct {
 	NumResultChunks   int
 	Documents         map[string]types.DocumentData
 	ResultChunks      map[int]types.ResultChunkData
-	Definitions       []types.DefinitionReferenceRow
-	References        []types.DefinitionReferenceRow
+	Definitions       []types.MonikerLocations
+	References        []types.MonikerLocations
 	Packages          []types.Package
 	PackageReferences []types.PackageReference
 }
@@ -42,8 +41,8 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 
 	documents := serializeBundleDocuments(state)
 	resultChunks := serializeResultChunks(state, numResultChunks)
-	definitionRows := gatherMonikersByResult(state, state.DefinitionData, getDefinitionResultID)
-	referenceRows := gatherMonikersByResult(state, state.ReferenceData, getReferenceResultID)
+	definitionRows := gatherMonikersLocations(state, state.DefinitionData, getDefinitionResultID)
+	referenceRows := gatherMonikersLocations(state, state.ReferenceData, getReferenceResultID)
 	packages := gatherPackages(state, dumpID)
 	packageReferences, err := gatherPackageReferences(state, dumpID)
 	if err != nil {
@@ -184,12 +183,10 @@ var (
 	getReferenceResultID  = func(r lsif.Range) string { return r.ReferenceResultID }
 )
 
-func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.Range) string) []types.DefinitionReferenceRow {
-	var rows []types.DefinitionReferenceRow
-
+func gatherMonikersLocations(state *State, data map[string]datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) string) []types.MonikerLocations {
 	monikers := datastructures.DefaultIDSetMap{}
 	for _, r := range state.RangeData {
-		resultID := xr(r)
+		resultID := getResultID(r)
 		if resultID != "" && len(r.MonikerIDs) > 0 {
 			s := monikers.GetOrCreate(resultID)
 			for id := range r.MonikerIDs {
@@ -198,6 +195,7 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 		}
 	}
 
+	uniques := map[string]types.MonikerLocations{}
 	for id, documentRanges := range data {
 		monikerIDs, ok := monikers[id]
 		if !ok {
@@ -205,11 +203,9 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 		}
 
 		for monikerID := range monikerIDs {
-			moniker := state.MonikerData[monikerID]
-
+			var locations []types.Location
 			for documentID, rangeIDs := range documentRanges {
 				document := state.DocumentData[documentID]
-
 				if strings.HasPrefix(document.URI, "..") {
 					continue
 				}
@@ -217,9 +213,7 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 				for id := range rangeIDs {
 					r := state.RangeData[id]
 
-					rows = append(rows, types.DefinitionReferenceRow{
-						Scheme:         moniker.Scheme,
-						Identifier:     moniker.Identifier,
+					locations = append(locations, types.Location{
 						URI:            document.URI,
 						StartLine:      r.StartLine,
 						StartCharacter: r.StartCharacter,
@@ -228,10 +222,25 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 					})
 				}
 			}
+
+			moniker := state.MonikerData[monikerID]
+			key := makeKey(moniker.Scheme, moniker.Identifier)
+			uniques[key] = types.MonikerLocations{
+				Scheme:     moniker.Scheme,
+				Identifier: moniker.Identifier,
+				Locations:  append(uniques[key].Locations, locations...),
+			}
 		}
 	}
 
-	return rows
+	monikerLocations := make([]types.MonikerLocations, 0, len(uniques))
+	for _, v := range uniques {
+		if len(v.Locations) > 0 {
+			monikerLocations = append(monikerLocations, v)
+		}
+	}
+
+	return monikerLocations
 }
 
 // TODO(efritz) - document
@@ -241,7 +250,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
-		uniques[fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)] = types.Package{
+		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = types.Package{
 			DumpID:  dumpID,
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
@@ -249,7 +258,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 		}
 	}
 
-	var packages []types.Package
+	packages := make([]types.Package, 0, len(uniques))
 	for _, v := range uniques {
 		packages = append(packages, v)
 	}
@@ -271,7 +280,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
-		key := fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)
+		key := makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)
 		uniques[key] = ExpandedPackageReference{
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,
@@ -280,7 +289,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 		}
 	}
 
-	var packageReferences []types.PackageReference
+	packageReferences := make([]types.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
 		filter, err := bloomfilter.CreateFilter(v.Identifiers)
 		if err != nil {
@@ -297,4 +306,8 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 	}
 
 	return packageReferences, nil
+}
+
+func makeKey(parts ...string) string {
+	return strings.Join(parts, ":")
 }

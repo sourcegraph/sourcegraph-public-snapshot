@@ -106,11 +106,11 @@ func TestReadDefinitions(t *testing.T) {
 		t.Errorf("unexpected total count. want=%d have=%d", 11, totalCount)
 	}
 
-	expectedDefinitions := []types.DefinitionReferenceRow{
-		{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Vertex", URI: "protocol/protocol.go", StartLine: 334, StartCharacter: 1, EndLine: 334, EndCharacter: 7},
-		{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Vertex", URI: "protocol/protocol.go", StartLine: 139, StartCharacter: 1, EndLine: 139, EndCharacter: 7},
-		{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Vertex", URI: "protocol/protocol.go", StartLine: 384, StartCharacter: 1, EndLine: 384, EndCharacter: 7},
-		{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Vertex", URI: "protocol/protocol.go", StartLine: 357, StartCharacter: 1, EndLine: 357, EndCharacter: 7},
+	expectedDefinitions := []types.Location{
+		{URI: "protocol/protocol.go", StartLine: 334, StartCharacter: 1, EndLine: 334, EndCharacter: 7},
+		{URI: "protocol/protocol.go", StartLine: 139, StartCharacter: 1, EndLine: 139, EndCharacter: 7},
+		{URI: "protocol/protocol.go", StartLine: 384, StartCharacter: 1, EndLine: 384, EndCharacter: 7},
+		{URI: "protocol/protocol.go", StartLine: 357, StartCharacter: 1, EndLine: 357, EndCharacter: 7},
 	}
 	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
@@ -126,11 +126,11 @@ func TestReadReferences(t *testing.T) {
 		t.Errorf("unexpected total count. want=%d have=%d", 25, totalCount)
 	}
 
-	expectedReferences := []types.DefinitionReferenceRow{
-		{Scheme: "gomod", Identifier: "golang.org/x/tools/go/packages:Package", URI: "internal/index/helper.go", StartLine: 184, StartCharacter: 56, EndLine: 184, EndCharacter: 63},
-		{Scheme: "gomod", Identifier: "golang.org/x/tools/go/packages:Package", URI: "internal/index/helper.go", StartLine: 35, StartCharacter: 56, EndLine: 35, EndCharacter: 63},
-		{Scheme: "gomod", Identifier: "golang.org/x/tools/go/packages:Package", URI: "internal/index/helper.go", StartLine: 184, StartCharacter: 35, EndLine: 184, EndCharacter: 42},
-		{Scheme: "gomod", Identifier: "golang.org/x/tools/go/packages:Package", URI: "internal/index/helper.go", StartLine: 48, StartCharacter: 44, EndLine: 48, EndCharacter: 51},
+	expectedReferences := []types.Location{
+		{URI: "internal/index/helper.go", StartLine: 184, StartCharacter: 56, EndLine: 184, EndCharacter: 63},
+		{URI: "internal/index/helper.go", StartLine: 35, StartCharacter: 56, EndLine: 35, EndCharacter: 63},
+		{URI: "internal/index/helper.go", StartLine: 184, StartCharacter: 35, EndLine: 184, EndCharacter: 42},
+		{URI: "internal/index/helper.go", StartLine: 48, StartCharacter: 44, EndLine: 48, EndCharacter: 51},
 	}
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
