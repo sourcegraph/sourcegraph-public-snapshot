@@ -7,7 +7,6 @@ import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
-import { ClientCommands } from './api/commands'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
@@ -136,9 +135,9 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const [newAPI, sub] = initMainThreadAPI(proxy, platformContext, services.workspace, services.commands)
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
 
-    subscription.add(sub)
+    subscription.add(apiSubscriptions)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',

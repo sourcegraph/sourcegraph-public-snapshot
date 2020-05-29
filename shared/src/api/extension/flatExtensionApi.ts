@@ -21,7 +21,7 @@ export interface InitResult {
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtHostAPI
-    // todo this is needed as a temp solution to getter problem
+    // todo this is needed as a temp solution for getter problem
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
 }
@@ -35,7 +35,7 @@ export type PartialWorkspaceNamespace = Omit<
 >
 /**
  * Holds internally ExtState and manages communication with the Client
- * Returns initialized public Ext API ready for consumption and API object marshaled into Client
+ * Returns initialized public Ext API pieces ready for consumption and internal Ext API ready to be passed to the main thread
  * NOTE that this function will slowly merge with the one in extensionHost.ts
  *
  * @param mainAPI
