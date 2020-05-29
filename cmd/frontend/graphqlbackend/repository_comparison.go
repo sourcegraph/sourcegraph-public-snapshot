@@ -232,7 +232,10 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			rdr, err = git.ExecReader(ctx, *cachedRepo, []string{
 				"diff",
 				"--find-renames",
-				"--find-copies",
+				// TODO(eseliger): Enable once we have support for copy detection in go-diff
+				// and actually expose a `isCopy` field in the api, otherwise this
+				// information is thrown away anyways.
+				// "--find-copies",
 				"--full-index",
 				"--inter-hunk-context=3",
 				"--no-prefix",
