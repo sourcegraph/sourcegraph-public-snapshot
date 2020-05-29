@@ -75,12 +75,15 @@ type config struct {
 func readConfig() (*config, error) {
 	cfgPath := *configPath
 	userSpecified := *configPath != ""
+
+	user, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
 	if !userSpecified {
-		user, err := user.Current()
-		if err != nil {
-			return nil, err
-		}
 		cfgPath = filepath.Join(user.HomeDir, "src-config.json")
+	} else if strings.HasPrefix(cfgPath, "~/") {
+		cfgPath = filepath.Join(user.HomeDir, cfgPath[2:])
 	}
 	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {
