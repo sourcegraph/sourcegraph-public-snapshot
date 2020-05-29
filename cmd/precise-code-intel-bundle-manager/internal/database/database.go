@@ -8,7 +8,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -46,10 +46,10 @@ type Database interface {
 
 type databaseImpl struct {
 	filename         string
-	reader           reader.Reader     // database file reader
-	documentCache    *DocumentCache    // shared cache
-	resultChunkCache *ResultChunkCache // shared cache
-	numResultChunks  int               // numResultChunks value from meta row
+	reader           persistence.Reader // database file reader
+	documentCache    *DocumentCache     // shared cache
+	resultChunkCache *ResultChunkCache  // shared cache
+	numResultChunks  int                // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -103,7 +103,7 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
+func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
 	_, _, numResultChunks, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")

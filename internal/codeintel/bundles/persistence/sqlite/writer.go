@@ -1,4 +1,4 @@
-package writer
+package sqlite
 
 import (
 	"context"
@@ -8,14 +8,17 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/schema"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer/schema"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
+const InternalVersion = "0.1.0"
+
 type sqliteWriter struct {
-	serializer          serializer.Serializer
+	serializer          serialization.Serializer
 	db                  *sqlx.DB
 	tx                  *sql.Tx
 	metaInserter        *sqliteutil.BatchInserter
@@ -25,11 +28,9 @@ type sqliteWriter struct {
 	referenceInserter   *sqliteutil.BatchInserter
 }
 
-var _ Writer = &sqliteWriter{}
+var _ persistence.Writer = &sqliteWriter{}
 
-const InternalVersion = "0.1.0"
-
-func NewSQLiteWriter(filename string, serializer serializer.Serializer) (_ Writer, err error) {
+func NewWriter(filename string, serializer serialization.Serializer) (_ persistence.Writer, err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err

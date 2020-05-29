@@ -18,8 +18,9 @@ import (
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -340,9 +341,9 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := reader.NewSQLiteReader(filename, jsonserializer.New())
+		sqliteReader, err := sqlitereader.NewReader(filename, jsonserializer.New())
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
+			return nil, pkgerrors.Wrap(err, "sqlitereader.NewReader")
 		}
 
 		// Check to see if the database exists after opening it. If it doesn't, then
@@ -378,8 +379,8 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	return s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler)
 }
 
-func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
-	return reader.NewObserved(innerReader, s.observationContext)
+func (s *Server) wrapReader(innerReader persistence.Reader) persistence.Reader {
+	return persistence.NewObserved(innerReader, s.observationContext)
 }
 
 func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {
