@@ -185,7 +185,6 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tag
 					if tags, ok := resource.Meta["tags"].(map[string]string); ok {
 						if hasKeyValue(tags, tagsWhitelist) {
 							resource.Whitelisted = true
-							break
 						}
 					}
 				}

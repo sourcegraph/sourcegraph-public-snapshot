@@ -192,7 +192,6 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool, lab
 					if labels, ok := resource.Meta["labels"].(map[string]string); ok {
 						if hasKeyValue(labels, labelsWhitelist) {
 							resource.Whitelisted = true
-							break
 						}
 					}
 				}
