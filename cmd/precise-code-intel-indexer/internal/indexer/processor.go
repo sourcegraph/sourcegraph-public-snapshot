@@ -64,7 +64,7 @@ func (p *processor) upload(ctx context.Context, repoDir string, index db.Index) 
 	}
 
 	args := []string{
-		fmt.Sprintf("-endpoint=%s", p.frontendURL),
+		fmt.Sprintf("-endpoint=http://%s", p.frontendURL),
 		"lsif",
 		"upload",
 		fmt.Sprintf("-repo=%s", repoName),
