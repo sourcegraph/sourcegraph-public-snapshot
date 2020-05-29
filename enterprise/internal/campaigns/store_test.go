@@ -1853,7 +1853,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		})
 	})
 
-	t.Run("Listing OnlyNotInCampaign", func(t *testing.T) {
+	t.Run("Listing OnlyWithoutChangesetJob", func(t *testing.T) {
 		// Define a fake campaign.
 		campaignID := int64(1220)
 
@@ -1882,7 +1882,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		// List the patches and see what we get back.
-		opts := ListPatchesOpts{OnlyNotInCampaign: campaignID}
+		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
 		have, _, err := s.ListPatches(ctx, opts)
 		if err != nil {
 			t.Fatal(err)

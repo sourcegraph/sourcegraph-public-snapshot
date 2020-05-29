@@ -2135,12 +2135,12 @@ type ListPatchesOpts struct {
 	// associated with that Campaign are returned. The state of the
 	// ChangesetJobs is not checked. This is mutually exclusive with
 	// OnlyUnpublishedInCampaign.
-	OnlyNotInCampaign int64
+	OnlyWithoutChangesetJob int64
 
 	// If this is set to a Campaign ID only the Patches are returned that are
 	// _not_ associated with a successfully completed ChangesetJob (meaning that
 	// a Changeset on the codehost was created) for the given Campaign. This is
-	// mutually exclusive with OnlyNotInCampaign.
+	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
 	// If this is set only the Patches where diff_stat_added OR
@@ -2210,8 +2210,8 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("patches.patch_set_id = %s", opts.PatchSetID))
 	}
 
-	if opts.OnlyNotInCampaign != 0 {
-		preds = append(preds, notInCampaignQuery(opts.OnlyNotInCampaign))
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
 	}
 
 	if opts.OnlyWithDiff {
