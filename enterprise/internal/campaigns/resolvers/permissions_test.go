@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -150,48 +151,9 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetJobs = append(changesetJobs, job)
 	}
 
-	type want struct {
-		patchTypes     map[string]int
-		changesetTypes map[string]int
-		errors         []string
-	}
-
-	testCampaign := func(t *testing.T, ctx context.Context, id int64, w want) {
-		t.Helper()
-
-		var response struct{ Node apitest.Campaign }
-		query := fmt.Sprintf(queryCampaignPermLevels, campaigns.MarshalCampaignID(id))
-
-		apitest.MustExec(ctx, t, s, nil, &response, query)
-
-		if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(id)); have != want {
-			t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
-		}
-
-		if diff := cmp.Diff(response.Node.Status.Errors, w.errors); diff != "" {
-			t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
-		}
-
-		changesetTypes := map[string]int{}
-		for _, c := range response.Node.Changesets.Nodes {
-			changesetTypes[c.Typename]++
-		}
-		if diff := cmp.Diff(w.changesetTypes, changesetTypes); diff != "" {
-			t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
-		}
-
-		patchTypes := map[string]int{}
-		for _, p := range response.Node.Patches.Nodes {
-			patchTypes[p.Typename]++
-		}
-		if diff := cmp.Diff(w.patchTypes, patchTypes); diff != "" {
-			t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
-		}
-	}
-
 	// Query campaign and check that we get all changesets and all patches
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	testCampaign(t, userCtx, campaign.ID, want{
+	testCampaignResponse(t, s, userCtx, campaign.ID, wantCampaignResponse{
 		changesetTypes: map[string]int{"ExternalChangeset": 2},
 		errors: []string{
 			fmt.Sprintf("error patch %d", patches[0].ID),
@@ -220,7 +182,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	// Send query again and check that for each filtered repository we get a
 	// HiddenChangeset/HiddenPatch and that errors are filtered out
-	testCampaign(t, userCtx, campaign.ID, want{
+	testCampaignResponse(t, s, userCtx, campaign.ID, wantCampaignResponse{
 		changesetTypes: map[string]int{
 			"ExternalChangeset":       1,
 			"HiddenExternalChangeset": 1,
@@ -238,6 +200,45 @@ func TestRepositoryPermissions(t *testing.T) {
 	// TODO: Test that the diffStat on `patchset` doesn't include the filtered patches diff stats
 	// TODO: Test that the diffStat on `campaign` doesn't include the filtered changesets diff stats
 	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
+}
+
+type wantCampaignResponse struct {
+	patchTypes     map[string]int
+	changesetTypes map[string]int
+	errors         []string
+}
+
+func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, w wantCampaignResponse) {
+	t.Helper()
+
+	var response struct{ Node apitest.Campaign }
+	query := fmt.Sprintf(queryCampaignPermLevels, campaigns.MarshalCampaignID(id))
+
+	apitest.MustExec(ctx, t, s, nil, &response, query)
+
+	if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(id)); have != want {
+		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
+	}
+
+	if diff := cmp.Diff(response.Node.Status.Errors, w.errors); diff != "" {
+		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
+	}
+
+	changesetTypes := map[string]int{}
+	for _, c := range response.Node.Changesets.Nodes {
+		changesetTypes[c.Typename]++
+	}
+	if diff := cmp.Diff(w.changesetTypes, changesetTypes); diff != "" {
+		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
+	}
+
+	patchTypes := map[string]int{}
+	for _, p := range response.Node.Patches.Nodes {
+		patchTypes[p.Typename]++
+	}
+	if diff := cmp.Diff(w.patchTypes, patchTypes); diff != "" {
+		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
+	}
 }
 
 const queryCampaignPermLevels = `
