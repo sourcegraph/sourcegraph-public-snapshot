@@ -2,16 +2,17 @@ package json
 
 import (
 	"encoding/json"
+	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 type jsonSerializer struct{}
 
-var _ serializer.Serializer = &jsonSerializer{}
+var _ serialization.Serializer = &jsonSerializer{}
 
-func New() serializer.Serializer {
+func New() serialization.Serializer {
 	return &jsonSerializer{}
 }
 
@@ -277,4 +278,26 @@ func unmarshalWrappedDocumentIDRangeIDs(pairs []json.RawMessage) (map[types.ID][
 	}
 
 	return m, nil
+}
+
+type ID string
+
+func (id *ID) UnmarshalJSON(raw []byte) error {
+	if raw[0] == '"' {
+		var v string
+		if err := json.Unmarshal(raw, &v); err != nil {
+			return err
+		}
+
+		*id = ID(v)
+		return nil
+	}
+
+	var v int64
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err
+	}
+
+	*id = ID(strconv.FormatInt(v, 10))
+	return nil
 }

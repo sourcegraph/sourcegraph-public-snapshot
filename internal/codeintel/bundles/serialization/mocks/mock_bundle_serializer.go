@@ -3,14 +3,14 @@
 package mocks
 
 import (
-	serializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	serialization "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"sync"
 )
 
 // MockSerializer is a mock impelementation of the Serializer interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization)
 // used for unit testing.
 type MockSerializer struct {
 	// MarshalDocumentDataFunc is an instance of a mock function object
@@ -56,7 +56,7 @@ func NewMockSerializer() *MockSerializer {
 
 // NewMockSerializerFrom creates a new mock of the MockSerializer interface.
 // All methods delegate to the given implementation, unless overwritten.
-func NewMockSerializerFrom(i serializer.Serializer) *MockSerializer {
+func NewMockSerializerFrom(i serialization.Serializer) *MockSerializer {
 	return &MockSerializer{
 		MarshalDocumentDataFunc: &SerializerMarshalDocumentDataFunc{
 			defaultHook: i.MarshalDocumentData,

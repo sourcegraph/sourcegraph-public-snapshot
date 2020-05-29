@@ -1,4 +1,4 @@
-package serializer
+package serialization
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"

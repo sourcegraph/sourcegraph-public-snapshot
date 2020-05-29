@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	writer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
 	"sync"
 )
 
 // MockWriter is a mock impelementation of the Writer interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence)
 // used for unit testing.
 type MockWriter struct {
 	// CloseFunc is an instance of a mock function object controlling the
@@ -81,7 +81,7 @@ func NewMockWriter() *MockWriter {
 
 // NewMockWriterFrom creates a new mock of the MockWriter interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockWriterFrom(i writer.Writer) *MockWriter {
+func NewMockWriterFrom(i persistence.Writer) *MockWriter {
 	return &MockWriter{
 		CloseFunc: &WriterCloseFunc{
 			defaultHook: i.Close,

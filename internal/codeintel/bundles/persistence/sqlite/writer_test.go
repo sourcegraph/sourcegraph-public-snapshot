@@ -1,4 +1,4 @@
-package writer
+package sqlite
 
 import (
 	"context"
@@ -8,16 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
-
-func init() {
-	sqliteutil.SetLocalLibpath()
-	sqliteutil.MustRegisterSqlite3WithPcre()
-}
 
 func TestWrite(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "")
@@ -30,7 +23,7 @@ func TestWrite(t *testing.T) {
 	filename := filepath.Join(tempDir, "test.db")
 	serializer := jsonserializer.New()
 
-	writer, err := NewSQLiteWriter(filename, serializer)
+	writer, err := NewWriter(filename, serializer)
 	if err != nil {
 		t.Fatalf("unexpected error while opening writer: %s", err)
 	}
@@ -114,7 +107,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 
-	reader, err := reader.NewSQLiteReader(filename, serializer)
+	reader, err := NewReader(filename, serializer)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

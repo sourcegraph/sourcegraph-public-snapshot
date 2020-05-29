@@ -1,20 +1,15 @@
-package reader
+package sqlite
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
-
-func init() {
-	sqliteutil.SetLocalLibpath()
-	sqliteutil.MustRegisterSqlite3WithPcre()
-}
 
 func TestReadMeta(t *testing.T) {
 	lsifVersion, sourcegraphVersion, numResultChunks, err := testReader(t).ReadMeta(context.Background())
@@ -143,13 +138,13 @@ func TestReadReferences(t *testing.T) {
 	}
 }
 
-func testReader(t *testing.T) Reader {
-	reader, err := NewSQLiteReader("../testdata/lsif-go@ad3507cb.lsif.db", jsonserializer.New())
+func testReader(t *testing.T) persistence.Reader {
+	reader, err := NewReader("./testdata/lsif-go@ad3507cb.lsif.db", jsonserializer.New())
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 	t.Cleanup(func() { _ = reader.Close() })
 
 	// Wrap in observed, as that's how it's used in production
-	return NewObserved(reader, &observation.TestContext)
+	return persistence.NewObserved(reader, &observation.TestContext)
 }
