@@ -59,7 +59,7 @@ func TestDefaultSerializerDocumentData(t *testing.T) {
 		},
 	}
 
-	for _, file := range []string{"../../testdata/documentdata-strings.json", "../../testdata/documentdata-ints.json"} {
+	for _, file := range []string{"./testdata/documentdata-strings.json", "./testdata/documentdata-ints.json"} {
 		name := fmt.Sprintf("file=%s", file)
 
 		t.Run(name, func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestDefaultSerializerResultChunkData(t *testing.T) {
 		},
 	}
 
-	for _, file := range []string{"../../testdata/resultchunkdata-strings.json", "../../testdata/resultchunkdata-ints.json"} {
+	for _, file := range []string{"./testdata/resultchunkdata-strings.json", "./testdata/resultchunkdata-ints.json"} {
 		name := fmt.Sprintf("file=%s", file)
 
 		t.Run(name, func(t *testing.T) {

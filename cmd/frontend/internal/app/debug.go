@@ -17,6 +17,7 @@ import (
 )
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
 
 func addNoK8sClientHandler(r *mux.Router) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +31,7 @@ func addNoK8sClientHandler(r *mux.Router) {
 // endpoints.
 func addDebugHandlers(r *mux.Router) {
 	addGrafana(r)
+	addJaeger(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -87,6 +89,37 @@ func addGrafana(r *mux.Router) {
 		}
 	} else {
 		addNoGrafanaHandler(r)
+	}
+}
+
+func addNoJaegerHandler(r *mux.Router) {
+	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
+	})
+	r.Handle("/jaeger", adminOnly(noJaeger))
+}
+
+func addJaeger(r *mux.Router) {
+	if len(jaegerURLFromEnv) > 0 {
+		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
+		jaegerURL, err := url.Parse(jaegerURLFromEnv)
+		if err != nil {
+			log.Printf("failed to parse JAEGER_SERVER_URL=%s: %v", jaegerURLFromEnv, err)
+			addNoJaegerHandler(r)
+		} else {
+			prefix := "/jaeger"
+			// 🚨 SECURITY: Only admins have access to Jaeger dashboard
+			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
+				Director: func(req *http.Request) {
+					req.URL.Scheme = "http"
+					req.URL.Host = jaegerURL.Host
+				},
+				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
+			}))
+		}
+
+	} else {
+		addNoJaegerHandler(r)
 	}
 }
 

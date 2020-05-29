@@ -616,9 +616,9 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, ErrIDIsZero
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobForPatch checks whether current user is authorized.
+	// 🚨 SECURITY: EnqueueChangesetJobForPatch checks whether current user is authorized.
 	svc := ee.NewService(r.store, r.httpFactory)
-	if err = svc.CreateChangesetJobForPatch(ctx, patchID); err != nil {
+	if err = svc.EnqueueChangesetJobForPatch(ctx, patchID); err != nil {
 		return nil, err
 	}
 

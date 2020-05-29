@@ -35,6 +35,7 @@ func (db *dbImpl) RepoUsageStatistics(ctx context.Context) ([]RepoUsageStatistic
 		) counts
 		-- Cast allows use of the uri btree index
 		JOIN repo r ON r.uri = counts.repo_name::citext
+		WHERE r.deleted_at IS NULL
 		ORDER BY search_count DESC, precise_count DESC
 	`)))
 }

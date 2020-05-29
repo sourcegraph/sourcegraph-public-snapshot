@@ -1,4 +1,4 @@
-package reader
+package sqlite
 
 import (
 	"context"
@@ -9,7 +9,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
 	pkgerrors "github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -17,12 +19,12 @@ var ErrNoMetadata = errors.New("no rows in meta table")
 
 type sqliteReader struct {
 	db         *sqlx.DB
-	serializer serializer.Serializer
+	serializer serialization.Serializer
 }
 
-var _ Reader = &sqliteReader{}
+var _ persistence.Reader = &sqliteReader{}
 
-func NewSQLiteReader(filename string, serializer serializer.Serializer) (_ Reader, err error) {
+func NewReader(filename string) (_ persistence.Reader, err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err
@@ -30,7 +32,7 @@ func NewSQLiteReader(filename string, serializer serializer.Serializer) (_ Reade
 
 	return &sqliteReader{
 		db:         db,
-		serializer: serializer,
+		serializer: jsonserializer.New(),
 	}, nil
 }
 

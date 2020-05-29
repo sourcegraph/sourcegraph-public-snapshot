@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
-	reader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"sync"
 )
 
 // MockReader is a mock impelementation of the Reader interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence)
 // used for unit testing.
 type MockReader struct {
 	// CloseFunc is an instance of a mock function object controlling the
@@ -73,7 +73,7 @@ func NewMockReader() *MockReader {
 
 // NewMockReaderFrom creates a new mock of the MockReader interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockReaderFrom(i reader.Reader) *MockReader {
+func NewMockReaderFrom(i persistence.Reader) *MockReader {
 	return &MockReader{
 		CloseFunc: &ReaderCloseFunc{
 			defaultHook: i.Close,

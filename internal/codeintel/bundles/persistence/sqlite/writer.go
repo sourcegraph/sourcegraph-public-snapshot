@@ -1,4 +1,4 @@
-package writer
+package sqlite
 
 import (
 	"context"
@@ -8,16 +8,20 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer"
+	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/schema"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer/schema"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
+const InternalVersion = "0.1.0"
+
 type sqliteWriter struct {
-	serializer          serializer.Serializer
 	db                  *sqlx.DB
 	tx                  *sql.Tx
+	serializer          serialization.Serializer
 	metaInserter        *sqliteutil.BatchInserter
 	documentInserter    *sqliteutil.BatchInserter
 	resultChunkInserter *sqliteutil.BatchInserter
@@ -25,11 +29,9 @@ type sqliteWriter struct {
 	referenceInserter   *sqliteutil.BatchInserter
 }
 
-var _ Writer = &sqliteWriter{}
+var _ persistence.Writer = &sqliteWriter{}
 
-const InternalVersion = "0.1.0"
-
-func NewSQLiteWriter(filename string, serializer serializer.Serializer) (_ Writer, err error) {
+func NewWriter(filename string) (_ persistence.Writer, err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
 	if err != nil {
 		return nil, err
@@ -57,9 +59,9 @@ func NewSQLiteWriter(filename string, serializer serializer.Serializer) (_ Write
 	definitionsReferencesColumns := []string{"scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter"}
 
 	return &sqliteWriter{
-		serializer:          serializer,
 		db:                  db,
 		tx:                  tx,
+		serializer:          jsonserializer.New(),
 		metaInserter:        sqliteutil.NewBatchInserter(tx, "meta", metaColumns...),
 		documentInserter:    sqliteutil.NewBatchInserter(tx, "documents", documentsColumns...),
 		resultChunkInserter: sqliteutil.NewBatchInserter(tx, "resultChunks", resultChunksColumns...),

@@ -2,6 +2,17 @@
 
 const path = require('path')
 
+// Use the same locale for test runs so that snapshots generated using code that
+// uses Intl or toLocaleString() are consistent.
+//
+// We have to do this at this point instead of in the normal Jest setup hooks
+// because ICU (and therefore Intl) only reads the environment once:
+// specifically, at the point any Intl object is instantiated. Jest indirectly
+// uses a locale-sensitive sort while setting up test suites _before_ invoking
+// the setup hooks, so we have no opportunity to change $LANG outside of this
+// ugly side effect. (This is especially evident when running tests in-band.)
+process.env.LANG = 'en_US.UTF-8'
+
 /** @type {jest.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
