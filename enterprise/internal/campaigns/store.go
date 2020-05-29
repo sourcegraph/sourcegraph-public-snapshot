@@ -1744,6 +1744,13 @@ type GetCampaignStatusOpts struct {
 	// BackgroundProcessStatus returned by GetCampaignStatus won't be
 	// populated.
 	ExcludeErrors bool
+
+	// ExcludeErrorsInRepos filters out error messages from ChangesetJobs that
+	// are associated with Patches that have the given repository IDs set in
+	// `patches.repo_id`.
+	// This is used to filter out error messages from repositories the user
+	// doesn't have access to.
+	ExcludeErrorsInRepos []api.RepoID
 }
 
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
@@ -1765,6 +1772,19 @@ func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
 	var errorsPreds []*sqlf.Query
 	if opts.ExcludeErrors {
 		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
+	}
+
+	if len(opts.ExcludeErrorsInRepos) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ExcludeErrorsInRepos))
+
+		for _, repoID := range opts.ExcludeErrorsInRepos {
+			ids = append(ids, sqlf.Sprintf("%s", repoID))
+		}
+
+		joined := sqlf.Join(ids, ",")
+
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("patches.repo_id NOT IN (%s)", joined))
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
 	}
 
 	if len(errorsPreds) == 0 {
@@ -1813,6 +1833,7 @@ SELECT
   COUNT(*) FILTER (WHERE error != '') AS failed,
   array_agg(error) FILTER (WHERE %s) AS errors
 FROM changeset_jobs
+JOIN patches ON patches.id = changeset_jobs.patch_id
 WHERE %s
 LIMIT 1
 `

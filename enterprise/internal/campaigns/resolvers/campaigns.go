@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -322,9 +324,78 @@ func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.Backgroun
 		return nil, err
 	}
 
+	if !canAdmin {
+		// If the user doesn't have admin permissions for this campaign, we
+		// don't need to filter out specific errors, but can simply exclude
+		// _all_ errors.
+		return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
+			ID:            r.Campaign.ID,
+			ExcludeErrors: true,
+		})
+	}
+
+	// TODO: Wow, this is horrible. We're loading way too many patches.
+	// What we actually want is this:
+
+	//   SELECT repo.id
+	//   FROM   patches
+	//   JOIN   repo           ON repo.id = patches.repo_id
+	//   JOIN   changeset_jobs ON changeset_jobs.patch_id = patches.id
+	//   WHERE patches.patch_set_id = patch.patch_set_id;
+
+	// Or we do:
+	//
+	//   SELECT repo.id
+	//   FROM   changeset_jobs
+	//   JOIN   patches ON patches.id = changeset_jobs.patch_id
+	//   JOIN   repo    ON patches.repo_id = repo.id
+	//   WHERE  changeset_jobs.campaign_id = <campaign_id>
+
+	// And then we put those repo IDs through `db.Repo.GetByIDs`, which
+	// uses the authz filter what we then get back are the repos we have access
+	// to.
+
+	// And then we need to filter out the error messages of changeset_jobs that
+	// are attached to patches that are attached to filtered out repositories in the
+	// `GetCampaignStatus` query below.
+
+	patches, _, err := r.store.ListPatches(ctx, ee.ListPatchesOpts{
+		PatchSetID: r.Campaign.PatchSetID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	// We now check which repositories in `repoIDs` are not in `accessibleRepoIDs`.
+	// We have to filter the error messages associated with those out.
+	excludedRepos := make([]api.RepoID, 0, len(accessibleRepoIDs))
+	for _, id := range repoIDs {
+		if _, ok := accessibleRepoIDs[id]; !ok {
+			excludedRepos = append(excludedRepos, id)
+		}
+	}
+
 	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
-		ID:            r.Campaign.ID,
-		ExcludeErrors: !canAdmin,
+		ID:                   r.Campaign.ID,
+		ExcludeErrorsInRepos: excludedRepos,
 	})
 }
 

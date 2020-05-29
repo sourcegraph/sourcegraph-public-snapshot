@@ -85,6 +85,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
+
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 

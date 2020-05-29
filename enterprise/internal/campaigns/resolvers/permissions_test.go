@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -29,6 +30,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
 
 	// We need to enable read access so that non-site-admin users can access
 	// the API and we can check for their admin rights.
@@ -129,6 +132,24 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create 2 failed ChangesetJobs for the patchess to produce error messages
+	// on the campaign.
+	changesetJobs := make([]*campaigns.ChangesetJob, 0, 2)
+	for _, p := range patches {
+		job := &campaigns.ChangesetJob{
+			CampaignID: campaign.ID,
+			PatchID:    p.ID,
+			Error:      fmt.Sprintf("error patch %d", p.ID),
+			StartedAt:  now,
+			FinishedAt: now,
+		}
+		if err := store.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetJobs = append(changesetJobs, job)
+	}
+
 	// TODO: Do we also need failed ChangesetJobs to check for hidden errors
 
 	var response struct{ Node apitest.Campaign }
@@ -141,6 +162,14 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(campaign.ID)); have != want {
 		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
+	}
+
+	wantErrors := []string{
+		fmt.Sprintf("error patch %d", patches[0].ID),
+		fmt.Sprintf("error patch %d", patches[1].ID),
+	}
+	if diff := cmp.Diff(response.Node.Status.Errors, wantErrors); diff != "" {
+		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
 	}
 
 	changesetTypes := map[string]int{}
@@ -162,10 +191,12 @@ func TestRepositoryPermissions(t *testing.T) {
 	}
 
 	// Now we add the authzFilter and filter out 2 repositories
+
 	filteredRepoIDs := map[api.RepoID]bool{
 		patches[0].RepoID:    true,
 		changesets[0].RepoID: true,
 	}
+
 	db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		var filtered []*types.Repo
 		for _, r := range repos {
@@ -183,6 +214,14 @@ func TestRepositoryPermissions(t *testing.T) {
 	apitest.MustExec(userCtx, t, s, nil, &response, query)
 	if have, want := response.Node.ID, string(campaigns.MarshalCampaignID(campaign.ID)); have != want {
 		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
+	}
+
+	wantErrors = []string{
+		// patches[0] is filtered out
+		fmt.Sprintf("error patch %d", patches[1].ID),
+	}
+	if diff := cmp.Diff(response.Node.Status.Errors, wantErrors); diff != "" {
+		t.Fatalf("unexpected status errors (-want +got):\n%s", diff)
 	}
 
 	changesetTypes = map[string]int{}
@@ -203,6 +242,10 @@ func TestRepositoryPermissions(t *testing.T) {
 	if diff := cmp.Diff(wantPatchTypes, patchTypes); diff != "" {
 		t.Fatalf("unexpected patch types (-want +got):\n%s", diff)
 	}
+
+	// TODO: Test that the diffStat on `patchset` doesn't include the filtered patches diff stats
+	// TODO: Test that the diffStat on `campaign` doesn't include the filtered changesets diff stats
+	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
 }
 
 const queryCampaignPermLevels = `
@@ -210,6 +253,12 @@ query {
   node(id: %q) {
     ... on Campaign {
       id
+
+	  status {
+	    state
+		errors
+	  }
+
       changesets(first: 100) {
         nodes {
           __typename
