@@ -1,7 +1,7 @@
 import { Observable, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { DiffOrBlobInfo } from '../shared/codeHost'
+import { DiffInfo, BlobInfo } from '../shared/codeHost'
 
 import { getBaseCommitIDForCommit, getMergeRequestDetailsFromAPI } from './api'
 import {
@@ -18,7 +18,7 @@ import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
-export const resolveFileInfo = (): DiffOrBlobInfo => {
+export const resolveFileInfo = (): BlobInfo => {
     const { rawRepoName, filePath, rev } = getFilePageInfo()
     if (!filePath) {
         throw new Error(
@@ -32,7 +32,7 @@ export const resolveFileInfo = (): DiffOrBlobInfo => {
 /**
  * Gets `FileInfo` for a diff file.
  */
-export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffOrBlobInfo> =>
+export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffInfo> =>
     from(
         getMergeRequestDetailsFromAPI({
             ...getPageInfo(),
@@ -41,7 +41,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffOrBlo
         })
     ).pipe(
         map(
-            (info): DiffOrBlobInfo => {
+            (info): DiffInfo => {
                 const { rawRepoName, baseRawRepoName, commitID, baseCommitID } = info
                 const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
 
@@ -56,7 +56,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<DiffOrBlo
 /**
  * Resolves file information for commit pages.
  */
-export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<DiffOrBlobInfo> =>
+export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<DiffInfo> =>
     asObservable(getCommitPageInfo).pipe(
         // Resolve base commit ID.
         switchMap(({ owner, projectName, commitID, rawRepoName }) =>
@@ -65,7 +65,7 @@ export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<DiffOrB
             )
         ),
         map(
-            ({ commitID, baseCommitID, rawRepoName }): DiffOrBlobInfo => {
+            ({ commitID, baseCommitID, rawRepoName }): DiffInfo => {
                 const { headFilePath, baseFilePath } = getFilePathsFromCodeView(codeView)
                 return {
                     head: { rawRepoName, filePath: headFilePath, commitID },

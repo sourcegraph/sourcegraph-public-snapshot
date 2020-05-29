@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { DiffResolvedRevSpec } from '../../repo'
-import { FileInfo, DiffOrBlobInfo } from '../shared/codeHost'
+import { FileInfo, DiffInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {
     repoSlug: string
@@ -298,7 +298,7 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     }
 }
 
-export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement): DiffOrBlobInfo => {
+export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement): DiffInfo => {
     const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
     const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')
     const { rawRepoName, filePath, baseFilePath } = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(

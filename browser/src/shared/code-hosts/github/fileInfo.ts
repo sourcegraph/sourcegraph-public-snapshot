@@ -1,8 +1,8 @@
-import { DiffOrBlobInfo } from '../shared/codeHost'
+import { BlobInfo, DiffInfo } from '../shared/codeHost'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDiffFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
 
-export const resolveDiffFileInfo = (codeView: HTMLElement): DiffOrBlobInfo => {
+export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     const { rawRepoName } = parseURL()
     const { headFilePath, baseFilePath } = getDiffFileName(codeView)
     if (!headFilePath) {
@@ -33,7 +33,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): DiffOrBlobInfo => {
 /**
  * Resolve file info entirely from the parsed URL, not relying on the DOM.
  */
-export const resolveFileInfo = (): DiffOrBlobInfo => {
+export const resolveFileInfo = (): BlobInfo => {
     const parsedURL = parseURL()
     if (parsedURL.pageType !== 'blob' && parsedURL.pageType !== 'tree') {
         throw new Error(`Current URL does not match a blob or tree url: ${window.location.href}`)
@@ -59,7 +59,7 @@ export const resolveFileInfo = (): DiffOrBlobInfo => {
 
 const COMMIT_HASH_REGEX = /\/([\da-f]{40})$/i
 
-export const resolveSnippetFileInfo = (codeView: HTMLElement): DiffOrBlobInfo => {
+export const resolveSnippetFileInfo = (codeView: HTMLElement): BlobInfo => {
     // A snippet code view contains a link to the snippet's commit.
     // We use it to find the 40-character commit id.
     const commitLinkElement = codeView.querySelector('a.commit-tease-sha') as HTMLAnchorElement

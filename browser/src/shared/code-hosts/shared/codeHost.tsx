@@ -263,11 +263,13 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
 /**
  * A blob (single file `FileInfo`) or a diff (with a head `FileInfo` and/or base `FileInfo`)
  */
-export type DiffOrBlobInfo<T extends FileInfo = FileInfo> =
-    | { blob: T }
-    | { head: T; base?: undefined }
-    | { head: T; base: T }
-    | { head?: undefined; base: T }
+export type DiffOrBlobInfo<T extends FileInfo = FileInfo> = BlobInfo<T> | DiffInfo<T>
+export interface BlobInfo<T extends FileInfo = FileInfo> {
+    blob: T
+}
+export type DiffInfo<T extends FileInfo = FileInfo> =
+    // `base?: undefined` avoids making `{ head: T; base: T }` assignable to this type
+    { head: T; base?: undefined } | { base: T; head?: undefined } | { head: T; base: T }
 
 export interface FileInfo {
     /**

@@ -1,7 +1,7 @@
 import { Observable, zip } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileInfo, DiffOrBlobInfo } from '../shared/codeHost'
+import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 import { PhabricatorMode } from '.'
 import { queryConduitHelper, resolveDiffRev } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
@@ -11,10 +11,10 @@ export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit = queryConduitHelper
-): Observable<DiffOrBlobInfo> =>
+): Observable<DiffInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         map(
-            (state): DiffOrBlobInfo => {
+            (state): DiffInfo => {
                 if (state.mode !== PhabricatorMode.Revision) {
                     throw new Error(
                         `Unexpected Phabricator state for resolveRevisionFileInfo, PhabricatorMode: ${state.mode}`
@@ -42,7 +42,7 @@ export const resolveDiffFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit = queryConduitHelper
-): Observable<DiffOrBlobInfo> =>
+): Observable<DiffInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         switchMap(state => {
             if (state.mode !== PhabricatorMode.Differential) {
@@ -95,7 +95,7 @@ export const resolveDiffFileInfo = (
             )
             return zip(resolveBaseCommitID, resolveHeadCommitID).pipe(
                 map(
-                    ([baseInfo, headInfo]): DiffOrBlobInfo => ({
+                    ([baseInfo, headInfo]): DiffInfo => ({
                         base: {
                             rawRepoName: baseInfo.rawRepoName,
                             filePath: baseFilePath || filePath,
@@ -116,10 +116,10 @@ export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit = queryConduitHelper
-): Observable<DiffOrBlobInfo> =>
+): Observable<BlobInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         map(
-            (state): DiffOrBlobInfo => {
+            (state): BlobInfo => {
                 if (state.mode !== PhabricatorMode.Diffusion) {
                     throw new Error(
                         `Unexpected PhabricatorState for resolveDiffusionFileInfo, PhabricatorMode: ${state.mode}`
