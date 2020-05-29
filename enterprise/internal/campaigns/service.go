@@ -157,10 +157,10 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	}
 
 	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:                c.PatchSetID,
-		Limit:                     -1,
-		OnlyWithDiff:              true,
-		OnlyUnpublishedInCampaign: c.ID,
+		PatchSetID:              c.PatchSetID,
+		Limit:                   -1,
+		OnlyWithDiff:            true,
+		OnlyWithoutChangesetJob: c.ID,
 	})
 	if err != nil {
 		return err

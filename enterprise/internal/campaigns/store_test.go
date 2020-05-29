@@ -1853,6 +1853,76 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		})
 	})
 
+	t.Run("Listing OnlyWithoutChangesetJob", func(t *testing.T) {
+		// Define a fake campaign.
+		campaignID := int64(1220)
+
+		// Set up two changeset jobs within the campaign: one successful, one
+		// failed.
+		jobSuccess := &cmpgn.ChangesetJob{
+			PatchID:     patches[0].ID,
+			CampaignID:  campaignID,
+			ChangesetID: 1220,
+			StartedAt:   clock.now(),
+			FinishedAt:  clock.now(),
+		}
+		if err := s.CreateChangesetJob(ctx, jobSuccess); err != nil {
+			t.Fatal(err)
+		}
+
+		jobFailed := &cmpgn.ChangesetJob{
+			PatchID:    patches[1].ID,
+			CampaignID: campaignID,
+			StartedAt:  clock.now(),
+			FinishedAt: clock.now(),
+			Error:      "Octocat knocked pull request off desk",
+		}
+		if err := s.CreateChangesetJob(ctx, jobFailed); err != nil {
+			t.Fatal(err)
+		}
+
+		// List the patches and see what we get back.
+		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		have, _, err := s.ListPatches(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Since patches[0] and patches[1] exist in the changeset jobs created
+		// above, we only expect to see patches[2] in the results.
+		want := patches[2:]
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+		}
+
+		// Update the changeset jobs to change the campaign IDs and try again.
+		// This time, we should get all three elements of patches back.
+		for _, job := range []*cmpgn.ChangesetJob{jobSuccess, jobFailed} {
+			job.CampaignID = 0
+			if err = s.UpdateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		have, _, err = s.ListPatches(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want = patches
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+		}
+	})
+
 	t.Run("Listing OnlyWithoutDiffStats", func(t *testing.T) {
 		listOpts := ListPatchesOpts{OnlyWithoutDiffStats: true}
 		have, _, err := s.ListPatches(ctx, listOpts)
