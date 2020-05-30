@@ -50,38 +50,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
     }
   }
   alwaysShow={true}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
 >
   <Menu>
     <DescendantProvider
@@ -917,38 +886,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         "FoundReferences": false,
                       }
                     }
-                    history={
-                      Object {
-                        "action": "POP",
-                        "block": [Function],
-                        "canGo": [Function],
-                        "createHref": [Function],
-                        "entries": Array [
-                          Object {
-                            "hash": "",
-                            "key": undefined,
-                            "pathname": "/",
-                            "search": "",
-                            "state": undefined,
-                          },
-                        ],
-                        "go": [Function],
-                        "goBack": [Function],
-                        "goForward": [Function],
-                        "index": 0,
-                        "length": 1,
-                        "listen": [Function],
-                        "location": Object {
-                          "hash": "",
-                          "key": undefined,
-                          "pathname": "/",
-                          "search": "",
-                          "state": undefined,
-                        },
-                        "push": [Function],
-                        "replace": [Function],
-                      }
-                    }
+                    history="placeholderHistoryObject"
                     steps={
                       Array [
                         Object {
@@ -1332,38 +1270,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     <ActivationChecklistItem
                                       detail="Configure Sourcegraph to talk to your code host and fetch a list of your repositories."
                                       done={false}
-                                      history={
-                                        Object {
-                                          "action": "POP",
-                                          "block": [Function],
-                                          "canGo": [Function],
-                                          "createHref": [Function],
-                                          "entries": Array [
-                                            Object {
-                                              "hash": "",
-                                              "key": undefined,
-                                              "pathname": "/",
-                                              "search": "",
-                                              "state": undefined,
-                                            },
-                                          ],
-                                          "go": [Function],
-                                          "goBack": [Function],
-                                          "goForward": [Function],
-                                          "index": 0,
-                                          "length": 1,
-                                          "listen": [Function],
-                                          "location": Object {
-                                            "hash": "",
-                                            "key": undefined,
-                                            "pathname": "/",
-                                            "search": "",
-                                            "state": undefined,
-                                          },
-                                          "push": [Function],
-                                          "replace": [Function],
-                                        }
-                                      }
+                                      history="placeholderHistoryObject"
                                       id="ConnectedCodeHost"
                                       key="ConnectedCodeHost"
                                       title="Add repositories"
@@ -1501,38 +1408,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         </span>
                                       }
                                       done={false}
-                                      history={
-                                        Object {
-                                          "action": "POP",
-                                          "block": [Function],
-                                          "canGo": [Function],
-                                          "createHref": [Function],
-                                          "entries": Array [
-                                            Object {
-                                              "hash": "",
-                                              "key": undefined,
-                                              "pathname": "/",
-                                              "search": "",
-                                              "state": undefined,
-                                            },
-                                          ],
-                                          "go": [Function],
-                                          "goBack": [Function],
-                                          "goForward": [Function],
-                                          "index": 0,
-                                          "length": 1,
-                                          "listen": [Function],
-                                          "location": Object {
-                                            "hash": "",
-                                            "key": undefined,
-                                            "pathname": "/",
-                                            "search": "",
-                                            "state": undefined,
-                                          },
-                                          "push": [Function],
-                                          "replace": [Function],
-                                        }
-                                      }
+                                      history="placeholderHistoryObject"
                                       id="DidSearch"
                                       key="DidSearch"
                                       title="Search your code"
@@ -1668,38 +1544,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     <ActivationChecklistItem
                                       detail="To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\"."
                                       done={false}
-                                      history={
-                                        Object {
-                                          "action": "POP",
-                                          "block": [Function],
-                                          "canGo": [Function],
-                                          "createHref": [Function],
-                                          "entries": Array [
-                                            Object {
-                                              "hash": "",
-                                              "key": undefined,
-                                              "pathname": "/",
-                                              "search": "",
-                                              "state": undefined,
-                                            },
-                                          ],
-                                          "go": [Function],
-                                          "goBack": [Function],
-                                          "goForward": [Function],
-                                          "index": 0,
-                                          "length": 1,
-                                          "listen": [Function],
-                                          "location": Object {
-                                            "hash": "",
-                                            "key": undefined,
-                                            "pathname": "/",
-                                            "search": "",
-                                            "state": undefined,
-                                          },
-                                          "push": [Function],
-                                          "replace": [Function],
-                                        }
-                                      }
+                                      history="placeholderHistoryObject"
                                       id="FoundReferences"
                                       key="FoundReferences"
                                       title="Find some references"
@@ -1822,38 +1667,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     <ActivationChecklistItem
                                       detail="Configure a single-sign on (SSO) provider or have at least one other teammate sign up."
                                       done={false}
-                                      history={
-                                        Object {
-                                          "action": "POP",
-                                          "block": [Function],
-                                          "canGo": [Function],
-                                          "createHref": [Function],
-                                          "entries": Array [
-                                            Object {
-                                              "hash": "",
-                                              "key": undefined,
-                                              "pathname": "/",
-                                              "search": "",
-                                              "state": undefined,
-                                            },
-                                          ],
-                                          "go": [Function],
-                                          "goBack": [Function],
-                                          "goForward": [Function],
-                                          "index": 0,
-                                          "length": 1,
-                                          "listen": [Function],
-                                          "location": Object {
-                                            "hash": "",
-                                            "key": undefined,
-                                            "pathname": "/",
-                                            "search": "",
-                                            "state": undefined,
-                                          },
-                                          "push": [Function],
-                                          "replace": [Function],
-                                        }
-                                      }
+                                      history="placeholderHistoryObject"
                                       id="EnabledSharing"
                                       key="EnabledSharing"
                                       title="Configure SSO or share with teammates"

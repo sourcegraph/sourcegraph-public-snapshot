@@ -5,6 +5,7 @@ import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
 import toJson from 'enzyme-to-json'
+import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
 
 jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
 jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
@@ -21,7 +22,8 @@ describe('StatusMessagesNavItem', () => {
                         isSiteAdmin={false}
                         history={createMemoryHistory()}
                     />
-                )
+                ),
+                { map: replaceHistoryObject }
             )
         ).toMatchSnapshot()
     })
@@ -42,7 +44,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })
@@ -56,7 +59,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })
@@ -89,7 +93,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })
@@ -103,7 +108,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })
@@ -125,7 +131,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={false}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })
@@ -139,7 +146,8 @@ describe('StatusMessagesNavItem', () => {
                             isSiteAdmin={true}
                             history={createMemoryHistory()}
                         />
-                    )
+                    ),
+                    { map: replaceHistoryObject }
                 )
             ).toMatchSnapshot()
         })

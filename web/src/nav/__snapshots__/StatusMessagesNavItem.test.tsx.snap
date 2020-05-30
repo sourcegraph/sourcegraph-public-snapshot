@@ -3,38 +3,7 @@
 exports[`StatusMessagesNavItem no messages 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -141,38 +110,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -280,38 +218,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
 exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={true}
 >
   <ButtonDropdown
@@ -434,38 +341,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -573,38 +449,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={true}
 >
   <ButtonDropdown
@@ -727,38 +572,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
 exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -866,38 +680,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="placeholderHistoryObject"
   isSiteAdmin={true}
 >
   <ButtonDropdown

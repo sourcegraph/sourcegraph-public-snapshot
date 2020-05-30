@@ -5,6 +5,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 import { mount } from 'enzyme'
+import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
+import toJson from 'enzyme-to-json'
 
 describe('UserNavItem', () => {
     const ORG_CONNECTION = {
@@ -21,17 +23,20 @@ describe('UserNavItem', () => {
 
     test('simple', () => {
         expect(
-            mount(
-                <MemoryRouter>
-                    <UserNavItem
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
-                        themePreference={ThemePreference.Light}
-                        location={history.location}
-                        authenticatedUser={USER}
-                        showDotComMarketing={true}
-                    />
-                </MemoryRouter>
+            toJson(
+                mount(
+                    <MemoryRouter>
+                        <UserNavItem
+                            isLightTheme={true}
+                            onThemePreferenceChange={() => undefined}
+                            themePreference={ThemePreference.Light}
+                            location={history.location}
+                            authenticatedUser={USER}
+                            showDotComMarketing={true}
+                        />
+                    </MemoryRouter>
+                ),
+                { map: replaceHistoryObject }
             )
         ).toMatchSnapshot()
     })

@@ -5,6 +5,7 @@ import { VersionContextDropdown, VersionContextDropdownProps } from './VersionCo
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import toJson from 'enzyme-to-json'
+import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
 
 const commonProps: VersionContextDropdownProps = {
     setVersionContext: sinon.spy(),
@@ -21,7 +22,7 @@ const commonProps: VersionContextDropdownProps = {
 }
 describe('VersionContextDropdown', () => {
     it('renders the version context dropdown with no context selected', () => {
-        const wrapper = toJson(mount(<VersionContextDropdown {...commonProps} />))
+        const wrapper = toJson(mount(<VersionContextDropdown {...commonProps} />), { map: replaceHistoryObject })
         expect(wrapper).toMatchSnapshot()
     })
 
