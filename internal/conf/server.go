@@ -194,6 +194,9 @@ func (s *Server) updateFromSource(ctx context.Context) (PostConfigWriteActions, 
 	if actions.ServerRestartRequired {
 		s.markNeedServerRestart()
 	}
+	// We don't persist the frontend reload state here because we can't monitor
+	// if the user has actually done it: instead, we'll just report that
+	// synchronously now in the return value, but otherwise drop it.
 
 	return actions, nil
 }
