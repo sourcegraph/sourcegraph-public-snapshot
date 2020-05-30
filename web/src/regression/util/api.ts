@@ -854,31 +854,6 @@ export function fetchSiteConfiguration({
 }
 
 /**
- * Updates the site's configuration.
- *
- * @returns An observable indicating whether or not a service restart is
- * required for the update to be applied.
- */
-export function updateSiteConfiguration(
-    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
-    lastID: number,
-    input: string
-): Observable<boolean> {
-    return requestGraphQL<GQL.IMutation>({
-        request: gql`
-            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-                updateSiteConfiguration(lastID: $lastID, input: $input)
-            }
-        `,
-        variables: { lastID, input },
-        mightContainPrivateInfo: true,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.updateSiteConfiguration)
-    )
-}
-
-/**
  * Overwrites the site's configuration.
  *
  * @returns An observable indicating whether a service restart and/or frontend
