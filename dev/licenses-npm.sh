@@ -9,4 +9,4 @@ FAIL_ON='UNKNOWN;GPL-1.0-only;GPL-1.0-or-later;GPL-2.0-only;GPL-2.0-or-later;GPL
 {
   # Webapp, native integrations and browser extension
   ./node_modules/.bin/license-checker --production --csv --failOn "$FAIL_ON"
-} | uniq >ThirdPartyLicensesNpm.csv
+} | uniq >thid-party-licenses/ThirdPartyLicensesNpm.csv
