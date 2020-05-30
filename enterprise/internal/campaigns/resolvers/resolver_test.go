@@ -1234,7 +1234,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		}
 		return api.CommitID(testBaseRevision), nil
 	}
-	defer func() { git.Mocks.MergeBase = nil }()
+	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	// repo & external service setup
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})

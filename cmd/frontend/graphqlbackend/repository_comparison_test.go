@@ -48,7 +48,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
 	}
-	defer func() { git.Mocks.ExecReader = nil }()
+	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
 	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
@@ -56,7 +56,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
 	}
-	defer func() { git.Mocks.MergeBase = nil }()
+	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(repo)
