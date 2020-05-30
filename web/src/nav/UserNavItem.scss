@@ -2,4 +2,8 @@
     &__dropdown-menu {
         min-width: 12rem;
     }
+
+    [data-reach-menu-item][data-selected] {
+        background: red;
+    }
 }
