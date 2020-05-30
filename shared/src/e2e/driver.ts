@@ -508,15 +508,18 @@ export class Driver {
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
         const newConfig = modifyJSONC(currentConfig, path, f)
-        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+        const overwriteConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-                    updateSiteConfiguration(lastID: $lastID, input: $input)
+                mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {
+                    overwriteSiteConfiguration(lastID: $lastID, input: $input) {
+                        frontendReloadRequired
+                        serverRestartRequired
+                    }
                 }
             `,
             variables: { lastID: site.configuration.id, input: newConfig },
         })
-        dataOrThrowErrors(updateConfigResponse)
+        dataOrThrowErrors(overwriteConfigResponse)
     }
 
     public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {

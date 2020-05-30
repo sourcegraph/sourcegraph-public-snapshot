@@ -10,7 +10,7 @@ import { PageTitle } from '../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { fetchSite, reloadSite, overwriteSiteConfiguration } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
@@ -202,8 +202,10 @@ interface State {
     error?: Error
 
     saving?: boolean
-    restartToApply: boolean
     reloadStartedAt?: number
+    serverRestartRequired: boolean
+
+    frontendReloadRequired: boolean
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
@@ -214,7 +216,8 @@ const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
-        restartToApply: window.context.needServerRestart,
+        serverRestartRequired: window.context.needServerRestart,
+        frontendReloadRequired: false,
     }
 
     private remoteRefreshes = new Subject<void>()
@@ -246,7 +249,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         const lastConfiguration = this.state.site && this.state.site.configuration
                         const lastConfigurationID = lastConfiguration?.id || 0
 
-                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
+                        return overwriteSiteConfiguration(lastConfigurationID, newContents).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ saving: false, error })
@@ -254,16 +257,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             })
                         )
                     }),
-                    tap(restartToApply => {
-                        if (restartToApply) {
-                            window.context.needServerRestart = restartToApply
+                    tap(({ frontendReloadRequired, serverRestartRequired }) => {
+                        if (serverRestartRequired) {
+                            window.context.needServerRestart = serverRestartRequired
                         } else {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
                             // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
                             refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
-                        this.setState({ restartToApply })
+                        this.setState({ frontendReloadRequired, serverRestartRequired })
                         this.remoteRefreshes.next()
                     })
                 )
@@ -333,7 +336,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
-        if (this.state.restartToApply) {
+        if (this.state.serverRestartRequired) {
             alerts.push(
                 <div
                     key="remote-dirty"
@@ -364,6 +367,19 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             </li>
                         ))}
                     </ul>
+                </div>
+            )
+        }
+        if (this.state.frontendReloadRequired) {
+            alerts.push(
+                <div
+                    key="frontend-dirty"
+                    className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
+                >
+                    A UI reload is required for the configuration to take effect.
+                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadFrontend}>
+                        Reload the UI
+                    </button>
                 </div>
             )
         }
@@ -455,6 +471,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private onSave = (value: string): void => {
         eventLogger.log('SiteConfigurationSaved')
         this.remoteUpdates.next(value)
+    }
+
+    private reloadFrontend = (): void => {
+        eventLogger.log('SiteFrontendReloaded')
+        window.location.reload()
     }
 
     private reloadSite = (): void => {

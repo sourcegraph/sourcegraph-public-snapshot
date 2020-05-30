@@ -892,7 +892,10 @@ export function overwriteSiteConfiguration(
     return requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {
-                overwriteSiteConfiguration(lastID: $lastID, input: $input)
+                overwriteSiteConfiguration(lastID: $lastID, input: $input) {
+                    frontendReloadRequired
+                    serverRestartRequired
+                }
             }
         `,
         variables: { lastID, input },

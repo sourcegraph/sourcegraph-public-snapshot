@@ -481,6 +481,29 @@ export function updateSiteConfiguration(lastID: number, input: string): Observab
 }
 
 /**
+ * Overwrites the site's configuration.
+ *
+ * @returns An observable indicating whether a service restart and/or frontend
+ * reload is required for the update to be applied.
+ */
+export function overwriteSiteConfiguration(lastID: number, input: string): Observable<GQL.ISiteConfigurationActions> {
+    return mutateGraphQL(
+        gql`
+            mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {
+                overwriteSiteConfiguration(lastID: $lastID, input: $input) {
+                    frontendReloadRequired
+                    serverRestartRequired
+                }
+            }
+        `,
+        { lastID, input }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.overwriteSiteConfiguration)
+    )
+}
+
+/**
  * Reloads the site.
  */
 export function reloadSite(): Observable<void> {

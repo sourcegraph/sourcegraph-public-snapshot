@@ -15,7 +15,7 @@ import {
     deleteOrganization,
     getViewerSettings,
     fetchSiteConfiguration,
-    updateSiteConfiguration,
+    overwriteSiteConfiguration,
 } from './api'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ResourceDestructor } from './TestResourceManager'
@@ -227,17 +227,17 @@ export async function editGlobalSettings(
 export async function editSiteConfig(
     gqlClient: GraphQLClient,
     ...edits: ((contents: string) => jsonc.Edit[])[]
-): Promise<{ destroy: ResourceDestructor; result: boolean }> {
+): Promise<{ destroy: ResourceDestructor; result: GQL.ISiteConfigurationActions }> {
     const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     let newContents = origConfig.configuration.effectiveContents
     for (const editFn of edits) {
         newContents = jsonc.applyEdits(newContents, editFn(newContents))
     }
     return {
-        result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),
+        result: await overwriteSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),
         destroy: async () => {
             const c = await fetchSiteConfiguration(gqlClient).toPromise()
-            await updateSiteConfiguration(
+            await overwriteSiteConfiguration(
                 gqlClient,
                 c.configuration.id,
                 origConfig.configuration.effectiveContents
