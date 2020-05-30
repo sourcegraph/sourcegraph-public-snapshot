@@ -142,7 +142,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return JSONCString(""), err
+		return "", err
 	}
 	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
 	return JSONCString(siteConfig), nil
@@ -173,6 +173,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if strings.TrimSpace(args.Input) == "" {
 		return false, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
+
+	if problems, err := conf.ValidateSite(args.Input); err != nil {
+		return false, fmt.Errorf("failed to validate site configuration: %w", err)
+	} else if len(problems) > 0 {
+		return false, fmt.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
+	}
+
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
@@ -197,7 +204,7 @@ func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return JSONCString(""), err
+		return "", err
 	}
 	criticalConf := globals.ConfigurationServerFrontendOnly.Raw().Critical
 	return JSONCString(criticalConf), nil

@@ -117,6 +117,7 @@ export interface LayoutProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
+    previousVersionContext: string | null
 
     isSourcegraphDotCom: boolean
     showCampaigns: boolean

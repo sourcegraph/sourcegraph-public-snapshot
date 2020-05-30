@@ -3,6 +3,7 @@ on:
   - push
 jobs:
   lsif-go:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     steps:
@@ -13,6 +14,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
@@ -31,6 +33,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-shared:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
@@ -49,6 +52,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-browser:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:

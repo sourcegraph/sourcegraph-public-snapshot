@@ -6,37 +6,43 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type Janitor struct {
+	db                 db.DB
 	bundleDir          string
 	desiredPercentFree int
 	janitorInterval    time.Duration
 	maxUploadAge       time.Duration
+	maxDatabasePartAge time.Duration
 	metrics            JanitorMetrics
 	done               chan struct{}
 	once               sync.Once
 }
 
 func New(
+	db db.DB,
 	bundleDir string,
 	desiredPercentFree int,
 	janitorInterval time.Duration,
 	maxUploadAge time.Duration,
+	maxDatabasePartAge time.Duration,
 	metrics JanitorMetrics,
 ) *Janitor {
 	return &Janitor{
+		db:                 db,
 		bundleDir:          bundleDir,
 		desiredPercentFree: desiredPercentFree,
 		janitorInterval:    janitorInterval,
 		maxUploadAge:       maxUploadAge,
+		maxDatabasePartAge: maxDatabasePartAge,
 		metrics:            metrics,
 		done:               make(chan struct{}),
 	}
 }
 
-// Run periodically performs a best-effort cleanup process. See the following methods
-// for more specifics: removeOldUploadFiles, removeOrphanedBundleFiles, and freeSpace.
+// Run periodically performs a best-effort cleanup process.
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
@@ -66,12 +72,20 @@ func (j *Janitor) run() error {
 		return errors.Wrap(err, "janitor.removeOldUploadFiles")
 	}
 
-	if err := j.removeOrphanedBundleFiles(defaultStatesFn); err != nil {
+	if err := j.removeOldDatabasePartFiles(); err != nil {
+		return errors.Wrap(err, "janitor.removeOldDatabasePartFiles")
+	}
+
+	if err := j.removeOrphanedBundleFiles(); err != nil {
 		return errors.Wrap(err, "janitor.removeOrphanedBundleFiles")
 	}
 
-	if err := j.freeSpace(defaultPruneFn); err != nil {
+	if err := j.freeSpace(); err != nil {
 		return errors.Wrap(err, "janitor.freeSpace")
+	}
+
+	if err := j.removeProcessedUploadsWithoutBundleFile(); err != nil {
+		return errors.Wrap(err, "janitor.removeProcessedUploadsWithoutBundle")
 	}
 
 	return nil

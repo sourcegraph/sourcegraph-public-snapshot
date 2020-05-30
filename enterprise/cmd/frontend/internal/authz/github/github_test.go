@@ -227,7 +227,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 	}
 }
 
-func Test_fetchUserRepos(t *testing.T) {
+func TestFetchUserRepos(t *testing.T) {
 	mockClient := &mockClient{
 		MockGetRepositoriesByNodeIDFromAPI: func(ctx context.Context, nodeIDs []string) (map[string]*github.Repository, error) {
 			return map[string]*github.Repository{

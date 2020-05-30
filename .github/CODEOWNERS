@@ -35,6 +35,7 @@
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @slimsag
+/internal/cmd/ghe-feeder @uwedeportivo
 /internal/comby @rvantonder
 /internal/db/ @keegancsmith
 /internal/processrestart @slimsag @keegancsmith
@@ -70,7 +71,7 @@
 /dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
-/SECURITY.md @beyang @nicksnyder
+/SECURITY.md @sourcegraph/security
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
@@ -143,14 +144,15 @@
 /schema/ @sourcegraph/core-services
 
 # Search and code mod
-*/search/**/* @sourcegraph/core-services
-/cmd/frontend/internal/pkg/search @sourcegraph/core-services
-/cmd/query-runner/ @sourcegraph/core-services
-/cmd/replacer/ @sourcegraph/core-services @rvantonder
-/cmd/searcher/ @sourcegraph/core-services
-/cmd/symbols/ @sourcegraph/core-services
-/internal/search/ @sourcegraph/core-services
-/internal/symbols/ @sourcegraph/core-services
+*/search/**/* @sourcegraph/search
+/cmd/frontend/internal/pkg/search @sourcegraph/search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/search
+/cmd/query-runner/ @sourcegraph/search
+/cmd/replacer/ @sourcegraph/search @rvantonder
+/cmd/searcher/ @sourcegraph/search
+/cmd/symbols/ @sourcegraph/search
+/internal/search/ @sourcegraph/search
+/internal/symbols/ @sourcegraph/search
 
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
@@ -178,10 +180,14 @@ Dockerfile @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
+/cmd/frontend/graphqlbackend/site_monitoring* @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /internal/conf @slimsag
 /internal/db/confdb @slimsag
 /internal/db/globalstatedb @slimsag
+/internal/prometheusutil @sourcegraph/distribution
+/internal/cmd/resources-report @sourcegraph/distribution
+/.github/workflows/resources-report.yml @sourcegraph/distribution
 /enterprise/docs @sourcegraph/distribution
 /.buildkite @sourcegraph/distribution @ggilmore
 ## Regression testing
@@ -193,7 +199,7 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 /README.md @sqs
-/doc/ @sourcegraph/distribution @ryan-blunden
+/doc/ @sourcegraph/distribution
 /doc/dev/ @nicksnyder
 /doc/dev/web/ @felixfbecker @sourcegraph/web
 
@@ -223,13 +229,12 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # Precise code intel
-/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
 /cmd/precise-code-intel-worker/ @sourcegraph/code-intel
+/cmd/precise-code-intel-indexer/ @sourcegraph/code-intel
 /internal/cmd/precise-code-intel-test @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
-/internal/lsif @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
@@ -244,7 +249,6 @@ Dockerfile @sourcegraph/distribution
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
-/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services

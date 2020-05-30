@@ -124,7 +124,7 @@ function abbreviateOID(oid: string): string {
 }
 
 export function quoteIfNeeded(s: string): string {
-    if (/["' ]/.test(s)) {
+    if (/[ "']/.test(s)) {
         return JSON.stringify(s)
     }
     return s

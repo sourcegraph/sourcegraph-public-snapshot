@@ -38,7 +38,8 @@ type OrdinaryQuery struct {
 
 // A query containing and/or expressions.
 type AndOrQuery struct {
-	Query []Node
+	Query             []Node
+	HeuristicsApplied map[heuristic]bool
 }
 
 func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
@@ -68,7 +69,7 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 
 // AndOrQuery satisfies the interface for QueryInfo close to that of OrdinaryQuery.
 func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
@@ -79,7 +80,7 @@ func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string
 }
 
 func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
@@ -90,7 +91,7 @@ func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) 
 }
 
 func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	VisitField(q.Query, field, func(visitedValue string, negated, _ bool) {
+	VisitField(q.Query, field, func(visitedValue string, negated bool) {
 		if negated {
 			negatedValue = visitedValue
 		} else {
@@ -102,16 +103,25 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
-	VisitField(q.Query, field, func(value string, _, quoted bool) {
-		values = append(values, valueToTypedValue(field, value, quoted)...)
-	})
+	if field == "" {
+		VisitPattern(q.Query, func(value string, _, quoted bool) {
+			values = append(values, q.valueToTypedValue(field, value, quoted)...)
+		})
+	} else {
+		VisitField(q.Query, field, func(value string, _ bool) {
+			values = append(values, q.valueToTypedValue(field, value, false)...)
+		})
+	}
 	return values
 }
 
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
-	VisitParameter(q.Query, func(field, value string, _, quoted bool) {
-		fields[field] = valueToTypedValue(field, value, quoted)
+	VisitPattern(q.Query, func(value string, _, quoted bool) {
+		fields[""] = q.Values("")
+	})
+	VisitParameter(q.Query, func(field, _ string, _ bool) {
+		fields[field] = q.Values(field)
 	})
 	return fields
 }
@@ -121,7 +131,15 @@ func (q AndOrQuery) Fields() map[string][]*types.Value {
 // not is significant for surfacing suggestions.
 func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
-	VisitParameter(q.Query, func(field, value string, negated, _ bool) {
+	VisitPattern(q.Query, func(value string, negated, _ bool) {
+		expr := &syntax.Expr{
+			Field: "",
+			Value: value,
+			Not:   negated,
+		}
+		tree = append(tree, expr)
+	})
+	VisitParameter(q.Query, func(field, value string, negated bool) {
 		expr := &syntax.Expr{
 			Field: field,
 			Value: value,
@@ -134,7 +152,7 @@ func (q AndOrQuery) ParseTree() syntax.ParseTree {
 
 func (q AndOrQuery) BoolValue(field string) bool {
 	result := false
-	VisitField(q.Query, field, func(value string, _, _ bool) {
+	VisitField(q.Query, field, func(value string, _ bool) {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result
@@ -145,26 +163,30 @@ func (q AndOrQuery) IsCaseSensitive() bool {
 }
 
 func parseRegexpOrPanic(field, value string) *regexp.Regexp {
-	regexp, err := regexp.Compile(value)
+	r, err := regexp.Compile(value)
 	if err != nil {
 		panic(fmt.Sprintf("Value %s for field %s invalid regex: %s", field, value, err.Error()))
 	}
-	return regexp
+	return r
 }
 
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func valueToTypedValue(field, value string, quoted bool) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, quoted bool) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
-		if quoted {
+		// If a pattern is quoted, or we applied heuristics to interpret
+		// valid regexp metasyntax literally instead, this pattern is a
+		// string.
+		if quoted || q.HeuristicsApplied[parensAsPatterns] {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {
 			return []*types.Value{{Regexp: regexp}}
 		}
+		// If the regexp does not compile, treat it as a string.
 		return []*types.Value{{String: &value}}
 
 	case

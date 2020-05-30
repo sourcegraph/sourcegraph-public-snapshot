@@ -39,12 +39,22 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "TS-Morph",
+      "program": "${workspaceFolder}/dev/ts-morph/out/main.js",
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"],
+      "console": "internalConsole",
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Gulp",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
       "args": ["webpack"],
       "env": {
-        "TS_NODE_COMPILER_OPTIONS": '{"module":"commonjs"}',
+        // prettier-ignore
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
       },
       "internalConsoleOptions": "openOnSessionStart",
     },

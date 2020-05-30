@@ -46,7 +46,15 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 <!-- omit in toc -->
 ### For Sourcegraph employees
 
-[dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) (which has convenient preconfigured settings and external services on an enterprise account) alongside the `sourcegraph/sourcegraph` repository, for example:
+
+```
+/dir
+ |-- dev-private
+ +-- sourcegraph
+```
+
+After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
 
 ## Step 1: Install dependencies
 

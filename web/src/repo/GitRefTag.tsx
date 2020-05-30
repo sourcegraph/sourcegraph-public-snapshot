@@ -1,4 +1,4 @@
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import React from 'react'
@@ -40,11 +40,11 @@ export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown 
             if (gitRef.name.endsWith('/head')) {
                 kind = 'pull request'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
-                Icon = GithubCircleIcon
+                Icon = GithubIcon
             } else if (gitRef.name.endsWith('/merge')) {
                 kind = 'pull request merge'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
-                Icon = GithubCircleIcon
+                Icon = GithubIcon
             }
             break
     }

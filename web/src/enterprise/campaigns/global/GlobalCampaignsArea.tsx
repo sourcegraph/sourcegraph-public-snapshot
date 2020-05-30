@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
-import { CampaignCLIHelp } from './create/CampaignCLIHelp'
+import { CampaignCliHelp } from './create/CampaignCliHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
@@ -66,7 +66,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         />
                         <Route
                             path={`${match.url}/cli`}
-                            render={props => <CampaignCLIHelp {...outerProps} {...props} />}
+                            render={props => <CampaignCliHelp {...outerProps} {...props} />}
                             exact={true}
                         />
                         <Route

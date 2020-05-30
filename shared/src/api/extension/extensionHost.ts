@@ -7,18 +7,17 @@ import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
-import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
-import { ExtWorkspace } from './api/workspace'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { registerComlinkTransferHandlers } from '../util'
+import { initNewExtensionAPI } from './flatExtensionApi'
 
 /**
  * Required information when initializing an extension host.
@@ -135,25 +134,25 @@ function createExtensionAPI(
     const extensions = new ExtExtensions()
     subscription.add(extensions)
 
-    const workspace = new ExtWorkspace()
     const windows = new ExtWindows(proxy, documents)
     const views = new ExtViews(proxy.views)
-    const configuration = new ExtConfiguration<any>(proxy.configuration)
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
+
+    const { configuration, exposedToMain, workspace, state } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
-        configuration,
+
         documents,
         extensions,
-        workspace,
         windows,
+        ...exposedToMain,
     }
 
     // Expose the extension API to extensions
@@ -194,20 +193,19 @@ function createExtensionAPI(
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-            get roots(): readonly sourcegraph.WorkspaceRoot[] {
-                return workspace.getAllRoots()
+            ...workspace,
+            // we use state here directly because of getters
+            // getter are not preserved as functions via {...obj} syntax
+            // thus expose state until we migrate documents to the new model according RFC 155
+            get roots() {
+                return state.roots
             },
-            onDidChangeRoots: workspace.rootChanges,
-            rootChanges: workspace.rootChanges,
-            get versionContext(): string | undefined {
-                return workspace.versionContextChanges.value
+            get versionContext() {
+                return state.versionContext
             },
-            versionContextChanges: workspace.versionContextChanges.asObservable(),
         },
 
-        configuration: Object.assign(configuration.changes.asObservable(), {
-            get: () => configuration.get(),
-        }),
+        configuration,
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>

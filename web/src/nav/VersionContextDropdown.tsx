@@ -49,6 +49,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
         const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
         const activation = undefined
         const source = 'filter'
+        const queryParams: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
         if (searchQueryNotEmpty) {
             submitSearch({
                 history,
@@ -59,6 +60,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                 versionContext,
                 activation,
                 filtersInQuery,
+                queryParams,
             })
         }
     }
@@ -108,12 +110,14 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                     })}
                                     portal={props.portal}
                                 >
-                                    <div className="version-context-dropdown__title pl-2 mb-1">
-                                        <span className="text-nowrap">Select version context</span>
-                                        <button type="button" className="btn btn-icon" onClick={showInfo}>
-                                            <HelpCircleOutlineIcon className="icon-inline small" />
-                                        </button>
-                                    </div>
+                                    {hasDismissedInfo === 'true' && (
+                                        <div className="version-context-dropdown__title pl-2 mb-1">
+                                            <span className="text-nowrap">Select version context</span>
+                                            <button type="button" className="btn btn-icon" onClick={showInfo}>
+                                                <HelpCircleOutlineIcon className="icon-inline small" />
+                                            </button>
+                                        </div>
+                                    )}
                                     {hasDismissedInfo !== 'true' && (
                                         <div className="version-context-dropdown__info card">
                                             <span className="font-weight-bold">About version contexts</span>

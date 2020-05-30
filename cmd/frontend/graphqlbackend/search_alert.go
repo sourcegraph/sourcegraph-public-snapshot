@@ -46,7 +46,7 @@ func alertForCappedAndExpression() *searchAlert {
 	return &searchAlert{
 		prometheusType: "exceed_and_expression_search_limit",
 		title:          "Too many files to search for and-expression",
-		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+		description:    "One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824",
 	}
 }
 
@@ -80,7 +80,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 		return &searchAlert{
 			prometheusType: "unsupported_and_or_query",
 			title:          "Unable To Process Query",
-			description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
+			description:    `I'm having trouble understanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
 		}
 	}
 	return &searchAlert{
@@ -131,7 +131,7 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func reposExist(ctx context.Context, options resolveRepoOp) bool {
-	repos, _, _, err := resolveRepositories(ctx, options)
+	repos, _, _, _, err := resolveRepositories(ctx, options)
 	return err == nil && len(repos) > 0
 }
 
@@ -387,7 +387,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		}
 	}
 
-	repos, _, _, _ := r.resolveRepositories(ctx, nil)
+	repos, _, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
 		for i, repo := range repos {
@@ -416,7 +416,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {

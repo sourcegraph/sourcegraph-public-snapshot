@@ -224,17 +224,14 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return err
 	}
 
-	// httpapi.NewLSIFServerProxy is set by enterprise frontend
-	var lsifServerProxy *httpapi.LSIFServerProxy
-	if httpapi.NewLSIFServerProxy != nil {
-		var err error
-		if lsifServerProxy, err = httpapi.NewLSIFServerProxy(); err != nil {
-			return err
-		}
+	// httpapi.NewCodeIntelUploadHandler is set by the enterprise frontend
+	var codeintelUploadHandler http.Handler
+	if httpapi.NewCodeIntelUploadHandler != nil {
+		codeintelUploadHandler = httpapi.NewCodeIntelUploadHandler()
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, lsifServerProxy)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, codeintelUploadHandler)
 	if err != nil {
 		return err
 	}

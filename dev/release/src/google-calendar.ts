@@ -25,7 +25,7 @@ async function getAccessToken(oauth2Client: OAuth2Client): Promise<Credentials> 
     try {
         const content = await readFile(TOKEN_PATH, { encoding: 'utf8' })
         return JSON.parse(content)
-    } catch (err) {
+    } catch {
         const token = await getAccessTokenNoCache(oauth2Client)
         await writeFile(TOKEN_PATH, JSON.stringify(token))
         return token

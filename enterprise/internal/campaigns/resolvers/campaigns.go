@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -68,19 +66,8 @@ type campaignResolver struct {
 	*campaigns.Campaign
 }
 
-const campaignIDKind = "Campaign"
-
-func marshalCampaignID(id int64) graphql.ID {
-	return relay.MarshalID(campaignIDKind, id)
-}
-
-func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
-	err = relay.UnmarshalSpec(id, &campaignID)
-	return
-}
-
 func (r *campaignResolver) ID() graphql.ID {
-	return marshalCampaignID(r.Campaign.ID)
+	return campaigns.MarshalCampaignID(r.Campaign.ID)
 }
 
 func (r *campaignResolver) Name() string {
@@ -106,11 +93,7 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 }
 
 func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	currentUser, err := backend.CurrentUser(ctx)
-	if err != nil {
-		return false, err
-	}
-	return currentUser.SiteAdmin, nil
+	return currentUserCanAdministerCampaign(ctx, r.Campaign)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
@@ -333,7 +316,15 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
+	canAdmin, err := currentUserCanAdministerCampaign(ctx, r.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
+		ID:            r.Campaign.ID,
+		ExcludeErrors: !canAdmin,
+	})
 }
 
 type changesetDiffsConnectionResolver struct {

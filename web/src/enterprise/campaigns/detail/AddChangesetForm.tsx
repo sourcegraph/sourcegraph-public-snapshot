@@ -82,8 +82,8 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                 await addChangeset({ campaignID, repoName, externalID })
                 setExternalID('')
                 onAdd()
-            } catch (err) {
-                setError(asError(err))
+            } catch (error) {
+                setError(asError(error))
             } finally {
                 setIsLoading(false)
             }

@@ -99,20 +99,26 @@ func Init(d dbutil.DB, clock func() time.Time) {
 		if info != nil && info.IsExpiredWithGracePeriod() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Core features.",
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
 			}}
 		}
 		return nil
 	})
 
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
-	// (due to a error in parsing or verification, or because the license has expired).
+	// (due to an error in parsing or verification, or because the license has expired).
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
-				// Site admins are exempt from license enforcement screens such that they can
-				// easily update the license key.
+			// Site admins are exempt from license enforcement screens so that they can
+			// easily update the license key. Also ignore backend.ErrNotAuthenticated
+			// because we need to allow site admins to sign in.
+			err := backend.CheckCurrentUserIsSiteAdmin(r.Context())
+			if err == nil || err == backend.ErrNotAuthenticated {
 				next.ServeHTTP(w, r)
+				return
+			} else if err != backend.ErrMustBeSiteAdmin {
+				log15.Error("Error checking current user is site admin", "err", err)
+				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
@@ -123,7 +129,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 

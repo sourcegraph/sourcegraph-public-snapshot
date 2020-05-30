@@ -217,7 +217,7 @@ func TestInsertUploadUploading(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	id, err := db.InsertUpload(context.Background(), &Upload{
+	id, err := db.InsertUpload(context.Background(), Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
 		State:        "uploading",
@@ -267,7 +267,7 @@ func TestInsertUploadQueued(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	id, err := db.InsertUpload(context.Background(), &Upload{
+	id, err := db.InsertUpload(context.Background(), Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
 		State:         "queued",
@@ -558,7 +558,7 @@ func TestDequeueSkipsLocked(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	t1 := time.Now().UTC()
+	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
 	t3 := t2.Add(time.Minute)
 	insertUploads(

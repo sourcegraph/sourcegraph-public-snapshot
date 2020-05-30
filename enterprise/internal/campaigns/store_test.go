@@ -429,6 +429,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 	changesets := make([]*cmpgn.Changeset, 0, 3)
 
+	deletedRepoChangeset := &cmpgn.Changeset{
+		RepoID:              deletedRepo.ID,
+		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
+		ExternalServiceType: "github",
+	}
+
 	t.Run("Create", func(t *testing.T) {
 		var i int
 		for i = 0; i < cap(changesets); i++ {
@@ -455,20 +461,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			t.Fatal(err)
 		}
 
-		err = s.CreateChangesets(ctx, &cmpgn.Changeset{
-			RepoID:              deletedRepo.ID,
-			CreatedAt:           clock.now(),
-			UpdatedAt:           clock.now(),
-			Metadata:            githubPR,
-			CampaignIDs:         []int64{int64(i) + 1},
-			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: "github",
-			ExternalBranch:      "campaigns/test",
-			ExternalUpdatedAt:   clock.now(),
-			ExternalState:       cmpgn.ChangesetStateOpen,
-			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
-		})
+		err = s.CreateChangesets(ctx, deletedRepoChangeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -932,6 +925,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
+
+		t.Run("RepoDeleted", func(t *testing.T) {
+			opts := GetChangesetOpts{ID: deletedRepoChangeset.ID}
+
+			_, have := s.GetChangeset(ctx, opts)
+			want := ErrNoResults
+
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
@@ -1311,7 +1315,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	// We need campaigns attached to each changeset
 	for _, cs := range changesets {
 		c := &cmpgn.Campaign{
-			Name:           fmt.Sprintf("ListChangesetSyncData test"),
+			Name:           "ListChangesetSyncData test",
 			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
 		}
@@ -1645,8 +1649,14 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 }
 
-func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	patches := make([]*cmpgn.Patch, 0, 3)
+
+	repo := testRepo(1, "github")
+	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+		t.Fatal(err)
+	}
 
 	var (
 		added   int32 = 77
@@ -1658,7 +1668,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 		for i := 0; i < cap(patches); i++ {
 			p := &cmpgn.Patch{
 				PatchSetID: int64(i + 1),
-				RepoID:     1,
+				RepoID:     repo.ID,
 				Rev:        api.CommitID("deadbeef"),
 				BaseRef:    "master",
 				Diff:       "+ foobar - barfoo",
@@ -1695,6 +1705,19 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 			patches = append(patches, p)
 		}
 	})
+
+	// Create patch to deleted repo.
+	deletedRepoPatch := &cmpgn.Patch{
+		PatchSetID: 1000,
+		RepoID:     deletedRepo.ID,
+		Rev:        api.CommitID("deadbeef"),
+		BaseRef:    "master",
+		Diff:       "+ foobar - barfoo",
+	}
+	err := s.CreatePatch(ctx, deletedRepoPatch)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Count", func(t *testing.T) {
 		count, err := s.CountPatches(ctx, CountPatchesOpts{})
@@ -1828,6 +1851,76 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 				}
 			}
 		})
+	})
+
+	t.Run("Listing OnlyWithoutChangesetJob", func(t *testing.T) {
+		// Define a fake campaign.
+		campaignID := int64(1220)
+
+		// Set up two changeset jobs within the campaign: one successful, one
+		// failed.
+		jobSuccess := &cmpgn.ChangesetJob{
+			PatchID:     patches[0].ID,
+			CampaignID:  campaignID,
+			ChangesetID: 1220,
+			StartedAt:   clock.now(),
+			FinishedAt:  clock.now(),
+		}
+		if err := s.CreateChangesetJob(ctx, jobSuccess); err != nil {
+			t.Fatal(err)
+		}
+
+		jobFailed := &cmpgn.ChangesetJob{
+			PatchID:    patches[1].ID,
+			CampaignID: campaignID,
+			StartedAt:  clock.now(),
+			FinishedAt: clock.now(),
+			Error:      "Octocat knocked pull request off desk",
+		}
+		if err := s.CreateChangesetJob(ctx, jobFailed); err != nil {
+			t.Fatal(err)
+		}
+
+		// List the patches and see what we get back.
+		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		have, _, err := s.ListPatches(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Since patches[0] and patches[1] exist in the changeset jobs created
+		// above, we only expect to see patches[2] in the results.
+		want := patches[2:]
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+		}
+
+		// Update the changeset jobs to change the campaign IDs and try again.
+		// This time, we should get all three elements of patches back.
+		for _, job := range []*cmpgn.ChangesetJob{jobSuccess, jobFailed} {
+			job.CampaignID = 0
+			if err = s.UpdateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		have, _, err = s.ListPatches(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want = patches
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+		}
 	})
 
 	t.Run("Listing OnlyWithoutDiffStats", func(t *testing.T) {
@@ -2032,6 +2125,17 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, _ repos.Store
 
 		t.Run("NoResults", func(t *testing.T) {
 			opts := GetPatchOpts{ID: 0xdeadbeef}
+
+			_, have := s.GetPatch(ctx, opts)
+			want := ErrNoResults
+
+			if have != want {
+				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("RepoDeleted", func(t *testing.T) {
+			opts := GetPatchOpts{ID: deletedRepoPatch.ID}
 
 			_, have := s.GetPatch(ctx, opts)
 			want := ErrNoResults
@@ -2548,6 +2652,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		tests := []struct {
 			jobs []*cmpgn.ChangesetJob
 			want *cmpgn.BackgroundProcessStatus
+			opts GetCampaignStatusOpts
 		}{
 			{
 				jobs: []*cmpgn.ChangesetJob{}, // no jobs
@@ -2596,6 +2701,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 					ProcessState:  cmpgn.BackgroundProcessStateErrored,
 					Total:         1,
 					Completed:     1,
+					Failed:        1,
 					Pending:       0,
 					ProcessErrors: []string{"error1"},
 				},
@@ -2617,8 +2723,26 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 					ProcessState:  cmpgn.BackgroundProcessStateProcessing,
 					Total:         5,
 					Completed:     3,
+					Failed:        2,
 					Pending:       2,
 					ProcessErrors: []string{"error1", "error2"},
+				},
+			},
+
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, error
+					{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				// but we want to exclude errors
+				opts: GetCampaignStatusOpts{ExcludeErrors: true},
+				want: &cmpgn.BackgroundProcessStatus{
+					ProcessState:  cmpgn.BackgroundProcessStateErrored,
+					Total:         1,
+					Completed:     1,
+					Failed:        1,
+					Pending:       0,
+					ProcessErrors: nil,
 				},
 			},
 		}
@@ -2634,7 +2758,10 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 				}
 			}
 
-			status, err := s.GetCampaignStatus(ctx, int64(campaignID))
+			opts := tc.opts
+			opts.ID = int64(campaignID)
+
+			status, err := s.GetCampaignStatus(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}

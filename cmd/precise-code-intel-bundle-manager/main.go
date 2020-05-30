@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -31,13 +33,14 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir            = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		databaseCacheSize    = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
-		documentCacheSize    = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
-		resultChunkCacheSize = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
-		desiredPercentFree   = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval      = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge         = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		bundleDir             = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		databaseCacheSize     = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
+		documentCacheSize     = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
+		resultChunkCacheSize  = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
+		desiredPercentFree    = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval       = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge          = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		rawMaxDatabasePartAge = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
@@ -57,10 +60,11 @@ func main() {
 		resultChunkCacheSize,
 	)
 
+	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
-	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	server := server.New(bundleDir, databaseCache, documentCache, resultChunkCache, observationContext)
-	janitor := janitor.New(bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, janitorMetrics)
+	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
+	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, rawMaxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
 	go janitor.Run()
@@ -106,4 +110,20 @@ func prepCaches(r prometheus.Registerer, databaseCacheSize, documentCacheSize, r
 	MustRegisterCacheMonitor(r, "precise-code-intel-result-chunk", resultChunkCacheSize, resultChunkCacheMetrics)
 
 	return databaseCache, documentCache, resultChunkCache
+}
+
+func mustInitializeDatabase() db.DB {
+	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
+	conf.Watch(func() {
+		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
+			log.Fatalf("detected repository DSN change, restarting to take effect: %s", newDSN)
+		}
+	})
+
+	db, err := db.New(postgresDSN)
+	if err != nil {
+		log.Fatalf("failed to initialize db store: %s", err)
+	}
+
+	return db
 }

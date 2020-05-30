@@ -2,11 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
-	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,21 +11,23 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
+
+func assertEqual(t *testing.T, got, want interface{}) {
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
+	}
+}
 
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
@@ -74,21 +73,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs:     true,
-				IncludePatterns: []string{"r", "p"},
-				LimitOffset:     limitOffset,
-				NoArchived:      true,
-				NoForks:         true,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
@@ -112,22 +108,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -188,22 +180,18 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
 
-			want := db.ReposListOptions{
-				OnlyRepoIDs: true,
-				LimitOffset: limitOffset,
-				NoArchived:  true,
-				NoForks:     true,
-			}
-
-			if !reflect.DeepEqual(op, want) {
-				t.Fatalf("got %+v, want %+v", op, want)
-			}
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.OnlyRepoIDs, true)
+			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
+		db.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -261,200 +249,17 @@ func TestSearchResults(t *testing.T) {
 			if err != nil {
 				t.Fatal("Search:", err)
 			}
+
 			results, err := r.Results(context.Background())
+			if err != nil {
+				t.Fatal("Search: ", err)
+			}
+
 			if results.start.IsZero() {
 				t.Error("Start value is not set")
 			}
 		}
 	})
-}
-
-func BenchmarkSearchResults(b *testing.B) {
-	minimalRepos, _, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
-
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: zoektRepos},
-			result: &zoekt.SearchResult{Files: zoektFileMatches},
-		},
-		DisableCache: true,
-	}
-
-	ctx := context.Background()
-
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return minimalRepos, nil
-	}
-	defer func() { db.Mocks = db.MockStores{} }()
-
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only count:350`)
-		if err != nil {
-			b.Fatal(err)
-		}
-		resolver := &searchResolver{query: q, zoekt: z}
-		results, err := resolver.Results(ctx)
-		if err != nil {
-			b.Fatal("Results:", err)
-		}
-		if int(results.MatchCount()) != len(zoektFileMatches) {
-			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
-		}
-	}
-}
-
-func BenchmarkIntegrationSearchResults(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
-
-	ctx := context.Background()
-
-	_, repos, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
-
-	zoektClient, cleanup := zoektRPC(&fakeSearcher{
-		repos:  &zoekt.RepoList{Repos: zoektRepos},
-		result: &zoekt.SearchResult{Files: zoektFileMatches},
-	})
-	defer cleanup()
-	z := &searchbackend.Zoekt{
-		Client:       zoektClient,
-		DisableCache: true,
-	}
-
-	rows := make([]*sqlf.Query, 0, len(repos))
-	for _, r := range repos {
-		rows = append(rows, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s)",
-			r.Name,
-			r.Description,
-			r.Fork,
-			true,
-			r.ExternalRepo.ServiceType,
-			r.ExternalRepo.ServiceID,
-			r.ExternalRepo.ID,
-		))
-	}
-
-	q := sqlf.Sprintf(`
-		INSERT INTO repo (
-			name,
-			description,
-			fork,
-			enabled,
-			external_service_type,
-			external_service_id,
-			external_id
-		)
-		VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only count:350`)
-		if err != nil {
-			b.Fatal(err)
-		}
-		resolver := &searchResolver{query: q, zoekt: z}
-		results, err := resolver.Results(ctx)
-		if err != nil {
-			b.Fatal("Results:", err)
-		}
-		if int(results.MatchCount()) != len(zoektFileMatches) {
-			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
-		}
-	}
-}
-
-func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
-	var reposWithIDs []*types.Repo
-	var repos []*types.Repo
-	var zoektRepos []*zoekt.RepoListEntry
-
-	for i := 1; i <= count; i++ {
-		name := fmt.Sprintf("repo-%d", i)
-
-		repoWithIDs := &types.Repo{
-			ID:   api.RepoID(i),
-			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: "github",
-				ServiceID:   "https://github.com",
-			}}
-
-		reposWithIDs = append(reposWithIDs, repoWithIDs)
-
-		repos = append(repos, &types.Repo{
-
-			ID:           repoWithIDs.ID,
-			Name:         repoWithIDs.Name,
-			ExternalRepo: repoWithIDs.ExternalRepo,
-
-			RepoFields: &types.RepoFields{
-				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
-				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
-				Language:    "v-language",
-			}})
-
-		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
-			Repository: zoekt.Repository{
-				Name:     name,
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-			},
-		})
-	}
-	return reposWithIDs, repos, zoektRepos
-}
-
-func generateZoektMatches(count int) []zoekt.FileMatch {
-	var zoektFileMatches []zoekt.FileMatch
-	for i := 1; i <= count; i++ {
-		repoName := fmt.Sprintf("repo-%d", i)
-		fileName := fmt.Sprintf("foobar-%d.go", i)
-
-		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
-			Score:      5.0,
-			FileName:   fileName,
-			Repository: repoName, // Important: this needs to match a name in `repos`
-			Branches:   []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
-		})
-	}
-	return zoektFileMatches
-}
-
-// zoektRPC starts zoekts rpc interface and returns a client to
-// searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
-// client.
-func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
-	mux := http.NewServeMux()
-	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
-	ts := httptest.NewServer(mux)
-	cl := zoektrpc.Client(strings.TrimPrefix(ts.URL, "http://"))
-	return cl, func() {
-		cl.Close()
-		ts.Close()
-	}
 }
 
 func TestOrderedFuzzyRegexp(t *testing.T) {
@@ -915,7 +720,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 }
 
-func Test_longer(t *testing.T) {
+func TestLonger(t *testing.T) {
 	N := 2
 	noise := time.Nanosecond
 	for dt := time.Millisecond + noise; dt < time.Hour; dt += time.Millisecond {
@@ -933,7 +738,7 @@ func Test_longer(t *testing.T) {
 	}
 }
 
-func Test_roundStr(t *testing.T) {
+func TestRoundStr(t *testing.T) {
 	tests := []struct {
 		name string
 		s    string
@@ -1037,6 +842,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{repoWithIDs}, nil
 	}
+	db.Mocks.Repos.Count = mockCount
 
 	defer func() { db.Mocks = db.MockStores{} }()
 
@@ -1096,85 +902,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 }
 
-// Tests that indexed repos are filtered in structural search
-func TestStructuralSearchRepoFilter(t *testing.T) {
-	repoName := "indexed/one"
-	indexedFileName := "indexed.go"
-
-	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
-
-	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
-
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
-
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return []*types.Repo{indexedRepo, unindexedRepo}, nil
-	}
-	defer func() { db.Mocks = db.MockStores{} }()
-
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
-		repoName := repo.Name
-		switch repoName {
-		case "indexed/one":
-			return []*FileMatchResolver{{JPath: indexedFileName}}, false, nil
-		case "unindexed/one":
-			return []*FileMatchResolver{{JPath: "unindexed.go"}}, false, nil
-		default:
-			return nil, false, errors.New("Unexpected repo")
-		}
-	}
-	defer func() { mockSearchFilesInRepo = nil }()
-
-	zoektRepo := &zoekt.RepoListEntry{
-		Repository: zoekt.Repository{
-			Name:     string(indexedRepo.Name),
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-		},
-	}
-
-	zoektFileMatches := []zoekt.FileMatch{{
-		FileName:   indexedFileName,
-		Repository: string(indexedRepo.Name),
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-	}}
-
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
-			result: &zoekt.SearchResult{Files: zoektFileMatches},
-		},
-		DisableCache: true,
-	}
-
-	ctx := context.Background()
-
-	q, err := query.ParseAndCheck(`patterntype:structural index:only foo`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resolver := &searchResolver{
-		query:        q,
-		patternType:  query.SearchTypeStructural,
-		zoekt:        z,
-		searcherURLs: endpoint.Static("test"),
-	}
-	results, err := resolver.Results(ctx)
-	if err != nil {
-		t.Fatal("Results:", err)
-	}
-
-	fm, _ := results.Results()[0].ToFileMatch()
-	if fm.JPath != indexedFileName {
-		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
-	}
-}
-
-func Test_dedupSort(t *testing.T) {
+func TestDedupSort(t *testing.T) {
 	repos := make(types.Repos, 512)
 	for i := range repos {
 		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
@@ -1197,7 +925,7 @@ func Test_dedupSort(t *testing.T) {
 	}
 }
 
-func Test_commitAndDiffSearchLimits(t *testing.T) {
+func TestCommitAndDiffSearchLimits(t *testing.T) {
 	cases := []struct {
 		name                 string
 		resultTypes          []string
@@ -1294,102 +1022,6 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 	}
 }
 
-func Test_ZoektSingleIndexedRepo(t *testing.T) {
-	repoRev := func(revSpec string) *search.RepositoryRevisions {
-		return &search.RepositoryRevisions{
-			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
-			Revs: []search.RevisionSpecifier{
-				{RevSpec: revSpec},
-			},
-		}
-	}
-	zoektRepos := []*zoekt.RepoListEntry{{
-		Repository: zoekt.Repository{
-			Name: "test/repo",
-			Branches: []zoekt.RepositoryBranch{
-				{
-					Name:    "HEAD",
-					Version: "df3f4e499698e48152b39cd655d8901eaf583fa5",
-				},
-				{
-					Name:    "NOT-HEAD",
-					Version: "8ec975423738fe7851676083ebf660a062ed1578",
-				},
-			},
-		},
-	}}
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos: &zoekt.RepoList{Repos: zoektRepos},
-		},
-		DisableCache: true,
-	}
-	cases := []struct {
-		rev           string
-		wantIndexed   []*search.RepositoryRevisions
-		wantUnindexed []*search.RepositoryRevisions
-	}{
-		{
-			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
-			wantUnindexed: []*search.RepositoryRevisions{},
-		},
-		{
-			rev:           "HEAD",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
-			wantUnindexed: []*search.RepositoryRevisions{},
-		},
-		{
-			rev:           "df3f4e499698e48152b39cd655d8901eaf583fa5",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
-			wantUnindexed: []*search.RepositoryRevisions{},
-		},
-		{
-			rev:           "df3f4e",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
-			wantUnindexed: []*search.RepositoryRevisions{},
-		},
-		{
-			rev:           "d",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
-		},
-		{
-			rev:           "HEAD^1",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
-		},
-		{
-			rev:           "8ec975423738fe7851676083ebf660a062ed1578",
-			wantUnindexed: []*search.RepositoryRevisions{},
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
-		},
-	}
-
-	type ret struct {
-		Indexed, Unindexed []*search.RepositoryRevisions
-	}
-
-	for _, tt := range cases {
-		filter := func(*zoekt.Repository) bool { return true }
-		indexed, unindexed, err := zoektSingleIndexedRepo(context.Background(), z, repoRev(tt.rev), filter)
-		if err != nil {
-			t.Fatal(err)
-		}
-		got := ret{
-			Indexed:   indexed,
-			Unindexed: unindexed,
-		}
-		want := ret{
-			Indexed:   tt.wantIndexed,
-			Unindexed: tt.wantUnindexed,
-		}
-		if !cmp.Equal(want, got) {
-			t.Errorf("%s mismatch (-want +got):\n%s", tt.rev, cmp.Diff(want, got))
-		}
-	}
-}
-
 func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []SearchResultResolver
@@ -1477,7 +1109,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	q, _ := query.ProcessAndOr("file:foo or file:bar")
-	wantPrefix := "I'm having trouble understsanding that query."
+	wantPrefix := "I'm having trouble understanding that query."
 	andOrQuery, _ := q.(*query.AndOrQuery)
 	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {
