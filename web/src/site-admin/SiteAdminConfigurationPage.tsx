@@ -202,10 +202,8 @@ interface State {
     error?: Error
 
     saving?: boolean
-    reloadStartedAt?: number
     serverRestartRequired: boolean
-
-    frontendReloadRequired: boolean
+    reloadStartedAt?: number
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
@@ -217,7 +215,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         serverRestartRequired: window.context.needServerRestart,
-        frontendReloadRequired: false,
     }
 
     private remoteRefreshes = new Subject<void>()
@@ -258,6 +255,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         )
                     }),
                     tap(({ frontendReloadRequired, serverRestartRequired }) => {
+                        // If the frontend has to be reloaded, let's just do it
+                        // now: we know that the user just saved and has no
+                        // local state that isn't persisted somewhere, so it's a
+                        // good opportunity to do it. If they also need to
+                        // restart the server, that message is persistent and
+                        // will come back after the reload via the JSContext.
+                        if (frontendReloadRequired) {
+                            window.location.reload()
+                        }
+
                         if (serverRestartRequired) {
                             window.context.needServerRestart = serverRestartRequired
                         } else {
@@ -266,7 +273,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
                             refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
-                        this.setState({ frontendReloadRequired, serverRestartRequired })
+                        this.setState({ serverRestartRequired })
                         this.remoteRefreshes.next()
                     })
                 )
@@ -370,19 +377,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
-        if (this.state.frontendReloadRequired) {
-            alerts.push(
-                <div
-                    key="frontend-dirty"
-                    className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
-                >
-                    A UI reload is required for the configuration to take effect.
-                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadFrontend}>
-                        Reload the UI
-                    </button>
-                </div>
-            )
-        }
 
         // Avoid user confusion with values.yaml properties mixed in with site config properties.
         const contents =
@@ -471,11 +465,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private onSave = (value: string): void => {
         eventLogger.log('SiteConfigurationSaved')
         this.remoteUpdates.next(value)
-    }
-
-    private reloadFrontend = (): void => {
-        eventLogger.log('SiteFrontendReloaded')
-        window.location.reload()
     }
 
     private reloadSite = (): void => {
