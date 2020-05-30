@@ -202,7 +202,7 @@ func runSearchTests() error {
 		}
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
-		if err := assertGolden(test.Name, goldenPath, got); err != nil {
+		if err := assertGolden(goldenPath, got); err != nil {
 			if update || updateAll {
 				err := assertUpdate(goldenPath, got)
 				if err != nil {

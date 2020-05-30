@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func assertGolden(name, path string, got GQLResult) error {
+func assertGolden(path string, got GQLResult) error {
 	wantString, err := ioutil.ReadFile(path)
 	if err != nil {
 		// Doesn't exist, set empty to empty object to see the diff.
