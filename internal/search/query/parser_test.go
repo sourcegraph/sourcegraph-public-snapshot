@@ -540,13 +540,13 @@ func TestParse(t *testing.T) {
 		// Escaping.
 		{
 			Input:         `\(\)`,
-			WantGrammar:   `"\\(\\)"`,
-			WantHeuristic: Same,
+			WantGrammar:   Spec(`"\\(\\)"`),
+			WantHeuristic: Diff(`"()"`),
 		},
 		{
 			Input:         `\( \) ()`,
 			WantGrammar:   Spec(`(concat "\\(" "\\)")`),
-			WantHeuristic: Diff(`(concat "\\(" "\\)" "()")`),
+			WantHeuristic: Diff(`(concat "(" ")" "()")`),
 		},
 		{
 			Input:         `\ `,

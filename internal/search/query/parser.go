@@ -432,9 +432,9 @@ loop:
 					continue
 				}
 				switch r {
-				case 'a', 'b', 'f', 'v', '(', ')':
+				case 'a', 'b', 'f', 'v':
 					piece = append(piece, '\\', r)
-				case ':', '\\', '"', '\'':
+				case ':', '\\', '"', '\'', '(', ')':
 					piece = append(piece, r)
 				case 'n':
 					piece = append(piece, '\n')
