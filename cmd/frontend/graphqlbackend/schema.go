@@ -356,7 +356,7 @@ type Mutation {
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
-    ): SiteConfigurationActions!
+    ): OverwriteSiteConfigurationResult!
     # Sets whether the user with the specified user ID is a site admin.
     #
     # Only site admins may perform this mutation.
@@ -3386,7 +3386,7 @@ type SiteConfiguration {
 }
 
 # The actions to be taken after the site configuration has been updated.
-type SiteConfigurationActions {
+type OverwriteSiteConfigurationResult {
     # Whether the frontend needs to be reloaded.
     frontendReloadRequired: Boolean!
     # Whether a server restart is required.

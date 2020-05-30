@@ -227,7 +227,7 @@ export async function editGlobalSettings(
 export async function editSiteConfig(
     gqlClient: GraphQLClient,
     ...edits: ((contents: string) => jsonc.Edit[])[]
-): Promise<{ destroy: ResourceDestructor; result: GQL.ISiteConfigurationActions }> {
+): Promise<{ destroy: ResourceDestructor; result: GQL.IOverwriteSiteConfigurationResult }> {
     const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     let newContents = origConfig.configuration.effectiveContents
     for (const editFn of edits) {

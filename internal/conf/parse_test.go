@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-func TestPropertyActions(t *testing.T) {
+func TestConfigChangeResult(t *testing.T) {
 	// Set up a fake schema that covers the required scenarios.
-	schema := configPropertyActionSchema{
+	schema := configPropertyResultSchema{
 		"experimentalFeatures::automation": {FrontendReloadRequired: true},
 		"externalURL":                      {FrontendReloadRequired: true, ServerRestartRequired: true},
 		"email.address":                    {},
@@ -25,10 +25,10 @@ func TestPropertyActions(t *testing.T) {
 	}
 
 	t.Run("empty configurations", func(t *testing.T) {
-		have := needActionToApply(empty, empty, schema)
-		want := PostConfigWriteActions{FrontendReloadRequired: false, ServerRestartRequired: false}
+		have := calculateConfigChangeResult(empty, empty, schema)
+		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("unexpected actions: %s", diff)
+			t.Fatalf("unexpected result: %s", diff)
 		}
 	})
 
@@ -40,10 +40,10 @@ func TestPropertyActions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		have := needActionToApply(empty, config, schema)
-		want := PostConfigWriteActions{FrontendReloadRequired: false, ServerRestartRequired: false}
+		have := calculateConfigChangeResult(empty, config, schema)
+		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("unexpected actions: %s", diff)
+			t.Fatalf("unexpected result: %s", diff)
 		}
 	})
 
@@ -55,10 +55,10 @@ func TestPropertyActions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		have := needActionToApply(empty, config, schema)
-		want := PostConfigWriteActions{FrontendReloadRequired: true, ServerRestartRequired: false}
+		have := calculateConfigChangeResult(empty, config, schema)
+		want := ConfigWriteResult{FrontendReloadRequired: true, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("unexpected actions: %s", diff)
+			t.Fatalf("unexpected result: %s", diff)
 		}
 	})
 
@@ -70,10 +70,10 @@ func TestPropertyActions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		have := needActionToApply(empty, config, schema)
-		want := PostConfigWriteActions{FrontendReloadRequired: false, ServerRestartRequired: true}
+		have := calculateConfigChangeResult(empty, config, schema)
+		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: true}
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("unexpected actions: %s", diff)
+			t.Fatalf("unexpected result: %s", diff)
 		}
 	})
 
@@ -85,10 +85,10 @@ func TestPropertyActions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		have := needActionToApply(empty, config, schema)
-		want := PostConfigWriteActions{FrontendReloadRequired: true, ServerRestartRequired: true}
+		have := calculateConfigChangeResult(empty, config, schema)
+		want := ConfigWriteResult{FrontendReloadRequired: true, ServerRestartRequired: true}
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("unexpected actions: %s", diff)
+			t.Fatalf("unexpected result: %s", diff)
 		}
 	})
 }

@@ -466,7 +466,10 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
  * @returns An observable indicating whether a service restart and/or frontend
  * reload is required for the update to be applied.
  */
-export function overwriteSiteConfiguration(lastID: number, input: string): Observable<GQL.ISiteConfigurationActions> {
+export function overwriteSiteConfiguration(
+    lastID: number,
+    input: string
+): Observable<GQL.IOverwriteSiteConfigurationResult> {
     return mutateGraphQL(
         gql`
             mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {

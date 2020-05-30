@@ -863,7 +863,7 @@ export function overwriteSiteConfiguration(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     lastID: number,
     input: string
-): Observable<GQL.ISiteConfigurationActions> {
+): Observable<GQL.IOverwriteSiteConfigurationResult> {
     return requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {

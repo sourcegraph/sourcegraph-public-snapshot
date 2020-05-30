@@ -41,21 +41,21 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 	return cfg, nil
 }
 
-// PostConfigWriteActions defines actions that should be taken after a config
+// ConfigWriteResult defines the actions that should be performed after a config
 // property is changed in order for the user to see the change take effect.
-type PostConfigWriteActions struct {
+type ConfigWriteResult struct {
 	FrontendReloadRequired bool
 	ServerRestartRequired  bool
 }
 
-type configPropertyActionSchema map[string]PostConfigWriteActions
+type configPropertyResultSchema map[string]ConfigWriteResult
 
 // configPropertiesRequiringAction describes the list of config properties that
 // require action to be taken after being changed.
 //
 // Experimental features are special in that they are denoted individually via
 // e.g. "experimentalFeatures::myFeatureFlag".
-var configPropertiesRequiringAction = configPropertyActionSchema{
+var configPropertiesRequiringAction = configPropertyResultSchema{
 	"auth.accessTokens":                {ServerRestartRequired: true},
 	"auth.providers":                   {ServerRestartRequired: true},
 	"auth.sessionExpiry":               {ServerRestartRequired: true},
@@ -72,27 +72,27 @@ var configPropertiesRequiringAction = configPropertyActionSchema{
 	"useJaeger":                        {ServerRestartRequired: true},
 }
 
-func needActionToApply(before, after *Unified, schema configPropertyActionSchema) PostConfigWriteActions {
-	actions := PostConfigWriteActions{}
+func calculateConfigChangeResult(before, after *Unified, schema configPropertyResultSchema) ConfigWriteResult {
+	result := ConfigWriteResult{}
 
-	// Check every option that changed to determine whether or not action should
-	// be taken.
+	// Check every option that changed to determine whether or not any flags
+	// should be set.
 	for option := range diff(before, after) {
-		if action, ok := schema[option]; ok {
-			if action.FrontendReloadRequired {
-				actions.FrontendReloadRequired = true
+		if optionResult, ok := schema[option]; ok {
+			if optionResult.FrontendReloadRequired {
+				result.FrontendReloadRequired = true
 			}
-			if action.ServerRestartRequired {
-				actions.ServerRestartRequired = true
+			if optionResult.ServerRestartRequired {
+				result.ServerRestartRequired = true
 			}
 		}
 	}
 
-	return actions
+	return result
 }
 
-// NeedActionToApply determines if action needs to be taken to apply the changes
-// between the two configurations.
-func NeedActionToApply(before, after *Unified) PostConfigWriteActions {
-	return needActionToApply(before, after, configPropertiesRequiringAction)
+// CalculateConfigChangeResult determines the actions that need to be taken to
+// apply the changes between the two configurations.
+func CalculateConfigChangeResult(before, after *Unified) ConfigWriteResult {
+	return calculateConfigChangeResult(before, after, configPropertiesRequiringAction)
 }
