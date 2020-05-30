@@ -32,7 +32,7 @@ type Server struct {
 	// fileWrite signals when our app writes to the configuration file. The
 	// secondary channel is closed when server.Raw() would return the new
 	// configuration that has been written to disk.
-	fileWrite chan chan struct{}
+	fileWrite chan chan PostConfigWriteActions
 
 	once sync.Once
 }
@@ -42,7 +42,7 @@ type Server struct {
 //
 // The server must be started with Start() before it can handle requests.
 func NewServer(source ConfigurationSource) *Server {
-	fileWrite := make(chan chan struct{}, 1)
+	fileWrite := make(chan chan PostConfigWriteActions, 1)
 	return &Server{
 		Source:    source,
 		store:     newStore(),
@@ -57,27 +57,29 @@ func (s *Server) Raw() conftypes.RawUnified {
 
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
 // invalid, an error is returned.
-func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) (PostConfigWriteActions, error) {
+	actions := PostConfigWriteActions{}
+
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	_, err := ParseConfig(input)
 	if err != nil {
-		return err
+		return actions, err
 	}
 
 	err = s.Source.Write(ctx, input)
 	if err != nil {
-		return err
+		return actions, err
 	}
 
 	// Wait for the change to the configuration file to be detected. Otherwise
 	// we would return to the caller earlier than server.Raw() would return the
 	// new configuration.
-	doneReading := make(chan struct{}, 1)
+	doneReading := make(chan PostConfigWriteActions, 1)
 	s.fileWrite <- doneReading
-	<-doneReading
+	actions = <-doneReading
 
-	return nil
+	return actions, nil
 }
 
 // Edits describes some JSON edits to apply to site or critical configuration.
@@ -120,11 +122,10 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 	// TODO@ggilmore: Another race condition (also present in the existing library). Locks
 	// aren't held between applying the edits and writing the config file,
 	// so the newConfig could be outdated.
-	err = s.Write(ctx, conftypes.RawUnified{
+	if _, err := s.Write(ctx, conftypes.RawUnified{
 		Site:     newSite,
 		Critical: newCritical,
-	})
-	if err != nil {
+	}); err != nil {
 		return errors.Wrap(err, "conf.Write")
 	}
 	return nil
@@ -144,7 +145,7 @@ func (s *Server) watchSource() {
 	for {
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 
-		var signalDoneReading chan struct{}
+		var signalDoneReading chan PostConfigWriteActions
 		select {
 		case signalDoneReading = <-s.fileWrite:
 			// File was changed on FS, so check now.
@@ -152,49 +153,49 @@ func (s *Server) watchSource() {
 			// File possibly changed on FS, so check now.
 		}
 
-		err := s.updateFromSource(ctx)
+		actions, err := s.updateFromSource(ctx)
 		if err != nil {
 			log.Printf("failed to read configuration: %s. Fix your Sourcegraph configuration to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err)
 		}
 
 		if signalDoneReading != nil {
+			signalDoneReading <- actions
 			close(signalDoneReading)
 		}
 	}
 }
 
-func (s *Server) updateFromSource(ctx context.Context) error {
+func (s *Server) updateFromSource(ctx context.Context) (PostConfigWriteActions, error) {
+	actions := PostConfigWriteActions{}
+
 	rawConfig, err := s.Source.Read(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to read configuration")
+		return actions, errors.Wrap(err, "unable to read configuration")
 	}
 
 	configChange, err := s.store.MaybeUpdate(rawConfig)
 	if err != nil {
-		return err
+		return actions, err
 	}
 
 	// Don't need to restart if the configuration hasn't changed.
 	if !configChange.Changed {
-		return nil
+		return actions, nil
 	}
 
 	// Don't restart if the configuration was empty before (this only occurs during initialization).
 	if configChange.Old == nil {
-		return nil
+		return actions, nil
 	}
 
 	// Update global "action has to be taken for the configuration to apply"
 	// state.
-	actions := NeedActionToApply(configChange.Old, configChange.New)
+	actions = NeedActionToApply(configChange.Old, configChange.New)
 	if actions.ServerRestartRequired {
 		s.markNeedServerRestart()
 	}
-	if actions.FrontendReloadRequired {
-		// TODO: take appropriate action.
-	}
 
-	return nil
+	return actions, nil
 }
 
 // NeedServerRestart tells if the server needs to restart for pending configuration

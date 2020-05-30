@@ -877,3 +877,28 @@ export function updateSiteConfiguration(
         map(data => data.updateSiteConfiguration)
     )
 }
+
+/**
+ * Overwrites the site's configuration.
+ *
+ * @returns An observable indicating whether a service restart and/or frontend
+ * reload is required for the update to be applied.
+ */
+export function overwriteSiteConfiguration(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    lastID: number,
+    input: string
+): Observable<GQL.ISiteConfigurationActions> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {
+                overwriteSiteConfiguration(lastID: $lastID, input: $input)
+            }
+        `,
+        variables: { lastID, input },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.overwriteSiteConfiguration)
+    )
+}

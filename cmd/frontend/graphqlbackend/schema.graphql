@@ -336,6 +336,8 @@ type Mutation {
     # Updates the site configuration. Returns whether or not a restart is required for the update to be applied.
     #
     # Only site admins may perform this mutation.
+    #
+    # DEPRECATED: Use overwriteSiteConfiguration instead. This mutation will be removed in a future release.
     updateSiteConfiguration(
         # The last ID of the site configuration that is known by the client, to
         # prevent race conditions. An error will be returned if someone else
@@ -344,7 +346,19 @@ type Mutation {
         # A JSON object containing the entire site configuration. The previous site configuration will be replaced
         # with this new value.
         input: String!
-    ): Boolean!
+    ): Boolean! @deprecated(reason: "use overwriteSiteConfiguration instead")
+    # Overwrites the site configuration. Returns the actions required for the update to be applied.
+    #
+    # Only site admins may perform this mutation.
+    overwriteSiteConfiguration(
+        # The last ID of the site configuration that is known by the client, to
+        # prevent race conditions. An error will be returned if someone else
+        # has already written a new update.
+        lastID: Int!
+        # A JSON object containing the entire site configuration. The previous site configuration will be replaced
+        # with this new value.
+        input: String!
+    ): SiteConfigurationActions!
     # Sets whether the user with the specified user ID is a site admin.
     #
     # Only site admins may perform this mutation.
@@ -3376,6 +3390,14 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
+}
+
+# The actions to be taken after the site configuration has been updated.
+type SiteConfigurationActions {
+    # Whether the frontend needs to be reloaded.
+    frontendReloadRequired: Boolean!
+    # Whether a server restart is required.
+    serverRestartRequired: Boolean!
 }
 
 # The critical configuration for a site.

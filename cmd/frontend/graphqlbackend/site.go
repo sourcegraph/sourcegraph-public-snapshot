@@ -158,35 +158,67 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
+func (r *schemaResolver) overwriteSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
-}) (bool, error) {
+}) (conf.PostConfigWriteActions, error) {
+	actions := conf.PostConfigWriteActions{}
+
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false, err
+		return actions, err
 	}
 	if os.Getenv("SITE_CONFIG_FILE") != "" && !siteConfigAllowEdits {
-		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
+		return actions, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
 	}
 	if strings.TrimSpace(args.Input) == "" {
-		return false, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
+		return actions, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
 
 	if problems, err := conf.ValidateSite(args.Input); err != nil {
-		return false, fmt.Errorf("failed to validate site configuration: %w", err)
+		return actions, fmt.Errorf("failed to validate site configuration: %w", err)
 	} else if len(problems) > 0 {
-		return false, fmt.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
+		return actions, fmt.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
 	}
 
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	prev.Site = args.Input
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
-	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev); err != nil {
+	return globals.ConfigurationServerFrontendOnly.Write(ctx, prev)
+}
+
+type siteConfigurationActions struct {
+	frontendReloadRequired bool
+	serverRestartRequired  bool
+}
+
+func (sca *siteConfigurationActions) FrontendReloadRequired() bool { return sca.frontendReloadRequired }
+func (sca *siteConfigurationActions) ServerRestartRequired() bool  { return sca.serverRestartRequired }
+
+func (r *schemaResolver) OverwriteSiteConfiguration(ctx context.Context, args *struct {
+	LastID int32
+	Input  string
+}) (*siteConfigurationActions, error) {
+	actions, err := r.overwriteSiteConfiguration(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return &siteConfigurationActions{
+		frontendReloadRequired: actions.FrontendReloadRequired,
+		serverRestartRequired:  actions.ServerRestartRequired,
+	}, nil
+}
+
+func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
+	LastID int32
+	Input  string
+}) (bool, error) {
+	actions, err := r.overwriteSiteConfiguration(ctx, args)
+	if err != nil {
 		return false, err
 	}
-	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+	return actions.ServerRestartRequired, nil
 }
 
 type criticalConfigurationResolver struct{}
