@@ -1,607 +1,509 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
-<React.Fragment>
-  <div>
-    <React.Fragment>
-      <div
-        className="alert alert-danger my-4"
+<div>
+  <React.Fragment>
+    <div
+      className="alert alert-danger my-4"
+    >
+      <h3
+        className="alert-heading mb-0"
       >
-        <h3
-          className="alert-heading mb-0"
+        Creating changesets failed
+      </h3>
+      <ul
+        className="mt-2"
+      >
+        <li
+          className="mb-2"
         >
-          Creating changesets failed
-        </h3>
-        <ul
-          className="mt-2"
-        >
-          <li
-            className="mb-2"
+          <p
+            className="mb-0"
           >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="a"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
+            <ErrorMessage
+              error="a"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
                       "hash": "",
                       "key": undefined,
                       "pathname": "/",
                       "search": "",
                       "state": undefined,
                     },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
                 }
-              />
-            </p>
-          </li>
-          <li
-            className="mb-2"
+              }
+            />
+          </p>
+        </li>
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
           >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="b"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
+            <ErrorMessage
+              error="b"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
                       "hash": "",
                       "key": undefined,
                       "pathname": "/",
                       "search": "",
                       "state": undefined,
                     },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
                 }
-              />
-            </p>
-          </li>
-        </ul>
-      </div>
-    </React.Fragment>
-  </div>
-</React.Fragment>
+              }
+            />
+          </p>
+        </li>
+      </ul>
+    </div>
+  </React.Fragment>
+</div>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
-<React.Fragment>
-  <div>
-    <React.Fragment>
+<div>
+  <React.Fragment>
+    <div
+      className="alert alert-info mt-4"
+    >
+      <p>
+        <Memo(SyncIcon)
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
+      </p>
       <div
-        className="alert alert-info mt-4"
+        className="progress mt-2 mb-1"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
         <div
-          className="progress mt-2 mb-1"
-        >
-          <div
-            className="progress-bar"
-            style={
-              Object {
-                "width": "50%",
-              }
+          className="progress-bar"
+          style={
+            Object {
+              "width": "50%",
             }
-          >
-             
-          </div>
+          }
+        >
+           
         </div>
-        <h4
-          className="mt-1"
-        >
-          Creating changesets failed
-        </h4>
-        <ul
-          className="mt-2"
-        >
-          <li
-            className="mb-2"
-          >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="a"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
-                      "hash": "",
-                      "key": undefined,
-                      "pathname": "/",
-                      "search": "",
-                      "state": undefined,
-                    },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
-                }
-              />
-            </p>
-          </li>
-          <li
-            className="mb-2"
-          >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="b"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
-                      "hash": "",
-                      "key": undefined,
-                      "pathname": "/",
-                      "search": "",
-                      "state": undefined,
-                    },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
-                }
-              />
-            </p>
-          </li>
-        </ul>
       </div>
-    </React.Fragment>
-  </div>
-</React.Fragment>
+      <h4
+        className="mt-1"
+      >
+        Creating changesets failed
+      </h4>
+      <ul
+        className="mt-2"
+      >
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
+          >
+            <ErrorMessage
+              error="a"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
+                }
+              }
+            />
+          </p>
+        </li>
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
+          >
+            <ErrorMessage
+              error="b"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
+                }
+              }
+            />
+          </p>
+        </li>
+      </ul>
+    </div>
+  </React.Fragment>
+</div>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
-<React.Fragment>
-  <div>
-    <div
-      className="alert alert-secondary mt-2"
-    >
-      Campaign is closed. No changes can be made to this campaign anymore.
-    </div>
+<div>
+  <div
+    className="alert alert-secondary mt-2"
+  >
+    Campaign is closed. No changes can be made to this campaign anymore.
   </div>
-</React.Fragment>
+</div>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
-<React.Fragment>
-  <React.Fragment>
-    <div
-      className="d-flex align-items-center alert alert-warning my-4"
-    >
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        No changesets have
-         
-        been created on code hosts yet.
-      </p>
-    </div>
-  </React.Fragment>
-</React.Fragment>
-`;
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `null`;
 
-exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some published 1`] = `
-<React.Fragment>
-  <React.Fragment>
-    <div
-      className="d-flex align-items-center alert alert-warning my-4"
-    >
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        Only a subset of changesets has
-         
-        been created on code hosts yet.
-      </p>
-    </div>
-  </React.Fragment>
-</React.Fragment>
-`;
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some published 1`] = `null`;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
-<React.Fragment>
-  <div>
-    <React.Fragment>
-      <div
-        className="alert alert-danger my-4"
+<div>
+  <React.Fragment>
+    <div
+      className="alert alert-danger my-4"
+    >
+      <h3
+        className="alert-heading mb-0"
       >
-        <h3
-          className="alert-heading mb-0"
+        Creating changesets failed
+      </h3>
+      <ul
+        className="mt-2"
+      >
+        <li
+          className="mb-2"
         >
-          Creating changesets failed
-        </h3>
-        <ul
-          className="mt-2"
-        >
-          <li
-            className="mb-2"
+          <p
+            className="mb-0"
           >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="a"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
+            <ErrorMessage
+              error="a"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
                       "hash": "",
                       "key": undefined,
                       "pathname": "/",
                       "search": "",
                       "state": undefined,
                     },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
                 }
-              />
-            </p>
-          </li>
-          <li
-            className="mb-2"
+              }
+            />
+          </p>
+        </li>
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
           >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="b"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
+            <ErrorMessage
+              error="b"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
                       "hash": "",
                       "key": undefined,
                       "pathname": "/",
                       "search": "",
                       "state": undefined,
                     },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
                 }
-              />
-            </p>
-          </li>
-        </ul>
-        <button
-          className="btn btn-primary mb-0"
-          disabled={false}
-          onClick={[Function]}
-          type="button"
-        >
-          Retry
-        </button>
-      </div>
-    </React.Fragment>
-  </div>
-</React.Fragment>
+              }
+            />
+          </p>
+        </li>
+      </ul>
+      <button
+        className="btn btn-primary mb-0"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        Retry
+      </button>
+    </div>
+  </React.Fragment>
+</div>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
-<React.Fragment>
-  <div>
-    <React.Fragment>
+<div>
+  <React.Fragment>
+    <div
+      className="alert alert-info mt-4"
+    >
+      <p>
+        <Memo(SyncIcon)
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
+      </p>
       <div
-        className="alert alert-info mt-4"
+        className="progress mt-2 mb-1"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
         <div
-          className="progress mt-2 mb-1"
-        >
-          <div
-            className="progress-bar"
-            style={
-              Object {
-                "width": "50%",
-              }
+          className="progress-bar"
+          style={
+            Object {
+              "width": "50%",
             }
-          >
-             
-          </div>
+          }
+        >
+           
         </div>
-        <h4
-          className="mt-1"
-        >
-          Creating changesets failed
-        </h4>
-        <ul
-          className="mt-2"
-        >
-          <li
-            className="mb-2"
-          >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="a"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
-                      "hash": "",
-                      "key": undefined,
-                      "pathname": "/",
-                      "search": "",
-                      "state": undefined,
-                    },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
-                }
-              />
-            </p>
-          </li>
-          <li
-            className="mb-2"
-          >
-            <p
-              className="mb-0"
-            >
-              <ErrorMessage
-                error="b"
-                history={
-                  Object {
-                    "action": "POP",
-                    "block": [Function],
-                    "canGo": [Function],
-                    "createHref": [Function],
-                    "entries": Array [
-                      Object {
-                        "hash": "",
-                        "key": undefined,
-                        "pathname": "/",
-                        "search": "",
-                        "state": undefined,
-                      },
-                    ],
-                    "go": [Function],
-                    "goBack": [Function],
-                    "goForward": [Function],
-                    "index": 0,
-                    "length": 1,
-                    "listen": [Function],
-                    "location": Object {
-                      "hash": "",
-                      "key": undefined,
-                      "pathname": "/",
-                      "search": "",
-                      "state": undefined,
-                    },
-                    "push": [Function],
-                    "replace": [Function],
-                  }
-                }
-              />
-            </p>
-          </li>
-        </ul>
       </div>
-    </React.Fragment>
-  </div>
-</React.Fragment>
+      <h4
+        className="mt-1"
+      >
+        Creating changesets failed
+      </h4>
+      <ul
+        className="mt-2"
+      >
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
+          >
+            <ErrorMessage
+              error="a"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
+                }
+              }
+            />
+          </p>
+        </li>
+        <li
+          className="mb-2"
+        >
+          <p
+            className="mb-0"
+          >
+            <ErrorMessage
+              error="b"
+              history={
+                Object {
+                  "action": "POP",
+                  "block": [Function],
+                  "canGo": [Function],
+                  "createHref": [Function],
+                  "entries": Array [
+                    Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                  ],
+                  "go": [Function],
+                  "goBack": [Function],
+                  "goForward": [Function],
+                  "index": 0,
+                  "length": 1,
+                  "listen": [Function],
+                  "location": Object {
+                    "hash": "",
+                    "key": undefined,
+                    "pathname": "/",
+                    "search": "",
+                    "state": undefined,
+                  },
+                  "push": [Function],
+                  "replace": [Function],
+                }
+              }
+            />
+          </p>
+        </li>
+      </ul>
+    </div>
+  </React.Fragment>
+</div>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
-<React.Fragment>
-  <div>
-    <div
-      className="alert alert-secondary mt-2"
-    >
-      Campaign is closed. No changes can be made to this campaign anymore.
-    </div>
+<div>
+  <div
+    className="alert alert-secondary mt-2"
+  >
+    Campaign is closed. No changes can be made to this campaign anymore.
   </div>
-</React.Fragment>
+</div>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
-<React.Fragment>
-  <React.Fragment>
-    <div
-      className="d-flex align-items-center alert alert-warning my-4"
-    >
-      <button
-        className="btn btn-primary mb-0"
-        onClick={[Function]}
-        type="button"
-      >
-        Publish campaign
-      </button>
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        No changesets have
-         
-        been created on code hosts yet.
-      </p>
-    </div>
-  </React.Fragment>
-</React.Fragment>
-`;
+exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `null`;
 
-exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some published 1`] = `
-<React.Fragment>
-  <React.Fragment>
-    <div
-      className="d-flex align-items-center alert alert-warning my-4"
-    >
-      <button
-        className="btn btn-primary mb-0"
-        onClick={[Function]}
-        type="button"
-      >
-        Publish campaign
-      </button>
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        Only a subset of changesets has
-         
-        been created on code hosts yet.
-      </p>
-    </div>
-  </React.Fragment>
-</React.Fragment>
-`;
+exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some published 1`] = `null`;

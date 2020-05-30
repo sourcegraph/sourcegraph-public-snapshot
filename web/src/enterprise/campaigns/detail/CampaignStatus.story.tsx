@@ -36,10 +36,8 @@ add('Errored', () => (
             changesets: {
                 totalCount: 0,
             },
-            publishedAt: boolean('Is draft', false) ? null : new Date().toISOString(),
             closedAt: null,
         }}
-        onPublish={action('Publish')}
         afterRetry={action('Retry')}
         history={createMemoryHistory()}
     />

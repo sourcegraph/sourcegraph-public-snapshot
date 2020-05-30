@@ -38,7 +38,6 @@ const campaignFragment = gql`
         branch
         createdAt
         updatedAt
-        publishedAt
         closedAt
         viewerCanAdminister
         changesets {
@@ -398,21 +397,6 @@ export const queryPatchesFromPatchSet = (
             return node.patches
         })
     )
-
-export async function publishCampaign(campaign: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishCampaign($campaign: ID!) {
-                publishCampaign(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishCampaign
-}
 
 export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
     const result = await mutateGraphQL(

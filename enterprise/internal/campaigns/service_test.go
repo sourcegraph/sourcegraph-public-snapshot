@@ -163,11 +163,6 @@ func TestServicePermissionLevels(t *testing.T) {
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
-			t.Run("PublishCampaign", func(t *testing.T) {
-				_, err = svc.PublishCampaign(currentUserCtx, campaign.ID)
-				tc.assertFunc(t, err)
-			})
-
 			t.Run("RetryPublishCampaign", func(t *testing.T) {
 				_, err = svc.RetryPublishCampaign(currentUserCtx, campaign.ID)
 				tc.assertFunc(t, err)

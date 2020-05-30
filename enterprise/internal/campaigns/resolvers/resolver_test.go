@@ -800,7 +800,6 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
 	}
@@ -1390,33 +1389,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
-	var publishCampaignResponse struct{ PublishCampaign apitest.Campaign }
-	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
-      mutation {
-        publishCampaign(campaign: %q) {
-          id
-          status { state }
-          branch
-          patches {
-            nodes {
-			  ... on Patch {
-                publicationEnqueued
-			  }
-            }
-          }
-        }
-      }
-	`, campaign.ID))
-
-	publishedCampaign := publishCampaignResponse.PublishCampaign
-	if publishedCampaign.Status.State != "PROCESSING" {
-		t.Fatalf("campaign is not in state 'PROCESSING': %q", publishedCampaign.Status.State)
-	}
-	enqueuedPatch := publishedCampaign.Patches.Nodes[0]
-	if !enqueuedPatch.PublicationEnqueued {
-		t.Fatalf("patch is not enqueued for publication")
-	}
-
 	// Now we need to run the created ChangsetJob
 	changesetJobs, _, err := store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{})
 	if err != nil {
@@ -1830,12 +1802,6 @@ func TestPermissionLevels(t *testing.T) {
 				name: "retryCampaign",
 				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
 					return fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaignID)
-				},
-			},
-			{
-				name: "publishCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaignID)
 				},
 			},
 			{

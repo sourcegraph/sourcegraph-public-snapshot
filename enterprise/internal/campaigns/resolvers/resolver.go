@@ -623,32 +623,6 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.PublishCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, errors.Wrap(err, "unmarshaling campaign id")
-	}
-
-	if campaignID == 0 {
-		return nil, ErrIDIsZero
-	}
-
-	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: PublishCampaign checks whether current user is authorized.
-	campaign, err := svc.PublishCampaign(ctx, campaignID)
-	if err != nil {
-		return nil, errors.Wrap(err, "publishing campaign")
-	}
-
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
-}
-
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
 	defer func() {
