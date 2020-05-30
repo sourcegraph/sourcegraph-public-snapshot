@@ -2,8 +2,8 @@ import * as H from 'history'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { PatchNode } from './PatchNode'
-import { IPatch } from '../../../../../../shared/src/graphql/schema'
-import { Subject } from 'rxjs'
+import { IPatch, IFileDiffConnection } from '../../../../../../shared/src/graphql/schema'
+import { Subject, of } from 'rxjs'
 
 describe('PatchNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
@@ -37,6 +37,7 @@ describe('PatchNode', () => {
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={enablePublishing}
+                queryPatchFileDiffs={() => of({ __typename: 'FileDiffConnection' } as IFileDiffConnection)}
             />
         )
         const result = renderer.getRenderOutput()

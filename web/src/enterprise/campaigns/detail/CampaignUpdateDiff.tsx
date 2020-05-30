@@ -8,7 +8,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { queryChangesets, queryPatchesFromPatchSet, queryPatchesFromCampaign } from './backend'
+import { queryChangesets, queryPatchesFromPatchSet, queryPatchesFromCampaign, queryPatchFileDiffs } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
@@ -43,6 +43,7 @@ interface Props extends ThemeProps {
         patchSet: GQL.ID,
         { first }: GQL.IPatchesOnPatchSetArguments
     ) => Observable<GQL.IPatchConnection>
+    queryPatchFileDiffs: typeof queryPatchFileDiffs
 }
 
 export interface CampaignDiff {
@@ -143,6 +144,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     _queryChangesets = queryChangesets,
     _queryPatchesFromCampaign = queryPatchesFromCampaign,
     _queryPatchesFromPatchSet = queryPatchesFromPatchSet,
+    queryPatchFileDiffs,
 }) => {
     const queriedChangesets = useObservable(
         React.useMemo(
@@ -236,6 +238,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             history={history}
                             location={location}
                             node={changeset}
+                            queryPatchFileDiffs={queryPatchFileDiffs}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
                         />
@@ -249,6 +252,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             history={history}
                             location={location}
                             node={changeset}
+                            queryPatchFileDiffs={queryPatchFileDiffs}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
                         />

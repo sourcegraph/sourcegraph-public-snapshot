@@ -3,9 +3,9 @@ import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { Observable, Subject, Observer } from 'rxjs'
+import { Subject, Observer } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
-import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet } from '../backend'
+import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet, queryPatchFileDiffs } from '../backend'
 import { PatchInterfaceNodeProps, PatchInterfaceNode } from './PatchInterfaceNode'
 
 interface Props extends ThemeProps {
@@ -16,8 +16,8 @@ interface Props extends ThemeProps {
     changesetUpdates: Subject<void>
     enablePublishing: boolean
 
-    /** For testing only. */
-    queryPatches?: (patchSetID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<GQL.IPatchConnection>
+    queryPatchesFromPatchSet: typeof queryPatchesFromPatchSet
+    queryPatchFileDiffs: typeof queryPatchFileDiffs
 }
 
 /**
@@ -31,12 +31,13 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
     campaignUpdates,
     changesetUpdates,
     enablePublishing,
-    queryPatches = queryPatchesFromPatchSet,
+    queryPatchesFromPatchSet,
+    queryPatchFileDiffs,
 }) => {
-    const queryPatchesConnection = useCallback((args: FilteredConnectionQueryArgs) => queryPatches(patchSet.id, args), [
-        patchSet.id,
-        queryPatches,
-    ])
+    const queryPatchesConnection = useCallback(
+        (args: FilteredConnectionQueryArgs) => queryPatchesFromPatchSet(patchSet.id, args),
+        [patchSet.id, queryPatchesFromPatchSet]
+    )
 
     return (
         <div className="list-group">
@@ -50,6 +51,7 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
                     location,
                     enablePublishing,
                     campaignUpdates,
+                    queryPatchFileDiffs,
                 }}
                 queryConnection={queryPatchesConnection}
                 hideSearch={true}

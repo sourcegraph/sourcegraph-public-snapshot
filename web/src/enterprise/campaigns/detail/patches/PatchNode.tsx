@@ -22,6 +22,7 @@ export interface PatchNodeProps extends ThemeProps {
     location: H.Location
     /** Shows the publish button */
     enablePublishing: boolean
+    queryPatchFileDiffs: typeof queryPatchFileDiffs
 }
 
 export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
@@ -31,6 +32,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     history,
     location,
     enablePublishing,
+    queryPatchFileDiffs,
 }) => {
     const [isPublishing, setIsPublishing] = useState<boolean | Error>(false)
     useEffect(() => {
@@ -91,7 +93,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArgs) => queryPatchFileDiffs(node.id, { ...args, isLightTheme }),
-        [node.id, isLightTheme]
+        [queryPatchFileDiffs, node.id, isLightTheme]
     )
 
     return (
