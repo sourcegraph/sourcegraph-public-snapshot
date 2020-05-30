@@ -50,13 +50,13 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	defer func() { git.Mocks.ExecReader = nil }()
 
-	git.Mocks.ExecSafe = func(args []string) (stdout, stderr []byte, exitCode int, err error) {
-		if len(args) < 3 || args[0] != "merge-base" || args[1] != wantBaseRevision || args[2] != wantHeadRevision {
-			t.Fatalf("gitserver.ExecSafe received wrong args: %v", args)
+	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
+			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
-		return []byte(wantMergeBaseRevision), []byte{}, 0, nil
+		return api.CommitID(wantMergeBaseRevision), nil
 	}
-	defer func() { git.Mocks.ExecSafe = nil }()
+	defer func() { git.Mocks.MergeBase = nil }()
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(repo)

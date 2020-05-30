@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -1227,13 +1228,13 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 
-	git.Mocks.ExecSafe = func(args []string) (stdout, stderr []byte, exitCode int, err error) {
-		if len(args) < 3 || args[0] != "merge-base" || args[1] != testBaseRef || args[2] != testHeadRef {
-			t.Fatalf("gitserver.ExecSafe received wrong args: %v", args)
+	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+		if string(a) != testBaseRef || string(b) != testHeadRef {
+			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
-		return []byte(testBaseRevision), []byte{}, 0, nil
+		return api.CommitID(testBaseRevision), nil
 	}
-	t.Cleanup(func() { git.Mocks.ExecSafe = nil })
+	defer func() { git.Mocks.MergeBase = nil }()
 
 	// repo & external service setup
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})

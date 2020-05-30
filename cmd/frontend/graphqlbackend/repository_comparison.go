@@ -103,16 +103,16 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		baseErr, headErr error
 	)
 
-	// Find the common merge-base for the diff. That's what the diff will actually need to be applied to,
-	// not the baseRevspec.
-	mergeBaseCommit, stderr, _, err := git.ExecSafe(ctx, *grepo, []string{"merge-base", baseRevspec, headRevspec})
-	if err != nil {
-		return nil, fmt.Errorf("git merge-base failed: %v - %s", err, stderr)
-	}
-
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
+		// Find the common merge-base for the diff. That's what the diff will actually need to be applied to,
+		// not the baseRevspec.
+		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+		if err != nil {
+			baseErr = err
+			return
+		}
 		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
 		// applicable to the file from that revision.
 		commitString := strings.TrimSpace(string(mergeBaseCommit))
