@@ -70,8 +70,8 @@ func NewWriter(filename string) (_ persistence.Writer, err error) {
 	}, nil
 }
 
-func (w *sqliteWriter) WriteMeta(ctx context.Context, lsifVersion string, numResultChunks int) error {
-	if err := w.metaInserter.Insert(ctx, lsifVersion, InternalVersion, numResultChunks); err != nil {
+func (w *sqliteWriter) WriteMeta(ctx context.Context, meta types.MetaData) error {
+	if err := w.metaInserter.Insert(ctx, "", "", meta.NumResultChunks); err != nil {
 		return errors.Wrap(err, "metaInserter.Insert")
 	}
 	return nil

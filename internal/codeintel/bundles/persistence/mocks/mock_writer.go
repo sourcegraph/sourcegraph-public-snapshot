@@ -62,7 +62,7 @@ func NewMockWriter() *MockWriter {
 			},
 		},
 		WriteMetaFunc: &WriterWriteMetaFunc{
-			defaultHook: func(context.Context, string, int) error {
+			defaultHook: func(context.Context, types.MetaData) error {
 				return nil
 			},
 		},
@@ -523,23 +523,23 @@ func (c WriterWriteDocumentsFuncCall) Results() []interface{} {
 // WriterWriteMetaFunc describes the behavior when the WriteMeta method of
 // the parent MockWriter instance is invoked.
 type WriterWriteMetaFunc struct {
-	defaultHook func(context.Context, string, int) error
-	hooks       []func(context.Context, string, int) error
+	defaultHook func(context.Context, types.MetaData) error
+	hooks       []func(context.Context, types.MetaData) error
 	history     []WriterWriteMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWriter) WriteMeta(v0 context.Context, v1 string, v2 int) error {
-	r0 := m.WriteMetaFunc.nextHook()(v0, v1, v2)
-	m.WriteMetaFunc.appendCall(WriterWriteMetaFuncCall{v0, v1, v2, r0})
+func (m *MockWriter) WriteMeta(v0 context.Context, v1 types.MetaData) error {
+	r0 := m.WriteMetaFunc.nextHook()(v0, v1)
+	m.WriteMetaFunc.appendCall(WriterWriteMetaFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WriteMeta method of
 // the parent MockWriter instance is invoked and the hook queue is empty.
-func (f *WriterWriteMetaFunc) SetDefaultHook(hook func(context.Context, string, int) error) {
+func (f *WriterWriteMetaFunc) SetDefaultHook(hook func(context.Context, types.MetaData) error) {
 	f.defaultHook = hook
 }
 
@@ -547,7 +547,7 @@ func (f *WriterWriteMetaFunc) SetDefaultHook(hook func(context.Context, string, 
 // WriteMeta method of the parent MockWriter instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WriterWriteMetaFunc) PushHook(hook func(context.Context, string, int) error) {
+func (f *WriterWriteMetaFunc) PushHook(hook func(context.Context, types.MetaData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -556,7 +556,7 @@ func (f *WriterWriteMetaFunc) PushHook(hook func(context.Context, string, int) e
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *WriterWriteMetaFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int) error {
+	f.SetDefaultHook(func(context.Context, types.MetaData) error {
 		return r0
 	})
 }
@@ -564,12 +564,12 @@ func (f *WriterWriteMetaFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *WriterWriteMetaFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int) error {
+	f.PushHook(func(context.Context, types.MetaData) error {
 		return r0
 	})
 }
 
-func (f *WriterWriteMetaFunc) nextHook() func(context.Context, string, int) error {
+func (f *WriterWriteMetaFunc) nextHook() func(context.Context, types.MetaData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -607,10 +607,7 @@ type WriterWriteMetaFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
+	Arg1 types.MetaData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -619,7 +616,7 @@ type WriterWriteMetaFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WriterWriteMetaFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

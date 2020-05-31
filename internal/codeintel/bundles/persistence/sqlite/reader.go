@@ -36,18 +36,18 @@ func NewReader(filename string) (persistence.Reader, error) {
 	}, nil
 }
 
-func (r *sqliteReader) ReadMeta(ctx context.Context) (lsifVersion string, sourcegraphVersion string, numResultChunks int, _ error) {
-	query := `SELECT lsifVersion, sourcegraphVersion, numResultChunks FROM meta LIMIT 1`
+func (r *sqliteReader) ReadMeta(ctx context.Context) (meta types.MetaData, _ error) {
+	query := `SELECT numResultChunks FROM meta LIMIT 1`
 
-	if err := r.queryRow(ctx, sqlf.Sprintf(query)).Scan(&lsifVersion, &sourcegraphVersion, &numResultChunks); err != nil {
+	if err := r.queryRow(ctx, sqlf.Sprintf(query)).Scan(&meta.NumResultChunks); err != nil {
 		if err == sql.ErrNoRows {
-			return "", "", 0, ErrNoMetadata
+			return types.MetaData{}, ErrNoMetadata
 		}
 
-		return "", "", 0, err
+		return types.MetaData{}, err
 	}
 
-	return lsifVersion, sourcegraphVersion, numResultChunks, nil
+	return meta, nil
 }
 
 func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {

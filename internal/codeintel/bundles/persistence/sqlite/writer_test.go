@@ -26,7 +26,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while opening writer: %s", err)
 	}
 
-	if err := writer.WriteMeta(ctx, "0.4.3", 7); err != nil {
+	if err := writer.WriteMeta(ctx, types.MetaData{NumResultChunks: 7}); err != nil {
 		t.Fatalf("unexpected error while writing: %s", err)
 	}
 
@@ -127,18 +127,12 @@ func TestWrite(t *testing.T) {
 	}
 	defer reader.Close()
 
-	lsifVersion, sourcegraphVersion, numResultChunks, err := reader.ReadMeta(ctx)
+	meta, err := reader.ReadMeta(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error reading from database: %s", err)
 	}
-	if lsifVersion != "0.4.3" {
-		t.Errorf("unexpected lsif version. want=%s have=%s", "0.4.3", lsifVersion)
-	}
-	if sourcegraphVersion != "0.1.0" {
-		t.Errorf("unexpected sourcegraph version. want=%s have=%s", "0.1.0", sourcegraphVersion)
-	}
-	if numResultChunks != 7 {
-		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, numResultChunks)
+	if meta.NumResultChunks != 7 {
+		t.Errorf("unexpected num result chunks. want=%d have=%d", 7, meta.NumResultChunks)
 	}
 
 	documentData, _, err := reader.ReadDocument(ctx, "foo.go")

@@ -211,7 +211,7 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 
 	writers := []func() error{
 		func() error {
-			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks), "writer.WriteMeta")
+			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.Meta), "writer.WriteMeta")
 		},
 		func() error {
 			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
