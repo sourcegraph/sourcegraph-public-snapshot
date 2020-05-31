@@ -73,7 +73,7 @@ func TestConvert(t *testing.T) {
 
 	expectedBundleData := &GroupedBundleData{
 		Meta: types.MetaData{
-			NumResultChunks:1,
+			NumResultChunks: 1,
 		},
 		Documents: map[string]types.DocumentData{
 			"foo.go": {

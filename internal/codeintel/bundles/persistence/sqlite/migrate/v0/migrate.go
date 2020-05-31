@@ -12,4 +12,3 @@ import (
 func Migrate(ctx context.Context, s *store.Store, serializer serialization.Serializer) error {
 	return nil
 }
-
