@@ -21,7 +21,7 @@ func TestWrite(t *testing.T) {
 	ctx := context.Background()
 	filename := filepath.Join(tempDir, "test.db")
 
-	writer, err := NewWriter(filename)
+	writer, err := NewWriter(context.Background(), filename)
 	if err != nil {
 		t.Fatalf("unexpected error while opening writer: %s", err)
 	}

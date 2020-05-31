@@ -199,7 +199,7 @@ func convert(
 
 // write commits the correlated data to disk.
 func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
-	writer, err := sqlitewriter.NewWriter(filename)
+	writer, err := sqlitewriter.NewWriter(ctx, filename)
 	if err != nil {
 		return err
 	}

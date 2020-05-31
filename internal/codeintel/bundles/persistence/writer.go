@@ -7,7 +7,7 @@ import (
 )
 
 type Writer interface {
-	WriteMeta(ctx context.Context, metaData types.MetaData) error
+	WriteMeta(ctx context.Context, meta types.MetaData) error
 	WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error
 	WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error
 	WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error
