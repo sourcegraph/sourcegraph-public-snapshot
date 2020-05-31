@@ -6,15 +6,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	pkgerrors "github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
+// ErrNoMetadata occurs when there are no rows in the meta table.
 var ErrNoMetadata = errors.New("no rows in meta table")
 
 type sqliteReader struct {
@@ -25,16 +28,29 @@ type sqliteReader struct {
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(filename string) (persistence.Reader, error) {
+func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err error) {
 	store, closer, err := store.Open(filename)
 	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			if closeErr := closer(); closeErr != nil {
+				err = multierror.Append(err, closeErr)
+			}
+		}
+	}()
+
+	serializer := jsonserializer.New()
+
+	if err := migrate.Migrate(ctx, store, serializer); err != nil {
 		return nil, err
 	}
 
 	return &sqliteReader{
 		store:      store,
 		closer:     closer,
-		serializer: jsonserializer.New(),
+		serializer: serializer,
 	}, nil
 }
 

@@ -340,7 +340,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := sqlitereader.NewReader(filename)
+		sqliteReader, err := sqlitereader.NewReader(ctx, filename)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "sqlitereader.NewReader")
 		}

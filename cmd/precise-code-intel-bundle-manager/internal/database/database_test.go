@@ -244,7 +244,7 @@ func openTestDatabase(t *testing.T) Database {
 	filename := "../../../../internal/codeintel/bundles/persistence/sqlite/testdata/lsif-go@ad3507cb.lsif.db"
 
 	// TODO(efritz) - rewrite test not to require actual reader
-	reader, err := sqlitereader.NewReader(filename)
+	reader, err := sqlitereader.NewReader(context.Background(), filename)
 	if err != nil {
 		t.Fatalf("unexpected error creating reader: %s", err)
 	}

@@ -131,7 +131,7 @@ func TestReadReferences(t *testing.T) {
 }
 
 func testReader(t *testing.T) persistence.Reader {
-	reader, err := NewReader("./testdata/lsif-go@ad3507cb.lsif.db")
+	reader, err := NewReader(context.Background(), "./testdata/lsif-go@ad3507cb.lsif.db")
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

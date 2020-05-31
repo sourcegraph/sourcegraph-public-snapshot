@@ -77,3 +77,41 @@ func ScanFirstBytes(rows *sql.Rows, err error) ([]byte, bool, error) {
 	}
 	return values[0], true, nil
 }
+
+// ScanString populates an integer value from the given scanner.
+func ScanString(scanner scanner) (value string, err error) {
+	err = scanner.Scan(&value)
+	return value, err
+}
+
+// ScanStrings reads the given set of `(int)` rows and returns a slice of resulting values.
+// This method should be called directly with the return value of `*store.Query`.
+func ScanStrings(rows *sql.Rows, err error) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var values []string
+	for rows.Next() {
+		value, err := ScanString(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil // TODO(efritz) need to close rows
+}
+
+// ScanFirstString reads the given set of `(string)` rows and returns the first value and a
+// boolean flag indicating its presence. This method should be called directly with
+// the return value of `*store.Query`.
+func ScanFirstString(rows *sql.Rows, err error) (string, bool, error) {
+	values, err := ScanStrings(rows, err)
+	if err != nil || len(values) == 0 {
+		return "", false, err
+	}
+	return values[0], true, nil
+}
