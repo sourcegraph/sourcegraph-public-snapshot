@@ -18,9 +18,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
@@ -224,20 +224,14 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 		return err
 	}
 
-	// httpapi.NewCodeIntelUploadHandler is set by the enterprise frontend
-	var codeintelUploadHandler http.Handler
-	if httpapi.NewCodeIntelUploadHandler != nil {
-		codeintelUploadHandler = httpapi.NewCodeIntelUploadHandler()
-	}
-
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, codeintelUploadHandler)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
 	if err != nil {
 		return err
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema)
+	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
 
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
