@@ -124,7 +124,11 @@ func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []
 	if err := inserter.Flush(ctx); err != nil {
 		return errors.Wrap(err, "inserter.Flush")
 	}
-	return nil
+
+	return w.store.ExecAll(
+		ctx,
+		sqlf.Sprintf(`CREATE INDEX "idx_definitions" ON "definitions" ("scheme", "identifier")`),
+	)
 }
 
 func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
@@ -140,13 +144,9 @@ func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []t
 	if err := inserter.Flush(ctx); err != nil {
 		return errors.Wrap(err, "inserter.Flush")
 	}
-	return nil
-}
 
-func (w *sqliteWriter) Flush(ctx context.Context) error {
 	return w.store.ExecAll(
 		ctx,
-		sqlf.Sprintf(`CREATE INDEX "idx_definitions" ON "definitions" ("scheme", "identifier")`),
 		sqlf.Sprintf(`CREATE INDEX "idx_references" ON "references" ("scheme", "identifier")`),
 	)
 }

@@ -12,6 +12,5 @@ type Writer interface {
 	WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error
 	WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error
 	WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error
-	Flush(ctx context.Context) error
 	Close() error
 }

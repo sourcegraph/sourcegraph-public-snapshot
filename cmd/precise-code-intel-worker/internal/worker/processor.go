@@ -198,7 +198,7 @@ func convert(
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
+func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) (err error) {
 	writer, err := sqlitewriter.NewWriter(ctx, filename)
 	if err != nil {
 		return err
@@ -234,19 +234,10 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		go func(w func() error) { errs <- w() }(w)
 	}
 
-	var writeErr error
 	for i := 0; i < len(writers); i++ {
-		if err := <-errs; err != nil {
-			writeErr = multierror.Append(writeErr, err)
+		if writeErr := <-errs; writeErr != nil {
+			err = multierror.Append(err, writeErr)
 		}
 	}
-	if writeErr != nil {
-		return writeErr
-	}
-
-	if err := writer.Flush(ctx); err != nil {
-		return errors.Wrap(err, "writer.Flush")
-	}
-
-	return nil
+	return err
 }
