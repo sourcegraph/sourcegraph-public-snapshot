@@ -2,6 +2,9 @@ package sqlite
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -131,7 +134,7 @@ func TestReadReferences(t *testing.T) {
 }
 
 func testReader(t *testing.T) persistence.Reader {
-	reader, err := NewReader(context.Background(), "./testdata/lsif-go@ad3507cb.lsif.db")
+	reader, err := NewReader(context.Background(), copyFile(t, "./testdata/lsif-go@ad3507cb.lsif.db"))
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
@@ -139,4 +142,24 @@ func testReader(t *testing.T) persistence.Reader {
 
 	// Wrap in observed, as that's how it's used in production
 	return persistence.NewObserved(reader, &observation.TestContext)
+}
+
+func copyFile(t *testing.T, source string) string {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp dir: %s", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+
+	input, err := ioutil.ReadFile(source)
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+
+	dest := filepath.Join(tempDir, "test.sqlite")
+	if err := ioutil.WriteFile(dest, input, os.ModePerm); err != nil {
+		t.Fatalf("unexpected error writing file: %s", err)
+	}
+
+	return dest
 }
