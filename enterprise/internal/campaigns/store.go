@@ -101,7 +101,7 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
 	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
-	ORDER BY j.id ASC
+	ORDER BY j.updated_at ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING j.id,
@@ -2131,9 +2131,16 @@ type ListPatchesOpts struct {
 	Limit        int
 	OnlyWithDiff bool
 
-	// If this is set to a Campaign ID only the Patches are returned that
-	// are _not_ associated with a successfully completed ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
+	// If this is set to a Campaign ID only the Patches are returned that are
+	// _not_ associated with a successfully completed ChangesetJob (meaning that
+	// a Changeset on the codehost was created) for the given Campaign. This is
+	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
 	// If this is set only the Patches where diff_stat_added OR
@@ -2203,6 +2210,10 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("patches.patch_set_id = %s", opts.PatchSetID))
 	}
 
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
+	}
+
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
@@ -2219,6 +2230,21 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		listPatchesQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+const onlyNotInCampaignQueryFmtstr = `
+NOT EXISTS (
+	SELECT 1
+	FROM changeset_jobs
+	WHERE
+	  changeset_jobs.patch_id = patches.id
+	AND
+	  changeset_jobs.campaign_id = %s
+)
+`
+
+func notInCampaignQuery(campaignID int64) *sqlf.Query {
+	return sqlf.Sprintf(onlyNotInCampaignQueryFmtstr, campaignID)
 }
 
 var onlyUnpublishedInCampaignQueryFmtstr = `

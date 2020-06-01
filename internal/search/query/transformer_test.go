@@ -18,7 +18,7 @@ func prettyPrint(nodes []Node) string {
 func TestSubstituteAliases(t *testing.T) {
 	input := "r:repo g:repogroup f:file"
 	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
-	query, _ := ParseAndOr(input)
+	query, _, _ := ParseAndOr(input)
 	got := prettyPrint(SubstituteAliases(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -28,7 +28,7 @@ func TestSubstituteAliases(t *testing.T) {
 func TestLowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
-	query, _ := ParseAndOr(input)
+	query, _, _ := ParseAndOr(input)
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -104,8 +104,9 @@ func TestHoist(t *testing.T) {
 			// does not perform the heuristic.
 			parse := func(in string) []Node {
 				parser := &parser{
-					buf:       []byte(in),
-					heuristic: heuristic{parensAsPatterns: true},
+					buf:               []byte(in),
+					heuristic:         map[heuristic]bool{parensAsPatterns: true},
+					heuristicsApplied: map[heuristic]bool{},
 				}
 				nodes, _ := parser.parseOr()
 				return newOperator(nodes, And)
@@ -174,7 +175,7 @@ func TestSearchUppercase(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("searchUppercase", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _, _ := ParseAndOr(c.input)
 			got := prettyPrint(SearchUppercase(SubstituteAliases(query)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -202,7 +203,7 @@ func TestMap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			query, _, _ := ParseAndOr(c.input)
 			got := prettyPrint(Map(query, c.fns...))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)

@@ -43,6 +43,7 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v28 v28.1.1
+	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20200324103759-172db892e9a2
@@ -101,6 +102,7 @@ require (
 	github.com/russellhaering/gosaml2 v0.4.0
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
+	github.com/schollz/progressbar/v3 v3.3.3
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.1.0
 	github.com/shirou/gopsutil v2.20.3+incompatible // indirect
@@ -115,7 +117,7 @@ require (
 	github.com/sirupsen/logrus v1.5.0 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/codeintelutils v0.0.0-20200527005717-5df0d7f50241
+	github.com/sourcegraph/codeintelutils v0.0.0-20200528142143-a2f46204e2e9
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
@@ -124,6 +126,7 @@ require (
 	github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.11.0+incompatible

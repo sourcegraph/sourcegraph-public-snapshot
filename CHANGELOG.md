@@ -26,6 +26,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Dynamic repo search filters on branches which contain special characters are correctly escaped now. [#10810](https://github.com/sourcegraph/sourcegraph/pull/10810)
 - Forks and archived repositories at a specific commit are searched without the need to specify "fork:yes" or "archived:yes" in the query. [#10864](https://github.com/sourcegraph/sourcegraph/pull/10864)
+- The git history for binary files is now correctly shown. [#11034](https://github.com/sourcegraph/sourcegraph/pull/11034)
+- Links to AWS Code Commit repositories have been fixed after the URL schema has been changed. [#11019](https://github.com/sourcegraph/sourcegraph/pull/11019)
+- A link to view all repositories will now always appear on the Explore page. [#11113](https://github.com/sourcegraph/sourcegraph/pull/11113)
 
 ### Removed
 
@@ -37,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
 - Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
+- Sourcegraph is now built with Go 1.14.3, fixing issues running Sourcegraph onUbuntu 19 and 20. [#10447](https://github.com/sourcegraph/sourcegraph/issues/10447)
 
 ## 3.16.0
 

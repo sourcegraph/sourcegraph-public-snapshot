@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -27,6 +28,105 @@ type Upload struct {
 	NumParts          int        `json:"numParts"`
 	UploadedParts     []int      `json:"uploadedParts"`
 	Rank              *int       `json:"placeInQueue"`
+}
+
+// scanUploads scans a slice of uploads from the return value of `*dbImpl.query`.
+func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var uploads []Upload
+	for rows.Next() {
+		var upload Upload
+		var rawUploadedParts []sql.NullInt32
+		if err := rows.Scan(
+			&upload.ID,
+			&upload.Commit,
+			&upload.Root,
+			&upload.VisibleAtTip,
+			&upload.UploadedAt,
+			&upload.State,
+			&upload.FailureSummary,
+			&upload.FailureStacktrace,
+			&upload.StartedAt,
+			&upload.FinishedAt,
+			&upload.RepositoryID,
+			&upload.Indexer,
+			&upload.NumParts,
+			pq.Array(&rawUploadedParts),
+			&upload.Rank,
+		); err != nil {
+			return nil, err
+		}
+
+		var uploadedParts = []int{}
+		for _, uploadedPart := range rawUploadedParts {
+			uploadedParts = append(uploadedParts, int(uploadedPart.Int32))
+		}
+		upload.UploadedParts = uploadedParts
+
+		uploads = append(uploads, upload)
+	}
+
+	return uploads, nil
+}
+
+// scanFirstUpload scans a slice of uploads from the return value of `*dbImpl.query` and returns the first.
+func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
+	uploads, err := scanUploads(rows, err)
+	if err != nil || len(uploads) == 0 {
+		return Upload{}, false, err
+	}
+	return uploads[0], true, nil
+}
+
+// scanFirstUploadInterface scans a slice of uploads from the return value of `*dbImpl.query` and returns the first.
+func scanFirstUploadInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstUpload(rows, err)
+}
+
+// scanStates scans pairs of id/states from the return value of `*dbImpl.query`.
+func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	states := map[int]string{}
+	for rows.Next() {
+		var id int
+		var state string
+		if err := rows.Scan(&id, &state); err != nil {
+			return nil, err
+		}
+
+		states[id] = state
+	}
+
+	return states, nil
+}
+
+// scanVisibility scans pairs of id/visibleAtTip from the return value of `*dbImpl.query`.
+func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	visibilities := map[int]bool{}
+	for rows.Next() {
+		var id int
+		var visibleAtTip bool
+		if err := rows.Scan(&id, &visibleAtTip); err != nil {
+			return nil, err
+		}
+
+		visibilities[id] = visibleAtTip
+	}
+
+	return visibilities, nil
 }
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
@@ -186,7 +286,7 @@ func (db *dbImpl) InsertUpload(ctx context.Context, upload Upload) (int, error) 
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
 func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
 		WHERE id = %s
@@ -195,12 +295,12 @@ func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) er
 
 // MarkQueued updates the state of the upload to queued.
 func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
-	return db.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
+	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
 }
 
 // MarkComplete updates the state of the upload to complete.
 func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
@@ -209,7 +309,7 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
 func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s
@@ -239,7 +339,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 // If there is no such unlocked upload, a zero-value upload and nil DB will be returned along with a false
 // valued flag. This method must not be called from within a transaction.
 func (db *dbImpl) Dequeue(ctx context.Context) (Upload, DB, bool, error) {
-	upload, tx, ok, err := db.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadDequeue)
+	upload, tx, ok, err := db.dequeueRecord(ctx, "lsif_uploads", uploadColumnsWithNullRank, sqlf.Sprintf("uploaded_at"), scanFirstUploadInterface)
 	if err != nil || !ok {
 		return Upload{}, tx, ok, err
 	}

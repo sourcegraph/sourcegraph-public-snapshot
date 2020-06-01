@@ -93,9 +93,9 @@ func PreciseCodeIntelBundleManager() *Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "janitor_old_database_parts_removed",
-							Description:       "database part files removed (due to age) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_database_part_files_removed_total[5m]))`,
+							Name:              "janitor_old_parts_removed",
+							Description:       "upload and database part files removed (due to age) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_part_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),
@@ -113,9 +113,9 @@ func PreciseCodeIntelBundleManager() *Container {
 					},
 					{
 						{
-							Name:              "janitor_orphaned_dumps",
-							Description:       "bundle files removed (with no corresponding database entry) every 5m",
-							Query:             `sum(increase(src_bundle_manager_janitor_orphaned_bundle_files_removed_total[5m]))`,
+							Name:              "janitor_orphans",
+							Description:       "bundle and upload files removed (with no corresponding database entry) every 5m",
+							Query:             `sum(increase(src_bundle_manager_janitor_orphaned_files_removed_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("files removed"),

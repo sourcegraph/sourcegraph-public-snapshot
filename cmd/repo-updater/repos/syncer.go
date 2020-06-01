@@ -362,9 +362,6 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-	defer cancel()
-
 	return listAll(ctx, srcs, observe...)
 }
 
@@ -446,7 +443,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 					otlog.Object(state+".repos", repos.Names()))
 
 				if len(repos) > 0 && s.Logger != nil {
-					s.Logger.Debug(family, "diff."+state, repos.Names())
+					s.Logger.Debug(family, "diff."+state, repos.NamesSummary())
 				}
 			}
 			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))

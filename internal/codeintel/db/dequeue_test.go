@@ -18,12 +18,12 @@ func TestDequeueRecordConcurrency(t *testing.T) {
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	_, tx1, ok1, err1 := db.dequeueByID(context.Background(), "lsif_uploads", uploadColumnsWithNullRank, scanFirstUploadDequeue, 1)
+	_, tx1, ok1, err1 := db.dequeueByID(context.Background(), "lsif_uploads", uploadColumnsWithNullRank, scanFirstUploadInterface, 1)
 	if ok1 {
 		defer func() { _ = tx1.Done(nil) }()
 	}
 
-	_, tx2, ok2, err2 := db.dequeueByID(context.Background(), "lsif_uploads", uploadColumnsWithNullRank, scanFirstUploadDequeue, 1)
+	_, tx2, ok2, err2 := db.dequeueByID(context.Background(), "lsif_uploads", uploadColumnsWithNullRank, scanFirstUploadInterface, 1)
 	if ok2 {
 		defer func() { _ = tx2.Done(nil) }()
 	}

@@ -8,6 +8,8 @@ go build && ./resources-report --aws --gcp \
   --sheets.id="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
+This document primarily outlines how to set up this tool and use it directly - for more details, please [refer to the handbook entry](https://about.sourcegraph.com/handbook/engineering/distribution/tools/resources_report).
+
 ## Authentication
 
 ### Google Cloud Platform

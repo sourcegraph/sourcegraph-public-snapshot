@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -40,24 +41,37 @@ func TestRepoUsageStatistics(t *testing.T) {
 		{"http://localhost:3080/gitlab.com/bar/baz/-/remainder_of_path", 15, 30},
 		{"https://sourcegraph.com/github.com/bar/bonk/-/remainder_of_path", 5, 40},
 		{"http://srcgraph.org/github.com/bonk/quux/-/remainder_of_path", 4, 50},
+		{"https://sourcegraph.com/github.com/baz/honk/-/remainder_of_path", 10, 60},  // deleted repo
 		{"https://sourcegraph.com/github.com/bonk/honk/-/remainder_of_path", 10, 60}, // no such repo
 	} {
 		insertEvent(data.URL, "codeintel.searchHover", data.NumSearchEvents)
 		insertEvent(data.URL, "codeintel.lsifHover", data.NumPreciseEvents)
 	}
 
-	for i, name := range []string{
+	repos := []string{
 		"github.com/foo/baz",
 		"github.com/foo/bar",
 		"gitlab.com/bar/baz",
 		"github.com/bar/bonk",
 		"github.com/bonk/quux",
-	} {
+	}
+	for i, name := range repos {
 		query := sqlf.Sprintf(`INSERT INTO repo (id, name, uri) VALUES (%s, %s, %s)`, i+1, name, name)
 
 		if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error inserting repo: %s", err)
 		}
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name, uri, deleted_at) VALUES (%s, %s, %s, %s)`,
+		len(repos)+1,
+		"DELETED-github.com/baz/honk",
+		"github.com/baz/honk",
+		time.Now(),
+	)
+	if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 
 	stats, err := db.RepoUsageStatistics(context.Background())

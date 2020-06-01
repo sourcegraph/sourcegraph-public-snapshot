@@ -19,8 +19,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
@@ -184,8 +184,8 @@ func initCodeIntel() {
 		)
 	}
 
-	httpapi.NewCodeIntelUploadHandler = func() http.Handler {
-		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient)
+	enterprise.NewCodeIntelUploadHandler = func(internal bool) http.Handler {
+		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient, internal)
 	}
 }
 

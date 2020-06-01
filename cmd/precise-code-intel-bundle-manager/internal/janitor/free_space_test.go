@@ -27,7 +27,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -55,7 +55,7 @@ func TestEvictBundlesStopsAfterFreeingDesiredSpace(t *testing.T) {
 		t.Fatalf("unexpected error listing directory: %s", err)
 	}
 
-	expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
+	expected := []string{"10/sqlite.db", "6/sqlite.db", "7/sqlite.db", "8/sqlite.db", "9/sqlite.db"}
 	if diff := cmp.Diff(expected, names); diff != "" {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 	}
@@ -77,7 +77,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 	}
 
 	for id, size := range sizes {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
 		if err := makeFileWithSize(path, size); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}
@@ -111,7 +111,7 @@ func TestEvictBundlesStopsWithNoPrunableDatabases(t *testing.T) {
 		t.Fatalf("unexpected error listing directory: %s", err)
 	}
 
-	expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
+	expected := []string{"10/sqlite.db", "6/sqlite.db", "7/sqlite.db", "8/sqlite.db", "9/sqlite.db"}
 	if diff := cmp.Diff(expected, names); diff != "" {
 		t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 	}

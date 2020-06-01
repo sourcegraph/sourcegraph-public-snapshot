@@ -64,14 +64,14 @@ func PreciseCodeIntelIndexer() *Container {
 				},
 			},
 			{
-				Title:  "Schedulers",
+				Title:  "Indexability updater and index scheduler",
 				Hidden: true,
 				Rows: []Row{
 					{
 						{
-							Name:              "indexability_scheduler_errors",
-							Description:       "indexability scheduler errors every 5m",
-							Query:             `sum(increase(src_indexability_scheduler_errors_total[5m]))`,
+							Name:              "indexability_updater_errors",
+							Description:       "indexability updater errors every 5m",
+							Query:             `sum(increase(src_indexability_updater_errors_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert{GreaterOrEqual: 20},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),

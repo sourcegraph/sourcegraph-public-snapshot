@@ -9,9 +9,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	indexabilityupdater "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/indexability_updater"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/indexer"
-	indexscheduler "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/scheduler/index"
-	indexabilityscheduler "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/scheduler/indexability"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
@@ -31,8 +31,8 @@ func main() {
 	var (
 		frontendURL                      = mustGet(rawFrontendURL, "SRC_FRONTEND_INTERNAL")
 		indexerPollInterval              = mustParseInterval(rawIndexerPollInterval, "PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL")
-		indexSchedulerInterval           = mustParseInterval(rawIndexSchedulerInterval, "PRECISE_CODE_INTEL_INDEX_SCHEDULER_INTERVAL")
-		indexabilitySchedulerInterval    = mustParseInterval(rawIndexabilitySchedulerInterval, "PRECISE_CODE_INTEL_INDEXABILITY_SCHEDULER_INTERVAL")
+		schedulerInterval                = mustParseInterval(rawSchedulerInterval, "PRECISE_CODE_INTEL_SCHEDULER_INTERVAL")
+		indexabilityUpdaterInterval      = mustParseInterval(rawIndexabilityUpdaterInterval, "PRECISE_CODE_INTEL_INDEXABILITY_UPDATER_INTERVAL")
 		indexBatchSize                   = mustParseInt(rawIndexBatchSize, "PRECISE_CODE_INTEL_INDEX_BATCH_SIZE")
 		indexMinimumTimeSinceLastEnqueue = mustParseInterval(rawIndexMinimumTimeSinceLastEnqueue, "PRECISE_CODE_INTEL_INDEX_MINIMUM_TIME_SINCE_LAST_ENQUEUE")
 		indexMinimumSearchCount          = mustParseInt(rawIndexMinimumSearchCount, "PRECISE_CODE_INTEL_INDEX_MINIMUM_SEARCH_COUNT")
@@ -49,27 +49,27 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	MustRegisterQueueMonitor(observationContext.Registerer, db)
 	indexerMetrics := indexer.NewIndexerMetrics(prometheus.DefaultRegisterer)
-	indexabilitySchedulerMetrics := indexabilityscheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
-	indexSchedulerMetrics := indexscheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
+	indexabilityUpdaterMetrics := indexabilityupdater.NewUpdaterMetrics(prometheus.DefaultRegisterer)
+	schedulerMetrics := scheduler.NewSchedulerMetrics(prometheus.DefaultRegisterer)
 	server := server.New()
 
-	indexabilityScheduler := indexabilityscheduler.NewScheduler(
+	indexabilityUpdater := indexabilityupdater.NewUpdater(
 		db,
 		gitserver.DefaultClient,
-		indexabilitySchedulerInterval,
-		indexabilitySchedulerMetrics,
+		indexabilityUpdaterInterval,
+		indexabilityUpdaterMetrics,
 	)
 
-	indexScheduler := indexscheduler.NewScheduler(
+	scheduler := scheduler.NewScheduler(
 		db,
 		gitserver.DefaultClient,
-		indexSchedulerInterval,
+		schedulerInterval,
 		indexBatchSize,
 		indexMinimumTimeSinceLastEnqueue,
 		indexMinimumSearchCount,
 		indexMinimumPreciseCount,
 		float64(indexMinimumSearchRatio)/100,
-		indexSchedulerMetrics,
+		schedulerMetrics,
 	)
 
 	indexer := indexer.NewIndexer(
@@ -81,8 +81,8 @@ func main() {
 	)
 
 	go server.Start()
-	go indexabilityScheduler.Start()
-	go indexScheduler.Start()
+	go indexabilityUpdater.Start()
+	go scheduler.Start()
 	go indexer.Start()
 	go debugserver.Start()
 
@@ -99,8 +99,8 @@ func main() {
 
 	server.Stop()
 	indexer.Stop()
-	indexScheduler.Stop()
-	indexabilityScheduler.Stop()
+	scheduler.Stop()
+	indexabilityUpdater.Stop()
 }
 
 func mustInitializeDatabase() db.DB {
