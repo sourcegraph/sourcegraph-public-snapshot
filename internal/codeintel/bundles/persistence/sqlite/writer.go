@@ -2,16 +2,14 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/jmoiron/sqlx"
+	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/schema"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
@@ -19,144 +17,144 @@ import (
 const InternalVersion = "0.1.0"
 
 type sqliteWriter struct {
-	db                  *sqlx.DB
-	tx                  *sql.Tx
-	serializer          serialization.Serializer
-	metaInserter        *sqliteutil.BatchInserter
-	documentInserter    *sqliteutil.BatchInserter
-	resultChunkInserter *sqliteutil.BatchInserter
-	definitionInserter  *sqliteutil.BatchInserter
-	referenceInserter   *sqliteutil.BatchInserter
+	store      *store.Store
+	closer     func() error
+	serializer serialization.Serializer
 }
 
 var _ persistence.Writer = &sqliteWriter{}
 
-func NewWriter(filename string) (_ persistence.Writer, err error) {
-	db, err := sqlx.Open("sqlite3_with_pcre", filename)
+func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err error) {
+	store, closer, err := store.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		if err != nil {
-			if closeErr := db.Close(); closeErr != nil {
+			if closeErr := closer(); closeErr != nil {
 				err = multierror.Append(err, closeErr)
 			}
 		}
 	}()
 
-	if _, err := db.Exec(schema.TableDefinitions); err != nil {
-		return nil, errors.Wrap(err, "creating tables")
-	}
-
-	tx, err := db.BeginTx(context.Background(), nil)
+	tx, err := store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	metaColumns := []string{"lsifVersion", "sourcegraphVersion", "numResultChunks"}
-	documentsColumns := []string{"path", "data"}
-	resultChunksColumns := []string{"id", "data"}
-	definitionsReferencesColumns := []string{"scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter"}
+	if err := createTables(ctx, tx); err != nil {
+		return nil, err
+	}
 
 	return &sqliteWriter{
-		db:                  db,
-		tx:                  tx,
-		serializer:          jsonserializer.New(),
-		metaInserter:        sqliteutil.NewBatchInserter(tx, "meta", metaColumns...),
-		documentInserter:    sqliteutil.NewBatchInserter(tx, "documents", documentsColumns...),
-		resultChunkInserter: sqliteutil.NewBatchInserter(tx, "resultChunks", resultChunksColumns...),
-		definitionInserter:  sqliteutil.NewBatchInserter(tx, "definitions", definitionsReferencesColumns...),
-		referenceInserter:   sqliteutil.NewBatchInserter(tx, `references`, definitionsReferencesColumns...),
+		store:      tx,
+		closer:     closer,
+		serializer: jsonserializer.New(),
 	}, nil
 }
 
-func (w *sqliteWriter) WriteMeta(ctx context.Context, lsifVersion string, numResultChunks int) error {
-	if err := w.metaInserter.Insert(ctx, lsifVersion, InternalVersion, numResultChunks); err != nil {
-		return errors.Wrap(err, "metaInserter.Insert")
+func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) error {
+	queries := []*sqlf.Query{
+		sqlf.Sprintf("INSERT INTO meta (lsifVersion, sourcegraphVersion, numResultChunks) VALUES ('', '', %s)", metaData.NumResultChunks),
 	}
+
+	for _, query := range queries {
+		if err := w.store.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
-	for k, v := range documents {
-		ser, err := w.serializer.MarshalDocumentData(v)
+	inserter := sqliteutil.NewBatchInserter(w.store, "documents", "path", "data")
+	for path, document := range documents {
+		data, err := w.serializer.MarshalDocumentData(document)
 		if err != nil {
 			return errors.Wrap(err, "serializer.MarshalDocumentData")
 		}
 
-		if err := w.documentInserter.Insert(ctx, k, ser); err != nil {
+		if err := inserter.Insert(ctx, path, data); err != nil {
 			return errors.Wrap(err, "documentInserter.Insert")
 		}
 	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "inserter.Flush")
+	}
+
 	return nil
 }
 
 func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
-	for k, v := range resultChunks {
-		ser, err := w.serializer.MarshalResultChunkData(v)
+	inserter := sqliteutil.NewBatchInserter(w.store, "resultChunks", "id", "data")
+	for id, resultChunk := range resultChunks {
+		data, err := w.serializer.MarshalResultChunkData(resultChunk)
 		if err != nil {
 			return errors.Wrap(err, "serializer.MarshalResultChunkData")
 		}
 
-		if err := w.resultChunkInserter.Insert(ctx, k, ser); err != nil {
+		if err := inserter.Insert(ctx, id, data); err != nil {
 			return errors.Wrap(err, "resultChunkInserter.Insert")
 		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "inserter.Flush")
 	}
 	return nil
 }
 
 func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	for _, ml := range monikerLocations {
-		for _, l := range ml.Locations {
-			if err := w.definitionInserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
-				return errors.Wrap(err, "definitionInserter.Insert")
-			}
-		}
-	}
-	return nil
+	return w.writeDefinitionReferences(ctx, "definitions", monikerLocations)
 }
 
 func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
+	return w.writeDefinitionReferences(ctx, "references", monikerLocations)
+}
+
+func (w *sqliteWriter) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations []types.MonikerLocations) error {
+	inserter := sqliteutil.NewBatchInserter(w.store, tableName, "scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter")
 	for _, ml := range monikerLocations {
 		for _, l := range ml.Locations {
-			if err := w.referenceInserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
-				return errors.Wrap(err, "referenceInserter.Insert")
+			if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
+				return errors.Wrap(err, "inserter.Insert")
 			}
 		}
 	}
-	return nil
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "inserter.Flush")
+	}
+
+	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_`+tableName+`" ON "`+tableName+`" ("scheme", "identifier")`))
 }
 
-func (w *sqliteWriter) Flush(ctx context.Context) error {
-	inserters := map[string]*sqliteutil.BatchInserter{
-		"metaInserter":        w.metaInserter,
-		"documentInserter":    w.documentInserter,
-		"resultChunkInserter": w.resultChunkInserter,
-		"definitionInserter":  w.definitionInserter,
-		"referenceInserter":   w.referenceInserter,
-	}
+func (w *sqliteWriter) Close(err error) error {
+	err = w.store.Done(err)
 
-	for name, inserter := range inserters {
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("%s.Flush", name))
-		}
-	}
-
-	if err := w.tx.Commit(); err != nil {
-		return err
-	}
-
-	if _, err := w.db.ExecContext(ctx, schema.IndexDefinitions); err != nil {
-		return errors.Wrap(err, "creating indexes")
-	}
-
-	return nil
-}
-
-func (w *sqliteWriter) Close() (err error) {
-	if closeErr := w.db.Close(); closeErr != nil {
+	if closeErr := w.closer(); closeErr != nil {
 		err = multierror.Append(err, closeErr)
 	}
 
 	return err
+}
+
+func createTables(ctx context.Context, store *store.Store) error {
+	tables := []*sqlf.Query{
+		sqlf.Sprintf(`CREATE TABLE "meta" ("id" integer PRIMARY KEY NOT NULL, "lsifVersion" text NOT NULL, "sourcegraphVersion" text NOT NULL, "numResultChunks" integer NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "resultChunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "definitions" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "references" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
+	}
+
+	for _, table := range tables {
+		if err := store.Exec(ctx, table); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

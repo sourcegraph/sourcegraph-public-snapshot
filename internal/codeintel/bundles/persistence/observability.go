@@ -67,7 +67,7 @@ func NewObserved(reader Reader, observationContext *observation.Context) Reader 
 }
 
 // ReadMeta calls into the inner Reader and registers the observed results.
-func (r *ObservedReader) ReadMeta(ctx context.Context) (_ string, _ string, _ int, err error) {
+func (r *ObservedReader) ReadMeta(ctx context.Context) (_ types.MetaData, err error) {
 	ctx, endObservation := r.readMetaOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return r.reader.ReadMeta(ctx)

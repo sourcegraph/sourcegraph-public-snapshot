@@ -54,8 +54,8 @@ func NewMockReader() *MockReader {
 			},
 		},
 		ReadMetaFunc: &ReaderReadMetaFunc{
-			defaultHook: func(context.Context) (string, string, int, error) {
-				return "", "", 0, nil
+			defaultHook: func(context.Context) (types.MetaData, error) {
+				return types.MetaData{}, nil
 			},
 		},
 		ReadReferencesFunc: &ReaderReadReferencesFunc{
@@ -430,23 +430,23 @@ func (c ReaderReadDocumentFuncCall) Results() []interface{} {
 // ReaderReadMetaFunc describes the behavior when the ReadMeta method of the
 // parent MockReader instance is invoked.
 type ReaderReadMetaFunc struct {
-	defaultHook func(context.Context) (string, string, int, error)
-	hooks       []func(context.Context) (string, string, int, error)
+	defaultHook func(context.Context) (types.MetaData, error)
+	hooks       []func(context.Context) (types.MetaData, error)
 	history     []ReaderReadMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockReader) ReadMeta(v0 context.Context) (string, string, int, error) {
-	r0, r1, r2, r3 := m.ReadMetaFunc.nextHook()(v0)
-	m.ReadMetaFunc.appendCall(ReaderReadMetaFuncCall{v0, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockReader) ReadMeta(v0 context.Context) (types.MetaData, error) {
+	r0, r1 := m.ReadMetaFunc.nextHook()(v0)
+	m.ReadMetaFunc.appendCall(ReaderReadMetaFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ReadMeta method of
 // the parent MockReader instance is invoked and the hook queue is empty.
-func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (string, string, int, error)) {
+func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.MetaData, error)) {
 	f.defaultHook = hook
 }
 
@@ -454,7 +454,7 @@ func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (string, 
 // ReadMeta method of the parent MockReader instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (string, string, int, error)) {
+func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -462,21 +462,21 @@ func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (string, string
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReaderReadMetaFunc) SetDefaultReturn(r0 string, r1 string, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context) (string, string, int, error) {
-		return r0, r1, r2, r3
+func (f *ReaderReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 error) {
+	f.SetDefaultHook(func(context.Context) (types.MetaData, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReaderReadMetaFunc) PushReturn(r0 string, r1 string, r2 int, r3 error) {
-	f.PushHook(func(context.Context) (string, string, int, error) {
-		return r0, r1, r2, r3
+func (f *ReaderReadMetaFunc) PushReturn(r0 types.MetaData, r1 error) {
+	f.PushHook(func(context.Context) (types.MetaData, error) {
+		return r0, r1
 	})
 }
 
-func (f *ReaderReadMetaFunc) nextHook() func(context.Context) (string, string, int, error) {
+func (f *ReaderReadMetaFunc) nextHook() func(context.Context) (types.MetaData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -514,16 +514,10 @@ type ReaderReadMetaFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 types.MetaData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 string
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -535,7 +529,7 @@ func (c ReaderReadMetaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ReaderReadMetaFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ReaderReadReferencesFunc describes the behavior when the ReadReferences

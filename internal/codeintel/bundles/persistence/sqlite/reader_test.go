@@ -2,6 +2,9 @@ package sqlite
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,19 +14,12 @@ import (
 )
 
 func TestReadMeta(t *testing.T) {
-	lsifVersion, sourcegraphVersion, numResultChunks, err := testReader(t).ReadMeta(context.Background())
+	meta, err := testReader(t).ReadMeta(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error reading meta: %s", err)
 	}
-
-	if lsifVersion != "0.4.3" {
-		t.Errorf("unexpected lsifVersion. want=%s have=%s", "0.4.3", lsifVersion)
-	}
-	if sourcegraphVersion != "0.1.0" {
-		t.Errorf("unexpected sourcegraphVersion. want=%s have=%s", "0.1.0", sourcegraphVersion)
-	}
-	if numResultChunks != 4 {
-		t.Errorf("unexpected numResultChunks. want=%d have=%d", 4, numResultChunks)
+	if meta.NumResultChunks != 4 {
+		t.Errorf("unexpected numResultChunks. want=%d have=%d", 4, meta.NumResultChunks)
 	}
 }
 
@@ -138,7 +134,7 @@ func TestReadReferences(t *testing.T) {
 }
 
 func testReader(t *testing.T) persistence.Reader {
-	reader, err := NewReader("./testdata/lsif-go@ad3507cb.lsif.db")
+	reader, err := NewReader(context.Background(), copyFile(t, "./testdata/lsif-go@ad3507cb.lsif.db"))
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
@@ -146,4 +142,24 @@ func testReader(t *testing.T) persistence.Reader {
 
 	// Wrap in observed, as that's how it's used in production
 	return persistence.NewObserved(reader, &observation.TestContext)
+}
+
+func copyFile(t *testing.T, source string) string {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp dir: %s", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+
+	input, err := ioutil.ReadFile(source)
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+
+	dest := filepath.Join(tempDir, "test.sqlite")
+	if err := ioutil.WriteFile(dest, input, os.ModePerm); err != nil {
+		t.Fatalf("unexpected error writing file: %s", err)
+	}
+
+	return dest
 }

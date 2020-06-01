@@ -15,8 +15,7 @@ import (
 // and shared data into shareded result chunks. The fields of this type are what is written to
 // persistent storage and what is read in the query path.
 type GroupedBundleData struct {
-	LSIFVersion       string
-	NumResultChunks   int
+	Meta              types.MetaData
 	Documents         map[string]types.DocumentData
 	ResultChunks      map[int]types.ResultChunkData
 	Definitions       []types.MonikerLocations
@@ -39,6 +38,7 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 		),
 	))
 
+	meta := types.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(state)
 	resultChunks := serializeResultChunks(state, numResultChunks)
 	definitionRows := gatherMonikersLocations(state, state.DefinitionData, getDefinitionResultID)
@@ -50,8 +50,7 @@ func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	}
 
 	return &GroupedBundleData{
-		LSIFVersion:       state.LSIFVersion,
-		NumResultChunks:   numResultChunks,
+		Meta:              meta,
 		Documents:         documents,
 		ResultChunks:      resultChunks,
 		Definitions:       definitionRows,

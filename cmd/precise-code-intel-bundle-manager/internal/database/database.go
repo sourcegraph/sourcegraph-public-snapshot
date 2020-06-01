@@ -104,7 +104,7 @@ func (e ErrMalformedBundle) Error() string {
 
 // OpenDatabase opens a handle to the bundle file at the given path.
 func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
-	_, _, numResultChunks, err := reader.ReadMeta(ctx)
+	meta, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
 	}
@@ -114,7 +114,7 @@ func OpenDatabase(ctx context.Context, filename string, reader persistence.Reade
 		documentCache:    documentCache,
 		resultChunkCache: resultChunkCache,
 		reader:           reader,
-		numResultChunks:  numResultChunks,
+		numResultChunks:  meta.NumResultChunks,
 	}, nil
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 type Reader interface {
-	ReadMeta(ctx context.Context) (string, string, int, error)
+	ReadMeta(ctx context.Context) (types.MetaData, error)
 	ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error)
 	ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error)
 	ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error)
