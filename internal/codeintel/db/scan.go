@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
@@ -28,11 +29,11 @@ func scanDump(rows *sql.Rows) (dump Dump, err error) {
 
 // scanDumps reads the given set of dump rows and returns a slice of resulting values.
 // This method should be called directly with the return value of `*db.query`.
-func scanDumps(rows *sql.Rows, err error) ([]Dump, error) {
-	if err != nil {
-		return nil, err
+func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var dumps []Dump
 	for rows.Next() {
@@ -90,11 +91,11 @@ func scanUpload(rows *sql.Rows) (upload Upload, err error) {
 
 // scanUploads reads the given set of upload rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.query`.
-func scanUploads(rows *sql.Rows, err error) ([]Upload, error) {
-	if err != nil {
-		return nil, err
+func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var uploads []Upload
 	for rows.Next() {
@@ -133,11 +134,11 @@ func scanPackageReference(rows *sql.Rows) (reference types.PackageReference, err
 
 // scanPackageReferences reads the given set of reference rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.queryRows`.
-func scanPackageReferences(rows *sql.Rows, err error) ([]types.PackageReference, error) {
-	if err != nil {
-		return nil, err
+func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageReference, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var references []types.PackageReference
 	for rows.Next() {
@@ -160,11 +161,11 @@ func scanString(rows *sql.Rows) (value string, err error) {
 
 // scanStrings reads the given set of `(string)` rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.query`.
-func scanStrings(rows *sql.Rows, err error) ([]string, error) {
-	if err != nil {
-		return nil, err
+func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var values []string
 	for rows.Next() {
@@ -198,11 +199,11 @@ func scanInt(rows *sql.Rows) (value int, err error) {
 
 // scanInts reads the given set of `(int)` rows and returns a slice of resulting values.
 // This method should be called directly with the return value of `*db.query`.
-func scanInts(rows *sql.Rows, err error) ([]int, error) {
-	if err != nil {
-		return nil, err
+func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var values []int
 	for rows.Next() {
@@ -236,11 +237,11 @@ func scanState(rows *sql.Rows) (id int, state string, err error) {
 
 // scanStates reads the given set of `(id, state)` rows and returns a map from id to its
 // state. This method should be called directly with the return value of `*db.query`.
-func scanStates(rows *sql.Rows, err error) (map[int]string, error) {
-	if err != nil {
-		return nil, err
+func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	states := map[int]string{}
 	for rows.Next() {
@@ -264,11 +265,11 @@ func scanVisibility(rows *sql.Rows) (id int, visibleAtTip bool, err error) {
 // scanVisibilities reads the given set of `(id, visible_at_tip)` rows and returns a map
 // from id to its visibility. This method should be called directly with the return value
 // of `*db.query`.
-func scanVisibilities(rows *sql.Rows, err error) (map[int]bool, error) {
-	if err != nil {
-		return nil, err
+func scanVisibilities(rows *sql.Rows, queryErr error) (_ map[int]bool, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	visibilities := map[int]bool{}
 	for rows.Next() {
@@ -292,11 +293,11 @@ func scanCommit(rows *sql.Rows) (commit string, parentCommit *string, err error)
 // scanCommits reads the given set of `(commit, parent_commit)` rows and returns
 // a map from commits to its parents. This method should be called directly from
 // the return value of `*db.query`.
-func scanCommits(rows *sql.Rows, err error) (map[string][]string, error) {
-	if err != nil {
-		return nil, err
+func scanCommits(rows *sql.Rows, queryErr error) (_ map[string][]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	commits := map[string][]string{}
 	for rows.Next() {
@@ -331,11 +332,11 @@ func scanIndexableRepository(rows *sql.Rows) (indexableRepository IndexableRepos
 // scanIndexableRepositories reads the given set of indexable repository rows and returns
 // a slice of resulting values. This method should be called directly with the return value
 // of `*db.query`.
-func scanIndexableRepositories(rows *sql.Rows, err error) ([]IndexableRepository, error) {
-	if err != nil {
-		return nil, err
+func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRepository, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var indexableRepositories []IndexableRepository
 	for rows.Next() {
@@ -369,11 +370,11 @@ func scanIndex(rows *sql.Rows) (index Index, err error) {
 
 // scanIndexes reads the given set of index rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.query`.
-func scanIndexes(rows *sql.Rows, err error) ([]Index, error) {
-	if err != nil {
-		return nil, err
+func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var indexes []Index
 	for rows.Next() {
@@ -413,11 +414,11 @@ func scanRepoUsageStatistics(rows *sql.Rows) (stats RepoUsageStatistics, err err
 // scanRepoUsageStatisticsSlice reads the given set of repo usage stat rows and returns
 // a slice of RepoUsageStatistics values. This method should be called directly from the
 // return value of `*db.query`.
-func scanRepoUsageStatisticsSlice(rows *sql.Rows, err error) ([]RepoUsageStatistics, error) {
-	if err != nil {
-		return nil, err
+func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsageStatistics, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = cleanup(rows, err) }()
 
 	var stats []RepoUsageStatistics
 	for rows.Next() {
@@ -430,4 +431,16 @@ func scanRepoUsageStatisticsSlice(rows *sql.Rows, err error) ([]RepoUsageStatist
 	}
 
 	return stats, nil
+}
+
+func cleanup(rows *sql.Rows, err error) error {
+	if closeErr := rows.Close(); closeErr != nil {
+		err = multierror.Append(err, closeErr)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		err = multierror.Append(err, rowsErr)
+	}
+
+	return err
 }
