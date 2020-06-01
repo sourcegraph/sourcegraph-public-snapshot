@@ -141,30 +141,24 @@ func (r *sqliteReader) Close() error {
 	return r.closer()
 }
 
-// scanLocation populates a Location value from the given scanner.
-func scanLocation(rows *sql.Rows) (row types.Location, err error) {
-	err = rows.Scan(
-		&row.URI,
-		&row.StartLine,
-		&row.StartCharacter,
-		&row.EndLine,
-		&row.EndCharacter,
-	)
-	return row, err
-}
-
 // scanLocations reads the given set of definition/reference rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.query`.
-func scanLocations(rows *sql.Rows, err error) ([]types.Location, error) {
-	if err != nil {
-		return nil, err
+func scanLocations(rows *sql.Rows, queryErr error) (_ []types.Location, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = store.CloseRows(rows, err) }()
 
 	var locations []types.Location
 	for rows.Next() {
-		location, err := scanLocation(rows)
-		if err != nil {
+		var location types.Location
+		if err := rows.Scan(
+			&location.URI,
+			&location.StartLine,
+			&location.StartCharacter,
+			&location.EndLine,
+			&location.EndCharacter,
+		); err != nil {
 			return nil, err
 		}
 

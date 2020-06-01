@@ -1,66 +1,22 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
 
-// scanner is the common interface shared by *sql.Row and *sql.Rows.
-type scanner interface {
-	// Scan copies the values of the current row into the values pointed at by dest.
-	Scan(dest ...interface{}) error
-}
+	"github.com/hashicorp/go-multierror"
+)
 
-// ScanInt populates an integer value from the given scanner.
-func ScanInt(scanner scanner) (value int, err error) {
-	err = scanner.Scan(&value)
-	return value, err
-}
-
-// ScanInts reads the given set of `(int)` rows and returns a slice of resulting values.
-// This method should be called directly with the return value of `*store.Query`.
-func ScanInts(rows *sql.Rows, err error) ([]int, error) {
-	if err != nil {
-		return nil, err
+// ScanStrings scans a slice of strings from the return value of `*dbImpl.query`.
+func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = CloseRows(rows, err) }()
 
-	var values []int
+	var values []string
 	for rows.Next() {
-		value, err := ScanInt(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil // TODO(efritz) need to close rows
-}
-
-// ScanFirstInt reads the given set of `(int)` rows and returns the first value and a
-// boolean flag indicating its presence. This method should be called directly with
-// the return value of `*store.Query`.
-func ScanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
-	values, err := ScanInts(rows, err)
-	if err != nil || len(values) == 0 {
-		return 0, false, err
-	}
-	return values[0], true, nil
-}
-
-func xScanBytes(scanner scanner) (value []byte, err error) {
-	err = scanner.Scan(&value)
-	return value, err
-}
-
-func ScanBytes(rows *sql.Rows, err error) ([][]byte, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var values [][]byte
-	for rows.Next() {
-		value, err := xScanBytes(rows)
-		if err != nil {
+		var value string
+		if err := rows.Scan(&value); err != nil {
 			return nil, err
 		}
 
@@ -70,6 +26,65 @@ func ScanBytes(rows *sql.Rows, err error) ([][]byte, error) {
 	return values, nil
 }
 
+// ScanFirstString scans a slice of strings from the return value of `*dbImpl.query` and returns the first.
+func ScanFirstString(rows *sql.Rows, err error) (string, bool, error) {
+	values, err := ScanStrings(rows, err)
+	if err != nil || len(values) == 0 {
+		return "", false, err
+	}
+	return values[0], true, nil
+}
+
+// ScanInts scans a slice of ints from the return value of `*dbImpl.query`.
+func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []int
+	for rows.Next() {
+		var value int
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanFirstInt scans a slice of ints from the return value of `*dbImpl.query` and returns the first.
+func ScanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
+	values, err := ScanInts(rows, err)
+	if err != nil || len(values) == 0 {
+		return 0, false, err
+	}
+	return values[0], true, nil
+}
+
+// ScanBytes scans a slice of bytes from the return value of `*dbImpl.query`.
+func ScanBytes(rows *sql.Rows, queryErr error) (_ [][]byte, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values [][]byte
+	for rows.Next() {
+		var value []byte
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanFirstBytes scans a slice of bytes from the return value of `*dbImpl.query` and returns the first.
 func ScanFirstBytes(rows *sql.Rows, err error) ([]byte, bool, error) {
 	values, err := ScanBytes(rows, err)
 	if err != nil || len(values) == 0 {
@@ -78,40 +93,15 @@ func ScanFirstBytes(rows *sql.Rows, err error) ([]byte, bool, error) {
 	return values[0], true, nil
 }
 
-// ScanString populates an integer value from the given scanner.
-func ScanString(scanner scanner) (value string, err error) {
-	err = scanner.Scan(&value)
-	return value, err
-}
-
-// ScanStrings reads the given set of `(int)` rows and returns a slice of resulting values.
-// This method should be called directly with the return value of `*store.Query`.
-func ScanStrings(rows *sql.Rows, err error) ([]string, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var values []string
-	for rows.Next() {
-		value, err := ScanString(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
+// CloseRows closes the rows object and checks its error value.
+func CloseRows(rows *sql.Rows, err error) error {
+	if closeErr := rows.Close(); closeErr != nil {
+		err = multierror.Append(err, closeErr)
 	}
 
-	return values, nil // TODO(efritz) need to close rows
-}
-
-// ScanFirstString reads the given set of `(string)` rows and returns the first value and a
-// boolean flag indicating its presence. This method should be called directly with
-// the return value of `*store.Query`.
-func ScanFirstString(rows *sql.Rows, err error) (string, bool, error) {
-	values, err := ScanStrings(rows, err)
-	if err != nil || len(values) == 0 {
-		return "", false, err
+	if rowsErr := rows.Err(); rowsErr != nil {
+		err = multierror.Append(err, rowsErr)
 	}
-	return values[0], true, nil
+
+	return err
 }

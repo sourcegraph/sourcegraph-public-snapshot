@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 )
 
-// ErrNoMetadata occurs when there are no rows in the schema_version table.
+// ErrNoVersion occurs when there are no rows in the schema_version table.
 var ErrNoVersion = errors.New("no rows in schema_version")
 
 // MigrationFunc runs a migration on the given store. The given serializer is the one that is used by
@@ -34,7 +34,7 @@ var UnknownSchemaVersion = migrations[0].Version
 var CurrentSchemaVersion = migrations[len(migrations)-1].Version
 
 // Migrate determines the current schema version and runs any migrations necessary to transform it to
-// the current schema version. Each migration is ran in an individual transation. An error is returned
+// the current schema version. Each migration is ran in an individual transaction. An error is returned
 // if the current schema version is unknown or if a migration is unsuccessful.
 func Migrate(ctx context.Context, s *store.Store, serializer serialization.Serializer) error {
 	version, err := getVersion(ctx, s)
@@ -93,7 +93,6 @@ func runMigration(ctx context.Context, store *store.Store, serializer serializat
 func getVersion(ctx context.Context, s *store.Store) (string, error) {
 	version, exists, err := store.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT version FROM schema_version LIMIT 1")))
 	if err != nil {
-		// TODO(efritz) - is there a better way to match this error?
 		if strings.Contains(err.Error(), "no such table: schema_version") {
 			return UnknownSchemaVersion, nil
 		}
