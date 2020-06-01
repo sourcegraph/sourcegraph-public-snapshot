@@ -62,11 +62,11 @@ type ExternalServicesListOptions struct {
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if len(o.Kinds) > 0 {
-		kinds := []*sqlf.Query{}
+		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
 		for _, kind := range o.Kinds {
 			kinds = append(kinds, sqlf.Sprintf("%s", kind))
 		}
-		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ", ")))
+		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
 	}
 	return conds
 }

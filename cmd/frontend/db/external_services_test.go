@@ -2,9 +2,47 @@ package db
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
+	tests := []struct {
+		name      string
+		kinds     []string
+		wantQuery string
+		wantArgs  []interface{}
+	}{
+		{
+			name:      "only one kind: GitHub",
+			kinds:     []string{"GITHUB"},
+			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
+			wantArgs:  []interface{}{"GITHUB"},
+		},
+		{
+			name:      "two kinds: GitHub and GitLab",
+			kinds:     []string{"GITHUB", "GITLAB"},
+			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
+			wantArgs:  []interface{}{"GITHUB", "GITLAB"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			opts := ExternalServicesListOptions{
+				Kinds: test.kinds,
+			}
+			q := sqlf.Join(opts.sqlConditions(), "AND")
+			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
+				t.Fatalf("query mismatch (-want +got):\n%s", diff)
+			} else if diff = cmp.Diff(test.wantArgs, q.Args()); diff != "" {
+				t.Fatalf("args mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	tests := map[string]struct {
