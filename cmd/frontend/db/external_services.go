@@ -266,9 +266,9 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 // determines a deadlock occurred.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 	ps := confGet().AuthProviders
-	if err := c.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
+	if err := e.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}
 
@@ -291,15 +291,15 @@ type ExternalServiceUpdate struct {
 // Update updates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
+func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
-		externalService, err := c.GetByID(ctx, id)
+		externalService, err := e.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		if err := c.ValidateConfig(ctx, id, externalService.Kind, *update.Config, ps); err != nil {
+		if err := e.ValidateConfig(ctx, id, externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}
 	}
@@ -367,13 +367,13 @@ func (*ExternalServicesStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the external service for id.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
+func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("id=%d", id)}
-	ExternalServicesStore, err := c.list(ctx, conds, nil)
+	ExternalServicesStore, err := e.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -386,18 +386,18 @@ func (c *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 // List returns all external services.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)
 	}
-	return c.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
 // listConfigs decodes the list configs into result.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
-	services, err := c.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
+func (e *ExternalServicesStore) listConfigs(ctx context.Context, kind string, result interface{}) error {
+	services, err := e.List(ctx, ExternalServicesListOptions{Kinds: []string{kind}})
 	if err != nil {
 		return err
 	}
@@ -426,9 +426,9 @@ func (c *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 // ListAWSCodeCommitConnections returns a list of AWSCodeCommit configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
+func (e *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var connections []*schema.AWSCodeCommitConnection
-	if err := c.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
+	if err := e.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -437,9 +437,9 @@ func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 // ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
+func (e *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
 	var connections []*schema.BitbucketCloudConnection
-	if err := c.listConfigs(ctx, "BITBUCKETCLOUD", &connections); err != nil {
+	if err := e.listConfigs(ctx, "BITBUCKETCLOUD", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -448,9 +448,9 @@ func (c *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Contex
 // ListBitbucketServerConnections returns a list of BitbucketServer configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
+func (e *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var connections []*schema.BitbucketServerConnection
-	if err := c.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
+	if err := e.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -459,9 +459,9 @@ func (c *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Conte
 // ListGitHubConnections returns a list of GitHubConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
+func (e *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*schema.GitHubConnection, error) {
 	var connections []*schema.GitHubConnection
-	if err := c.listConfigs(ctx, "GITHUB", &connections); err != nil {
+	if err := e.listConfigs(ctx, "GITHUB", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -470,9 +470,9 @@ func (c *ExternalServicesStore) ListGitHubConnections(ctx context.Context) ([]*s
 // ListGitLabConnections returns a list of GitLabConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
+func (e *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*schema.GitLabConnection, error) {
 	var connections []*schema.GitLabConnection
-	if err := c.listConfigs(ctx, "GITLAB", &connections); err != nil {
+	if err := e.listConfigs(ctx, "GITLAB", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -481,9 +481,9 @@ func (c *ExternalServicesStore) ListGitLabConnections(ctx context.Context) ([]*s
 // ListGitoliteConnections returns a list of GitoliteConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
+func (e *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]*schema.GitoliteConnection, error) {
 	var connections []*schema.GitoliteConnection
-	if err := c.listConfigs(ctx, "GITOLITE", &connections); err != nil {
+	if err := e.listConfigs(ctx, "GITOLITE", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -492,9 +492,9 @@ func (c *ExternalServicesStore) ListGitoliteConnections(ctx context.Context) ([]
 // ListPhabricatorConnections returns a list of PhabricatorConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
+func (e *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	var connections []*schema.PhabricatorConnection
-	if err := c.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
+	if err := e.listConfigs(ctx, "PHABRICATOR", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
@@ -503,15 +503,15 @@ func (c *ExternalServicesStore) ListPhabricatorConnections(ctx context.Context) 
 // ListOtherExternalServicesConnections returns a list of OtherExternalServiceConnection configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
+func (e *ExternalServicesStore) ListOtherExternalServicesConnections(ctx context.Context) ([]*schema.OtherExternalServiceConnection, error) {
 	var connections []*schema.OtherExternalServiceConnection
-	if err := c.listConfigs(ctx, "OTHER", &connections); err != nil {
+	if err := e.listConfigs(ctx, "OTHER", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
 }
 
-func (c *ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at
 		FROM external_services
@@ -542,7 +542,7 @@ func (c *ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, l
 // Count counts all external services that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
+func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
