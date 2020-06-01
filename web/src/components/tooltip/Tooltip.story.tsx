@@ -4,7 +4,7 @@ import { Tooltip } from './Tooltip'
 import tooltipStyles from './Tooltip.scss'
 import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
 
-const { add } = storiesOf('Tooltip', module).addDecorator(story => (
+const { add } = storiesOf('web/Tooltip', module).addDecorator(story => (
     <>
         <style>{bootstrapStyles}</style>
         <style>{tooltipStyles}</style>

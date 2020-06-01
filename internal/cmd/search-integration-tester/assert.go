@@ -9,17 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func assertGolden(name, path string, got GQLResult, update bool) error {
-	gotBytes, err := json.MarshalIndent(got, "", "  ")
-	if err != nil {
-		panic(fmt.Sprintf("could not marshal response %s", string(gotBytes)))
-	}
-	if update {
-		if err := ioutil.WriteFile(path, gotBytes, 0640); err != nil {
-			return fmt.Errorf("failed to update golden file %q: %s", path, err)
-		}
-	}
-
+func assertGolden(path string, got GQLResult) error {
 	wantString, err := ioutil.ReadFile(path)
 	if err != nil {
 		// Doesn't exist, set empty to empty object to see the diff.
@@ -32,6 +22,19 @@ func assertGolden(name, path string, got GQLResult, update bool) error {
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		return errors.New(diff)
+	}
+	return nil
+}
+
+func assertUpdate(path string, got GQLResult) error {
+	gotBytes, err := json.MarshalIndent(got, "", "  ")
+	if err != nil {
+		panic(fmt.Sprintf("could not marshal response %s", string(gotBytes)))
+	}
+	if update {
+		if err := ioutil.WriteFile(path, gotBytes, 0640); err != nil {
+			return fmt.Errorf("failed to update golden file %q: %s", path, err)
+		}
 	}
 	return nil
 }

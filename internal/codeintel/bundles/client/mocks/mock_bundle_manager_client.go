@@ -61,8 +61,8 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 			},
 		},
 		GetUploadFunc: &BundleManagerClientGetUploadFunc{
-			defaultHook: func(context.Context, int, string) (string, error) {
-				return "", nil
+			defaultHook: func(context.Context, int) (io.ReadCloser, error) {
+				return nil, nil
 			},
 		},
 		SendDBFunc: &BundleManagerClientSendDBFunc{
@@ -448,24 +448,24 @@ func (c BundleManagerClientExistsFuncCall) Results() []interface{} {
 // GetUpload method of the parent MockBundleManagerClient instance is
 // invoked.
 type BundleManagerClientGetUploadFunc struct {
-	defaultHook func(context.Context, int, string) (string, error)
-	hooks       []func(context.Context, int, string) (string, error)
+	defaultHook func(context.Context, int) (io.ReadCloser, error)
+	hooks       []func(context.Context, int) (io.ReadCloser, error)
 	history     []BundleManagerClientGetUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUpload delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBundleManagerClient) GetUpload(v0 context.Context, v1 int, v2 string) (string, error) {
-	r0, r1 := m.GetUploadFunc.nextHook()(v0, v1, v2)
-	m.GetUploadFunc.appendCall(BundleManagerClientGetUploadFuncCall{v0, v1, v2, r0, r1})
+func (m *MockBundleManagerClient) GetUpload(v0 context.Context, v1 int) (io.ReadCloser, error) {
+	r0, r1 := m.GetUploadFunc.nextHook()(v0, v1)
+	m.GetUploadFunc.appendCall(BundleManagerClientGetUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetUpload method of
 // the parent MockBundleManagerClient instance is invoked and the hook queue
 // is empty.
-func (f *BundleManagerClientGetUploadFunc) SetDefaultHook(hook func(context.Context, int, string) (string, error)) {
+func (f *BundleManagerClientGetUploadFunc) SetDefaultHook(hook func(context.Context, int) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
@@ -473,7 +473,7 @@ func (f *BundleManagerClientGetUploadFunc) SetDefaultHook(hook func(context.Cont
 // GetUpload method of the parent MockBundleManagerClient instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *BundleManagerClientGetUploadFunc) PushHook(hook func(context.Context, int, string) (string, error)) {
+func (f *BundleManagerClientGetUploadFunc) PushHook(hook func(context.Context, int) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -481,21 +481,21 @@ func (f *BundleManagerClientGetUploadFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientGetUploadFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (string, error) {
+func (f *BundleManagerClientGetUploadFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientGetUploadFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int, string) (string, error) {
+func (f *BundleManagerClientGetUploadFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, int) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *BundleManagerClientGetUploadFunc) nextHook() func(context.Context, int, string) (string, error) {
+func (f *BundleManagerClientGetUploadFunc) nextHook() func(context.Context, int) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -534,12 +534,9 @@ type BundleManagerClientGetUploadFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 io.ReadCloser
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -548,7 +545,7 @@ type BundleManagerClientGetUploadFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BundleManagerClientGetUploadFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

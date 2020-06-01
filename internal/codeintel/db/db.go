@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -198,11 +199,88 @@ func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, erro
 	return db.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// exec performs a query and throws away the result.
-func (db *dbImpl) exec(ctx context.Context, query *sqlf.Query) error {
-	rows, err := db.query(ctx, query)
-	if err != nil {
-		return err
+// queryForEffect performs a query and throws away the result.
+func (db *dbImpl) queryForEffect(ctx context.Context, query *sqlf.Query) error {
+	return closeRows(db.query(ctx, query))
+}
+
+// scanStrings scans a slice of strings from the return value of `*dbImpl.query`.
+func scanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	return rows.Close()
+	defer func() { err = closeRows(rows, err) }()
+
+	var values []string
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// scanFirstString scans a slice of strings from the return value of `*dbImpl.query` and returns the first.
+func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
+	values, err := scanStrings(rows, err)
+	if err != nil || len(values) == 0 {
+		return "", false, err
+	}
+	return values[0], true, nil
+}
+
+// scanInts scans a slice of ints from the return value of `*dbImpl.query`.
+func scanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var values []int
+	for rows.Next() {
+		var value int
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// scanFirstInt scans a slice of ints from the return value of `*dbImpl.query` and returns the first.
+func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
+	values, err := scanInts(rows, err)
+	if err != nil || len(values) == 0 {
+		return 0, false, err
+	}
+	return values[0], true, nil
+}
+
+// closeRows closes the rows object and checks its error value.
+func closeRows(rows *sql.Rows, err error) error {
+	if closeErr := rows.Close(); closeErr != nil {
+		err = multierror.Append(err, closeErr)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		err = multierror.Append(err, rowsErr)
+	}
+
+	return err
+}
+
+// intsToQueries converts a slice of ints into a slice of queries.
+func intsToQueries(values []int) []*sqlf.Query {
+	var queries []*sqlf.Query
+	for _, value := range values {
+		queries = append(queries, sqlf.Sprintf("%d", value))
+	}
+
+	return queries
 }

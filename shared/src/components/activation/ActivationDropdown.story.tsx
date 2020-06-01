@@ -8,7 +8,7 @@ import { action } from '@storybook/addon-actions'
 import webMainStyles from '../../../../web/src/SourcegraphWebApp.scss'
 import { subTypeOf } from '../../util/types'
 
-const { add } = storiesOf('ActivationDropdown', module).addDecorator(story => (
+const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
     <>
         <style>{webMainStyles}</style>
         <div className="theme-light">{story()}</div>

@@ -11,7 +11,7 @@ const commonProps = {
     location: history.location,
 }
 
-const { add } = storiesOf('ChartViewContent', module).addDecorator(story => (
+const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         {/* Chart will always fill the container, so we need to give the container an explicit size. */}

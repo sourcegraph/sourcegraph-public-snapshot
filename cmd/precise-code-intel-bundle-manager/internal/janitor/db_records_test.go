@@ -17,7 +17,7 @@ func TestRemoveProcessedUploadsWithoutBundleFile(t *testing.T) {
 	ids := []int{1, 2, 3, 4, 5}
 
 	for _, id := range []int{1, 3, 5} {
-		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+		path := filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d", id), "sqlite.db")
 		if err := makeFile(path, time.Now().Local()); err != nil {
 			t.Fatalf("unexpected error creating file %s: %s", path, err)
 		}

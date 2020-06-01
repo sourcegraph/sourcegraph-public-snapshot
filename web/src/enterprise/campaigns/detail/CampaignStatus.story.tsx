@@ -7,7 +7,7 @@ import { boolean } from '@storybook/addon-knobs'
 import { createMemoryHistory } from 'history'
 import webStyles from '../../../SourcegraphWebApp.scss'
 
-const { add } = storiesOf('CampaignStatus', module).addDecorator(story => (
+const { add } = storiesOf('web/CampaignStatus', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light container">{story()}</div>

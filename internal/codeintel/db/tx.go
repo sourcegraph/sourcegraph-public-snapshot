@@ -67,7 +67,7 @@ func (db *dbImpl) Savepoint(ctx context.Context) (string, error) {
 	db.savepointIDs = append(db.savepointIDs, savepointID)
 
 	// Unfortunately, it's a syntax error to supply this as a param
-	if err := db.exec(ctx, sqlf.Sprintf("SAVEPOINT "+savepointID)); err != nil {
+	if err := db.queryForEffect(ctx, sqlf.Sprintf("SAVEPOINT "+savepointID)); err != nil {
 		return "", err
 	}
 
@@ -90,7 +90,7 @@ func (db *dbImpl) RollbackToSavepoint(ctx context.Context, savepointID string) e
 		db.savepointIDs = db.savepointIDs[:i]
 
 		// Unfortunately, it's a syntax error to supply this as a param
-		return db.exec(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
+		return db.queryForEffect(ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
 	}
 
 	return ErrNoSavepoint

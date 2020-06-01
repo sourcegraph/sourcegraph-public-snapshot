@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -2547,6 +2548,33 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 	})
 
+	t.Run("UpdateWithLargeError", func(t *testing.T) {
+		// We were seeing errors creating / updating changeset jobs with errors
+		// larger than 2704 bytes
+		// https://github.com/sourcegraph/sourcegraph/issues/10798
+		c := changesetJobs[0]
+		clock.add(1 * time.Second)
+		c.StartedAt = clock.now().Add(1 * time.Second)
+		c.FinishedAt = clock.now().Add(1 * time.Second)
+		c.Branch = "upgrade-es-lint"
+		// Strangely this value needs to be a lot higher than the threshold before
+		// an error is actually raised. It must be due to the way PostgreSQL constructs
+		// the index.
+		c.Error = strings.Repeat("X", 1000000)
+
+		want := c
+		want.UpdatedAt = clock.now()
+
+		have := c.Clone()
+		if err := s.UpdateChangesetJob(ctx, have); err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
 			if len(changesetJobs) == 0 {
@@ -3036,6 +3064,21 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		patchSet2 := &cmpgn.PatchSet{UserID: userID}
+		err = s.CreatePatchSet(context.Background(), patchSet2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		patch2 := &cmpgn.Patch{
+			PatchSetID: patchSet2.ID,
+			RepoID:     repo.ID,
+			BaseRef:    "abc",
+		}
+		err = s.CreatePatch(context.Background(), patch2)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		campaign := &cmpgn.Campaign{
 			PatchSetID:      patchSet.ID,
 			Name:            "testcampaign",
@@ -3090,6 +3133,55 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			if !ran {
 				// We shouldn't have any pending jobs yet
 				t.Fatalf("process function should have run")
+			}
+		})
+
+		t.Run("GetPendingChangesetJobOrder", func(t *testing.T) {
+			// Test that we get the oldest job first
+			tx := dbtest.NewTx(t, db)
+			// NOTE: We don't use a clock here as we need ordering by updated_at to work
+			s := NewStore(tx)
+
+			var idRun int64
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
+				idRun = job.ID
+				return errors.New("rollback")
+			}
+
+			job1 := &cmpgn.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    patch.ID,
+			}
+			err := s.CreateChangesetJob(ctx, job1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			job2 := &cmpgn.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    patch2.ID,
+			}
+			err = s.CreateChangesetJob(ctx, job2)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Move the old job to the back of the queue
+			err = s.UpdateChangesetJob(ctx, job1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
+			if err != nil && err.Error() != "rollback" {
+				t.Fatal(err)
+			}
+			if !ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should have run")
+			}
+			if idRun != job2.ID {
+				t.Fatalf("Job with oldest update_at should have run")
 			}
 		})
 

@@ -44,7 +44,7 @@ func NewMockReader() *MockReader {
 			},
 		},
 		ReadDefinitionsFunc: &ReaderReadDefinitionsFunc{
-			defaultHook: func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+			defaultHook: func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -54,12 +54,12 @@ func NewMockReader() *MockReader {
 			},
 		},
 		ReadMetaFunc: &ReaderReadMetaFunc{
-			defaultHook: func(context.Context) (string, string, int, error) {
-				return "", "", 0, nil
+			defaultHook: func(context.Context) (types.MetaData, error) {
+				return types.MetaData{}, nil
 			},
 		},
 		ReadReferencesFunc: &ReaderReadReferencesFunc{
-			defaultHook: func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+			defaultHook: func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -198,15 +198,15 @@ func (c ReaderCloseFuncCall) Results() []interface{} {
 // ReaderReadDefinitionsFunc describes the behavior when the ReadDefinitions
 // method of the parent MockReader instance is invoked.
 type ReaderReadDefinitionsFunc struct {
-	defaultHook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)
-	hooks       []func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)
+	defaultHook func(context.Context, string, string, int, int) ([]types.Location, int, error)
+	hooks       []func(context.Context, string, string, int, int) ([]types.Location, int, error)
 	history     []ReaderReadDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReader) ReadDefinitions(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.DefinitionReferenceRow, int, error) {
+func (m *MockReader) ReadDefinitions(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.Location, int, error) {
 	r0, r1, r2 := m.ReadDefinitionsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.ReadDefinitionsFunc.appendCall(ReaderReadDefinitionsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
@@ -215,7 +215,7 @@ func (m *MockReader) ReadDefinitions(v0 context.Context, v1 string, v2 string, v
 // SetDefaultHook sets function that is called when the ReadDefinitions
 // method of the parent MockReader instance is invoked and the hook queue is
 // empty.
-func (f *ReaderReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)) {
+func (f *ReaderReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -223,7 +223,7 @@ func (f *ReaderReadDefinitionsFunc) SetDefaultHook(hook func(context.Context, st
 // ReadDefinitions method of the parent MockReader instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ReaderReadDefinitionsFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)) {
+func (f *ReaderReadDefinitionsFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -231,21 +231,21 @@ func (f *ReaderReadDefinitionsFunc) PushHook(hook func(context.Context, string, 
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReaderReadDefinitionsFunc) SetDefaultReturn(r0 []types.DefinitionReferenceRow, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadDefinitionsFunc) SetDefaultReturn(r0 []types.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReaderReadDefinitionsFunc) PushReturn(r0 []types.DefinitionReferenceRow, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadDefinitionsFunc) PushReturn(r0 []types.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ReaderReadDefinitionsFunc) nextHook() func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadDefinitionsFunc) nextHook() func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -295,7 +295,7 @@ type ReaderReadDefinitionsFuncCall struct {
 	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.DefinitionReferenceRow
+	Result0 []types.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -430,23 +430,23 @@ func (c ReaderReadDocumentFuncCall) Results() []interface{} {
 // ReaderReadMetaFunc describes the behavior when the ReadMeta method of the
 // parent MockReader instance is invoked.
 type ReaderReadMetaFunc struct {
-	defaultHook func(context.Context) (string, string, int, error)
-	hooks       []func(context.Context) (string, string, int, error)
+	defaultHook func(context.Context) (types.MetaData, error)
+	hooks       []func(context.Context) (types.MetaData, error)
 	history     []ReaderReadMetaFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadMeta delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockReader) ReadMeta(v0 context.Context) (string, string, int, error) {
-	r0, r1, r2, r3 := m.ReadMetaFunc.nextHook()(v0)
-	m.ReadMetaFunc.appendCall(ReaderReadMetaFuncCall{v0, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+func (m *MockReader) ReadMeta(v0 context.Context) (types.MetaData, error) {
+	r0, r1 := m.ReadMetaFunc.nextHook()(v0)
+	m.ReadMetaFunc.appendCall(ReaderReadMetaFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ReadMeta method of
 // the parent MockReader instance is invoked and the hook queue is empty.
-func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (string, string, int, error)) {
+func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (types.MetaData, error)) {
 	f.defaultHook = hook
 }
 
@@ -454,7 +454,7 @@ func (f *ReaderReadMetaFunc) SetDefaultHook(hook func(context.Context) (string, 
 // ReadMeta method of the parent MockReader instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (string, string, int, error)) {
+func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (types.MetaData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -462,21 +462,21 @@ func (f *ReaderReadMetaFunc) PushHook(hook func(context.Context) (string, string
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReaderReadMetaFunc) SetDefaultReturn(r0 string, r1 string, r2 int, r3 error) {
-	f.SetDefaultHook(func(context.Context) (string, string, int, error) {
-		return r0, r1, r2, r3
+func (f *ReaderReadMetaFunc) SetDefaultReturn(r0 types.MetaData, r1 error) {
+	f.SetDefaultHook(func(context.Context) (types.MetaData, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReaderReadMetaFunc) PushReturn(r0 string, r1 string, r2 int, r3 error) {
-	f.PushHook(func(context.Context) (string, string, int, error) {
-		return r0, r1, r2, r3
+func (f *ReaderReadMetaFunc) PushReturn(r0 types.MetaData, r1 error) {
+	f.PushHook(func(context.Context) (types.MetaData, error) {
+		return r0, r1
 	})
 }
 
-func (f *ReaderReadMetaFunc) nextHook() func(context.Context) (string, string, int, error) {
+func (f *ReaderReadMetaFunc) nextHook() func(context.Context) (types.MetaData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -514,16 +514,10 @@ type ReaderReadMetaFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 types.MetaData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 string
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 int
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -535,21 +529,21 @@ func (c ReaderReadMetaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ReaderReadMetaFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ReaderReadReferencesFunc describes the behavior when the ReadReferences
 // method of the parent MockReader instance is invoked.
 type ReaderReadReferencesFunc struct {
-	defaultHook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)
-	hooks       []func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)
+	defaultHook func(context.Context, string, string, int, int) ([]types.Location, int, error)
+	hooks       []func(context.Context, string, string, int, int) ([]types.Location, int, error)
 	history     []ReaderReadReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadReferences delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReader) ReadReferences(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.DefinitionReferenceRow, int, error) {
+func (m *MockReader) ReadReferences(v0 context.Context, v1 string, v2 string, v3 int, v4 int) ([]types.Location, int, error) {
 	r0, r1, r2 := m.ReadReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.ReadReferencesFunc.appendCall(ReaderReadReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
@@ -558,7 +552,7 @@ func (m *MockReader) ReadReferences(v0 context.Context, v1 string, v2 string, v3
 // SetDefaultHook sets function that is called when the ReadReferences
 // method of the parent MockReader instance is invoked and the hook queue is
 // empty.
-func (f *ReaderReadReferencesFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)) {
+func (f *ReaderReadReferencesFunc) SetDefaultHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -566,7 +560,7 @@ func (f *ReaderReadReferencesFunc) SetDefaultHook(hook func(context.Context, str
 // ReadReferences method of the parent MockReader instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ReaderReadReferencesFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error)) {
+func (f *ReaderReadReferencesFunc) PushHook(hook func(context.Context, string, string, int, int) ([]types.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -574,21 +568,21 @@ func (f *ReaderReadReferencesFunc) PushHook(hook func(context.Context, string, s
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ReaderReadReferencesFunc) SetDefaultReturn(r0 []types.DefinitionReferenceRow, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadReferencesFunc) SetDefaultReturn(r0 []types.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ReaderReadReferencesFunc) PushReturn(r0 []types.DefinitionReferenceRow, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadReferencesFunc) PushReturn(r0 []types.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ReaderReadReferencesFunc) nextHook() func(context.Context, string, string, int, int) ([]types.DefinitionReferenceRow, int, error) {
+func (f *ReaderReadReferencesFunc) nextHook() func(context.Context, string, string, int, int) ([]types.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -638,7 +632,7 @@ type ReaderReadReferencesFuncCall struct {
 	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.DefinitionReferenceRow
+	Result0 []types.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
