@@ -279,3 +279,36 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
 }
+
+func TestExternalServicesStore_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ess, err := (&ExternalServicesStore{}).List(ctx, ExternalServicesListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(ess) != 1 {
+		t.Fatalf("Want 1 external service but got %d", len(ess))
+	} else if diff := cmp.Diff(es, ess[0]); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
+	}
+}
