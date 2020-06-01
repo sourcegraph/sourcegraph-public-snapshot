@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
@@ -87,16 +86,21 @@ func runMigration(ctx context.Context, store *store.Store, serializer serializat
 	return nil
 }
 
-// getVersion returns the current schema version of the store. If there is no schema_version table,
-// then we assume this database was created prior to this migration mechanism and return the lowest
-// migration version and apply all migrations
+// getVersion returns the current schema version of the store.
 func getVersion(ctx context.Context, s *store.Store) (string, error) {
+	// Determine if schema_version table exists
+	_, exists, err := store.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT name FROM sqlite_master WHERE type = 'table' AND name = %s", "schema_version")))
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		// We assume this database was created prior to this migration mechanism
+		// and return the lowest migration version so that we apply all migrations.
+		return UnknownSchemaVersion, nil
+	}
+
 	version, exists, err := store.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT version FROM schema_version LIMIT 1")))
 	if err != nil {
-		if strings.Contains(err.Error(), "no such table: schema_version") {
-			return UnknownSchemaVersion, nil
-		}
-
 		return "", err
 	}
 	if !exists {
