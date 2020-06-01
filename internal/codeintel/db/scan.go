@@ -7,15 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// scanner is the common interface shared by *sql.Row and *sql.Rows.
-type scanner interface {
-	// Scan copies the values of the current row into the values pointed at by dest.
-	Scan(dest ...interface{}) error
-}
-
-// scanDump populates a Dump value from the given scanner.
-func scanDump(scanner scanner) (dump Dump, err error) {
-	err = scanner.Scan(
+// scanDump populates a Dump value from the given rows.
+func scanDump(rows *sql.Rows) (dump Dump, err error) {
+	err = rows.Scan(
 		&dump.ID,
 		&dump.Commit,
 		&dump.Root,
@@ -64,10 +58,10 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 	return dumps[0], true, nil
 }
 
-// scanUpload populates an Upload value from the given scanner.
-func scanUpload(scanner scanner) (upload Upload, err error) {
+// scanUpload populates an Upload value from the given rows.
+func scanUpload(rows *sql.Rows) (upload Upload, err error) {
 	var rawUploadedParts []sql.NullInt32
-	err = scanner.Scan(
+	err = rows.Scan(
 		&upload.ID,
 		&upload.Commit,
 		&upload.Root,
@@ -131,9 +125,9 @@ func scanFirstUploadDequeue(rows *sql.Rows, err error) (interface{}, bool, error
 	return scanFirstUpload(rows, err)
 }
 
-// scanPackageReference populates a package reference value from the given scanner.
-func scanPackageReference(scanner scanner) (reference types.PackageReference, err error) {
-	err = scanner.Scan(&reference.DumpID, &reference.Scheme, &reference.Name, &reference.Version, &reference.Filter)
+// scanPackageReference populates a package reference value from the given rows.
+func scanPackageReference(rows *sql.Rows) (reference types.PackageReference, err error) {
+	err = rows.Scan(&reference.DumpID, &reference.Scheme, &reference.Name, &reference.Version, &reference.Filter)
 	return reference, err
 }
 
@@ -158,9 +152,9 @@ func scanPackageReferences(rows *sql.Rows, err error) ([]types.PackageReference,
 	return references, nil
 }
 
-// scanString populates a string value from the given scanner.
-func scanString(scanner scanner) (value string, err error) {
-	err = scanner.Scan(&value)
+// scanString populates a string value from the given rows.
+func scanString(rows *sql.Rows) (value string, err error) {
+	err = rows.Scan(&value)
 	return value, err
 }
 
@@ -196,9 +190,9 @@ func scanFirstString(rows *sql.Rows, err error) (string, bool, error) {
 	return values[0], true, nil
 }
 
-// scanInt populates an integer value from the given scanner.
-func scanInt(scanner scanner) (value int, err error) {
-	err = scanner.Scan(&value)
+// scanInt populates an integer value from the given rows.
+func scanInt(rows *sql.Rows) (value int, err error) {
+	err = rows.Scan(&value)
 	return value, err
 }
 
@@ -234,9 +228,9 @@ func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return values[0], true, nil
 }
 
-// scanState populates an integer and string from the given scanner.
-func scanState(scanner scanner) (id int, state string, err error) {
-	err = scanner.Scan(&id, &state)
+// scanState populates an integer and string from the given rows.
+func scanState(rows *sql.Rows) (id int, state string, err error) {
+	err = rows.Scan(&id, &state)
 	return id, state, err
 }
 
@@ -261,9 +255,9 @@ func scanStates(rows *sql.Rows, err error) (map[int]string, error) {
 	return states, nil
 }
 
-// scanVisibility populates an integer and boolean from the given scanner.
-func scanVisibility(scanner scanner) (id int, visibleAtTip bool, err error) {
-	err = scanner.Scan(&id, &visibleAtTip)
+// scanVisibility populates an integer and boolean from the given rows.
+func scanVisibility(rows *sql.Rows) (id int, visibleAtTip bool, err error) {
+	err = rows.Scan(&id, &visibleAtTip)
 	return id, visibleAtTip, err
 }
 
@@ -289,9 +283,9 @@ func scanVisibilities(rows *sql.Rows, err error) (map[int]bool, error) {
 	return visibilities, nil
 }
 
-// scanCommit populates a pair of strings from the given scanner.
-func scanCommit(scanner scanner) (commit string, parentCommit *string, err error) {
-	err = scanner.Scan(&commit, &parentCommit)
+// scanCommit populates a pair of strings from the given rows.
+func scanCommit(rows *sql.Rows) (commit string, parentCommit *string, err error) {
+	err = rows.Scan(&commit, &parentCommit)
 	return commit, parentCommit, err
 }
 
@@ -323,9 +317,9 @@ func scanCommits(rows *sql.Rows, err error) (map[string][]string, error) {
 	return commits, nil
 }
 
-// scanIndexableRepository populates an IndexableRepository value from the given scanner.
-func scanIndexableRepository(scanner scanner) (indexableRepository IndexableRepository, err error) {
-	err = scanner.Scan(
+// scanIndexableRepository populates an IndexableRepository value from the given rows.
+func scanIndexableRepository(rows *sql.Rows) (indexableRepository IndexableRepository, err error) {
+	err = rows.Scan(
 		&indexableRepository.RepositoryID,
 		&indexableRepository.SearchCount,
 		&indexableRepository.PreciseCount,
@@ -356,9 +350,9 @@ func scanIndexableRepositories(rows *sql.Rows, err error) ([]IndexableRepository
 	return indexableRepositories, nil
 }
 
-// scanIndex populates an Index value from the given scanner.
-func scanIndex(scanner scanner) (index Index, err error) {
-	err = scanner.Scan(
+// scanIndex populates an Index value from the given rows.
+func scanIndex(rows *sql.Rows) (index Index, err error) {
+	err = rows.Scan(
 		&index.ID,
 		&index.Commit,
 		&index.QueuedAt,
@@ -410,9 +404,9 @@ func scanFirstIndexDequeue(rows *sql.Rows, err error) (interface{}, bool, error)
 	return scanFirstIndex(rows, err)
 }
 
-// scanRepoUsageStatistics populates a RepoUsageStatistics from the given scanner.
-func scanRepoUsageStatistics(scanner scanner) (stats RepoUsageStatistics, err error) {
-	err = scanner.Scan(&stats.RepositoryID, &stats.SearchCount, &stats.PreciseCount)
+// scanRepoUsageStatistics populates a RepoUsageStatistics from the given rows.
+func scanRepoUsageStatistics(rows *sql.Rows) (stats RepoUsageStatistics, err error) {
+	err = rows.Scan(&stats.RepositoryID, &stats.SearchCount, &stats.PreciseCount)
 	return stats, err
 }
 
