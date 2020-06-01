@@ -148,7 +148,7 @@
     "@types/signale": "1.4.1",
     "@types/simmerjs": "0.5.1",
     "@types/sinon": "9.0.0",
-    "@types/socket.io": "2.1.4",
+    "@types/socket.io": "2.1.8",
     "@types/socket.io-client": "1.4.32",
     "@types/storybook__addon-actions": "3.4.3",
     "@types/storybook__addon-info": "5.2.1",

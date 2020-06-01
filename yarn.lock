@@ -3000,6 +3000,13 @@
   resolved "https://registry.npmjs.org/@types/d3-time/-/d3-time-1.0.9.tgz#c2cf05a3cd51f810b8d8a9bbca0c74030d4e535e"
   integrity sha512-m+D4NbQdDlTVaO7QgXAnatR3IDxQYDMBtRhgSCi5rs9R1LPq1y7/2aqa1FJ2IWjFm1mOV63swDxonnCDlHgHMA==
 
+"@types/engine.io@*":
+  version "3.1.4"
+  resolved "https://registry.npmjs.org/@types/engine.io/-/engine.io-3.1.4.tgz#3d9472711d179daa7c95c051e50ad411e18a9bdc"
+  integrity sha512-98rXVukLD6/ozrQ2O80NAlWDGA4INg+tqsEReWJldqyi2fulC9V7Use/n28SWgROXKm6003ycWV4gZHoF8GA6w==
+  dependencies:
+    "@types/node" "*"
+
 "@types/eslint-visitor-keys@^1.0.0":
   version "1.0.0"
   resolved "https://registry.npmjs.org/@types/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#1ee30d79544ca84d68d4b3cdb0af4f205663dd2d"
@@ -3560,11 +3567,12 @@
   resolved "https://registry.npmjs.org/@types/socket.io-client/-/socket.io-client-1.4.32.tgz#988a65a0386c274b1c22a55377fab6a30789ac14"
   integrity sha512-Vs55Kq8F+OWvy1RLA31rT+cAyemzgm0EWNeax6BWF8H7QiiOYMJIdcwSDdm5LVgfEkoepsWkS+40+WNb7BUMbg==
 
-"@types/socket.io@2.1.4":
-  version "2.1.4"
-  resolved "https://registry.npmjs.org/@types/socket.io/-/socket.io-2.1.4.tgz#674e7bc193c5ccdadd4433f79f3660d31759e9ac"
-  integrity sha512-cI98INy7tYnweTsUlp8ocveVdAxENUThO0JsLSCs51cjOP2yV5Mqo5QszMDPckyRRA+PO6+wBgKvGvHUCc23TQ==
+"@types/socket.io@2.1.8":
+  version "2.1.8"
+  resolved "https://registry.npmjs.org/@types/socket.io/-/socket.io-2.1.8.tgz#ffc3aac0163a58bf50a463d50b1baabed91638cc"
+  integrity sha512-NIQfh9WwJuJKlgmby4NgwMpoBOmNPCDgaRNPiLYZBtkbHkszK/9R52B5yGkd5a34rbVdAADuo8FhOS/5AZDemw==
   dependencies:
+    "@types/engine.io" "*"
     "@types/node" "*"
 
 "@types/source-list-map@*":
