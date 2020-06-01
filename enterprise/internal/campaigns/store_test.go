@@ -3064,6 +3064,21 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		patchSet2 := &cmpgn.PatchSet{UserID: userID}
+		err = s.CreatePatchSet(context.Background(), patchSet2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		patch2 := &cmpgn.Patch{
+			PatchSetID: patchSet2.ID,
+			RepoID:     repo.ID,
+			BaseRef:    "abc",
+		}
+		err = s.CreatePatch(context.Background(), patch2)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		campaign := &cmpgn.Campaign{
 			PatchSetID:      patchSet.ID,
 			Name:            "testcampaign",
@@ -3118,6 +3133,55 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			if !ran {
 				// We shouldn't have any pending jobs yet
 				t.Fatalf("process function should have run")
+			}
+		})
+
+		t.Run("GetPendingChangesetJobOrder", func(t *testing.T) {
+			// Test that we get the oldest job first
+			tx := dbtest.NewTx(t, db)
+			// NOTE: We don't use a clock here as we need ordering by updated_at to work
+			s := NewStore(tx)
+
+			var idRun int64
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
+				idRun = job.ID
+				return errors.New("rollback")
+			}
+
+			job1 := &cmpgn.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    patch.ID,
+			}
+			err := s.CreateChangesetJob(ctx, job1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			job2 := &cmpgn.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    patch2.ID,
+			}
+			err = s.CreateChangesetJob(ctx, job2)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Move the old job to the back of the queue
+			err = s.UpdateChangesetJob(ctx, job1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
+			if err != nil && err.Error() != "rollback" {
+				t.Fatal(err)
+			}
+			if !ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should have run")
+			}
+			if idRun != job2.ID {
+				t.Fatalf("Job with oldest update_at should have run")
 			}
 		})
 
