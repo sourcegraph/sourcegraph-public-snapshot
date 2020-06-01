@@ -65,7 +65,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 	for _, stat := range stats {
 		if err := u.queueRepository(ctx, stat); err != nil {
-			if vcs.IsRepoNotExist(err) {
+			if isRepoNotExist(err) {
 				continue
 			}
 
@@ -101,4 +101,16 @@ func (u *Updater) queueRepository(ctx context.Context, repoUsageStatistics db.Re
 
 	log15.Debug("Updated indexable repository metadata", "repository_id", repoUsageStatistics.RepositoryID)
 	return nil
+}
+
+func isRepoNotExist(err error) bool {
+	for err != nil {
+		if vcs.IsRepoNotExist(err) {
+			return true
+		}
+
+		err = errors.Unwrap(err)
+	}
+
+	return false
 }
