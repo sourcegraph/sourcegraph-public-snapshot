@@ -14,6 +14,5 @@ var defaultHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 
 // NewCodeIntelUploadHandler is re-assigned by the enterprise frontend
 var NewCodeIntelUploadHandler CodeIntelUploadHandlerFactory = func(_ bool) http.Handler {
-	fmt.Printf("GOT DEFAULT HANDLER?\n")
 	return defaultHandler
 }
