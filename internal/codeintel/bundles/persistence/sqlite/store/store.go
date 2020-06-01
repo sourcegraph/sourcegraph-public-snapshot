@@ -43,19 +43,9 @@ func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 }
 
 // Exec calls into the underlying connection.
-func (s *Store) Exec(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
-	return s.db.ExecContext(ctx, query.Query(sqlf.SimpleBindVar), query.Args()...)
-}
-
-// ExecAll executes the given queries in sequence.
-func (s *Store) ExecAll(ctx context.Context, queries ...*sqlf.Query) error {
-	for _, query := range queries {
-		if _, err := s.Exec(ctx, query); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
+	_, err := s.db.ExecContext(ctx, query.Query(sqlf.SimpleBindVar), query.Args()...)
+	return err
 }
 
 // TODO(efritz) - rework ExecContext interface

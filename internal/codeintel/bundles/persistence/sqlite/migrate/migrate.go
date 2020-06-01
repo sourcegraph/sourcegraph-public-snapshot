@@ -80,7 +80,7 @@ func runMigration(ctx context.Context, store *store.Store, serializer serializat
 		return err
 	}
 
-	if err := tx.ExecAll(ctx, sqlf.Sprintf("UPDATE schema_version SET version = %s", version)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE schema_version SET version = %s", version)); err != nil {
 		return err
 	}
 

@@ -37,19 +37,12 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 		}
 	}()
 
-	if err := store.ExecAll(
-		ctx,
-		sqlf.Sprintf(`CREATE TABLE "meta" ("id" integer PRIMARY KEY NOT NULL, "lsifVersion" text NOT NULL, "sourcegraphVersion" text NOT NULL, "numResultChunks" integer NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "resultChunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "definitions" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "references" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
-	); err != nil {
+	tx, err := store.Transact(ctx)
+	if err != nil {
 		return nil, err
 	}
 
-	tx, err := store.Transact(ctx)
-	if err != nil {
+	if err := createTables(ctx, tx); err != nil {
 		return nil, err
 	}
 
@@ -60,9 +53,9 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 	}, nil
 }
 
-func (w *sqliteWriter) WriteMeta(ctx context.Context, meta types.MetaData) error {
+func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) error {
 	inserter := sqliteutil.NewBatchInserter(w.store, "meta", "lsifVersion", "sourcegraphVersion", "numResultChunks")
-	if err := inserter.Insert(ctx, "", "", meta.NumResultChunks); err != nil {
+	if err := inserter.Insert(ctx, "", "", metaData.NumResultChunks); err != nil {
 		return errors.Wrap(err, "inserter.Insert")
 	}
 	if err := inserter.Flush(ctx); err != nil {
@@ -125,10 +118,7 @@ func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []
 		return errors.Wrap(err, "inserter.Flush")
 	}
 
-	return w.store.ExecAll(
-		ctx,
-		sqlf.Sprintf(`CREATE INDEX "idx_definitions" ON "definitions" ("scheme", "identifier")`),
-	)
+	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_definitions" ON "definitions" ("scheme", "identifier")`))
 }
 
 func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
@@ -145,10 +135,7 @@ func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []t
 		return errors.Wrap(err, "inserter.Flush")
 	}
 
-	return w.store.ExecAll(
-		ctx,
-		sqlf.Sprintf(`CREATE INDEX "idx_references" ON "references" ("scheme", "identifier")`),
-	)
+	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_references" ON "references" ("scheme", "identifier")`))
 }
 
 func (w *sqliteWriter) Close() (err error) {
@@ -159,4 +146,22 @@ func (w *sqliteWriter) Close() (err error) {
 	}
 
 	return err
+}
+
+func createTables(ctx context.Context, store *store.Store) error {
+	tables := []*sqlf.Query{
+		sqlf.Sprintf(`CREATE TABLE "meta" ("id" integer PRIMARY KEY NOT NULL, "lsifVersion" text NOT NULL, "sourcegraphVersion" text NOT NULL, "numResultChunks" integer NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "resultChunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "definitions" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
+		sqlf.Sprintf(`CREATE TABLE "references" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
+	}
+
+	for _, table := range tables {
+		if err := store.Exec(ctx, table); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
