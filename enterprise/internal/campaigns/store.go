@@ -101,7 +101,7 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
 	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
-	ORDER BY j.id ASC
+	ORDER BY j.updated_at ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING j.id,
