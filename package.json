@@ -202,7 +202,7 @@
     "node-fetch": "^2.6.0",
     "node-sass": "^4.14.1",
     "nyc": "^15.0.1",
-    "open": "^7.0.3",
+    "open": "^7.0.4",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.2.0",
     "postcss-focus-visible": "^5.0.0",
