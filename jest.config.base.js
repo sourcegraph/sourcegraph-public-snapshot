@@ -58,9 +58,13 @@ const config = {
     // Enzyme setup file
     path.join(__dirname, 'shared/dev/enzymeSetup.js'),
   ],
-  setupFilesAfterEnv: [require.resolve('core-js/stable'), require.resolve('regenerator-runtime/runtime')],
+  setupFilesAfterEnv: [
+    require.resolve('core-js/stable'),
+    require.resolve('regenerator-runtime/runtime'),
+    // path.join(__dirname, 'shared/dev/enzymeSerializer.js'),
+  ],
   globalSetup: path.join(__dirname, 'shared/dev/jestGlobalSetup.js'),
-  snapshotSerializers: ['enzyme-to-json/serializer'],
+  snapshotSerializers: [path.join(__dirname, 'shared/dev/enzymeSerializer.js')],
 }
 
 module.exports = config

@@ -4,8 +4,6 @@ import { mount } from 'enzyme'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
-import toJson from 'enzyme-to-json'
-import { replaceHistoryObject } from '../../../shared/src/util/enzymeSnapshotModifiers'
 
 const commonProps: VersionContextDropdownProps = {
     setVersionContext: sinon.spy((_versionContext: string | undefined) => {}),
@@ -22,16 +20,14 @@ const commonProps: VersionContextDropdownProps = {
 }
 describe('VersionContextDropdown', () => {
     it('renders the version context dropdown with no context selected', () => {
-        const wrapper = toJson(mount(<VersionContextDropdown {...commonProps} />), { map: replaceHistoryObject })
-        expect(wrapper).toMatchSnapshot()
+        expect(mount(<VersionContextDropdown {...commonProps} />)).toMatchSnapshot()
     })
 
     it('renders the expanded version context dropdown, with 3.15 selected and displayed first', () => {
-        const wrapper = toJson(
+        expect(
             mount(
                 <VersionContextDropdown {...commonProps} versionContext="3.15" alwaysExpanded={true} portal={false} />
             )
-        )
-        expect(wrapper).toMatchSnapshot()
+        ).toMatchSnapshot()
     })
 })

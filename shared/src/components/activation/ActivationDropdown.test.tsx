@@ -1,11 +1,9 @@
 import * as H from 'history'
 import React from 'react'
 import { mount } from 'enzyme'
-import toJson from 'enzyme-to-json'
 import { ActivationDropdown } from './ActivationDropdown'
 import sinon from 'sinon'
 import { Activation } from './Activation'
-import { replaceHistoryObject } from '../../util/enzymeSnapshotModifiers'
 
 const baseActivation: Activation = {
     steps: [
@@ -48,16 +46,14 @@ const baseActivation: Activation = {
 
 describe('ActivationDropdown', () => {
     it('renders the activation dropdown', () => {
-        const wrapper = toJson(
+        expect(
             mount(
                 <ActivationDropdown
                     activation={baseActivation}
                     history={H.createMemoryHistory({ keyLength: 0 })}
                     alwaysShow={true}
                 />
-            ),
-            { map: replaceHistoryObject }
-        )
-        expect(wrapper).toMatchSnapshot()
+            )
+        ).toMatchSnapshot()
     })
 })

@@ -4,8 +4,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
-import toJson from 'enzyme-to-json'
-import { replaceHistoryObject } from '../../../shared/src/util/enzymeSnapshotModifiers'
 
 jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
 jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
@@ -15,15 +13,12 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
-            toJson(
-                mount(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
-                        history={createMemoryHistory()}
-                    />
-                ),
-                { map: replaceHistoryObject }
+            mount(
+                <StatusMessagesNavItem
+                    fetchMessages={fetchMessages}
+                    isSiteAdmin={false}
+                    history={createMemoryHistory()}
+                />
             )
         ).toMatchSnapshot()
     })
@@ -37,30 +32,24 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
         test('as non-site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={false}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={false}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={true}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
@@ -86,30 +75,24 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={false}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={false}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={true}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
@@ -124,30 +107,24 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={false}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={false}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                toJson(
-                    mount(
-                        <StatusMessagesNavItem
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                            history={createMemoryHistory()}
-                        />
-                    ),
-                    { map: replaceHistoryObject }
+                mount(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={true}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })

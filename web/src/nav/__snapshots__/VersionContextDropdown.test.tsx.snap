@@ -28,38 +28,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
     ]
   }
   caseSensitive={false}
-  history={
-    Object {
-      "action": "POP",
-      "block": [Function],
-      "canGo": [Function],
-      "createHref": [Function],
-      "entries": Array [
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-      ],
-      "go": [Function],
-      "goBack": [Function],
-      "goForward": [Function],
-      "index": 0,
-      "length": 1,
-      "listen": [Function],
-      "location": Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      },
-      "push": [Function],
-      "replace": [Function],
-    }
-  }
+  history="[History]"
   navbarSearchQuery="test"
   patternType="literal"
   portal={false}
