@@ -155,3 +155,49 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		t.Fatalf("(-want +got):\n%s", diff)
 	}
 }
+
+func TestExternalServicesStore_Update(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Update its name and config
+	esUpdate := &ExternalServiceUpdate{
+		DisplayName: strptr("GITHUB (updated) #1"),
+		Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+	}
+	err = (&ExternalServicesStore{}).Update(ctx, nil, es.ID, esUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Get and verify update
+	got, err := (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(*esUpdate.DisplayName, got.DisplayName); diff != "" {
+		t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
+	} else if diff = cmp.Diff(*esUpdate.Config, got.Config); diff != "" {
+		t.Fatalf("Config mismatch (-want +got):\n%s", diff)
+	} else if got.UpdatedAt.Equal(es.UpdatedAt) {
+		t.Fatalf("UpdateAt: want to be updated but not")
+	}
+}
