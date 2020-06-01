@@ -237,3 +237,45 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
 }
+
+func TestExternalServicesStore_GetByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should be able to get back by its ID
+	_, err = (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete this external service
+	err = (&ExternalServicesStore{}).Delete(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should now get externalServiceNotFoundError
+	_, err = (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	gotErr := fmt.Sprintf("%v", err)
+	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
+	if gotErr != wantErr {
+		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+}

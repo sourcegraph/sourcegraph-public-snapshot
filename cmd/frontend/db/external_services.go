@@ -372,13 +372,16 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 		return Mocks.ExternalServices.GetByID(id)
 	}
 
-	conds := []*sqlf.Query{sqlf.Sprintf("id=%d", id)}
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("deleted_at IS NULL"),
+		sqlf.Sprintf("id=%d", id),
+	}
 	ExternalServicesStore, err := e.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
 	}
 	if len(ExternalServicesStore) == 0 {
-		return nil, fmt.Errorf("external service not found: id=%d", id)
+		return nil, externalServiceNotFoundError{id: id}
 	}
 	return ExternalServicesStore[0], nil
 }
