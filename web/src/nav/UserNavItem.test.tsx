@@ -5,7 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 import { mount } from 'enzyme'
-import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
+import { replaceHistoryObject } from '../../../shared/src/util/enzymeSnapshotModifiers'
 import toJson from 'enzyme-to-json'
 
 describe('UserNavItem', () => {

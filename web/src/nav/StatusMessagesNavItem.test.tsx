@@ -5,7 +5,7 @@ import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { createMemoryHistory } from 'history'
 import { mount } from 'enzyme'
 import toJson from 'enzyme-to-json'
-import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
+import { replaceHistoryObject } from '../../../shared/src/util/enzymeSnapshotModifiers'
 
 jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
 jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')

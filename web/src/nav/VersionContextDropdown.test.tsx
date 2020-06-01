@@ -5,10 +5,10 @@ import { VersionContextDropdown, VersionContextDropdownProps } from './VersionCo
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import toJson from 'enzyme-to-json'
-import { replaceHistoryObject } from '../../../shared/dev/enzymeSnapshotModifiers'
+import { replaceHistoryObject } from '../../../shared/src/util/enzymeSnapshotModifiers'
 
 const commonProps: VersionContextDropdownProps = {
-    setVersionContext: sinon.spy(),
+    setVersionContext: sinon.spy((_versionContext: string | undefined) => {}),
     availableVersionContexts: [
         { name: '3.0', description: '3.0', revisions: [{ repo: 'github.com/sourcegraph/sourcegraph', rev: '3.0' }] },
         { name: '3.15', description: '3.15', revisions: [{ repo: 'github.com/sourcegraph/sourcegraph', rev: '3.15' }] },
