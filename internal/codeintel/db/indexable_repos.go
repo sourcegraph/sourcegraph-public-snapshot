@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -32,6 +33,31 @@ type IndexableRepositoryQueryOptions struct {
 	MinimumPreciseCount         int
 	MinimumSearchRatio          float64
 	now                         time.Time
+}
+
+// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*dbImpl.query`.
+func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRepository, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var indexableRepositories []IndexableRepository
+	for rows.Next() {
+		var indexableRepository IndexableRepository
+		if err := rows.Scan(
+			&indexableRepository.RepositoryID,
+			&indexableRepository.SearchCount,
+			&indexableRepository.PreciseCount,
+			&indexableRepository.LastIndexEnqueuedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		indexableRepositories = append(indexableRepositories, indexableRepository)
+	}
+
+	return indexableRepositories, nil
 }
 
 // IndexableRepositories returns the metadata of all indexable repositories.

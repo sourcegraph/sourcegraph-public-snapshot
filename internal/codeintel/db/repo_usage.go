@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 )
@@ -11,6 +12,30 @@ type RepoUsageStatistics struct {
 	RepositoryID int
 	SearchCount  int
 	PreciseCount int
+}
+
+// scanRepoUsageStatisticsSlice scans a slice of repo usage statistics from the return value of `*dbImpl.query`.
+func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsageStatistics, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var stats []RepoUsageStatistics
+	for rows.Next() {
+		var s RepoUsageStatistics
+		if err := rows.Scan(
+			&s.RepositoryID,
+			&s.SearchCount,
+			&s.PreciseCount,
+		); err != nil {
+			return nil, err
+		}
+
+		stats = append(stats, s)
+	}
+
+	return stats, nil
 }
 
 // RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
