@@ -32,5 +32,8 @@ export interface MainThreadAPI {
 
     // Commands
     executeCommand: (command: string, args: any[]) => Promise<any>
-    registerCommand: (name: string, command: Remote<((...args: any) => any) & ProxyMarked>) => Unsubscribable & ProxyMarked
+    registerCommand: (
+        name: string,
+        command: Remote<((...args: any) => any) & ProxyMarked>
+    ) => Unsubscribable & ProxyMarked
 }
