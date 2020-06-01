@@ -44,7 +44,9 @@ export function registerComlinkTransferHandlers(): void {
  *
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
-export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
+export const synchronousSubscription = (
+    subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>
+): Subscription =>
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     new Subscription(async function (this: any) {
         // Wait to retrieve the proxy
