@@ -10,8 +10,8 @@ import (
 func TestCalculateConfigChangeResult(t *testing.T) {
 	// Set up a fake schema that covers the required scenarios.
 	schema := configPropertyResultSchema{
-		"experimentalFeatures::automation": {FrontendReloadRequired: true},
-		"externalURL":                      {FrontendReloadRequired: true, ServerRestartRequired: true},
+		"experimentalFeatures::automation": {ClientReloadRequired: true},
+		"externalURL":                      {ClientReloadRequired: true, ServerRestartRequired: true},
 		"email.address":                    {},
 		"licenseKey":                       {ServerRestartRequired: true},
 	}
@@ -26,7 +26,7 @@ func TestCalculateConfigChangeResult(t *testing.T) {
 
 	t.Run("empty configurations", func(t *testing.T) {
 		have := calculateConfigChangeResult(empty, empty, schema)
-		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: false}
+		want := ConfigWriteResult{ClientReloadRequired: false, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatalf("unexpected result: %s", diff)
 		}
@@ -41,7 +41,7 @@ func TestCalculateConfigChangeResult(t *testing.T) {
 		}
 
 		have := calculateConfigChangeResult(empty, config, schema)
-		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: false}
+		want := ConfigWriteResult{ClientReloadRequired: false, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatalf("unexpected result: %s", diff)
 		}
@@ -56,7 +56,7 @@ func TestCalculateConfigChangeResult(t *testing.T) {
 		}
 
 		have := calculateConfigChangeResult(empty, config, schema)
-		want := ConfigWriteResult{FrontendReloadRequired: true, ServerRestartRequired: false}
+		want := ConfigWriteResult{ClientReloadRequired: true, ServerRestartRequired: false}
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatalf("unexpected result: %s", diff)
 		}
@@ -71,7 +71,7 @@ func TestCalculateConfigChangeResult(t *testing.T) {
 		}
 
 		have := calculateConfigChangeResult(empty, config, schema)
-		want := ConfigWriteResult{FrontendReloadRequired: false, ServerRestartRequired: true}
+		want := ConfigWriteResult{ClientReloadRequired: false, ServerRestartRequired: true}
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatalf("unexpected result: %s", diff)
 		}
@@ -86,7 +86,7 @@ func TestCalculateConfigChangeResult(t *testing.T) {
 		}
 
 		have := calculateConfigChangeResult(empty, config, schema)
-		want := ConfigWriteResult{FrontendReloadRequired: true, ServerRestartRequired: true}
+		want := ConfigWriteResult{ClientReloadRequired: true, ServerRestartRequired: true}
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatalf("unexpected result: %s", diff)
 		}

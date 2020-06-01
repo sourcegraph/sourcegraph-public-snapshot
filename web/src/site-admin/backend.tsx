@@ -474,7 +474,7 @@ export function overwriteSiteConfiguration(
         gql`
             mutation OverwriteSiteConfiguration($lastID: Int!, $input: String!) {
                 overwriteSiteConfiguration(lastID: $lastID, input: $input) {
-                    frontendReloadRequired
+                    clientReloadRequired
                     serverRestartRequired
                 }
             }

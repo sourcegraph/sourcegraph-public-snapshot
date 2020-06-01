@@ -254,14 +254,14 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             })
                         )
                     }),
-                    tap(({ frontendReloadRequired, serverRestartRequired }) => {
+                    tap(({ clientReloadRequired, serverRestartRequired }) => {
                         // If the frontend has to be reloaded, let's just do it
                         // now: we know that the user just saved and has no
                         // local state that isn't persisted somewhere, so it's a
                         // good opportunity to do it. If they also need to
                         // restart the server, that message is persistent and
                         // will come back after the reload via the JSContext.
-                        if (frontendReloadRequired) {
+                        if (clientReloadRequired) {
                             window.location.reload()
                         }
 

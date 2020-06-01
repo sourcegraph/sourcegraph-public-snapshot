@@ -44,8 +44,8 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 // ConfigWriteResult defines the actions that should be performed after a config
 // property is changed in order for the user to see the change take effect.
 type ConfigWriteResult struct {
-	FrontendReloadRequired bool
-	ServerRestartRequired  bool
+	ClientReloadRequired  bool
+	ServerRestartRequired bool
 }
 
 type configPropertyResultSchema map[string]ConfigWriteResult
@@ -61,7 +61,7 @@ var configPropertiesRequiringAction = configPropertyResultSchema{
 	"auth.sessionExpiry":               {ServerRestartRequired: true},
 	"auth.userOrgMap":                  {ServerRestartRequired: true},
 	"disablePublicRepoRedirects":       {ServerRestartRequired: true},
-	"experimentalFeatures::automation": {FrontendReloadRequired: true},
+	"experimentalFeatures::automation": {ClientReloadRequired: true},
 	"extensions":                       {ServerRestartRequired: true},
 	"externalURL":                      {ServerRestartRequired: true},
 	"git.cloneURLToRepositoryName":     {ServerRestartRequired: true},
@@ -79,8 +79,8 @@ func calculateConfigChangeResult(before, after *Unified, schema configPropertyRe
 	// should be set.
 	for option := range diff(before, after) {
 		if optionResult, ok := schema[option]; ok {
-			if optionResult.FrontendReloadRequired {
-				result.FrontendReloadRequired = true
+			if optionResult.ClientReloadRequired {
+				result.ClientReloadRequired = true
 			}
 			if optionResult.ServerRestartRequired {
 				result.ServerRestartRequired = true

@@ -189,12 +189,12 @@ func (r *schemaResolver) overwriteSiteConfiguration(ctx context.Context, args *s
 }
 
 type overwriteSiteConfigurationResult struct {
-	frontendReloadRequired bool
-	serverRestartRequired  bool
+	clientReloadRequired  bool
+	serverRestartRequired bool
 }
 
-func (sca *overwriteSiteConfigurationResult) FrontendReloadRequired() bool {
-	return sca.frontendReloadRequired
+func (sca *overwriteSiteConfigurationResult) ClientReloadRequired() bool {
+	return sca.clientReloadRequired
 }
 func (sca *overwriteSiteConfigurationResult) ServerRestartRequired() bool {
 	return sca.serverRestartRequired
@@ -209,8 +209,8 @@ func (r *schemaResolver) OverwriteSiteConfiguration(ctx context.Context, args *s
 		return nil, err
 	}
 	return &overwriteSiteConfigurationResult{
-		frontendReloadRequired: result.FrontendReloadRequired,
-		serverRestartRequired:  result.ServerRestartRequired,
+		clientReloadRequired:  result.ClientReloadRequired,
+		serverRestartRequired: result.ServerRestartRequired,
 	}, nil
 }
 
