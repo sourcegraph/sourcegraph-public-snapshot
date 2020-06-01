@@ -54,12 +54,14 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 }
 
 func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "meta", "lsifVersion", "sourcegraphVersion", "numResultChunks")
-	if err := inserter.Insert(ctx, "", "", metaData.NumResultChunks); err != nil {
-		return errors.Wrap(err, "inserter.Insert")
+	queries := []*sqlf.Query{
+		sqlf.Sprintf("INSERT INTO meta (lsifVersion, sourcegraphVersion, numResultChunks) VALUES ('', '', %s)", metaData.NumResultChunks),
 	}
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
+
+	for _, query := range queries {
+		if err := w.store.Exec(ctx, query); err != nil {
+			return err
+		}
 	}
 
 	return nil
