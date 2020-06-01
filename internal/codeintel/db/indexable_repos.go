@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -32,6 +33,31 @@ type IndexableRepositoryQueryOptions struct {
 	MinimumPreciseCount         int
 	MinimumSearchRatio          float64
 	now                         time.Time
+}
+
+// scanIndexableRepositories scans a slice of indexable repositories from the return value of `*dbImpl.query`.
+func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRepository, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var indexableRepositories []IndexableRepository
+	for rows.Next() {
+		var indexableRepository IndexableRepository
+		if err := rows.Scan(
+			&indexableRepository.RepositoryID,
+			&indexableRepository.SearchCount,
+			&indexableRepository.PreciseCount,
+			&indexableRepository.LastIndexEnqueuedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		indexableRepositories = append(indexableRepositories, indexableRepository)
+	}
+
+	return indexableRepositories, nil
 }
 
 // IndexableRepositories returns the metadata of all indexable repositories.
@@ -85,7 +111,7 @@ func (db *dbImpl) IndexableRepositories(ctx context.Context, opts IndexableRepos
 // already marked as indexable, a new record will be created.
 func (db *dbImpl) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error {
 	// Ensure that record exists before we attempt to update it
-	err := db.exec(ctx, sqlf.Sprintf(`
+	err := db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
 		VALUES (%s)
 		ON CONFLICT DO NOTHING
@@ -111,7 +137,7 @@ func (db *dbImpl) UpdateIndexableRepository(ctx context.Context, indexableReposi
 		return nil
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexable_repositories
 		SET %s
 		WHERE repository_id = %s
