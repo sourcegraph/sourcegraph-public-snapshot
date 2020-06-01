@@ -231,7 +231,7 @@
     "ts-morph": "^7.1.0",
     "ts-node": "^8.10.1",
     "typescript": "^3.9.2",
-    "utc-version": "^2.0.1",
+    "utc-version": "^2.0.2",
     "web-ext": "^4.1.0",
     "webpack": "^4.43.0",
     "webpack-dev-server": "^3.11.0",
