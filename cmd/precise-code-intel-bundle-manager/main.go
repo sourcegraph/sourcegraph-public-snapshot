@@ -12,8 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/migrator"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/readers"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +53,10 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
+	if err := readers.Migrate(bundleDir); err != nil {
+		log.Fatalf("failed to migrate readers: %s", err)
+	}
+
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -73,11 +77,8 @@ func main() {
 	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
-	go janitor.Run()
+	// go janitor.Run()
 	go debugserver.Start()
-
-	// TODO - do in goroutine
-	migrator.New(bundleDir).Run()
 
 	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)
