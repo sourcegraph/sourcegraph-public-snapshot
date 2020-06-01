@@ -272,7 +272,7 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 		return err
 	}
 
-	externalService.CreatedAt = time.Now()
+	externalService.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	externalService.UpdatedAt = externalService.CreatedAt
 
 	return dbconn.Global.QueryRowContext(

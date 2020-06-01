@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
@@ -119,5 +121,37 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)
 			}
 		})
+	}
+}
+
+func TestExternalServicesStore_Create(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should get back the same one
+	got, err := (&ExternalServicesStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(es, got); diff != "" {
+		t.Fatalf("(-want +got):\n%s", diff)
 	}
 }
