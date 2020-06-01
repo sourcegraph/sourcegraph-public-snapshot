@@ -54,10 +54,10 @@ func main() {
 		return
 	}
 	if *gcpWhitelistLabelsStr != "" {
-		opts.gcpLabelsWhitelist = stringToMap(*gcpWhitelistLabelsStr)
+		opts.gcpLabelsWhitelist = csvToMap(*gcpWhitelistLabelsStr)
 	}
 	if *awsWhitelistTagsStr != "" {
-		opts.awsTagsWhitelist = stringToMap(*awsWhitelistTagsStr)
+		opts.awsTagsWhitelist = csvToMap(*awsWhitelistTagsStr)
 	}
 	if err := run(opts); err != nil {
 		log.Fatal(err)
@@ -115,7 +115,9 @@ func reportString(resources Resources) string {
 	return output
 }
 
-func stringToMap(str string) map[string]string {
+// csvToMap accepts a comma-delimited set of key:pair values (e.g. `key1:value1,key2:value2`)
+// and converts it to a map.
+func csvToMap(str string) map[string]string {
 	m := map[string]string{}
 	for _, pair := range strings.Split(str, ",") {
 		keyValue := strings.Split(pair, ":")
