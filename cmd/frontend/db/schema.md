@@ -99,7 +99,7 @@ Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, patch_id)
     "changeset_jobs_campaign_job_id" btree (patch_id)
-    "changeset_jobs_error" btree (error)
+    "changeset_jobs_error_not_null" btree ((error IS NOT NULL))
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
