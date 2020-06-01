@@ -35,7 +35,7 @@ export type PartialWorkspaceNamespace = Omit<
 >
 /**
  * Holds internally ExtState and manages communication with the Client
- * Returns initialized public Ext API pieces ready for consumption and internal Ext API ready to be passed to the main thread
+ * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
  * NOTE that this function will slowly merge with the one in extensionHost.ts
  *
  * @param mainAPI
@@ -92,7 +92,7 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
-        executeCommand: (cmd, args) => mainAPI.executeCommand(cmd, args),
+        executeCommand: (cmd, ...args) => mainAPI.executeCommand(cmd, args),
         registerCommand: (cmd, callback) => syncSubscription(mainAPI.registerCommand(cmd, proxy(callback))),
     }
 
