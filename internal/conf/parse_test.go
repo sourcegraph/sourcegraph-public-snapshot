@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-func TestConfigChangeResult(t *testing.T) {
+func TestCalculateConfigChangeResult(t *testing.T) {
 	// Set up a fake schema that covers the required scenarios.
 	schema := configPropertyResultSchema{
 		"experimentalFeatures::automation": {FrontendReloadRequired: true},
