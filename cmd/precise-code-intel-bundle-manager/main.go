@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/readers"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,6 +51,10 @@ func main() {
 
 	if err := paths.Migrate(bundleDir); err != nil {
 		log.Fatalf("failed to migrate paths: %s", err)
+	}
+
+	if err := readers.Migrate(bundleDir); err != nil {
+		log.Fatalf("failed to migrate readers: %s", err)
 	}
 
 	observationContext := &observation.Context{

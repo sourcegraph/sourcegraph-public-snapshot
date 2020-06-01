@@ -2,9 +2,7 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -56,7 +54,7 @@ func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err 
 
 func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
 	numResultChunks, exists, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
-		`SELECT numResultChunks FROM meta LIMIT 1`,
+		`SELECT num_result_chunks FROM meta LIMIT 1`,
 	)))
 	if err != nil {
 		return types.MetaData{}, err
@@ -88,7 +86,7 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 
 func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
 	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
-		`SELECT data FROM resultChunks WHERE id = %s LIMIT 1`,
+		`SELECT data FROM result_chunks WHERE id = %s LIMIT 1`,
 		id,
 	)))
 	if err != nil || !exists {
@@ -111,59 +109,39 @@ func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier st
 }
 
 func (r *sqliteReader) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	var limitOffset string
-	if take != 0 && skip != 0 {
-		limitOffset = fmt.Sprintf("LIMIT %d OFFSET %d", take, skip)
-	}
-
-	locations, err := scanLocations(r.store.Query(ctx, sqlf.Sprintf(
-		`SELECT documentPath, startLine, startCharacter, endLine, endCharacter FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s `+limitOffset,
+	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT data FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s LIMIT 1`,
 		scheme,
 		identifier,
 	)))
-	if err != nil {
+	if err != nil || !exists {
 		return nil, 0, err
 	}
 
-	count, _, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
-		`SELECT COUNT(*) FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s `,
-		scheme,
-		identifier,
-	)))
+	locations, err := r.serializer.UnmarshalLocations(data)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, pkgerrors.Wrap(err, "serializer.UnmarshalLocations")
 	}
 
-	return locations, count, err
+	if skip == 0 && take == 0 {
+		// Pagination is disabled, return full result set
+		return locations, len(locations), nil
+	}
+
+	lo := skip
+	if lo >= len(locations) {
+		// Skip lands past result set, return nothing
+		return nil, len(locations), nil
+	}
+
+	hi := skip + take
+	if hi >= len(locations) {
+		hi = len(locations)
+	}
+
+	return locations[lo:hi], len(locations), nil
 }
 
 func (r *sqliteReader) Close() error {
 	return r.closer()
-}
-
-// scanLocations reads the given set of definition/reference rows and returns a slice of resulting
-// values. This method should be called directly with the return value of `*db.query`.
-func scanLocations(rows *sql.Rows, queryErr error) (_ []types.Location, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = store.CloseRows(rows, err) }()
-
-	var locations []types.Location
-	for rows.Next() {
-		var location types.Location
-		if err := rows.Scan(
-			&location.URI,
-			&location.StartLine,
-			&location.StartCharacter,
-			&location.EndLine,
-			&location.EndCharacter,
-		); err != nil {
-			return nil, err
-		}
-
-		locations = append(locations, location)
-	}
-
-	return locations, nil
 }
