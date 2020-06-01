@@ -57,12 +57,15 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketS
 		m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
 	}
 
+	if newCodeIntelUploadHandler != nil {
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))
+	}
+
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
-	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
@@ -131,8 +134,11 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema, newCodeIntelUploa
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
-	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(true)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
+
+	if newCodeIntelUploadHandler != nil {
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(true)))
+	}
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
