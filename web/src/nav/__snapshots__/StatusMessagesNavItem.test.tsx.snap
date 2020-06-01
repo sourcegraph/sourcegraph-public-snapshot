@@ -3,7 +3,7 @@
 exports[`StatusMessagesNavItem no messages 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -110,7 +110,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -218,7 +218,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
 exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={true}
 >
   <ButtonDropdown
@@ -341,7 +341,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -449,7 +449,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
 exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={true}
 >
   <ButtonDropdown
@@ -572,7 +572,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
 exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={false}
 >
   <ButtonDropdown
@@ -680,7 +680,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
-  history="placeholderHistoryObject"
+  history="[History]"
   isSiteAdmin={true}
 >
   <ButtonDropdown

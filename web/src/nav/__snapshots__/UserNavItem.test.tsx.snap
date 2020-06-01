@@ -3,7 +3,7 @@
 exports[`UserNavItem simple 1`] = `
 <MemoryRouter>
   <Router
-    history="placeholderHistoryObject"
+    history="[History]"
   >
     <UserNavItem
       authenticatedUser={
