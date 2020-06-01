@@ -36,7 +36,7 @@ func (r Resources) Swap(i, j int) {
 	r[j] = tmp
 }
 
-// Unwhitelisted only unwhitelisted resources
+// Unwhitelisted returns only unwhitelisted resources
 func (r Resources) Unwhitelisted() (filtered Resources, whitelisted int) {
 	for _, resource := range r {
 		if resource.Whitelisted {
