@@ -2123,8 +2123,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -3318,7 +3317,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-grid-layout@^0.17.1":
+"@types/react-grid-layout@0.17.1":
   version "0.17.1"
   resolved "https://registry.npmjs.org/@types/react-grid-layout/-/react-grid-layout-0.17.1.tgz#07b5ab9e58af6ea7403e94d54c4e535209467a6f"
   integrity sha512-1ssQjX3X2A89jx94jECJ0Ze2EHFRYlBHjRh2pnlwjJj1WaEijXUNvwKnUzKwgNFnyZ91Pzqu9Z3V7Atzi9ge7A==
@@ -19314,8 +19313,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.5.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
