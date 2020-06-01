@@ -34,7 +34,6 @@ func NewUploadHandler(db db.DB, bundleManagerClient bundles.BundleManagerClient,
 		internal:            internal,
 	}
 
-	fmt.Printf("MAKING REAL HANDLER...\n")
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
