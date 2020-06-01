@@ -125,7 +125,7 @@
     "@types/mkdirp-promise": "5.0.0",
     "@types/mocha": "7.0.2",
     "@types/mockdate": "2.0.0",
-    "@types/mz": "2.7.0",
+    "@types/mz": "2.7.1",
     "@types/node": "13.13.5",
     "@types/optimize-css-assets-webpack-plugin": "5.0.1",
     "@types/puppeteer": "1.20.2",
