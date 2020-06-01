@@ -36,8 +36,8 @@ func (r Resources) Swap(i, j int) {
 	r[j] = tmp
 }
 
-// Unwhitelisted returns only unwhitelisted resources
-func (r Resources) Unwhitelisted() (filtered Resources, whitelisted int) {
+// NonWhitelisted returns only resources that are not whitelisted
+func (r Resources) NonWhitelisted() (filtered Resources, whitelisted int) {
 	for _, resource := range r {
 		if resource.Whitelisted {
 			whitelisted++
@@ -59,7 +59,7 @@ func hasPrefix(value string, prefixes []string) bool {
 
 func generateReport(ctx context.Context, opts options, resources Resources) error {
 	// count and drop whitelisted resources
-	filteredResources, whitelisted := resources.Unwhitelisted()
+	filteredResources, whitelisted := resources.NonWhitelisted()
 
 	// resources are sorted by creation beforehand
 	highlightSince := time.Now().Add(-*opts.highlightWindow).UTC()
