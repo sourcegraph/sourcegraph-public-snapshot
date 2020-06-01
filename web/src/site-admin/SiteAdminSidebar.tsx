@@ -53,5 +53,8 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
         <a href="/-/debug/grafana" className={SIDEBAR_BUTTON_CLASS}>
             Monitoring
         </a>
+        <a href="/-/debug/jaeger" className={SIDEBAR_BUTTON_CLASS}>
+            Tracing
+        </a>
     </div>
 )

@@ -17,6 +17,7 @@ DIRS=(
   packages/sourcegraph-extension-api
   packages/@sourcegraph/extension-api-types
   dev/release
+  dev/ts-morph
 )
 
 run_command() {

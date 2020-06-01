@@ -24,4 +24,6 @@ chmod +x "${target}"
 
 popd >/dev/null
 
+export QUERY_BASE_PATH="/-/debug/jaeger"
+
 exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@" >>"${JAEGER_DISK}"/logs/jaeger.log 2>&1

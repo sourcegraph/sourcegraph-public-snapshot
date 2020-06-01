@@ -7,7 +7,7 @@ import { subTypeOf } from '../../../shared/src/util/types'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { action } from '@storybook/addon-actions'
 
-const { add } = storiesOf('VersionContextDropdown', module).addDecorator(story => (
+const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(story => (
     <>
         <style>{webMainStyles}</style>
         <div className="theme-light">{story()}</div>

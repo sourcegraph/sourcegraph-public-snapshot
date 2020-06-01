@@ -8,7 +8,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -46,10 +46,10 @@ type Database interface {
 
 type databaseImpl struct {
 	filename         string
-	reader           reader.Reader     // database file reader
-	documentCache    *DocumentCache    // shared cache
-	resultChunkCache *ResultChunkCache // shared cache
-	numResultChunks  int               // numResultChunks value from meta row
+	reader           persistence.Reader // database file reader
+	documentCache    *DocumentCache     // shared cache
+	resultChunkCache *ResultChunkCache  // shared cache
+	numResultChunks  int                // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -103,8 +103,8 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
-	_, _, numResultChunks, err := reader.ReadMeta(ctx)
+func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
+	meta, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
 	}
@@ -114,7 +114,7 @@ func OpenDatabase(ctx context.Context, filename string, reader reader.Reader, do
 		documentCache:    documentCache,
 		resultChunkCache: resultChunkCache,
 		reader:           reader,
-		numResultChunks:  numResultChunks,
+		numResultChunks:  meta.NumResultChunks,
 	}, nil
 }
 
@@ -251,7 +251,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
 func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
 	// TODO(efritz) - gross
-	var rows []types.DefinitionReferenceRow
+	var rows []types.Location
 	var totalCount int
 	var err error
 	if tableName == "definitions" {

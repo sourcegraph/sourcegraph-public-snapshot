@@ -45,7 +45,7 @@ func TestRepositoryComparison(t *testing.T) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+		return ioutil.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
 	defer func() { git.Mocks.ExecReader = nil }()
 
@@ -469,6 +469,14 @@ index 9bd8209..d2acfa9 100644
  Line 9
  Line 10
 +Another line
+`
+
+// This is unparseable by go-diff. Once it isn't anymore, the test should fail, reminding
+// us of the TODO comment in repository_comparison to reenable it.
+const testCopyDiff = `diff --git a/test.txt b/test2.txt
+similarity index 100%
+copy from test.txt
+copy to test2.txt
 `
 const testDiffFirstHunk = ` Line 1
  Line 2

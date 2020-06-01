@@ -144,16 +144,32 @@ var tests = []test{
 	},
 	// And/Or queries.
 	{
-		Name:  `Literals, escaped`,
-		Query: `repo:^github\.com/facebook/react$ (\(\) or \(\)) stable:yes type:file count:1 patterntype:regexp`,
-	},
-	{
-		Name:  `Literals, no parens escaped`,
-		Query: `repo:^github\.com/facebook/react$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
-	},
-	{
 		Name:  `And operator, basic`,
-		Query: `repo:^github\.com/facebook/react$ func and main stable:yes type:file count:1 file:^dangerfile.js$`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ func and main type:file stable:yes count:1 lang:go file:^cmd/frontend/auth/user_test\.go$ patterntype:regexp`,
+	},
+	{
+		Name:  `Or operator, single and double quoted`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ 'Search()' or "generate" type:file stable:yes lang:go file:^cmd/frontend/graphqlbackend/codeintel_usage_stats\.go$|^cmd/frontend/authz/perms.go$ patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, grouped parens with parens-as-patterns heuristic`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ (() or ()) stable:yes type:file count:1 file:^\.buildkite/hooks/pre-command$ patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, no grouped parens`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ () or () stable:yes type:file count:1 file:^\.buildkite/hooks/pre-command$ patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, escaped parens`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ \(\) or \(\) stable:yes type:file count:1 file:^\.buildkite/hooks/pre-command$ patterntype:regexp`,
+	},
+	{
+		Name:  `Literals, escaped and unescaped parens`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ (() or \(\)) stable:yes type:file count:1 file:^\.buildkite/hooks/pre-command$`,
+	},
+	{
+		Name:  `Escape sequences`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ \' and \" and \\ and / file:^\.buildkite/hooks/pre-command$`,
 	},
 }
 
@@ -186,8 +202,19 @@ func runSearchTests() error {
 		}
 		filename := strings.ToLower(sanitizeFilename(test.Name))
 		goldenPath := path.Join(searchTestDataDir, fmt.Sprintf("%s.golden", filename))
-		if err := assertGolden(test.Name, goldenPath, got, update); err != nil {
-			return fmt.Errorf("TEST FAILURE: %s\n%s", test.Name, err)
+		if err := assertGolden(goldenPath, got); err != nil {
+			if update || updateAll {
+				err := assertUpdate(goldenPath, got)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("Updated Test %s\n", test.Name)
+				if update {
+					return nil
+				}
+				continue
+			}
+			return fmt.Errorf("TEST FAILURE: %s\nQuery: %s\n%s", test.Name, test.Query, err)
 		}
 	}
 	return nil

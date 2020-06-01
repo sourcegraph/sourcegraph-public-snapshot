@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,9 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	sqlitewriter "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
@@ -42,8 +42,15 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
+	// // Create target file for converted database
+	// uuid, err := uuid.NewRandom()
+	// if err != nil {
+	// 	return err
+	// }
+	// newFilename := filepath.Join(tempDir, uuid.String())
+
 	// Pull raw uploaded data from bundle manager
-	filename, err := p.bundleManagerClient.GetUpload(ctx, upload.ID, tempDir)
+	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
 	if err != nil {
 		return errors.Wrap(err, "bundleManager.GetUpload")
 	}
@@ -56,9 +63,9 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	dbPath, packages, packageReferences, err := convert(
+	packages, packageReferences, err := convert(
 		ctx,
-		filename,
+		r,
 		tempDir,
 		upload.ID,
 		upload.Root,
@@ -121,7 +128,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, dbPath); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, tempDir); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
@@ -166,43 +173,33 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 	return nil
 }
 
-// convert correlates the raw input data, commits the correlated data to disk, and
-// returns the path to the directory to archive/send to the bundle manager.
-func convert(ctx context.Context, filename string, dirname string, dumpID int, root string, getChildren existence.GetChildrenFunc) (string, []types.Package, []types.PackageReference, error) {
-	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
+// convert correlates the raw input data and commits the correlated data to disk.
+func convert(ctx context.Context, r io.Reader, tempDir string, dumpID int, root string, getChildren existence.GetChildrenFunc) ([]types.Package, []types.PackageReference, error) {
+	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
 	if err != nil {
-		return "", nil, nil, errors.Wrap(err, "correlation.Correlate")
+		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	dbPath, err := write(ctx, dirname, groupedBundleData)
-	if err != nil {
-		return "", nil, nil, err
+	if err := write(ctx, tempDir, groupedBundleData); err != nil {
+		return nil, nil, err
 	}
 
-	return dbPath, groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
+	return groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
 }
 
-// write commits the correlated data to disk and returns the path to the directory to archive/send to the bundle manager.
-func write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (string, error) {
-	dbPath := filepath.Join(dirname, "sqlite")
-	filename := filepath.Join(dbPath, "sqlite.db")
-	if err := os.MkdirAll(dbPath, os.ModePerm); err != nil {
-		return "", err
-	}
-
-	writer, err := writer.NewSQLiteWriter(filename, jsonserializer.New())
+// write commits the correlated data to disk.
+func write(ctx context.Context, tempDir string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(tempDir, "sqlite.db"))
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer func() {
-		if closeErr := writer.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
+		err = writer.Close(err)
 	}()
 
 	writers := []func() error{
 		func() error {
-			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks), "writer.WriteMeta")
+			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.Meta), "writer.WriteMeta")
 		},
 		func() error {
 			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
@@ -225,19 +222,11 @@ func write(ctx context.Context, dirname string, groupedBundleData *correlation.G
 		go func(w func() error) { errs <- w() }(w)
 	}
 
-	var writeErr error
 	for i := 0; i < len(writers); i++ {
-		if err := <-errs; err != nil {
-			writeErr = multierror.Append(writeErr, err)
+		if writeErr := <-errs; writeErr != nil {
+			err = multierror.Append(err, writeErr)
 		}
 	}
-	if writeErr != nil {
-		return "", writeErr
-	}
 
-	if err := writer.Flush(ctx); err != nil {
-		return "", errors.Wrap(err, "writer.Flush")
-	}
-
-	return dbPath, nil
+	return err
 }

@@ -1,11 +1,9 @@
 package correlation
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -16,22 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 )
 
-// Correlate reads the given gzipped upload file and returns a correlation state object with the
-// same data canonicalized and pruned for storage.
-func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	gzipReader, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, err
-	}
-
+// Correlate reads LSIF data from the given reader and returns a correlation state object with
+// the same data canonicalized and pruned for storage.
+func Correlate(r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReader(gzipReader, root)
+	state, err := correlateFromReader(r, root)
 	if err != nil {
 		return nil, err
 	}

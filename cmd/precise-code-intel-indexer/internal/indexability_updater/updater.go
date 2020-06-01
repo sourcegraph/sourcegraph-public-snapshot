@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Updater struct {
@@ -64,6 +65,10 @@ func (u *Updater) update(ctx context.Context) error {
 
 	for _, stat := range stats {
 		if err := u.queueRepository(ctx, stat); err != nil {
+			if vcs.IsRepoNotExist(err) {
+				continue
+			}
+
 			return err
 		}
 	}
