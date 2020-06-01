@@ -114,7 +114,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error while writing references: %s", err)
 	}
 
-	if err := writer.Close(); err != nil {
+	if err := writer.Close(nil); err != nil {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 

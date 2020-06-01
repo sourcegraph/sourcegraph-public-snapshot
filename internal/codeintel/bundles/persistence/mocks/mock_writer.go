@@ -39,7 +39,7 @@ type MockWriter struct {
 func NewMockWriter() *MockWriter {
 	return &MockWriter{
 		CloseFunc: &WriterCloseFunc{
-			defaultHook: func() error {
+			defaultHook: func(error) error {
 				return nil
 			},
 		},
@@ -99,23 +99,23 @@ func NewMockWriterFrom(i persistence.Writer) *MockWriter {
 // WriterCloseFunc describes the behavior when the Close method of the
 // parent MockWriter instance is invoked.
 type WriterCloseFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(error) error
+	hooks       []func(error) error
 	history     []WriterCloseFuncCall
 	mutex       sync.Mutex
 }
 
 // Close delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWriter) Close() error {
-	r0 := m.CloseFunc.nextHook()()
-	m.CloseFunc.appendCall(WriterCloseFuncCall{r0})
+func (m *MockWriter) Close(v0 error) error {
+	r0 := m.CloseFunc.nextHook()(v0)
+	m.CloseFunc.appendCall(WriterCloseFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Close method of the
 // parent MockWriter instance is invoked and the hook queue is empty.
-func (f *WriterCloseFunc) SetDefaultHook(hook func() error) {
+func (f *WriterCloseFunc) SetDefaultHook(hook func(error) error) {
 	f.defaultHook = hook
 }
 
@@ -123,7 +123,7 @@ func (f *WriterCloseFunc) SetDefaultHook(hook func() error) {
 // Close method of the parent MockWriter instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *WriterCloseFunc) PushHook(hook func() error) {
+func (f *WriterCloseFunc) PushHook(hook func(error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -132,7 +132,7 @@ func (f *WriterCloseFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *WriterCloseFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(error) error {
 		return r0
 	})
 }
@@ -140,12 +140,12 @@ func (f *WriterCloseFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *WriterCloseFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(error) error {
 		return r0
 	})
 }
 
-func (f *WriterCloseFunc) nextHook() func() error {
+func (f *WriterCloseFunc) nextHook() func(error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -178,6 +178,9 @@ func (f *WriterCloseFunc) History() []WriterCloseFuncCall {
 // WriterCloseFuncCall is an object that describes an invocation of method
 // Close on an instance of MockWriter.
 type WriterCloseFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -186,7 +189,7 @@ type WriterCloseFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WriterCloseFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this

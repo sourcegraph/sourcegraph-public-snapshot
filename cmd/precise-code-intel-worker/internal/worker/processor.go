@@ -204,9 +204,7 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 		return err
 	}
 	defer func() {
-		if closeErr := writer.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
+		err = writer.Close(err)
 	}()
 
 	writers := []func() error{

@@ -131,7 +131,7 @@ func (w *sqliteWriter) writeDefinitionReferences(ctx context.Context, tableName 
 	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_`+tableName+`" ON "`+tableName+`" ("scheme", "identifier")`))
 }
 
-func (w *sqliteWriter) Close() (err error) {
+func (w *sqliteWriter) Close(err error) error {
 	err = w.store.Done(err)
 
 	if closeErr := w.closer(); closeErr != nil {
