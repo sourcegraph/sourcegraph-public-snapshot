@@ -539,6 +539,10 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 		}
 		results = append(results, &h)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return results, nil
 }
 
