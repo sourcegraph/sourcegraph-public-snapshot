@@ -1,4 +1,4 @@
-import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthreadApi'
+import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
 import { PlatformContext } from '../../platform/context'
 import { of, Subject } from 'rxjs'
 import { pretendRemote } from '../util'
