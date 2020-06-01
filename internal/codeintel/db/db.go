@@ -266,6 +266,7 @@ func scanFirstInt(rows *sql.Rows, err error) (int, bool, error) {
 	return values[0], true, nil
 }
 
+// closeRows closes the rows object and checks its error value.
 func closeRows(rows *sql.Rows, err error) error {
 	if closeErr := rows.Close(); closeErr != nil {
 		err = multierror.Append(err, closeErr)
