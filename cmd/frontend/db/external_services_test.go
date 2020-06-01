@@ -312,3 +312,33 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatalf("(-want +got):\n%s", diff)
 	}
 }
+func TestExternalServicesStore_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServicesStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := (&ExternalServicesStore{}).Count(ctx, ExternalServicesListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != 1 {
+		t.Fatalf("Want 1 external service but got %d", count)
+	}
+}
