@@ -3,7 +3,6 @@ package migrate
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
@@ -22,43 +21,28 @@ var ErrNoVersion = errors.New("no rows in schema_version")
 type MigrationFunc func(ctx context.Context, s *store.Store, serializer serialization.Serializer) error
 
 var migrations = []struct {
-	Version       string
 	MigrationFunc MigrationFunc
 }{
-	{"v00000", v0.Migrate},
-	{"v00001", v1.Migrate},
+	{v0.Migrate},
+	{v1.Migrate},
 }
 
-var UnknownSchemaVersion = migrations[0].Version
-var CurrentSchemaVersion = migrations[len(migrations)-1].Version
+var UnknownSchemaVersion = 0
+var CurrentSchemaVersion = len(migrations) - 1
 
 // Migrate determines the current schema version and runs any migrations necessary to transform it to
 // the current schema version. Each migration is ran in an individual transaction. An error is returned
 // if the current schema version is unknown or if a migration is unsuccessful.
 func Migrate(ctx context.Context, s *store.Store, serializer serialization.Serializer) error {
-	version, err := getVersion(ctx, s)
+	currentVersion, err := getVersion(ctx, s)
 	if err != nil {
 		return err
 	}
 
-	found := false
-	for _, migration := range migrations {
-		// This is our current version: all migrations _after_ this iteration should be applied
-		if migration.Version == version {
-			found = true
-			continue
-		}
-		if !found {
-			continue
-		}
-
-		if err := runMigration(ctx, s, serializer, migration.Version, migration.MigrationFunc); err != nil {
+	for version := currentVersion + 1; version < len(migrations); version++ {
+		if err := runMigration(ctx, s, serializer, version, migrations[version].MigrationFunc); err != nil {
 			return err
 		}
-	}
-
-	if !found {
-		return fmt.Errorf("unrecognized schema version %s", version)
 	}
 
 	return nil
@@ -66,7 +50,7 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 
 // runMigration applies a single migration function within a transaction. If the migration
 // function is successful, the schema version will be reflected to update the new version.
-func runMigration(ctx context.Context, store *store.Store, serializer serialization.Serializer, version string, migrationFunc MigrationFunc) (err error) {
+func runMigration(ctx context.Context, store *store.Store, serializer serialization.Serializer, version int, migrationFunc MigrationFunc) (err error) {
 	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
@@ -87,11 +71,11 @@ func runMigration(ctx context.Context, store *store.Store, serializer serializat
 }
 
 // getVersion returns the current schema version of the store.
-func getVersion(ctx context.Context, s *store.Store) (string, error) {
+func getVersion(ctx context.Context, s *store.Store) (int, error) {
 	// Determine if schema_version table exists
 	_, exists, err := store.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT name FROM sqlite_master WHERE type = 'table' AND name = %s", "schema_version")))
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 	if !exists {
 		// We assume this database was created prior to this migration mechanism
@@ -99,12 +83,12 @@ func getVersion(ctx context.Context, s *store.Store) (string, error) {
 		return UnknownSchemaVersion, nil
 	}
 
-	version, exists, err := store.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT version FROM schema_version LIMIT 1")))
+	version, exists, err := store.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT version FROM schema_version LIMIT 1")))
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 	if !exists {
-		return "", ErrNoVersion
+		return 0, ErrNoVersion
 	}
 
 	return version, nil

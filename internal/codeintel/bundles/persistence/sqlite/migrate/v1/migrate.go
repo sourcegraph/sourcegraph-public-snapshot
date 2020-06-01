@@ -11,8 +11,8 @@ import (
 // Migrate v1: Create a schema_version table that will explicitly declare a bundle's format.
 func Migrate(ctx context.Context, s *store.Store, serializer serialization.Serializer) error {
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE schema_version ("version" TEXT NOT NULL)`),
-		sqlf.Sprintf(`INSERT INTO schema_version (version) VALUES (%s);`, "v00001"),
+		sqlf.Sprintf(`CREATE TABLE schema_version ("version" INT NOT NULL)`),
+		sqlf.Sprintf(`INSERT INTO schema_version (version) VALUES (%s);`, 1),
 	}
 
 	for _, query := range queries {
