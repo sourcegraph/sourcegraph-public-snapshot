@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/migrator"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -74,6 +75,9 @@ func main() {
 	go server.Start()
 	go janitor.Run()
 	go debugserver.Start()
+
+	// TODO - do in goroutine
+	migrator.New(bundleDir).Run()
 
 	// Attempt to clean up after first shutdown signal
 	signals := make(chan os.Signal, 2)
