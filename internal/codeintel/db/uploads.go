@@ -286,7 +286,7 @@ func (db *dbImpl) InsertUpload(ctx context.Context, upload Upload) (int, error) 
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
 func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) error {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s)))
 		WHERE id = %s
@@ -295,12 +295,12 @@ func (db *dbImpl) AddUploadPart(ctx context.Context, uploadID, partIndex int) er
 
 // MarkQueued updates the state of the upload to queued.
 func (db *dbImpl) MarkQueued(ctx context.Context, uploadID int) error {
-	return db.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
+	return db.queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET state = 'queued' WHERE id = %s`, uploadID))
 }
 
 // MarkComplete updates the state of the upload to complete.
 func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
@@ -309,7 +309,7 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
 func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
 		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s

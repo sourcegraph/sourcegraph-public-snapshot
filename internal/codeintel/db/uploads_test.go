@@ -528,7 +528,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	}
 
 	// alter record in the underlying transacted db
-	if err := unwrapDB(tx).exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
+	if err := unwrapDB(tx).queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)
 	}
 

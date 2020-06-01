@@ -111,7 +111,7 @@ func (db *dbImpl) IndexableRepositories(ctx context.Context, opts IndexableRepos
 // already marked as indexable, a new record will be created.
 func (db *dbImpl) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository) error {
 	// Ensure that record exists before we attempt to update it
-	err := db.exec(ctx, sqlf.Sprintf(`
+	err := db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_indexable_repositories (repository_id)
 		VALUES (%s)
 		ON CONFLICT DO NOTHING
@@ -137,7 +137,7 @@ func (db *dbImpl) UpdateIndexableRepository(ctx context.Context, indexableReposi
 		return nil
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexable_repositories
 		SET %s
 		WHERE repository_id = %s

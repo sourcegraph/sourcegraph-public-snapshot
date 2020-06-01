@@ -199,13 +199,9 @@ func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, erro
 	return db.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// exec performs a query and throws away the result.
-func (db *dbImpl) exec(ctx context.Context, query *sqlf.Query) error {
-	rows, err := db.query(ctx, query)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+// queryForEffect performs a query and throws away the result.
+func (db *dbImpl) queryForEffect(ctx context.Context, query *sqlf.Query) error {
+	return closeRows(db.query(ctx, query))
 }
 
 // scanStrings scans a slice of strings from the return value of `*dbImpl.query`.

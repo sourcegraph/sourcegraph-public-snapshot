@@ -143,7 +143,7 @@ func (db *dbImpl) UpdatePackageReferences(ctx context.Context, references []type
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
 		VALUES %s
 	`, sqlf.Join(values, ",")))

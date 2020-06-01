@@ -172,7 +172,7 @@ func (db *dbImpl) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 
 // UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
 func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
-	return db.exec(ctx, withAncestorLineage(`
+	return db.queryForEffect(ctx, withAncestorLineage(`
 		UPDATE lsif_dumps d
 		SET visible_at_tip = id IN (SELECT * from visible_ids)
 		WHERE d.repository_id = %s AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
@@ -183,7 +183,7 @@ func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID in
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		DELETE from lsif_uploads
 		WHERE repository_id = %d AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
 	`, repositoryID, commit, root, indexer))

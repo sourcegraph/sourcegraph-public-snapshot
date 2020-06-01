@@ -135,7 +135,7 @@ func (db *dbImpl) InsertIndex(ctx context.Context, index Index) (int, error) {
 
 // MarkIndexComplete updates the state of the index to complete.
 func (db *dbImpl) MarkIndexComplete(ctx context.Context, id int) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
@@ -144,7 +144,7 @@ func (db *dbImpl) MarkIndexComplete(ctx context.Context, id int) (err error) {
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
 func (db *dbImpl) MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s

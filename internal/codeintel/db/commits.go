@@ -114,7 +114,7 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 		}
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_commits (repository_id, "commit", parent_commit)
 		VALUES %s
 		ON CONFLICT DO NOTHING
