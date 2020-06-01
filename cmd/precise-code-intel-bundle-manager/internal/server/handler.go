@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -126,9 +127,15 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
 	id := idFromRequest(r)
-	filename := paths.DBFilename(s.bundleDir, id)
+	filename := paths.SQLiteDBFilename(s.bundleDir, id)
 	makePartFilename := func(index int) string {
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
+	}
+
+	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+		log15.Error("Failed to create directory", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
@@ -316,7 +323,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 // error occurs it will be returned.
 func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
 	ctx := r.Context()
-	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
+	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 	cached := true
 
 	span, ctx := ot.StartSpanFromContext(ctx, "dbQuery")

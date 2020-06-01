@@ -6,10 +6,22 @@ import (
 	"path/filepath"
 )
 
-// PrepDirectories
+const uploadDir = "uploads"
+const uploadPartsDir = "upload-parts"
+const dbsDir = "dbs"
+const dbPartsDir = "db-parts"
+
+// PrepDirectories creates the root directories within the given bundle dir.
 func PrepDirectories(bundleDir string) error {
-	for _, dir := range []string{UploadsDir(bundleDir), DBsDir(bundleDir)} {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+	rootDirs := []string{
+		uploadDir,
+		uploadPartsDir,
+		dbsDir,
+		dbPartsDir,
+	}
+
+	for _, dir := range rootDirs {
+		if err := os.MkdirAll(filepath.Join(bundleDir, dir), os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -17,46 +29,47 @@ func PrepDirectories(bundleDir string) error {
 	return nil
 }
 
-// UploadsDir returns the path of the uploads directory.
+// UploadsDir returns the path of the directory containing upload files.
 func UploadsDir(bundleDir string) string {
-	return filepath.Join(bundleDir, "uploads")
-}
-
-// DBsDir returns the path of the dbs directory.
-func DBsDir(bundleDir string) string {
-	return filepath.Join(bundleDir, "dbs")
+	return filepath.Join(bundleDir, uploadDir)
 }
 
 // UploadFilename returns the path of the upload with the given identifier.
 func UploadFilename(bundleDir string, id int64) string {
-	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.lsif.gz", id))
+	return filepath.Join(bundleDir, uploadDir, fmt.Sprintf("%d.gz", id))
+}
+
+// UploadPartsDir returns the path of the directory containing upload part files.
+func UploadPartsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, uploadPartsDir)
 }
 
 // UploadPartFilename returns the path of the upload with the given identifier and part index.
 func UploadPartFilename(bundleDir string, id, index int64) string {
-	return filepath.Join(bundleDir, "uploads", fmt.Sprintf("%d.%d.lsif.gz", id, index))
+	return filepath.Join(bundleDir, uploadPartsDir, fmt.Sprintf("%d.%d.gz", id, index))
 }
 
-// DBFilename returns the path of the database with the given identifier.
-func DBFilename(bundleDir string, id int64) string {
-	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.lsif.db", id))
+// DBsDir returns the path of the directory containing db file trees.
+func DBsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, dbsDir)
 }
 
-// DBPartFilename returns the path of the database with the given identifier and part index.
+// DBDir returns the path of the directory containing files for a given bundle identifier.
+func DBDir(bundleDir string, id int64) string {
+	return filepath.Join(bundleDir, dbsDir, fmt.Sprintf("%d", id))
+}
+
+// SQLiteDBFilename returns the path of the SQLite db for the given bundle identifier.
+func SQLiteDBFilename(bundleDir string, id int64) string {
+	return filepath.Join(bundleDir, dbsDir, fmt.Sprintf("%d", id), "sqlite.db")
+}
+
+// DBPartsDir returns the path of the directory containing db part files.
+func DBPartsDir(bundleDir string) string {
+	return filepath.Join(bundleDir, dbPartsDir)
+}
+
+// DBPartFilename returns the path of the db with the given identifier and part index.
 func DBPartFilename(bundleDir string, id, index int64) string {
-	return filepath.Join(bundleDir, "dbs", fmt.Sprintf("%d.%d.lsif.gz", id, index))
-}
-
-// PathExists returns (true, nil) if the specified path exists, or (false, error) if an error
-// occurred (such as not having permission to read the path).
-func PathExists(filename string) (bool, error) {
-	if _, err := os.Stat(filename); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return true, nil
+	return filepath.Join(bundleDir, dbPartsDir, fmt.Sprintf("%d.%d.gz", id, index))
 }
