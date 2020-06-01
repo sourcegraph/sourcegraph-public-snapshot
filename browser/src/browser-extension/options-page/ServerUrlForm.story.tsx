@@ -83,7 +83,7 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
     }
 }
 
-storiesOf('Options - ServerUrlForm', module)
+storiesOf('browser/Options/ServerUrlForm', module)
     .addDecorator(story => (
         <>
             <style>{optionsStyles}</style>

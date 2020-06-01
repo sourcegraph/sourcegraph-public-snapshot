@@ -10,7 +10,7 @@ import webStyles from '../SourcegraphWebApp.scss'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 
-const { add } = storiesOf('UserNavItem', module).addDecorator(story => (
+const { add } = storiesOf('web/UserNavItem', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">{story()}</div>
