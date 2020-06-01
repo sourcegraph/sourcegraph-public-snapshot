@@ -107,24 +107,15 @@ func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[i
 }
 
 func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "definitions", "scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter")
-	for _, ml := range monikerLocations {
-		for _, l := range ml.Locations {
-			if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
-				return errors.Wrap(err, "inserter.Insert")
-			}
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
-	}
-
-	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_definitions" ON "definitions" ("scheme", "identifier")`))
+	return w.writeDefinitionReferences(ctx, "definitions", monikerLocations)
 }
 
 func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "references", "scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter")
+	return w.writeDefinitionReferences(ctx, "references", monikerLocations)
+}
+
+func (w *sqliteWriter) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations []types.MonikerLocations) error {
+	inserter := sqliteutil.NewBatchInserter(w.store, tableName, "scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter")
 	for _, ml := range monikerLocations {
 		for _, l := range ml.Locations {
 			if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
@@ -137,7 +128,7 @@ func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []t
 		return errors.Wrap(err, "inserter.Flush")
 	}
 
-	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_references" ON "references" ("scheme", "identifier")`))
+	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_`+tableName+`" ON "`+tableName+`" ("scheme", "identifier")`))
 }
 
 func (w *sqliteWriter) Close() (err error) {
