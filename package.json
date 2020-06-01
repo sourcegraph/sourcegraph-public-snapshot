@@ -159,7 +159,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "7.0.3",
     "@types/webpack": "4.41.16",
-    "@types/webpack-dev-server": "3.10.1",
+    "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.8.0",
     "babel-jest": "^25.5.1",
