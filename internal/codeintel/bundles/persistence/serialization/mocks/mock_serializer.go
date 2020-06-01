@@ -16,12 +16,18 @@ type MockSerializer struct {
 	// MarshalDocumentDataFunc is an instance of a mock function object
 	// controlling the behavior of the method MarshalDocumentData.
 	MarshalDocumentDataFunc *SerializerMarshalDocumentDataFunc
+	// MarshalLocationsFunc is an instance of a mock function object
+	// controlling the behavior of the method MarshalLocations.
+	MarshalLocationsFunc *SerializerMarshalLocationsFunc
 	// MarshalResultChunkDataFunc is an instance of a mock function object
 	// controlling the behavior of the method MarshalResultChunkData.
 	MarshalResultChunkDataFunc *SerializerMarshalResultChunkDataFunc
 	// UnmarshalDocumentDataFunc is an instance of a mock function object
 	// controlling the behavior of the method UnmarshalDocumentData.
 	UnmarshalDocumentDataFunc *SerializerUnmarshalDocumentDataFunc
+	// UnmarshalLocationsFunc is an instance of a mock function object
+	// controlling the behavior of the method UnmarshalLocations.
+	UnmarshalLocationsFunc *SerializerUnmarshalLocationsFunc
 	// UnmarshalResultChunkDataFunc is an instance of a mock function object
 	// controlling the behavior of the method UnmarshalResultChunkData.
 	UnmarshalResultChunkDataFunc *SerializerUnmarshalResultChunkDataFunc
@@ -36,6 +42,11 @@ func NewMockSerializer() *MockSerializer {
 				return nil, nil
 			},
 		},
+		MarshalLocationsFunc: &SerializerMarshalLocationsFunc{
+			defaultHook: func([]types.Location) ([]byte, error) {
+				return nil, nil
+			},
+		},
 		MarshalResultChunkDataFunc: &SerializerMarshalResultChunkDataFunc{
 			defaultHook: func(types.ResultChunkData) ([]byte, error) {
 				return nil, nil
@@ -44,6 +55,11 @@ func NewMockSerializer() *MockSerializer {
 		UnmarshalDocumentDataFunc: &SerializerUnmarshalDocumentDataFunc{
 			defaultHook: func([]byte) (types.DocumentData, error) {
 				return types.DocumentData{}, nil
+			},
+		},
+		UnmarshalLocationsFunc: &SerializerUnmarshalLocationsFunc{
+			defaultHook: func([]byte) ([]types.Location, error) {
+				return nil, nil
 			},
 		},
 		UnmarshalResultChunkDataFunc: &SerializerUnmarshalResultChunkDataFunc{
@@ -61,11 +77,17 @@ func NewMockSerializerFrom(i serialization.Serializer) *MockSerializer {
 		MarshalDocumentDataFunc: &SerializerMarshalDocumentDataFunc{
 			defaultHook: i.MarshalDocumentData,
 		},
+		MarshalLocationsFunc: &SerializerMarshalLocationsFunc{
+			defaultHook: i.MarshalLocations,
+		},
 		MarshalResultChunkDataFunc: &SerializerMarshalResultChunkDataFunc{
 			defaultHook: i.MarshalResultChunkData,
 		},
 		UnmarshalDocumentDataFunc: &SerializerUnmarshalDocumentDataFunc{
 			defaultHook: i.UnmarshalDocumentData,
+		},
+		UnmarshalLocationsFunc: &SerializerUnmarshalLocationsFunc{
+			defaultHook: i.UnmarshalLocations,
 		},
 		UnmarshalResultChunkDataFunc: &SerializerUnmarshalResultChunkDataFunc{
 			defaultHook: i.UnmarshalResultChunkData,
@@ -178,6 +200,112 @@ func (c SerializerMarshalDocumentDataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SerializerMarshalDocumentDataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SerializerMarshalLocationsFunc describes the behavior when the
+// MarshalLocations method of the parent MockSerializer instance is invoked.
+type SerializerMarshalLocationsFunc struct {
+	defaultHook func([]types.Location) ([]byte, error)
+	hooks       []func([]types.Location) ([]byte, error)
+	history     []SerializerMarshalLocationsFuncCall
+	mutex       sync.Mutex
+}
+
+// MarshalLocations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSerializer) MarshalLocations(v0 []types.Location) ([]byte, error) {
+	r0, r1 := m.MarshalLocationsFunc.nextHook()(v0)
+	m.MarshalLocationsFunc.appendCall(SerializerMarshalLocationsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MarshalLocations
+// method of the parent MockSerializer instance is invoked and the hook
+// queue is empty.
+func (f *SerializerMarshalLocationsFunc) SetDefaultHook(hook func([]types.Location) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarshalLocations method of the parent MockSerializer instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SerializerMarshalLocationsFunc) PushHook(hook func([]types.Location) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SerializerMarshalLocationsFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func([]types.Location) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SerializerMarshalLocationsFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func([]types.Location) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *SerializerMarshalLocationsFunc) nextHook() func([]types.Location) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SerializerMarshalLocationsFunc) appendCall(r0 SerializerMarshalLocationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SerializerMarshalLocationsFuncCall objects
+// describing the invocations of this function.
+func (f *SerializerMarshalLocationsFunc) History() []SerializerMarshalLocationsFuncCall {
+	f.mutex.Lock()
+	history := make([]SerializerMarshalLocationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SerializerMarshalLocationsFuncCall is an object that describes an
+// invocation of method MarshalLocations on an instance of MockSerializer.
+type SerializerMarshalLocationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 []types.Location
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SerializerMarshalLocationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SerializerMarshalLocationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -396,6 +524,113 @@ func (c SerializerUnmarshalDocumentDataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SerializerUnmarshalDocumentDataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SerializerUnmarshalLocationsFunc describes the behavior when the
+// UnmarshalLocations method of the parent MockSerializer instance is
+// invoked.
+type SerializerUnmarshalLocationsFunc struct {
+	defaultHook func([]byte) ([]types.Location, error)
+	hooks       []func([]byte) ([]types.Location, error)
+	history     []SerializerUnmarshalLocationsFuncCall
+	mutex       sync.Mutex
+}
+
+// UnmarshalLocations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSerializer) UnmarshalLocations(v0 []byte) ([]types.Location, error) {
+	r0, r1 := m.UnmarshalLocationsFunc.nextHook()(v0)
+	m.UnmarshalLocationsFunc.appendCall(SerializerUnmarshalLocationsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UnmarshalLocations
+// method of the parent MockSerializer instance is invoked and the hook
+// queue is empty.
+func (f *SerializerUnmarshalLocationsFunc) SetDefaultHook(hook func([]byte) ([]types.Location, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UnmarshalLocations method of the parent MockSerializer instance inovkes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SerializerUnmarshalLocationsFunc) PushHook(hook func([]byte) ([]types.Location, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SerializerUnmarshalLocationsFunc) SetDefaultReturn(r0 []types.Location, r1 error) {
+	f.SetDefaultHook(func([]byte) ([]types.Location, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SerializerUnmarshalLocationsFunc) PushReturn(r0 []types.Location, r1 error) {
+	f.PushHook(func([]byte) ([]types.Location, error) {
+		return r0, r1
+	})
+}
+
+func (f *SerializerUnmarshalLocationsFunc) nextHook() func([]byte) ([]types.Location, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SerializerUnmarshalLocationsFunc) appendCall(r0 SerializerUnmarshalLocationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SerializerUnmarshalLocationsFuncCall
+// objects describing the invocations of this function.
+func (f *SerializerUnmarshalLocationsFunc) History() []SerializerUnmarshalLocationsFuncCall {
+	f.mutex.Lock()
+	history := make([]SerializerUnmarshalLocationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SerializerUnmarshalLocationsFuncCall is an object that describes an
+// invocation of method UnmarshalLocations on an instance of MockSerializer.
+type SerializerUnmarshalLocationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 []byte
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SerializerUnmarshalLocationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SerializerUnmarshalLocationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

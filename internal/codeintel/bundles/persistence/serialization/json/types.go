@@ -37,6 +37,14 @@ type SerializingResultChunk struct {
 	DocumentIDRangeIDs SerializingTaggedValue `json:"documentIdRangeIds"`
 }
 
+type SerializingLocation struct {
+	URI            string `json:"uri"`
+	StartLine      int    `json:"startLine"`
+	StartCharacter int    `json:"startCharacter"`
+	EndLine        int    `json:"endLine"`
+	EndCharacter   int    `json:"endCharacter"`
+}
+
 //
 // The following types are used during unmarshalling
 
@@ -67,6 +75,8 @@ type SerializedResultChunk struct {
 	DocumentPaths      SerializedTaggedValue `json:"documentPaths"`
 	DocumentIDRangeIDs SerializedTaggedValue `json:"documentIdRangeIds"`
 }
+
+type SerializedLocation = SerializingLocation
 
 type SerializedMoniker struct {
 	Kind                 string `json:"kind"`

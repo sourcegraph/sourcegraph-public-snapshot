@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-func TestDefaultSerializerDocumentData(t *testing.T) {
+func TestJSONSerializerDocumentData(t *testing.T) {
 	expected := types.DocumentData{
 		Ranges: map[types.ID]types.RangeData{
 			types.ID("7864"): {
@@ -100,7 +100,7 @@ func TestDefaultSerializerDocumentData(t *testing.T) {
 	}
 }
 
-func TestDefaultSerializerResultChunkData(t *testing.T) {
+func TestJSONSerializerResultChunkData(t *testing.T) {
 	expected := types.ResultChunkData{
 		DocumentPaths: map[types.ID]string{
 			types.ID("4"):   "internal/gomod/module.go",
@@ -161,5 +161,114 @@ func TestDefaultSerializerResultChunkData(t *testing.T) {
 				t.Errorf("unexpected document data (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestJSONSerializerLocations(t *testing.T) {
+	expected := []types.Location{
+		{
+			URI:            "internal/index/indexer.go",
+			StartLine:      36,
+			StartCharacter: 26,
+			EndLine:        36,
+			EndCharacter:   32,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      100,
+			StartCharacter: 9,
+			EndLine:        100,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      115,
+			StartCharacter: 9,
+			EndLine:        115,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      95,
+			StartCharacter: 9,
+			EndLine:        95,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      130,
+			StartCharacter: 9,
+			EndLine:        130,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      155,
+			StartCharacter: 9,
+			EndLine:        155,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      80,
+			StartCharacter: 9,
+			EndLine:        80,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      36,
+			StartCharacter: 9,
+			EndLine:        36,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      135,
+			StartCharacter: 9,
+			EndLine:        135,
+			EndCharacter:   15,
+		},
+		{
+			URI:            "protocol/writer.go",
+			StartLine:      12,
+			StartCharacter: 5,
+			EndLine:        12,
+			EndCharacter:   11,
+		},
+	}
+
+	contents, err := ioutil.ReadFile("./testdata/locations.json")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	compressed, err := compress(contents)
+	if err != nil {
+		t.Fatalf("unexpected error compressing file contents: %s", err)
+	}
+
+	serializer := &jsonSerializer{}
+	actual, err := serializer.UnmarshalLocations(compressed)
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling locations: %s", err)
+	}
+
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected locations (-want +got):\n%s", diff)
+	}
+
+	recompressed, err := serializer.MarshalLocations(expected)
+	if err != nil {
+		t.Fatalf("unexpected error marshalling locations: %s", err)
+	}
+
+	roundtripActual, err := serializer.UnmarshalLocations(recompressed)
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling locations: %s", err)
+	}
+
+	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
+		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 }
