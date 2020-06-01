@@ -77,7 +77,7 @@ func main() {
 	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
-	// go janitor.Run()
+	go janitor.Run()
 	go debugserver.Start()
 
 	// Attempt to clean up after first shutdown signal
