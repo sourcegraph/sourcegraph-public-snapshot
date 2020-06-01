@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/tar"
 )
 
 func TestMain(m *testing.M) {
@@ -305,8 +306,13 @@ func TestGetUploadBadResponse(t *testing.T) {
 }
 
 func TestSendDB(t *testing.T) {
-	var paths []string
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp dir: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
 
+	var paths []string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, r.URL.Path)
 		if r.URL.Path == "/dbs/42/stitch" {
@@ -317,47 +323,45 @@ func TestSendDB(t *testing.T) {
 			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/0", r.URL.Path)
 		}
 
-		rawContent, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
-		}
-
-		gzipReader, err := gzip.NewReader(bytes.NewReader(rawContent))
+		gzipReader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			t.Fatalf("unexpected error decompressing payload: %s", err)
 		}
 		defer gzipReader.Close()
 
-		content, err := ioutil.ReadAll(gzipReader)
-		if err != nil {
-			t.Fatalf("unexpected error reading decompressed payload: %s", err)
-		}
-
-		if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
-			t.Errorf("unexpected contents (-want +got):\n%s", diff)
+		if err := tar.Extract(filepath.Join(tempDir, "dest"), gzipReader); err != nil {
+			t.Fatalf("unexpected error extracting payload: %s", err)
 		}
 	}))
 	defer ts.Close()
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	filename := filepath.Join(tempDir, "test.db")
-
+	filename := filepath.Join(tempDir, "test")
 	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
-		t.Fatalf("unexpected error writing file: %s", err)
+		t.Fatalf("unexpected error writing temp file: %s", err)
 	}
 
-	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: 1000}
-	if err := client.SendDB(context.Background(), 42, filename); err != nil {
+	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: 10000}
+	if err := client.SendDB(context.Background(), 42, tempDir); err != nil {
 		t.Fatalf("unexpected error sending db: %s", err)
+	}
+
+	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "dest", "test"))
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+
+	if diff := cmp.Diff([]byte("payload\n"), contents); diff != "" {
+		t.Errorf("unexpected contents (-want +got):\n%s", diff)
 	}
 }
 
 func TestSendDBMultipart(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp dir: %s", err)
+	}
+	defer os.RemoveAll(tempDir)
+
 	const maxPayloadSizeBytes = 1000
 
 	var fullContents []byte
@@ -367,7 +371,6 @@ func TestSendDBMultipart(t *testing.T) {
 
 	var paths []string
 	var sentContent []byte
-
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, r.URL.Path)
 		if r.URL.Path == "/dbs/42/stitch" {
@@ -398,37 +401,33 @@ func TestSendDBMultipart(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	filename := filepath.Join(tempDir, "test.db")
-
+	filename := filepath.Join(tempDir, "test")
 	if err := ioutil.WriteFile(filename, fullContents, os.ModePerm); err != nil {
-		t.Fatalf("unexpected error writing file: %s", err)
+		t.Fatalf("unexpected error writing temp file: %s", err)
 	}
 
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: maxPayloadSizeBytes}
-	if err := client.SendDB(context.Background(), 42, filename); err != nil {
+	if err := client.SendDB(context.Background(), 42, tempDir); err != nil {
 		t.Fatalf("unexpected error sending db: %s", err)
 	}
 
-	expectedPaths := []string{
-		"/dbs/42/0",
-		"/dbs/42/1",
-		"/dbs/42/2",
-		"/dbs/42/3",
-		"/dbs/42/4",
-		"/dbs/42/5",
-		"/dbs/42/stitch",
+	if len(paths) < 5 {
+		t.Errorf("unexpected number of requests. want>=%d have=%d", 5, len(paths))
 	}
-	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
-		t.Errorf("unexpected paths (-want +got):\n%s", diff)
+	if paths[len(paths)-1] != "/dbs/42/stitch" {
+		t.Errorf("unexpected final request path. want=%s have=%s", "/dbs/42/stitch", paths[len(paths)-1])
 	}
 
-	if diff := cmp.Diff(fullContents, sentContent); diff != "" {
+	if err := tar.Extract(filepath.Join(tempDir, "dest"), bytes.NewReader(sentContent)); err != nil {
+		t.Fatalf("unexpected error extracting payload: %s", err)
+	}
+
+	contents, err := ioutil.ReadFile(filepath.Join(tempDir, "dest", "test"))
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+
+	if diff := cmp.Diff(fullContents, contents); diff != "" {
 		t.Errorf("unexpected contents (-want +got):\n%s", diff)
 	}
 }
@@ -441,17 +440,12 @@ func TestSendDBBadResponse(t *testing.T) {
 
 	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		t.Fatalf("unexpected error creating temp directory: %s", err)
+		t.Fatalf("unexpected error creating temp dir: %s", err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	filename := filepath.Join(tempDir, "test.db")
-	if err := ioutil.WriteFile(filename, []byte("payload\n"), os.ModePerm); err != nil {
-		t.Fatalf("unexpected error writing file: %s", err)
-	}
-
 	client := &bundleManagerClientImpl{bundleManagerURL: ts.URL, maxPayloadSizeBytes: 1000}
-	if err := client.SendDB(context.Background(), 42, filename); err == nil {
+	if err := client.SendDB(context.Background(), 42, tempDir); err == nil {
 		t.Fatalf("unexpected nil error sending db")
 	}
 }

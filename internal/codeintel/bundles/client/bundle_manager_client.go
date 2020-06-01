@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -57,9 +58,8 @@ type BundleManagerClient interface {
 	// from the bundle manager.
 	GetUpload(ctx context.Context, bundleID int) (io.ReadCloser, error)
 
-	// SendDB transfers a converted database to the bundle manager to be stored on disk. This
-	// will also remove the original upload file with the same identifier from disk.
-	SendDB(ctx context.Context, bundleID int, filename string) error
+	// SendDB transfers a converted database archive to the bundle manager to be stored on disk.
+	SendDB(ctx context.Context, bundleID int, path string) error
 
 	// Exists determines if a file exists on disk for all the supplied identifiers.
 	Exists(ctx context.Context, bundleIDs []int) (map[int]bool, error)
@@ -253,9 +253,9 @@ func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Write
 	return c.ioCopy(w, body)
 }
 
-// SendDB transfers a converted database to the bundle manager to be stored on disk.
-func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, filename string) (err error) {
-	files, cleanup, err := codeintelutils.SplitFile(filename, c.maxPayloadSizeBytes)
+// SendDB transfers a converted database archive to the bundle manager to be stored on disk.
+func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path string) (err error) {
+	files, cleanup, err := codeintelutils.SplitReader(tar.Archive(path), c.maxPayloadSizeBytes)
 	if err != nil {
 		return err
 	}

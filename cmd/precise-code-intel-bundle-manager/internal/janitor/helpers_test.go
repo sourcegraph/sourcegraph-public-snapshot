@@ -47,7 +47,7 @@ func makeFileWithSize(path string, size int) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, make([]byte, size), 0600)
+	return ioutil.WriteFile(path, make([]byte, size), os.ModePerm)
 }
 
 func getFilenames(root string) ([]string, error) {

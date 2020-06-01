@@ -1,15 +1,17 @@
-package indexer
+package tar
 
 import (
 	"archive/tar"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/hashicorp/go-multierror"
 )
 
-func extractTarfile(root string, r io.Reader) error {
+// Extract reads tar archive data from r and extracts it into files under the given root.
+func Extract(root string, r io.Reader) error {
 	tr := tar.NewReader(r)
-
 	for {
 		header, err := tr.Next()
 		if err != nil {
@@ -55,7 +57,7 @@ func extractDir(root string, tr *tar.Reader, header *tar.Header) error {
 	return nil
 }
 
-func extractFile(root string, tr *tar.Reader, header *tar.Header) error {
+func extractFile(root string, tr *tar.Reader, header *tar.Header) (err error) {
 	target := filepath.Join(root, header.Name)
 
 	// It's possible for a file to exist in a directory for which there is
@@ -68,11 +70,12 @@ func extractFile(root string, tr *tar.Reader, header *tar.Header) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
 
-	if _, err := io.Copy(f, tr); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = io.Copy(f, tr)
+	return err
 }

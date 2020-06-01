@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -33,22 +32,22 @@ type processor struct {
 // process converts a raw upload into a dump within the given transaction context.
 func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (err error) {
 	// Create scratch directory that we can clean on completion/failure
-	name, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if cleanupErr := os.RemoveAll(name); cleanupErr != nil {
-			log15.Warn("Failed to remove temporary directory", "path", name, "err", cleanupErr)
+		if cleanupErr := os.RemoveAll(tempDir); cleanupErr != nil {
+			log15.Warn("Failed to remove temporary directory", "path", tempDir, "err", cleanupErr)
 		}
 	}()
 
-	// Create target file for converted database
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-	newFilename := filepath.Join(name, uuid.String())
+	// // Create target file for converted database
+	// uuid, err := uuid.NewRandom()
+	// if err != nil {
+	// 	return err
+	// }
+	// newFilename := filepath.Join(tempDir, uuid.String())
 
 	// Pull raw uploaded data from bundle manager
 	r, err := p.bundleManagerClient.GetUpload(ctx, upload.ID)
@@ -64,12 +63,10 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 		}
 	}()
 
-	// Read raw upload and write converted database to newFilename. This process also correlates
-	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
 		ctx,
 		r,
-		newFilename,
+		tempDir,
 		upload.ID,
 		upload.Root,
 		func(dirnames []string) (map[string][]string, error) {
@@ -131,7 +128,7 @@ func (p *processor) Process(ctx context.Context, tx db.DB, upload db.Upload) (er
 	}
 
 	// Send converted database file to bundle manager
-	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, newFilename); err != nil {
+	if err := p.bundleManagerClient.SendDB(ctx, upload.ID, tempDir); err != nil {
 		return errors.Wrap(err, "bundleManager.SendDB")
 	}
 
@@ -177,20 +174,13 @@ func (p *processor) updateCommitsAndVisibility(ctx context.Context, db db.DB, re
 }
 
 // convert correlates the raw input data and commits the correlated data to disk.
-func convert(
-	ctx context.Context,
-	r io.Reader,
-	newFilename string,
-	dumpID int,
-	root string,
-	getChildren existence.GetChildrenFunc,
-) (_ []types.Package, _ []types.PackageReference, err error) {
+func convert(ctx context.Context, r io.Reader, tempDir string, dumpID int, root string, getChildren existence.GetChildrenFunc) ([]types.Package, []types.PackageReference, error) {
 	groupedBundleData, err := correlation.Correlate(r, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := write(ctx, newFilename, groupedBundleData); err != nil {
+	if err := write(ctx, tempDir, groupedBundleData); err != nil {
 		return nil, nil, err
 	}
 
@@ -198,8 +188,8 @@ func convert(
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	writer, err := sqlitewriter.NewWriter(ctx, filename)
+func write(ctx context.Context, tempDir string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(tempDir, "sqlite.db"))
 	if err != nil {
 		return err
 	}
@@ -237,5 +227,6 @@ func write(ctx context.Context, filename string, groupedBundleData *correlation.
 			err = multierror.Append(err, writeErr)
 		}
 	}
+
 	return err
 }
