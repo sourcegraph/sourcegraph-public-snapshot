@@ -54,7 +54,7 @@ func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err 
 	}, nil
 }
 
-func (r *sqliteReader) ReadMeta(ctx context.Context) (meta types.MetaData, _ error) {
+func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
 	numResultChunks, exists, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
 		`SELECT numResultChunks FROM meta LIMIT 1`,
 	)))
