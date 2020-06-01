@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -45,38 +46,47 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 }
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	tests := map[string]struct {
-		kind, config string
-		setup        func(t *testing.T)
-		teardown     func()
-		wantErr      string
+	tests := []struct {
+		name    string
+		kind    string
+		config  string
+		setup   func(t *testing.T)
+		wantErr string
 	}{
-		"0 errors": {
+		{
+			name:    "0 errors",
 			kind:    "GITHUB",
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			wantErr: "",
+			wantErr: "<nil>",
 		},
-		"1 error": {
+		{
+			name:    "1 error",
 			kind:    "GITHUB",
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
 			wantErr: "1 error occurred:\n\t* token: String length must be greater than or equal to 1\n\n",
 		},
-		"2 errors": {
+		{
+			name:    "2 errors",
 			kind:    "GITHUB",
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "", "x": 123}`,
 			wantErr: "2 errors occurred:\n\t* Additional property x is not allowed\n\t* token: String length must be greater than or equal to 1\n\n",
 		},
-		"no conflicting rate limit": {
+		{
+			name:   "no conflicting rate limit",
 			kind:   "GITHUB",
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
+				t.Cleanup(func() {
+					Mocks.ExternalServices.List = nil
+				})
 				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 					return nil, nil
 				}
 			},
-			wantErr: "",
+			wantErr: "<nil>",
 		},
-		"conflicting rate limit": {
+		{
+			name:   "conflicting rate limit",
 			kind:   "GITHUB",
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
@@ -97,19 +107,16 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			if test.setup != nil {
 				test.setup(t)
 			}
 
 			err := (&ExternalServicesStore{}).ValidateConfig(context.Background(), 0, test.kind, test.config, nil)
-			var errStr string
-			if err != nil {
-				errStr = err.Error()
-			}
-			if errStr != test.wantErr {
-				t.Errorf("got error %q, want %q", errStr, test.wantErr)
+			gotErr := fmt.Sprintf("%v", err)
+			if gotErr != test.wantErr {
+				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)
 			}
 		})
 	}

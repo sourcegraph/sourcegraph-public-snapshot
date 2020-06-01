@@ -115,14 +115,14 @@ func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, id int64, ki
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGithubConnection(ctx, id, &c)
+		err = e.validateGitHubConnection(ctx, id, &c)
 
 	case "GITLAB":
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateGitlabConnection(ctx, id, &c, ps)
+		err = e.validateGitLabConnection(ctx, id, &c, ps)
 
 	case "BITBUCKETSERVER":
 		var c schema.BitbucketServerConnection
@@ -178,7 +178,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func (e *ExternalServicesStore) validateGithubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
+func (e *ExternalServicesStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitHubValidators {
 		err = multierror.Append(err, validate(c))
@@ -193,7 +193,7 @@ func (e *ExternalServicesStore) validateGithubConnection(ctx context.Context, id
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateGitlabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func (e *ExternalServicesStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitLabValidators {
 		err = multierror.Append(err, validate(c, ps))
