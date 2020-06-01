@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -2544,6 +2545,33 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
+		}
+	})
+
+	t.Run("UpdateWithLargeError", func(t *testing.T) {
+		// We were seeing errors creating / updating changeset jobs with errors
+		// larger than 2704 bytes
+		// https://github.com/sourcegraph/sourcegraph/issues/10798
+		c := changesetJobs[0]
+		clock.add(1 * time.Second)
+		c.StartedAt = clock.now().Add(1 * time.Second)
+		c.FinishedAt = clock.now().Add(1 * time.Second)
+		c.Branch = "upgrade-es-lint"
+		// Strangely this value needs to be a lot higher than the threshold before
+		// an error is actually raised. It must be due to the way PostgreSQL constructs
+		// the index.
+		c.Error = strings.Repeat("X", 1000000)
+
+		want := c
+		want.UpdatedAt = clock.now()
+
+		have := c.Clone()
+		if err := s.UpdateChangesetJob(ctx, have); err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatal(diff)
 		}
 	})
 
