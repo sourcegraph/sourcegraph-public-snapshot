@@ -10,7 +10,7 @@ export function replaceHistoryObject(json: Json): Json {
             ...json,
             props: {
                 ...json.props,
-                history: 'placeholderHistoryObject',
+                history: '[History]',
             },
         } as Json
     }
