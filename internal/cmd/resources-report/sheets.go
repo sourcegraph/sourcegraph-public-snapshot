@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	sheets "google.golang.org/api/sheets/v4"
 )
@@ -52,7 +51,6 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 		return fmt.Errorf("failed to update report: %w", err)
 	}
 
-	log.Print(highlighted)
 	_, err = client.Spreadsheets.BatchUpdate(sheetID, &sheets.BatchUpdateSpreadsheetRequest{
 		Requests: []*sheets.Request{
 			// fix header: https://developers.google.com/sheets/api/samples/formatting#format_a_header_row
@@ -69,7 +67,7 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 				Range: &sheets.GridRange{
 					SheetId:       0,
 					StartRowIndex: 1,
-					EndRowIndex:   int64(highlighted),
+					EndRowIndex:   int64(highlighted) + 1,
 				},
 				Cell: &sheets.CellData{
 					UserEnteredFormat: &sheets.CellFormat{
@@ -83,7 +81,7 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 			{RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
 					SheetId:       0,
-					StartRowIndex: int64(highlighted),
+					StartRowIndex: int64(highlighted) + 1,
 				},
 				Cell: &sheets.CellData{
 					UserEnteredFormat: &sheets.CellFormat{
