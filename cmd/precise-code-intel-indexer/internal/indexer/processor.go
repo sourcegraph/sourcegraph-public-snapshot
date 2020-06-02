@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
@@ -41,9 +43,17 @@ func (p *processor) Process(ctx context.Context, index db.Index) error {
 }
 
 func (p *processor) index(ctx context.Context, repoDir string, index db.Index) error {
+	tag, exact, err := p.gitserverClient.Tags(ctx, p.db, index.RepositoryID, index.Commit)
+	if err != nil {
+		return err
+	}
+	if !exact {
+		tag = fmt.Sprintf("%s-%s", tag, index.Commit[:12])
+	}
+
 	args := []string{
 		"--repositoryRoot=.",
-		"--moduleVersion=NONE", // TODO - find git tags on this commit to support module version
+		fmt.Sprintf("--moduleVersion=%s", tag),
 	}
 
 	return command(repoDir, "lsif-go", args...)
@@ -55,14 +65,20 @@ func (p *processor) upload(ctx context.Context, repoDir string, index db.Index) 
 		return errors.Wrap(err, "db.RepoName")
 	}
 
-	args := []string{
-		fmt.Sprintf("-endpoint=%s", p.frontendURL),
-		"lsif",
-		"upload",
-		fmt.Sprintf("-repo=%s", repoName),
-		fmt.Sprintf("-commit=%s", index.Commit),
-		"-root=.",
+	opts := codeintelutils.UploadIndexOpts{
+		Endpoint:            fmt.Sprintf("http://%s", p.frontendURL),
+		Path:                "/.internal/lsif/upload",
+		Repo:                repoName,
+		Commit:              index.Commit,
+		Root:                "",
+		Indexer:             "lsif-go",
+		File:                filepath.Join(repoDir, "dump.lsif"),
+		MaxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
 	}
 
-	return command(repoDir, "src", args...)
+	if _, err := codeintelutils.UploadIndex(opts); err != nil {
+		return errors.Wrap(err, "codeintelutils.UploadIndex")
+	}
+
+	return nil
 }

@@ -276,7 +276,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -287,7 +287,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -319,7 +319,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -330,19 +330,19 @@ func TestDequeueIndexProcessError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, err := scanString(dbconn.Global.QueryRow("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
+	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_summary: %s", err)
 	} else if summary != "test summary" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
 	}
 
-	if stacktrace, err := scanString(dbconn.Global.QueryRow("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
+	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
 	} else if stacktrace != "test stacktrace" {
 		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)

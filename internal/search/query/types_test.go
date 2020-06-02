@@ -11,7 +11,8 @@ func TestValueToTypedValue(t *testing.T) {
 	value := ".*"
 	t.Run("is quoted is string", func(t *testing.T) {
 		inputQuoted := true
-		got := valueToTypedValue("", value, inputQuoted)
+		q := &AndOrQuery{}
+		got := q.valueToTypedValue("", value, inputQuoted)
 		want := types.Value{String: &value}
 		if *got[0].String != *want.String {
 			t.Errorf("got %v, want %v", *got[0].String, *want.String)
@@ -19,7 +20,8 @@ func TestValueToTypedValue(t *testing.T) {
 	})
 	t.Run("is not quoted is regex", func(t *testing.T) {
 		inputQuoted := false
-		got := valueToTypedValue("", value, inputQuoted)
+		q := &AndOrQuery{}
+		got := q.valueToTypedValue("", value, inputQuoted)
 		regexValue, _ := regexp.Compile(value)
 		want := types.Value{Regexp: regexValue}
 		if got[0].Regexp.String() != want.Regexp.String() {
@@ -30,7 +32,21 @@ func TestValueToTypedValue(t *testing.T) {
 	value = ".*("
 	t.Run("uncompilable regex is string", func(t *testing.T) {
 		inputQuoted := false
-		got := valueToTypedValue("", value, inputQuoted)
+		q := &AndOrQuery{}
+		got := q.valueToTypedValue("", value, inputQuoted)
+		want := types.Value{String: &value}
+		if *got[0].String != *want.String {
+			t.Errorf("got %v, want %v", *got[0].String, *want.String)
+		}
+	})
+
+	value = "foo()"
+	t.Run("compilable regex becomes a literal string pattern when parensAsPatterns heuristic is applied", func(t *testing.T) {
+		inputQuoted := false
+		q := &AndOrQuery{
+			HeuristicsApplied: map[heuristic]bool{parensAsPatterns: true},
+		}
+		got := q.valueToTypedValue("", value, inputQuoted)
 		want := types.Value{String: &value}
 		if *got[0].String != *want.String {
 			t.Errorf("got %v, want %v", *got[0].String, *want.String)

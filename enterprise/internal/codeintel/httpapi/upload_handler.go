@@ -24,12 +24,14 @@ import (
 type UploadHandler struct {
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
+	internal            bool
 }
 
-func NewUploadHandler(db db.DB, bundleManagerClient bundles.BundleManagerClient) http.Handler {
+func NewUploadHandler(db db.DB, bundleManagerClient bundles.BundleManagerClient, internal bool) http.Handler {
 	handler := &UploadHandler{
 		db:                  db,
 		bundleManagerClient: bundleManagerClient,
+		internal:            internal,
 	}
 
 	return http.HandlerFunc(handler.handleEnqueue)
@@ -53,7 +55,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 		// token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
+		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
 			return
 		}
 	}

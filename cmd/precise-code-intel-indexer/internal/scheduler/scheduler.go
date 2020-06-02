@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Scheduler struct {
@@ -85,6 +86,10 @@ func (s *Scheduler) update(ctx context.Context) error {
 
 	for _, indexableRepository := range indexableRepositories {
 		if err := s.queueIndex(ctx, indexableRepository); err != nil {
+			if isRepoNotExist(err) {
+				continue
+			}
+
 			return err
 		}
 	}
@@ -140,4 +145,16 @@ func (s *Scheduler) queueIndex(ctx context.Context, indexableRepository db.Index
 	)
 
 	return nil
+}
+
+func isRepoNotExist(err error) bool {
+	for err != nil {
+		if vcs.IsRepoNotExist(err) {
+			return true
+		}
+
+		err = errors.Unwrap(err)
+	}
+
+	return false
 }

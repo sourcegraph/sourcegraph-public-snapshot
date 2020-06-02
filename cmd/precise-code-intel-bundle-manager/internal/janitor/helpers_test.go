@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -18,7 +18,7 @@ func testRoot(t *testing.T) string {
 		os.RemoveAll(bundleDir)
 	})
 
-	for _, dir := range []string{"", "uploads", "dbs"} {
+	for _, dir := range []string{"", "uploads", "dbs", "upload-parts", "db-parts"} {
 		path := filepath.Join(bundleDir, dir)
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			t.Fatalf("unexpected error creating test directory: %s", err)
@@ -29,6 +29,10 @@ func testRoot(t *testing.T) string {
 }
 
 func makeFile(path string, mtimes time.Time) error {
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return err
+	}
+
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -39,20 +43,24 @@ func makeFile(path string, mtimes time.Time) error {
 }
 
 func makeFileWithSize(path string, size int) error {
-	return ioutil.WriteFile(path, make([]byte, size), 0644)
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(path, make([]byte, size), os.ModePerm)
 }
 
-func getFilenames(path string) ([]string, error) {
-	infos, err := ioutil.ReadDir(path)
-	if err != nil {
+func getFilenames(root string) ([]string, error) {
+	var paths []string
+	if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			paths = append(paths, strings.TrimPrefix(strings.TrimPrefix(path, root), string(os.PathSeparator)))
+		}
+
+		return err
+	}); err != nil {
 		return nil, err
 	}
 
-	var names []string
-	for _, info := range infos {
-		names = append(names, info.Name())
-	}
-	sort.Strings(names)
-
-	return names, nil
+	return paths, nil
 }

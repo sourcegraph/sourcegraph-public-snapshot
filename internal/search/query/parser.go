@@ -138,25 +138,33 @@ func skipSpace(buf []byte) int {
 	return count
 }
 
-type heuristic struct {
-	// If true, parses parens as patterns rather than expression groups.
-	parensAsPatterns bool
-	// If true, disables parsing parentheses as expression groups.
-	allowDanglingParens bool
-	// If true, the parser accepts any characters (e.g., unbalanced quotes,
-	// parentheses, backslashes) if they can be associated with a pattern.
+type heuristic string
+
+const (
+	// If present, balanced parentheses, which would normally be treated as
+	// delimiting expression groups, are treated as literal search patterns
+	// instead.
+	parensAsPatterns heuristic = "ParensAsPatterns"
+	// If present, all parentheses, whether balanced or unbalanced, are
+	// treated as literal search patterns (i.e., interpreting parentheses as
+	// expression groups is completely disabled).
+	allowDanglingParens = "AllowDanglingParens"
+	// If present, quotes and escape sequences, which would normally be
+	// interpreted, are treated literally in search patterns instead.
 	// Balanced quotes remain expected for non-empty fields like repo:"foo",
 	// if specified.
-	literalSearchPatterns bool
-}
+	literalSearchPatterns = "LiteralSearchPatterns"
+	// If present, implies that at least one expression was disambiguated by
+	// explicit parentheses.
+	disambiguated = "Disambiguated"
+)
 
 type parser struct {
-	buf          []byte
-	pos          int
-	balanced     int
-	heuristic    heuristic
-	unambiguated bool // if true, this signal implies that at least one expression was unambiguated by explicit parentheses.
-
+	buf               []byte
+	heuristic         map[heuristic]bool
+	pos               int
+	balanced          int
+	heuristicsApplied map[heuristic]bool
 }
 
 func (p *parser) done() bool {
@@ -245,8 +253,8 @@ func (p *parser) skipSpaces() error {
 
 // ScanLiteral consumes all characters up to a whitespace character and returns
 // the string and how much it consumed.
-func ScanSearchPatternLiteral(buf []byte) (string, int) {
-	var count, advance int
+func ScanSearchPatternLiteral(buf []byte) (scanned string, count int) {
+	var advance int
 	var r rune
 	var result []rune
 
@@ -265,7 +273,8 @@ func ScanSearchPatternLiteral(buf []byte) (string, int) {
 		}
 		result = append(result, r)
 	}
-	return string(result), count
+	scanned = string(result)
+	return scanned, count
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -447,7 +456,6 @@ loop:
 		default:
 			piece = append(piece, r)
 		}
-
 	}
 	if len(piece) > 0 {
 		pieces = append(pieces, string(piece))
@@ -462,23 +470,24 @@ loop:
 // parentheses as part of the pattern. It only succeeds if the value parsed can
 // be interpreted as a pattern, and not, e.g., as a filter:value parameter.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
-	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
+	if !p.heuristic[parensAsPatterns] || p.heuristic[allowDanglingParens] {
 		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value}, true
+		return Pattern{Value: value, Quoted: true}, true
 	}
 
 	start := p.pos
 	pieces, advance, ok := ScanSearchPatternHeuristic(p.buf[p.pos:])
 	end := start + advance
-	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) {
+	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) || ContainsAndOrKeyword(string(p.buf[start:end])) {
 		// We tried validating the pattern but it is either unbalanced
 		// or malformed, empty, or an invalid and/or expression.
 		return Pattern{}, false
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
+	p.heuristicsApplied[parensAsPatterns] = true
 	if len(pieces) == 1 {
 		return Pattern{Value: pieces[0]}, true
 	}
@@ -490,10 +499,12 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 }
 
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
-// to a search pattern). Its main function is to determine when to stop
-// scanning a value (e.g., at a parentheses), and which escape sequences to
-// interpret.
-func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
+// to a search pattern). Its main function is to determine when to stop scanning
+// a value (e.g., at a parentheses), and which escape sequences to interpret. It
+// returns the scanned value, how much was advanced, and whether the
+// allowDanglingParenthesis heuristic was applied
+func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
+	var sawDanglingParen bool
 	var count, advance int
 	var r rune
 	var result []rune
@@ -514,6 +525,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 		}
 		if r == '(' || r == ')' {
 			if allowDanglingParens {
+				sawDanglingParen = true
 				result = append(result, r)
 				continue
 			}
@@ -550,7 +562,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 		}
 		result = append(result, r)
 	}
-	return string(result), count
+	return string(result), count, sawDanglingParen
 }
 
 // TryParseDelimiter tries to parse a delimited string, returning whether it
@@ -597,7 +609,7 @@ func (p *parser) ParseFieldValue() (string, error) {
 	if p.match(DQUOTE) {
 		return delimited('"')
 	}
-	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
+	value, advance, _ := ScanValue(p.buf[p.pos:], p.heuristic[allowDanglingParens])
 	p.pos += advance
 	return value, nil
 }
@@ -606,7 +618,7 @@ func (p *parser) ParseFieldValue() (string, error) {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern() Pattern {
-	if p.heuristic.literalSearchPatterns {
+	if p.heuristic[literalSearchPatterns] {
 		// Accept unconditionally as pattern, even if the pattern
 		// contains dangling quotes like " or ', and do not interpret
 		// quoted strings as quoted, but interpret them literally.
@@ -621,7 +633,8 @@ func (p *parser) ParsePattern() Pattern {
 		return Pattern{Value: value, Negated: false, Quoted: true}
 	}
 
-	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
+	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], p.heuristic[allowDanglingParens])
+	p.heuristicsApplied[allowDanglingParens] = sawDanglingParen
 	p.pos += advance
 	// Invariant: the pattern can't be quoted since we checked for that.
 	return Pattern{Value: value, Negated: false, Quoted: false}
@@ -633,7 +646,7 @@ func (p *parser) ParsePattern() Pattern {
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	field, advance := ScanField(p.buf[p.pos:])
-	if len(field) == 0 {
+	if field == "" {
 		return Parameter{}, false, nil
 	}
 
@@ -653,26 +666,6 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 		return Parameter{}, false, err
 	}
 	return Parameter{Field: field, Value: value, Negated: negated}, true, nil
-}
-
-// containsPattern returns true if any descendent of nodes is a search pattern.
-func containsPattern(node Node) bool {
-	var result bool
-	VisitPattern([]Node{node}, func(_ string, _, _ bool) {
-		result = true
-	})
-	return result
-}
-
-// returns true if descendent of node contains and/or expressions.
-func containsAndOrExpression(nodes []Node) bool {
-	var result bool
-	VisitOperator(nodes, func(kind operatorKind, _ []Node) {
-		if kind == And || kind == Or {
-			result = true
-		}
-	})
-	return result
 }
 
 // partitionParameters constructs a parse tree to distinguish terms where
@@ -719,7 +712,7 @@ loop:
 			break loop
 		}
 		switch {
-		case p.match(LPAREN) && !p.heuristic.allowDanglingParens:
+		case p.match(LPAREN) && !p.heuristic[allowDanglingParens]:
 			// First try parse a parameter as a search pattern containing parens.
 			if patterns, ok := p.ParseSearchPatternHeuristic(); ok {
 				nodes = append(nodes, patterns)
@@ -728,20 +721,21 @@ loop:
 				// group as part of an and/or expression.
 				_ = p.expect(LPAREN) // Guaranteed to succeed.
 				p.balanced++
-				p.unambiguated = true
+				p.heuristic[disambiguated] = true
 				result, err := p.parseOr()
 				if err != nil {
 					return nil, err
 				}
 				nodes = append(nodes, result...)
 			}
-		case p.expect(RPAREN) && !p.heuristic.allowDanglingParens:
+		case p.expect(RPAREN) && !p.heuristic[allowDanglingParens]:
 			p.balanced--
-			p.unambiguated = true
+			p.heuristic[disambiguated] = true
 			if len(nodes) == 0 {
 				// We parsed "()".
-				if p.heuristic.parensAsPatterns {
+				if p.heuristic[parensAsPatterns] {
 					// Interpret literally.
+					p.heuristicsApplied[parensAsPatterns] = true
 					nodes = []Node{Pattern{Value: "()"}}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
@@ -882,51 +876,53 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-func tryFallbackParser(in string) ([]Node, error) {
+func tryFallbackParser(in string) ([]Node, map[heuristic]bool, error) {
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: heuristic{allowDanglingParens: true},
+		buf:               []byte(in),
+		heuristic:         map[heuristic]bool{allowDanglingParens: true},
+		heuristicsApplied: map[heuristic]bool{},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
-		return nil, err
+		return nil, parser.heuristicsApplied, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
+		return newOperator(hoistedNodes, And), parser.heuristicsApplied, nil
 	}
-	return newOperator(nodes, And), nil
+	return newOperator(nodes, And), parser.heuristicsApplied, nil
 }
 
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string) ([]Node, error) {
+func ParseAndOr(in string) ([]Node, map[heuristic]bool, error) {
 	if strings.TrimSpace(in) == "" {
-		return nil, nil
+		return nil, map[heuristic]bool{}, nil
 	}
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: heuristic{parensAsPatterns: true},
+		buf:               []byte(in),
+		heuristic:         map[heuristic]bool{parensAsPatterns: true},
+		heuristicsApplied: map[heuristic]bool{},
 	}
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		if nodes, err := tryFallbackParser(in); err == nil {
-			return nodes, nil
+		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
+			return nodes, heuristicsApplied, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	if parser.balanced != 0 {
-		if nodes, err := tryFallbackParser(in); err == nil {
-			return nodes, nil
+		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
+			return nodes, heuristicsApplied, nil
 		}
-		return nil, errors.New("unbalanced expression")
+		return nil, nil, errors.New("unbalanced expression")
 	}
-	if !parser.unambiguated {
+	if !parser.heuristic[disambiguated] {
 		// Hoist or expressions if this query is potential ambiguous.
 		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
 		}
 	}
-	return newOperator(nodes, And), nil
+	return newOperator(nodes, And), parser.heuristicsApplied, nil
 }
 
 func ParseLiteralSearch(in string) ([]Node, error) {
@@ -935,10 +931,11 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 	}
 	parser := &parser{
 		buf: []byte(in),
-		heuristic: heuristic{
+		heuristic: map[heuristic]bool{
 			allowDanglingParens:   true,
 			literalSearchPatterns: true,
 		},
+		heuristicsApplied: map[heuristic]bool{},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -954,7 +951,7 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
 func ProcessAndOr(in string) (QueryInfo, error) {
-	query, err := ParseAndOr(in)
+	query, heuristicsApplied, err := ParseAndOr(in)
 	if err != nil {
 		return nil, err
 	}
@@ -964,5 +961,5 @@ func ProcessAndOr(in string) (QueryInfo, error) {
 		return nil, err
 	}
 
-	return &AndOrQuery{Query: query}, nil
+	return &AndOrQuery{Query: query, HeuristicsApplied: heuristicsApplied}, nil
 }

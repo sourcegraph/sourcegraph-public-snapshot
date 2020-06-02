@@ -14,7 +14,6 @@ import (
 
 func TestConvert(t *testing.T) {
 	state := &State{
-		LSIFVersion: "0.4.3",
 		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go", Contains: datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}}},
 			"d02": {URI: "bar.go", Contains: datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}}},
@@ -73,8 +72,9 @@ func TestConvert(t *testing.T) {
 	}
 
 	expectedBundleData := &GroupedBundleData{
-		LSIFVersion:     "0.4.3",
-		NumResultChunks: 1,
+		Meta: types.MetaData{
+			NumResultChunks: 1,
+		},
 		Documents: map[string]types.DocumentData{
 			"foo.go": {
 				Ranges: map[types.ID]types.RangeData{
@@ -161,21 +161,45 @@ func TestConvert(t *testing.T) {
 				},
 			},
 		},
-		Definitions: []types.DefinitionReferenceRow{
-			{Scheme: "scheme A", Identifier: "ident A", URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-			{Scheme: "scheme A", Identifier: "ident A", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme A", Identifier: "ident A", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+		Definitions: []types.MonikerLocations{
+			{
+				Scheme:     "scheme A",
+				Identifier: "ident A",
+				Locations: []types.Location{
+					{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
+			{
+				Scheme:     "scheme B",
+				Identifier: "ident B",
+				Locations: []types.Location{
+					{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
 		},
-		References: []types.DefinitionReferenceRow{
-			{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-			{Scheme: "scheme C", Identifier: "ident C", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+		References: []types.MonikerLocations{
+			{
+				Scheme:     "scheme C",
+				Identifier: "ident C",
+				Locations: []types.Location{
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
+			{
+				Scheme:     "scheme D",
+				Identifier: "ident D",
+				Locations: []types.Location{
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
 		},
 		Packages: []types.Package{
 			{DumpID: 42, Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
@@ -206,8 +230,8 @@ func normalizeGroupedBundleData(groupedBundleData *GroupedBundleData) {
 		}
 	}
 
-	sortDefinitionReferenceRows(groupedBundleData.Definitions)
-	sortDefinitionReferenceRows(groupedBundleData.References)
+	sortMonikerLocations(groupedBundleData.Definitions)
+	sortMonikerLocations(groupedBundleData.References)
 }
 
 func sortMonikerIDs(s []types.ID) {
@@ -226,14 +250,27 @@ func sortDocumentIDRangeIDs(s []types.DocumentIDRangeID) {
 	})
 }
 
-func sortDefinitionReferenceRows(s []types.DefinitionReferenceRow) {
-	sort.Slice(s, func(i, j int) bool {
-		if cmp := strings.Compare(s[i].URI, s[j].URI); cmp != 0 {
+func sortMonikerLocations(monikerLocations []types.MonikerLocations) {
+	sort.Slice(monikerLocations, func(i, j int) bool {
+		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
 			return cmp < 0
-		} else if cmp := strings.Compare(s[i].Identifier, s[j].Identifier); cmp != 0 {
+		} else if cmp := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); cmp != 0 {
 			return cmp < 0
-		} else {
-			return s[i].StartLine < s[j].StartLine
 		}
+		return false
+	})
+
+	for _, ml := range monikerLocations {
+		sortLocations(ml.Locations)
+	}
+}
+
+func sortLocations(locations []types.Location) {
+	sort.Slice(locations, func(i, j int) bool {
+		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
+			return cmp < 0
+		}
+
+		return locations[i].StartLine < locations[j].StartLine
 	})
 }

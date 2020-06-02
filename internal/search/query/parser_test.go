@@ -71,7 +71,7 @@ func TestScanParameter(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input)}
+			parser := &parser{buf: []byte(tt.Input), heuristicsApplied: map[heuristic]bool{}}
 			result, err := parser.parseParameterList()
 			if err != nil {
 				panic("ruh roh")
@@ -202,8 +202,9 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: heuristic{parensAsPatterns: false},
+		buf:               []byte(in),
+		heuristic:         map[heuristic]bool{parensAsPatterns: false},
+		heuristicsApplied: map[heuristic]bool{},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -530,6 +531,12 @@ func TestParse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		{
+			Name:          "disable parens as patterns heuristic if containing recognized operator",
+			Input:         "(() or ())",
+			WantGrammar:   Spec(`""`),
+			WantHeuristic: Diff(`(or "()" "()")`),
+		},
 		// Escaping.
 		{
 			Input:         `\(\)`,
@@ -661,7 +668,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = ParseAndOr(tt.Input)
+			result, _, err = ParseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
@@ -757,7 +764,6 @@ func TestScanDelimited(t *testing.T) {
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
 			}
-
 		})
 	}
 }

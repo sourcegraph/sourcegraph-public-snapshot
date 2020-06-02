@@ -51,7 +51,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
 							Created:    *instance.LaunchTime,
 							Meta: map[string]interface{}{
-								"tags": instance.Tags,
+								"tags": ec2TagsToMap(instance.Tags),
 							},
 						}
 					}
@@ -75,7 +75,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Type:       fmt.Sprintf("EC2::Volumes::%s", string(volume.VolumeType)),
 						Created:    *volume.CreateTime,
 						Meta: map[string]interface{}{
-							"tags":        volume.Tags,
+							"tags":        ec2TagsToMap(volume.Tags),
 							"attachments": volume.Attachments,
 						},
 					}
@@ -115,7 +115,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 						Type:       "EKS::Cluster",
 						Created:    *cluster.Cluster.CreatedAt,
 						Meta: map[string]interface{}{
-							"tags": cluster.Cluster.Tags,
+							"tags": cluster.Cluster.Tags, // tags are already a map
 						},
 					}
 				}
@@ -125,7 +125,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	},
 }
 
-func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]Resource, error) {
+func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tagsWhitelist map[string]string) ([]Resource, error) {
 	logger := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources since %s", since)
@@ -180,6 +180,14 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 		case r, ok := <-results:
 			if ok {
 				resource := r
+				// whitelist resource if configured - all AWS tags should be converted to maps
+				if tagsWhitelist != nil {
+					if tags, ok := resource.Meta["tags"].(map[string]string); ok {
+						if hasKeyValue(tags, tagsWhitelist) {
+							resource.Whitelisted = true
+						}
+					}
+				}
 				resources = append(resources, resource)
 			} else {
 				return resources, nil
@@ -188,4 +196,12 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool) ([]
 			return nil, err
 		}
 	}
+}
+
+func ec2TagsToMap(tags []aws_ec2.Tag) map[string]string {
+	m := map[string]string{}
+	for _, tag := range tags {
+		m[*tag.Key] = *tag.Value
+	}
+	return m
 }
