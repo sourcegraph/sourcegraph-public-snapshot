@@ -31,7 +31,7 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 
 	// NOTE: We need to serialize with the JSON serializer, NOT the current serializer. This is
 	// because future migrations assume that v4 was written with the most current serializer at
-	// that time. Using the current serializer wiol cause future migrations to fail to read the
+	// that time. Using the current serializer will cause future migrations to fail to read the
 	// encoded data.
 	serializer = jsonserializer.New()
 
