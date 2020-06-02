@@ -34,6 +34,24 @@ func ZoektIndexServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage1d("zoekt-indexserver"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage1h("zoekt-indexserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("zoekt-indexserver"),
+						sharedProvisioningMemoryUsage5m("zoekt-indexserver"),
+					},
+				},
+			},
 		},
 	}
 }

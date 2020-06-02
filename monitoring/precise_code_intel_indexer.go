@@ -130,6 +130,24 @@ func PreciseCodeIntelIndexer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-indexer"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage1h("precise-code-intel-indexer"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-indexer"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-indexer"),
+					},
+				},
+			},
 		},
 	}
 }

@@ -401,6 +401,24 @@ func Frontend() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("frontend"),
+						sharedProvisioningMemoryUsage1d("frontend"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("frontend"),
+						sharedProvisioningMemoryUsage1h("frontend"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("frontend"),
+						sharedProvisioningMemoryUsage5m("frontend"),
+					},
+				},
+			},
 		},
 	}
 }

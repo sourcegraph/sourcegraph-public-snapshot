@@ -62,6 +62,24 @@ func SyntectServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("syntect-server"),
+						sharedProvisioningMemoryUsage1d("syntect-server"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("syntect-server"),
+						sharedProvisioningMemoryUsage1h("syntect-server"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("syntect-server"),
+						sharedProvisioningMemoryUsage5m("syntect-server"),
+					},
+				},
+			},
 		},
 	}
 }

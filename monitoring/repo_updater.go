@@ -25,6 +25,24 @@ func RepoUpdater() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("repo-updater"),
+						sharedProvisioningMemoryUsage1d("repo-updater"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("repo-updater"),
+						sharedProvisioningMemoryUsage1h("repo-updater"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("repo-updater"),
+						sharedProvisioningMemoryUsage5m("repo-updater"),
+					},
+				},
+			},
 		},
 	}
 }

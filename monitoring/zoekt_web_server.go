@@ -33,6 +33,24 @@ func ZoektWebServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("zoekt-webserver"),
+						sharedProvisioningMemoryUsage1d("zoekt-webserver"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("zoekt-webserver"),
+						sharedProvisioningMemoryUsage1h("zoekt-webserver"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("zoekt-webserver"),
+						sharedProvisioningMemoryUsage5m("zoekt-webserver"),
+					},
+				},
+			},
 		},
 	}
 }

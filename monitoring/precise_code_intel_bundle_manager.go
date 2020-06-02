@@ -181,6 +181,24 @@ func PreciseCodeIntelBundleManager() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage1d("precise-code-intel-bundle-manager"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage1h("precise-code-intel-bundle-manager"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("precise-code-intel-bundle-manager"),
+						sharedProvisioningMemoryUsage5m("precise-code-intel-bundle-manager"),
+					},
+				},
+			},
 		},
 	}
 }

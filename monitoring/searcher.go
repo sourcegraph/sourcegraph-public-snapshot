@@ -34,6 +34,24 @@ func Searcher() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Provisioning indicators (not available on server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						sharedProvisioningCPUUsage1d("searcher"),
+						sharedProvisioningMemoryUsage1d("searcher"),
+					},
+					{
+						sharedProvisioningCPUUsage1h("searcher"),
+						sharedProvisioningMemoryUsage1h("searcher"),
+					},
+					{
+						sharedProvisioningCPUUsage5m("searcher"),
+						sharedProvisioningMemoryUsage5m("searcher"),
+					},
+				},
+			},
 		},
 	}
 }
