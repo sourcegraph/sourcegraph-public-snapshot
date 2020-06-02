@@ -8,6 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	v0 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v0"
 	v1 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v1"
+	v2 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v2"
+	v3 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v3"
+	v4 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v4"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 )
 
@@ -22,9 +25,13 @@ type MigrationFunc func(ctx context.Context, s *store.Store, serializer serializ
 
 var migrations = []struct {
 	MigrationFunc MigrationFunc
+	ShouldVacuum  bool
 }{
-	{v0.Migrate},
-	{v1.Migrate},
+	{v0.Migrate, false},
+	{v1.Migrate, false},
+	{v2.Migrate, false},
+	{v3.Migrate, false},
+	{v4.Migrate, true},
 }
 
 var UnknownSchemaVersion = 0
@@ -39,8 +46,20 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 		return err
 	}
 
+	shouldVacuum := false
 	for version := currentVersion + 1; version < len(migrations); version++ {
 		if err := runMigration(ctx, s, serializer, version, migrations[version].MigrationFunc); err != nil {
+			return err
+		}
+
+		shouldVacuum = shouldVacuum || migrations[version].ShouldVacuum
+	}
+
+	if shouldVacuum {
+		// If we've had a migration that updates a lot of data, vacuuming can remove a large
+		// number of dead tuples or tables which are still present in the file. Compacting
+		// this data can give a huge savings on disk cost.
+		if err := s.Exec(ctx, sqlf.Sprintf("VACUUM")); err != nil {
 			return err
 		}
 	}
