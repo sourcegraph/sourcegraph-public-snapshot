@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
@@ -27,6 +28,9 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 		populateTable,
 		swapTables,
 	}
+
+	// TODO - make a big note about this
+	serializer = jsonserializer.New()
 
 	for _, tableName := range []string{"definitions", "references"} {
 		for _, step := range steps {
