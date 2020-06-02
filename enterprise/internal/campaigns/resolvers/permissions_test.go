@@ -410,19 +410,52 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	if have, want := res.Node.State, string(campaigns.ChangesetStateOpen); have != want {
 		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
 	}
+
+	if have, want := res.Node.Campaigns.TotalCount, 1; have != want {
+		t.Fatalf("changeset has wrong campaigns totalcount. want=%d, have=%d", want, have)
+	}
+
+	if parseJSONTime(t, res.Node.CreatedAt).IsZero() {
+		t.Fatalf("changeset createdAt is zero")
+	}
+
+	if parseJSONTime(t, res.Node.UpdatedAt).IsZero() {
+		t.Fatalf("changeset updatedAt is zero")
+	}
+
+	// TODO: See https://github.com/sourcegraph/sourcegraph/issues/11227
+	// if parseJSONTime(t, res.Node.NextSyncAt).IsZero() {
+	// 	t.Fatalf("changeset next sync at is zero")
+	// }
 }
 
 const queryChangesetPermLevels = `
 query {
   node(id: %q) {
     __typename
+
     ... on HiddenExternalChangeset {
       id
+
       state
+	  createdAt
+	  updatedAt
+	  nextSyncAt
+	  campaigns {
+	    totalCount
+	  }
     }
     ... on ExternalChangeset {
       id
+
       state
+	  createdAt
+	  updatedAt
+	  nextSyncAt
+	  campaigns {
+	    totalCount
+	  }
+
       repository {
         id
         name

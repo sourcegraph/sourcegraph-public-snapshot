@@ -77,14 +77,14 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	repo, err := db.Repos.Get(ctx, changeset.RepoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			// TODO: nextSyncAt is not populated
+			// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
 			return &hiddenChangesetResolver{store: r.store, Changeset: changeset}, nil
 		}
 		return nil, err
 	}
 
 	return &changesetResolver{
-		// TODO: nextSyncAt is not populated
+		// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
 		store:         r.store,
 		Changeset:     changeset,
 		preloadedRepo: repo,

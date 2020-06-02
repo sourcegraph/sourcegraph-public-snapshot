@@ -141,6 +141,7 @@ type Changeset struct {
 	Campaigns   CampaignConnection
 	CreatedAt   string
 	UpdatedAt   string
+	NextSyncAt  string
 	Title       string
 	Body        string
 	State       string

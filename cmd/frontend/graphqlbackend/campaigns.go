@@ -259,9 +259,7 @@ type HiddenExternalChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
-
 	State() campaigns.ChangesetState
-
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -274,13 +272,12 @@ type ExternalChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
-
+	State() campaigns.ChangesetState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
 	ExternalID() string
 	Title() (string, error)
 	Body() (string, error)
-	State() campaigns.ChangesetState
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) campaigns.ChangesetReviewState
 	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
