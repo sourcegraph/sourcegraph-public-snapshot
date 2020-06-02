@@ -195,6 +195,10 @@ func TestRepositoryPermissions(t *testing.T) {
 		testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 	}
 
+	for _, p := range patches {
+		testPatchResponse(t, s, userCtx, p.ID, "Patch")
+	}
+
 	// Now we add the authzFilter and filter out 2 repositories
 	filteredRepoIDs := map[api.RepoID]bool{
 		patches[0].RepoID:    true,
@@ -241,15 +245,22 @@ func TestRepositoryPermissions(t *testing.T) {
 	})
 
 	for _, c := range changesets {
-		want := "ExternalChangeset"
 		// The changeset whose repository has been filtered should be hidden
 		if _, ok := filteredRepoIDs[c.RepoID]; ok {
-			want = "HiddenExternalChangeset"
+			testChangesetResponse(t, s, userCtx, c.ID, "HiddenExternalChangeset")
+		} else {
+			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 		}
-
-		testChangesetResponse(t, s, userCtx, c.ID, want)
 	}
-	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
+
+	for _, p := range patches {
+		// The patch whose repository has been filtered should be hidden
+		if _, ok := filteredRepoIDs[p.RepoID]; ok {
+			testPatchResponse(t, s, userCtx, p.ID, "HiddenPatch")
+		} else {
+			testPatchResponse(t, s, userCtx, p.ID, "Patch")
+		}
+	}
 }
 
 type wantCampaignResponse struct {
@@ -405,6 +416,36 @@ query {
       id
     }
     ... on ExternalChangeset {
+      id
+      repository {
+        id
+        name
+      }
+    }
+  }
+}
+`
+
+func testPatchResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
+	t.Helper()
+
+	var res struct{ Node apitest.Patch }
+	query := fmt.Sprintf(queryPatchPermLevels, marshalPatchID(id))
+	apitest.MustExec(ctx, t, s, nil, &res, query)
+
+	if have, want := res.Node.Typename, wantType; have != want {
+		t.Fatalf("patch has wrong typename. want=%q, have=%q", want, have)
+	}
+}
+
+const queryPatchPermLevels = `
+query {
+  node(id: %q) {
+    __typename
+    ... on HiddenPatch {
+      id
+    }
+    ... on Patch {
       id
       repository {
         id

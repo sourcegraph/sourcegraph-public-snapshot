@@ -116,7 +116,7 @@ type CampaignsResolver interface {
 	CreatePatchSetFromPatches(ctx context.Context, args CreatePatchSetFromPatchesArgs) (PatchSetResolver, error)
 	PatchSetByID(ctx context.Context, id graphql.ID) (PatchSetResolver, error)
 
-	PatchByID(ctx context.Context, id graphql.ID) (PatchResolver, error)
+	PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error)
 }
 
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -183,7 +183,7 @@ func (defaultCampaignsResolver) PatchSetByID(ctx context.Context, id graphql.ID)
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchResolver, error) {
+func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

@@ -117,7 +117,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchResolver, error) {
+func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchInterfaceResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patches.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 	repo, err := db.Repos.Get(ctx, patch.RepoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return nil, nil
+			return &hiddenPatchResolver{patch: patch}, nil
 		}
 		return nil, err
 	}
