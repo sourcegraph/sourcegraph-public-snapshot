@@ -237,7 +237,8 @@ Format of the action JSON files:
 		}
 		logger.Infof("Use 'src actions scope-query' for help with scoping.\n")
 
-		logger.Start()
+		totalSteps := len(repos) * len(action.Steps)
+		logger.Start(totalSteps)
 
 		executor := newActionExecutor(action, *parallelismFlag, logger, opts)
 		for _, repo := range repos {

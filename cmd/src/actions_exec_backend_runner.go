@@ -46,7 +46,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 		} else if ok {
 			status := ActionRepoStatus{Cached: true, Patch: result}
 			x.updateRepoStatus(repo, status)
-			x.logger.RepoCacheHit(repo, status.Patch != PatchInput{})
+			x.logger.RepoCacheHit(repo, len(x.action.Steps), status.Patch != PatchInput{})
 			return nil
 		}
 	}

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/fatih/color"
@@ -31,9 +33,12 @@ type actionLogger struct {
 
 	highlight func(a ...interface{}) string
 
+	progress *progress
+	out      io.Writer
+
+	mu         sync.Mutex
 	logFiles   map[string]*os.File
 	logWriters map[string]io.Writer
-	mu         sync.Mutex
 }
 
 func newActionLogger(verbose, keepLogs bool) *actionLogger {
@@ -41,25 +46,36 @@ func newActionLogger(verbose, keepLogs bool) *actionLogger {
 	if useColor {
 		color.NoColor = false
 	}
+
+	progress := new(progress)
+
 	return &actionLogger{
-		verbose:    verbose,
-		keepLogs:   keepLogs,
-		highlight:  color.New(color.Bold, color.FgGreen).SprintFunc(),
+		verbose:   verbose,
+		keepLogs:  keepLogs,
+		highlight: color.New(color.Bold, color.FgGreen).SprintFunc(),
+		progress:  progress,
+		out: &progressWriter{
+			p: progress,
+			w: os.Stderr,
+		},
 		logFiles:   map[string]*os.File{},
 		logWriters: map[string]io.Writer{},
 	}
 }
 
-func (a *actionLogger) Start() {
+func (a *actionLogger) Start(totalSteps int) {
 	if a.verbose {
+		a.progress.SetTotalSteps(int64(totalSteps))
 		fmt.Fprintln(os.Stderr)
 	}
 }
 
+func (a *actionLogger) Infof(format string, args ...interface{}) {
+	a.log("", grey, format, args...)
+}
+
 func (a *actionLogger) Warnf(format string, args ...interface{}) {
-	if a.verbose {
-		yellow.Fprintf(os.Stderr, "WARNING: "+format, args...)
-	}
+	a.log("", yellow, "WARNING: "+format, args...)
 }
 
 func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
@@ -89,31 +105,25 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 }
 
 func (a *actionLogger) ActionSuccess(patches []PatchInput, newLines bool) {
-	if a.verbose {
-		fmt.Fprintln(os.Stderr)
-		format := "✔  Action produced %d patches."
-		if newLines {
-			format = format + "\n\n"
-		}
-		hiGreen.Fprintf(os.Stderr, format, len(patches))
+	if !a.verbose {
+		return
 	}
+	fmt.Fprintln(os.Stderr)
+	format := "✔  Action produced %d patches."
+	if newLines {
+		format = format + "\n\n"
+	}
+	hiGreen.Fprintf(os.Stderr, format, len(patches))
 }
 
-func (a *actionLogger) Infof(format string, args ...interface{}) {
-	if a.verbose {
-		grey.Fprintf(os.Stderr, format, args...)
+func (a *actionLogger) RepoCacheHit(repo ActionRepo, stepCount int, patchProduced bool) {
+	a.progress.IncStepsComplete(int64(stepCount))
+	if patchProduced {
+		a.progress.IncPatchCount()
+		a.log(repo.Name, boldGreen, "Cached result found: using cached diff.\n")
+		return
 	}
-}
-
-func (a *actionLogger) RepoCacheHit(repo ActionRepo, patchProduced bool) {
-	if a.verbose {
-		if patchProduced {
-			fmt.Fprintf(os.Stderr, "%s -> Cached result found: using cached diff.\n", boldGreen.Sprint(repo.Name))
-			return
-		}
-
-		fmt.Fprintf(os.Stderr, "%s -> Cached result found: no diff produced for this repository.\n", grey.Sprint(repo.Name))
-	}
+	a.log(repo.Name, grey, "Cached result found: no diff produced for this repository.\n")
 }
 
 func (a *actionLogger) AddRepo(repo ActionRepo) (string, error) {
@@ -151,23 +161,12 @@ func (a *actionLogger) RepoStdoutStderr(repoName string) (io.Writer, io.Writer, 
 	}
 
 	stderrPrefix := fmt.Sprintf("%s -> [STDERR]: ", yellow.Sprint(repoName))
-	stderr := textio.NewPrefixWriter(os.Stderr, stderrPrefix)
+	stderr := textio.NewPrefixWriter(a.out, stderrPrefix)
 
 	stdoutPrefix := fmt.Sprintf("%s -> [STDOUT]: ", yellow.Sprint(repoName))
-	stdout := textio.NewPrefixWriter(os.Stderr, stdoutPrefix)
+	stdout := textio.NewPrefixWriter(a.out, stdoutPrefix)
 
 	return io.MultiWriter(stdout, w), io.MultiWriter(stderr, w), ok
-}
-
-func (a *actionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
-	if w, ok := a.RepoWriter(repoName); ok {
-		fmt.Fprintf(w, format, args...)
-	}
-
-	if a.verbose {
-		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
-		fmt.Fprintf(os.Stderr, format, args...)
-	}
 }
 
 func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionErr error) error {
@@ -186,6 +185,7 @@ func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionE
 			a.write(repoName, boldRed, "Action failed: %q\n", actionErr)
 		}
 	} else if patchProduced {
+		a.progress.IncPatchCount()
 		a.write(repoName, boldGreen, "Finished. Patch produced.\n")
 	} else {
 		a.write(repoName, grey, "Finished. No patch produced.\n")
@@ -215,10 +215,13 @@ func (a *actionLogger) CommandStepStarted(repoName string, step int, args []stri
 }
 
 func (a *actionLogger) CommandStepErrored(repoName string, step int, err error) {
+	a.progress.IncStepsComplete(1)
+	a.progress.IncStepsFailed()
 	a.write(repoName, boldRed, "%s %s.\n", boldBlack.Sprintf("[Step %d]", step), err)
 }
 
 func (a *actionLogger) CommandStepDone(repoName string, step int) {
+	a.progress.IncStepsComplete(1)
 	a.write(repoName, yellow, "%s Done.\n", boldBlack.Sprintf("[Step %d]", step))
 }
 
@@ -227,9 +230,126 @@ func (a *actionLogger) DockerStepStarted(repoName string, step int, image string
 }
 
 func (a *actionLogger) DockerStepErrored(repoName string, step int, err error, elapsed time.Duration) {
+	a.progress.IncStepsComplete(1)
+	a.progress.IncStepsFailed()
 	a.write(repoName, boldRed, "%s %s. (%s)\n", boldBlack.Sprintf("[Step %d]", step), err, elapsed)
 }
 
 func (a *actionLogger) DockerStepDone(repoName string, step int, elapsed time.Duration) {
+	a.progress.IncStepsComplete(1)
 	a.write(repoName, yellow, "%s Done. (%s)\n", boldBlack.Sprintf("[Step %d]", step), elapsed)
+}
+
+// write writes to the RepoWriter associated with the given repoName and logs the message using the log method.
+func (a *actionLogger) write(repoName string, c *color.Color, format string, args ...interface{}) {
+	if w, ok := a.RepoWriter(repoName); ok {
+		fmt.Fprintf(w, format, args...)
+	}
+	a.log(repoName, c, format, args...)
+}
+
+// log logs only to stderr, it does not log to our repoWriters. When not in verbose mode, it's a noop.
+func (a *actionLogger) log(repoName string, c *color.Color, format string, args ...interface{}) {
+	if !a.verbose {
+		return
+	}
+	if len(repoName) > 0 {
+		format = fmt.Sprintf("%s -> %s", c.Sprint(repoName), format)
+	}
+	fmt.Fprintf(a.out, format, args...)
+}
+
+type progress struct {
+	patchCount int64
+
+	totalSteps    int64
+	stepsComplete int64
+	stepsFailed   int64
+}
+
+func (p *progress) SetTotalSteps(n int64) {
+	atomic.StoreInt64(&p.totalSteps, n)
+}
+
+func (p *progress) TotalSteps() int64 {
+	return atomic.LoadInt64(&p.totalSteps)
+}
+
+func (p *progress) StepsComplete() int64 {
+	return atomic.LoadInt64(&p.stepsComplete)
+}
+
+func (p *progress) IncStepsComplete(delta int64) {
+	atomic.AddInt64(&p.stepsComplete, delta)
+}
+
+func (p *progress) TotalStepsFailed() int64 {
+	return atomic.LoadInt64(&p.stepsFailed)
+}
+
+func (p *progress) IncStepsFailed() {
+	atomic.AddInt64(&p.stepsFailed, 1)
+}
+
+func (p *progress) PatchCount() int64 {
+	return atomic.LoadInt64(&p.patchCount)
+}
+
+func (p *progress) IncPatchCount() {
+	atomic.AddInt64(&p.patchCount, 1)
+}
+
+type progressWriter struct {
+	p *progress
+
+	mu                sync.Mutex
+	w                 io.Writer
+	shouldClear       bool
+	progressLogLength int
+}
+
+func (w *progressWriter) Write(data []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.shouldClear {
+		// Clear current progress
+		fmt.Fprintf(w.w, "\r")
+		fmt.Fprintf(w.w, strings.Repeat(" ", w.progressLogLength))
+		fmt.Fprintf(w.w, "\r")
+	}
+
+	if w.p.TotalSteps() == 0 {
+		// Don't display bar until we know number of steps
+		w.shouldClear = false
+		return w.w.Write(data)
+	}
+
+	if !bytes.HasSuffix(data, []byte("\n")) {
+		w.shouldClear = false
+		return w.w.Write(data)
+	}
+
+	n, err := w.w.Write(data)
+	if err != nil {
+		return n, err
+	}
+	total := w.p.TotalSteps()
+	done := w.p.StepsComplete()
+	var pctDone float64
+	if total > 0 {
+		pctDone = float64(done) / float64(total)
+	}
+
+	maxLength := 50
+	bar := strings.Repeat("=", int(float64(maxLength)*pctDone))
+	if len(bar) < maxLength {
+		bar += ">"
+	}
+	bar += strings.Repeat(" ", maxLength-len(bar))
+	progessText := fmt.Sprintf("[%s] Steps: %d/%d (%s, %s)", bar, w.p.StepsComplete(), w.p.TotalSteps(), boldRed.Sprintf("%d failed", w.p.TotalStepsFailed()), hiGreen.Sprintf("%d patches", w.p.PatchCount()))
+	fmt.Fprintf(w.w, progessText)
+	w.shouldClear = true
+	w.progressLogLength = len(progessText)
+	return n, err
 }
