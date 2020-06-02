@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { IExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { formatDistance, parseISO } from 'date-fns'
@@ -30,7 +30,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
             setLastUpdatedAt(null)
         }
     }, [campaignUpdates, lastUpdatedAtChanged, changeset.updatedAt])
-    const enqueueChangeset: React.MouseEventHandler = async () => {
+    const enqueueChangeset = useCallback<React.MouseEventHandler>(async () => {
         // already enqueued
         if (typeof lastUpdatedAt === 'string') {
             return
@@ -41,7 +41,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         } catch (error) {
             setLastUpdatedAt(error)
         }
-    }
+    }, [changeset.id, changeset.updatedAt, lastUpdatedAt])
 
     let tooltipText = ''
     if (changeset.updatedAt === lastUpdatedAt) {

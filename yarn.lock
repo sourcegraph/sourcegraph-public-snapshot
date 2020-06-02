@@ -2141,10 +2141,10 @@
     rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.18.2":
-  version "0.18.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.18.2.tgz#529b5409a57e3dd42866138a4a38cad0a5d3c168"
-  integrity sha512-1VAsT0Xm+p8wEAToEVs/poHzsFnWEpTbawRPVBCSjIXMzEnxzZYZrvEl1caqwJMqqeubfMXf6E7WHzXL/vnFiQ==
+"@sourcegraph/eslint-config@^0.18.4":
+  version "0.18.4"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.18.4.tgz#a063b28d2d2023bd1cdb6c2427c3aaa8028966e7"
+  integrity sha512-roBS5HZqNwFp1YZfQyjS18ntCP23YYd/YGKP95215QkjRRUaQrKOha6TTAw7Jzej/nNH7P2lWt/DTs32KqF6YQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.34.0"
@@ -2154,8 +2154,8 @@
     eslint-plugin-etc "^0.0.1-beta.25"
     eslint-plugin-import "^2.20.2"
     eslint-plugin-jsdoc "^26.0.1"
-    eslint-plugin-react "^7.19.0"
-    eslint-plugin-react-hooks "^4.0.0"
+    eslint-plugin-react "^7.20.0"
+    eslint-plugin-react-hooks "^4.0.4"
     eslint-plugin-rxjs "^0.0.2-beta.24"
     eslint-plugin-unicorn "^20.1.0"
 
@@ -8644,15 +8644,15 @@ eslint-plugin-no-unsafe-innerhtml@1.0.16:
   dependencies:
     eslint "^3.7.1"
 
-eslint-plugin-react-hooks@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.0.0.tgz#81196b990043cde339e25c6662aeebe32ac52d01"
-  integrity sha512-YKBY+kilK5wrwIdQnCF395Ya6nDro3EAMoe+2xFkmyklyhF16fH83TrQOo9zbZIDxBsXFgBbywta/0JKRNFDkw==
+eslint-plugin-react-hooks@^4.0.4:
+  version "4.0.4"
+  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.0.4.tgz#aed33b4254a41b045818cacb047b81e6df27fa58"
+  integrity sha512-equAdEIsUETLFNCmmCkiCGq6rkSK5MoJhXFPFYeUebcjKgBmWWcgVOqZyQC8Bv1BwVCnTq9tBxgJFgAJTWoJtA==
 
-eslint-plugin-react@^7.19.0:
-  version "7.19.0"
-  resolved "https://registry.npmjs.org/eslint-plugin-react/-/eslint-plugin-react-7.19.0.tgz#6d08f9673628aa69c5559d33489e855d83551666"
-  integrity sha512-SPT8j72CGuAP+JFbT0sJHOB80TX/pu44gQ4vXH/cq+hQTiY2PuZ6IHkqXJV6x1b28GDdo1lbInjKUrrdUf0LOQ==
+eslint-plugin-react@^7.20.0:
+  version "7.20.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-react/-/eslint-plugin-react-7.20.0.tgz#f98712f0a5e57dfd3e5542ef0604b8739cd47be3"
+  integrity sha512-rqe1abd0vxMjmbPngo4NaYxTcR3Y4Hrmc/jg4T+sYz63yqlmJRknpEQfmWY+eDWPuMmix6iUIK+mv0zExjeLgA==
   dependencies:
     array-includes "^3.1.1"
     doctrine "^2.1.0"
@@ -8663,7 +8663,6 @@ eslint-plugin-react@^7.19.0:
     object.values "^1.1.1"
     prop-types "^15.7.2"
     resolve "^1.15.1"
-    semver "^6.3.0"
     string.prototype.matchall "^4.0.2"
     xregexp "^4.3.0"
 

@@ -83,6 +83,8 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
                 return fetchReposByQuery(searchScope.value).pipe(catchError(err => of(asError(err))))
             }
             return of([])
+            // False positive: https://github.com/facebook/react/issues/19064
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [searchScope])
     )
 
