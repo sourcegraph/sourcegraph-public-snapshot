@@ -264,7 +264,7 @@
     "delay": "^4.3.0",
     "downshift": "^3.4.8",
     "focus-visible": "^5.1.0",
-    "got": "^10.7.0",
+    "got": "^11.2.0",
     "graphiql": "^0.17.5",
     "he": "^1.2.0",
     "highlight.js": "^10.0.3",
