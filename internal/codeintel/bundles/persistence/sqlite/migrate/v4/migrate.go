@@ -29,7 +29,10 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 		swapTables,
 	}
 
-	// TODO - make a big note about this
+	// NOTE: We need to serialize with the JSON serializer, NOT the current serializer. This is
+	// because future migrations assume that v4 was written with the most current serializer at
+	// that time. Using the current serializer wiol cause future migrations to fail to read the
+	// encoded data.
 	serializer = jsonserializer.New()
 
 	for _, tableName := range []string{"definitions", "references"} {
