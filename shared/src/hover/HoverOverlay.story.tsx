@@ -17,7 +17,7 @@ import { BadgeAttachmentRenderOptions, MarkupContent, Badged } from 'sourcegraph
 
 registerHighlightContributions()
 
-const { add } = storiesOf('HoverOverlay', module)
+const { add } = storiesOf('shared/HoverOverlay', module)
 
 const history = createMemoryHistory()
 const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }

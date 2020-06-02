@@ -4,60 +4,79 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
+	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	pkgerrors "github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
+// ErrNoMetadata occurs when there are no rows in the meta table.
 var ErrNoMetadata = errors.New("no rows in meta table")
 
 type sqliteReader struct {
-	db         *sqlx.DB
+	store      *store.Store
+	closer     func() error
 	serializer serialization.Serializer
 }
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(filename string) (persistence.Reader, error) {
-	db, err := sqlx.Open("sqlite3_with_pcre", filename)
+func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err error) {
+	store, closer, err := store.Open(filename)
 	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			if closeErr := closer(); closeErr != nil {
+				err = multierror.Append(err, closeErr)
+			}
+		}
+	}()
+
+	serializer := jsonserializer.New()
+
+	if err := migrate.Migrate(ctx, store, serializer); err != nil {
 		return nil, err
 	}
 
 	return &sqliteReader{
-		db:         db,
-		serializer: jsonserializer.New(),
+		store:      store,
+		closer:     closer,
+		serializer: serializer,
 	}, nil
 }
 
-func (r *sqliteReader) ReadMeta(ctx context.Context) (lsifVersion string, sourcegraphVersion string, numResultChunks int, _ error) {
-	query := `SELECT lsifVersion, sourcegraphVersion, numResultChunks FROM meta LIMIT 1`
-
-	if err := r.queryRow(ctx, sqlf.Sprintf(query)).Scan(&lsifVersion, &sourcegraphVersion, &numResultChunks); err != nil {
-		if err == sql.ErrNoRows {
-			return "", "", 0, ErrNoMetadata
-		}
-
-		return "", "", 0, err
+func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
+	numResultChunks, exists, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT numResultChunks FROM meta LIMIT 1`,
+	)))
+	if err != nil {
+		return types.MetaData{}, err
+	}
+	if !exists {
+		return types.MetaData{}, ErrNoMetadata
 	}
 
-	return lsifVersion, sourcegraphVersion, numResultChunks, nil
+	return types.MetaData{
+		NumResultChunks: numResultChunks,
+	}, nil
 }
 
 func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
-	query := `SELECT data FROM documents WHERE path = %s LIMIT 1`
-
-	data, err := scanBytes(r.queryRow(ctx, sqlf.Sprintf(query, path)))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return types.DocumentData{}, false, nil
-		}
+	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT data FROM documents WHERE path = %s LIMIT 1`,
+		path,
+	)))
+	if err != nil || !exists {
+		return types.DocumentData{}, false, err
 	}
 
 	documentData, err := r.serializer.UnmarshalDocumentData(data)
@@ -68,13 +87,12 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 }
 
 func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
-	query := `SELECT data FROM resultChunks WHERE id = %s LIMIT 1`
-
-	data, err := scanBytes(r.queryRow(ctx, sqlf.Sprintf(query, id)))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return types.ResultChunkData{}, false, nil
-		}
+	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT data FROM resultChunks WHERE id = %s LIMIT 1`,
+		id,
+	)))
+	if err != nil || !exists {
+		return types.ResultChunkData{}, false, err
 	}
 
 	resultChunkData, err := r.serializer.UnmarshalResultChunkData(data)
@@ -85,68 +103,33 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 }
 
 func (r *sqliteReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	var query *sqlf.Query
-	if take == 0 && skip == 0 {
-		query = sqlf.Sprintf(`
-			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
-			FROM definitions
-			WHERE scheme = %s AND identifier = %s
-		`, scheme, identifier)
-	} else {
-		query = sqlf.Sprintf(`
-			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
-			FROM definitions
-			WHERE scheme = %s AND identifier = %s
-			LIMIT %d OFFSET %d
-		`, scheme, identifier, take, skip)
-	}
-
-	locations, err := scanLocations(r.query(ctx, query))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	countQuery := `
-		SELECT COUNT(*) FROM definitions
-		WHERE scheme = %s AND identifier = %s
-	`
-
-	count, err := scanInt(r.queryRow(ctx, sqlf.Sprintf(countQuery, scheme, identifier)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return locations, count, err
+	return r.readDefinitionReferences(ctx, "definitions", scheme, identifier, skip, take)
 }
 
 func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	var query *sqlf.Query
-	if take == 0 && skip == 0 {
-		query = sqlf.Sprintf(`
-			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
-			FROM "references"
-			WHERE scheme = %s AND identifier = %s
-		`, scheme, identifier)
-	} else {
-		query = sqlf.Sprintf(`
-			SELECT `+strings.Join(definitionReferenceColumns, ", ")+`
-			FROM "references"
-			WHERE scheme = %s AND identifier = %s
-			LIMIT %s OFFSET %d
-		`, scheme, identifier, take, skip)
+	return r.readDefinitionReferences(ctx, "references", scheme, identifier, skip, take)
+}
+
+func (r *sqliteReader) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
+	var limitOffset string
+	if take != 0 && skip != 0 {
+		limitOffset = fmt.Sprintf("LIMIT %d OFFSET %d", take, skip)
 	}
 
-	locations, err := scanLocations(r.query(ctx, query))
+	locations, err := scanLocations(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT documentPath, startLine, startCharacter, endLine, endCharacter FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s `+limitOffset,
+		scheme,
+		identifier,
+	)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	countQuery := `
-		SELECT COUNT(*) FROM "references"
-		WHERE scheme = %s AND identifier = %s
-	`
-
-	count, err := scanInt(r.queryRow(ctx, sqlf.Sprintf(countQuery, scheme, identifier)))
+	count, _, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT COUNT(*) FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s `,
+		scheme,
+		identifier,
+	)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -155,63 +138,27 @@ func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier st
 }
 
 func (r *sqliteReader) Close() error {
-	return r.db.Close()
-}
-
-var definitionReferenceColumns = []string{
-	"documentPath",
-	"startLine",
-	"startCharacter",
-	"endLine",
-	"endCharacter",
-}
-
-// query performs QueryContext on the underlying connection.
-func (r *sqliteReader) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return r.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-}
-
-// queryRow performs QueryRowContext on the underlying connection.
-func (r *sqliteReader) queryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
-	return r.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-}
-
-// scanBytes populates a byte slice value from the given scanner.
-func scanBytes(scanner *sql.Row) (value []byte, err error) {
-	err = scanner.Scan(&value)
-	return value, err
-}
-
-// scanInt populates an integer value from the given scanner.
-func scanInt(scanner *sql.Row) (value int, err error) {
-	err = scanner.Scan(&value)
-	return value, err
-}
-
-// scanLocation populates a Location value from the given scanner.
-func scanLocation(rows *sql.Rows) (row types.Location, err error) {
-	err = rows.Scan(
-		&row.URI,
-		&row.StartLine,
-		&row.StartCharacter,
-		&row.EndLine,
-		&row.EndCharacter,
-	)
-	return row, err
+	return r.closer()
 }
 
 // scanLocations reads the given set of definition/reference rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.query`.
-func scanLocations(rows *sql.Rows, err error) ([]types.Location, error) {
-	if err != nil {
-		return nil, err
+func scanLocations(rows *sql.Rows, queryErr error) (_ []types.Location, err error) {
+	if queryErr != nil {
+		return nil, queryErr
 	}
-	defer rows.Close()
+	defer func() { err = store.CloseRows(rows, err) }()
 
 	var locations []types.Location
 	for rows.Next() {
-		location, err := scanLocation(rows)
-		if err != nil {
+		var location types.Location
+		if err := rows.Scan(
+			&location.URI,
+			&location.StartLine,
+			&location.StartCharacter,
+			&location.EndLine,
+			&location.EndCharacter,
+		); err != nil {
 			return nil, err
 		}
 

@@ -17,7 +17,7 @@ jobs:
     - name: report resources
       uses: ./internal/cmd/resources-report/.
       with:
-        args: --aws --gcp
+        args: --aws --gcp --gcp.whitelist "cost-category:build"
       env:
         GOOGLE_APPLICATION_CREDENTIALS: resources-report-credentials.json
         AWS_ACCESS_KEY_ID: ${{ secrets.RR_AWS_ACCESS_KEY_ID }}

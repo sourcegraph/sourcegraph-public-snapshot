@@ -7,7 +7,6 @@ import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
@@ -68,16 +67,6 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 
         const itemClass = 'py-2'
 
-        // Only show total count if it is counting *all* repositories (i.e., no filter args are specified).
-        const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
-        const totalCount =
-            queryingAllRepositories &&
-            this.state.repositoriesOrError !== LOADING &&
-            !isErrorLike(this.state.repositoriesOrError) &&
-            typeof this.state.repositoriesOrError.totalCount === 'number'
-                ? this.state.repositoriesOrError.totalCount
-                : undefined
-
         return (
             <div className="card">
                 <h3 className="card-header">Repositories</h3>
@@ -107,14 +96,12 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                         )
                     )}
                 </div>
-                {typeof totalCount === 'number' && totalCount > 0 && (
-                    <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
-                            View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
-                            <ChevronRightIcon className="icon-inline" />
-                        </Link>
-                    </div>
-                )}
+                <div className="card-footer">
+                    <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
+                        View all repositories
+                        <ChevronRightIcon className="icon-inline" />
+                    </Link>
+                </div>
             </div>
         )
     }
@@ -132,7 +119,6 @@ function queryRepositories(
                         description
                         url
                     }
-                    totalCount(precise: false)
                 }
             }
         `,

@@ -14,7 +14,6 @@ import (
 
 func TestConvert(t *testing.T) {
 	state := &State{
-		LSIFVersion: "0.4.3",
 		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go", Contains: datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}}},
 			"d02": {URI: "bar.go", Contains: datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}}},
@@ -73,8 +72,9 @@ func TestConvert(t *testing.T) {
 	}
 
 	expectedBundleData := &GroupedBundleData{
-		LSIFVersion:     "0.4.3",
-		NumResultChunks: 1,
+		Meta: types.MetaData{
+			NumResultChunks: 1,
+		},
 		Documents: map[string]types.DocumentData{
 			"foo.go": {
 				Ranges: map[types.ID]types.RangeData{

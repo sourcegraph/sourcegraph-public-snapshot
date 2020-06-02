@@ -2,10 +2,37 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
+
+// scanPackageReferences scans a slice of package references from the return value of `*dbImpl.query`.
+func scanPackageReferences(rows *sql.Rows, queryErr error) (_ []types.PackageReference, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var references []types.PackageReference
+	for rows.Next() {
+		var reference types.PackageReference
+		if err := rows.Scan(
+			&reference.DumpID,
+			&reference.Scheme,
+			&reference.Name,
+			&reference.Version,
+			&reference.Filter,
+		); err != nil {
+			return nil, err
+		}
+
+		references = append(references, reference)
+	}
+
+	return references, nil
+}
 
 // SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 // given scheme, name, and version.
@@ -116,7 +143,7 @@ func (db *dbImpl) UpdatePackageReferences(ctx context.Context, references []type
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
 		VALUES %s
 	`, sqlf.Join(values, ",")))

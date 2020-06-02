@@ -2,6 +2,11 @@ package types
 
 type ID string
 
+// MetaData contains data describing the overall structure of a bundle.
+type MetaData struct {
+	NumResultChunks int
+}
+
 // DocumentData represents a single document within an index. The data here can answer
 // definitions, references, and hover queries if the results are all contained in the
 // same document.

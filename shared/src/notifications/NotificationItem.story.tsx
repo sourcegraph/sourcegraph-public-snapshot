@@ -19,7 +19,7 @@ const notificationClassNames = {
 
 const onDismiss = action('onDismiss')
 
-const { add } = storiesOf('NotificationItem', module).addDecorator(story => (
+const { add } = storiesOf('shared/NotificationItem', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <style>{notificationItemStyles}</style>
