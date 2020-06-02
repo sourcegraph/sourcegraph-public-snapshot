@@ -145,7 +145,6 @@ func readDocuments(ctx context.Context, s *store.Store, serializer serialization
 			return err
 		}
 
-		// TODO - deserialize out of band?
 		document, err := serializer.UnmarshalDocumentData(data)
 		if err != nil {
 			return err
