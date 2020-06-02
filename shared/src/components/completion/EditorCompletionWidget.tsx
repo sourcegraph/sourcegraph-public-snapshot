@@ -1,6 +1,6 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { merge, of } from 'rxjs'
 import {
     catchError,
@@ -79,50 +79,55 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
         return () => subscription.unsubscribe()
     }, [completionItemsService, viewerId, viewerService, viewerService.viewers, modelService])
 
-    const onSelectItem = async (item: CompletionItem): Promise<void> => {
-        const editor = await observeEditorAndModel({ viewerId }, viewerService, modelService).pipe(first()).toPromise()
-        const [sel, ...secondarySelections] = editor.selections
-        if (!sel) {
-            throw new Error('no selection')
-        }
-        if (!editor.model.text) {
-            throw new Error('model text not available')
-        }
-
-        let replaceRange: Range
-        const word = getWordAtText(positionToOffset(editor.model.text, sel.active), editor.model.text)
-        if (word) {
-            replaceRange = {
-                start: offsetToPosition(editor.model.text, word.startColumn),
-                end: offsetToPosition(editor.model.text, word.endColumn),
+    const onSelectItem = useCallback(
+        async (item: CompletionItem): Promise<void> => {
+            const editor = await observeEditorAndModel({ viewerId }, viewerService, modelService)
+                .pipe(first())
+                .toPromise()
+            const [sel, ...secondarySelections] = editor.selections
+            if (!sel) {
+                throw new Error('no selection')
             }
-        } else {
-            replaceRange = sel
-        }
+            if (!editor.model.text) {
+                throw new Error('model text not available')
+            }
 
-        const beforeText = editor.model.text.slice(0, positionToOffset(editor.model.text, replaceRange.start))
-        const afterText = editor.model.text.slice(positionToOffset(editor.model.text, replaceRange.end))
-        const itemText = item.insertText !== undefined ? item.insertText : item.label
-        modelService.updateModel(editor.resource, beforeText + itemText + afterText)
+            let replaceRange: Range
+            const word = getWordAtText(positionToOffset(editor.model.text, sel.active), editor.model.text)
+            if (word) {
+                replaceRange = {
+                    start: offsetToPosition(editor.model.text, word.startColumn),
+                    end: offsetToPosition(editor.model.text, word.endColumn),
+                }
+            } else {
+                replaceRange = sel
+            }
 
-        // TODO: Support multi-line completion insertions.
-        const pos: Position = {
-            line: replaceRange.start.line,
-            character: replaceRange.start.character + itemText.length,
-        }
-        viewerService.setSelections(editor, [
-            {
-                active: pos,
-                anchor: pos,
-                start: pos,
-                end: pos,
-                isReversed: false,
-            },
-            ...secondarySelections,
-        ])
+            const beforeText = editor.model.text.slice(0, positionToOffset(editor.model.text, replaceRange.start))
+            const afterText = editor.model.text.slice(positionToOffset(editor.model.text, replaceRange.end))
+            const itemText = item.insertText !== undefined ? item.insertText : item.label
+            modelService.updateModel(editor.resource, beforeText + itemText + afterText)
 
-        setCompletionListOrError(null)
-    }
+            // TODO: Support multi-line completion insertions.
+            const pos: Position = {
+                line: replaceRange.start.line,
+                character: replaceRange.start.character + itemText.length,
+            }
+            viewerService.setSelections(editor, [
+                {
+                    active: pos,
+                    anchor: pos,
+                    start: pos,
+                    end: pos,
+                    isReversed: false,
+                },
+                ...secondarySelections,
+            ])
+
+            setCompletionListOrError(null)
+        },
+        [modelService, viewerId, viewerService]
+    )
 
     return (
         <CompletionWidget
