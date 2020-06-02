@@ -106,7 +106,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		// Find the common merge-base for the diff. That's what the diff will actually need to be applied to,
+		// Find the common merge-base for the diff. That's the revision the diff applies to,
 		// not the baseRevspec.
 		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
 		if err != nil {
