@@ -1,4 +1,4 @@
-import { initMainThreadAPI } from './mainthreadApi'
+import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
 import { PlatformContext } from '../../platform/context'
 import { of, Subject } from 'rxjs'
 import { pretendRemote } from '../util'
@@ -6,6 +6,12 @@ import { SettingsEdit } from './services/settings'
 import { SettingsCascade } from '../../settings/settings'
 import { FlatExtHostAPI } from '../contract'
 import { createWorkspaceService } from './services/workspaceService'
+import { CommandRegistry } from './services/command'
+
+const defaultDependencies = (): MainThreadAPIDependencies => ({
+    workspace: createWorkspaceService(),
+    commands: new CommandRegistry(),
+})
 
 describe('configuration', () => {
     test('changeConfiguration goes to platform with the last settings subject', async () => {
@@ -34,7 +40,7 @@ describe('configuration', () => {
             updateSettings,
         }
 
-        const [api] = initMainThreadAPI(pretendRemote({}), platformContext, createWorkspaceService())
+        const { api } = initMainThreadAPI(pretendRemote({}), platformContext, defaultDependencies())
 
         const edit: SettingsEdit = { path: ['a'], value: 'newVal' }
         await api.applySettingsEdit(edit)
@@ -71,7 +77,7 @@ describe('configuration', () => {
                 },
             }),
             platformContext,
-            createWorkspaceService()
+            defaultDependencies()
         )
 
         expect(passedToExtHost).toEqual<SettingsCascade<{ a: string }>[]>([values[0], values[2]])
@@ -85,14 +91,14 @@ describe('configuration', () => {
         }
 
         const passedToExtHost: SettingsCascade<object>[] = []
-        const [, subscription] = initMainThreadAPI(
+        const { subscription } = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
                 syncSettingsData: data => {
                     passedToExtHost.push(data)
                 },
             }),
             platformContext,
-            createWorkspaceService()
+            defaultDependencies()
         )
 
         const one = {
