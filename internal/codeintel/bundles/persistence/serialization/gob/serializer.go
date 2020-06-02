@@ -87,7 +87,7 @@ func (*gobSerializer) UnmarshalLocations(data []byte) (locations []types.Locatio
 	return locations, err
 }
 
-// TODO(efritz) - document
+// compress gzips the bytes in the given reader.
 func compress(r io.Reader) ([]byte, error) {
 	var buf bytes.Buffer
 	gzipWriter, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
