@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { ChangesetNode } from './ChangesetNode'
+import { ExternalChangesetNode } from './ExternalChangesetNode'
 import {
     ChangesetReviewState,
     ChangesetState,
@@ -17,13 +17,13 @@ jest.mock('mdi-react/SourceMergeIcon', () => 'SourceMergeIcon')
 jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
 jest.mock('mdi-react/DeleteIcon', () => 'DeleteIcon')
 
-describe('ChangesetNode', () => {
+describe('ExternalChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
     test('renders an externalchangeset', () => {
         const renderer = createRenderer()
         renderer.render(
-            <ChangesetNode
+            <ExternalChangesetNode
                 isLightTheme={true}
                 history={history}
                 location={location}

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { IPatch } from '../../../../../../shared/src/graphql/schema'
+import { PatchInterface, IPatch } from '../../../../../../shared/src/graphql/schema'
 import Octicon, { Diff } from '@primer/octicons-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from '../../../../../../shared/src/components/Link'
@@ -14,6 +14,39 @@ import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observer } from 'rxjs'
+
+export interface PatchInterfaceNodeProps extends ThemeProps {
+    node: PatchInterface
+    campaignUpdates?: Pick<Observer<void>, 'next'>
+    history: H.History
+    location: H.Location
+    /** Shows the publish button */
+    enablePublishing: boolean
+}
+
+export const PatchInterfaceNode: React.FunctionComponent<PatchInterfaceNodeProps> = ({ node, ...props }) => {
+    if (node.__typename === 'Patch') {
+        return <PatchNode node={node} {...props} />
+    }
+    return <HiddenPatchNode />
+}
+
+export const HiddenPatchNode: React.FunctionComponent<{}> = () => (
+    <li className="list-group-item e2e-changeset-node">
+        <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">
+            <div className="d-flex align-items-center m-1 ml-2">
+                <div className="changeset-node__content flex-fill">
+                    <div className="d-flex flex-column">
+                        <div>
+                            <Octicon icon={Diff} className="icon-inline text-muted mr-2" />
+                            <strong className="text-muted">Patch in a private repository</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </li>
+)
 
 export interface PatchNodeProps extends ThemeProps {
     node: IPatch
@@ -59,14 +92,9 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     <div>
-                        <Octicon icon={Diff} className="icon-inline mr-2" />
+                        <Octicon icon={Diff} className="icon-inline mr-2 text-success" />
                         <strong>
-                            <Link
-                                to={node.repository.url}
-                                className="text-muted"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
+                            <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                                 {node.repository.name}
                             </Link>
                         </strong>

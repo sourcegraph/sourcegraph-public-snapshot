@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ChangesetNode renders an externalchangeset 1`] = `
+exports[`ExternalChangesetNode renders an externalchangeset 1`] = `
 Object {
   "children": <Collapsible
     expandedButtonClassName="mb-3"
@@ -20,9 +20,8 @@ Object {
               <h3
                 className="m-0 d-inline"
               >
-                <SourcePullIcon
-                  className="mr-1 icon-inline text-success"
-                  data-tooltip="open"
+                <ChangesetStateIcon
+                  state="OPEN"
                 />
                 <LinkOrSpan
                   rel="noopener noreferrer"
@@ -61,7 +60,9 @@ Object {
               </span>
             </div>
             <div>
-              <strong>
+              <strong
+                className="mr-2"
+              >
                 <AnchorLink
                   rel="noopener noreferrer"
                   target="_blank"
@@ -123,6 +124,7 @@ Object {
                     "updatedAt": "2020-01-01T00:00:00.000Z",
                   }
                 }
+                disableRefresh={false}
               />
             </div>
           </div>
