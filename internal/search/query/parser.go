@@ -480,7 +480,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	start := p.pos
 	pieces, advance, ok := ScanSearchPatternHeuristic(p.buf[p.pos:])
 	end := start + advance
-	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) {
+	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) || ContainsAndOrKeyword(string(p.buf[start:end])) {
 		// We tried validating the pattern but it is either unbalanced
 		// or malformed, empty, or an invalid and/or expression.
 		return Pattern{}, false
