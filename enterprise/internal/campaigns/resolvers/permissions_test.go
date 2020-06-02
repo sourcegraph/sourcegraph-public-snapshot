@@ -190,6 +190,11 @@ func TestRepositoryPermissions(t *testing.T) {
 		},
 	})
 
+	for _, c := range changesets {
+		// Both changesets are visible still, so both should be ExternalChangesets
+		testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
+	}
+
 	// Now we add the authzFilter and filter out 2 repositories
 	filteredRepoIDs := map[api.RepoID]bool{
 		patches[0].RepoID:    true,
@@ -235,6 +240,15 @@ func TestRepositoryPermissions(t *testing.T) {
 		},
 	})
 
+	for _, c := range changesets {
+		want := "ExternalChangeset"
+		// The changeset whose repository has been filtered should be hidden
+		if _, ok := filteredRepoIDs[c.RepoID]; ok {
+			want = "HiddenExternalChangeset"
+		}
+
+		testChangesetResponse(t, s, userCtx, c.ID, want)
+	}
 	// TODO: Test that ChangesetByID and PatchByID don't return the filtered out changesets/patches
 }
 
@@ -365,6 +379,36 @@ query {
             }
           }
         }
+      }
+    }
+  }
+}
+`
+
+func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
+	t.Helper()
+
+	var res struct{ Node apitest.Changeset }
+	query := fmt.Sprintf(queryChangesetPermLevels, marshalExternalChangesetID(id))
+	apitest.MustExec(ctx, t, s, nil, &res, query)
+
+	if have, want := res.Node.Typename, wantType; have != want {
+		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
+	}
+}
+
+const queryChangesetPermLevels = `
+query {
+  node(id: %q) {
+    __typename
+    ... on HiddenExternalChangeset {
+      id
+    }
+    ... on ExternalChangeset {
+      id
+      repository {
+        id
+        name
       }
     }
   }

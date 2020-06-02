@@ -152,10 +152,16 @@ type changesetResolver struct {
 	nextSyncAt time.Time
 }
 
-const changesetIDKind = "ExternalChangeset"
+const externalChangesetIDKind = "ExternalChangeset"
 
-func marshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID(changesetIDKind, id)
+func marshalExternalChangesetID(id int64) graphql.ID {
+	return relay.MarshalID(externalChangesetIDKind, id)
+}
+
+const hiddenExternalChangesetIDKind = "HiddenExternalChangeset"
+
+func marshalHiddenExternalChangesetID(id int64) graphql.ID {
+	return relay.MarshalID(hiddenExternalChangesetIDKind, id)
 }
 
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
@@ -199,7 +205,7 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 }
 
 func (r *changesetResolver) ID() graphql.ID {
-	return marshalChangesetID(r.Changeset.ID)
+	return marshalExternalChangesetID(r.Changeset.ID)
 }
 
 func (r *changesetResolver) ExternalID() string {
@@ -476,7 +482,7 @@ func (r *hiddenChangesetResolver) ToHiddenExternalChangeset() (graphqlbackend.Hi
 	return r, true
 }
 
-func (r *hiddenChangesetResolver) ID() graphql.ID { return marshalChangesetID(r.Changeset.ID) }
+func (r *hiddenChangesetResolver) ID() graphql.ID { return marshalHiddenChangesetID(r.Changeset.ID) }
 
 func (r *hiddenChangesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	return newChangesetCampaignsConnectionsResolver(r.store, r.Changeset.ID, args)

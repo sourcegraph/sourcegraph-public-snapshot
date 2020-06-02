@@ -782,7 +782,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalPatchSetID(0),
 		marshalPatchID(0),
 		campaigns.MarshalCampaignID(0),
-		marshalChangesetID(0),
+		marshalExternalChangesetID(0),
 	}
 
 	for _, id := range ids {
@@ -802,7 +802,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -1845,7 +1845,7 @@ func TestPermissionLevels(t *testing.T) {
 
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
-							string(marshalChangesetID(changeset.ID)),
+							string(marshalExternalChangesetID(changeset.ID)),
 							string(marshalPatchID(patchID)),
 						)
 

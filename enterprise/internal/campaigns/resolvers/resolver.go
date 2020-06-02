@@ -77,12 +77,14 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	repo, err := db.Repos.Get(ctx, changeset.RepoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return nil, nil
+			// TODO: nextSyncAt is not populated
+			return &hiddenChangesetResolver{store: r.store, Changeset: changeset}, nil
 		}
 		return nil, err
 	}
 
 	return &changesetResolver{
+		// TODO: nextSyncAt is not populated
 		store:         r.store,
 		Changeset:     changeset,
 		preloadedRepo: repo,
