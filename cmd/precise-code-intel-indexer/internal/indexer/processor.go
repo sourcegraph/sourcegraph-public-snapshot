@@ -70,7 +70,7 @@ func (p *processor) upload(ctx context.Context, repoDir string, index db.Index) 
 		Path:                "/.internal/lsif/upload",
 		Repo:                repoName,
 		Commit:              index.Commit,
-		Root:                ".",
+		Root:                "",
 		Indexer:             "lsif-go",
 		File:                filepath.Join(repoDir, "dump.lsif"),
 		MaxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
