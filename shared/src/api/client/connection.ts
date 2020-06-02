@@ -7,7 +7,6 @@ import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
-import { ClientCommands } from './api/commands'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
@@ -25,7 +24,7 @@ import {
 import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
-import { initMainThreadAPI } from './mainthreadApi'
+import { initMainThreadAPI } from './mainthread-api'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -132,21 +131,19 @@ export async function createExtensionHostClientConnection(
         services.completionItems
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
-    const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const [newAPI, sub] = initMainThreadAPI(proxy, platformContext, services.workspace)
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
 
-    subscription.add(sub)
+    subscription.add(apiSubscriptions)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
         search: clientSearch,
         languageFeatures: clientLanguageFeatures,
-        commands: clientCommands,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
         views: clientViews,

@@ -281,6 +281,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                 <div className="form-group flex-column mb-2 mr-sm-2">
                                     {/* eslint-disable-next-line react/button-has-type */}
                                     <button
+                                        // eslint-disable-next-line react/button-has-type
                                         type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                         disabled={!!this.state.loading}
                                         className={`btn ${

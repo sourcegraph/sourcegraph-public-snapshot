@@ -4,7 +4,7 @@
 - [Add repositories by Git clone URLs](../external_service/other.md)
 - [Add repositories from non-Git code hosts](../external_service/non-git.md)
   - [Add Perforce repositories](perforce.md)
-- [Add repositories from the local disk](add_from_local_disk.md)
+- [Pre-load repositories from the local disk](pre_load_from_local_disk.md)
 
 ## Troubleshooting
 

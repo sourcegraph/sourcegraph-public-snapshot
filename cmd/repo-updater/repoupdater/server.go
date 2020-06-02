@@ -544,7 +544,20 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
+	messagesSummary := func() string {
+		cappedMsg := resp.Messages
+		if len(cappedMsg) > 10 {
+			cappedMsg = cappedMsg[:10]
+		}
+
+		jMsg, err := json.MarshalIndent(cappedMsg, "", " ")
+		if err != nil {
+			return "error summarizing messages for logging"
+		}
+		return string(jMsg)
+	}
+
+	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
 
 	respond(w, http.StatusOK, resp)
 }

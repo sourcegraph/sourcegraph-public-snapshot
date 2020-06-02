@@ -531,6 +531,12 @@ func TestParse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		{
+			Name:          "disable parens as patterns heuristic if containing recognized operator",
+			Input:         "(() or ())",
+			WantGrammar:   Spec(`""`),
+			WantHeuristic: Diff(`(or "()" "()")`),
+		},
 		// Escaping.
 		{
 			Input:         `\(\)`,
