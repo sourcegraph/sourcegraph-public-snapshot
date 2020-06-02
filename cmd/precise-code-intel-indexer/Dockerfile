@@ -17,13 +17,10 @@ ENV GOROOT=/usr/lib/go GOPATH=/go PATH=/go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 
 RUN mkdir temp && \
-    curl -L https://github.com/sourcegraph/src-cli/releases/download/3.12.0/src-cli_3.12.0_linux_amd64.tar.gz -o src-cli.tar.gz && \
-    tar -C temp -zvxf src-cli.tar.gz && \
-    mv temp/src /usr/local/bin && \
     curl -L https://github.com/sourcegraph/lsif-go/releases/download/v0.8.0/lsif-go_0.8.0_linux_amd64.tar.gz -o lsif-go.tar.gz && \
     tar -C temp -zvxf lsif-go.tar.gz && \
     mv temp/lsif-go /usr/local/bin && \
-    rm -rf temp src-cli.tar.gz lsif-go.tar.gz
+    rm -rf temp lsif-go.tar.gz
 
 USER sourcegraph
 EXPOSE 3189
