@@ -244,7 +244,7 @@
     "@reach/accordion": "^0.10.2",
     "@reach/listbox": "^0.10.1",
     "@reach/menu-button": "0.10.2",
-    "@sentry/browser": "^5.15.5",
+    "@sentry/browser": "^5.16.0",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^7.0.0",
     "@sourcegraph/extension-api-classes": "^1.0.3",
