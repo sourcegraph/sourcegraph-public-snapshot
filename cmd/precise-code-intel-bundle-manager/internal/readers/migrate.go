@@ -14,7 +14,7 @@ import (
 )
 
 // NumMigrateGoRoutines is the number of goroutines launched to migrate database files.
-var NumMigrateGoRoutines = runtime.NumCPU()
+var NumMigrateGoRoutines = runtime.NumCPU() * 2
 
 // Migrate runs through each SQLite database on disk and opens a reader instance which will perform
 // any necessary migrations to transform it to the newest schema. Because this may have a non-negligible
