@@ -33,7 +33,8 @@ docker run --rm \
   -p 0.0.0.0:3370:3370 \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
-  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
+  -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
+  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards/legacy \
   ${IMAGE} >>"${GRAFANA_DISK}"/logs/grafana.log 2>&1 &
 wait $!
 
