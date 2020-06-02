@@ -213,6 +213,177 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setBranchModified(true)
     }, [])
 
+    const specifyingBranchAllowed =
+        // on campaign creation
+        (!campaign && patchSet) ||
+        // or when it's not yet published and no changesets have been published or are being published as well
+        (campaign &&
+            !campaign.publishedAt &&
+            campaign.changesets.totalCount === 0 &&
+            campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
+
+    const onDraft: React.FormEventHandler = useCallback(
+        async event => {
+            event.preventDefault()
+            setMode('saving')
+            try {
+                const createdCampaign = await createCampaign({
+                    name,
+                    description,
+                    namespace: authenticatedUser.id,
+                    patchSet: patchSet ? patchSet.id : undefined,
+                    branch: specifyingBranchAllowed ? branch : undefined,
+                    draft: true,
+                })
+                unblockHistoryRef.current()
+                history.push(`/campaigns/${createdCampaign.id}`)
+                setMode('viewing')
+                setAlertError(undefined)
+                campaignUpdates.next()
+            } catch (error) {
+                setMode('editing')
+                setAlertError(asError(error))
+            }
+        },
+        [authenticatedUser.id, branch, campaignUpdates, description, history, name, patchSet, specifyingBranchAllowed]
+    )
+
+    const onPublish = useCallback(async (): Promise<void> => {
+        setMode('publishing')
+        try {
+            await publishCampaign(campaign!.id)
+            setAlertError(undefined)
+            campaignUpdates.next()
+        } catch (error) {
+            setAlertError(asError(error))
+        } finally {
+            setMode('viewing')
+        }
+    }, [campaign, campaignUpdates])
+
+    const onSubmit: React.FormEventHandler = useCallback(
+        async event => {
+            event.preventDefault()
+            setMode('saving')
+            try {
+                if (campaignID) {
+                    const newCampaign = await updateCampaign({
+                        id: campaignID,
+                        name,
+                        description,
+                        patchSet: patchSetID ?? undefined,
+                        branch: specifyingBranchAllowed ? branch : undefined,
+                    })
+                    setCampaign(newCampaign)
+                    setName(newCampaign.name)
+                    setDescription(newCampaign.description ?? '')
+                    setBranch(newCampaign.branch ?? '')
+                    setBranchModified(false)
+                    unblockHistoryRef.current()
+                    history.push(`/campaigns/${newCampaign.id}`)
+                } else {
+                    const createdCampaign = await createCampaign({
+                        name,
+                        description,
+                        namespace: authenticatedUser.id,
+                        patchSet: patchSet ? patchSet.id : undefined,
+                        branch: specifyingBranchAllowed ? branch : undefined,
+                    })
+                    unblockHistoryRef.current()
+                    history.push(`/campaigns/${createdCampaign.id}`)
+                }
+                setMode('viewing')
+                setAlertError(undefined)
+                campaignUpdates.next()
+            } catch (error) {
+                setMode('editing')
+                setAlertError(asError(error))
+            }
+        },
+        [
+            authenticatedUser.id,
+            branch,
+            campaignID,
+            campaignUpdates,
+            description,
+            history,
+            name,
+            patchSet,
+            patchSetID,
+            specifyingBranchAllowed,
+        ]
+    )
+
+    const discardChangesMessage = 'Do you want to discard your changes?'
+
+    const onEdit: React.MouseEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            unblockHistoryRef.current = history.block(discardChangesMessage)
+            setMode('editing')
+            setAlertError(undefined)
+        },
+        [history]
+    )
+
+    const onCancel: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            if (!confirm(discardChangesMessage)) {
+                return
+            }
+            unblockHistoryRef.current()
+            // clear query params
+            history.replace(location.pathname)
+            setMode('viewing')
+            setAlertError(undefined)
+        },
+        [history, location.pathname]
+    )
+
+    const onClose = useCallback(
+        async (closeChangesets: boolean): Promise<void> => {
+            if (!confirm('Are you sure you want to close the campaign?')) {
+                return
+            }
+            setMode('closing')
+            try {
+                await closeCampaign(campaign!.id, closeChangesets)
+                campaignUpdates.next()
+            } catch (error) {
+                setAlertError(asError(error))
+            } finally {
+                setMode('viewing')
+            }
+        },
+        [campaign, campaignUpdates]
+    )
+
+    const onDelete = useCallback(
+        async (closeChangesets: boolean): Promise<void> => {
+            if (!confirm('Are you sure you want to delete the campaign?')) {
+                return
+            }
+            setMode('deleting')
+            try {
+                await deleteCampaign(campaign!.id, closeChangesets)
+                history.push('/campaigns')
+            } catch (error) {
+                setAlertError(asError(error))
+                setMode('viewing')
+            }
+        },
+        [campaign, history]
+    )
+
+    const afterRetry = useCallback(
+        (updatedCampaign: Campaign): void => {
+            setCampaign(updatedCampaign)
+            campaignUpdates.next()
+        },
+        [campaignUpdates]
+    )
+
     // Is loading
     if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
         return (
@@ -238,145 +409,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         if (campaign.closedAt) {
             return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
         }
-    }
-
-    const specifyingBranchAllowed =
-        // on campaign creation
-        (!campaign && patchSet) ||
-        // or when it's not yet published and no changesets have been published or are being published as well
-        (campaign &&
-            !campaign.publishedAt &&
-            campaign.changesets.totalCount === 0 &&
-            campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
-
-    const onDraft: React.FormEventHandler = async event => {
-        event.preventDefault()
-        setMode('saving')
-        try {
-            const createdCampaign = await createCampaign({
-                name,
-                description,
-                namespace: authenticatedUser.id,
-                patchSet: patchSet ? patchSet.id : undefined,
-                branch: specifyingBranchAllowed ? branch : undefined,
-                draft: true,
-            })
-            unblockHistoryRef.current()
-            history.push(`/campaigns/${createdCampaign.id}`)
-            setMode('viewing')
-            setAlertError(undefined)
-            campaignUpdates.next()
-        } catch (error) {
-            setMode('editing')
-            setAlertError(asError(error))
-        }
-    }
-
-    const onPublish = async (): Promise<void> => {
-        setMode('publishing')
-        try {
-            await publishCampaign(campaign!.id)
-            setAlertError(undefined)
-            campaignUpdates.next()
-        } catch (error) {
-            setAlertError(asError(error))
-        } finally {
-            setMode('viewing')
-        }
-    }
-
-    const onSubmit: React.FormEventHandler = async event => {
-        event.preventDefault()
-        setMode('saving')
-        try {
-            if (campaignID) {
-                const newCampaign = await updateCampaign({
-                    id: campaignID,
-                    name,
-                    description,
-                    patchSet: patchSetID ?? undefined,
-                    branch: specifyingBranchAllowed ? branch : undefined,
-                })
-                setCampaign(newCampaign)
-                setName(newCampaign.name)
-                setDescription(newCampaign.description ?? '')
-                setBranch(newCampaign.branch ?? '')
-                setBranchModified(false)
-                unblockHistoryRef.current()
-                history.push(`/campaigns/${newCampaign.id}`)
-            } else {
-                const createdCampaign = await createCampaign({
-                    name,
-                    description,
-                    namespace: authenticatedUser.id,
-                    patchSet: patchSet ? patchSet.id : undefined,
-                    branch: specifyingBranchAllowed ? branch : undefined,
-                })
-                unblockHistoryRef.current()
-                history.push(`/campaigns/${createdCampaign.id}`)
-            }
-            setMode('viewing')
-            setAlertError(undefined)
-            campaignUpdates.next()
-        } catch (error) {
-            setMode('editing')
-            setAlertError(asError(error))
-        }
-    }
-
-    const discardChangesMessage = 'Do you want to discard your changes?'
-
-    const onEdit: React.MouseEventHandler = event => {
-        event.preventDefault()
-        unblockHistoryRef.current = history.block(discardChangesMessage)
-        setMode('editing')
-        setAlertError(undefined)
-    }
-
-    const onCancel: React.FormEventHandler = event => {
-        event.preventDefault()
-        if (!confirm(discardChangesMessage)) {
-            return
-        }
-        unblockHistoryRef.current()
-        // clear query params
-        history.replace(location.pathname)
-        setMode('viewing')
-        setAlertError(undefined)
-    }
-
-    const onClose = async (closeChangesets: boolean): Promise<void> => {
-        if (!confirm('Are you sure you want to close the campaign?')) {
-            return
-        }
-        setMode('closing')
-        try {
-            await closeCampaign(campaign!.id, closeChangesets)
-            campaignUpdates.next()
-        } catch (error) {
-            setAlertError(asError(error))
-        } finally {
-            setMode('viewing')
-        }
-    }
-
-    const onDelete = async (closeChangesets: boolean): Promise<void> => {
-        if (!confirm('Are you sure you want to delete the campaign?')) {
-            return
-        }
-        setMode('deleting')
-        try {
-            await deleteCampaign(campaign!.id, closeChangesets)
-            history.push('/campaigns')
-        } catch (error) {
-            setAlertError(asError(error))
-            setMode('viewing')
-        }
-    }
-
-    const afterRetry = (updatedCampaign: Campaign): void => {
-        setCampaign(updatedCampaign)
-        campaignUpdates.next()
     }
 
     const author = campaign ? campaign.author : authenticatedUser
@@ -528,7 +560,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </>
                 )}
             </Form>
-
             {/* Iff either campaign XOR patchset are present */}
             {!(campaign && patchSet) && (campaign || patchSet) && (
                 <>

@@ -359,11 +359,9 @@ function initCodeIntelligence({
 
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
-    const nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
 
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
-    const nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
 
     const relativeElement = document.body
 
@@ -417,6 +415,9 @@ function initCodeIntelligence({
         HoverState<HoverContext, HoverData<ExtensionHoverAlertType>, ActionItemAction>
     > {
         private subscription = new Subscription()
+        private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
+        private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
+
         constructor(props: {}) {
             super(props)
             this.state = hoverifier.hoverState
@@ -443,11 +444,11 @@ function initCodeIntelligence({
                     {...codeHost.hoverOverlayClassProps}
                     telemetryService={telemetryService}
                     isLightTheme={IS_LIGHT_THEME}
-                    hoverRef={nextOverlayElement}
+                    hoverRef={this.nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
-                    onCloseButtonClick={nextCloseButtonClick}
+                    onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
                 />
             ) : null
@@ -703,6 +704,8 @@ export function handleCodeHost({
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
+                        // The bound function is constant
+                        // eslint-disable-next-line react/jsx-no-bind
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
@@ -755,6 +758,8 @@ export function handleCodeHost({
                                     platformContext={platformContext}
                                     extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
+                                    // The bound function is constant
+                                    // eslint-disable-next-line react/jsx-no-bind
                                     onSignInClose={nextSignInClose}
                                     location={H.createLocation(window.location)}
                                 />,
@@ -1024,6 +1029,8 @@ export function handleCodeHost({
                         buttonProps={toolbarButtonProps}
                         location={H.createLocation(window.location)}
                         scope={scope}
+                        // The bound function is constant
+                        // eslint-disable-next-line react/jsx-no-bind
                         onSignInClose={nextSignInClose}
                     />,
                     mount
