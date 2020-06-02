@@ -878,6 +878,8 @@ github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
 github.com/sourcegraph/codeintelutils v0.0.0-20200528142143-a2f46204e2e9 h1:AUUSD/me2hphB7WyWGuljtUEdFBpgWjDII3wd9CmeX8=
 github.com/sourcegraph/codeintelutils v0.0.0-20200528142143-a2f46204e2e9/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
+github.com/sourcegraph/codeintelutils v0.0.0-20200602000243-9543a4b9c9f8 h1:W0oFiF6o3iRzdiJSKcfhxAi93tQDaVYC5hKA6VYOnSA=
+github.com/sourcegraph/codeintelutils v0.0.0-20200602000243-9543a4b9c9f8/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-diff v0.5.1 h1:gO6i5zugwzo1RVTvgvfwCOSVegNuvnNi6bAD1QCmkHs=

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
@@ -63,14 +65,20 @@ func (p *processor) upload(ctx context.Context, repoDir string, index db.Index) 
 		return errors.Wrap(err, "db.RepoName")
 	}
 
-	args := []string{
-		fmt.Sprintf("-endpoint=http://%s", p.frontendURL),
-		"lsif",
-		"upload",
-		fmt.Sprintf("-repo=%s", repoName),
-		fmt.Sprintf("-commit=%s", index.Commit),
-		"-root=.",
+	opts := codeintelutils.UploadIndexOpts{
+		Endpoint:            fmt.Sprintf("http://%s", p.frontendURL),
+		Path:                "/.internal/lsif/upload",
+		Repo:                repoName,
+		Commit:              index.Commit,
+		Root:                ".",
+		Indexer:             "lsif-go",
+		File:                filepath.Join(repoDir, "dump.lsif"),
+		MaxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
 	}
 
-	return command(repoDir, "src", args...)
+	if _, err := codeintelutils.UploadIndex(opts); err != nil {
+		return errors.Wrap(err, "codeintelutils.UploadIndex")
+	}
+
+	return nil
 }
