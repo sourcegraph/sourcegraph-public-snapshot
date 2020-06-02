@@ -246,6 +246,7 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
+	State() campaigns.ChangesetState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -258,6 +259,8 @@ type HiddenExternalChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
+
+	State() campaigns.ChangesetState
 
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 

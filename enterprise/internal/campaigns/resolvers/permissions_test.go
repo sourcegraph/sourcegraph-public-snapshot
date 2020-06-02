@@ -406,6 +406,10 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	if have, want := res.Node.Typename, wantType; have != want {
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
+
+	if have, want := res.Node.State, string(campaigns.ChangesetStateOpen); have != want {
+		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
+	}
 }
 
 const queryChangesetPermLevels = `
@@ -414,9 +418,11 @@ query {
     __typename
     ... on HiddenExternalChangeset {
       id
+      state
     }
     ... on ExternalChangeset {
       id
+      state
       repository {
         id
         name

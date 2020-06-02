@@ -760,6 +760,9 @@ interface Changeset {
         hasPatchSet: Boolean
     ): CampaignConnection!
 
+    # The state of the changeset.
+    state: ChangesetState!
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -784,6 +787,9 @@ type HiddenExternalChangeset implements Node & Changeset {
         # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
     ): CampaignConnection!
+
+    # The state of the changeset.
+    state: ChangesetState!
 
     # The date and time when the changeset was created.
     createdAt: DateTime!
