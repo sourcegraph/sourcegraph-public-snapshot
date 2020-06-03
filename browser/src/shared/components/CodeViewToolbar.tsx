@@ -98,7 +98,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                 {
                     // Only show the "View file" button if we were able to fetch the file contents
                     // from the Sourcegraph instance
-                    'blob' in props.fileInfoOrError && props.fileInfoOrError.blob.content && (
+                    'blob' in props.fileInfoOrError && props.fileInfoOrError.blob.content !== undefined && (
                         <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
                             <OpenOnSourcegraph
                                 ariaLabel="View file on Sourcegraph"
