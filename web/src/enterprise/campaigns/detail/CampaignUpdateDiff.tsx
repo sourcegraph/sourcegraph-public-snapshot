@@ -75,7 +75,9 @@ export function calculateChangesetDiff(
             visibleChangesets.push(changeset)
         }
     }
-    const visibleCampaignPatches = campaignPatches.filter((c): c is GQL.IPatch => c.__typename !== 'HiddenPatch')
+    const visibleCampaignPatches = campaignPatches.filter(
+        (campaignPatch): campaignPatch is GQL.IPatch => campaignPatch.__typename !== 'HiddenPatch'
+    )
     const visiblePatches = patches.filter((c): c is GQL.IPatch => c.__typename !== 'HiddenPatch')
 
     const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
