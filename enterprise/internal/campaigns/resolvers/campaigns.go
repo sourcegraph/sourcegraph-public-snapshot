@@ -321,7 +321,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: AddChangesetsToCampaign checks whether current user is authorized.
+	// 🚨 SECURITY: GetCampaignStatus checks whether current user is authorized.
 	return svc.GetCampaignStatus(ctx, r.Campaign)
 }
 

@@ -609,7 +609,14 @@ func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64
 }
 
 // GetCampaignStatus returns the BackgroundProcessStatus for the given campaign.
-func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) (*campaigns.BackgroundProcessStatus, error) {
+func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) (status *campaigns.BackgroundProcessStatus, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", c.ID)
+	tr, ctx := trace.New(ctx, "service.GetCampaignStatus", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	canAdmin, err := hasCampaignAdminPermissions(ctx, c)
 	if err != nil {
 		return nil, err
