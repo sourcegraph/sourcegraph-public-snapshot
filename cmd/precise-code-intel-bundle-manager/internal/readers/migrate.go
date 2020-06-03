@@ -22,6 +22,11 @@ func Migrate(bundleDir string) error {
 	if err != nil {
 		return err
 	}
+	if len(paths) == 0 {
+		return nil
+	}
+
+	log15.Info("Performing bundle migrations in background", "numBundles", len(paths))
 
 	go func() {
 		// After fetching the paths to convert, perform the migrations in a background
@@ -29,10 +34,14 @@ func Migrate(bundleDir string) error {
 		// happens to fail.
 
 		for _, filename := range paths {
+			log15.Debug("Migrating bundle", "filename", filename)
+
 			if err := migrateDB(context.Background(), filename); err != nil {
-				log15.Error("Failed to migrate database", "err", err, "filename", filename)
+				log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 			}
 		}
+
+		log15.Info("Finished migrating bundles", "numBundles", len(paths))
 	}()
 
 	return nil
