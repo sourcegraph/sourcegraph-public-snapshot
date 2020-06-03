@@ -188,8 +188,8 @@ func convert(ctx context.Context, r io.Reader, tempDir string, dumpID int, root 
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, tempDir string, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(tempDir, "sqlite.db"))
+func write(ctx context.Context, dirname string, groupedBundleData *correlation.GroupedBundleData) (err error) {
+	writer, err := sqlitewriter.NewWriter(ctx, filepath.Join(dirname, "sqlite.db"))
 	if err != nil {
 		return err
 	}

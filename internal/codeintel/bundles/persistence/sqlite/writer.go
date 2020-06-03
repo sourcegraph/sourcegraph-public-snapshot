@@ -9,12 +9,11 @@ import (
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
-
-const InternalVersion = "0.1.0"
 
 type sqliteWriter struct {
 	store      *store.Store
@@ -55,7 +54,8 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 
 func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) error {
 	queries := []*sqlf.Query{
-		sqlf.Sprintf("INSERT INTO meta (lsifVersion, sourcegraphVersion, numResultChunks) VALUES ('', '', %s)", metaData.NumResultChunks),
+		sqlf.Sprintf("INSERT INTO schema_version (version) VALUES (%s)", migrate.CurrentSchemaVersion),
+		sqlf.Sprintf("INSERT INTO meta (num_result_chunks) VALUES (%s)", metaData.NumResultChunks),
 	}
 
 	for _, query := range queries {
@@ -88,7 +88,7 @@ func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents map[string]
 }
 
 func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "resultChunks", "id", "data")
+	inserter := sqliteutil.NewBatchInserter(w.store, "result_chunks", "id", "data")
 	for id, resultChunk := range resultChunks {
 		data, err := w.serializer.MarshalResultChunkData(resultChunk)
 		if err != nil {
@@ -115,20 +115,22 @@ func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []t
 }
 
 func (w *sqliteWriter) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations []types.MonikerLocations) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, tableName, "scheme", "identifier", "documentPath", "startLine", "startCharacter", "endLine", "endCharacter")
+	inserter := sqliteutil.NewBatchInserter(w.store, tableName, "scheme", "identifier", "data")
 	for _, ml := range monikerLocations {
-		for _, l := range ml.Locations {
-			if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, l.URI, l.StartLine, l.StartCharacter, l.EndLine, l.EndCharacter); err != nil {
-				return errors.Wrap(err, "inserter.Insert")
-			}
+		data, err := w.serializer.MarshalLocations(ml.Locations)
+		if err != nil {
+			return errors.Wrap(err, "serializer.MarshalLocations")
+		}
+
+		if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, data); err != nil {
+			return errors.Wrap(err, "inserter.Insert")
 		}
 	}
 
 	if err := inserter.Flush(ctx); err != nil {
 		return errors.Wrap(err, "inserter.Flush")
 	}
-
-	return w.store.Exec(ctx, sqlf.Sprintf(`CREATE INDEX "idx_`+tableName+`" ON "`+tableName+`" ("scheme", "identifier")`))
+	return nil
 }
 
 func (w *sqliteWriter) Close(err error) error {
@@ -138,20 +140,21 @@ func (w *sqliteWriter) Close(err error) error {
 		err = multierror.Append(err, closeErr)
 	}
 
-	return err
+	return nil
 }
 
 func createTables(ctx context.Context, store *store.Store) error {
-	tables := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE "meta" ("id" integer PRIMARY KEY NOT NULL, "lsifVersion" text NOT NULL, "sourcegraphVersion" text NOT NULL, "numResultChunks" integer NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "resultChunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "definitions" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
-		sqlf.Sprintf(`CREATE TABLE "references" ("id" integer PRIMARY KEY NOT NULL, "scheme" text NOT NULL, "identifier" text NOT NULL, "documentPath" text NOT NULL, "startLine" integer NOT NULL, "endLine" integer NOT NULL, "startCharacter" integer NOT NULL, "endCharacter" integer NOT NULL);`),
+	queries := []*sqlf.Query{
+		sqlf.Sprintf(`CREATE TABLE "schema_version" ("version" text NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "meta" ("num_result_chunks" integer NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "result_chunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "definitions" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL, PRIMARY KEY (scheme, identifier))`),
+		sqlf.Sprintf(`CREATE TABLE "references" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL, PRIMARY KEY (scheme, identifier))`),
 	}
 
-	for _, table := range tables {
-		if err := store.Exec(ctx, table); err != nil {
+	for _, query := range queries {
+		if err := store.Exec(ctx, query); err != nil {
 			return err
 		}
 	}

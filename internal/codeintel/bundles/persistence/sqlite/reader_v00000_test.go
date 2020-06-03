@@ -2,19 +2,16 @@ package sqlite
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestReadMeta(t *testing.T) {
-	meta, err := testReader(t).ReadMeta(context.Background())
+const v00000TestFile = "./testdata/lsif-go@ad3507cb.lsif.db"
+
+func TestReadMetaV00000(t *testing.T) {
+	meta, err := testReader(t, v00000TestFile).ReadMeta(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error reading meta: %s", err)
 	}
@@ -23,8 +20,8 @@ func TestReadMeta(t *testing.T) {
 	}
 }
 
-func TestReadDocument(t *testing.T) {
-	data, exists, err := testReader(t).ReadDocument(context.Background(), "protocol/writer.go")
+func TestReadDocumentV00000(t *testing.T) {
+	data, exists, err := testReader(t, v00000TestFile).ReadDocument(context.Background(), "protocol/writer.go")
 	if err != nil {
 		t.Fatalf("unexpected error reading document: %s", err)
 	}
@@ -70,8 +67,8 @@ func TestReadDocument(t *testing.T) {
 	}
 }
 
-func TestReadResultChunk(t *testing.T) {
-	data, exists, err := testReader(t).ReadResultChunk(context.Background(), 3)
+func TestReadResultChunkV00000(t *testing.T) {
+	data, exists, err := testReader(t, v00000TestFile).ReadResultChunk(context.Background(), 3)
 	if err != nil {
 		t.Fatalf("unexpected error reading result chunk: %s", err)
 	}
@@ -93,8 +90,8 @@ func TestReadResultChunk(t *testing.T) {
 	}
 }
 
-func TestReadDefinitions(t *testing.T) {
-	definitions, totalCount, err := testReader(t).ReadDefinitions(context.Background(), "gomod", "github.com/sourcegraph/lsif-go/protocol:Vertex", 3, 4)
+func TestReadDefinitionsV00000(t *testing.T) {
+	definitions, totalCount, err := testReader(t, v00000TestFile).ReadDefinitions(context.Background(), "gomod", "github.com/sourcegraph/lsif-go/protocol:Vertex", 3, 4)
 	if err != nil {
 		t.Fatalf("unexpected error getting definitions: %s", err)
 	}
@@ -113,8 +110,8 @@ func TestReadDefinitions(t *testing.T) {
 	}
 }
 
-func TestReadReferences(t *testing.T) {
-	references, totalCount, err := testReader(t).ReadReferences(context.Background(), "gomod", "golang.org/x/tools/go/packages:Package", 3, 4)
+func TestReadReferencesV00000(t *testing.T) {
+	references, totalCount, err := testReader(t, v00000TestFile).ReadReferences(context.Background(), "gomod", "golang.org/x/tools/go/packages:Package", 3, 4)
 	if err != nil {
 		t.Fatalf("unexpected error getting references: %s", err)
 	}
@@ -131,35 +128,4 @@ func TestReadReferences(t *testing.T) {
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
-}
-
-func testReader(t *testing.T) persistence.Reader {
-	reader, err := NewReader(context.Background(), copyFile(t, "./testdata/lsif-go@ad3507cb.lsif.db"))
-	if err != nil {
-		t.Fatalf("unexpected error opening database: %s", err)
-	}
-	t.Cleanup(func() { _ = reader.Close() })
-
-	// Wrap in observed, as that's how it's used in production
-	return persistence.NewObserved(reader, &observation.TestContext)
-}
-
-func copyFile(t *testing.T, source string) string {
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("unexpected error creating temp dir: %s", err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
-
-	input, err := ioutil.ReadFile(source)
-	if err != nil {
-		t.Fatalf("unexpected error reading file: %s", err)
-	}
-
-	dest := filepath.Join(tempDir, "test.sqlite")
-	if err := ioutil.WriteFile(dest, input, os.ModePerm); err != nil {
-		t.Fatalf("unexpected error writing file: %s", err)
-	}
-
-	return dest
 }
