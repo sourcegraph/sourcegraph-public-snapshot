@@ -64,7 +64,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
 				Description:  "All the Javascripts are belong to us",
 				Branch:       "upgrade-es-lint",
-				AuthorID:     23,
+				AuthorID:     int32(i) + 50,
 				ChangesetIDs: []int64{int64(i) + 1},
 				PatchSetID:   42 + int64(i),
 				ClosedAt:     clock.now(),
@@ -79,7 +79,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			if i%2 == 0 {
 				c.NamespaceOrgID = 23
 			} else {
-				c.NamespaceUserID = 42
+				c.NamespaceUserID = c.AuthorID
 			}
 
 			want := c.Clone()
@@ -140,10 +140,21 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if have, want := count, int64(2); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -269,6 +280,24 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 			if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if next != 0 {
+					t.Fatal("Next value was true, but false expected")
+				}
+				if have, want := len(have), 1; have != want {
+					t.Fatalf("Incorrect number of campaigns returned, want=%d have=%d", want, have)
+				}
+				if diff := cmp.Diff(have[0], c); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 	})

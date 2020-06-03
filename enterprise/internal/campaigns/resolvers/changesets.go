@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -223,7 +224,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	return newChangesetCampaignsConnectionsResolver(r.store, r.httpFactory, r.Changeset.ID, args)
+	return newChangesetCampaignsConnectionsResolver(ctx, r.store, r.httpFactory, r.Changeset.ID, args)
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -492,7 +493,7 @@ func (r *hiddenChangesetResolver) ToHiddenExternalChangeset() (graphqlbackend.Hi
 func (r *hiddenChangesetResolver) ID() graphql.ID { return marshalHiddenChangesetID(r.Changeset.ID) }
 
 func (r *hiddenChangesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	return newChangesetCampaignsConnectionsResolver(r.store, r.httpFactory, r.Changeset.ID, args)
+	return newChangesetCampaignsConnectionsResolver(ctx, r.store, r.httpFactory, r.Changeset.ID, args)
 }
 
 func (r *hiddenChangesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -515,6 +516,7 @@ func (r *hiddenChangesetResolver) State() campaigns.ChangesetState {
 }
 
 func newChangesetCampaignsConnectionsResolver(
+	ctx context.Context,
 	s *ee.Store,
 	cf *httpcli.Factory,
 	changeset int64,
@@ -532,6 +534,18 @@ func newChangesetCampaignsConnectionsResolver(
 	opts.State = state
 	if args.First != nil {
 		opts.Limit = int(*args.First)
+	}
+
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+		return nil, err
+	}
+	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
+	if !isSiteAdmin {
+		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
+			actor := actor.FromContext(ctx)
+			opts.OnlyForAuthor = actor.UID
+		}
 	}
 
 	return &campaignsConnectionResolver{store: s, httpFactory: cf, opts: opts}, nil
