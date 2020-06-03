@@ -44,7 +44,7 @@ func createTempTable(ctx context.Context, s *store.Store, tableName, tempTableNa
 	return s.Exec(ctx, sqlf.Sprintf(`CREATE TABLE "`+tempTableName+`" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL)`))
 }
 
-const Delimiter = "$$"
+const Delimiter = ":"
 
 // populateTable pulls data from the old definition or reference table and inserts the data into the temporary table.
 func populateTable(ctx context.Context, s *store.Store, tableName, tempTableName string, serializer serialization.Serializer) error {
