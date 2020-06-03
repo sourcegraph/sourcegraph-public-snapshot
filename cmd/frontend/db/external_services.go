@@ -267,6 +267,10 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+	if Mocks.ExternalServices.Create != nil {
+		return Mocks.ExternalServices.Create(ctx, confGet, externalService)
+	}
+
 	ps := confGet().AuthProviders
 	if err := e.ValidateConfig(ctx, 0, externalService.Kind, externalService.Config, ps); err != nil {
 		return err
@@ -292,6 +296,10 @@ type ExternalServiceUpdate struct {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
+	if Mocks.ExternalServices.Update != nil {
+		return Mocks.ExternalServices.Update(ctx, ps, id, update)
+	}
+
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)
@@ -350,6 +358,10 @@ func (e externalServiceNotFoundError) NotFound() bool {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (*ExternalServicesStore) Delete(ctx context.Context, id int64) error {
+	if Mocks.ExternalServices.Delete != nil {
+		return Mocks.ExternalServices.Delete(ctx, id)
+	}
+
 	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -560,6 +572,9 @@ func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesLis
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
+	Create  func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	Delete  func(ctx context.Context, id int64) error
 	GetByID func(id int64) (*types.ExternalService, error)
 	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Update  func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
 }
