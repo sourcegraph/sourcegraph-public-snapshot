@@ -94,7 +94,7 @@ func sqlitePaths(bundleDir string) ([]string, error) {
 
 	// Order by descending size
 	sort.Slice(paths, func(i, j int) bool {
-		return sizeByPath[paths[i]] < sizeByPath[paths[j]]
+		return sizeByPath[paths[j]] < sizeByPath[paths[i]]
 	})
 
 	return paths, nil
