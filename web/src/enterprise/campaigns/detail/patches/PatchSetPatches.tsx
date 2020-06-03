@@ -6,7 +6,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../com
 import { Observable, Subject, Observer } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet } from '../backend'
-import { PatchInterfaceNodeProps, PatchInterfaceNode } from './PatchNode'
+import { PatchInterfaceNodeProps, PatchInterfaceNode } from './PatchInterfaceNode'
 
 interface Props extends ThemeProps {
     patchSet: Pick<GQL.IPatchSet, 'id'>

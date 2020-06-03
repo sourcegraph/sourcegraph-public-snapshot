@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { PatchInterface, IPatch } from '../../../../../../shared/src/graphql/schema'
+import { IPatch } from '../../../../../../shared/src/graphql/schema'
 import Octicon, { Diff } from '@primer/octicons-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from '../../../../../../shared/src/components/Link'
@@ -14,23 +14,6 @@ import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observer } from 'rxjs'
-import { HiddenPatchNode } from './HiddenPatchNode'
-
-export interface PatchInterfaceNodeProps extends ThemeProps {
-    node: PatchInterface
-    campaignUpdates?: Pick<Observer<void>, 'next'>
-    history: H.History
-    location: H.Location
-    /** Shows the publish button */
-    enablePublishing: boolean
-}
-
-export const PatchInterfaceNode: React.FunctionComponent<PatchInterfaceNodeProps> = ({ node, ...props }) => {
-    if (node.__typename === 'Patch') {
-        return <PatchNode node={node} {...props} />
-    }
-    return <HiddenPatchNode />
-}
 
 export interface PatchNodeProps extends ThemeProps {
     node: IPatch

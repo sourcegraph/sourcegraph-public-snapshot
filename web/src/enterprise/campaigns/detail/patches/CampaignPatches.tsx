@@ -6,7 +6,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../com
 import { Observable, Subject, Observer, merge, of } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromCampaign } from '../backend'
-import { PatchInterfaceNode, PatchInterfaceNodeProps } from './PatchNode'
+import { PatchInterfaceNode, PatchInterfaceNodeProps } from './PatchInterfaceNode'
 import { switchMap } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
