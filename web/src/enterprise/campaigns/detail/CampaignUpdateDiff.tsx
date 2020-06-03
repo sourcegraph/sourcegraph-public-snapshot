@@ -16,7 +16,7 @@ import classNames from 'classnames'
 import { PatchNode } from './patches/PatchNode'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt'> & {
+    campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     }
@@ -251,6 +251,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}
@@ -266,6 +267,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}

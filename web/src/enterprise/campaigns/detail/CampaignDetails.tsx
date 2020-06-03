@@ -633,7 +633,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         campaign={campaign}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
-                                        enablePublishing={!campaign.closedAt}
+                                        enablePublishing={!campaign.closedAt && campaign.viewerCanAdminister}
                                         history={history}
                                         location={location}
                                         isLightTheme={isLightTheme}
@@ -643,6 +643,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         patchSet={patchSet!}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
+                                        // No publishing allowed in create view.
                                         enablePublishing={false}
                                         history={history}
                                         location={location}

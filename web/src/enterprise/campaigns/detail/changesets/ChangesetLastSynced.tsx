@@ -8,20 +8,21 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { Observer } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 interface Props {
     changeset: Pick<IExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt'>
+    viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
-    disableRefresh: boolean
     /** For testing purposes only */
     _now?: Date
 }
 
 export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
     changeset,
+    viewerCanAdminister,
     campaignUpdates,
     _now,
-    disableRefresh,
 }) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
@@ -36,6 +37,9 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
         }
     }, [campaignUpdates, lastUpdatedAtChanged, changeset.updatedAt])
     const enqueueChangeset = useCallback<React.MouseEventHandler>(async () => {
+        if (!viewerCanAdminister) {
+            return
+        }
         // already enqueued
         if (typeof lastUpdatedAt === 'string') {
             return
@@ -46,7 +50,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
         } catch (error) {
             setLastUpdatedAt(error)
         }
-    }, [changeset.id, changeset.updatedAt, lastUpdatedAt])
+    }, [changeset.id, changeset.updatedAt, lastUpdatedAt, viewerCanAdminister])
 
     let tooltipText = ''
     if (changeset.updatedAt === lastUpdatedAt) {
@@ -57,11 +61,17 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
         } else {
             tooltipText = `Next refresh in ${formatDistance(parseISO(changeset.nextSyncAt), _now ?? new Date())}.`
         }
-        tooltipText += ' Click to prioritize refresh'
+        if (viewerCanAdminister) {
+            tooltipText += ' Click to prioritize refresh'
+        }
     }
 
     const UpdateLoaderIcon =
-        typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt ? LoadingSpinner : SyncIcon
+        typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt
+            ? LoadingSpinner
+            : viewerCanAdminister
+            ? SyncIcon
+            : InfoCircleOutlineIcon
 
     return (
         <small className="text-muted">
@@ -69,14 +79,15 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
             {isErrorLike(lastUpdatedAt) && (
                 <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
             )}
-            {!disableRefresh && (
-                <span data-tooltip={tooltipText}>
-                    <UpdateLoaderIcon
-                        className={classNames('icon-inline', typeof lastUpdatedAt !== 'string' && 'cursor-pointer')}
-                        onClick={enqueueChangeset}
-                    />
-                </span>
-            )}
+            <span data-tooltip={tooltipText}>
+                <UpdateLoaderIcon
+                    className={classNames(
+                        'icon-inline',
+                        typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer'
+                    )}
+                    onClick={enqueueChangeset}
+                />
+            </span>
         </small>
     )
 }

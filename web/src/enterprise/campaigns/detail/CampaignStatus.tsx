@@ -96,6 +96,9 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                                 Retry
                             </button>
                         )}
+                        {!campaign.viewerCanAdminister && (
+                            <p className="mb-0 text-warning">You don't have permission to view error details.</p>
+                        )}
                     </div>
                 </>
             )
