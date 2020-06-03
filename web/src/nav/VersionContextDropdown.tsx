@@ -104,9 +104,11 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                 <ListboxButton className="version-context-dropdown__button btn btn-secondary">
                                     <FlagVariantIcon className="icon-inline small" />
                                     <span className="version-context-dropdown__button-text ml-2 mr-1">
-                                        {!currentVersionContext || currentVersionContext === 'default'
-                                            ? 'Select context'
-                                            : `${currentVersionContext} (Active)`}
+                                        {!currentVersionContext || currentVersionContext === 'default' ? (
+                                            <span className="d-sm-none">Select context</span>
+                                        ) : (
+                                            `${currentVersionContext} (Active)`
+                                        )}
                                     </span>
                                     <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
