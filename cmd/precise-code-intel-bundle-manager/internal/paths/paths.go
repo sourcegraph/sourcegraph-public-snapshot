@@ -10,6 +10,7 @@ const uploadDir = "uploads"
 const uploadPartsDir = "upload-parts"
 const dbsDir = "dbs"
 const dbPartsDir = "db-parts"
+const migrationMarkersDir = "migration-markers"
 
 // PrepDirectories creates the root directories within the given bundle dir.
 func PrepDirectories(bundleDir string) error {
@@ -18,6 +19,7 @@ func PrepDirectories(bundleDir string) error {
 		uploadPartsDir,
 		dbsDir,
 		dbPartsDir,
+		migrationMarkersDir,
 	}
 
 	for _, dir := range rootDirs {
@@ -72,4 +74,9 @@ func DBPartsDir(bundleDir string) string {
 // DBPartFilename returns the path of the db with the given identifier and part index.
 func DBPartFilename(bundleDir string, id, index int64) string {
 	return filepath.Join(bundleDir, dbPartsDir, fmt.Sprintf("%d.%d.gz", id, index))
+}
+
+// MigrationMarkerFilename returns the path to the file that marks a migration has been performed.
+func MigrationMarkerFilename(bundleDir string, version int) string {
+	return filepath.Join(bundleDir, migrationMarkersDir, fmt.Sprintf("v%d", version))
 }
