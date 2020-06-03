@@ -21,12 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type changesetsConnectionResolver struct {
-	store *ee.Store
-	opts  ee.ListChangesetsOpts
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+	opts        ee.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
 	once           sync.Once
@@ -51,15 +53,17 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			// filtered out by the authz-filter.
 			// In both cases: use hiddenChangesetResolver.
 			resolvers = append(resolvers, &hiddenChangesetResolver{
-				store:      r.store,
-				Changeset:  c,
-				nextSyncAt: r.scheduledSyncs[c.ID],
+				store:       r.store,
+				httpFactory: r.httpFactory,
+				Changeset:   c,
+				nextSyncAt:  r.scheduledSyncs[c.ID],
 			})
 			continue
 		}
 
 		resolvers = append(resolvers, &changesetResolver{
 			store:         r.store,
+			httpFactory:   r.httpFactory,
 			Changeset:     c,
 			preloadedRepo: repo,
 			nextSyncAt:    r.scheduledSyncs[c.ID],
@@ -134,7 +138,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 }
 
 type changesetResolver struct {
-	store *ee.Store
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+
 	*campaigns.Changeset
 	preloadedRepo *types.Repo
 
@@ -217,7 +223,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	return newChangesetCampaignsConnectionsResolver(r.store, r.Changeset.ID, args)
+	return newChangesetCampaignsConnectionsResolver(r.store, r.httpFactory, r.Changeset.ID, args)
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -456,7 +462,8 @@ func (r *changesetLabelResolver) Description() *string {
 }
 
 type hiddenChangesetResolver struct {
-	store *ee.Store
+	store       *ee.Store
+	httpFactory *httpcli.Factory
 	*campaigns.Changeset
 
 	// When the next sync is scheduled
@@ -485,7 +492,7 @@ func (r *hiddenChangesetResolver) ToHiddenExternalChangeset() (graphqlbackend.Hi
 func (r *hiddenChangesetResolver) ID() graphql.ID { return marshalHiddenChangesetID(r.Changeset.ID) }
 
 func (r *hiddenChangesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	return newChangesetCampaignsConnectionsResolver(r.store, r.Changeset.ID, args)
+	return newChangesetCampaignsConnectionsResolver(r.store, r.httpFactory, r.Changeset.ID, args)
 }
 
 func (r *hiddenChangesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -509,6 +516,7 @@ func (r *hiddenChangesetResolver) State() campaigns.ChangesetState {
 
 func newChangesetCampaignsConnectionsResolver(
 	s *ee.Store,
+	cf *httpcli.Factory,
 	changeset int64,
 	args *graphqlbackend.ListCampaignArgs,
 ) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -526,5 +534,5 @@ func newChangesetCampaignsConnectionsResolver(
 		opts.Limit = int(*args.First)
 	}
 
-	return &campaignsConnectionResolver{store: s, opts: opts}, nil
+	return &campaignsConnectionResolver{store: s, httpFactory: cf, opts: opts}, nil
 }

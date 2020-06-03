@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
 
 type campaignsConnectionResolver struct {
-	store *ee.Store
-	opts  ee.ListCampaignsOpts
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+	opts        ee.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -36,7 +36,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	}
 	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(campaigns))
 	for _, c := range campaigns {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: c})
 	}
 	return resolvers, nil
 }
@@ -65,7 +65,8 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*campaigns
 var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
-	store *ee.Store
+	store       *ee.Store
+	httpFactory *httpcli.Factory
 	*campaigns.Campaign
 }
 
@@ -319,59 +320,9 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	canAdmin, err := currentUserCanAdministerCampaign(ctx, r.Campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	if !canAdmin {
-		// If the user doesn't have admin permissions for this campaign, we
-		// don't need to filter out specific errors, but can simply exclude
-		// _all_ errors.
-		return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
-			ID:            r.Campaign.ID,
-			ExcludeErrors: true,
-		})
-	}
-
-	// We need to filter out error messages the user is not allowed to see,
-	// because they don't have permissions to access the repository associated
-	// with a given patch/changesetJob.
-
-	// First we load the repo IDs of the failed changesetJobs
-	repoIDs, err := r.store.GetRepoIDsForFailedChangesetJobs(ctx, r.Campaign.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = struct{}{}
-	}
-
-	// We now check which repositories in `repoIDs` are not in `accessibleRepoIDs`.
-	// We have to filter the error messages associated with those out.
-	excludedRepos := make([]api.RepoID, 0, len(accessibleRepoIDs))
-	for _, id := range repoIDs {
-		if _, ok := accessibleRepoIDs[id]; !ok {
-			excludedRepos = append(excludedRepos, id)
-		}
-	}
-
-	// TODO(thorsten): Another idea: change this to be ExcludeErrorsForPatches
-	// and pass in the patch IDs that should be filtered out, since we can use
-	// the accessibleRepoIDs map to filter out patches.
-	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
-		ID:                   r.Campaign.ID,
-		ExcludeErrorsInRepos: excludedRepos,
-	})
+	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: AddChangesetsToCampaign checks whether current user is authorized.
+	return svc.GetCampaignStatus(ctx, r.Campaign)
 }
 
 type changesetDiffsConnectionResolver struct {

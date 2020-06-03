@@ -78,7 +78,11 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
-			return &hiddenChangesetResolver{store: r.store, Changeset: changeset}, nil
+			return &hiddenChangesetResolver{
+				store:       r.store,
+				httpFactory: r.httpFactory,
+				Changeset:   changeset,
+			}, nil
 		}
 		return nil, err
 	}
@@ -86,6 +90,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return &changesetResolver{
 		// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
 		store:         r.store,
+		httpFactory:   r.httpFactory,
 		Changeset:     changeset,
 		preloadedRepo: repo,
 	}, nil
@@ -114,7 +119,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchInterfaceResolver, error) {
@@ -213,7 +218,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -277,7 +282,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -327,7 +332,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		}()
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -376,7 +381,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -396,8 +401,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		opts.Limit = int(*args.First)
 	}
 	return &campaignsConnectionResolver{
-		store: r.store,
-		opts:  opts,
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		opts:        opts,
 	}, nil
 }
 
@@ -486,6 +492,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	for i := range cs {
 		csr[i] = &changesetResolver{
 			store:         r.store,
+			httpFactory:   r.httpFactory,
 			Changeset:     cs[i],
 			preloadedRepo: repoSet[cs[i].RepoID],
 		}
@@ -601,7 +608,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "closing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.PublishCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -627,7 +634,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
