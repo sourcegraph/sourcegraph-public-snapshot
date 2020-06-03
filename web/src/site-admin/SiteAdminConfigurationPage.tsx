@@ -260,12 +260,13 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 //
                                 // This should be removed once the feature flag
                                 // is removed.
-                                const lastAutomationEnabled = lastConfiguration
-                                    ? (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)
-                                          .experimentalFeatures?.automation
-                                    : undefined
-                                const newAutomationEnabled = (jsonc.parse(newContents) as SiteConfiguration)
-                                    .experimentalFeatures?.automation
+                                const lastAutomationEnabled =
+                                    (lastConfiguration &&
+                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)
+                                            ?.experimentalFeatures?.automation) === 'enabled'
+                                const newAutomationEnabled =
+                                    (jsonc.parse(newContents) as SiteConfiguration)?.experimentalFeatures
+                                        ?.automation === 'enabled'
 
                                 if (lastAutomationEnabled !== newAutomationEnabled) {
                                     window.location.reload()
