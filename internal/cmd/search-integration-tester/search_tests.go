@@ -168,6 +168,30 @@ var tests = []test{
 		Query: `repo:^github\.com/sourcegraph/sourcegraph$ (() or \(\)) stable:yes type:file count:1 file:^\.buildkite/hooks/pre-command$`,
 	},
 	{
+		Name:  `Literals, escaped and unescaped parens, no group`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ () or \(\)`,
+	},
+	{
+		Name:  `Literals, double paren`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ ()() or ()()`,
+	},
+	{
+		Name:  `Literals, double paren, dangling paren right side`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ ()() or main()(`,
+	},
+	{
+		Name:  `Literals, double paren, dangling paren left side`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ ()( or ()()`,
+	},
+	{
+		Name:  `Mixed regexp and literal`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ func(.*) or does_not_exist_3744`,
+	},
+	{
+		Name:  `Mixed regexp and literal heuristic`,
+		Query: `repo:^github\.com/sourcegraph/sourcegraph$ func(.*) or func(`,
+	},
+	{
 		Name:  `Escape sequences`,
 		Query: `repo:^github\.com/sourcegraph/sourcegraph$ \' and \" and \\ and / file:^\.buildkite/hooks/pre-command$`,
 	},

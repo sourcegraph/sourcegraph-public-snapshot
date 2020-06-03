@@ -17,7 +17,7 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 
 	getTipCommit := func(repositoryID int) (string, error) {
 		tipCommit, err := gitserver.Head(ctx, j.db, repositoryID)
-		if err != nil && !vcs.IsRepoNotExist(err) {
+		if err != nil && !isRepoNotExist(err) {
 			return "", errors.Wrap(err, "gitserver.Head")
 		}
 		return tipCommit, nil
@@ -50,4 +50,16 @@ func (j *Janitor) removeProcessedUploadsWithoutBundleFile() error {
 	}
 
 	return nil
+}
+
+func isRepoNotExist(err error) bool {
+	for err != nil {
+		if vcs.IsRepoNotExist(err) {
+			return true
+		}
+
+		err = errors.Unwrap(err)
+	}
+
+	return false
 }

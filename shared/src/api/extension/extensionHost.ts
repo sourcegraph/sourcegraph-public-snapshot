@@ -6,7 +6,6 @@ import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { ExtCommands } from './api/commands'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
@@ -138,10 +137,9 @@ function createExtensionAPI(
     const views = new ExtViews(proxy.views)
     const languageFeatures = new ExtLanguageFeatures(proxy.languageFeatures, documents)
     const search = new ExtSearch(proxy.search)
-    const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
 
-    const { configuration, exposedToMain, workspace, state } = initNewExtensionAPI(proxy)
+    const { configuration, exposedToMain, workspace, state, commands } = initNewExtensionAPI(proxy)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -253,13 +251,7 @@ function createExtensionAPI(
                 search.registerQueryTransformer(provider),
         },
 
-        commands: {
-            registerCommand: (command: string, callback: (...args: any[]) => any) =>
-                commands.registerCommand({ command, callback }),
-
-            executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
-        },
-
+        commands,
         content: {
             registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
                 content.registerLinkPreviewProvider(urlMatchPattern, provider),

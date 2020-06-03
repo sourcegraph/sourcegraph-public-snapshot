@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useCallback } from 'react'
 import {
     ListboxOption,
     ListboxInput,
@@ -33,42 +33,54 @@ export interface VersionContextDropdownProps
     navbarSearchQuery: string
 }
 
-export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = (
-    props: VersionContextDropdownProps
-) => {
+export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = ({
+    history,
+    navbarSearchQuery,
+    filtersInQuery,
+    caseSensitive,
+    patternType,
+    setVersionContext,
+    availableVersionContexts,
+    versionContext: currentVersionContext,
+}: VersionContextDropdownProps) => {
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, 'false')
 
-    const submitOnToggle = (versionContext: string): void => {
-        const { history, navbarSearchQuery, filtersInQuery, caseSensitive, patternType } = props
-        const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
-        const activation = undefined
-        const source = 'filter'
-        const queryParams: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
-        if (searchQueryNotEmpty) {
-            submitSearch({
-                history,
-                query: navbarSearchQuery,
-                source,
-                patternType,
-                caseSensitive,
-                versionContext,
-                activation,
-                filtersInQuery,
-                queryParams,
-            })
-        }
-    }
+    const submitOnToggle = useCallback(
+        (versionContext: string): void => {
+            const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
+            const activation = undefined
+            const source = 'filter'
+            const queryParams: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
+            if (searchQueryNotEmpty) {
+                submitSearch({
+                    history,
+                    query: navbarSearchQuery,
+                    source,
+                    patternType,
+                    caseSensitive,
+                    versionContext,
+                    activation,
+                    filtersInQuery,
+                    queryParams,
+                })
+            }
+        },
+        [caseSensitive, filtersInQuery, history, navbarSearchQuery, patternType]
+    )
 
-    const updateValue = (newValue: string): void => {
-        props.setVersionContext(newValue)
-        submitOnToggle(newValue)
-    }
+    const updateValue = useCallback(
+        (newValue: string): void => {
+            setVersionContext(newValue)
+            submitOnToggle(newValue)
+        },
+        [setVersionContext, submitOnToggle]
+    )
 
-    const disableValue = (): void => {
-        props.setVersionContext(undefined)
-    }
+    const disableValue = useCallback((): void => {
+        setVersionContext(undefined)
+    }, [setVersionContext])
 
-    if (!props.availableVersionContexts || props.availableVersionContexts.length === 0) {
+    if (!availableVersionContexts || availableVersionContexts.length === 0) {
         return null
     }
 
@@ -84,17 +96,17 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
 
     return (
         <>
-            {props.availableVersionContexts ? (
+            {availableVersionContexts ? (
                 <div className="version-context-dropdown text-nowrap">
-                    <ListboxInput value={props.versionContext} onChange={updateValue}>
+                    <ListboxInput value={currentVersionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
                                 <ListboxButton className="version-context-dropdown__button btn btn-secondary">
                                     <FlagVariantIcon className="icon-inline small" />
                                     <span className="version-context-dropdown__button-text ml-2 mr-1">
-                                        {!props.versionContext || props.versionContext === 'default'
+                                        {!currentVersionContext || currentVersionContext === 'default'
                                             ? 'Select context'
-                                            : `${props.versionContext} (Active)`}
+                                            : `${currentVersionContext} (Active)`}
                                     </span>
                                     <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
@@ -145,14 +157,14 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                                 onDisableValue={disableValue}
                                             />
                                         </ListboxGroupLabel>
-                                        {props.availableVersionContexts
+                                        {availableVersionContexts
                                             // Render the current version context at the top, then other available version
                                             // contexts in alphabetical order.
                                             ?.sort((a, b) => {
-                                                if (a.name === props.versionContext) {
+                                                if (a.name === currentVersionContext) {
                                                     return -1
                                                 }
-                                                if (b.name === props.versionContext) {
+                                                if (b.name === currentVersionContext) {
                                                     return 1
                                                 }
                                                 return a.name > b.name ? 1 : -1
@@ -167,7 +179,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                                     <VersionContextInfoRow
                                                         name={versionContext.name}
                                                         description={versionContext.description || ''}
-                                                        isActive={props.versionContext === versionContext.name}
+                                                        isActive={currentVersionContext === versionContext.name}
                                                         onDisableValue={disableValue}
                                                     />
                                                 </ListboxOption>
