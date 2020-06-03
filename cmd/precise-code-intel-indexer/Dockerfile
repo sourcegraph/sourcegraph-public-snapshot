@@ -13,8 +13,11 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk update && apk add --no-cache \
     tini musl-dev go git
 
+# TODO(efritz) - mount ssd cache
+# TODO(efritz) - periodically run `go clean -modcache`
+
 ENV GOROOT=/usr/lib/go GOPATH=/go PATH=/go/bin:$PATH
-RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+RUN mkdir -p ${GOPATH}/bin ${GOPATH}/pkg ${GOPATH}/src chown -R sourcegraph:sourcegraph ${GOPATH}
 
 RUN mkdir temp && \
     curl -L https://github.com/sourcegraph/lsif-go/releases/download/v0.8.0/lsif-go_0.8.0_linux_amd64.tar.gz -o lsif-go.tar.gz && \
