@@ -97,7 +97,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 // Campaign and the Campaign is not created as a draft, it calls
 // CreateChangesetJobs inside the same transaction in which it creates the
 // Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, draft bool) error {
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -116,7 +116,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	defer tx.Done(&err)
 
 	if c.PatchSetID != 0 {
-		_, err := tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
 		if err != nil && err != ErrNoResults {
 			return err
 		}
@@ -129,14 +129,27 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err = tx.CreateCampaign(ctx, c); err != nil {
+	err = tx.CreateCampaign(ctx, c)
+	if err != nil {
 		return err
 	}
 
-	if c.PatchSetID != 0 {
-		if err := validateCampaignBranch(c.Branch); err != nil {
-			return err
-		}
+	if c.PatchSetID == 0 {
+		return nil
+	}
+	err = validateCampaignBranch(c.Branch)
+	if err != nil {
+		return err
+	}
+	// Validate we don't have an empty patchset.
+	var patchCount int64
+	patchCount, err = tx.CountPatches(ctx, CountPatchesOpts{PatchSetID: c.PatchSetID, OnlyWithDiff: true, OnlyUnpublishedInCampaign: c.ID})
+	if err != nil {
+		return err
+	}
+	if patchCount == 0 {
+		err = ErrNoPatches
+		return err
 	}
 
 	return nil

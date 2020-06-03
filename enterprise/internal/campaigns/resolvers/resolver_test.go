@@ -1395,9 +1395,11 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(changesetJobs) != 1 {
-		t.Fatalf("more than 1 changeset jobs created: %d", len(changesetJobs))
+	if len(changesetJobs) != 0 {
+		t.Fatalf("changeset jobs were created: %d", len(changesetJobs))
 	}
+
+	// TODO @mrnugget: From here on, the changeset jobs don't exist, we should probably use a mutation to publish them here?
 
 	headRef := "refs/heads/" + campaign.Branch
 

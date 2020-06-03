@@ -27,7 +27,6 @@ type CreateCampaignArgs struct {
 		Description *string
 		Branch      *string
 		PatchSet    *graphql.ID
-		Draft       *bool
 	}
 }
 

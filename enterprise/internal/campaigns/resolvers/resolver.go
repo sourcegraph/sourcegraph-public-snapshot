@@ -259,11 +259,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		campaign.PatchSetID = patchSetID
 	}
 
-	var draft bool
-	if args.Input.Draft != nil {
-		draft = *args.Input.Draft
-	}
-
 	switch relay.UnmarshalKind(args.Input.Namespace) {
 	case "User":
 		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
@@ -278,7 +273,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	err = svc.CreateCampaign(ctx, campaign, draft)
+	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		return nil, err
 	}
