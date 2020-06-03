@@ -240,6 +240,8 @@ type ChangesetLabelResolver interface {
 	Description() *string
 }
 
+// ChangesetResolver is the "interface Changeset" in the GraphQL schema and is
+// implemented by ExternalChangesetResolver and HiddenExternalChangesetResolver.
 type ChangesetResolver interface {
 	ID() graphql.ID
 
@@ -253,27 +255,20 @@ type ChangesetResolver interface {
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
 }
 
+// HiddenExternalChangesetResolver implements only the common interface,
+// ChangesetResolver, to not reveal information to unauthorized users.
+//
+// Theoretically this type is not necessary, but it's easier to understand the
+// implementation of the GraphQL schema if we have a mapping between GraphQL
+// types and Go types.
 type HiddenExternalChangesetResolver interface {
-	ID() graphql.ID
-
-	CreatedAt() DateTime
-	UpdatedAt() DateTime
-	NextSyncAt() *DateTime
-	State() campaigns.ChangesetState
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
-
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
-	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
+	ChangesetResolver
 }
 
+// ExternalChangesetResolver implements the ChangesetResolver interface and
+// additional data.
 type ExternalChangesetResolver interface {
-	ID() graphql.ID
-
-	CreatedAt() DateTime
-	UpdatedAt() DateTime
-	NextSyncAt() *DateTime
-	State() campaigns.ChangesetState
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+	ChangesetResolver
 
 	ExternalID() string
 	Title() (string, error)
@@ -288,9 +283,6 @@ type ExternalChangesetResolver interface {
 	Head(ctx context.Context) (*GitRefResolver, error)
 	Base(ctx context.Context) (*GitRefResolver, error)
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
-
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
-	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
 }
 
 type PatchConnectionResolver interface {
@@ -299,6 +291,8 @@ type PatchConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+// PatchInterfaceResolver is the "interface PatchInterface" in the GraphQL
+// schema and is implemented by Patch and HiddenPatch.
 type PatchInterfaceResolver interface {
 	ID() graphql.ID
 
@@ -306,23 +300,26 @@ type PatchInterfaceResolver interface {
 	ToHiddenPatch() (HiddenPatchResolver, bool)
 }
 
+// HiddenPatchResolver implements only the common interface,
+// PatchInterfaceResolver, to not reveal information to unauthorized users.
+//
+// Theoretically this type is not necessary, but it's easier to understand the
+// implementation of the GraphQL schema if we have a mapping between GraphQL
+// types and Go types.
+type HiddenPatchResolver interface {
+	PatchInterfaceResolver
+}
+
+// PatchResolver implements the PatchInterfaceResolver interface and additional
+// data.
 type PatchResolver interface {
-	ID() graphql.ID
+	PatchInterfaceResolver
+
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() PatchResolver
 	FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error)
 	PublicationEnqueued(ctx context.Context) (bool, error)
-
-	ToPatch() (PatchResolver, bool)
-	ToHiddenPatch() (HiddenPatchResolver, bool)
-}
-
-type HiddenPatchResolver interface {
-	ID() graphql.ID
-
-	ToPatch() (PatchResolver, bool)
-	ToHiddenPatch() (HiddenPatchResolver, bool)
 }
 
 type ChangesetEventsConnectionResolver interface {
