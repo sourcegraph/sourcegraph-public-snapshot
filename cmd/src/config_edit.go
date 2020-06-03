@@ -11,23 +11,23 @@ func init() {
 	usage := `
 Examples:
 
-  Edit configuration property for the current user (authenticated by the src CLI's access token, if any):
+  Edit settings property for the current user (authenticated by the src CLI's access token, if any):
 
     	$ src config edit -property motd -value '["Hello!"]'
 
-  Overwrite all configuration settings for the current user:
+  Overwrite all settings settings for the current user:
 
     	$ src config edit -overwrite -value '{"motd":["Hello!"]}'
 
-  Overwrite all configuration settings for the current user with the file contents:
+  Overwrite all settings settings for the current user with the file contents:
 
     	$ src config edit -overwrite -value-file myconfig.json
 
-  Edit a configuration property for the user with username alice:
+  Edit a settings property for the user with username alice:
 
     	$ src config edit -subject=$(src users get -f '{{.ID}}' -username=alice) -property motd -value '["Hello!"]'
 
-  Overwrite all configuration settings for the organization named abc-org:
+  Overwrite all settings settings for the organization named abc-org:
 
     	$ src config edit -subject=$(src orgs get -f '{{.ID}}' -name=abc-org) -overwrite -value '{"motd":["Hello!"]}'
 
@@ -40,9 +40,9 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		subjectFlag   = flagSet.String("subject", "", "The ID of the configuration subject whose configuration to edit. (default: authenticated user)")
-		propertyFlag  = flagSet.String("property", "", "The name of the configuration property to set.")
-		valueFlag     = flagSet.String("value", "", "The value for the configuration property (when used with -property).")
+		subjectFlag   = flagSet.String("subject", "", "The ID of the settings subject whose settings to edit. (default: authenticated user)")
+		propertyFlag  = flagSet.String("property", "", "The name of the settings property to set.")
+		valueFlag     = flagSet.String("value", "", "The value for the settings property (when used with -property).")
 		valueFileFlag = flagSet.String("value-file", "", "Read the value from this file instead of from the -value command-line option.")
 		overwriteFlag = flagSet.Bool("overwrite", false, "Overwrite the entire settings with the value given in -value (not just a single property).")
 		apiFlags      = newAPIFlags(flagSet)
@@ -85,15 +85,15 @@ Examples:
 			subjectID = *subjectFlag
 		}
 
-		lastID, err := getConfigurationSubjectLatestSettingsID(subjectID)
+		lastID, err := getSettingsSubjectLatestSettingsID(subjectID)
 		if err != nil {
 			return err
 		}
 
 		query := `
-mutation EditConfiguration($input: ConfigurationMutationGroupInput!, $edit: ConfigurationEdit!) {
-  configurationMutation(input: $input) {
-    editConfiguration(edit: $edit) {
+mutation EditSettings($input: SettingsMutationGroupInput!, $edit: SettingsEdit!) {
+  settingsMutation(input: $input) {
+    editSettings(edit: $edit) {
       empty {
         alwaysNil
       }
@@ -113,8 +113,8 @@ mutation EditConfiguration($input: ConfigurationMutationGroupInput!, $edit: Conf
 		}
 
 		var result struct {
-			ViewerConfiguration  *ConfigurationCascade
-			ConfigurationSubject *ConfigurationSubject
+			ViewerSettings  *SettingsCascade
+			SettingsSubject *SettingsSubject
 		}
 		return (&apiRequest{
 			query:  query,

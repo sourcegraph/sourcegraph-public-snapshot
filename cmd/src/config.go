@@ -11,7 +11,7 @@ var configCommands commander
 func init() {
 	usage := `'src config' is a tool that manages global, organization, and user settings on a Sourcegraph instance.
 
-The effective configuration is computed by shallow-merging the following settings, in order from lowest to highest precedence:
+The effective setting is computed by shallow-merging the following settings, in order from lowest to highest precedence:
 
 - Global settings (site-wide)
 - Organization settings for the user's organizations (if any)
@@ -26,9 +26,9 @@ Usage:
 
 The commands are:
 
-	get       gets the effective (merged) configuration
-	edit      updates configuration settings
-	list      lists the partial settings (that, when merged, yield the effective configuration)
+	get       gets the effective (merged) settings
+	edit      updates settings
+	list      lists the partial settings (that, when merged, yield the effective settings)
 
 Use "src config [command] -h" for more information about a command.
 `
@@ -49,14 +49,12 @@ Use "src config [command] -h" for more information about a command.
 	})
 }
 
-const configurationSubjectFragment = `
-fragment ConfigurationSubjectFields on ConfigurationSubject {
+const settingsSubjectFragment = `
+fragment SettingsSubjectFields on SettingsSubject {
     id
     latestSettings {
         id
-        configuration {
-            ...ConfigurationFields
-        }
+        contents
         author {
             ...UserFields
         }
@@ -67,60 +65,48 @@ fragment ConfigurationSubjectFields on ConfigurationSubject {
 }
 `
 
-type ConfigurationSubject struct {
-	ID                   string
-	LatestSettings       *Settings
-	SettingsURL          string
-	ViewerCanAdminister  bool
-	ConfigurationCascade ConfigurationCascade
+type SettingsSubject struct {
+	ID                  string
+	LatestSettings      *Settings
+	SettingsURL         string
+	ViewerCanAdminister bool
+	SettingsCascade     SettingsCascade
 }
 
 type Settings struct {
-	ID            int32
-	Configuration Configuration
-	Author        *User
-	CreatedAt     string
+	ID        int32
+	Contents  string
+	Author    *User
+	CreatedAt string
 }
 
-const configurationCascadeFragment = `
-fragment ConfigurationCascadeFields on ConfigurationCascade {
+const settingsCascadeFragment = `
+fragment SettingsCascadeFields on SettingsCascade {
     subjects {
-        ...ConfigurationSubjectFields
+        ...SettingsSubjectFields
     }
-    merged {
-        ...ConfigurationFields
-    }
+    final
 }
 `
 
-type ConfigurationCascade struct {
-	Subjects []ConfigurationSubject
-	Merged   Configuration
+type SettingsCascade struct {
+	Subjects []SettingsSubject
+	Final    string
 }
 
-const configurationFragment = `
-fragment ConfigurationFields on Configuration {
-    contents
-}
-`
-
-type Configuration struct {
-	Contents string
-}
-
-const viewerConfigurationQuery = `query ViewerConfiguration {
-  viewerConfiguration {
-    ...ConfigurationCascadeFields
+const viewerSettingsQuery = `query ViewerSettings {
+  viewerSettings {
+    ...SettingsCascadeFields
   }
-}` + configurationCascadeFragment + configurationSubjectFragment + configurationFragment + userFragment
+}` + settingsCascadeFragment + settingsSubjectFragment + userFragment
 
-const configurationSubjectCascadeQuery = `query ConfigurationSubjectCascade($subject: ID!) {
-  configurationSubject(id: $subject) {
-    configurationCascade {
-      ...ConfigurationCascadeFields
+const settingsSubjectCascadeQuery = `query SettingsSubjectCascade($subject: ID!) {
+  settingsSubject(id: $subject) {
+    settingsCascade {
+      ...SettingsCascadeFields
     }
   }
-}` + configurationCascadeFragment + configurationSubjectFragment + configurationFragment + userFragment
+}` + settingsCascadeFragment + settingsSubjectFragment + userFragment
 
 type KeyPath struct {
 	Property string `json:"property,omitempty"`
@@ -150,9 +136,9 @@ query ViewerUserID {
 	return result.CurrentUser.ID, nil
 }
 
-func getConfigurationSubjectLatestSettingsID(subjectID string) (*int, error) {
+func getSettingsSubjectLatestSettingsID(subjectID string) (*int, error) {
 	var result struct {
-		ConfigurationSubject *struct {
+		SettingsSubject *struct {
 			LatestSettings *struct {
 				ID int
 			}
@@ -160,8 +146,8 @@ func getConfigurationSubjectLatestSettingsID(subjectID string) (*int, error) {
 	}
 	req := &apiRequest{
 		query: `
-query ConfigurationSubjectLatestSettingsID($subject: ID!) {
-  configurationSubject(id: $subject) {
+query SettingsSubjectLatestSettingsID($subject: ID!) {
+  settingsSubject(id: $subject) {
     latestSettings {
       id
     }
@@ -174,11 +160,11 @@ query ConfigurationSubjectLatestSettingsID($subject: ID!) {
 	if err := req.do(); err != nil {
 		return nil, err
 	}
-	if result.ConfigurationSubject == nil {
-		return nil, fmt.Errorf("unable to find configuration subject with ID %s", subjectID)
+	if result.SettingsSubject == nil {
+		return nil, fmt.Errorf("unable to find settings subject with ID %s", subjectID)
 	}
-	if result.ConfigurationSubject.LatestSettings == nil {
+	if result.SettingsSubject.LatestSettings == nil {
 		return nil, nil
 	}
-	return &result.ConfigurationSubject.LatestSettings.ID, nil
+	return &result.SettingsSubject.LatestSettings.ID, nil
 }

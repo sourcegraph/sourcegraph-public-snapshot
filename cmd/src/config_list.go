@@ -9,11 +9,11 @@ func init() {
 	usage := `
 Examples:
 
-  List configuration settings for the current user (authenticated by the src CLI's access token, if any):
+  List settings for the current user (authenticated by the src CLI's access token, if any):
 
     	$ src config list
 
-  List configuration settings for the user with username alice:
+  List settings for the user with username alice:
 
     	$ src config list -subject=$(src users get -f '{{.ID}}' -username=alice)
 
@@ -26,7 +26,7 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		subjectFlag = flagSet.String("subject", "", "The ID of the configuration subject whose configuration to list. (default: authenticated user)")
+		subjectFlag = flagSet.String("subject", "", "The ID of the settings subject whose settings to list. (default: authenticated user)")
 		formatFlag  = flagSet.String("f", "", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.|json}}")`)
 		apiFlags    = newAPIFlags(flagSet)
 	)
@@ -44,7 +44,7 @@ Examples:
 			// Set default here instead of in flagSet.String because it is very long and makes the usage message ugly.
 			formatStr = `{{range .Subjects -}}
 # {{.SettingsURL}}:{{with .LatestSettings}}
-{{.Configuration.Contents}}
+{{.Contents}}
 {{- else}} (empty){{- end}}
 {{end}}`
 		}
@@ -56,28 +56,28 @@ Examples:
 		var query string
 		var queryVars map[string]interface{}
 		if *subjectFlag == "" {
-			query = viewerConfigurationQuery
+			query = viewerSettingsQuery
 		} else {
-			query = configurationSubjectCascadeQuery
+			query = settingsSubjectCascadeQuery
 			queryVars = map[string]interface{}{
 				"subject": nullString(*subjectFlag),
 			}
 		}
 
 		var result struct {
-			ViewerConfiguration  *ConfigurationCascade
-			ConfigurationSubject *ConfigurationSubject
+			ViewerSettings  *SettingsCascade
+			SettingsSubject *SettingsSubject
 		}
 		return (&apiRequest{
 			query:  query,
 			vars:   queryVars,
 			result: &result,
 			done: func() error {
-				var cascade *ConfigurationCascade
-				if result.ViewerConfiguration != nil {
-					cascade = result.ViewerConfiguration
-				} else if result.ConfigurationSubject != nil {
-					cascade = &result.ConfigurationSubject.ConfigurationCascade
+				var cascade *SettingsCascade
+				if result.ViewerSettings != nil {
+					cascade = result.ViewerSettings
+				} else if result.SettingsSubject != nil {
+					cascade = &result.SettingsSubject.SettingsCascade
 				}
 				return execTemplate(tmpl, cascade)
 			},
