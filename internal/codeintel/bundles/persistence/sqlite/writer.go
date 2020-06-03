@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	gobserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/gob"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -48,7 +48,7 @@ func NewWriter(ctx context.Context, filename string) (_ persistence.Writer, err 
 	return &sqliteWriter{
 		store:      tx,
 		closer:     closer,
-		serializer: jsonserializer.New(),
+		serializer: gobserializer.New(),
 	}, nil
 }
 

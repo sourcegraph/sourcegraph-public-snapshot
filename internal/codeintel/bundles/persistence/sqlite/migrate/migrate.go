@@ -11,6 +11,7 @@ import (
 	v2 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v2"
 	v3 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v3"
 	v4 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v4"
+	v5 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate/v5"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 )
 
@@ -32,6 +33,7 @@ var migrations = []struct {
 	{v2.Migrate, false},
 	{v3.Migrate, false},
 	{v4.Migrate, true},
+	{v5.Migrate, true},
 }
 
 var UnknownSchemaVersion = 0

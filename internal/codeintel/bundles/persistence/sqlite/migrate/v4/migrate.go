@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
+	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
@@ -27,6 +28,12 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 		populateTable,
 		swapTables,
 	}
+
+	// NOTE: We need to serialize with the JSON serializer, NOT the current serializer. This is
+	// because future migrations assume that v4 was written with the most current serializer at
+	// that time. Using the current serializer will cause future migrations to fail to read the
+	// encoded data.
+	serializer = jsonserializer.New()
 
 	for _, tableName := range []string{"definitions", "references"} {
 		for _, step := range steps {
