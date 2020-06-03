@@ -135,12 +135,7 @@ export const fetchFileContentForDiffOrFileInfo = (
         const fetchingHeadFile = fetchFileContentForFileInfo(diffOrBlobInfo.head, requestGraphQL)
 
         return zip(fetchingBaseFile, fetchingHeadFile).pipe(
-            map(
-                ([base, head]): DiffOrBlobInfo<FileInfoWithContent> => ({
-                    head,
-                    base,
-                })
-            )
+            map(([base, head]): DiffOrBlobInfo<FileInfoWithContent> => ({ head, base }))
         )
     }
     if (diffOrBlobInfo.head) {
