@@ -102,6 +102,11 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
             </p>
           </li>
         </ul>
+        <p
+          className="mb-0"
+        >
+          You don't have permission to view error details.
+        </p>
       </div>
     </React.Fragment>
   </div>
@@ -261,8 +266,6 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
         No changesets have
          
         been created on code hosts yet.
@@ -281,8 +284,6 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
         Only a subset of changesets has
          
         been created on code hosts yet.
@@ -568,8 +569,6 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
         No changesets have
          
         been created on code hosts yet.
@@ -595,8 +594,6 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
         Only a subset of changesets has
          
         been created on code hosts yet.

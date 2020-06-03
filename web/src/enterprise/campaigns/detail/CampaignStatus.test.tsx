@@ -40,6 +40,9 @@ describe('CampaignStatus', () => {
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
                                 },
+                                patches: {
+                                    totalCount: 2,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -59,6 +62,9 @@ describe('CampaignStatus', () => {
                                     pendingCount: 0,
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
+                                },
+                                patches: {
+                                    totalCount: 2,
                                 },
                             }}
                             onPublish={() => undefined}
@@ -81,6 +87,9 @@ describe('CampaignStatus', () => {
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
                                 },
+                                patches: {
+                                    totalCount: 1,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -100,6 +109,9 @@ describe('CampaignStatus', () => {
                                     errors: ['a', 'b'],
                                     state: GQL.BackgroundProcessState.PROCESSING,
                                 },
+                                patches: {
+                                    totalCount: 2,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -118,6 +130,9 @@ describe('CampaignStatus', () => {
                                     pendingCount: 0,
                                     errors: ['a', 'b'],
                                     state: GQL.BackgroundProcessState.ERRORED,
+                                },
+                                patches: {
+                                    totalCount: 2,
                                 },
                             }}
                             onPublish={() => undefined}

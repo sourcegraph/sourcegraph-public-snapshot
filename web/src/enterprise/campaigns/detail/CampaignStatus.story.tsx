@@ -36,6 +36,9 @@ add('Errored', () => (
             changesets: {
                 totalCount: 0,
             },
+            patches: {
+                totalCount: 2,
+            },
             publishedAt: boolean('Is draft', false) ? null : new Date().toISOString(),
             closedAt: null,
         }}
