@@ -334,42 +334,14 @@ func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.Backgroun
 		})
 	}
 
-	// TODO: Wow, this is horrible. We're loading way too many patches.
-	// What we actually want is this:
+	// We need to filter out error messages the user is not allowed to see,
+	// because they don't have permissions to access the repository associated
+	// with a given patch/changesetJob.
 
-	//   SELECT repo.id
-	//   FROM   patches
-	//   JOIN   repo           ON repo.id = patches.repo_id
-	//   JOIN   changeset_jobs ON changeset_jobs.patch_id = patches.id
-	//   WHERE patches.patch_set_id = patch.patch_set_id;
-
-	// Or we do:
-	//
-	//   SELECT repo.id
-	//   FROM   changeset_jobs
-	//   JOIN   patches ON patches.id = changeset_jobs.patch_id
-	//   JOIN   repo    ON patches.repo_id = repo.id
-	//   WHERE  changeset_jobs.campaign_id = <campaign_id>
-
-	// And then we put those repo IDs through `db.Repo.GetByIDs`, which
-	// uses the authz filter what we then get back are the repos we have access
-	// to.
-
-	// And then we need to filter out the error messages of changeset_jobs that
-	// are attached to patches that are attached to filtered out repositories in the
-	// `GetCampaignStatus` query below.
-
-	patches, _, err := r.store.ListPatches(ctx, ee.ListPatchesOpts{
-		PatchSetID: r.Campaign.PatchSetID,
-		Limit:      -1,
-	})
+	// First we load the repo IDs of the failed changesetJobs
+	repoIDs, err := r.store.GetRepoIDsForFailedChangesetJobs(ctx, r.Campaign.ID)
 	if err != nil {
 		return nil, err
-	}
-
-	repoIDs := make([]api.RepoID, 0, len(patches))
-	for _, p := range patches {
-		repoIDs = append(repoIDs, p.RepoID)
 	}
 
 	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
