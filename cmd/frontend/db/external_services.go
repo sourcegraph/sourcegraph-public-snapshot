@@ -376,14 +376,14 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 		sqlf.Sprintf("deleted_at IS NULL"),
 		sqlf.Sprintf("id=%d", id),
 	}
-	ExternalServicesStore, err := e.list(ctx, conds, nil)
+	ess, err := e.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(ExternalServicesStore) == 0 {
+	if len(ess) == 0 {
 		return nil, externalServiceNotFoundError{id: id}
 	}
-	return ExternalServicesStore[0], nil
+	return ess[0], nil
 }
 
 // List returns all external services.
