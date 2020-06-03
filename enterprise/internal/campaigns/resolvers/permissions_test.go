@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -523,11 +524,11 @@ query {
 }
 `
 
-func mockBackendCommit(t *testing.T, rev string) {
+func mockBackendCommit(t *testing.T, testRev string) {
 	t.Helper()
 
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if rev != rev {
+		if rev != testRev {
 			t.Fatalf("ResolveRev received wrong rev: %q", rev)
 		}
 		return api.CommitID(rev), nil
@@ -535,7 +536,7 @@ func mockBackendCommit(t *testing.T, rev string) {
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
 	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
-		if string(id) != rev {
+		if string(id) != testRev {
 			t.Fatalf("GetCommit received wrong ID: %s", id)
 		}
 		return &git.Commit{ID: id}, nil
@@ -567,4 +568,12 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
+
+	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+		if string(a) != baseRev && string(b) != headRev {
+			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
+		}
+		return a, nil
+	}
+	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
