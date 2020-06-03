@@ -656,9 +656,6 @@ func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) 
 		}
 	}
 
-	// TODO(thorsten): Another idea: change this to be ExcludeErrorsForPatches
-	// and pass in the patch IDs that should be filtered out, since we can use
-	// the accessibleRepoIDs map to filter out patches.
 	return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
 		ID:                   c.ID,
 		ExcludeErrorsInRepos: excludedRepos,
