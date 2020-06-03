@@ -25,16 +25,16 @@ export type RegistryPublisher = (
 }
 
 /** Returns the extension ID prefix (excluding the trailing "/") for a registry extension's publisher. */
-export function extensionIDPrefix(p: RegistryPublisher): string {
-    return `${p.extensionIDPrefix ? `${p.extensionIDPrefix}/` : ''}${publisherName(p)}`
+export function extensionIDPrefix(publisher: RegistryPublisher): string {
+    return `${publisher.extensionIDPrefix ? `${publisher.extensionIDPrefix}/` : ''}${publisherName(publisher)}`
 }
 
-export function publisherName(p: RegistryPublisher): string {
-    switch (p.__typename) {
+export function publisherName(publisher: RegistryPublisher): string {
+    switch (publisher.__typename) {
         case 'User':
-            return p.username
+            return publisher.username
         case 'Org':
-            return p.name
+            return publisher.name
     }
 }
 
@@ -58,7 +58,11 @@ export function validCategories(categories: ExtensionManifest['categories']): Ex
         return undefined
     }
     const validCategories = uniq(
-        categories.filter((c): c is ExtensionCategory => EXTENSION_CATEGORIES.includes(c as ExtensionCategory)).sort()
+        categories
+            .filter((category): category is ExtensionCategory =>
+                EXTENSION_CATEGORIES.includes(category as ExtensionCategory)
+            )
+            .sort()
     )
     return validCategories.length === 0 ? undefined : validCategories
 }
@@ -104,7 +108,7 @@ export function extensionsQuery({
  * {@link extensionsQuery}).
  */
 export function urlToExtensionsQuery(query: string): string {
-    const params = new URLSearchParams()
-    params.set('query', query)
-    return `/extensions?${params.toString()}`
+    const parameters = new URLSearchParams()
+    parameters.set('query', query)
+    return `/extensions?${parameters.toString()}`
 }

@@ -19,14 +19,14 @@ import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
 export const resolveFileInfo = (): FileInfo => {
-    const { rawRepoName, filePath, rev } = getFilePageInfo()
+    const { rawRepoName, filePath, revision } = getFilePageInfo()
     if (!filePath) {
         throw new Error(
             `Unable to determine the file path of the current file because the current URL (window.location ${window.location.href}) does not have a file path.`
         )
     }
     const commitID = getCommitIDFromPermalink()
-    return { rawRepoName, filePath, commitID, rev }
+    return { rawRepoName, filePath, commitID, revision }
 }
 
 /**

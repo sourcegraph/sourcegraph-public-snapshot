@@ -6,7 +6,7 @@ import { Activation } from './Activation'
 import { boolean } from '@storybook/addon-knobs'
 import { action } from '@storybook/addon-actions'
 import webMainStyles from '../../../../web/src/SourcegraphWebApp.scss'
-import { subTypeOf } from '../../util/types'
+import { subtypeOf } from '../../util/types'
 
 const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
     <>
@@ -49,7 +49,7 @@ const baseActivation: Activation = {
     completed: undefined,
 }
 const history = H.createMemoryHistory({ keyLength: 0 })
-const commonProps = subTypeOf<Partial<ActivationDropdownProps>>()({
+const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     alwaysShow: true,
     history,
     // Make sure the dropdown is not rendered outside the theme-light container

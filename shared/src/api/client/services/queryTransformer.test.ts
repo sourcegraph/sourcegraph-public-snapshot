@@ -30,7 +30,7 @@ describe('transformQuery', () => {
                 expectObservable(
                     transformQuery(
                         cold<TransformQuerySignature[]>('-a-|', {
-                            a: [q => of(FIXTURE_RESULT)],
+                            a: [() => of(FIXTURE_RESULT)],
                         }),
                         FIXTURE_INPUT
                     )
@@ -44,7 +44,10 @@ describe('transformQuery', () => {
                 expectObservable(
                     transformQuery(
                         cold<TransformQuerySignature[]>('-a-|', {
-                            a: [q => of(`${q} ${FIXTURE_RESULT}`), q => of(`${q} ${FIXTURE_RESULT_TWO}`)],
+                            a: [
+                                query => of(`${query} ${FIXTURE_RESULT}`),
+                                query => of(`${query} ${FIXTURE_RESULT_TWO}`),
+                            ],
                         }),
                         FIXTURE_INPUT
                     )
@@ -58,8 +61,8 @@ describe('transformQuery', () => {
                 expectObservable(
                     transformQuery(
                         cold<TransformQuerySignature[]>('-a-b-|', {
-                            a: [q => of(`${q} ${FIXTURE_RESULT}`)],
-                            b: [q => of(`${q} ${FIXTURE_RESULT_TWO}`)],
+                            a: [query => of(`${query} ${FIXTURE_RESULT}`)],
+                            b: [query => of(`${query} ${FIXTURE_RESULT_TWO}`)],
                         }),
                         FIXTURE_INPUT
                     )

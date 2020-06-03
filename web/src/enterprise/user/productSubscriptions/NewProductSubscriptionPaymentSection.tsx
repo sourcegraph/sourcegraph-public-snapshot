@@ -84,7 +84,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                     subscriptionToUpdate: subscriptionID,
                     productSubscription,
                 }).pipe(
-                    catchError(err => [asError(err)]),
+                    catchError(error => [asError(error)]),
                     startWith(LOADING)
                 )
             }, [_queryPreviewProductSubscriptionInvoice, accountID, productSubscription, subscriptionID])

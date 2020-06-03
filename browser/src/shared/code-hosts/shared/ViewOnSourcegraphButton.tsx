@@ -55,8 +55,8 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
-    const { rawRepoName, rev } = getContext()
-    const url = new URL(`/${rawRepoName}${rev ? `@${rev}` : ''}`, sourcegraphURL).href
+    const { rawRepoName, revision } = getContext()
+    const url = new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}`, sourcegraphURL).href
 
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)

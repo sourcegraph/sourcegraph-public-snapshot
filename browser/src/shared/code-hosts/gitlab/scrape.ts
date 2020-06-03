@@ -1,6 +1,6 @@
 import { last, take } from 'lodash'
 
-import { FileSpec, RawRepoSpec, RevSpec } from '../../../../../shared/src/util/url'
+import { FileSpec, RawRepoSpec, RevisionSpec } from '../../../../../shared/src/util/url'
 import { commitIDFromPermalink } from '../../util/dom'
 import { FileInfo } from '../shared/codeHost'
 import { isExtension } from '../../context'
@@ -25,7 +25,7 @@ export interface GitLabInfo extends RawRepoSpec {
 /**
  * Information about single file pages.
  */
-interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevSpec {}
+interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevisionSpec {}
 
 export const getPageKindFromPathName = (owner: string, projectName: string, pathname: string): GitLabPageKind => {
     const pageKindMatch = pathname.match(new RegExp(`^/${owner}/${projectName}(/-)?/(commit|merge_requests|blob)/`))
@@ -81,12 +81,12 @@ export function getFilePageInfo(): GitLabFileInfo {
         throw new Error('Unable to determine revision or file path')
     }
 
-    const rev = decodeURIComponent(matches[1])
+    const revision = decodeURIComponent(matches[1])
     const filePath = decodeURIComponent(matches[2])
     return {
         rawRepoName,
         filePath,
-        rev,
+        revision,
     }
 }
 
@@ -106,12 +106,12 @@ export const getMergeRequestID = (): string => {
  * The diff ID represents a specific revision in a merge request.
  */
 export const getDiffID = (): string | undefined => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('diff_id') ?? undefined
+    const parameters = new URLSearchParams(window.location.search)
+    return parameters.get('diff_id') ?? undefined
 }
 
-const getFilePathFromElem = (elem: HTMLElement): string => {
-    const filePath = elem.dataset.originalTitle || elem.dataset.title || elem.title
+const getFilePathFromElement = (element: HTMLElement): string => {
+    const filePath = element.dataset.originalTitle || element.dataset.title || element.title
     if (!filePath) {
         throw new Error('Unable to get file paths from code view: no file title')
     }
@@ -129,11 +129,11 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
     }
 
     const filePathDidChange = filePathElements.length > 1
-    const filePath = getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0))
+    const filePath = getFilePathFromElement(filePathElements.item(filePathDidChange ? 1 : 0))
 
     return {
         filePath,
-        baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : filePath,
+        baseFilePath: filePathDidChange ? getFilePathFromElement(filePathElements.item(0)) : filePath,
     }
 }
 

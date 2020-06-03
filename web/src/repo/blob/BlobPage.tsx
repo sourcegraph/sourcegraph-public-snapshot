@@ -159,7 +159,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     blobOrError => this.setState({ blobOrError }),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -234,7 +234,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         <GoToRawAction
                             key="raw-action"
                             repoName={this.props.repoName}
-                            rev={this.props.rev}
+                            revision={this.props.revision}
                             filePath={this.props.filePath}
                         />
                     }
@@ -335,11 +335,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
     private getPageTitle(): string {
         const repoNameSplit = this.props.repoName.split('/')
-        const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
+        const repoString = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
         if (this.props.filePath) {
-            const fileOrDir = this.props.filePath.split('/').pop()!
-            return `${fileOrDir} - ${repoStr}`
+            const fileOrDirectory = this.props.filePath.split('/').pop()!
+            return `${fileOrDirectory} - ${repoString}`
         }
-        return `${repoStr}`
+        return `${repoString}`
     }
 }

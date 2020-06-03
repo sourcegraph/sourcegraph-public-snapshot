@@ -1,15 +1,15 @@
 import { Selection } from '@sourcegraph/extension-api-classes'
-import { ExtDocuments } from './documents'
-import { ExtWindow, ExtWindows } from './windows'
+import { ExtensionDocuments } from './documents'
+import { ExtensionWindow, ExtensionWindows } from './windows'
 
-describe('ExtWindow', () => {
+describe('ExtensionWindow', () => {
     const NOOP_PROXY = {} as any
 
-    const DOCUMENTS = new ExtDocuments(() => Promise.resolve())
+    const DOCUMENTS = new ExtensionDocuments(() => Promise.resolve())
     DOCUMENTS.$acceptDocumentData([{ type: 'added', uri: 'u', text: 't', languageId: 'l' }])
 
     test('reuses ExtCodeEditor object when updated', () => {
-        const wins = new ExtWindow(NOOP_PROXY, DOCUMENTS, [
+        const wins = new ExtensionWindow(NOOP_PROXY, DOCUMENTS, [
             {
                 type: 'added',
                 viewerId: 'viewer#0',
@@ -30,7 +30,7 @@ describe('ExtWindow', () => {
     })
 
     test('creates new ExtCodeEditor object for a different viewerId', () => {
-        const wins = new ExtWindow(NOOP_PROXY, DOCUMENTS, [
+        const wins = new ExtensionWindow(NOOP_PROXY, DOCUMENTS, [
             {
                 type: 'added',
                 viewerId: 'viewer#0',
@@ -54,11 +54,11 @@ describe('ExtWindow', () => {
 describe('ExtWindows', () => {
     const NOOP_PROXY = {} as any
 
-    const documents = new ExtDocuments(() => Promise.resolve())
+    const documents = new ExtensionDocuments(() => Promise.resolve())
     documents.$acceptDocumentData([{ type: 'added', uri: 'u', text: 't', languageId: 'l' }])
 
     test('reuses ExtWindow object when updated', () => {
-        const wins = new ExtWindows(NOOP_PROXY, documents)
+        const wins = new ExtensionWindows(NOOP_PROXY, documents)
         wins.$acceptWindowData([
             {
                 type: 'added',

@@ -1,10 +1,10 @@
-export function assertEnv(env: typeof window['EXTENSION_ENV']): void {
-    if (window.EXTENSION_ENV !== env) {
+export function assertEnvironment(environment: typeof window['EXTENSION_ENV']): void {
+    if (window.EXTENSION_ENV !== environment) {
         throw new Error(
             'Detected transitive import of an entrypoint! ' +
                 window.EXTENSION_ENV +
                 ' attempted to import a file that is only intended to be imported by ' +
-                env +
+                environment +
                 '.'
         )
     }

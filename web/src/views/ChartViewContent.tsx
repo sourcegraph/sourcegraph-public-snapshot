@@ -167,7 +167,7 @@ export const CartesianChartViewContent: React.FunctionComponent<{
     )
 }
 
-const percentageLabel: ContentRenderer<PieLabelRenderProps> = ({ x, y, ...props }) =>
+const percentageLabel: ContentRenderer<PieLabelRenderProps> = props =>
     props.name + (props.percent ? ': ' + (props.percent * 100).toFixed(0) + '%' : '')
 
 export const PieChartViewContent: React.FunctionComponent<{ content: PieChartContent<any>; history: H.History }> = ({

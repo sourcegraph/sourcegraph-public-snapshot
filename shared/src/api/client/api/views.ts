@@ -61,7 +61,7 @@ export class ClientViews implements ClientViewsAPI {
             combineLatest([
                 panelView.pipe(
                     map(data => omit(data, 'component')),
-                    distinctUntilChanged((x, y) => isEqual(x, y))
+                    distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
                 panelView.pipe(
                     map(({ component }) => component),
@@ -74,11 +74,14 @@ export class ClientViews implements ClientViewsAPI {
                         return from(this.viewerService.activeViewerUpdates).pipe(
                             map(getActiveCodeEditorPosition),
                             switchMap(
-                                (params): ObservableInput<MaybeLoadingResult<Location[]>> => {
-                                    if (!params) {
+                                (parameters): ObservableInput<MaybeLoadingResult<Location[]>> => {
+                                    if (!parameters) {
                                         return [{ isLoading: false, result: [] }]
                                     }
-                                    return this.textDocumentLocations.getLocations(component.locationProvider, params)
+                                    return this.textDocumentLocations.getLocations(
+                                        component.locationProvider,
+                                        parameters
+                                    )
                                 }
                             )
                         )

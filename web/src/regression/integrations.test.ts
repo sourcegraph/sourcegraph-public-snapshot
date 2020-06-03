@@ -1,5 +1,5 @@
 import { describe, test } from 'mocha'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { catchError } from 'rxjs/operators'
 import { checkOk } from '../../../shared/src/backend/fetch'
 import { merge } from 'rxjs'

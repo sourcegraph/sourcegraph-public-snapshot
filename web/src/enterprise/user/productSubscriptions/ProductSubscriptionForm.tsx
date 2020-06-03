@@ -161,7 +161,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                 })
                                 return of(undefined)
                             }),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
@@ -170,8 +170,8 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
         )
     )
     const onSubmit = useCallback<React.FormEventHandler>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             nextSubmit()
         },
         [nextSubmit]

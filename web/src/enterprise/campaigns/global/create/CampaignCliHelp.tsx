@@ -5,7 +5,7 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
 import { highlightCodeSafe } from '../../../../../../shared/src/util/markdown'
 
-const srcInstall = `# Configure your Sourcegraph instance:
+const sourceInstall = `# Configure your Sourcegraph instance:
 $ export SRC_ENDPOINT=${window.location.protocol}//${window.location.host}
 
 # Download the src binary for macOS:
@@ -66,7 +66,7 @@ export const CampaignCliHelp: React.FunctionComponent<Props> = ({ className }) =
                     <pre className="alert alert-secondary ml-3">
                         <code
                             dangerouslySetInnerHTML={{
-                                __html: highlightCodeSafe(srcInstall, 'bash'),
+                                __html: highlightCodeSafe(sourceInstall, 'bash'),
                             }}
                         />
                     </pre>

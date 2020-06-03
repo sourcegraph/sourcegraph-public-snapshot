@@ -58,12 +58,12 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
     const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA)
 
     const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => setFormData(formData => ({ ...formData, tags: e.currentTarget.value })),
+        event => setFormData(formData => ({ ...formData, tags: event.currentTarget.value })),
         []
     )
 
     const onUserCountChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => setFormData(formData => ({ ...formData, userCount: e.currentTarget.valueAsNumber })),
+        event => setFormData(formData => ({ ...formData, userCount: event.currentTarget.valueAsNumber })),
         []
     )
 
@@ -75,7 +75,8 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         }))
     }, [])
     const onValidDaysChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => setValidDays(Number.isNaN(e.currentTarget.valueAsNumber) ? null : e.currentTarget.valueAsNumber),
+        event =>
+            setValidDays(Number.isNaN(event.currentTarget.valueAsNumber) ? null : event.currentTarget.valueAsNumber),
         [setValidDays]
     )
 
@@ -102,7 +103,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                             },
                         }).pipe(
                             tap(() => onGenerate()),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     })
@@ -111,8 +112,8 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         )
     )
     const onSubmit = useCallback<React.FormEventHandler>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             nextCreation()
         },
         [nextCreation]
@@ -206,8 +207,8 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                     href="#"
                                     key={days}
                                     className="mr-2"
-                                    onClick={e => {
-                                        e.preventDefault()
+                                    onClick={event => {
+                                        event.preventDefault()
                                         setValidDays(days)
                                     }}
                                 >

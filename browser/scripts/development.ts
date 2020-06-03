@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import signale from 'signale'
 import webpack from 'webpack'
-import config from '../config/webpack/dev.config'
+import config from '../config/webpack/development.config'
 import * as autoReloading from './auto-reloading'
 import * as tasks from './tasks'
 
@@ -24,10 +24,10 @@ compiler.watch(
     {
         aggregateTimeout: 300,
     },
-    (err, stats) => {
+    (error, stats) => {
         signale.complete(stats.toString(tasks.WEBPACK_STATS_OPTIONS))
 
-        if (err || stats.hasErrors()) {
+        if (error || stats.hasErrors()) {
             signale.error('Webpack compilation error')
             return
         }

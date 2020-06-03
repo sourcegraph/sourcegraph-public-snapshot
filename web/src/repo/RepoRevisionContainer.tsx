@@ -10,7 +10,7 @@ import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
-    isRevNotFoundErrorLike,
+    isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -27,7 +27,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { ResolvedRev, resolveRev } from './backend'
+import { ResolvedRevision, resolveRevision } from './backend'
 import { RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -39,9 +39,10 @@ import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { RevisionSpec } from '../../../shared/src/util/url'
 
-/** Props passed to sub-routes of {@link RepoRevContainer}. */
-export interface RepoRevContainerContext
+/** Props passed to sub-routes of {@link RepoRevisionContainer}. */
+export interface RepoRevisionContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
@@ -56,19 +57,19 @@ export interface RepoRevContainerContext
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        RevisionSpec {
     repo: GQL.IRepository
-    rev: string
-    resolvedRev: ResolvedRev
+    resolvedRev: ResolvedRevision
 
-    /** The URL route match for {@link RepoRevContainer}. */
+    /** The URL route match for {@link RepoRevisionContainer}. */
     routePrefix: string
 }
 
-/** A sub-route of {@link RepoRevContainer}. */
-export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerContext> {}
+/** A sub-route of {@link RepoRevisionContainer}. */
+export interface RepoRevisionContainerRoute extends RouteDescriptor<RepoRevisionContainerContext> {}
 
-interface RepoRevContainerProps
+interface RepoRevisionContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
@@ -80,60 +81,60 @@ interface RepoRevContainerProps
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
-    routes: readonly RepoRevContainerRoute[]
+        VersionContextProps,
+        RevisionSpec {
+    routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     repo: GQL.IRepository
-    rev: string
     authenticatedUser: GQL.IUser | null
     routePrefix: string
 
     /**
-     * The resolved rev or an error if it could not be resolved. This value lives in RepoContainer (this
+     * The resolved revision or an error if it could not be resolved. This value lives in RepoContainer (this
      * component's parent) but originates from this component.
      */
-    resolvedRevOrError?: ResolvedRev | ErrorLike
+    resolvedRevisionOrError?: ResolvedRevision | ErrorLike
 
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
-    onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
+    onResolvedRevisionOrError: (v: ResolvedRevision | ErrorLike | undefined) => void
     history: H.History
 }
 
-interface RepoRevContainerState {}
+interface RepoRevisionContainerState {}
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, RepoRevContainerState> {
-    public state: RepoRevContainerState = {}
+export class RepoRevisionContainer extends React.PureComponent<RepoRevisionContainerProps, RepoRevisionContainerState> {
+    public state: RepoRevisionContainerState = {}
 
-    private propsUpdates = new Subject<RepoRevContainerProps>()
+    private propsUpdates = new Subject<RepoRevisionContainerProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const repoRevChanges = this.propsUpdates.pipe(
-            // Pick repoName and rev out of the props
-            map(props => ({ repoName: props.repo.name, rev: props.rev })),
+        const repoRevisionChanges = this.propsUpdates.pipe(
+            // Pick repoName and revision out of the props
+            map(props => ({ repoName: props.repo.name, revision: props.revision })),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
         // Fetch repository revision.
         this.subscriptions.add(
-            repoRevChanges
+            repoRevisionChanges
                 .pipe(
-                    // Reset resolved rev / error state
-                    tap(() => this.props.onResolvedRevOrError(undefined)),
-                    switchMap(({ repoName, rev }) =>
-                        defer(() => resolveRev({ repoName, rev })).pipe(
+                    // Reset resolved revision / error state
+                    tap(() => this.props.onResolvedRevisionOrError(undefined)),
+                    switchMap(({ repoName, revision }) =>
+                        defer(() => resolveRevision({ repoName, revision })).pipe(
                             // On a CloneInProgress error, retry after 1s
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
                                         if (isCloneInProgressErrorLike(error)) {
                                             // Display cloning screen to the user and retry
-                                            this.props.onResolvedRevOrError(error)
+                                            this.props.onResolvedRevisionOrError(error)
                                             return
                                         }
                                         // Display error to the user and do not retry
@@ -144,15 +145,15 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             ),
                             // Save any error in the sate to display to the user
                             catchError(error => {
-                                this.props.onResolvedRevOrError(error)
+                                this.props.onResolvedRevisionOrError(error)
                                 return []
                             })
                         )
                     )
                 )
                 .subscribe(
-                    resolvedRev => {
-                        this.props.onResolvedRevOrError(resolvedRev)
+                    resolvedRevision => {
+                        this.props.onResolvedRevisionOrError(resolvedRevision)
                     },
                     error => {
                         // Should never be reached because errors are caught above
@@ -173,22 +174,22 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.resolvedRevOrError) {
+        if (!this.props.resolvedRevisionOrError) {
             // Render nothing while loading
             return null
         }
 
-        if (isErrorLike(this.props.resolvedRevOrError)) {
+        if (isErrorLike(this.props.resolvedRevisionOrError)) {
             // Show error page
-            if (isCloneInProgressErrorLike(this.props.resolvedRevOrError)) {
+            if (isCloneInProgressErrorLike(this.props.resolvedRevisionOrError)) {
                 return (
                     <RepositoryCloningInProgressPage
                         repoName={this.props.repo.name}
-                        progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
+                        progress={(this.props.resolvedRevisionOrError as CloneInProgressError).progress}
                     />
                 )
             }
-            if (isRepoNotFoundErrorLike(this.props.resolvedRevOrError)) {
+            if (isRepoNotFoundErrorLike(this.props.resolvedRevisionOrError)) {
                 return (
                     <HeroPage
                         icon={MapSearchIcon}
@@ -197,8 +198,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     />
                 )
             }
-            if (isRevNotFoundErrorLike(this.props.resolvedRevOrError)) {
-                if (!this.props.rev) {
+            if (isRevisionNotFoundErrorLike(this.props.resolvedRevisionOrError)) {
+                if (!this.props.revision) {
                     return <EmptyRepositoryPage />
                 }
                 return (
@@ -213,12 +214,12 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.props.resolvedRevOrError} history={this.props.history} />}
+                    subtitle={<ErrorMessage error={this.props.resolvedRevisionOrError} history={this.props.history} />}
                 />
             )
         }
 
-        const context: RepoRevContainerContext = {
+        const context: RepoRevisionContainerContext = {
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             isLightTheme: this.props.isLightTheme,
@@ -226,8 +227,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             activation: this.props.activation,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
-            resolvedRev: this.props.resolvedRevOrError,
-            rev: this.props.rev,
+            resolvedRev: this.props.resolvedRevisionOrError,
+            revision: this.props.revision,
             routePrefix: this.props.routePrefix,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
@@ -242,30 +243,35 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         }
 
         return (
-            <div className="repo-rev-container">
+            <div className="repo-revision-container">
                 {IS_CHROME && <ChromeExtensionToast />}
                 <RepoHeaderContributionPortal
                     position="nav"
                     priority={100}
                     element={
-                        <div className="d-flex align-items-center" key="repo-rev">
+                        <div className="d-flex align-items-center" key="repo-revision">
                             <span className="e2e-revision">
-                                {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
-                                    ? this.props.resolvedRevOrError.commitID.slice(0, 7)
-                                    : this.props.rev) ||
-                                    this.props.resolvedRevOrError.defaultBranch ||
+                                {(this.props.revision &&
+                                this.props.revision === this.props.resolvedRevisionOrError.commitID
+                                    ? this.props.resolvedRevisionOrError.commitID.slice(0, 7)
+                                    : this.props.revision) ||
+                                    this.props.resolvedRevisionOrError.defaultBranch ||
                                     'HEAD'}
                             </span>
-                            <button type="button" id="repo-rev-popover" className="btn btn-link px-0">
+                            <button type="button" id="repo-revision-popover" className="btn btn-link px-0">
                                 <MenuDownIcon className="icon-inline" />
                             </button>
-                            <UncontrolledPopover placement="bottom-start" target="repo-rev-popover" trigger="legacy">
+                            <UncontrolledPopover
+                                placement="bottom-start"
+                                target="repo-revision-popover"
+                                trigger="legacy"
+                            >
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
                                     repoName={this.props.repo.name}
-                                    defaultBranch={this.props.resolvedRevOrError.defaultBranch}
-                                    currentRev={this.props.rev}
-                                    currentCommitID={this.props.resolvedRevOrError.commitID}
+                                    defaultBranch={this.props.resolvedRevisionOrError.defaultBranch}
+                                    currentRev={this.props.revision}
+                                    currentCommitID={this.props.resolvedRevisionOrError.commitID}
                                     history={this.props.history}
                                     location={this.props.location}
                                 />
@@ -300,8 +306,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     element={
                         <GoToPermalinkAction
                             key="go-to-permalink"
-                            rev={this.props.rev}
-                            commitID={this.props.resolvedRevOrError.commitID}
+                            revision={this.props.revision}
+                            commitID={this.props.resolvedRevisionOrError.commitID}
                             location={this.props.location}
                             history={this.props.history}
                         />

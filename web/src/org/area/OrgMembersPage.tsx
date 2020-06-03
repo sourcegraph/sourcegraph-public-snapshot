@@ -61,7 +61,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     switchMap(() =>
                         removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
-                            map(c => ({ removalOrError: c || null })),
+                            map(removalOrError => ({ removalOrError: removalOrError || null })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
                                     this.props.onDidUpdate()

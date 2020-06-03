@@ -194,8 +194,8 @@ describe('Parser', () => {
         },
     }
     const parser = new Parser()
-    for (const [expr, want] of Object.entries(TESTS)) {
-        test(expr, () => expect(parser.parse(expr)).toEqual(want))
+    for (const [expression, want] of Object.entries(TESTS)) {
+        test(expression, () => expect(parser.parse(expression)).toEqual(want))
     }
 
     test('throws an error on an invalid argument list', () => expect(() => parser.parse('a(1,,)')).toThrow())

@@ -2141,10 +2141,10 @@
     rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.18.4":
-  version "0.18.4"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.18.4.tgz#a063b28d2d2023bd1cdb6c2427c3aaa8028966e7"
-  integrity sha512-roBS5HZqNwFp1YZfQyjS18ntCP23YYd/YGKP95215QkjRRUaQrKOha6TTAw7Jzej/nNH7P2lWt/DTs32KqF6YQ==
+"@sourcegraph/eslint-config@^0.19.1":
+  version "0.19.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.19.1.tgz#644a92577e644d08c95db583d9dfa08f707741f7"
+  integrity sha512-0x03tmKvCdsSaKNQ9vpGTtvSM72qVpNKXPiBuVF1z/rWDGJjkwvEEOL9g5MOG6EIY6vlctqLP/RMQddyDtAPBw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.34.0"
@@ -2181,7 +2181,8 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.1.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -19360,7 +19361,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "24.5.0"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

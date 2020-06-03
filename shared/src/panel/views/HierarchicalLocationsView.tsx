@@ -152,12 +152,12 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         const GROUPS: {
             name: string
             defaultSize: number
-            key: (loc: Location) => string | undefined
+            key: (location: Location) => string | undefined
         }[] = [
             {
                 name: 'repo',
                 defaultSize: 175,
-                key: loc => parseRepoURI(loc.uri).repoName,
+                key: location => parseRepoURI(location.uri).repoName,
             },
         ]
         const groupByFile =
@@ -168,7 +168,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             GROUPS.push({
                 name: 'file',
                 defaultSize: 200,
-                key: loc => parseRepoURI(loc.uri).filePath,
+                key: location => parseRepoURI(location.uri).filePath,
             })
         }
 
@@ -179,18 +179,18 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             { uri: this.props.defaultGroup }
         )
 
-        const groupsToDisplay = GROUPS.map(({ name, key, defaultSize }, i) => {
+        const groupsToDisplay = GROUPS.map(({ name, key, defaultSize }, index) => {
             const group = { name, key, defaultSize }
-            if (!groups[i]) {
+            if (!groups[index]) {
                 // No groups exist at this level. Don't display anything.
                 return null
             }
-            if (groups[i].length > 1) {
+            if (groups[index].length > 1) {
                 // Always display when there is more than 1 group.
                 return group
             }
-            if (groups[i].length === 1) {
-                if (selectedGroups[i] !== groups[i][0].key) {
+            if (groups[index].length === 1) {
+                if (selectedGroups[index] !== groups[index][0].key) {
                     // When the only group is not the currently selected group, show it. This occurs when the
                     // references list changes after the user made an initial selection. The group must be shown so
                     // that the user can update their selection to the only available group; otherwise they would
@@ -198,7 +198,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     // exists.
                     return group
                 }
-                if (key({ uri: this.props.defaultGroup }) !== selectedGroups[i]) {
+                if (key({ uri: this.props.defaultGroup }) !== selectedGroups[index]) {
                     // When the only group is other than the default group, show it. This is important because it
                     // often indicates that the match comes from another repository. If it isn't shown, the user
                     // would likely assume the match is from the current repository.
@@ -225,24 +225,24 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 <div className={`hierarchical-locations-view ${this.props.className || ''}`}>
                     {selectedGroups &&
                         groupsToDisplay.map(
-                            (g, i) =>
-                                g && (
+                            (group, index) =>
+                                group && (
                                     <Resizable
-                                        key={i}
+                                        key={index}
                                         className="hierarchical-locations-view__resizable"
                                         handlePosition="right"
-                                        storageKey={`hierarchical-locations-view-resizable:${g.name}`}
-                                        defaultSize={g.defaultSize}
+                                        storageKey={`hierarchical-locations-view-resizable:${group.name}`}
+                                        defaultSize={group.defaultSize}
                                         element={
                                             <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
-                                                {groups[i].map((group, j) => (
+                                                {groups[index].map((group, innerIndex) => (
                                                     <span
-                                                        key={j}
+                                                        key={innerIndex}
                                                         className={`list-group-item hierarchical-locations-view__item ${
-                                                            selectedGroups[i] === group.key ? 'active' : ''
+                                                            selectedGroups[index] === group.key ? 'active' : ''
                                                         }`}
-                                                        onClick={e =>
-                                                            this.onSelectTree(e, selectedGroups, i, group.key)
+                                                        onClick={event =>
+                                                            this.onSelectTree(event, selectedGroups, index, group.key)
                                                         }
                                                     >
                                                         <span
@@ -283,13 +283,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     }
 
     private onSelectTree = (
-        e: React.MouseEvent<HTMLElement>,
+        event: React.MouseEvent<HTMLElement>,
         selectedGroups: string[],
-        i: number,
+        index: number,
         group: string
     ): void => {
-        e.preventDefault()
-        this.setState({ selectedGroups: selectedGroups.slice(0, i).concat(group) })
+        event.preventDefault()
+        this.setState({ selectedGroups: selectedGroups.slice(0, index).concat(group) })
         if (this.props.onSelectTree) {
             this.props.onSelectTree()
         }

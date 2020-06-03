@@ -47,10 +47,10 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                 message.args().length === 0 ? message.text() : '',
                 ...(
                     await Promise.all(
-                        message.args().map(async argHandle => {
+                        message.args().map(async argumentHandle => {
                             try {
                                 const json = await (
-                                    await argHandle.evaluateHandle(value =>
+                                    await argumentHandle.evaluateHandle(value =>
                                         JSON.stringify(value, (key, value: unknown) => {
                                             // Check if value is error, because Errors are not serializable but commonly logged
                                             if (value instanceof Error) {
