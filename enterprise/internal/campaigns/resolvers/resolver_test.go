@@ -1734,6 +1734,79 @@ func TestPermissionLevels(t *testing.T) {
 				}
 			})
 		}
+
+		t.Run("Campaigns", func(t *testing.T) {
+			tests := []struct {
+				name                string
+				currentUser         int32
+				viewerCanAdminister bool
+				wantCampaigns       []int64
+			}{
+				{
+					name:                "admin listing viewerCanAdminister: true",
+					currentUser:         adminID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: true",
+					currentUser:         userID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{userCampaign},
+				},
+				{
+					name:                "admin listing viewerCanAdminister: false",
+					currentUser:         adminID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: false",
+					currentUser:         userID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+			}
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
+					for _, c := range tc.wantCampaigns {
+						graphqlID := string(campaigns.MarshalCampaignID(c))
+						expectedIDs[graphqlID] = true
+					}
+
+					query := fmt.Sprintf(`
+				query {
+					campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					node(id: %q) {
+						id
+						... on ExternalChangeset {
+							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+						}
+					}
+					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					var res struct {
+						Campaigns apitest.CampaignConnection
+						Node      apitest.Changeset
+					}
+					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					for _, conn := range []apitest.CampaignConnection{res.Campaigns, res.Node.Campaigns} {
+						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
+							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
+						}
+						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
+							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+						}
+						for _, node := range conn.Nodes {
+							if _, ok := expectedIDs[node.ID]; !ok {
+								t.Fatalf("received wrong campaign with id %q", node.ID)
+							}
+						}
+					}
+				})
+			}
+		})
 	})
 
 	t.Run("mutations", func(t *testing.T) {

@@ -53,9 +53,10 @@ type PatchInput struct {
 }
 
 type ListCampaignArgs struct {
-	First       *int32
-	State       *string
-	HasPatchSet *bool
+	First               *int32
+	State               *string
+	HasPatchSet         *bool
+	ViewerCanAdminister *bool
 }
 
 type DeleteCampaignArgs struct {

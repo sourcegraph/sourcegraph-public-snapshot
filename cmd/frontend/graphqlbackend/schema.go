@@ -821,6 +821,8 @@ type ExternalChangeset implements Node & Changeset {
         state: CampaignState
         # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # The events belonging to this changeset.
@@ -1097,6 +1099,8 @@ type Query {
         state: CampaignState
         # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
