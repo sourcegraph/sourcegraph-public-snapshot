@@ -312,6 +312,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatalf("(-want +got):\n%s", diff)
 	}
 }
+
 func TestExternalServicesStore_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
