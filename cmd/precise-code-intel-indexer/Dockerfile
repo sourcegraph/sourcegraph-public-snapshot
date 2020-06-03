@@ -11,7 +11,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-    tini musl-dev go
+    tini musl-dev go git
 
 ENV GOROOT=/usr/lib/go GOPATH=/go PATH=/go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
