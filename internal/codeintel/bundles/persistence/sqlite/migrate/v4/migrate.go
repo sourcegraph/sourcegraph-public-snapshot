@@ -148,7 +148,7 @@ func scanDefinitionReferenceRow(rows *sql.Rows) (types.MonikerLocations, error) 
 	// This REALLY should never happen as the delimilter is illegal in both Unix
 	// and Windows paths.
 	if n := len(uriParts); len(startLineParts) != n || len(startCharacterParts) != n || len(endLineParts) != n || len(endCharacterParts) != n {
-		return nil, fmt.Errorf("unexpected '%s' in path", Delimiter)
+		return types.MonikerLocations{}, fmt.Errorf("unexpected '%s' in path", Delimiter)
 	}
 
 	var locations []types.Location
