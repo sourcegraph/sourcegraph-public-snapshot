@@ -25,7 +25,7 @@ import {
     UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
-    RevSpec,
+    RevisionSpec,
     ViewStateSpec,
     toAbsoluteBlobURL,
     toPrettyBlobURL,
@@ -50,7 +50,7 @@ const FIXTURE_LOCATION: Location = {
 const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     repoName: 'r',
     commitID: 'c',
-    rev: 'v',
+    revision: 'v',
     filePath: 'f',
     line: 2,
     character: 2,
@@ -420,7 +420,7 @@ describe('getDefinitionURL', () => {
                 (
                     _location: RepoSpec &
                         Partial<RawRepoSpec> &
-                        RevSpec &
+                        RevisionSpec &
                         FileSpec &
                         Partial<UIPositionSpec> &
                         Partial<ViewStateSpec>
@@ -448,7 +448,7 @@ describe('getDefinitionURL', () => {
                 position: undefined,
                 rawRepoName: 'github.com/r3',
                 repoName: 'r3',
-                rev: 'v3',
+                revision: 'v3',
             })
         })
 
@@ -480,7 +480,7 @@ describe('getDefinitionURL', () => {
                 range: undefined,
                 rawRepoName: 'r3',
                 repoName: 'r3',
-                rev: 'v3',
+                revision: 'v3',
             })
         })
 

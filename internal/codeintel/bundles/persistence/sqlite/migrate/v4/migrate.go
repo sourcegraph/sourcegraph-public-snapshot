@@ -51,7 +51,7 @@ func createTempTable(ctx context.Context, s *store.Store, tableName, tempTableNa
 	return s.Exec(ctx, sqlf.Sprintf(`CREATE TABLE "`+tempTableName+`" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL)`))
 }
 
-const Delimiter = "$$"
+const Delimiter = ":"
 
 // populateTable pulls data from the old definition or reference table and inserts the data into the temporary table.
 func populateTable(ctx context.Context, s *store.Store, tableName, tempTableName string, serializer serialization.Serializer) error {
@@ -149,6 +149,14 @@ func scanDefinitionReferenceRow(rows *sql.Rows) (types.MonikerLocations, error) 
 	startCharacterParts := strings.Split(row.StartCharacter, Delimiter)
 	endLineParts := strings.Split(row.EndLine, Delimiter)
 	endCharacterParts := strings.Split(row.EndCharacter, Delimiter)
+
+	// Ensure that all slices have the same length so that we don't panic if we
+	// index a short slice because some document path included the delimiter.
+	// This REALLY should never happen as the delimilter is illegal in both Unix
+	// and Windows paths.
+	if n := len(uriParts); len(startLineParts) != n || len(startCharacterParts) != n || len(endLineParts) != n || len(endCharacterParts) != n {
+		return types.MonikerLocations{}, fmt.Errorf("unexpected '%s' in path", Delimiter)
+	}
 
 	var locations []types.Location
 	for i, uriPart := range uriParts {

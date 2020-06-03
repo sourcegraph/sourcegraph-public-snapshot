@@ -47,9 +47,9 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
     })
     // Set a sortText so that filter type suggestions
     // are shown before dynamic suggestions.
-    .map((completionItem, idx) => ({
+    .map((completionItem, index) => ({
         ...completionItem,
-        sortText: `0${idx}`,
+        sortText: `0${index}`,
     }))
 
 const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({

@@ -16,7 +16,7 @@ import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeSourcegraphURL } from '../../shared/util/context'
-import { assertEnv } from '../envAssertion'
+import { assertEnvironment } from '../environmentAssertion'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { isDefined } from '../../../../shared/src/util/types'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
@@ -24,7 +24,7 @@ import { EndpointPair } from '../../../../shared/src/platform/context'
 
 const IS_EXTENSION = true
 
-assertEnv('BACKGROUND')
+assertEnvironment('BACKGROUND')
 
 initSentry('background')
 
@@ -232,8 +232,8 @@ async function main(): Promise<void> {
             next: browserPortPair => {
                 subscriptions.add(handleBrowserPortPair(browserPortPair))
             },
-            error: err => {
-                console.error('Error handling extension host client connection', err)
+            error: error => {
+                console.error('Error handling extension host client connection', error)
             },
         })
     )

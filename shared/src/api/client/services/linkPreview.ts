@@ -89,9 +89,9 @@ export function provideLinkPreview(
                     from(
                         provider(url).pipe(
                             finallyReleaseProxy(),
-                            catchError(err => {
+                            catchError(error => {
                                 if (logErrors) {
-                                    console.error(err)
+                                    console.error(error)
                                 }
                                 return [null]
                             })
@@ -108,7 +108,7 @@ export function provideLinkPreview(
 }
 
 function mergeLinkPreviews(values: (sourcegraph.LinkPreview | null | undefined)[]): LinkPreviewMerged | null {
-    const nonemptyValues = values.filter((p): p is sourcegraph.LinkPreview => !!p)
+    const nonemptyValues = values.filter(isDefined)
     const contentValues = nonemptyValues.filter(property('content', isDefined))
     const hoverValues = nonemptyValues.filter(property('hover', isDefined))
     if (hoverValues.length === 0 && contentValues.length === 0) {

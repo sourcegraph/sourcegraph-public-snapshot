@@ -28,12 +28,12 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
 }) => {
     const query = new URLSearchParams(location.search).get('q') || ''
     const [uncommittedQuery, setUncommittedQuery] = useState(query)
-    const onUncommittedQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
-        setUncommittedQuery(e.currentTarget.value)
+    const onUncommittedQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setUncommittedQuery(event.currentTarget.value)
     }, [])
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        e => {
-            e.preventDefault()
+        event => {
+            event.preventDefault()
             history.push({ ...location, search: new URLSearchParams({ q: uncommittedQuery }).toString() })
         },
         [history, location, uncommittedQuery]
@@ -44,10 +44,10 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
 
     // TODO(sqs): reuse the user's current patternType
     const stats = useObservable(
-        useMemo(() => _querySearchResultsStats(queryWithCount).pipe(catchError(err => of<ErrorLike>(asError(err)))), [
-            queryWithCount,
-            _querySearchResultsStats,
-        ])
+        useMemo(
+            () => _querySearchResultsStats(queryWithCount).pipe(catchError(error => of<ErrorLike>(asError(error)))),
+            [queryWithCount, _querySearchResultsStats]
+        )
     )
 
     return (

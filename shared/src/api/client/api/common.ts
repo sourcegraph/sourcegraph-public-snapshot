@@ -21,9 +21,11 @@ import { FeatureProviderRegistry } from '../services/registry'
 export class ProxySubscription extends Subscription {
     constructor(proxy: Pick<ProxyMethods, typeof releaseProxy>) {
         super(() => {
-            const p = proxy
-            ;(proxy as any) = null // null out closure reference to proxy
-            p[releaseProxy]()
+            proxy[releaseProxy]()
+
+            // Workaround for https://github.com/ReactiveX/rxjs/issues/5464
+            // Remove when fixed
+            ;(this as any)._unsubscribe = null
         })
     }
 }
@@ -76,15 +78,15 @@ export const wrapRemoteObservable = <T>(
                             proxyObserver = {
                                 [proxyMarker]: true,
                                 next: args[0] || noop,
-                                error: args[1] ? err => args[1](asError(err)) : noop,
+                                error: args[1] ? error => args[1](asError(error)) : noop,
                                 complete: args[2] || noop,
                             }
                         } else {
                             const partialObserver = args[0] || {}
                             proxyObserver = {
                                 [proxyMarker]: true,
-                                next: partialObserver.next ? val => partialObserver.next(val) : noop,
-                                error: partialObserver.error ? err => partialObserver.error(asError(err)) : noop,
+                                next: partialObserver.next ? value => partialObserver.next(value) : noop,
+                                error: partialObserver.error ? error => partialObserver.error(asError(error)) : noop,
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,
                             }
                         }
@@ -142,11 +144,11 @@ export function registerRemoteProvider<
     const subscription = new Subscription()
 
     subscription.add(
-        registry.registerProvider(registrationOptions, params =>
+        registry.registerProvider(registrationOptions, parameters =>
             // Wrap the remote, proxied Observable in an ordinary Observable
             // and add its underlying proxy subscription to our subscription
             // to release the proxy when the provider gets unregistered.
-            wrapRemoteObservable(remoteProviderFunction(params), subscription)
+            wrapRemoteObservable(remoteProviderFunction(parameters), subscription)
         )
     )
 

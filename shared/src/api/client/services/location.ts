@@ -35,8 +35,8 @@ export class TextDocumentLocationProviderRegistry<
      * outer observable never completes because providers may be registered and unregistered at any
      * time.
      */
-    public getLocations(params: P): Observable<MaybeLoadingResult<L[]>> {
-        return getLocationsFromProviders(this.providersForDocument(params.textDocument), params)
+    public getLocations(parameters: P): Observable<MaybeLoadingResult<L[]>> {
+        return getLocationsFromProviders(this.providersForDocument(parameters.textDocument), parameters)
     }
 
     /**
@@ -112,8 +112,11 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      *
      * @param id The provider ID.
      */
-    public getLocations(id: string, params: TextDocumentPositionParams): Observable<MaybeLoadingResult<Location[]>> {
-        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
+    public getLocations(
+        id: string,
+        parameters: TextDocumentPositionParams
+    ): Observable<MaybeLoadingResult<Location[]>> {
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, parameters.textDocument), parameters)
     }
 }
 
@@ -128,7 +131,7 @@ export function getLocationsFromProviders<
     L extends Location = Location
 >(
     providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
-    params: P,
+    parameters: P,
     logErrors = true
 ): Observable<MaybeLoadingResult<L[]>> {
     return providers.pipe(
@@ -137,12 +140,12 @@ export function getLocationsFromProviders<
                 providers.map(provider =>
                     concat(
                         [LOADING],
-                        provider(params).pipe(
+                        provider(parameters).pipe(
                             finallyReleaseProxy(),
                             defaultIfEmpty<typeof LOADING | L[] | null>([]),
-                            catchError(err => {
+                            catchError(error => {
                                 if (logErrors) {
-                                    console.error('Location provider errored:', err)
+                                    console.error('Location provider errored:', error)
                                 }
                                 return [null]
                             })

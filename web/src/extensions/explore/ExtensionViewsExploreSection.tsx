@@ -47,8 +47,8 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
 
         return (
             <div className="extension-views-explore-section">
-                {this.state.views.map((view, i) => (
-                    <div key={i} className="mt-5">
+                {this.state.views.map((view, index) => (
+                    <div key={index} className="mt-5">
                         <h2>{view.title}</h2>
                         <Markdown dangerousInnerHTML={renderMarkdown(view.content)} history={this.props.history} />
                     </div>

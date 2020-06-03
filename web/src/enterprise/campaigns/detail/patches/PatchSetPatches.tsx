@@ -6,7 +6,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../com
 import { Observable, Subject, Observer } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet } from '../backend'
-import { PatchNode, PatchNodeProps } from './PatchNode'
+import { PatchInterfaceNodeProps, PatchInterfaceNode } from './PatchInterfaceNode'
 
 interface Props extends ThemeProps {
     patchSet: Pick<GQL.IPatchSet, 'id'>
@@ -40,10 +40,10 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
 
     return (
         <div className="list-group">
-            <FilteredConnection<GQL.IPatch, Omit<PatchNodeProps, 'node'>>
+            <FilteredConnection<GQL.PatchInterface, Omit<PatchInterfaceNodeProps, 'node'>>
                 className="mt-2"
                 updates={changesetUpdates}
-                nodeComponent={PatchNode}
+                nodeComponent={PatchInterfaceNode}
                 nodeComponentProps={{
                     isLightTheme,
                     history,

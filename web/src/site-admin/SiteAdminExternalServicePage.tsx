@@ -60,7 +60,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     switchMap(id =>
                         fetchExternalService(id).pipe(
                             startWith(LOADING),
-                            catchError(err => [asError(err)])
+                            catchError(error => [asError(error)])
                         )
                     ),
                     map(result => ({ externalServiceOrError: result }))

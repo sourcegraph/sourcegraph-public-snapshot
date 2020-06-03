@@ -15,12 +15,12 @@ import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
-import { ExtDocuments } from './documents'
+import { ExtensionDocuments } from './documents'
 import { fromHover, fromLocation, toPosition, fromDocumentSelector } from './types'
 
 /** @internal */
-export class ExtLanguageFeatures {
-    constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
+export class ExtensionLanguageFeatures {
+    constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtensionDocuments) {}
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
         const providerFunction: comlink.Local<
@@ -65,7 +65,7 @@ export class ExtLanguageFeatures {
     }
 
     public registerLocationProvider(
-        idStr: string,
+        idString: string,
         selector: DocumentSelector,
         provider: LocationProvider
     ): Unsubscribable {
@@ -78,7 +78,11 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(
-            this.proxy.$registerLocationProvider(idStr, fromDocumentSelector(selector), comlink.proxy(providerFunction))
+            this.proxy.$registerLocationProvider(
+                idString,
+                fromDocumentSelector(selector),
+                comlink.proxy(providerFunction)
+            )
         )
     }
 

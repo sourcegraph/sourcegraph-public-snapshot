@@ -59,7 +59,7 @@ export function getProviders(
             },
         },
         hover: {
-            provideHover: (_, position, token) =>
+            provideHover: (textModel, position, token) =>
                 parsedQueries
                     .pipe(
                         first(),
@@ -71,7 +71,7 @@ export function getProviders(
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [':', '-', ...alphabet, ...alphabet.toUpperCase()],
-            provideCompletionItems: (_, position, context, token) =>
+            provideCompletionItems: (textModel, position, context, token) =>
                 parsedQueries
                     .pipe(
                         first(),

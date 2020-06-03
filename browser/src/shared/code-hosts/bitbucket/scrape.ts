@@ -23,11 +23,11 @@ const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo
  * - project name
  * - repo name
  * - file path
- * - rev (through the query parameter `at`)
+ * - revision (through the query parameter `at`)
  */
 const getFileInfoFromLinkInSingleFileView = (
     codeView: HTMLElement
-): Pick<FileInfo, 'rawRepoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
+): Pick<FileInfo, 'rawRepoName' | 'filePath' | 'revision'> & BitbucketRepoInfo => {
     const errors: Error[] = []
     for (const selector of LINK_SELECTORS) {
         try {
@@ -38,7 +38,7 @@ const getFileInfoFromLinkInSingleFileView = (
             const url = new URL(linkElement.href)
             const path = url.pathname
 
-            // Looks like /projects/<project>/repos/<repo>/(browse|raw)/<file path>?at=<rev>
+            // Looks like /projects/<project>/repos/<repo>/(browse|raw)/<file path>?at=<revision>
             const pathMatch = path.match(/\/projects\/(.*?)\/repos\/(.*?)\/(?:browse|raw)\/(.*)$/)
             if (!pathMatch) {
                 throw new Error(`Path of link matching selector ${selector} did not match path regex: ${path}`)
@@ -46,22 +46,22 @@ const getFileInfoFromLinkInSingleFileView = (
 
             const [, project, repoSlug, filePath] = pathMatch
 
-            // Looks like 'refs/heads/<rev>'
-            const at = url.searchParams.get('at')
-            if (!at) {
+            // Looks like 'refs/heads/<revision>'
+            const atParameter = url.searchParams.get('at')
+            if (!atParameter) {
                 throw new Error(
                     `href of link matching selector ${selector} did not have 'at' search param: ${url.href}`
                 )
             }
 
-            const atMatch = at.match(/refs\/heads\/(.*?)$/)
+            const atMatch = atParameter.match(/refs\/heads\/(.*?)$/)
 
-            const rev = atMatch ? atMatch[1] : at
+            const revision = atMatch ? atMatch[1] : atParameter
 
             return {
                 rawRepoName: bitbucketToSourcegraphRepoName({ repoSlug, project }),
                 filePath: decodeURIComponent(filePath),
-                rev,
+                revision,
                 project,
                 repoSlug,
             }
@@ -107,13 +107,13 @@ const getCommitIDFromRevisionSelector = (): string => {
  */
 export const getFileInfoFromSingleFileSourceCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'filePath' | 'rev' | 'commitID'> => {
-    const { rawRepoName, filePath, rev, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
+): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'filePath' | 'revision' | 'commitID'> => {
+    const { rawRepoName, filePath, revision, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
     const commitID = getCommitIDFromRevisionSelector()
     return {
         rawRepoName,
         filePath,
-        rev,
+        revision,
         commitID,
         project,
         repoSlug,
@@ -161,7 +161,7 @@ const getChangeType = ({ changeTypeElement }: { changeTypeElement: HTMLElement |
     if (!changeTypeElement) {
         return 'MODIFY'
     }
-    const className = [...changeTypeElement.classList].find(c => /^change-type-[A-Z]+/.test(c))
+    const className = [...changeTypeElement.classList].find(className => /^change-type-[A-Z]+/.test(className))
     if (!className) {
         throw new Error('Could not detect change type from change type element')
     }
@@ -261,7 +261,7 @@ export const getFileInfoFromSingleFileDiffCodeView = (
  */
 export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'rev'> => {
+): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'revision'> => {
     // Get the file path from the breadcrumbs
     const breadcrumbsElement = codeViewElement.querySelector('.breadcrumbs')
     if (!breadcrumbsElement) {
@@ -301,7 +301,7 @@ export const getFileInfoFromCommitDiffCodeView = (
 ): BitbucketRepoInfo &
     Pick<
         FileInfo,
-        'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'rev' | 'commitID' | 'baseCommitID'
+        'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'revision' | 'commitID' | 'baseCommitID'
     > => {
     const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
     const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')

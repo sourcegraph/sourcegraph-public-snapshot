@@ -2,17 +2,17 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { DOMFunctions } from '../shared/codeViews'
 
 const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {
-    const lineNumElem = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"]`)
-    if (!lineNumElem) {
+    const lineNumberElement = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"]`)
+    if (!lineNumberElement) {
         throw new Error(`Line ${line} not found in code view`)
     }
 
-    const lineElem = lineNumElem.closest<HTMLElement>('.line')
-    if (!lineElem) {
+    const lineElement = lineNumberElement.closest<HTMLElement>('.line')
+    if (!lineElement) {
         throw new Error('Could not find line elem for line element')
     }
 
-    return lineElem
+    return lineElement
 }
 
 export const singleFileDOMFunctions: DOMFunctions = {
@@ -27,17 +27,17 @@ export const singleFileDOMFunctions: DOMFunctions = {
             throw new Error('Could not find line containing code element')
         }
 
-        const lineNumElem = line.querySelector<HTMLElement>('.line-locator')
-        if (!lineNumElem) {
+        const lineNumberElement = line.querySelector<HTMLElement>('.line-locator')
+        if (!lineNumberElement) {
             throw new Error('Could not find the line number in a line container')
         }
 
-        const lineNum = parseInt(lineNumElem.dataset.lineNumber || '', 10)
-        if (isNaN(lineNum)) {
+        const lineNumber = parseInt(lineNumberElement.dataset.lineNumber || '', 10)
+        if (isNaN(lineNumber)) {
             throw new TypeError('data-line-number not set on line number element')
         }
 
-        return lineNum
+        return lineNumber
     },
     getLineElementFromLineNumber: getSingleFileLineElementFromLineNumber,
     getCodeElementFromLineNumber: (codeView, line) =>
@@ -47,15 +47,15 @@ export const singleFileDOMFunctions: DOMFunctions = {
 }
 
 const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement => {
-    for (const lineNumElem of codeView.querySelectorAll(`.line-number-${part === 'head' ? 'to' : 'from'}`)) {
-        const lineNum = parseInt((lineNumElem.textContent || '').trim(), 10)
-        if (!isNaN(lineNum) && lineNum === line) {
-            const lineElem = lineNumElem.closest<HTMLElement>('.line')
-            if (!lineElem) {
+    for (const lineNumberElement of codeView.querySelectorAll(`.line-number-${part === 'head' ? 'to' : 'from'}`)) {
+        const lineNumber = parseInt((lineNumberElement.textContent || '').trim(), 10)
+        if (!isNaN(lineNumber) && lineNumber === line) {
+            const lineElement = lineNumberElement.closest<HTMLElement>('.line')
+            if (!lineElement) {
                 throw new Error('Could not find lineElem from lineNumElem')
             }
 
-            return lineElem
+            return lineElement
         }
     }
 
@@ -70,19 +70,19 @@ export const diffDOMFunctions: DOMFunctions = {
             throw new Error('Could not find line containing code element')
         }
 
-        const lineNumTo = line.querySelector<HTMLElement>('.line-number-to')
-        if (lineNumTo) {
-            const lineNum = parseInt((lineNumTo.textContent || '').trim(), 10)
-            if (!isNaN(lineNum)) {
-                return lineNum
+        const lineNumberTo = line.querySelector<HTMLElement>('.line-number-to')
+        if (lineNumberTo) {
+            const lineNumber = parseInt((lineNumberTo.textContent || '').trim(), 10)
+            if (!isNaN(lineNumber)) {
+                return lineNumber
             }
         }
 
-        const lineNumFrom = line.querySelector<HTMLElement>('.line-number-from')
-        if (lineNumFrom) {
-            const lineNum = parseInt((lineNumFrom.textContent || '').trim(), 10)
-            if (!isNaN(lineNum)) {
-                return lineNum
+        const lineNumberFrom = line.querySelector<HTMLElement>('.line-number-from')
+        if (lineNumberFrom) {
+            const lineNumber = parseInt((lineNumberFrom.textContent || '').trim(), 10)
+            if (!isNaN(lineNumber)) {
+                return lineNumber
             }
         }
 

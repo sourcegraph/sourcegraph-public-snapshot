@@ -9,7 +9,7 @@ describe('repeatUntil()', () => {
         scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 from(
-                    cold<number>('a|', { a: 5 }).pipe(repeatUntil(v => v === 5))
+                    cold<number>('a|', { a: 5 }).pipe(repeatUntil(value => value === 5))
                 )
             ).toBe('(a|)', { a: 5 })
         })
@@ -17,28 +17,30 @@ describe('repeatUntil()', () => {
 
     it('resubscribes until an emitted value matches select', () => {
         scheduler().run(({ cold, expectObservable }) => {
-            let n = 0
-            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 3))).toBe('ab(c|)', {
-                a: 1,
-                b: 2,
-                c: 3,
-            })
+            let number = 0
+            expectObservable(defer(() => cold('a|', { a: ++number })).pipe(repeatUntil(value => value === 3))).toBe(
+                'ab(c|)',
+                {
+                    a: 1,
+                    b: 2,
+                    c: 3,
+                }
+            )
         })
     })
 
     it('delays resubscription if delay is provided', () => {
         scheduler().run(({ cold, expectObservable }) => {
-            let n = 0
-            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 5, { delay: 5000 }))).toBe(
-                'a 5s b 5s c 5s d 5s (e|)',
-                {
-                    a: 1,
-                    b: 2,
-                    c: 3,
-                    d: 4,
-                    e: 5,
-                }
-            )
+            let number = 0
+            expectObservable(
+                defer(() => cold('a|', { a: ++number })).pipe(repeatUntil(value => value === 5, { delay: 5000 }))
+            ).toBe('a 5s b 5s c 5s d 5s (e|)', {
+                a: 1,
+                b: 2,
+                c: 3,
+                d: 4,
+                e: 5,
+            })
         })
     })
 })

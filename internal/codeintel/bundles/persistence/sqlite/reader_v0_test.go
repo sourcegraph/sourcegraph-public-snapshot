@@ -22,13 +22,8 @@ func TestReadMetaV0(t *testing.T) {
 
 func TestReadDocumentV0(t *testing.T) {
 	data, exists, err := testReader(t, v0TestFile).ReadDocument(context.Background(), "protocol/writer.go")
-	if err != nil {
 		t.Fatalf("unexpected error reading document: %s", err)
 	}
-	if !exists {
-		t.Errorf("expected document to exist")
-	}
-
 	expectedRange := types.RangeData{
 		StartLine:          145,
 		StartCharacter:     17,

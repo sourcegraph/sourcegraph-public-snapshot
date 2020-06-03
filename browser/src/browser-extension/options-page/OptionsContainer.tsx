@@ -72,28 +72,28 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 this.setState({ status: 'connecting', connectionError: undefined })
                 return this.props.ensureValidSite(url).pipe(
                     map(() => url),
-                    catchError(err => of(asError(err)))
+                    catchError(error => of(asError(error)))
                 )
             }),
-            catchError(err => of(asError(err))),
+            catchError(error => of(asError(error))),
             share()
         )
 
         this.subscriptions.add(
-            fetchingSite.subscribe(async res => {
+            fetchingSite.subscribe(async result => {
                 let url = ''
 
-                if (isErrorLike(res)) {
+                if (isErrorLike(result)) {
                     this.setState({
                         status: 'error',
-                        connectionError: isHTTPAuthError(res)
+                        connectionError: isHTTPAuthError(result)
                             ? ConnectionErrors.AuthError
                             : ConnectionErrors.UnableToConnect,
                     })
                     url = this.state.sourcegraphURL
                 } else {
                     this.setState({ status: 'connected' })
-                    url = res
+                    url = result
                 }
 
                 const urlHasPermissions = await props.hasPermissions(url)

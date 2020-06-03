@@ -108,11 +108,11 @@ export function fromFetch<T>(
                     subscription.add(
                         from(selector(response)).subscribe(
                             value => subscriber.next(value),
-                            err => {
+                            error => {
                                 abortable = false
                                 if (!unsubscribed) {
                                     // Only forward the error if it wasn't an abort.
-                                    subscriber.error(err)
+                                    subscriber.error(error)
                                 }
                             },
                             () => {

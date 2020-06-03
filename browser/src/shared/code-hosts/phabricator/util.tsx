@@ -6,11 +6,11 @@ import { Observable, throwError } from 'rxjs'
 
 const TAG_PATTERN = /r([\dA-z]+)([\da-f]{40})/
 function matchPageTag(): RegExpExecArray | null {
-    const el = document.querySelectorAll('.phui-tag-core').item(0)
-    if (!el) {
+    const element = document.querySelectorAll('.phui-tag-core').item(0)
+    if (!element) {
         throw new Error('Could not find Phabricator page tag')
     }
-    return TAG_PATTERN.exec(el.children[0].getAttribute('href') as string)
+    return TAG_PATTERN.exec(element.children[0].getAttribute('href') as string)
 }
 
 function getCallsignFromPageTag(): string {
@@ -77,12 +77,12 @@ function getBaseCommitIDFromRevisionPage(): string {
 }
 
 export function getPhabricatorState(
-    loc: Location,
+    location: Location,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
 ): Observable<DiffusionState | DifferentialState | RevisionState | ChangeState> {
     try {
-        const stateUrl = loc.href.replace(loc.origin, '')
+        const stateUrl = location.href.replace(location.origin, '')
         const diffusionMatch = PHAB_DIFFUSION_REGEX.exec(stateUrl)
         if (diffusionMatch) {
             const filePath = diffusionMatch[4]

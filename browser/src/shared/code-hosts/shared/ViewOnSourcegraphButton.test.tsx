@@ -40,7 +40,7 @@ describe('<ViewOnSourcegraphButton />', () => {
             expect(root!).toMatchSnapshot()
         })
 
-        it('renders a link with the rev when provided', () => {
+        it('renders a link with the revision when provided', () => {
             let root: ReactTestRenderer
             renderer.act(() => {
                 root = renderer.create(
@@ -49,7 +49,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         sourcegraphURL="https://test.com"
                         getContext={() => ({
                             rawRepoName: 'test',
-                            rev: 'test',
+                            revision: 'test',
                             privateRepository: false,
                         })}
                         className="test"
@@ -72,7 +72,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         sourcegraphURL="https://sourcegraph.com"
                         getContext={() => ({
                             rawRepoName: 'test',
-                            rev: 'test',
+                            revision: 'test',
                             privateRepository: false,
                         })}
                         className="test"
@@ -94,7 +94,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                         sourcegraphURL="https://sourcegraph.test"
                         getContext={() => ({
                             rawRepoName: 'test',
-                            rev: 'test',
+                            revision: 'test',
                             privateRepository: false,
                         })}
                         className="test"
@@ -121,7 +121,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     sourcegraphURL="https://test.com"
                                     getContext={() => ({
                                         rawRepoName: 'test',
-                                        rev: 'test',
+                                        revision: 'test',
                                         privateRepository: false,
                                     })}
                                     showSignInButton={true}
@@ -147,7 +147,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                             sourcegraphURL="https://test.com"
                             getContext={() => ({
                                 rawRepoName: 'test',
-                                rev: 'test',
+                                revision: 'test',
                                 privateRepository: false,
                             })}
                             showSignInButton={true}

@@ -225,15 +225,17 @@ export function testDOMFunctions(
                     beforeEach(setCodeElement)
                     it('should return correctly whether the first character is a diff indicator', () => {
                         // Default is false
-                        const is = Boolean(
+                        const actualFirstCharacterIsDiffIndicator = Boolean(
                             domFunctions.isFirstCharacterDiffIndicator &&
                                 domFunctions.isFirstCharacterDiffIndicator(codeElement)
                         )
-                        expect(is).toBe(Boolean(firstCharacterIsDiffIndicator))
-                        if (is) {
+                        expect(actualFirstCharacterIsDiffIndicator).toBe(Boolean(firstCharacterIsDiffIndicator))
+                        if (actualFirstCharacterIsDiffIndicator) {
                             // Check that the first character is truly a diff indicator
                             const diffIndicators = new Set(['+', '-', ' '])
-                            expect(is).toBe(diffIndicators.has(codeElement.textContent![0]))
+                            expect(actualFirstCharacterIsDiffIndicator).toBe(
+                                diffIndicators.has(codeElement.textContent![0])
+                            )
                         }
                     })
                 })

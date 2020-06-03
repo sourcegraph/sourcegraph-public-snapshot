@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -607,6 +608,67 @@ func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64
 	return tx.CreateChangesetJob(ctx, changesetJob)
 }
 
+// GetCampaignStatus returns the BackgroundProcessStatus for the given campaign.
+func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) (status *campaigns.BackgroundProcessStatus, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", c.ID)
+	tr, ctx := trace.New(ctx, "service.GetCampaignStatus", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	canAdmin, err := hasCampaignAdminPermissions(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canAdmin {
+		// If the user doesn't have admin permissions for this campaign, we
+		// don't need to filter out specific errors, but can simply exclude
+		// _all_ errors.
+		return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
+			ID:            c.ID,
+			ExcludeErrors: true,
+		})
+	}
+
+	// We need to filter out error messages the user is not allowed to see,
+	// because they don't have permissions to access the repository associated
+	// with a given patch/changesetJob.
+
+	// First we load the repo IDs of the failed changesetJobs
+	repoIDs, err := s.store.GetRepoIDsForFailedChangesetJobs(ctx, c.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	// We now check which repositories in `repoIDs` are not in `accessibleRepoIDs`.
+	// We have to filter the error messages associated with those out.
+	excludedRepos := make([]api.RepoID, 0, len(accessibleRepoIDs))
+	for _, id := range repoIDs {
+		if _, ok := accessibleRepoIDs[id]; !ok {
+			excludedRepos = append(excludedRepos, id)
+		}
+	}
+
+	return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
+		ID:                   c.ID,
+		ExcludeErrorsInRepos: excludedRepos,
+	})
+}
+
 // ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
 // has been published at the time of update but its ChangesetJobs have not
 // finished execution.
@@ -1060,4 +1122,18 @@ func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bo
 		return false, err
 	}
 	return status.Processing(), nil
+}
+
+// hasCampaignAdminPermissions returns true when the actor in the given context
+// is either a site-admin or the author of the given campaign.
+func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bool, error) {
+	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			return false, nil
+		}
+
+		return false, err
+	}
+	return true, nil
 }
