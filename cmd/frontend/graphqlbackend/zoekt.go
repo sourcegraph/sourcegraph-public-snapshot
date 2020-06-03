@@ -251,7 +251,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
-			MatchCount:   matchCount,
+			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
 			Repo:         repoRev.Repo,
