@@ -585,8 +585,7 @@ func (c *Container) alertDescription(o Observable, alert Alert) string {
 	}
 	units := o.PanelOptions.unitType.short()
 	if alert.GreaterOrEqual != 0 && alert.LessOrEqual != 0 {
-		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s",
-			c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
+		return fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, alert.GreaterOrEqual, units, alert.LessOrEqual, units, o.Description)
 	} else if alert.GreaterOrEqual != 0 {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, units, o.Description)
