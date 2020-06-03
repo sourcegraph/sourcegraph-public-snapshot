@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -595,6 +596,115 @@ func TestService(t *testing.T) {
 		}
 		if !haveJob3.FinishedAt.IsZero() {
 			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
+		}
+	})
+
+	t.Run("GetCampaignStatus", func(t *testing.T) {
+		// Make sure that user is an admin
+		if !user.SiteAdmin {
+			t.Fatalf("user is not an admin")
+		}
+
+		otherUser := createTestUser(ctx, t)
+		if otherUser.SiteAdmin {
+			t.Fatalf("otherUser is admin")
+		}
+
+		patchSet := &campaigns.PatchSet{UserID: otherUser.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patches := make([]*campaigns.Patch, 0, len(rs))
+		for _, repo := range rs {
+			patch := testPatch(patchSet.ID, repo.ID, now)
+			if err := store.CreatePatch(ctx, patch); err != nil {
+				t.Fatal(err)
+			}
+			patches = append(patches, patch)
+		}
+
+		campaign := testCampaign(otherUser.ID, patchSet.ID)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
+		for _, p := range patches {
+			job := &campaigns.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    p.ID,
+				StartedAt:  clock(),
+				FinishedAt: clock(),
+				Error:      "error",
+			}
+			if err = store.CreateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+			changesetJobs = append(changesetJobs, job)
+		}
+
+		// As site-admin
+		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+		svc := NewService(store, cf)
+		status, err := svc.GetCampaignStatus(userCtx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(status.ProcessErrors), len(changesetJobs); have != want {
+			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
+		}
+
+		// As author of campaign and non-site-admin
+		otherUserCtx := actor.WithActor(context.Background(), actor.FromUser(otherUser.ID))
+		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(status.ProcessErrors), len(changesetJobs); have != want {
+			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
+		}
+
+		// As author of campaign and non-site-admin with filtered out repositories
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			var filtered []*types.Repo
+			for _, r := range repos {
+				// Filter out one repository
+				if r.ID == patches[0].RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		defer func() { db.MockAuthzFilter = nil }()
+
+		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// One less error
+		if have, want := len(status.ProcessErrors), len(changesetJobs)-1; have != want {
+			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
+		}
+
+		// Change author of campaign to site-admin
+		campaign.AuthorID = user.ID
+		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		// As non-author and non-site-admin
+		status, err = svc.GetCampaignStatus(otherUserCtx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(status.ProcessErrors), 0; have != want {
+			t.Fatalf("wrong number of errors returned. want=%d, have=%d", want, have)
 		}
 	})
 

@@ -12,11 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -47,7 +49,7 @@ func allowReadAccess(ctx context.Context) error {
 	return nil
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
@@ -70,7 +72,28 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &changesetResolver{store: r.store, Changeset: changeset}, nil
+	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	repo, err := db.Repos.Get(ctx, changeset.RepoID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
+			return &hiddenChangesetResolver{
+				store:       r.store,
+				httpFactory: r.httpFactory,
+				Changeset:   changeset,
+			}, nil
+		}
+		return nil, err
+	}
+
+	return &changesetResolver{
+		// TODO: nextSyncAt is not populated. See https://github.com/sourcegraph/sourcegraph/issues/11227
+		store:         r.store,
+		httpFactory:   r.httpFactory,
+		Changeset:     changeset,
+		preloadedRepo: repo,
+	}, nil
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
@@ -96,10 +119,10 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchResolver, error) {
+func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchInterfaceResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patches.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
@@ -122,7 +145,17 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	return &patchResolver{store: r.store, patch: patch}, nil
+	// 🚨 SECURITY: db.Repos.Get uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	repo, err := db.Repos.Get(ctx, patch.RepoID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return &hiddenPatchResolver{patch: patch}, nil
+		}
+		return nil, err
+	}
+
+	return &patchResolver{store: r.store, patch: patch, preloadedRepo: repo}, nil
 }
 
 func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {
@@ -185,7 +218,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -249,7 +282,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -299,7 +332,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		}()
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -348,7 +381,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
@@ -368,8 +401,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		opts.Limit = int(*args.First)
 	}
 	return &campaignsConnectionResolver{
-		store: r.store,
-		opts:  opts,
+		store:       r.store,
+		httpFactory: r.httpFactory,
+		opts:        opts,
 	}, nil
 }
 
@@ -380,7 +414,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	var repoIDs []api.RepoID
-	repoSet := map[api.RepoID]*repos.Repo{}
+	repoSet := map[api.RepoID]*types.Repo{}
 	cs := make([]*campaigns.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
@@ -408,7 +442,9 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
-	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -456,6 +492,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	for i := range cs {
 		csr[i] = &changesetResolver{
 			store:         r.store,
+			httpFactory:   r.httpFactory,
 			Changeset:     cs[i],
 			preloadedRepo: repoSet[cs[i].RepoID],
 		}
@@ -571,7 +608,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "closing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.PublishCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -597,7 +634,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "publishing campaign")
 	}
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {

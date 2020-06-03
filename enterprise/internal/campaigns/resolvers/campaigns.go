@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"sync"
 	"time"
@@ -11,13 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
 
 type campaignsConnectionResolver struct {
-	store *ee.Store
-	opts  ee.ListCampaignsOpts
+	store       *ee.Store
+	httpFactory *httpcli.Factory
+	opts        ee.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -33,7 +36,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	}
 	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(campaigns))
 	for _, c := range campaigns {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: c})
 	}
 	return resolvers, nil
 }
@@ -62,7 +65,8 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*campaigns
 var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
-	store *ee.Store
+	store       *ee.Store
+	httpFactory *httpcli.Factory
 	*campaigns.Campaign
 }
 
@@ -143,7 +147,7 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
-) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+) (graphqlbackend.ChangesetsConnectionResolver, error) {
 	opts, err := listChangesetOptsFromArgs(args)
 	if err != nil {
 		return nil, err
@@ -155,7 +159,7 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ChangesetsConnectionResolver, error) {
 	state := campaigns.ChangesetStateOpen
 	return &changesetsConnectionResolver{
 		store: r.store,
@@ -316,15 +320,9 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	canAdmin, err := currentUserCanAdministerCampaign(ctx, r.Campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.store.GetCampaignStatus(ctx, ee.GetCampaignStatusOpts{
-		ID:            r.Campaign.ID,
-		ExcludeErrors: !canAdmin,
-	})
+	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: GetCampaignStatus checks whether current user is authorized.
+	return svc.GetCampaignStatus(ctx, r.Campaign)
 }
 
 type changesetDiffsConnectionResolver struct {
@@ -336,23 +334,34 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
 	for _, c := range changesets {
-		comp, err := c.Diff(ctx)
-		if err != nil {
-			return nil, err
+		switch c := c.(type) {
+		case *changesetResolver:
+			comp, err := c.Diff(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			if comp != nil {
+				resolvers = append(resolvers, comp)
+			}
+		case *hiddenChangesetResolver:
+			// Do not include hidden changesets in diff and diffstats
+			continue
+		default:
+			return nil, fmt.Errorf("changesetResolver has unknown type: %T", c)
 		}
-		if comp != nil {
-			resolvers = append(resolvers, comp)
-		}
+
 	}
 	return resolvers, nil
 }
 
 type emptyPatchConnectionResolver struct{}
 
-func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
-	return []graphqlbackend.PatchResolver{}, nil
+func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
+	return []graphqlbackend.PatchInterfaceResolver{}, nil
 }
 
 func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {

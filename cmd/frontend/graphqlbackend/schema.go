@@ -600,10 +600,10 @@ type Campaign implements Node {
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
         checkState: ChangesetCheckState
-    ): ExternalChangesetConnection!
+    ): ChangesetConnection!
 
     # All the changesets in this campaign whose state is ChangesetState.OPEN.
-    openChangesets: ExternalChangesetConnection!
+    openChangesets: ChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
     # the "to" parameter.
@@ -699,9 +699,17 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# A patch is a code change on a repository branch. It is used to create a changeset on a code host
-# as part of a campaign.
-type Patch implements Node {
+# A campaign patch is code change on a repository branch that a user might or might not
+# have access to.
+# It is used to create a changeset on a code host as part of a campaign.
+interface PatchInterface {
+    # The id of the patch.
+    id: ID!
+}
+
+# A patch is a patch in a repository that the user has read-access
+# to.
+type Patch implements PatchInterface & Node {
     # The id of the patch.
     id: ID!
 
@@ -720,6 +728,13 @@ type Patch implements Node {
     publicationEnqueued: Boolean!
 }
 
+# A hidden patch is a patch in a repository that the user does NOT have
+# read-access to.
+type HiddenPatch implements PatchInterface & Node {
+    # The id of the patch.
+    id: ID!
+}
+
 # A label attached to a changeset on a code host.
 type ChangesetLabel {
     # The label's text.
@@ -730,8 +745,64 @@ type ChangesetLabel {
     description: String
 }
 
+# A changeset on a codehost.
+interface Changeset {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The state of the changeset.
+    state: ChangesetState!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+}
+
+# A changeset on a code host that the user does not have access to.
+type HiddenExternalChangeset implements Node & Changeset {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The state of the changeset.
+    state: ChangesetState!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+}
+
 # A changeset on a code host (e.g., a pull request on GitHub).
-type ExternalChangeset implements Node {
+type ExternalChangeset implements Node & Changeset {
     # The unique ID for the changeset.
     id: ID!
 
@@ -799,9 +870,9 @@ type ExternalChangeset implements Node {
 }
 
 # A list of changesets.
-type ExternalChangesetConnection {
+type ChangesetConnection {
     # A list of changesets.
-    nodes: [ExternalChangeset!]!
+    nodes: [Changeset!]!
 
     # The total number of changesets in the connection.
     totalCount: Int!
@@ -813,7 +884,7 @@ type ExternalChangesetConnection {
 # A list of patches.
 type PatchConnection {
     # A list of patches.
-    nodes: [Patch!]!
+    nodes: [PatchInterface!]!
 
     # The total number of patches in the connection.
     totalCount: Int!

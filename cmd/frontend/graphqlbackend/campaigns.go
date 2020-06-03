@@ -109,14 +109,14 @@ type CampaignsResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
-	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
+	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
 	CreatePatchSetFromPatches(ctx context.Context, args CreatePatchSetFromPatchesArgs) (PatchSetResolver, error)
 	PatchSetByID(ctx context.Context, id graphql.ID) (PatchSetResolver, error)
 
-	PatchByID(ctx context.Context, id graphql.ID) (PatchResolver, error)
+	PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error)
 }
 
 var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -167,7 +167,7 @@ func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *Crea
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error) {
+func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -183,7 +183,7 @@ func (defaultCampaignsResolver) PatchSetByID(ctx context.Context, id graphql.ID)
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchResolver, error) {
+func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchInterfaceResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -210,8 +210,8 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	Changesets(ctx context.Context, args *ListChangesetsArgs) (ExternalChangesetsConnectionResolver, error)
-	OpenChangesets(ctx context.Context) (ExternalChangesetsConnectionResolver, error)
+	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
+	OpenChangesets(ctx context.Context) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	PatchSet(ctx context.Context) (PatchSetResolver, error)
@@ -228,8 +228,8 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ExternalChangesetsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ExternalChangesetResolver, error)
+type ChangesetsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -240,20 +240,44 @@ type ChangesetLabelResolver interface {
 	Description() *string
 }
 
-type ExternalChangesetResolver interface {
+// ChangesetResolver is the "interface Changeset" in the GraphQL schema and is
+// implemented by ExternalChangesetResolver and HiddenExternalChangesetResolver.
+type ChangesetResolver interface {
 	ID() graphql.ID
-	ExternalID() string
+
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt() *DateTime
+	State() campaigns.ChangesetState
+	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+
+	ToExternalChangeset() (ExternalChangesetResolver, bool)
+	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
+}
+
+// HiddenExternalChangesetResolver implements only the common interface,
+// ChangesetResolver, to not reveal information to unauthorized users.
+//
+// Theoretically this type is not necessary, but it's easier to understand the
+// implementation of the GraphQL schema if we have a mapping between GraphQL
+// types and Go types.
+type HiddenExternalChangesetResolver interface {
+	ChangesetResolver
+}
+
+// ExternalChangesetResolver implements the ChangesetResolver interface and
+// additional data.
+type ExternalChangesetResolver interface {
+	ChangesetResolver
+
+	ExternalID() string
 	Title() (string, error)
 	Body() (string, error)
-	State() campaigns.ChangesetState
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) campaigns.ChangesetReviewState
 	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
+
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
 	Head(ctx context.Context) (*GitRefResolver, error)
@@ -262,13 +286,35 @@ type ExternalChangesetResolver interface {
 }
 
 type PatchConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PatchResolver, error)
+	Nodes(ctx context.Context) ([]PatchInterfaceResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type PatchResolver interface {
+// PatchInterfaceResolver is the "interface PatchInterface" in the GraphQL
+// schema and is implemented by Patch and HiddenPatch.
+type PatchInterfaceResolver interface {
 	ID() graphql.ID
+
+	ToPatch() (PatchResolver, bool)
+	ToHiddenPatch() (HiddenPatchResolver, bool)
+}
+
+// HiddenPatchResolver implements only the common interface,
+// PatchInterfaceResolver, to not reveal information to unauthorized users.
+//
+// Theoretically this type is not necessary, but it's easier to understand the
+// implementation of the GraphQL schema if we have a mapping between GraphQL
+// types and Go types.
+type HiddenPatchResolver interface {
+	PatchInterfaceResolver
+}
+
+// PatchResolver implements the PatchInterfaceResolver interface and additional
+// data.
+type PatchResolver interface {
+	PatchInterfaceResolver
+
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() PatchResolver

@@ -3,7 +3,14 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
 import { CampaignUpdateDiff, calculateChangesetDiff } from './CampaignUpdateDiff'
-import { IRepository, IExternalChangeset, ChangesetState, IPatch } from '../../../../../shared/src/graphql/schema'
+import {
+    IRepository,
+    IExternalChangeset,
+    ChangesetState,
+    IPatch,
+    IHiddenPatch,
+    IHiddenExternalChangeset,
+} from '../../../../../shared/src/graphql/schema'
 
 describe('CampaignUpdateDiff', () => {
     test('renders a loader', () => {
@@ -85,11 +92,16 @@ describe('CampaignUpdateDiff', () => {
         })
     })
     describe('calculateChangesetDiff', () => {
-        type PatchInput = Pick<IPatch, '__typename'> & { repository: Pick<IRepository, 'id'> }
+        type PatchInput =
+            | Pick<IHiddenPatch, '__typename'>
+            | (Pick<IPatch, '__typename'> & { repository: Pick<IRepository, 'id'> })
 
-        type ChangesetInputArray = (Pick<IExternalChangeset, '__typename' | 'state'> & {
-            repository: Pick<IRepository, 'id'>
-        })[]
+        type ChangesetInputArray = (
+            | Pick<IHiddenExternalChangeset, '__typename' | 'state'>
+            | (Pick<IExternalChangeset, '__typename' | 'state'> & {
+                  repository: Pick<IRepository, 'id'>
+              })
+        )[]
         const testChangesetDiff = ({
             changesets,
             changesetPatches,
@@ -171,6 +183,19 @@ describe('CampaignUpdateDiff', () => {
                 },
             })
         })
+        test('new hidden patch', () => {
+            testChangesetDiff({
+                changesets: [{ __typename: 'HiddenExternalChangeset', state: ChangesetState.OPEN }],
+                changesetPatches: [],
+                patches: [{ __typename: 'HiddenPatch' }],
+                want: {
+                    added: 0,
+                    changed: 0,
+                    unmodified: 1,
+                    deleted: 0,
+                },
+            })
+        })
         test('new patch and new repo', () => {
             testChangesetDiff({
                 changesets: [
@@ -183,6 +208,22 @@ describe('CampaignUpdateDiff', () => {
                 ],
                 want: {
                     added: 1,
+                    changed: 1,
+                    unmodified: 0,
+                    deleted: 0,
+                },
+            })
+        })
+
+        test('new patch and new hidden patch', () => {
+            testChangesetDiff({
+                changesets: [
+                    { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.OPEN },
+                ],
+                changesetPatches: [],
+                patches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }, { __typename: 'HiddenPatch' }],
+                want: {
+                    added: 0,
                     changed: 1,
                     unmodified: 0,
                     deleted: 0,
@@ -202,11 +243,52 @@ describe('CampaignUpdateDiff', () => {
                 },
             })
         })
+
+        test('draft changeset and hidden patch', () => {
+            testChangesetDiff({
+                changesets: [],
+                changesetPatches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
+                patches: [{ __typename: 'HiddenPatch' }],
+                want: {
+                    added: 0,
+                    changed: 0,
+                    unmodified: 0,
+                    deleted: 0,
+                },
+            })
+        })
         test('draft changeset not relevant anymore and ignored', () => {
             testChangesetDiff({
                 changesets: [],
                 changesetPatches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
                 patches: [],
+                want: {
+                    added: 0,
+                    changed: 0,
+                    unmodified: 0,
+                    deleted: 0,
+                },
+            })
+        })
+
+        test('hidden draft changeset not relevant anymore and ignored', () => {
+            testChangesetDiff({
+                changesets: [],
+                changesetPatches: [{ __typename: 'HiddenPatch' }],
+                patches: [],
+                want: {
+                    added: 0,
+                    changed: 0,
+                    unmodified: 0,
+                    deleted: 0,
+                },
+            })
+        })
+        test('hidden new patch', () => {
+            testChangesetDiff({
+                changesets: [],
+                changesetPatches: [],
+                patches: [{ __typename: 'HiddenPatch' }],
                 want: {
                     added: 0,
                     changed: 0,
