@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"sort"
 	"strconv"
 
@@ -12,9 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 )
-
-// NumMigrateGoRoutines is the number of goroutines launched to migrate database files.
-var NumMigrateGoRoutines = runtime.NumCPU()
 
 // Migrate runs through each SQLite database on disk and opens a reader instance which will perform
 // any necessary migrations to transform it to the newest schema. Because this may have a non-negligible
@@ -26,24 +22,27 @@ func Migrate(bundleDir string) error {
 	if err != nil {
 		return err
 	}
+	if len(paths) == 0 {
+		return nil
+	}
 
-	ch := make(chan string, len(paths))
-	defer close(ch)
+	log15.Info("Performing bundle migrations in background", "numBundles", len(paths))
 
-	for i := 0; i < NumMigrateGoRoutines; i++ {
-		go func() {
-			for filename := range ch {
-				if err := migrateDB(context.Background(), filename); err != nil {
-					log15.Error("Failed to migrate database", "err", err, "filename", filename)
-				}
+	go func() {
+		// After fetching the paths to convert, perform the migrations in a background
+		// goroutine. This is just a best-effort migration and isn't a huge deal if it
+		// happens to fail.
+
+		for _, filename := range paths {
+			log15.Debug("Migrating bundle", "filename", filename)
+
+			if err := migrateDB(context.Background(), filename); err != nil {
+				log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 			}
-		}()
-	}
+		}
 
-	// Feed the migration goroutines, then exit
-	for _, path := range paths {
-		ch <- path
-	}
+		log15.Info("Finished migrating bundles", "numBundles", len(paths))
+	}()
 
 	return nil
 }

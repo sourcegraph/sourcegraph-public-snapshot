@@ -7,8 +7,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/batch"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/util"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 type MigrationStep func(context.Context, *store.Store, serialization.Serializer, serialization.Serializer) error
@@ -20,10 +22,12 @@ type MigrationStep func(context.Context, *store.Store, serialization.Serializer,
 // renamed to take its place.
 func Migrate(ctx context.Context, s *store.Store, serializer serialization.Serializer) error {
 	steps := []MigrationStep{
+		createTempTables,
 		reencodeDocuments,
 		reencodeResultChunks,
 		reencodeDefinitions,
 		reencodeReferences,
+		swapTables,
 	}
 
 	// NOTE: We need to serialize with the JSON serializer, NOT the current serializer. This is
@@ -41,20 +45,98 @@ func Migrate(ctx context.Context, s *store.Store, serializer serialization.Seria
 	return nil
 }
 
-func reencodeDocuments(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
-	if err := s.Exec(ctx, sqlf.Sprintf(`CREATE TABLE "t_documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL)`)); err != nil {
-		return err
+// createTempTables creates new, empty tables that will be the target for the new serialization format.
+func createTempTables(ctx context.Context, s *store.Store, _, _ serialization.Serializer) error {
+	queries := []*sqlf.Query{
+		sqlf.Sprintf(`CREATE TABLE "t_documents" ("path" text PRIMARY KEY NOT NULL, "data" blob NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "t_result_chunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL)`),
+		sqlf.Sprintf(`CREATE TABLE "t_definitions" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL, PRIMARY KEY (scheme, identifier))`),
+		sqlf.Sprintf(`CREATE TABLE "t_references" ("scheme" text NOT NULL, "identifier" text NOT NULL, "data" blob NOT NULL, PRIMARY KEY (scheme, identifier))`),
 	}
+
+	for _, query := range queries {
+		if err := s.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// reencodeDocuments pulls data from the old document table and inserts the re-encoded data into the temporary table.
+func reencodeDocuments(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
+	ch := make(chan batch.KeyedDocument)
+
+	return util.InvokeAll(
+		func() error { return readDocuments(ctx, s, deserializer, ch) },
+		func() error { return batch.WriteDocumentsChan(ctx, s, "t_documents", serializer, ch) },
+	)
+}
+
+// reencodeResultChunks pulls data from the old result chunks table and inserts the re-encoded data into the temporary table.
+func reencodeResultChunks(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
+	ch := make(chan batch.IndexedResultChunk)
+
+	return util.InvokeAll(
+		func() error { return readResultChunks(ctx, s, deserializer, ch) },
+		func() error { return batch.WriteResultChunksChan(ctx, s, "t_result_chunks", serializer, ch) },
+	)
+}
+
+// reencodeResultChunks pulls data from the old definitions table and inserts the re-encoded data into the temporary table.
+func reencodeDefinitions(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
+	return reencodeDefinitionReferences(ctx, s, "definitions", deserializer, serializer)
+}
+
+// reencodeResultChunks pulls data from the old references table and inserts the re-encoded data into the temporary table.
+func reencodeReferences(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
+	return reencodeDefinitionReferences(ctx, s, "references", deserializer, serializer)
+}
+
+// reencodeResultChunks pulls data from the old definitions or references table and inserts the re-encoded data into the temporary table.
+func reencodeDefinitionReferences(ctx context.Context, s *store.Store, tableName string, deserializer, serializer serialization.Serializer) (err error) {
+	ch := make(chan types.MonikerLocations)
+	tempTableName := fmt.Sprintf("t_%s", tableName)
+
+	return util.InvokeAll(
+		func() error { return readMonikerLocations(ctx, s, tableName, deserializer, ch) },
+		func() error { return batch.WriteMonikerLocationsChan(ctx, s, tempTableName, serializer, ch) },
+	)
+}
+
+// swapTables deletes the originals table and replaces them with the tables containing data in the serialization format.
+func swapTables(ctx context.Context, s *store.Store, _, _ serialization.Serializer) error {
+	queries := []*sqlf.Query{
+		sqlf.Sprintf(`DROP TABLE "documents"`),
+		sqlf.Sprintf(`ALTER TABLE "t_documents" RENAME TO "documents"`),
+		sqlf.Sprintf(`DROP TABLE "result_chunks"`),
+		sqlf.Sprintf(`ALTER TABLE "t_result_chunks" RENAME TO "result_chunks"`),
+		sqlf.Sprintf(`DROP TABLE "definitions"`),
+		sqlf.Sprintf(`ALTER TABLE "t_definitions" RENAME TO "definitions"`),
+		sqlf.Sprintf(`DROP TABLE "references"`),
+		sqlf.Sprintf(`ALTER TABLE "t_references" RENAME TO "references"`),
+	}
+
+	for _, query := range queries {
+		if err := s.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readDocuments reads all documents from the original documents table and writes the scanned results onto the
+// given channel. If an error occurs during query or scanning, that error is returned and no future writes to
+// the channel will be performed. The given channel is closed when the function exits.
+func readDocuments(ctx context.Context, s *store.Store, serializer serialization.Serializer, ch chan<- batch.KeyedDocument) (err error) {
+	defer close(ch)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf("SELECT path, data FROM documents"))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = store.CloseRows(rows, err)
-	}()
-
-	inserter := sqliteutil.NewBatchInserter(s, "t_documents", "path", "data")
+	defer func() { err = store.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var path string
@@ -63,42 +145,31 @@ func reencodeDocuments(ctx context.Context, s *store.Store, deserializer, serial
 			return err
 		}
 
-		document, err := deserializer.UnmarshalDocumentData(data)
+		document, err := serializer.UnmarshalDocumentData(data)
 		if err != nil {
 			return err
 		}
 
-		newData, err := serializer.MarshalDocumentData(document)
-		if err != nil {
-			return err
-		}
-
-		if err := inserter.Insert(ctx, path, newData); err != nil {
-			return err
+		ch <- batch.KeyedDocument{
+			Path:     path,
+			Document: document,
 		}
 	}
 
-	if err := inserter.Flush(ctx); err != nil {
-		return err
-	}
-
-	return swapTables(ctx, s, "documents", "t_documents")
+	return nil
 }
 
-func reencodeResultChunks(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
-	if err := s.Exec(ctx, sqlf.Sprintf(`CREATE TABLE "t_result_chunks" ("id" integer PRIMARY KEY NOT NULL, "data" blob NOT NULL)`)); err != nil {
-		return err
-	}
+// readResultChunks reads all result chunks from the original result chunks table and writes the scanned results
+// onto the given channel. If an error occurs during query or scanning, that error is returned and no future writes
+// to the channel will be performed. The given channel is closed when the function exits.
+func readResultChunks(ctx context.Context, s *store.Store, serializer serialization.Serializer, ch chan<- batch.IndexedResultChunk) (err error) {
+	defer close(ch)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf("SELECT id, data FROM result_chunks"))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = store.CloseRows(rows, err)
-	}()
-
-	inserter := sqliteutil.NewBatchInserter(s, "t_result_chunks", "id", "data")
+	defer func() { err = store.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var id int
@@ -107,57 +178,31 @@ func reencodeResultChunks(ctx context.Context, s *store.Store, deserializer, ser
 			return err
 		}
 
-		resultChunk, err := deserializer.UnmarshalResultChunkData(data)
+		resultChunk, err := serializer.UnmarshalResultChunkData(data)
 		if err != nil {
 			return err
 		}
 
-		newData, err := serializer.MarshalResultChunkData(resultChunk)
-		if err != nil {
-			return err
-		}
-
-		if err := inserter.Insert(ctx, id, newData); err != nil {
-			return err
+		ch <- batch.IndexedResultChunk{
+			Index:       id,
+			ResultChunk: resultChunk,
 		}
 	}
 
-	if err := inserter.Flush(ctx); err != nil {
-		return err
-	}
-
-	return swapTables(ctx, s, "result_chunks", "t_result_chunks")
+	return nil
 }
 
-func reencodeDefinitions(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
-	return reencodeDefinitionReferences(ctx, s, "definitions", deserializer, serializer)
-}
-
-func reencodeReferences(ctx context.Context, s *store.Store, deserializer, serializer serialization.Serializer) error {
-	return reencodeDefinitionReferences(ctx, s, "references", deserializer, serializer)
-}
-
-func reencodeDefinitionReferences(ctx context.Context, s *store.Store, tableName string, deserializer, serializer serialization.Serializer) error {
-	if err := s.Exec(ctx, sqlf.Sprintf(
-		`CREATE TABLE "t_`+tableName+`" (
-			"scheme" text NOT NULL,
-			"identifier" text NOT NULL,
-			"data" blob NOT NULL,
-			PRIMARY KEY (scheme, identifier)
-		)`,
-	)); err != nil {
-		return err
-	}
+// readMonikerLocations reads all moniker locations from the given table and writes the scanned results onto the given
+// channel. If an error occurs during query or scanning, that error is returned and no future writes to the channel will
+// be performed. The given channel is closed when the function exits.
+func readMonikerLocations(ctx context.Context, s *store.Store, tableName string, serializer serialization.Serializer, ch chan<- types.MonikerLocations) (err error) {
+	defer close(ch)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(`SELECT scheme, identifier, data FROM "`+tableName+`"`))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = store.CloseRows(rows, err)
-	}()
-
-	inserter := sqliteutil.NewBatchInserter(s, fmt.Sprintf("t_%s", tableName), "scheme", "identifier", "data")
+	defer func() { err = store.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var scheme string
@@ -167,38 +212,15 @@ func reencodeDefinitionReferences(ctx context.Context, s *store.Store, tableName
 			return err
 		}
 
-		locations, err := deserializer.UnmarshalLocations(data)
+		locations, err := serializer.UnmarshalLocations(data)
 		if err != nil {
 			return err
 		}
 
-		newData, err := serializer.MarshalLocations(locations)
-		if err != nil {
-			return err
-		}
-
-		if err := inserter.Insert(ctx, scheme, identifier, newData); err != nil {
-			return err
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return err
-	}
-
-	return swapTables(ctx, s, tableName, fmt.Sprintf("t_%s", tableName))
-}
-
-// swapTables deletes the original table and replaces it with the temporary table.
-func swapTables(ctx context.Context, s *store.Store, tableName, tempTableName string) error {
-	queries := []*sqlf.Query{
-		sqlf.Sprintf(`DROP TABLE "` + tableName + `"`),
-		sqlf.Sprintf(`ALTER TABLE "` + tempTableName + `" RENAME TO "` + tableName + `"`),
-	}
-
-	for _, query := range queries {
-		if err := s.Exec(ctx, query); err != nil {
-			return err
+		ch <- types.MonikerLocations{
+			Scheme:     scheme,
+			Identifier: identifier,
+			Locations:  locations,
 		}
 	}
 

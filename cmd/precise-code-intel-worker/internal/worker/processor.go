@@ -197,35 +197,20 @@ func write(ctx context.Context, dirname string, groupedBundleData *correlation.G
 		err = writer.Close(err)
 	}()
 
-	writers := []func() error{
-		func() error {
-			return errors.Wrap(writer.WriteMeta(ctx, groupedBundleData.Meta), "writer.WriteMeta")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteDocuments(ctx, groupedBundleData.Documents), "writer.WriteDocuments")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks), "writer.WriteResultChunks")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteDefinitions(ctx, groupedBundleData.Definitions), "writer.WriteDefinitions")
-		},
-		func() error {
-			return errors.Wrap(writer.WriteReferences(ctx, groupedBundleData.References), "writer.WriteReferences")
-		},
+	if err := writer.WriteMeta(ctx, groupedBundleData.Meta); err != nil {
+		return errors.Wrap(err, "writer.WriteMeta")
 	}
-
-	errs := make(chan error, len(writers))
-	defer close(errs)
-
-	for _, w := range writers {
-		go func(w func() error) { errs <- w() }(w)
+	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
+		return errors.Wrap(err, "writer.WriteDocuments")
 	}
-
-	for i := 0; i < len(writers); i++ {
-		if writeErr := <-errs; writeErr != nil {
-			err = multierror.Append(err, writeErr)
-		}
+	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
+		return errors.Wrap(err, "writer.WriteResultChunks")
+	}
+	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
+		return errors.Wrap(err, "writer.WriteDefinitions")
+	}
+	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
+		return errors.Wrap(err, "writer.WriteReferences")
 	}
 
 	return err

@@ -22,7 +22,7 @@ const LineBufferSize = 1e7
 const ChannelBufferSize = 512
 
 // NumUnmarshalGoRoutines is the number of goroutines launched to unmarshal individual lines.
-var NumUnmarshalGoRoutines = runtime.NumCPU()
+var NumUnmarshalGoRoutines = runtime.NumCPU() * 2
 
 // Read reads the given content as line-separated objects which are unmarshallable by the given function
 // and returns a channel of lsif.Pair values for each non-empty line.

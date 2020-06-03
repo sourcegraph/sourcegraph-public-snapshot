@@ -5,14 +5,13 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	gobserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/gob"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/batch"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
 type sqliteWriter struct {
@@ -68,69 +67,19 @@ func (w *sqliteWriter) WriteMeta(ctx context.Context, metaData types.MetaData) e
 }
 
 func (w *sqliteWriter) WriteDocuments(ctx context.Context, documents map[string]types.DocumentData) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "documents", "path", "data")
-	for path, document := range documents {
-		data, err := w.serializer.MarshalDocumentData(document)
-		if err != nil {
-			return errors.Wrap(err, "serializer.MarshalDocumentData")
-		}
-
-		if err := inserter.Insert(ctx, path, data); err != nil {
-			return errors.Wrap(err, "documentInserter.Insert")
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
-	}
-
-	return nil
+	return batch.WriteDocuments(ctx, w.store, "documents", w.serializer, documents)
 }
 
 func (w *sqliteWriter) WriteResultChunks(ctx context.Context, resultChunks map[int]types.ResultChunkData) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, "result_chunks", "id", "data")
-	for id, resultChunk := range resultChunks {
-		data, err := w.serializer.MarshalResultChunkData(resultChunk)
-		if err != nil {
-			return errors.Wrap(err, "serializer.MarshalResultChunkData")
-		}
-
-		if err := inserter.Insert(ctx, id, data); err != nil {
-			return errors.Wrap(err, "resultChunkInserter.Insert")
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
-	}
-	return nil
+	return batch.WriteResultChunks(ctx, w.store, "result_chunks", w.serializer, resultChunks)
 }
 
 func (w *sqliteWriter) WriteDefinitions(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	return w.writeDefinitionReferences(ctx, "definitions", monikerLocations)
+	return batch.WriteMonikerLocations(ctx, w.store, "definitions", w.serializer, monikerLocations)
 }
 
 func (w *sqliteWriter) WriteReferences(ctx context.Context, monikerLocations []types.MonikerLocations) error {
-	return w.writeDefinitionReferences(ctx, "references", monikerLocations)
-}
-
-func (w *sqliteWriter) writeDefinitionReferences(ctx context.Context, tableName string, monikerLocations []types.MonikerLocations) error {
-	inserter := sqliteutil.NewBatchInserter(w.store, tableName, "scheme", "identifier", "data")
-	for _, ml := range monikerLocations {
-		data, err := w.serializer.MarshalLocations(ml.Locations)
-		if err != nil {
-			return errors.Wrap(err, "serializer.MarshalLocations")
-		}
-
-		if err := inserter.Insert(ctx, ml.Scheme, ml.Identifier, data); err != nil {
-			return errors.Wrap(err, "inserter.Insert")
-		}
-	}
-
-	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "inserter.Flush")
-	}
-	return nil
+	return batch.WriteMonikerLocations(ctx, w.store, "references", w.serializer, monikerLocations)
 }
 
 func (w *sqliteWriter) Close(err error) error {
