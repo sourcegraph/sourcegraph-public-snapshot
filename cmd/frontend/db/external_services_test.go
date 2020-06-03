@@ -20,6 +20,10 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantArgs  []interface{}
 	}{
 		{
+			name:      "no kind",
+			wantQuery: "deleted_at IS NULL",
+		},
+		{
 			name:      "only one kind: GitHub",
 			kinds:     []string{"GITHUB"},
 			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
