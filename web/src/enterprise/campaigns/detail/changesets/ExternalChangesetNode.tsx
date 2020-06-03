@@ -8,7 +8,7 @@ import {
 } from '../../../../../../shared/src/graphql/schema'
 import { Observer } from 'rxjs'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../../shared/src/util/url'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
@@ -43,7 +43,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     history: H.History
     location: H.Location
     extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
 }
 
@@ -157,21 +157,21 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         if (!extensionInfo || !range) {
             return
         }
-        const baseRev = commitOIDForGitRev(range.base)
-        const headRev = commitOIDForGitRev(range.head)
+        const baseRevision = commitOIDForGitRevision(range.base)
+        const headRevision = commitOIDForGitRevision(range.head)
         return {
             ...extensionInfo,
             head: {
-                commitID: headRev,
+                commitID: headRevision,
                 repoID: node.repository.id,
                 repoName: node.repository.name,
-                rev: headRev,
+                revision: headRevision,
             },
             base: {
-                commitID: baseRev,
+                commitID: baseRevision,
                 repoID: node.repository.id,
                 repoName: node.repository.name,
-                rev: baseRev,
+                revision: baseRevision,
             },
         }
     }, [extensionInfo, range, node.repository.id, node.repository.name])
@@ -218,16 +218,16 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     )
 }
 
-function commitOIDForGitRev(rev: GitRevSpec): string {
-    switch (rev.__typename) {
+function commitOIDForGitRevision(revision: GitRevSpec): string {
+    switch (revision.__typename) {
         case 'GitObject':
-            return rev.oid
+            return revision.oid
         case 'GitRef':
-            return rev.target.oid
+            return revision.target.oid
         case 'GitRevSpecExpr':
-            if (!rev.object) {
+            if (!revision.object) {
                 throw new Error('Could not resolve commit for revision')
             }
-            return rev.object.oid
+            return revision.object.oid
     }
 }
