@@ -456,5 +456,11 @@ func (r *hiddenPatchResolver) ToHiddenPatch() (graphqlbackend.HiddenPatchResolve
 }
 
 func (r *hiddenPatchResolver) ID() graphql.ID {
-	return marshalPatchID(r.patch.ID)
+	return marshalHiddenPatchID(r.patch.ID)
+}
+
+const hiddenPatchIDKind = "HiddenPatch"
+
+func marshalHiddenPatchID(id int64) graphql.ID {
+	return relay.MarshalID(hiddenPatchIDKind, id)
 }
