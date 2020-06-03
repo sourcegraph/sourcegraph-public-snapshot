@@ -40,11 +40,11 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                     startWith(this.props),
                     map(props => props.activation.completed),
                     pairwise(),
-                    filter(([prev, cur]) => {
-                        if (!prev || !cur) {
+                    filter(([previous, current]) => {
+                        if (!previous || !current) {
                             return false
                         }
-                        return percentageDone(cur) > percentageDone(prev)
+                        return percentageDone(current) > percentageDone(previous)
                     }),
                     tap(didIncrease => {
                         if (didIncrease) {

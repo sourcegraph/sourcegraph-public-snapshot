@@ -3,6 +3,7 @@ import * as React from 'react'
 import { forkJoin, Observable } from 'rxjs'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetNode } from './changesets/ChangesetNode'
+import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -51,25 +52,39 @@ export interface CampaignDiff {
      * Changing the campaign description will technically update them,
      * but they will still show up as "unmodified" to reduce confusion
      */
-    unmodified: GQL.IExternalChangeset[]
+    unmodified: GQL.Changeset[]
     deleted: GQL.IExternalChangeset[]
 }
 
 export function calculateChangesetDiff(
-    changesets: GQL.IExternalChangeset[],
-    campaignPatches: GQL.IPatch[],
-    patches: GQL.IPatch[]
+    changesets: GQL.Changeset[],
+    campaignPatches: GQL.PatchInterface[],
+    patches: GQL.PatchInterface[]
 ): CampaignDiff {
     const added: GQL.IPatch[] = []
     const changed: GQL.IPatch[] = []
-    const unmodified: GQL.IExternalChangeset[] = []
+    const unmodified: GQL.Changeset[] = []
     const deleted: GQL.IExternalChangeset[] = []
 
+    const visibleChangesets: GQL.IExternalChangeset[] = []
+
+    for (const changeset of changesets) {
+        if (changeset.__typename === 'HiddenExternalChangeset') {
+            unmodified.push(changeset)
+        } else {
+            visibleChangesets.push(changeset)
+        }
+    }
+    const visibleCampaignPatches = campaignPatches.filter(
+        (campaignPatch): campaignPatch is GQL.IPatch => campaignPatch.__typename !== 'HiddenPatch'
+    )
+    const visiblePatches = patches.filter((patch): patch is GQL.IPatch => patch.__typename !== 'HiddenPatch')
+
     const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
-    for (const changeset of [...changesets, ...campaignPatches]) {
+    for (const changeset of [...visibleChangesets, ...visibleCampaignPatches]) {
         patchOrChangesetByRepoId.set(changeset.repository.id, changeset)
     }
-    for (const patch of patches) {
+    for (const patch of visiblePatches) {
         const key = patch.repository.id
         const existing = patchOrChangesetByRepoId.get(key)
         // if no matching changeset exists yet, it is a new changeset to the campaign
@@ -245,7 +260,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 </div>
                 <div key="deleted" className="pt-3">
                     {deleted.map(changeset => (
-                        <ChangesetNode
+                        <ExternalChangesetNode
                             history={history}
                             location={location}
                             node={changeset}

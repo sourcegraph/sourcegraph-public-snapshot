@@ -51,8 +51,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
 
     const errorList = (
         <ul className="mt-2">
-            {status.errors.map((error, i) => (
-                <li className="mb-2" key={i}>
+            {status.errors.map((error, index) => (
+                <li className="mb-2" key={index}>
                     <p className="mb-0">
                         <ErrorMessage error={error} history={history} />
                     </p>
@@ -66,9 +66,9 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
     const onRetry: React.MouseEventHandler = async (): Promise<void> => {
         setIsRetrying(true)
         try {
-            const c = await retryCampaign(campaign.id)
+            const retriedCampaign = await retryCampaign(campaign.id)
             setIsRetrying(false)
-            afterRetry(c)
+            afterRetry(retriedCampaign)
         } catch (error) {
             setIsRetrying(asError(error))
         }

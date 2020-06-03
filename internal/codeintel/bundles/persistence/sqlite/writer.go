@@ -89,7 +89,7 @@ func (w *sqliteWriter) Close(err error) error {
 		err = multierror.Append(err, closeErr)
 	}
 
-	return err
+	return nil
 }
 
 func createTables(ctx context.Context, store *store.Store) error {

@@ -51,7 +51,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
             useMemo(
                 () =>
                     _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductSubscription, subscriptionUUID]
@@ -87,7 +87,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
                             startWith(LOADING)
                         )
                     }),
-                    catchError(err => [asError(err)])
+                    catchError(error => [asError(error)])
                 ),
             [history, productSubscription]
         )

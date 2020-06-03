@@ -65,7 +65,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
         [settingsCascade]
     )
     const searchScope = useMemo(
-        () => (searchScopes ? searchScopes.find(o => o.id === props.match.params.id) : undefined),
+        () => (searchScopes ? searchScopes.find(scope => scope.id === props.match.params.id) : undefined),
         [props.match.params.id, searchScopes]
     )
     useEffect(() => {
@@ -80,7 +80,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
     const scopeRepositories = useObservable(
         useMemo(() => {
             if (searchScope?.value.includes('repo:') || searchScope?.value.includes('repogroup:')) {
-                return fetchReposByQuery(searchScope.value).pipe(catchError(err => of(asError(err))))
+                return fetchReposByQuery(searchScope.value).pipe(catchError(error => of(asError(error))))
             }
             return of([])
             // False positive: https://github.com/facebook/react/issues/19064
@@ -101,7 +101,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
     )
 
     const [repositoriesFirst, setRepositoriesFirst] = useState(50)
-    const showMoreRepositories = useCallback(() => setRepositoriesFirst(prevValue => prevValue + 50), [])
+    const showMoreRepositories = useCallback(() => setRepositoriesFirst(previousValue => previousValue + 50), [])
 
     if (!searchScopes) {
         return null

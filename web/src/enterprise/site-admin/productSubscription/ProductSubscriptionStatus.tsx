@@ -58,7 +58,7 @@ interface Props {
 export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus, history }) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
-        useMemo(() => queryProductLicenseInfo().pipe(catchError((err): [ErrorLike] => [asError(err)])), [])
+        useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])
     )
     if (statusOrError === undefined) {
         return (

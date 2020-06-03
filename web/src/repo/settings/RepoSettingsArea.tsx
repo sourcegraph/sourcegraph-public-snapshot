@@ -65,7 +65,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                 )
                 .subscribe(
                     repo => this.setState({ repo }),
-                    err => this.setState({ error: asError(err).message })
+                    error => this.setState({ error: asError(error).message })
                 )
         )
         this.componentUpdates.next(this.props)

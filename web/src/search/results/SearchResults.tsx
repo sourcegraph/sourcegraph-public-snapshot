@@ -112,9 +112,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
 
-            const q = parseSearchURLQuery(this.props.location.search) || ''
-            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
-            const newLoc =
+            const query = parseSearchURLQuery(this.props.location.search) || ''
+            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
+            const newLocation =
                 '/search?' +
                 buildSearchURLQuery(
                     navbarQuery,
@@ -123,7 +123,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     this.props.versionContext,
                     filtersInQuery
                 )
-            this.props.history.replace(newLoc)
+            this.props.history.replace(newLocation)
         }
 
         this.props.telemetryService.logViewEvent('SearchResults')
@@ -222,7 +222,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
                 .subscribe(
                     newState => this.setState(newState as SearchResultsState),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -233,16 +233,16 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     distinctUntilChanged((a, b) => isEqual(a.location, b.location))
                 )
                 .subscribe(props => {
-                    const searchParams = new URLSearchParams(props.location.search)
-                    const versionFromURL = searchParams.get('c')
+                    const searchParameters = new URLSearchParams(props.location.search)
+                    const versionFromURL = searchParameters.get('c')
 
-                    if (searchParams.has('from-context-toggle')) {
+                    if (searchParameters.has('from-context-toggle')) {
                         // The query param `from-context-toggle` indicates that the version context
                         // changed from the version context toggle. In this case, we don't warn
                         // users that the version context has changed.
-                        searchParams.delete('from-context-toggle')
+                        searchParameters.delete('from-context-toggle')
                         this.props.history.replace({
-                            search: searchParams.toString(),
+                            search: searchParameters.toString(),
                             hash: this.props.history.location.hash,
                         })
                         this.setState({ showVersionContextWarning: false })
@@ -355,8 +355,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
             dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
-            for (const d of dynamicFilters) {
-                filters.set(d.value, d)
+            for (const filter of dynamicFilters) {
+                filters.set(filter.value, filter)
             }
         }
         const scopes =
@@ -386,8 +386,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
     private showMoreResults = (): void => {
         // Requery with an increased max result count.
-        const params = new URLSearchParams(this.props.location.search)
-        let query = params.get('q') || ''
+        const parameters = new URLSearchParams(this.props.location.search)
+        let query = parameters.get('q') || ''
 
         const count = this.calculateCount()
         if (/count:(\d+)/.test(query)) {
@@ -395,8 +395,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         } else {
             query = `${query} count:${count}`
         }
-        params.set('q', query)
-        this.props.history.replace({ search: params.toString() })
+        parameters.set('q', query)
+        this.props.history.replace({ search: parameters.toString() })
     }
 
     private calculateCount = (): number => {
@@ -404,8 +404,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         // so casting is the right thing to do here
         const results = this.state.resultsOrError as GQL.ISearchResults
 
-        const params = new URLSearchParams(this.props.location.search)
-        const query = params.get('q') || ''
+        const parameters = new URLSearchParams(this.props.location.search)
+        const query = parameters.get('q') || ''
 
         if (/count:(\d+)/.test(query)) {
             return Math.max(results.matchCount * 2, 1000)

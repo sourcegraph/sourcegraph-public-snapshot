@@ -152,7 +152,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
                     tabComponent={this.props.tabComponent}
                 />
                 {this.props.toolbarFragment && <div className="tabs__toolbar small">{this.props.toolbarFragment}</div>}
-                {children?.find(c => c && c.key === this.props.activeTab)}
+                {children?.find(child => child && child.key === this.props.activeTab)}
             </div>
         )
     }
@@ -286,8 +286,8 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         return tabs[0].id // default
     }
 
-    public componentDidUpdate(prevProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
-        if (prevProps.location !== this.props.location || prevProps.tabs !== this.props.tabs) {
+    public componentDidUpdate(previousProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
+        if (previousProps.location !== this.props.location || previousProps.tabs !== this.props.tabs) {
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
                 activeTab: TabsWithURLViewStatePersistence.readFromURL(this.props.location, this.props.tabs),

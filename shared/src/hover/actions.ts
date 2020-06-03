@@ -93,7 +93,7 @@ export function getHoverActionsContext(
           },
     hoverContext: HoveredToken & HoverContext
 ): Observable<Context<TextDocumentPositionParams>> {
-    const params: TextDocumentPositionParams & URLToFileContext = {
+    const parameters: TextDocumentPositionParams & URLToFileContext = {
         textDocument: { uri: makeRepoURI(hoverContext) },
         position: { line: hoverContext.line - 1, character: hoverContext.character - 1 },
         part: hoverContext.part,
@@ -101,9 +101,9 @@ export function getHoverActionsContext(
     const definitionURLOrError = getDefinitionURL(
         { urlToFile, requestGraphQL },
         extensionsController.services,
-        params
+        parameters
     ).pipe(
-        catchError((err): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(err) }]),
+        catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
         share()
     )
 
@@ -115,7 +115,7 @@ export function getHoverActionsContext(
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
         extensionsController.services.textDocumentReferences
-            .providersForDocument(params.textDocument)
+            .providersForDocument(parameters.textDocument)
             .pipe(map(providers => providers.length !== 0)),
 
         // showFindReferences:
@@ -158,7 +158,7 @@ export function getHoverActionsContext(
                         : null,
 
                 // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
-                hoverPosition: params,
+                hoverPosition: parameters,
             })
         ),
         distinctUntilChanged((a, b) => isEqual(a, b))
@@ -194,9 +194,9 @@ export function getDefinitionURL(
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
-    params: TextDocumentPositionParams & URLToFileContext
+    parameters: TextDocumentPositionParams & URLToFileContext
 ): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
-    return textDocumentDefinition.getLocations(params).pipe(
+    return textDocumentDefinition.getLocations(parameters).pipe(
         switchMap(
             ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
                 if (definitions.length === 0) {
@@ -210,7 +210,7 @@ export function getDefinitionURL(
                     // Open the panel to show all definitions.
                     const uri = withWorkspaceRootInputRevision(
                         workspace.roots.value || [],
-                        parseRepoURI(params.textDocument.uri)
+                        parseRepoURI(parameters.textDocument.uri)
                     )
                     return of<MaybeLoadingResult<UIDefinitionURL | null>>({
                         isLoading,
@@ -218,15 +218,15 @@ export function getDefinitionURL(
                             url: urlToFile(
                                 {
                                     ...uri,
-                                    rev: uri.rev || '',
+                                    revision: uri.revision || '',
                                     filePath: uri.filePath || '',
                                     position: {
-                                        line: params.position.line + 1,
-                                        character: params.position.character + 1,
+                                        line: parameters.position.line + 1,
+                                        character: parameters.position.character + 1,
                                     },
                                     viewState: 'def',
                                 },
-                                { part: params.part }
+                                { part: parameters.part }
                             ),
                             multiple: true,
                         },
@@ -256,16 +256,16 @@ export function getDefinitionURL(
                         // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
                         // we're executing in a browser extension pointed to the public sourcegraph.com,
                         // in which case repoName === rawRepoName.
-                        catchError(err => {
-                            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+                        catchError(error => {
+                            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
                                 return [uri.repoName]
                             }
-                            throw err
+                            throw error
                         }),
                         map(rawRepoName => ({
                             url: urlToFile(
-                                { ...uri, rev: uri.rev || '', filePath: uri.filePath || '', rawRepoName },
-                                { part: params.part }
+                                { ...uri, revision: uri.revision || '', filePath: uri.filePath || '', rawRepoName },
+                                { part: parameters.part }
                             ),
                             multiple: false,
                         })),
@@ -373,12 +373,12 @@ export function registerHoverContributions({
     subscriptions.add(
         extensionsController.services.commands.registerCommand({
             command: 'goToDefinition',
-            run: async (paramsStr: string) => {
-                const params: TextDocumentPositionParams & URLToFileContext = JSON.parse(paramsStr)
+            run: async (parametersString: string) => {
+                const parameters: TextDocumentPositionParams & URLToFileContext = JSON.parse(parametersString)
                 const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,
-                    params
+                    parameters
                 )
                     .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
                     .toPromise()

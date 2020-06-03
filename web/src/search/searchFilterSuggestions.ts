@@ -101,7 +101,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             },
         ].map(
             assign({
-                type: NonFilterSuggestionType.filters,
+                type: NonFilterSuggestionType.Filters,
             })
         ),
     },

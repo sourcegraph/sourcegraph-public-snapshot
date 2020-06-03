@@ -20,15 +20,15 @@ export const DiffStat: React.FunctionComponent<{
     className?: string
 }> = ({ added, changed, deleted, expandedCounts = false, className = '' }) => {
     const total = added + changed + deleted
-    const numSquares = Math.min(NUM_SQUARES, total)
+    const numberOfSquares = Math.min(NUM_SQUARES, total)
     let addedSquares = allocateSquares(added, total)
     let changedSquares = allocateSquares(changed, total)
     let deletedSquares = allocateSquares(deleted, total)
 
     // Make sure we have exactly numSquares squares.
     const totalSquares = addedSquares + changedSquares + deletedSquares
-    if (totalSquares < numSquares) {
-        const deficit = numSquares - totalSquares
+    if (totalSquares < numberOfSquares) {
+        const deficit = numberOfSquares - totalSquares
         if (deleted > changed && deleted > added) {
             deletedSquares += deficit
         } else if (changed > added && changed > deleted) {
@@ -36,8 +36,8 @@ export const DiffStat: React.FunctionComponent<{
         } else {
             addedSquares += deficit
         }
-    } else if (totalSquares > numSquares) {
-        const surplus = numSquares - totalSquares
+    } else if (totalSquares > numberOfSquares) {
+        const surplus = numberOfSquares - totalSquares
         if (deleted <= changed && deleted <= added) {
             deletedSquares -= surplus
         } else if (changed < added && changed < deleted) {
@@ -52,7 +52,7 @@ export const DiffStat: React.FunctionComponent<{
         .concat(
             new Array(changedSquares).fill('changed'),
             new Array(deletedSquares).fill('deleted'),
-            new Array(NUM_SQUARES - numSquares).fill('empty')
+            new Array(NUM_SQUARES - numberOfSquares).fill('empty')
         )
 
     const labels: string[] = []
@@ -78,16 +78,16 @@ export const DiffStat: React.FunctionComponent<{
             ) : (
                 <small className="diff-stat__total">{numberWithCommas(total + changed)}</small>
             )}
-            {squares.map((verb, i) => (
-                <div key={i} className={`diff-stat__square diff-stat__${verb}`} />
+            {squares.map((verb, index) => (
+                <div key={index} className={`diff-stat__square diff-stat__${verb}`} />
             ))}
         </div>
     )
 }
 
-function allocateSquares(n: number, total: number): number {
+function allocateSquares(number: number, total: number): number {
     if (total === 0) {
         return 0
     }
-    return Math.max(Math.round(n / total), n > 0 ? 1 : 0)
+    return Math.max(Math.round(number / total), number > 0 ? 1 : 0)
 }

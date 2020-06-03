@@ -5,6 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
+import { range } from 'lodash'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
@@ -19,19 +20,19 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
             <div className={this.props.className}>
-                {new Array(11).fill(1).map((_, i) => {
-                    const pressed = i === this.props.score
+                {range(0, 10).map(score => {
+                    const pressed = score === this.props.score
                     return (
                         /* eslint-disable react/jsx-no-bind */
                         <Link
-                            key={i}
+                            key={score}
                             className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
                             aria-pressed={pressed || undefined}
-                            onClick={() => this.onClick(i)}
-                            to={`/survey/${i}`}
+                            onClick={() => this.onClick(score)}
+                            to={`/survey/${score}`}
                             target={this.props.openSurveyInNewTab ? '_blank' : undefined}
                         >
-                            {i}
+                            {score}
                         </Link>
                         /* eslint-enable react/jsx-no-bind */
                     )

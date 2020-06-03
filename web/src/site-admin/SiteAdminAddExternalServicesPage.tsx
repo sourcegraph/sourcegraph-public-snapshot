@@ -59,7 +59,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
 }
 
 function getAddURL(id: string): string {
-    const params = new URLSearchParams()
-    params.append('id', id)
-    return `?${params.toString()}`
+    const parameters = new URLSearchParams()
+    parameters.append('id', id)
+    return `?${parameters.toString()}`
 }

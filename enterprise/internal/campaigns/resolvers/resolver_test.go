@@ -359,7 +359,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []apitest.Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
+				Repository: apitest.Repository{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
@@ -405,7 +405,7 @@ func TestCampaigns(t *testing.T) {
 				},
 			},
 			{
-				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
+				Repository: apitest.Repository{ID: graphqlBBSRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "Release testing pr",
@@ -505,7 +505,11 @@ func TestCampaigns(t *testing.T) {
 				... on Org  { ...o }
 			}
 			changesets {
-				nodes { ...cs }
+				nodes {
+				  ... on ExternalChangeset {
+				    ...cs
+				  }
+				}
 				totalCount
 				pageInfo { hasNextPage }
 			}
@@ -778,7 +782,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalPatchSetID(0),
 		marshalPatchID(0),
 		campaigns.MarshalCampaignID(0),
-		marshalChangesetID(0),
+		marshalExternalChangesetID(0),
 	}
 
 	for _, id := range ids {
@@ -798,7 +802,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -948,42 +952,44 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
             id
             patches(first: %d) {
               nodes {
-                repository {
-                  name
-                }
-				diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
+			    ... on Patch {
+                  repository {
+                    name
+                  }
+				  diff {
+                    fileDiffs {
+                      rawDiff
+                      diffStat {
                         added
                         deleted
                         changed
                       }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
                         }
                       }
                     }
                   }
-                }
+				}
 			  }
             }
             previewURL
@@ -1119,46 +1125,51 @@ func TestPatchSetResolver(t *testing.T) {
               }
               patches(first: %d) {
                 nodes {
-                  repository {
-                    name
-                  }
-                  diff {
-                    fileDiffs(first: %d, after: %s) {
-                      rawDiff
-                      diffStat {
-                        added
-                        deleted
-                        changed
-                      }
-                      pageInfo {
-                        endCursor
-                        hasNextPage
-                      }
-                      nodes {
-                        oldPath
-                        newPath
-                        hunks {
-                          body
-                          section
-                          newRange { startLine, lines }
-                          oldRange { startLine, lines }
-                          oldNoNewlineAt
-                        }
-                        stat {
+				  ... on HiddenPatch {
+				    id
+				  }
+				  ... on Patch {
+                    repository {
+                      name
+                    }
+                    diff {
+                      fileDiffs(first: %d, after: %s) {
+                        rawDiff
+                        diffStat {
                           added
                           deleted
                           changed
                         }
-                        oldFile {
-                          name
-                          externalURLs {
-                            serviceType
-                            url
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
+                        nodes {
+                          oldPath
+                          newPath
+                          hunks {
+                            body
+                            section
+                            newRange { startLine, lines }
+                            oldRange { startLine, lines }
+                            oldNoNewlineAt
+                          }
+                          stat {
+                            added
+                            deleted
+                            changed
+                          }
+                          oldFile {
+                            name
+                            externalURLs {
+                              serviceType
+                              url
+                            }
                           }
                         }
                       }
                     }
-                  }
+				  }
                 }
               }
             }
@@ -1171,7 +1182,7 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	// Each patch has testDiff as diff, each with 2 lines changed
-	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
+	if have, want := response.Node.DiffStat.Changed, int32(len(patches)*2); have != want {
 		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
@@ -1184,7 +1195,7 @@ func TestPatchSetResolver(t *testing.T) {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, int32(2); have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
@@ -1301,43 +1312,48 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       status { state }
       patches {
         nodes {
-          publicationEnqueued
-          repository {
-            name
-          }
-          diff {
-            fileDiffs {
-              rawDiff
-              diffStat {
-                added
-                deleted
-                changed
-              }
-              nodes {
-                oldPath
-                newPath
-                hunks {
-                  body
-                  section
-                  newRange { startLine, lines }
-                  oldRange { startLine, lines }
-                  oldNoNewlineAt
-                }
-                stat {
+		  ... on HiddenPatch {
+		    id
+		  }
+		  ... on Patch {
+            publicationEnqueued
+            repository {
+              name
+            }
+            diff {
+              fileDiffs {
+                rawDiff
+                diffStat {
                   added
                   deleted
                   changed
                 }
-                oldFile {
-                  name
-                  externalURLs {
-                    serviceType
-                    url
+                nodes {
+                  oldPath
+                  newPath
+                  hunks {
+                    body
+                    section
+                    newRange { startLine, lines }
+                    oldRange { startLine, lines }
+                    oldNoNewlineAt
+                  }
+                  stat {
+                    added
+                    deleted
+                    changed
+                  }
+                  oldFile {
+                    name
+                    externalURLs {
+                      serviceType
+                      url
+                    }
                   }
                 }
               }
             }
-          }
+		  }
         }
       }
       diffStat {
@@ -1383,7 +1399,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
           branch
           patches {
             nodes {
-              publicationEnqueued
+			  ... on Patch {
+                publicationEnqueued
+			  }
             }
           }
         }
@@ -1490,16 +1508,18 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	      }
 	      changesets {
 	        nodes {
-	          state
-	          diff {
-	            fileDiffs {
-	              diffStat {
-	                added
-	                deleted
-	                changed
+			  ... on ExternalChangeset {
+	            state
+	            diff {
+	              fileDiffs {
+	                diffStat {
+	                  added
+	                  deleted
+	                  changed
+	                }
 	              }
 	            }
-	          }
+			  }
 	        }
 	        totalCount
 	      }
@@ -1714,6 +1734,79 @@ func TestPermissionLevels(t *testing.T) {
 				}
 			})
 		}
+
+		t.Run("Campaigns", func(t *testing.T) {
+			tests := []struct {
+				name                string
+				currentUser         int32
+				viewerCanAdminister bool
+				wantCampaigns       []int64
+			}{
+				{
+					name:                "admin listing viewerCanAdminister: true",
+					currentUser:         adminID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: true",
+					currentUser:         userID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{userCampaign},
+				},
+				{
+					name:                "admin listing viewerCanAdminister: false",
+					currentUser:         adminID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: false",
+					currentUser:         userID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+			}
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
+					for _, c := range tc.wantCampaigns {
+						graphqlID := string(campaigns.MarshalCampaignID(c))
+						expectedIDs[graphqlID] = true
+					}
+
+					query := fmt.Sprintf(`
+				query {
+					campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					node(id: %q) {
+						id
+						... on ExternalChangeset {
+							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+						}
+					}
+					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					var res struct {
+						Campaigns apitest.CampaignConnection
+						Node      apitest.Changeset
+					}
+					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					for _, conn := range []apitest.CampaignConnection{res.Campaigns, res.Node.Campaigns} {
+						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
+							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
+						}
+						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
+							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+						}
+						for _, node := range conn.Nodes {
+							if _, ok := expectedIDs[node.ID]; !ok {
+								t.Fatalf("received wrong campaign with id %q", node.ID)
+							}
+						}
+					}
+				})
+			}
+		})
 	})
 
 	t.Run("mutations", func(t *testing.T) {
@@ -1825,7 +1918,7 @@ func TestPermissionLevels(t *testing.T) {
 
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
-							string(marshalChangesetID(changeset.ID)),
+							string(marshalExternalChangesetID(changeset.ID)),
 							string(marshalPatchID(patchID)),
 						)
 

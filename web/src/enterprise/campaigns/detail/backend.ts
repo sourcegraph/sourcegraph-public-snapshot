@@ -3,6 +3,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
 import {
+    Changeset,
     ID,
     ICampaign,
     IUpdateCampaignInput,
@@ -216,7 +217,7 @@ export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<IExternalChangeset>> =>
+): Observable<Connection<Changeset>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -233,33 +234,40 @@ export const queryChangesets = (
                             totalCount
                             nodes {
                                 __typename
-                                id
-                                title
-                                body
+
                                 state
-                                reviewState
-                                checkState
-                                labels {
-                                    text
-                                    description
-                                    color
-                                }
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                externalURL {
-                                    url
-                                }
-                                externalID
                                 createdAt
                                 updatedAt
                                 nextSyncAt
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+
+                                ... on HiddenExternalChangeset {
+                                    id
+                                }
+                                ... on ExternalChangeset {
+                                    id
+                                    title
+                                    body
+                                    reviewState
+                                    checkState
+                                    labels {
+                                        text
+                                        description
+                                        color
+                                    }
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    externalURL {
+                                        url
+                                    }
+                                    externalID
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }
@@ -298,17 +306,22 @@ export const queryPatchesFromCampaign = (
                             totalCount
                             nodes {
                                 __typename
-                                id
-                                repository {
+                                ... on HiddenPatch {
                                     id
-                                    name
-                                    url
                                 }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+                                ... on Patch {
+                                    id
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    publicationEnqueued
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }
@@ -349,16 +362,18 @@ export const queryPatchesFromPatchSet = (
                             nodes {
                                 __typename
                                 id
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+                                ... on Patch {
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    publicationEnqueued
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }

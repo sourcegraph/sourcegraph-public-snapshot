@@ -9,14 +9,18 @@ const contentEntry = '../../src/config/content.entry.js'
 const backgroundEntry = '../../src/config/background.entry.js'
 const optionsEntry = '../../src/config/options.entry.js'
 const pageEntry = '../../src/config/page.entry.js'
-const extEntry = '../../src/config/extension.entry.js'
+const extensionEntry = '../../src/config/extension.entry.js'
 
 const config: webpack.Configuration = {
     entry: {
         // Browser extension
-        background: buildEntry(extEntry, backgroundEntry, '../../src/browser-extension/scripts/backgroundPage.main.ts'),
-        options: buildEntry(extEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
-        inject: buildEntry(extEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
+        background: buildEntry(
+            extensionEntry,
+            backgroundEntry,
+            '../../src/browser-extension/scripts/backgroundPage.main.ts'
+        ),
+        options: buildEntry(extensionEntry, optionsEntry, '../../src/browser-extension/scripts/optionsPage.main.tsx'),
+        inject: buildEntry(extensionEntry, contentEntry, '../../src/browser-extension/scripts/contentPage.main.ts'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
         integration: buildEntry(pageEntry, '../../src/native-integration/integration.main.ts'),

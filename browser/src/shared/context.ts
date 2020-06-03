@@ -1,43 +1,43 @@
-enum AppEnv {
+enum AppEnvironment {
     Extension,
     Page,
 }
 
-enum ScriptEnv {
+enum ScriptEnvironment {
     Content,
     Background,
     Options,
 }
 
 interface AppContext {
-    appEnv: AppEnv
-    scriptEnv: ScriptEnv
+    appEnvironment: AppEnvironment
+    scriptEnvironment: ScriptEnvironment
 }
 
 function getContext(): AppContext {
-    const appEnv = window.SG_ENV === 'EXTENSION' ? AppEnv.Extension : AppEnv.Page
+    const appEnvironment = window.SG_ENV === 'EXTENSION' ? AppEnvironment.Extension : AppEnvironment.Page
 
-    let scriptEnv: ScriptEnv = ScriptEnv.Content
-    if (appEnv === AppEnv.Extension) {
+    let scriptEnvironment: ScriptEnvironment = ScriptEnvironment.Content
+    if (appEnvironment === AppEnvironment.Extension) {
         if (window.location.pathname.includes('options.html')) {
-            scriptEnv = ScriptEnv.Options
+            scriptEnvironment = ScriptEnvironment.Options
         } else if (globalThis.browser && browser.runtime.getBackgroundPage) {
-            scriptEnv = ScriptEnv.Background
+            scriptEnvironment = ScriptEnvironment.Background
         }
     }
 
     return {
-        appEnv,
-        scriptEnv,
+        appEnvironment,
+        scriptEnvironment,
     }
 }
 
-const ctx = getContext()
+const context = getContext()
 
-export const isBackground = ctx.scriptEnv === ScriptEnv.Background
-export const isOptions = ctx.scriptEnv === ScriptEnv.Options
+export const isBackground = context.scriptEnvironment === ScriptEnvironment.Background
+export const isOptions = context.scriptEnvironment === ScriptEnvironment.Options
 
-export const isExtension = ctx.appEnv === AppEnv.Extension
+export const isExtension = context.appEnvironment === AppEnvironment.Extension
 export const isInPage = !isExtension
 
 export const isPhabricator = Boolean(document.querySelector('.phabricator-wordmark'))

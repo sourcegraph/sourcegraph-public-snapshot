@@ -12,12 +12,17 @@ import { isErrorLike } from '../../../../../../shared/src/util/errors'
 interface Props {
     changeset: Pick<IExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt'>
     campaignUpdates?: Pick<Observer<void>, 'next'>
-
+    disableRefresh: boolean
     /** For testing purposes only */
     _now?: Date
 }
 
-export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, campaignUpdates, _now }) => {
+export const ChangesetLastSynced: React.FunctionComponent<Props> = ({
+    changeset,
+    campaignUpdates,
+    _now,
+    disableRefresh,
+}) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
@@ -59,17 +64,19 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt ? LoadingSpinner : SyncIcon
 
     return (
-        <small className="text-muted ml-2">
+        <small className="text-muted">
             Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
             )}
-            <span data-tooltip={tooltipText}>
-                <UpdateLoaderIcon
-                    className={classNames('icon-inline', typeof lastUpdatedAt !== 'string' && 'cursor-pointer')}
-                    onClick={enqueueChangeset}
-                />
-            </span>
+            {!disableRefresh && (
+                <span data-tooltip={tooltipText}>
+                    <UpdateLoaderIcon
+                        className={classNames('icon-inline', typeof lastUpdatedAt !== 'string' && 'cursor-pointer')}
+                        onClick={enqueueChangeset}
+                    />
+                </span>
+            )}
         </small>
     )
 }
