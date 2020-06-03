@@ -1785,7 +1785,7 @@ func TestPermissionLevels(t *testing.T) {
 							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
 						}
 					}
-					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
 					var res struct {
 						Campaigns apitest.CampaignConnection
 						Node      apitest.Changeset
