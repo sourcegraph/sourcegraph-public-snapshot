@@ -117,8 +117,8 @@ const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
             return result
         }
         if (result.token.type === 'sequence') {
-            for (const m of result.token.members) {
-                members.push(m)
+            for (const member of result.token.members) {
+                members.push(member)
             }
         } else {
             const { range, token } = result
@@ -179,14 +179,14 @@ const quoted: Parser<Quoted> = (input, start) => {
  * Returns a {@link Parser} that will attempt to parse tokens matching
  * the given character in a search query.
  */
-const character = (c: string): Parser<Literal> => (input, start) => {
-    if (input[start] !== c) {
-        return { type: 'error', expected: c, at: start }
+const character = (character: string): Parser<Literal> => (input, start) => {
+    if (input[start] !== character) {
+        return { type: 'error', expected: character, at: start }
     }
     return {
         type: 'success',
         range: { start, end: start + 1 },
-        token: { type: 'literal', value: c },
+        token: { type: 'literal', value: character },
     }
 }
 
@@ -194,18 +194,18 @@ const character = (c: string): Parser<Literal> => (input, start) => {
  * Returns a {@link Parser} that will attempt to parse
  * tokens matching the given RegExp pattern in a search query.
  */
-const pattern = <T = Literal>(p: RegExp, output?: T, expected?: string): Parser<T> => {
-    if (!p.source.startsWith('^')) {
-        p = new RegExp(`^${p.source}`)
+const pattern = <T = Literal>(regexp: RegExp, output?: T, expected?: string): Parser<T> => {
+    if (!regexp.source.startsWith('^')) {
+        regexp = new RegExp(`^${regexp.source}`)
     }
     return (input, start) => {
         const matchTarget = input.slice(Math.max(0, start))
         if (!matchTarget) {
-            return { type: 'error', expected: expected || `/${p.source}/`, at: start }
+            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
-        const match = matchTarget.match(p)
+        const match = matchTarget.match(regexp)
         if (!match) {
-            return { type: 'error', expected: expected || `/${p.source}/`, at: start }
+            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
         return {
             type: 'success',

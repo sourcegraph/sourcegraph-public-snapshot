@@ -10,7 +10,7 @@ import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
 
-interface GitRefNodeProps {
+interface GitReferenceNodeProps {
     node: GQL.IGitRef
 
     /** Link URL; if undefined, node.url is used. */
@@ -22,7 +22,12 @@ interface GitRefNodeProps {
     children?: React.ReactNode
 }
 
-export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, ancestorIsLink, children }) => {
+export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
+    node,
+    url,
+    ancestorIsLink,
+    children,
+}) => {
     const mostRecentSig =
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
@@ -52,7 +57,7 @@ export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url
     )
 }
 
-export const gitRefFragment = gql`
+export const gitReferenceFragments = gql`
     fragment GitRefFields on GitRef {
         id
         displayName
@@ -86,7 +91,7 @@ export const gitRefFragment = gql`
     }
 `
 
-export const queryGitRefs = memoizeObservable(
+export const queryGitReferences = memoizeObservable(
     (args: {
         repo: GQL.ID
         first?: number
@@ -117,7 +122,7 @@ export const queryGitRefs = memoizeObservable(
                         }
                     }
                 }
-                ${gitRefFragment}
+                ${gitReferenceFragments}
             `,
             {
                 ...args,

@@ -6,9 +6,9 @@ export const ProductPlanTiered: React.FunctionComponent<{
     plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity'>
 }> = ({ plan: { planTiers, tiersMode, minQuantity } }) => (
     <>
-        {planTiers.map((tier, i) => (
-            <div key={i}>
-                {formatAmountForTier(tier, minQuantity)} {formatLabelForTier(tier, tiersMode, planTiers[i - 1])}
+        {planTiers.map((tier, index) => (
+            <div key={index}>
+                {formatAmountForTier(tier, minQuantity)} {formatLabelForTier(tier, tiersMode, planTiers[index - 1])}
             </div>
         ))}
     </>

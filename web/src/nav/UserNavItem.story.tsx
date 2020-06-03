@@ -18,9 +18,9 @@ const { add } = storiesOf('web/UserNavItem', module).addDecorator(story => (
 ))
 
 const OpenUserNavItem: React.FunctionComponent<UserNavItem['props']> = props => {
-    const openDropdown = useCallback((e: UserNavItem | null) => {
-        if (e) {
-            e.setState({ isOpen: true })
+    const openDropdown = useCallback((userNavItem: UserNavItem | null) => {
+        if (userNavItem) {
+            userNavItem.setState({ isOpen: true })
         }
     }, [])
     return <UserNavItem {...props} ref={openDropdown} />

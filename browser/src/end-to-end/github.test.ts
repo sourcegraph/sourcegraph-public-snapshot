@@ -1,10 +1,10 @@
 import { startCase } from 'lodash'
 import assert from 'assert'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { Driver, createDriverForTest } from '../../../shared/src/e2e/driver'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { testSingleFilePage } from './shared'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { retry } from '../../../shared/src/testing/utils'
+import { getConfig } from '../../../shared/src/testing/config'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'
 import { Target, Page } from 'puppeteer'
@@ -97,7 +97,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                                 )
                             ).asElement()
                             assert(tokenElement, 'Expected token element to exist')
-                            return tokenElement!
+                            return tokenElement
                         })
                         // Retry is here to wait for listeners to be registered
                         await retry(async () => {

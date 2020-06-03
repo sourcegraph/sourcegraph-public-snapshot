@@ -4,7 +4,7 @@ exports[`util parseURL() blob page 1`] = `
 Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
-  "revAndFilePath": "3.3/shared/src/hover/HoverOverlay.tsx",
+  "revisionAndFilePath": "3.3/shared/src/hover/HoverOverlay.tsx",
 }
 `;
 
@@ -12,7 +12,7 @@ exports[`util parseURL() branch name with forward slashes 1`] = `
 Object {
   "pageType": "blob",
   "rawRepoName": "ghe.sgdev.org/beyang/mux",
-  "revAndFilePath": "jr/branch/mux.go",
+  "revisionAndFilePath": "jr/branch/mux.go",
 }
 `;
 
@@ -48,7 +48,7 @@ exports[`util parseURL() selections - range 1`] = `
 Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
-  "revAndFilePath": "master/jest.config.base.js",
+  "revisionAndFilePath": "master/jest.config.base.js",
 }
 `;
 
@@ -56,7 +56,7 @@ exports[`util parseURL() selections - single line 1`] = `
 Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
-  "revAndFilePath": "master/jest.config.base.js",
+  "revisionAndFilePath": "master/jest.config.base.js",
 }
 `;
 
@@ -64,7 +64,7 @@ exports[`util parseURL() snippet permalink 1`] = `
 Object {
   "pageType": "blob",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
-  "revAndFilePath": "6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx",
+  "revisionAndFilePath": "6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx",
 }
 `;
 
@@ -72,7 +72,7 @@ exports[`util parseURL() tree page 1`] = `
 Object {
   "pageType": "tree",
   "rawRepoName": "github.com/sourcegraph/sourcegraph",
-  "revAndFilePath": "master/client",
+  "revisionAndFilePath": "master/client",
 }
 `;
 

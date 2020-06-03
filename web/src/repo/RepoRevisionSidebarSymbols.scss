@@ -1,4 +1,4 @@
-.repo-rev-sidebar-symbols {
+.repo-revision-sidebar-symbols {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -42,7 +42,7 @@
 }
 
 .theme-light {
-    .repo-rev-sidebar-symbols {
+    .repo-revision-sidebar-symbols {
         &-node {
             &__link {
                 color: $color-light-text-2;

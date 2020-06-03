@@ -30,8 +30,8 @@ interface Props extends RouteComponentProps<{ id: string }> {
 
 const terminalStates = new Set([GQL.LSIFUploadState.COMPLETED, GQL.LSIFUploadState.ERRORED])
 
-function shouldReload(v: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
-    return !isErrorLike(v) && !(v && terminalStates.has(v.state))
+function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): boolean {
+    return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
 /**

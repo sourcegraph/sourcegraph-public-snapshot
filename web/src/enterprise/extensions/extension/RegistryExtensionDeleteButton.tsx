@@ -50,7 +50,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                             }),
                             mapTo(null),
                             catchError(error => [asError(error)]),
-                            map(c => ({ deletionOrError: c })),
+                            map(deletionOrError => ({ deletionOrError })),
                             startWith<Pick<RegistryExtensionDeleteButtonState, 'deletionOrError'>>({
                                 deletionOrError: undefined,
                             })

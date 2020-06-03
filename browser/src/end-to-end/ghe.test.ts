@@ -1,8 +1,8 @@
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 
 const GHE_BASE_URL = process.env.GHE_BASE_URL || 'https://ghe.sgdev.org'
 const GHE_USERNAME = process.env.GHE_USERNAME

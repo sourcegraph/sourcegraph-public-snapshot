@@ -5,7 +5,7 @@ import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 
 interface Props {
-    gitRef: GQL.IGitRef
+    gitReference: GQL.IGitRef
 
     /**
      * Called when the mousedown event is triggered on the element.
@@ -13,17 +13,17 @@ interface Props {
     onMouseDown?: () => void
 }
 
-export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown }: Props) => {
+export const GitReferenceTag: React.FunctionComponent<Props> = ({ gitReference, onMouseDown }: Props) => {
     // TODO(sqs): make not github specific
-    const githubRepoURL = gitRef.repository.name.startsWith('github.com/')
-        ? `https://${gitRef.repository.name}`
+    const githubRepoURL = gitReference.repository.name.startsWith('github.com/')
+        ? `https://${gitReference.repository.name}`
         : undefined
 
-    const abbrevName = gitRef.name.slice(gitRef.prefix.length)
+    const abbrevName = gitReference.name.slice(gitReference.prefix.length)
     let kind = ''
     let url = githubRepoURL || ''
     let Icon: React.ComponentType<{ className?: string }> | undefined
-    switch (gitRef.prefix) {
+    switch (gitReference.prefix) {
         case 'refs/heads/':
             kind = 'branch'
             url = url && `${url}/compare/${encodeURIComponent(abbrevName)}`
@@ -37,11 +37,11 @@ export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown 
             break
 
         case 'refs/pull/':
-            if (gitRef.name.endsWith('/head')) {
+            if (gitReference.name.endsWith('/head')) {
                 kind = 'pull request'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
                 Icon = GithubIcon
-            } else if (gitRef.name.endsWith('/merge')) {
+            } else if (gitReference.name.endsWith('/merge')) {
                 kind = 'pull request merge'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
                 Icon = GithubIcon
@@ -53,11 +53,11 @@ export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown 
     const children: (React.ReactChild | undefined)[] = [
         Icon && <Icon key={1} className="icon-inline" />,
         <span key={2} className="git-ref-tag__display-name">
-            {gitRef.displayName}
+            {gitReference.displayName}
         </span>,
     ]
     const props = {
-        title: `${gitRef.name} ${kind ? `(${kind})` : ''}`,
+        title: `${gitReference.name} ${kind ? `(${kind})` : ''}`,
         className: 'git-ref-tag',
     }
 

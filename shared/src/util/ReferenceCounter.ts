@@ -1,7 +1,7 @@
 /**
  * A Map that tracks reference counts for keys.
  */
-export class RefCount<T> implements Pick<Set<T>, 'keys' | 'delete'> {
+export class ReferenceCounter<T> implements Pick<Set<T>, 'keys' | 'delete'> {
     private refCount = new Map<T, number>()
 
     /**

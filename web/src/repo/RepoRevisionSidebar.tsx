@@ -16,7 +16,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
-import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
+import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
@@ -36,9 +36,9 @@ interface State {
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export class RepoRevSidebar extends React.PureComponent<Props, State> {
-    private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
-    private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
+export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
+    private static LAST_TAB_STORAGE_KEY = 'repo-revision-sidebar-last-tab'
+    private static HIDDEN_STORAGE_KEY = 'repo-revision-sidebar-hidden'
 
     private static TABS: Tab<SidebarTabID>[] = [
         { id: 'files', label: 'Files' },
@@ -46,7 +46,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     ]
 
     public state: State = {
-        showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
+        showSidebar: localStorage.getItem(RepoRevisionSidebar.HIDDEN_STORAGE_KEY) === null,
     }
 
     private subscriptions = new Subscription()
@@ -58,7 +58,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 .pipe(filter(event => event.altKey && event.key === 's'))
                 .subscribe(event => {
                     event.preventDefault()
-                    this.setState(prevState => ({ showSidebar: !prevState.showSidebar }))
+                    this.setState(previousState => ({ showSidebar: !previousState.showSidebar }))
                 })
         )
     }
@@ -72,7 +72,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             return (
                 <button
                     type="button"
-                    className={`btn btn-icon repo-rev-sidebar-toggle ${this.props.className}-toggle`}
+                    className={`btn btn-icon repo-revision-sidebar-toggle ${this.props.className}-toggle`}
                     onClick={this.onSidebarToggle}
                     data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
@@ -81,18 +81,18 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             )
         }
 
-        const STORAGE_KEY = 'repo-rev-sidebar'
+        const STORAGE_KEY = 'repo-revision-sidebar'
 
         return (
             <Resizable
-                className="repo-rev-container__sidebar-resizable"
+                className="repo-revision-container__sidebar-resizable"
                 handlePosition="right"
                 storageKey={STORAGE_KEY}
                 defaultSize={256 /* px */}
                 element={
                     <TabsWithLocalStorageViewStatePersistence
-                        tabs={RepoRevSidebar.TABS}
-                        storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
+                        tabs={RepoRevisionSidebar.TABS}
+                        storageKey={RepoRevisionSidebar.LAST_TAB_STORAGE_KEY}
                         tabBarEndFragment={
                             <>
                                 <Spacer />
@@ -107,16 +107,16 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             </>
                         }
                         id="explorer"
-                        className={`repo-rev-sidebar ${this.props.className} ${
-                            this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
-                        } e2e-repo-rev-sidebar`}
+                        className={`repo-revision-sidebar ${this.props.className} ${
+                            this.state.showSidebar ? `repo-revision-sidebar--open ${this.props.className}--open` : ''
+                        } e2e-repo-revision-sidebar`}
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
                         <Tree
                             key="files"
                             repoName={this.props.repoName}
-                            rev={this.props.rev}
+                            revision={this.props.revision}
                             commitID={this.props.commitID}
                             history={this.props.history}
                             location={this.props.location}
@@ -125,10 +125,10 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             activePathIsDir={this.props.isDir}
                             sizeKey={`Resizable:${STORAGE_KEY}`}
                         />
-                        <RepoRevSidebarSymbols
+                        <RepoRevisionSidebarSymbols
                             key="symbols"
                             repoID={this.props.repoID}
-                            rev={this.props.rev}
+                            revision={this.props.revision}
                             activePath={this.props.filePath}
                             history={this.props.history}
                             location={this.props.location}
@@ -141,9 +141,9 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
 
     private onSidebarToggle = (): void => {
         if (this.state.showSidebar) {
-            localStorage.setItem(RepoRevSidebar.HIDDEN_STORAGE_KEY, 'true')
+            localStorage.setItem(RepoRevisionSidebar.HIDDEN_STORAGE_KEY, 'true')
         } else {
-            localStorage.removeItem(RepoRevSidebar.HIDDEN_STORAGE_KEY)
+            localStorage.removeItem(RepoRevisionSidebar.HIDDEN_STORAGE_KEY)
         }
         this.setState(state => ({ showSidebar: !state.showSidebar }))
     }

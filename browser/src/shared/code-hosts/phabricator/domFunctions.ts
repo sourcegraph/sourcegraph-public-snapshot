@@ -21,12 +21,12 @@ const getLineNumber = (lineNumberCell: HTMLElement): number =>
  * and `<td>` line number cells with a `data-n` attribtue (recent Phabricator versions).
  */
 const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement | null => {
-    let elem: HTMLElement | null = codeElement
-    while (elem) {
-        if (isLineNumberCell(elem)) {
-            return elem
+    let element: HTMLElement | null = codeElement
+    while (element) {
+        if (isLineNumberCell(element)) {
+            return element
         }
-        elem = elem.previousElementSibling as HTMLElement | null
+        element = element.previousElementSibling as HTMLElement | null
     }
     return null
 }
@@ -78,20 +78,20 @@ export const diffDomFunctions: DOMFunctions = {
             return null
         }
 
-        const td = target.closest('td')
-        if (!td) {
+        const tableCell = target.closest('td')
+        if (!tableCell) {
             return null
         }
-        if (td.classList.contains('show-more') || td.classList.contains('show-context')) {
+        if (tableCell.classList.contains('show-more') || tableCell.classList.contains('show-context')) {
             // This element represents a collapsed part of the diff, it's not a code element.
             return null
         }
-        if (!getLineNumberCellFromCodeElement(td)) {
+        if (!getLineNumberCellFromCodeElement(tableCell)) {
             // The element has no associated line number cell: this can be the case when hovering
             // 'empty' lines in the base part of a split diff that has added lines.
             return null
         }
-        return td
+        return tableCell
     },
     getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineElementFromLineNumber: getDiffCodeElementFromLineNumber,

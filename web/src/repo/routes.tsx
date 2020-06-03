@@ -6,12 +6,12 @@ import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
+import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const FilePathBreadcrumb = lazyComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
-const RepoRevSidebar = lazyComponent(() => import('./RepoRevSidebar'), 'RepoRevSidebar')
+const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
 
 const RepositoryGitDataContainer = lazyComponent(
@@ -83,9 +83,9 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
 ]
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
-const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
+const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
-export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
+export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...['', '/-/:objectType(blob|tree)/:filePath*'].map(routePath => ({
         path: routePath,
         exact: routePath === '',
@@ -100,7 +100,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
             copyQueryButton,
             versionContext,
             ...context
-        }: RepoRevContainerContext &
+        }: RepoRevisionContainerContext &
             RouteComponentProps<{
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
@@ -112,7 +112,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
 
             // Redirect tree and blob routes pointing to the root to the repo page
             if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
-                return <Redirect to={toRepoURL({ repoName, rev: context.rev })} />
+                return <Redirect to={toRepoURL({ repoName, revision: context.revision })} />
             }
 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
@@ -121,7 +121,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
-            if (!hideRepoRevContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
+            if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
                 const hash = parseHash(window.location.hash)
                 const newHash = new URLSearchParams()
                 if (hash.viewState) {
@@ -130,7 +130,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
             }
 
-            const repoRevProps = {
+            const repoRevisionProps = {
                 repoID,
                 repoDescription,
                 repoName,
@@ -155,7 +155,7 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                                     <FilePathBreadcrumb
                                         key="path"
                                         repoName={repoName}
-                                        rev={context.rev}
+                                        revision={context.revision}
                                         filePath={filePath}
                                         isDir={objectType === 'tree'}
                                     />
@@ -164,26 +164,26 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                             />
                         </>
                     )}
-                    <RepoRevSidebar
+                    <RepoRevisionSidebar
                         {...context}
-                        {...repoRevProps}
-                        className="repo-rev-container__sidebar"
+                        {...repoRevisionProps}
+                        className="repo-revision-container__sidebar"
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
-                    {!hideRepoRevContent && (
-                        <div className="repo-rev-container__content">
+                    {!hideRepoRevisionContent && (
+                        <div className="repo-revision-container__content">
                             {objectType === 'blob' ? (
                                 <BlobPage
                                     {...context}
-                                    {...repoRevProps}
+                                    {...repoRevisionProps}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                 />
                             ) : (
-                                <TreePage {...context} {...repoRevProps} />
+                                <TreePage {...context} {...repoRevisionProps} />
                             )}
                         </div>
                     )}

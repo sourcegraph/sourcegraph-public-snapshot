@@ -11,6 +11,7 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { replaceRevisionInURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
 
 interface CommitNodeProps {
     node: GQL.IGitCommit
@@ -36,15 +37,13 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
     </li>
 )
 
-interface Props {
+interface Props extends Partial<RevisionSpec>, FileSpec {
     repoID: GQL.ID
-    rev: string | undefined
-    filePath: string
     history: H.History
     location: H.Location
 }
 
-export class RepoRevSidebarCommits extends React.PureComponent<Props> {
+export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>>
@@ -65,21 +64,21 @@ export class RepoRevSidebarCommits extends React.PureComponent<Props> {
     }
 
     private fetchCommits = (args: { query?: string }): Observable<GQL.IGitCommitConnection> =>
-        fetchCommits(this.props.repoID, this.props.rev || '', { ...args, currentPath: this.props.filePath || '' })
+        fetchCommits(this.props.repoID, this.props.revision || '', { ...args, currentPath: this.props.filePath || '' })
 }
 
 function fetchCommits(
     repo: GQL.ID,
-    rev: string,
+    revision: string,
     args: { first?: number; currentPath?: string; query?: string }
 ): Observable<GQL.IGitCommitConnection> {
     return queryGraphQL(
         gql`
-            query FetchCommits($repo: ID!, $rev: String!, $first: Int, $currentPath: String, $query: String) {
+            query FetchCommits($repo: ID!, $revision: String!, $first: Int, $currentPath: String, $query: String) {
                 node(id: $repo) {
                     __typename
                     ... on Repository {
-                        commit(rev: $rev) {
+                        commit(rev: $revision) {
                             ancestors(first: $first, query: $query, path: $currentPath) {
                                 nodes {
                                     ...GitCommitFields
@@ -91,7 +90,7 @@ function fetchCommits(
             }
             ${gitCommitFragment}
         `,
-        { ...args, repo, rev }
+        { ...args, repo, revision }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

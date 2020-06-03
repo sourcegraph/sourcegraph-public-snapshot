@@ -17,7 +17,14 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { property, isDefined } from '../../../../shared/src/util/types'
-import { FileSpec, ModeSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import {
+    FileSpec,
+    ModeSpec,
+    UIPositionSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+} from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -98,12 +105,16 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    private hoverifier: Hoverifier<
+        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
+        HoverMerged,
+        ActionItemAction
+    >
 
     constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier<
-            RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+            RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
             HoverMerged,
             ActionItemAction
         >({
@@ -133,11 +144,11 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     }
 
     private getLSPTextDocumentPositionParams(
-        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
+        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
-            rev: hoveredToken.rev,
+            revision: hoveredToken.revision,
             filePath: hoveredToken.filePath,
             commitID: hoveredToken.commitID,
             position: hoveredToken,
@@ -159,7 +170,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             of({ commitOrError: undefined }),
                             queryCommit({ repo: repo.id, revspec: match.params.revspec }).pipe(
                                 catchError(error => [asError(error)]),
-                                map(c => ({ commitOrError: c })),
+                                map(commitOrError => ({ commitOrError })),
                                 tap(({ commitOrError }: { commitOrError: GQL.IGitCommit | ErrorLike }) => {
                                     if (isErrorLike(commitOrError)) {
                                         this.props.onDidUpdateExternalLinks(undefined)
@@ -230,13 +241,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     base: {
                                         repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
-                                        rev: commitParentOrEmpty(this.state.commitOrError),
+                                        revision: commitParentOrEmpty(this.state.commitOrError),
                                         commitID: commitParentOrEmpty(this.state.commitOrError),
                                     },
                                     head: {
                                         repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
-                                        rev: this.state.commitOrError.oid,
+                                        revision: this.state.commitOrError.oid,
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     hoverifier: this.hoverifier,

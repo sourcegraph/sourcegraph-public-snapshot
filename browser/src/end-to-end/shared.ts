@@ -1,6 +1,6 @@
 import expect from 'expect'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { Driver } from '../../../shared/src/testing/driver'
+import { retry } from '../../../shared/src/testing/utils'
 import assert from 'assert'
 
 /**

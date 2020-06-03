@@ -4,17 +4,17 @@ import { OperationOptions } from 'retry'
 /**
  * Retry function with more sensible defaults for e2e test assertions
  *
- * @param fn The async assertion function to retry
+ * @param function_ The async assertion function to retry
  * @param options Option overrides passed to pRetry
  */
-export const retry = <T>(fn: (attempt: number) => Promise<T>, options: OperationOptions = {}): Promise<T> =>
-    pRetry(fn, { factor: 1, ...options })
+export const retry = <T>(function_: (attempt: number) => Promise<T>, options: OperationOptions = {}): Promise<T> =>
+    pRetry(function_, { factor: 1, ...options })
 
 /**
  * Looks up an environment variable and parses it as a boolean. Throws when not
  * set and no default is provided, or if parsing fails.
  */
-export function readEnvBoolean({
+export function readEnvironmentBoolean({
     variable: variable,
     defaultValue,
 }: {
@@ -41,7 +41,7 @@ export function readEnvBoolean({
  * Looks up an environment variable. Throws when not set and no default is
  * provided.
  */
-export function readEnvString({ variable, defaultValue }: { variable: string; defaultValue?: string }): string {
+export function readEnvironmentString({ variable, defaultValue }: { variable: string; defaultValue?: string }): string {
     const value = process.env[variable]
 
     if (!value) {

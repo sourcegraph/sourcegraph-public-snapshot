@@ -423,7 +423,7 @@ export function deleteSavedSearch(id: GQL.ID): Observable<void> {
 }
 
 export const highlightCode = memoizeObservable(
-    (ctx: {
+    (context: {
         code: string
         fuzzyLanguage: string
         disableTimeout: boolean
@@ -445,7 +445,7 @@ export const highlightCode = memoizeObservable(
                     )
                 }
             `,
-            ctx
+            context
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.highlightCode) {
@@ -454,7 +454,8 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${String(ctx.disableTimeout)}:${String(ctx.isLightTheme)}`
+    context =>
+        `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}:${String(context.isLightTheme)}`
 )
 
 /**

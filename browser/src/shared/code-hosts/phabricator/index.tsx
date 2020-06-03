@@ -1,4 +1,4 @@
-import { FileSpec, RawRepoSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
+import { FileSpec, RawRepoSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
 
 export enum PhabricatorMode {
     Diffusion = 1,
@@ -7,7 +7,7 @@ export enum PhabricatorMode {
     Change,
 }
 
-export interface DiffusionState extends RawRepoSpec, ResolvedRevSpec, FileSpec {
+export interface DiffusionState extends RawRepoSpec, ResolvedRevisionSpec, FileSpec {
     mode: PhabricatorMode.Diffusion
 }
 
@@ -53,7 +53,7 @@ export interface RevisionState extends RawRepoSpec {
  * Refers to a URL like http://phabricator.aws.sgdev.org/source/nzap/change/master/checked_message_bench_test.go,
  * which a user gets to by clicking "Show Last Change" on a differential page.
  */
-export interface ChangeState extends RawRepoSpec, FileSpec, ResolvedRevSpec {
+export interface ChangeState extends RawRepoSpec, FileSpec, ResolvedRevisionSpec {
     mode: PhabricatorMode.Change
 }
 

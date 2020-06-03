@@ -1,14 +1,14 @@
 import { describe, test, before, beforeEach, after, afterEach } from 'mocha'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { afterEachRecordCoverage } from '../../../shared/src/e2e/coverage'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachRecordCoverage } from '../../../shared/src/testing/coverage'
+import { retry } from '../../../shared/src/testing/utils'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random, sortBy } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
 import { asError } from '../../../shared/src/util/errors'
@@ -72,7 +72,7 @@ describe('e2e test suite', () => {
         if (driver) {
             // Clear local storage to reset sidebar selection (files or tabs) for each test
             await driver.page.evaluate(() => {
-                localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
+                localStorage.setItem('repo-revision-sidebar-last-tab', 'files')
             })
 
             await driver.resetUserSettings()
@@ -101,11 +101,11 @@ describe('e2e test suite', () => {
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
             await driver.page.evaluate(message => {
-                const elem = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
-                if (!elem) {
+                const element = document.querySelector<HTMLElement>('.e2e-global-alert .notices .global-alerts__alert')
+                if (!element) {
                     throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
-                if (!elem.textContent?.includes(message)) {
+                if (!element.textContent?.includes(message)) {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
             }, message)
@@ -126,8 +126,8 @@ describe('e2e test suite', () => {
             await driver.page.click('.e2e-create-access-token-submit')
             const token: string = await (
                 await driver.page.waitForFunction(() => {
-                    const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
-                    return elem?.value
+                    const element = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
+                    return element?.value
                 })
             ).jsonValue()
 
@@ -298,8 +298,8 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
             const blob: string = await (
                 await driver.page.waitFor(() => {
-                    const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem?.textContent
+                    const element = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                    return element?.textContent
                 })
             ).jsonValue()
 
@@ -328,8 +328,8 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
             const blob: string = await (
                 await driver.page.waitFor(() => {
-                    const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem?.textContent
+                    const element = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                    return element?.textContent
                 })
             ).jsonValue()
 
@@ -369,7 +369,9 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 1)
 
             const privateResults = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.e2e-search-result-label')].map(t => (t.textContent || '').trim())
+                [...document.querySelectorAll('.e2e-search-result-label')].map(label =>
+                    (label.textContent || '').trim()
+                )
             )
             expect(privateResults).toEqual(expect.arrayContaining(privateRepos))
 
@@ -377,7 +379,9 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
 
             const publicResults = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.ee2e-search-result-label')].map(t => (t.textContent || '').trim())
+                [...document.querySelectorAll('.ee2e-search-result-label')].map(label =>
+                    (label.textContent || '').trim()
+                )
             )
             expect(publicResults).not.toEqual(expect.arrayContaining(privateRepos))
 
@@ -385,7 +389,9 @@ describe('e2e test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
 
             const anyResults = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.e2e-search-result-label')].map(t => (t.textContent || '').trim())
+                [...document.querySelectorAll('.e2e-search-result-label')].map(label =>
+                    (label.textContent || '').trim()
+                )
             )
             expect(anyResults).toEqual(expect.arrayContaining(privateRepos))
         })
@@ -415,7 +421,7 @@ describe('e2e test suite', () => {
 
             const getActiveThemeClasses = (): Promise<string[]> =>
                 driver.page.evaluate(() =>
-                    [...document.querySelector('.theme')!.classList].filter(c => c.startsWith('theme-'))
+                    [...document.querySelector('.theme')!.classList].filter(className => className.startsWith('theme-'))
                 )
 
             expect(await getActiveThemeClasses()).toHaveLength(1)
@@ -451,11 +457,11 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector(selector, { visible: true })
             return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
-                [...document.querySelectorAll('.e2e-tooltip-content')].map(t => t.textContent || '')
+                [...document.querySelectorAll('.e2e-tooltip-content')].map(content => content.textContent || '')
             )
         }
-        const assertHoverContentContains = async (val: string, count?: number): Promise<void> => {
-            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(val)]))
+        const assertHoverContentContains = async (value: string, count?: number): Promise<void> => {
+            expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
         }
 
         const clickHoverJ2D = async (): Promise<void> => {
@@ -463,7 +469,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector(selector, { visible: true })
             await driver.page.click(selector)
         }
-        const clickHoverFindRefs = async (): Promise<void> => {
+        const clickHoverFindReferences = async (): Promise<void> => {
             const selector = '.e2e-tooltip-find-references'
             await driver.page.waitForSelector(selector, { visible: true })
             await driver.page.click(selector)
@@ -538,7 +544,7 @@ describe('e2e test suite', () => {
             })
 
             test('responds to keyboard shortcuts', async () => {
-                const assertNumRowsExpanded = async (expectedCount: number): Promise<void> => {
+                const assertNumberRowsExpanded = async (expectedCount: number): Promise<void> => {
                     expect(
                         await driver.page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length)
                     ).toEqual(expectedCount)
@@ -549,7 +555,7 @@ describe('e2e test suite', () => {
                 )
                 await driver.page.waitForSelector('.tree__row', { visible: true }) // waitForSelector for tree to render
 
-                await driver.page.click('.e2e-repo-rev-sidebar .tree')
+                await driver.page.click('.e2e-repo-revision-sidebar .tree')
                 await driver.page.keyboard.press('ArrowUp') // arrow up to 'diff' directory
                 await driver.page.waitForSelector('.tree__row--selected [data-tree-path="diff"]', { visible: true })
                 await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff' directory)
@@ -560,7 +566,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', {
                     visible: true,
                 })
-                await assertNumRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
+                await assertNumberRowsExpanded(1) // only `diff` directory is expanded, though `diff/testdata` is expanded
 
                 await driver.page.keyboard.press('ArrowRight') // arrow right (expand 'diff/testdata' directory)
                 await driver.page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', {
@@ -569,7 +575,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('.tree__row--expanded [data-tree-path="diff/testdata"]', {
                     visible: true,
                 })
-                await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
+                await assertNumberRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
                 await driver.page.waitForSelector('.tree__row [data-tree-path="diff/testdata/empty.diff"]', {
                     visible: true,
@@ -590,13 +596,13 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', {
                     visible: true,
                 })
-                await assertNumRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
+                await assertNumberRowsExpanded(2) // `diff` and `diff/testdata` directories expanded
 
                 await driver.page.keyboard.press('ArrowLeft') // arrow left
                 await driver.page.waitForSelector('.tree__row--selected [data-tree-path="diff/testdata"]', {
                     visible: true,
                 }) // `diff/testdata` still selected
-                await assertNumRowsExpanded(1) // only `diff` directory expanded
+                await assertNumberRowsExpanded(1) // only `diff` directory expanded
             })
         })
         describe('symbol sidebar', () => {
@@ -721,11 +727,11 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
                     const symbolNames = await driver.page.evaluate(() =>
-                        [...document.querySelectorAll('.e2e-symbol-name')].map(t => t.textContent || '')
+                        [...document.querySelectorAll('.e2e-symbol-name')].map(name => name.textContent || '')
                     )
                     const symbolTypes = await driver.page.evaluate(() =>
                         [...document.querySelectorAll('.e2e-symbol-icon')].map(
-                            t => t.getAttribute('data-tooltip') || ''
+                            icon => icon.getAttribute('data-tooltip') || ''
                         )
                     )
 
@@ -812,8 +818,8 @@ describe('e2e test suite', () => {
 
                     await driver.page.waitForSelector('.e2e-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {
-                        const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
-                        return elem?.dataset.line && parseInt(elem.dataset.line, 10)
+                        const element = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
+                        return element?.dataset.line && parseInt(element.dataset.line, 10)
                     })
 
                     expect(selectedLineNumber).toEqual(line)
@@ -887,7 +893,7 @@ describe('e2e test suite', () => {
             })
         })
 
-        describe('rev resolution', () => {
+        describe('revision resolution', () => {
             test('shows clone in progress interstitial page', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraphtest/AlwaysCloningTest')
                 await driver.page.waitForSelector('.hero-page__subtitle', { visible: true })
@@ -900,7 +906,7 @@ describe('e2e test suite', () => {
 
             test('resolves default branch when unspecified', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
+                await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
                 await retry(async () => {
                     expect(
                         await driver.page.evaluate(() => document.querySelector('.e2e-revision')!.textContent!.trim())
@@ -910,11 +916,11 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector(blobTableSelector)
             })
 
-            test('updates rev with switcher', async () => {
+            test('updates revision with switcher', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                // Open rev switcher
-                await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
-                await driver.page.click('#repo-rev-popover')
+                // Open revision switcher
+                await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
+                await driver.page.click('#repo-revision-popover')
                 // Click "Tags" tab
                 await driver.page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
                 await driver.page.waitForSelector('a.git-ref-node[href*="0.5.0"]', { visible: true })
@@ -1010,7 +1016,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
-                        await clickHoverFindRefs()
+                        await clickHoverFindReferences()
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
                         )
@@ -1127,7 +1133,7 @@ describe('e2e test suite', () => {
             }
 
             const operatorsQuery = Object.keys(operators)
-                .map(op => `${op}:${operators[op]}`)
+                .map(operator => `${operator}:${operators[operator]}`)
                 .join('+')
 
             await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}&patternType=regexp`)
@@ -1171,8 +1177,8 @@ describe('e2e test suite', () => {
         describe('multiple revisions per repository', () => {
             let previousExperimentalFeatures: any
             before(async () => {
-                await driver.setConfig(['experimentalFeatures'], prev => {
-                    previousExperimentalFeatures = prev?.value
+                await driver.setConfig(['experimentalFeatures'], previous => {
+                    previousExperimentalFeatures = previous?.value
                     return { searchMultipleRevisionsPerRepository: true }
                 })
                 // Wait for configuration to be applied.
@@ -1476,8 +1482,8 @@ describe('e2e test suite', () => {
     describe('Campaigns', () => {
         let previousExperimentalFeatures: any
         before(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => {
-                previousExperimentalFeatures = prev?.value
+            await driver.setConfig(['experimentalFeatures'], previous => {
+                previousExperimentalFeatures = previous?.value
                 return { automation: 'enabled' }
             })
             // wait for configuration to be applied

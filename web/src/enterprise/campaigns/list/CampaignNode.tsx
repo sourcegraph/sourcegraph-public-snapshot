@@ -47,7 +47,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
     const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
     const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
     const changesetCountByState = (state: GQL.ChangesetState): number =>
-        node.changesets.nodes.reduce((prev, next) => prev + (next.state === state ? 1 : 0), 0)
+        node.changesets.nodes.reduce((previous, next) => previous + (next.state === state ? 1 : 0), 0)
     return (
         <li className="list-group-item">
             <div className="d-flex align-items-center p-2">

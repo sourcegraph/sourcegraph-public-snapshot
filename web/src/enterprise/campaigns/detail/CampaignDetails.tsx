@@ -177,15 +177,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [patchSetID])
 
     // To unblock the history after leaving edit mode
-    const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
+    const unblockHistoryReference = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
         if (!campaignID && patchSetID === null) {
-            unblockHistoryRef.current()
-            unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
+            unblockHistoryReference.current()
+            unblockHistoryReference.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
-        return () => unblockHistoryRef.current()
+        return () => unblockHistoryReference.current()
     }, [campaignID, history, patchSetID])
 
     const patchSet = useObservable(
@@ -235,7 +235,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     branch: specifyingBranchAllowed ? branch : undefined,
                     draft: true,
                 })
-                unblockHistoryRef.current()
+                unblockHistoryReference.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
                 setMode('viewing')
                 setAlertError(undefined)
@@ -279,7 +279,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setDescription(newCampaign.description ?? '')
                     setBranch(newCampaign.branch ?? '')
                     setBranchModified(false)
-                    unblockHistoryRef.current()
+                    unblockHistoryReference.current()
                     history.push(`/campaigns/${newCampaign.id}`)
                 } else {
                     const createdCampaign = await createCampaign({
@@ -289,7 +289,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         patchSet: patchSet ? patchSet.id : undefined,
                         branch: specifyingBranchAllowed ? branch : undefined,
                     })
-                    unblockHistoryRef.current()
+                    unblockHistoryReference.current()
                     history.push(`/campaigns/${createdCampaign.id}`)
                 }
                 setMode('viewing')
@@ -319,7 +319,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onEdit: React.MouseEventHandler = useCallback(
         event => {
             event.preventDefault()
-            unblockHistoryRef.current = history.block(discardChangesMessage)
+            unblockHistoryReference.current = history.block(discardChangesMessage)
             setMode('editing')
             setAlertError(undefined)
         },
@@ -332,7 +332,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             if (!confirm(discardChangesMessage)) {
                 return
             }
-            unblockHistoryRef.current()
+            unblockHistoryReference.current()
             // clear query params
             history.replace(location.pathname)
             setMode('viewing')

@@ -28,8 +28,8 @@ export function createTestViewerService({
 }): ViewerService {
     const viewerService = createViewerService(modelService || FIXTURE_MODEL_SERVICE)
     if (viewers) {
-        for (const e of viewers) {
-            viewerService.addViewer(e)
+        for (const viewer of viewers) {
+            viewerService.addViewer(viewer)
         }
     }
     const viewerUpdates = updates

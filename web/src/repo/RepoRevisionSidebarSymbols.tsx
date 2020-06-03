@@ -9,13 +9,14 @@ import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { fetchSymbols } from '../symbols/backend'
 import { parseBrowserRepoURL } from '../util/url'
+import { RevisionSpec } from '../../../shared/src/util/url'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const current = parseBrowserRepoURL(H.createPath(currentLocation))
     const symbol = parseBrowserRepoURL(symbolLocation)
     return (
         current.repoName === symbol.repoName &&
-        current.rev === symbol.rev &&
+        current.revision === symbol.revision &&
         current.filePath === symbol.filePath &&
         isEqual(current.position, symbol.position)
     )
@@ -32,21 +33,21 @@ interface SymbolNodeProps {
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
-        <li className="repo-rev-sidebar-symbols-node">
+        <li className="repo-revision-sidebar-symbols-node">
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-rev-sidebar-symbols-node__link e2e-symbol-link"
-                activeClassName="repo-rev-sidebar-symbols-node__link--active"
+                className="repo-revision-sidebar-symbols-node__link e2e-symbol-link"
+                activeClassName="repo-revision-sidebar-symbols-node__link--active"
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 e2e-symbol-icon" />
-                <span className="repo-rev-sidebar-symbols-node__name e2e-symbol-name">{node.name}</span>
+                <span className="repo-revision-sidebar-symbols-node__name e2e-symbol-name">{node.name}</span>
                 {node.containerName && (
-                    <span className="repo-rev-sidebar-symbols-node__container-name">
+                    <span className="repo-revision-sidebar-symbols-node__container-name">
                         <small>{node.containerName}</small>
                     </span>
                 )}
-                <span className="repo-rev-sidebar-symbols-node__path">
+                <span className="repo-revision-sidebar-symbols-node__path">
                     <small>{node.location.resource.path}</small>
                 </span>
             </NavLink>
@@ -56,16 +57,15 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
 
 class FilteredSymbolsConnection extends FilteredConnection<GQL.ISymbol, Pick<SymbolNodeProps, 'location'>> {}
 
-interface Props {
+interface Props extends Partial<RevisionSpec> {
     repoID: GQL.ID
-    rev: string | undefined
     history: H.History
     location: H.Location
     /** The path of the file or directory currently shown in the content area */
     activePath: string
 }
 
-export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
+export class RepoRevisionSidebarSymbols extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
 
     public componentDidUpdate(): void {
@@ -75,7 +75,7 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <FilteredSymbolsConnection
-                className="repo-rev-sidebar-symbols"
+                className="repo-revision-sidebar-symbols"
                 compact={true}
                 noun="symbol"
                 pluralNoun="symbols"
@@ -93,14 +93,13 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
     private fetchSymbols = (args: { first?: number; query?: string }): Observable<GQL.ISymbolConnection> =>
         this.componentUpdates.pipe(
             startWith(this.props),
-            map(props => ({ repoID: props.repoID, rev: props.rev, activePath: props.activePath })),
+            map(({ repoID, revision, activePath }) => ({ repoID, revision, activePath })),
             distinctUntilChanged((a, b) => isEqual(a, b)),
-            switchMap(props =>
-                fetchSymbols(props.repoID, props.rev || '', {
+            switchMap(({ repoID, revision, activePath }) =>
+                fetchSymbols(repoID, revision || '', {
                     ...args,
-                    // `includePatterns` expects regexes, so first escape the
-                    // path.
-                    includePatterns: [escapeRegExp(props.activePath)],
+                    // `includePatterns` expects regexes, so first escape the path.
+                    includePatterns: [escapeRegExp(activePath)],
                 })
             )
         )

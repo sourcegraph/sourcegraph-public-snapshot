@@ -10,7 +10,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
@@ -83,11 +83,11 @@ interface RepositoryCompareDiffPageProps
         ExtensionsControllerProps,
         ThemeProps {
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
+    base: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    head: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
+    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
 /** A page with the file diffs in the comparison. */
@@ -104,8 +104,8 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     nodeComponentProps={{
                         ...this.props,
                         extensionInfo: {
-                            base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
-                            head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
+                            base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
+                            head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
                             hoverifier: this.props.hoverifier,
                             extensionsController: this.props.extensionsController,
                         },

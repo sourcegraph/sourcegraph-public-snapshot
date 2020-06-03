@@ -50,7 +50,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
             const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
             const activation = undefined
             const source = 'filter'
-            const queryParams: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
+            const searchParameters: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
             if (searchQueryNotEmpty) {
                 submitSearch({
                     history,
@@ -61,7 +61,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                     versionContext,
                     activation,
                     filtersInQuery,
-                    queryParams,
+                    searchParameters,
                 })
             }
         },
@@ -84,13 +84,13 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
         return null
     }
 
-    const onDismissInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
-        e.preventDefault()
+    const onDismissInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault()
         setHasDismissedInfo('true')
     }
 
-    const showInfo = (e: React.MouseEvent<HTMLButtonElement>): void => {
-        e.preventDefault()
+    const showInfo = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.preventDefault()
         setHasDismissedInfo('false')
     }
 

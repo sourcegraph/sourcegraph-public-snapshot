@@ -15,7 +15,7 @@ import puppeteer, {
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
-import { readEnvBoolean, retry } from './e2e-test-utils'
+import { readEnvironmentBoolean, retry } from './utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
@@ -35,7 +35,7 @@ import { isDefined } from '../util/types'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
+export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
     ? realPercySnapshot
     : () => Promise.resolve()
 
@@ -106,13 +106,13 @@ function findElementRegexpStrings(
 function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
-        for (const el of document.querySelectorAll<HTMLElement>(tag)) {
-            if (!el.offsetParent) {
+        for (const element of document.querySelectorAll<HTMLElement>(tag)) {
+            if (!element.offsetParent) {
                 // Ignore hidden elements
                 continue
             }
-            if (el.textContent && el.textContent.match(regexp)) {
-                return el
+            if (element.textContent && element.textContent.match(regexp)) {
+                return element
             }
         }
     }
@@ -383,8 +383,8 @@ export class Driver {
     public async assertWindowLocationPrefix(locationPrefix: string, isAbsolute = false): Promise<any> {
         const prefix = isAbsolute ? locationPrefix : this.sourcegraphBaseUrl + locationPrefix
         await retry(async () => {
-            const loc: string = await this.page.evaluate(() => window.location.href)
-            expect(loc.startsWith(prefix)).toBeTruthy()
+            const location: string = await this.page.evaluate(() => window.location.href)
+            expect(location.startsWith(prefix)).toBeTruthy()
         })
     }
 
@@ -399,7 +399,7 @@ export class Driver {
 
     public async assertAllHighlightedTokens(label: string): Promise<void> {
         const highlightedTokens = await this.page.evaluate(() =>
-            [...document.querySelectorAll('.selection-highlight')].map(el => el.textContent || '')
+            [...document.querySelectorAll('.selection-highlight')].map(element => element.textContent || '')
         )
         expect(highlightedTokens.every(txt => txt === label)).toBeTruthy()
     }
@@ -423,7 +423,11 @@ export class Driver {
     }
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
-        const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
+        const handle = await this.page.evaluateHandle(
+            (url, init) => fetch(url, init).then(response => response.json()),
+            url,
+            init
+        )
         return (await handle.jsonValue()) as T
     }
 
@@ -489,7 +493,10 @@ export class Driver {
         return createPatchSetFromPatches
     }
 
-    public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
+    public async setConfig(
+        path: jsonc.JSONPath,
+        editFunction: (oldValue: jsonc.Node | undefined) => any
+    ): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query Site {
@@ -507,7 +514,7 @@ export class Driver {
         })
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, path, f)
+        const newConfig = modifyJSONC(currentConfig, path, editFunction)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
@@ -588,8 +595,8 @@ export class Driver {
         const tag = tagName || '*'
         const regexps = findElementRegexpStrings(text, { fuzziness })
 
-        const notFoundErr = (underlying?: Error): Error => {
-            const debuggingExpressions = regexps.map(r => getDebugExpressionFromRegexp(tag, r))
+        const notFoundError = (underlying?: Error): Error => {
+            const debuggingExpressions = regexps.map(regexp => getDebugExpressionFromRegexp(tag, regexp))
             return new Error(
                 `Could not find element with text ${JSON.stringify(text)}, options: ${JSON.stringify(options)}` +
                     (underlying ? `. Underlying error was: ${JSON.stringify(underlying.message)}.` : '') +
@@ -608,19 +615,19 @@ export class Driver {
                               regexps
                           )
                           .catch(error => {
-                              throw notFoundErr(error)
+                              throw notFoundError(error)
                           })
                     : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
-                const el = (await handlePromise).asElement()
-                if (!el) {
-                    throw notFoundErr()
+                const element = (await handlePromise).asElement()
+                if (!element) {
+                    throw notFoundError()
                 }
 
                 if (options.action === 'click') {
-                    await el.click()
+                    await element.click()
                 }
-                return el
+                return element
             },
             {
                 retries: options.action === 'click' ? 3 : 0,
@@ -637,11 +644,15 @@ export class Driver {
     }
 }
 
-export function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
+export function modifyJSONC(
+    text: string,
+    path: jsonc.JSONPath,
+    editFunction: (oldValue: jsonc.Node | undefined) => any
+): any {
     const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
     return jsonc.applyEdits(
         text,
-        jsoncEdit.setProperty(text, path, f(old), {
+        jsoncEdit.setProperty(text, path, editFunction(old), {
             eol: '\n',
             insertSpaces: true,
             tabSize: 2,
@@ -687,7 +698,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
     const launchOptions: puppeteer.LaunchOptions = {
         ...options,
         args,
-        headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+        headless: readEnvironmentBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
     }
     let browser: puppeteer.Browser

@@ -4,14 +4,14 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { GitRefNode, queryGitRefs as _queryGitRefs } from '../GitRef'
+import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
 import { Observable } from 'rxjs'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History
     location: H.Location
-    queryGitRefs?: (args: {
+    queryGitReferences?: (args: {
         repo: GQL.ID
         first?: number
         query?: string
@@ -25,7 +25,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     repo,
     history,
     location,
-    queryGitRefs = _queryGitRefs,
+    queryGitReferences: queryGitReferences = queryGitReferencesFromBackend,
 }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryReleasesTags')
@@ -33,8 +33,8 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
 
     const queryTags = useCallback(
         (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-            queryGitRefs({ ...args, repo: repo.id, type: GQL.GitRefType.GIT_TAG }),
-        [repo.id, queryGitRefs]
+            queryGitReferences({ ...args, repo: repo.id, type: GQL.GitRefType.GIT_TAG }),
+        [repo.id, queryGitReferences]
     )
 
     return (
@@ -46,7 +46,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
                 noun="tag"
                 pluralNoun="tags"
                 queryConnection={queryTags}
-                nodeComponent={GitRefNode}
+                nodeComponent={GitReferenceNode}
                 defaultFirst={20}
                 autoFocus={true}
                 history={history}

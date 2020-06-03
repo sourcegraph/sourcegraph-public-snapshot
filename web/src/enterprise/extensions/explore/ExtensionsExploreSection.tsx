@@ -48,7 +48,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                 first: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST,
                 prioritizeExtensionIDs: ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_EXTENSION_IDS,
             })
-                .pipe(catchError(err => [asError(err)]))
+                .pipe(catchError(error => [asError(error)]))
                 .subscribe(extensionsOrError => this.setState({ extensionsOrError }))
         )
     }
@@ -76,7 +76,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <div className="list-group list-group-flush">
                         {extensionsOrError
                             .slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST)
-                            .filter((e): e is GQL.IRegistryExtension => e !== LOADING)
+                            .filter((extension): extension is GQL.IRegistryExtension => extension !== LOADING)
                             .map(extension => (
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
