@@ -485,6 +485,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				HeadRefOid: changesetHeadRefOid,
 			},
 		}
+		c.SetDiffStat(changesetDiffStat.ToDiffStat())
 		if err := store.CreateChangesets(ctx, c); err != nil {
 			t.Fatal(err)
 		}

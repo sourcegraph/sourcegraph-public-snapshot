@@ -283,6 +283,11 @@ export const queryChangesets = (
                                             }
                                         }
                                     }
+                                    diffStat {
+                                        added
+                                        changed
+                                        deleted
+                                    }
                                 }
                             }
                         }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -292,6 +293,67 @@ func TestChangesetEvents(t *testing.T) {
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestChangesetDiffStat(t *testing.T) {
+	var (
+		added   int32 = 77
+		changed int32 = 88
+		deleted int32 = 99
+	)
+
+	for name, tc := range map[string]struct {
+		c    Changeset
+		want *diff.Stat
+	}{
+		"added missing": {
+			c: Changeset{
+				DiffStatAdded:   nil,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: &deleted,
+			},
+			want: nil,
+		},
+		"changed missing": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: nil,
+				DiffStatDeleted: &deleted,
+			},
+			want: nil,
+		},
+		"deleted missing": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: nil,
+			},
+			want: nil,
+		},
+		"all present": {
+			c: Changeset{
+				DiffStatAdded:   &added,
+				DiffStatChanged: &changed,
+				DiffStatDeleted: &deleted,
+			},
+			want: &diff.Stat{
+				Added:   added,
+				Changed: changed,
+				Deleted: deleted,
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have := tc.c.DiffStat()
+			if (tc.want == nil && have != nil) || (tc.want != nil && have == nil) {
+				t.Errorf("mismatched nils in diff stats: have %+v; want %+v", have, tc.want)
+			} else if tc.want != nil && have != nil {
+				if d := cmp.Diff(*have, *tc.want); d != "" {
+					t.Errorf("incorrect diff stat: %s", d)
+				}
 			}
 		})
 	}

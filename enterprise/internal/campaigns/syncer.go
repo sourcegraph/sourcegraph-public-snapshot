@@ -308,6 +308,11 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 		s.queue.Upsert(sched...)
 	}
 
+	// Prioritise changesets without diffstats on startup.
+	if err := s.prioritiseChangesetsWithoutDiffStats(ctx); err != nil {
+		log15.Error("Prioritising changesets", "err", err)
+	}
+
 	var next scheduledSync
 	var ok bool
 
@@ -476,6 +481,25 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
+func (s *ChangesetSyncer) prioritiseChangesetsWithoutDiffStats(ctx context.Context) error {
+	changesets, _, err := s.SyncStore.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true, Limit: -1})
+	if err != nil {
+		return err
+	}
+
+	if len(changesets) == 0 {
+		return nil
+	}
+
+	ids := make([]int64, 0, len(changesets))
+	for _, cs := range changesets {
+		ids = append(ids, cs.ID)
+	}
+	s.priorityNotify <- ids
+
+	return nil
+}
+
 // SyncChangeset will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
@@ -539,7 +563,7 @@ func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 			}
 
 			csEvents := c.Events()
-			SetDerivedState(c.Changeset, csEvents)
+			SetDerivedState(ctx, c.Changeset, csEvents)
 
 			// Deduplicate events per changeset based on their Kind+Key to avoid
 			// conflicts when inserting into database.
