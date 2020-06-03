@@ -21223,10 +21223,10 @@ user-home@^2.0.0:
   dependencies:
     os-homedir "^1.0.0"
 
-utc-version@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/utc-version/-/utc-version-2.0.1.tgz#479e12823d8f3b98fafebe9a8806168346428db9"
-  integrity sha512-Lv2gY/SgtEu7eR2d5QyTzMZwXIXeEpaf7Y4S0I8XBkCWHB0RFwuHi3dtskgEoL3EQENenzP2nq2d50Ytfwsb7Q==
+utc-version@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.npmjs.org/utc-version/-/utc-version-2.0.2.tgz#45afcec3eebf8a738c44bfe39cf9ca5a621c89ae"
+  integrity sha512-DblGt/1KFe3Jl1BbTZN7P8SFNw6L0zU/zahdgCJ+a/LPW6SE7VPY3RfpEg0W0ksyx6NewZYu7WD/7NzV7xljlA==
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
