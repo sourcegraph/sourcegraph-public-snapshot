@@ -187,7 +187,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _frontend: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -198,7 +198,7 @@ for assistance.
 
 **Descriptions:**
 
-- _frontend: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _frontend: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -350,7 +350,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _gitserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -361,7 +361,7 @@ for assistance.
 
 **Descriptions:**
 
-- _gitserver: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _gitserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -431,7 +431,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _github-proxy: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -442,7 +442,7 @@ for assistance.
 
 **Descriptions:**
 
-- _github-proxy: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _github-proxy: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -541,7 +541,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -552,7 +552,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-bundle-manager: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -638,7 +638,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -649,7 +649,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-worker: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -735,7 +735,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -746,7 +746,7 @@ for assistance.
 
 **Descriptions:**
 
-- _precise-code-intel-indexer: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -832,7 +832,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _query-runner: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -843,7 +843,7 @@ for assistance.
 
 **Descriptions:**
 
-- _query-runner: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _query-runner: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -929,7 +929,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _replacer: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -940,7 +940,7 @@ for assistance.
 
 **Descriptions:**
 
-- _replacer: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _replacer: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1026,7 +1026,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _repo-updater: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1037,7 +1037,7 @@ for assistance.
 
 **Descriptions:**
 
-- _repo-updater: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _repo-updater: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1123,7 +1123,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _searcher: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1134,7 +1134,7 @@ for assistance.
 
 **Descriptions:**
 
-- _searcher: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _searcher: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1220,7 +1220,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _symbols: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1231,7 +1231,7 @@ for assistance.
 
 **Descriptions:**
 
-- _symbols: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _symbols: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1301,7 +1301,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _syntect-server: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1312,7 +1312,7 @@ for assistance.
 
 **Descriptions:**
 
-- _syntect-server: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _syntect-server: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1382,7 +1382,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1393,7 +1393,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-indexserver: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1463,7 +1463,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: less than 10% container cpu usage total (1d average) across all cores by instance (not available on server)_
+- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (1d average) across all cores by instance (not available on server)_
 
 **Possible solutions:**
 
@@ -1474,7 +1474,7 @@ for assistance.
 
 **Descriptions:**
 
-- _zoekt-webserver: less than 10% container memory usage (1d average) by instance (not available on server)_
+- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d average) by instance (not available on server)_
 
 **Possible solutions:**
 
