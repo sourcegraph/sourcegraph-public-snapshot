@@ -14,6 +14,7 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import classNames from 'classnames'
 import { PatchNode } from './patches/PatchNode'
+import { HeroPage } from '../../../components/HeroPage'
 
 interface Props extends ThemeProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt' | 'viewerCanAdminister'> & {
@@ -148,6 +149,9 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             [_queryChangesets, campaign.id, _queryPatchesFromPatchSet, _queryPatchesFromCampaign, patchSet.id]
         )
     )
+    if (!campaign.viewerCanAdminister) {
+        return <HeroPage body="Cannot update campaign you don't have write-access to" />
+    }
     if (!queriedChangesets) {
         return (
             <div>
