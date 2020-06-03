@@ -603,6 +603,29 @@
         }
       }
     },
+    "observability.alerts": {
+      "description": "Configure notifications for Sourcegraph's built-in alerts.",
+      "type": "array",
+      "items": {
+        "required": ["type", "level"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["slack", "pagerduty", "email", "webook"]
+          },
+          "level": {
+            "type": "string",
+            "enum": ["warning", "critical"]
+          }
+        },
+        "oneOf": [
+          { "$ref": "#/definitions/GrafanaNotifierSlack" },
+          { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
+          { "$ref": "#/definitions/GrafanaNotifierEmail" },
+          { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+        ]
+      }
+    },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
@@ -943,6 +966,47 @@
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
         }
+      }
+    },
+    "GrafanaNotifierSlack": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "slack" },
+        "url": { "type": "string" },
+        "recipient": { "type": "string" },
+        "username": { "type": "string" },
+        "icon_emoji": { "type": "string" },
+        "icon_url": { "type": "string" },
+        "uploadImage": { "type": "string" },
+        "mentionUsers": { "type": "string" },
+        "mentionGroups": { "type": "string" },
+        "mentionChannel": { "type": "string" },
+        "token": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierPagerduty": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "pagerduty" },
+        "integrationKey": { "type": "string" },
+        "autoResolve": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierEmail": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "email" },
+        "singleEmail": { "type": "string" },
+        "addresses": { "type": "string" }
+      }
+    },
+    "GrafanaNotifierWebhook": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "webhook" },
+        "url": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" }
       }
     }
   }
