@@ -170,7 +170,8 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Query campaign and check that we get all changesets and all patches
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	testCampaignResponse(t, s, userCtx, campaign.ID, wantCampaignResponse{
-		changesetTypes: map[string]int{"ExternalChangeset": 2},
+		changesetTypes:     map[string]int{"ExternalChangeset": 2},
+		openChangesetTypes: map[string]int{"ExternalChangeset": 2},
 		errors: []string{
 			fmt.Sprintf("error patch %d", patches[0].ID),
 			fmt.Sprintf("error patch %d", patches[1].ID),
@@ -222,6 +223,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			"ExternalChangeset":       1,
 			"HiddenExternalChangeset": 1,
 		},
+		openChangesetTypes: map[string]int{
+			"ExternalChangeset":       1,
+			"HiddenExternalChangeset": 1,
+		},
 		errors: []string{
 			// patches[0] is filtered out
 			fmt.Sprintf("error patch %d", patches[1].ID),
@@ -262,11 +267,12 @@ func TestRepositoryPermissions(t *testing.T) {
 }
 
 type wantCampaignResponse struct {
-	patchTypes       map[string]int
-	changesetTypes   map[string]int
-	errors           []string
-	campaignDiffStat apitest.DiffStat
-	patchSetDiffStat apitest.DiffStat
+	patchTypes         map[string]int
+	changesetTypes     map[string]int
+	openChangesetTypes map[string]int
+	errors             []string
+	campaignDiffStat   apitest.DiffStat
+	patchSetDiffStat   apitest.DiffStat
 }
 
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, w wantCampaignResponse) {
@@ -291,6 +297,14 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 	}
 	if diff := cmp.Diff(w.changesetTypes, changesetTypes); diff != "" {
 		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
+	}
+
+	openChangesetTypes := map[string]int{}
+	for _, c := range response.Node.OpenChangesets.Nodes {
+		openChangesetTypes[c.Typename]++
+	}
+	if diff := cmp.Diff(w.openChangesetTypes, openChangesetTypes); diff != "" {
+		t.Fatalf("unexpected open changeset types (-want +got):\n%s", diff)
 	}
 
 	patchTypes := map[string]int{}
@@ -329,6 +343,22 @@ query {
 	  }
 
       changesets(first: 100) {
+        nodes {
+          __typename
+          ... on HiddenExternalChangeset {
+            id
+          }
+          ... on ExternalChangeset {
+            id
+            repository {
+              id
+              name
+            }
+          }
+        }
+      }
+
+      openChangesets {
         nodes {
           __typename
           ... on HiddenExternalChangeset {
