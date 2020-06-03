@@ -15,6 +15,7 @@ import { ErrorAlert } from '../components/alerts'
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import * as H from 'history'
+import { SiteConfiguration } from '../schema/site.schema'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -251,6 +252,25 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 console.error(error)
                                 this.setState({ saving: false, error })
                                 return []
+                            }),
+                            tap(() => {
+                                // Flipping the Campaigns feature flag
+                                // ("automation") requires a reload for the
+                                // Campaigns UI to be correctly rendered.
+                                //
+                                // This should be removed once the feature flag
+                                // is removed.
+                                const lastAutomationEnabled =
+                                    (lastConfiguration &&
+                                        (jsonc.parse(lastConfiguration.effectiveContents) as SiteConfiguration)
+                                            ?.experimentalFeatures?.automation) === 'enabled'
+                                const newAutomationEnabled =
+                                    (jsonc.parse(newContents) as SiteConfiguration)?.experimentalFeatures
+                                        ?.automation === 'enabled'
+
+                                if (lastAutomationEnabled !== newAutomationEnabled) {
+                                    window.location.reload()
+                                }
                             })
                         )
                     }),
