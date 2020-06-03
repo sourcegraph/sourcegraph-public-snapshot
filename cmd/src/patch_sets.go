@@ -46,39 +46,45 @@ fragment PatchSetFields on PatchSet {
     id
     patches(first: %d) {
         nodes {
-            repository {
+            __typename
+            ... on HiddenPatch {
                 id
-                name
-                url
             }
-            diff {
-                fileDiffs {
-                    rawDiff
-                    diffStat {
-                        added
-                        deleted
-                        changed
-                    }
-                    nodes {
-                        oldPath
-                        newPath
-                        hunks {
-                            body
-                            section
-                            newRange { startLine, lines }
-                            oldRange { startLine, lines }
-                            oldNoNewlineAt
-                        }
-                        stat {
+            ... on Patch {
+                repository {
+                    id
+                    name
+                    url
+                }
+                diff {
+                    fileDiffs {
+                        rawDiff
+                        diffStat {
                             added
                             deleted
                             changed
                         }
-                        oldFile {
-                            name
-                            externalURLs {
-                                serviceType
-                                url
+                        nodes {
+                            oldPath
+                            newPath
+                            hunks {
+                                body
+                                section
+                                newRange { startLine, lines }
+                                oldRange { startLine, lines }
+                                oldNoNewlineAt
+                            }
+                            stat {
+                                added
+                                deleted
+                                changed
+                            }
+                            oldFile {
+                                name
+                                externalURLs {
+                                    serviceType
+                                    url
+                                }
                             }
                         }
                     }
