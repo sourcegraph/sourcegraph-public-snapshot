@@ -103,13 +103,21 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                             <>
                                 <ListboxButton className="version-context-dropdown__button btn btn-secondary">
                                     <FlagVariantIcon className="icon-inline small" />
-                                    <span className="version-context-dropdown__button-text ml-2 mr-1">
-                                        {!currentVersionContext || currentVersionContext === 'default' ? (
-                                            <span className="d-sm-none">Select context</span>
-                                        ) : (
-                                            `${currentVersionContext} (Active)`
-                                        )}
-                                    </span>
+                                    {!currentVersionContext || currentVersionContext === 'default' ? (
+                                        <span
+                                            className={classNames(
+                                                'version-context-dropdown__button-text ml-2 mr-1',
+                                                { 'd-sm-none d-md-block': hasDismissedInfo !== 'true' },
+                                                { 'd-none': hasDismissedInfo === 'true' }
+                                            )}
+                                        >
+                                            Select context
+                                        </span>
+                                    ) : (
+                                        <span className="version-context-dropdown__button-text ml-2 mr-1">
+                                            {currentVersionContext} (Active)
+                                        </span>
+                                    )}
                                     <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
                                 <ListboxPopover
