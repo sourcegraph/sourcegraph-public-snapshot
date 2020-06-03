@@ -54,7 +54,7 @@ export const resolveSingleFileDiffFileInfo = (codeView: HTMLElement): Observable
         filePath,
         commitID,
         baseFilePath,
-        rev,
+        revision,
         ...bitbucketInfo
     } = getFileInfoFromSingleFileDiffCodeView(codeView)
     if (changeType === 'ADD') {

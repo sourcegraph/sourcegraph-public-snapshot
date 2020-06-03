@@ -11,7 +11,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { gitRefFragment, GitRefNode } from '../GitRef'
+import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { ErrorAlert } from '../../components/alerts'
 import * as H from 'history'
@@ -43,7 +43,7 @@ const queryGitBranches = memoizeObservable(
                         }
                     }
                 }
-                ${gitRefFragment}
+                ${gitReferenceFragments}
             `,
             { ...args, withBehindAhead: true }
         ).pipe(
@@ -95,7 +95,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
                         return queryGitBranches({ repo: repo.id, first: 10 }).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
-                            map((c): PartialStateUpdate => ({ dataOrError: c })),
+                            map((dataOrError): PartialStateUpdate => ({ dataOrError })),
                             startWith<PartialStateUpdate>({ dataOrError: undefined })
                         )
                     })
@@ -130,7 +130,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <div className="card repository-branches-page__card">
                                 <div className="card-header">Default branch</div>
                                 <ul className="list-group list-group-flush">
-                                    <GitRefNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
                                 </ul>
                             </div>
                         )}
@@ -138,8 +138,8 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <div className="card repository-branches-page__card">
                                 <div className="card-header">Active branches</div>
                                 <div className="list-group list-group-flush">
-                                    {this.state.dataOrError.activeBranches.map((b, i) => (
-                                        <GitRefNode key={i} node={b} />
+                                    {this.state.dataOrError.activeBranches.map((gitReference, index) => (
+                                        <GitReferenceNode key={index} node={gitReference} />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link

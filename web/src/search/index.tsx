@@ -18,8 +18,8 @@ import { VersionContext } from '../schema/site.schema'
  *
  */
 export function parseSearchURLQuery(query: string): string | undefined {
-    const searchParams = new URLSearchParams(query)
-    return searchParams.get('q') || undefined
+    const searchParameters = new URLSearchParams(query)
+    return searchParameters.get('q') || undefined
 }
 
 /**
@@ -27,8 +27,8 @@ export function parseSearchURLQuery(query: string): string | undefined {
  * is not present, or it is an invalid value, it returns undefined.
  */
 export function parseSearchURLPatternType(query: string): SearchPatternType | undefined {
-    const searchParams = new URLSearchParams(query)
-    const patternType = searchParams.get('patternType')
+    const searchParameters = new URLSearchParams(query)
+    const patternType = searchParameters.get('patternType')
     if (
         patternType !== SearchPatternType.literal &&
         patternType !== SearchPatternType.regexp &&
@@ -44,8 +44,8 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
  * is not present, return undefined.
  */
 export function parseSearchURLVersionContext(query: string): string | undefined {
-    const searchParams = new URLSearchParams(query)
-    const context = searchParams.get('c')
+    const searchParameters = new URLSearchParams(query)
+    const context = searchParameters.get('c')
     return context ?? undefined
 }
 
@@ -55,8 +55,8 @@ export function searchURLIsCaseSensitive(query: string): boolean {
         // if `case:` filter exists in the query, override the existing case: query param
         return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
     }
-    const searchParams = new URLSearchParams(query)
-    const caseSensitive = searchParams.get('case')
+    const searchParameters = new URLSearchParams(query)
+    const caseSensitive = searchParameters.get('case')
     return discreteValueAliases.yes.includes(caseSensitive || '')
 }
 
@@ -108,12 +108,12 @@ export function parseSearchURL(
     }
 }
 
-export function repoFilterForRepoRev(repoName: string, rev?: string): string {
-    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)}`
+export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
+    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${repoFilterForRepoRev(repoName, rev)} `
+export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
+    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
 }
 
 function abbreviateOID(oid: string): string {
@@ -123,11 +123,11 @@ function abbreviateOID(oid: string): string {
     return oid
 }
 
-export function quoteIfNeeded(s: string): string {
-    if (/[ "']/.test(s)) {
-        return JSON.stringify(s)
+export function quoteIfNeeded(string: string): string {
+    if (/[ "']/.test(string)) {
+        return JSON.stringify(string)
     }
-    return s
+    return string
 }
 
 export interface PatternTypeProps {

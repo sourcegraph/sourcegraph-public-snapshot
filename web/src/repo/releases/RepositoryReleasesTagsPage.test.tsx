@@ -14,7 +14,7 @@ describe('RepositoryReleasesTagsPage', () => {
                     history={history}
                     location={history.location}
                     repo={{ id: '123' } as IRepository}
-                    queryGitRefs={() =>
+                    queryGitReferences={() =>
                         of({
                             totalCount: 0,
                             nodes: [] as IGitRef[],

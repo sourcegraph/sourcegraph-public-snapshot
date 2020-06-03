@@ -6,6 +6,7 @@ import { createRenderer } from 'react-test-renderer/shallow'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 import { NEVER } from 'rxjs'
+import { subtypeOf } from '../util/types'
 
 const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
     const renderer = createRenderer()
@@ -17,16 +18,16 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps = {
+    const commonProps = subtypeOf<HoverOverlayProps<string>>()({
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
         showCloseButton: false,
-        hoveredToken: { repoName: 'r', commitID: 'c', rev: 'v', filePath: 'f', line: 1, character: 2 },
+        hoveredToken: { repoName: 'r', commitID: 'c', revision: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
         isLightTheme: false,
-    }
+    })
 
     test('actions and hover undefined', () => {
         expect(renderer.create(<HoverOverlay {...commonProps} />).toJSON()).toMatchSnapshot()

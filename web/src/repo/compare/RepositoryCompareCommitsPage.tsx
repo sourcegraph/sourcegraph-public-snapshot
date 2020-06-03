@@ -66,7 +66,10 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                 .pipe(
                     startWith(this.props),
                     distinctUntilChanged(
-                        (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
+                        (a, b) =>
+                            a.repo.id === b.repo.id &&
+                            a.base.revision === b.base.revision &&
+                            a.head.revision === b.head.revision
                     )
                 )
                 .subscribe(() => this.updates.next())
@@ -113,7 +116,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
         queryRepositoryComparisonCommits({
             ...args,
             repo: this.props.repo.id,
-            base: this.props.base.rev || null,
-            head: this.props.head.rev || null,
+            base: this.props.base.revision || null,
+            head: this.props.head.revision || null,
         })
 }

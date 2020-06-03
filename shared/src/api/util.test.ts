@@ -10,11 +10,11 @@ describe('tryCatchPromise', () => {
 
     const ERROR = new Error('x')
     test('returns a rejected promise with the synchronous exception', () => {
-        const p = tryCatchPromise(() => {
+        const promise = tryCatchPromise(() => {
             throw ERROR
         })
         let rejected: any
-        return p
+        return promise
             .then(undefined, error => {
                 rejected = error
             })
@@ -24,9 +24,9 @@ describe('tryCatchPromise', () => {
     })
 
     test('returns a rejected promise with the asynchronous error', () => {
-        const p = tryCatchPromise(() => Promise.reject(ERROR))
+        const promise = tryCatchPromise(() => Promise.reject(ERROR))
         let rejected: any
-        return p
+        return promise
             .then(undefined, error => {
                 rejected = error
             })

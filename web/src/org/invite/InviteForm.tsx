@@ -141,7 +141,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             merge(this.submits.pipe(filter(() => !this.viewerCanAddUserToOrganization)), this.inviteClicks)
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     withLatestFrom(orgChanges, this.usernameChanges),
                     tap(() => eventLogger.log('InviteOrgMemberClicked')),
                     mergeMap(([, { orgID }, username]) =>
@@ -176,7 +176,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -185,7 +185,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
             this.submits
                 .pipe(filter(() => this.viewerCanAddUserToOrganization))
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     withLatestFrom(orgChanges, this.usernameChanges),
                     mergeMap(([, { orgID }, username]) =>
                         addUserToOrganization(username, orgID).pipe(
@@ -215,7 +215,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -322,15 +322,15 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         </DismissibleAlert>
                     )}
                 {this.state.invited &&
-                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
+                    this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, index) => (
                         /* eslint-disable react/jsx-no-bind */
                         <InvitedNotification
-                            key={i}
+                            key={index}
                             className="alert alert-success invite-form__alert"
                             username={username}
                             sentInvitationEmail={sentInvitationEmail}
                             invitationURL={invitationURL}
-                            onDismiss={() => this.dismissNotification(i)}
+                            onDismiss={() => this.dismissNotification(index)}
                         />
                         /* eslint-enable react/jsx-no-bind */
                     ))}
@@ -341,12 +341,14 @@ export class InviteForm extends React.PureComponent<Props, State> {
         )
     }
 
-    private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.usernameChanges.next(e.currentTarget.value)
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
-    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = e => this.inviteClicks.next(e)
+    private onUsernameChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+        this.usernameChanges.next(event.currentTarget.value)
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
+    private onInviteClick: React.MouseEventHandler<HTMLButtonElement> = event => this.inviteClicks.next(event)
 
-    private dismissNotification = (i: number): void => {
-        this.setState(prevState => ({ invited: (prevState.invited || []).filter((_, j) => i !== j) }))
+    private dismissNotification = (dismissedIndex: number): void => {
+        this.setState(previousState => ({
+            invited: (previousState.invited || []).filter((invite, index) => dismissedIndex !== index),
+        }))
     }
 }

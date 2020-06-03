@@ -5,7 +5,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../../shared/src/util/url'
 import { ButtonProps } from '../../components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
@@ -57,7 +57,7 @@ export interface CodeView {
      */
     getPositionAdjuster?: (
         requestGraphQL: PlatformContext['requestGraphQL']
-    ) => PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec>
+    ) => PositionAdjuster<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec>
     /** Props for styling the buttons in the `CodeViewToolbar`. */
     toolbarButtonProps?: ButtonProps
     /**
@@ -112,12 +112,12 @@ const fetchFileContentForFileInfo = (
             }
             return { ...fileInfo }
         }),
-        catchError(err => {
-            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+        catchError(error => {
+            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
                 // In this case, fileInfo will have undefined content.
                 return of(fileInfo)
             }
-            throw err
+            throw error
         })
     )
 

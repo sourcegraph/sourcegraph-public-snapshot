@@ -70,8 +70,8 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            fromEvent<KeyboardEvent>(this.props.textArea, 'keydown').subscribe(e =>
-                this.handleKeyboardNavigationEvents(e)
+            fromEvent<KeyboardEvent>(this.props.textArea, 'keydown').subscribe(event =>
+                this.handleKeyboardNavigationEvents(event)
             )
         )
 
@@ -99,10 +99,10 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
         this.itemSelections.next(item)
     }
 
-    private handleKeyboardNavigationEvents(e: KeyboardEvent): void {
+    private handleKeyboardNavigationEvents(event: KeyboardEvent): void {
         let handled = false
 
-        switch (e.key) {
+        switch (event.key) {
             case Key.ArrowDown:
                 handled = this.scrollDown()
                 break
@@ -119,7 +119,7 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
         }
 
         if (handled) {
-            e.preventDefault()
+            event.preventDefault()
         }
     }
 

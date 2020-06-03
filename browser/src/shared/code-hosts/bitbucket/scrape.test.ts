@@ -25,7 +25,7 @@ describe('Bitbucket scrape.ts', () => {
                 project: 'SOUR',
                 rawRepoName: 'bitbucket.test/SOUR/mux',
                 repoSlug: 'mux',
-                rev: 'master',
+                revision: 'master',
             })
         })
     })

@@ -25,15 +25,15 @@ export class ClientExtensions {
                     const toDeactivate: ExecutableExtension[] = []
                     const next: ExecutableExtension[] = []
                     if (oldExtensions) {
-                        for (const x of oldExtensions) {
-                            const newIndex = toActivate.findIndex(({ id }) => x.id === id)
+                        for (const extension of oldExtensions) {
+                            const newIndex = toActivate.findIndex(({ id }) => extension.id === id)
                             if (newIndex === -1) {
                                 // Extension is no longer activated
-                                toDeactivate.push(x)
+                                toDeactivate.push(extension)
                             } else {
                                 // Extension is already activated.
                                 toActivate.splice(newIndex, 1)
-                                next.push(x)
+                                next.push(extension)
                             }
                         }
                     }
@@ -43,16 +43,16 @@ export class ClientExtensions {
                      * {@link activeExtensions} never deactivates extensions, so this will never be
                      * called (in the current implementation).
                      */
-                    for (const x of toDeactivate) {
-                        this.proxy.$deactivateExtension(x.id).catch(error => {
-                            console.warn(`Error deactivating extension ${JSON.stringify(x.id)}:`, error)
+                    for (const extension of toDeactivate) {
+                        this.proxy.$deactivateExtension(extension.id).catch(error => {
+                            console.warn(`Error deactivating extension ${JSON.stringify(extension.id)}:`, error)
                         })
                     }
 
                     // Activate extensions that haven't yet been activated.
-                    for (const x of toActivate) {
-                        this.proxy.$activateExtension(x.id, x.scriptURL).catch(error => {
-                            console.error(`Error activating extension ${JSON.stringify(x.id)}:`, error)
+                    for (const extension of toActivate) {
+                        this.proxy.$activateExtension(extension.id, extension.scriptURL).catch(error => {
+                            console.error(`Error activating extension ${JSON.stringify(extension.id)}:`, error)
                         })
                     }
                 })

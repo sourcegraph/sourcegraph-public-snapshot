@@ -74,8 +74,8 @@ import {
     UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
-    ResolvedRevSpec,
-    RevSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
     toRootURI,
     toURIWithPath,
     ViewStateSpec,
@@ -83,9 +83,9 @@ import {
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { toTextDocumentIdentifier, toTextDocumentPositionParams } from '../../backend/ext-api-conversion'
+import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
-import { resolveRev, retryWhenCloneInProgressError } from '../../repo/backend'
+import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger } from '../../tracking/eventLogger'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
@@ -111,7 +111,7 @@ import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
-import { resolveRepoNamesForDiffOrFileInfo, defaultRevToCommitID } from './util/fileInfo'
+import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 
 registerHighlightContributions()
 
@@ -136,7 +136,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RawRepoSpec & Partial<RevSpec> & { privateRepository: boolean }
+export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
 type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
 
@@ -233,7 +233,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     urlToFile?: (
         sourcegraphURL: string,
-        target: RepoSpec & RawRepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        target: RepoSpec & RawRepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
         context: URLToFileContext
     ) => string
 
@@ -287,7 +287,7 @@ export interface FileInfo {
     /**
      * The revision the code view is at.
      */
-    rev?: string
+    revision?: string
 }
 
 export interface FileInfoWithRepoName extends FileInfo, RepoSpec {}
@@ -342,7 +342,7 @@ function initCodeIntelligence({
     mutations: Observable<MutationRecordLike[]>
 }): {
     hoverifier: Hoverifier<
-        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
         HoverData<ExtensionHoverAlertType>,
         ActionItemAction
     >
@@ -371,7 +371,7 @@ function initCodeIntelligence({
 
     // Code views come and go, but there is always a single hoverifier on the page
     const hoverifier = createHoverifier<
-        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
         HoverData<ExtensionHoverAlertType>,
         ActionItemAction
     >({
@@ -385,7 +385,7 @@ function initCodeIntelligence({
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
                 extensionsController.services.textDocumentHover.getHover(
-                    toTextDocumentPositionParams({ ...rest, position: { line, character } })
+                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
                 ),
                 getActiveHoverAlerts(hoverAlerts),
             ]).pipe(
@@ -659,8 +659,8 @@ export function handleCodeHost({
         const repoExistsOrErrors = signInCloses.pipe(
             startWith(null),
             switchMap(() => {
-                const { rawRepoName, rev } = getContext()
-                return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
+                const { rawRepoName, revision } = getContext()
+                return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
                     catchError(error => {
@@ -733,12 +733,12 @@ export function handleCodeHost({
                         }))
                     )
                 ),
-                catchError(err => {
+                catchError(error => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
                         return EMPTY
                     }
-                    throw err
+                    throw error
                 }),
                 tap({
                     error: error => {
@@ -786,7 +786,7 @@ export function handleCodeHost({
     )
 
     /** Map from workspace URI to number of editors referencing it */
-    const rootRefCounts = new Map<string, number>()
+    const rootReferenceCounts = new Map<string, number>()
 
     /**
      * Adds root referenced by a code editor to the worskpace.
@@ -794,9 +794,9 @@ export function handleCodeHost({
      * Will only cause `workspace.roots` to emit if no root with
      * the given `uri` existed.
      */
-    const addRootRef = (uri: string, inputRevision: string | undefined): void => {
-        rootRefCounts.set(uri, (rootRefCounts.get(uri) || 0) + 1)
-        if (rootRefCounts.get(uri) === 1) {
+    const addRootReference = (uri: string, inputRevision: string | undefined): void => {
+        rootReferenceCounts.set(uri, (rootReferenceCounts.get(uri) || 0) + 1)
+        if (rootReferenceCounts.get(uri) === 1) {
             extensionsController.services.workspace.roots.next([
                 ...extensionsController.services.workspace.roots.value,
                 { uri, inputRevision },
@@ -810,18 +810,18 @@ export function handleCodeHost({
      * Will only cause `workspace.roots` to emit if the root
      * with the given `uri` has no more references.
      */
-    const deleteRootRef = (uri: string): void => {
-        const currentRefCount = rootRefCounts.get(uri)
-        if (!currentRefCount) {
+    const deleteRootReference = (uri: string): void => {
+        const currentReferenceCount = rootReferenceCounts.get(uri)
+        if (!currentReferenceCount) {
             throw new Error(`No preexisting root refs for uri ${uri}`)
         }
-        const updatedRefCount = currentRefCount - 1
-        if (updatedRefCount === 0) {
+        const updatedReferenceCount = currentReferenceCount - 1
+        if (updatedReferenceCount === 0) {
             extensionsController.services.workspace.roots.next(
                 extensionsController.services.workspace.roots.value.filter(root => root.uri !== uri)
             )
         } else {
-            rootRefCounts.set(uri, updatedRefCount)
+            rootReferenceCounts.set(uri, updatedReferenceCount)
         }
     }
 
@@ -857,11 +857,11 @@ export function handleCodeHost({
 
                 // Add root ref
                 const rootURI = toRootURI(fileInfo)
-                addRootRef(rootURI, fileInfo.rev)
+                addRootReference(rootURI, fileInfo.revision)
 
                 // Subscribe for removal
                 codeViewEvent.subscriptions.add(() => {
-                    deleteRootRef(rootURI)
+                    deleteRootReference(rootURI)
                     extensionsController.services.viewer.removeViewer(editorId)
                 })
 
@@ -946,15 +946,17 @@ export function handleCodeHost({
             }
 
             // Add hover code intelligence
-            const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({ part }) => {
+            const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
+                part,
+            }) => {
                 if ('blob' in diffOrBlobInfo) {
-                    return defaultRevToCommitID(diffOrBlobInfo.blob)
+                    return defaultRevisionToCommitID(diffOrBlobInfo.blob)
                 }
                 if (diffOrBlobInfo.head && part === 'head') {
-                    return defaultRevToCommitID(diffOrBlobInfo.head)
+                    return defaultRevisionToCommitID(diffOrBlobInfo.head)
                 }
                 if (diffOrBlobInfo.base && part === 'base') {
-                    return defaultRevToCommitID(diffOrBlobInfo.base)
+                    return defaultRevisionToCommitID(diffOrBlobInfo.base)
                 }
                 // TODO: confirm if we should throw an error here.
                 throw new Error(`Could not resolve context for diff part ${JSON.stringify(part)}`)

@@ -58,7 +58,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                                 history.push(productSubscription.url)
                             }),
                             mapTo(undefined),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
@@ -112,9 +112,9 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
  */
 function parseProductSubscriptionInputFromLocation(location: H.Location): GQL.IProductSubscriptionInput | null {
     if (location.hash) {
-        const params = new URLSearchParams(location.hash.slice('#'.length))
-        const billingPlanID = params.get('plan')
-        const userCount = parseInt(params.get('userCount') || '0', 10)
+        const parameters = new URLSearchParams(location.hash.slice('#'.length))
+        const billingPlanID = parameters.get('plan')
+        const userCount = parseInt(parameters.get('userCount') || '0', 10)
         if (billingPlanID && userCount) {
             return { billingPlanID, userCount }
         }
@@ -131,10 +131,10 @@ export function productSubscriptionInputForLocationHash(value: GQL.IProductSubsc
     if (value === null) {
         return ''
     }
-    const params = new URLSearchParams()
-    params.set('plan', value.billingPlanID)
-    params.set('userCount', value.userCount.toString())
-    return '#' + params.toString()
+    const parameters = new URLSearchParams()
+    parameters.set('plan', value.billingPlanID)
+    parameters.set('userCount', value.userCount.toString())
+    return '#' + parameters.toString()
 }
 
 function createPaidProductSubscription(

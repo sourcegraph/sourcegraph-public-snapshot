@@ -64,7 +64,7 @@ export const DiffHunk: React.FunctionComponent<
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
-            {hunk.highlight.lines.map((line, i) => {
+            {hunk.highlight.lines.map((line, index) => {
                 if (line.kind !== GQL.DiffHunkLineType.ADDED) {
                     oldLine++
                 }
@@ -74,9 +74,9 @@ export const DiffHunk: React.FunctionComponent<
                 const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                 const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                 const decorationsForLine = [
-                    // If the line was deleted, look for decorations in the base rev
+                    // If the line was deleted, look for decorations in the base revision
                     ...((line.kind === GQL.DiffHunkLineType.DELETED && decorations.base.get(oldLine - 1)) || []),
-                    // If the line wasn't deleted, look for decorations in the head rev
+                    // If the line wasn't deleted, look for decorations in the head revision
                     ...((line.kind !== GQL.DiffHunkLineType.DELETED && decorations.head.get(newLine - 1)) || []),
                 ]
                 const lineStyle = decorationsForLine
@@ -85,7 +85,7 @@ export const DiffHunk: React.FunctionComponent<
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
                 return (
                     <tr
-                        key={i}
+                        key={index}
                         className={`diff-hunk__line ${
                             line.kind === GQL.DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
                         } ${line.kind === GQL.DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
@@ -129,10 +129,10 @@ export const DiffHunk: React.FunctionComponent<
                         {/* eslint-disable-next-line react/forbid-dom-props */}
                         <td className="diff-hunk__content" style={lineStyle}>
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
-                            {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
+                            {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (
-                                    <React.Fragment key={i}>
+                                    <React.Fragment key={index}>
                                         {' '}
                                         <LinkOrSpan
                                             to={decoration.after.linkURL}

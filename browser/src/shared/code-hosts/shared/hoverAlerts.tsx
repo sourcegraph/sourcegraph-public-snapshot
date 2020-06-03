@@ -24,8 +24,8 @@ export function getActiveHoverAlerts(
                 map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !dismissedAlerts[type]) : alerts))
             )
         ),
-        catchError(err => {
-            console.error('Error getting hover alerts', err)
+        catchError(error => {
+            console.error('Error getting hover alerts', error)
             return [undefined]
         }),
         startWith([])

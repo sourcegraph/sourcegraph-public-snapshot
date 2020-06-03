@@ -14,7 +14,7 @@ import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../../shared/src/util/memoizeObservable'
-import { isDefined, subTypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
+import { isDefined, subtypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 import {
@@ -51,10 +51,10 @@ const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const createTestElement = (): HTMLElement => {
-    const el = document.createElement('div')
-    el.className = `test test-${uniqueId()}`
-    document.body.append(el)
-    return el
+    const element = document.createElement('div')
+    element.className = `test test-${uniqueId()}`
+    document.body.append(element)
+    return element
 }
 
 jest.mock('uuid', () => ({
@@ -80,8 +80,8 @@ const createMockPlatformContext = (
     ...partialMocks,
 })
 
-const commonArgs = () =>
-    subTypeOf<Partial<HandleCodeHostOptions>>()({
+const commonArguments = () =>
+    subtypeOf<Partial<HandleCodeHostOptions>>()({
         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
         showGlobalDebug: false,
         platformContext: createMockPlatformContext(),
@@ -134,7 +134,7 @@ describe('codeHost', () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -157,7 +157,7 @@ describe('codeHost', () => {
             const commandPaletteMount = createTestElement()
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -177,7 +177,7 @@ describe('codeHost', () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -210,7 +210,7 @@ describe('codeHost', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -285,7 +285,7 @@ describe('codeHost', () => {
                 codeView.append(line)
                 subscriptions.add(
                     handleCodeHost({
-                        ...commonArgs(),
+                        ...commonArguments(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
@@ -403,7 +403,7 @@ describe('codeHost', () => {
                 }
                 subscriptions.add(
                     handleCodeHost({
-                        ...commonArgs(),
+                        ...commonArguments(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
@@ -443,7 +443,7 @@ describe('codeHost', () => {
                 const baseEditor = viewers.find(
                     allOf(
                         isTaggedUnionMember('type', 'CodeEditor' as const),
-                        check(e => e.document.uri === 'git://foo?1#/bar.ts')
+                        check(editor => editor.document.uri === 'git://foo?1#/bar.ts')
                     )
                 )!
                 const baseDecorations = [
@@ -477,7 +477,7 @@ describe('codeHost', () => {
                 const headEditor = viewers.find(
                     allOf(
                         isTaggedUnionMember('type', 'CodeEditor' as const),
-                        check(e => e.document.uri === 'git://foo?2#/bar.ts')
+                        check(editor => editor.document.uri === 'git://foo?2#/bar.ts')
                     )
                 )!
                 const headDecorations = [
@@ -555,7 +555,7 @@ describe('codeHost', () => {
             ])
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     mutations,
                     codeHost: {
                         type: 'github',
@@ -634,7 +634,7 @@ describe('codeHost', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -679,7 +679,7 @@ describe('codeHost', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -738,7 +738,7 @@ describe('codeHost', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -793,7 +793,7 @@ describe('codeHost', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    ...commonArgs(),
+                    ...commonArguments(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -861,7 +861,7 @@ describe('codeHost', () => {
         })
 
         test('emits a custom mount location if a node matching the selector is in addedNodes()', () => {
-            const el = createTestElement()
+            const element = createTestElement()
             scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     observeHoverOverlayMountLocation(
@@ -869,7 +869,7 @@ describe('codeHost', () => {
                         cold<MutationRecordLike[]>('-b', {
                             b: [
                                 {
-                                    addedNodes: [el],
+                                    addedNodes: [element],
                                     removedNodes: [],
                                 },
                             ],
@@ -877,16 +877,16 @@ describe('codeHost', () => {
                     )
                 ).toBe('ab', {
                     a: document.body,
-                    b: el,
+                    b: element,
                 })
             })
         })
 
         test('emits a custom mount location if a node matching the selector is nested in an addedNode', () => {
-            const el = createTestElement()
+            const element = createTestElement()
             const nested = document.createElement('div')
             nested.classList.add('nested')
-            el.append(nested)
+            element.append(nested)
             scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     observeHoverOverlayMountLocation(
@@ -894,7 +894,7 @@ describe('codeHost', () => {
                         cold<MutationRecordLike[]>('-b', {
                             b: [
                                 {
-                                    addedNodes: [el],
+                                    addedNodes: [element],
                                     removedNodes: [],
                                 },
                             ],
@@ -908,7 +908,7 @@ describe('codeHost', () => {
         })
 
         test('emits document.body if a node matching the selector is removed', () => {
-            const el = createTestElement()
+            const element = createTestElement()
             scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     observeHoverOverlayMountLocation(
@@ -916,21 +916,21 @@ describe('codeHost', () => {
                         cold<MutationRecordLike[]>('-bc', {
                             b: [
                                 {
-                                    addedNodes: [el],
+                                    addedNodes: [element],
                                     removedNodes: [],
                                 },
                             ],
                             c: [
                                 {
                                     addedNodes: [],
-                                    removedNodes: [el],
+                                    removedNodes: [element],
                                 },
                             ],
                         })
                     )
                 ).toBe('abc', {
                     a: document.body,
-                    b: el,
+                    b: element,
                     c: document.body,
                 })
             })

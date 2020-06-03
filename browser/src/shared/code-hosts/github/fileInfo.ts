@@ -1,6 +1,6 @@
 import { BlobInfo, DiffInfo } from '../shared/codeHost'
 import { getCommitIDFromPermalink } from './scrape'
-import { getDiffFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
+import { getDiffFileName, getDiffResolvedRevision, getFilePath, parseURL } from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     const { rawRepoName } = parseURL()
@@ -8,24 +8,24 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     if (!headFilePath) {
         throw new Error('cannot determine file path')
     }
-    const diffResolvedRev = getDiffResolvedRev(codeView)
-    if (!diffResolvedRev) {
+    const diffResolvedRevision = getDiffResolvedRevision(codeView)
+    if (!diffResolvedRevision) {
         throw new Error('cannot determine delta info')
     }
-    const { headCommitID, baseCommitID } = diffResolvedRev
+    const { headCommitID, baseCommitID } = diffResolvedRevision
 
     return {
         head: {
             rawRepoName,
             filePath: headFilePath,
             commitID: headCommitID,
-            rev: headCommitID,
+            revision: headCommitID,
         },
         base: {
             rawRepoName,
             filePath: baseFilePath || headFilePath,
             commitID: baseCommitID,
-            rev: baseCommitID,
+            revision: baseCommitID,
         },
     }
 }
@@ -38,13 +38,13 @@ export const resolveFileInfo = (): BlobInfo => {
     if (parsedURL.pageType !== 'blob' && parsedURL.pageType !== 'tree') {
         throw new Error(`Current URL does not match a blob or tree url: ${window.location.href}`)
     }
-    const { revAndFilePath, rawRepoName } = parsedURL
+    const { revisionAndFilePath, rawRepoName } = parsedURL
 
     const filePath = getFilePath()
     const filePathWithLeadingSlash = filePath.startsWith('/') ? filePath : `/${filePath}`
-    if (!revAndFilePath.endsWith(filePathWithLeadingSlash)) {
+    if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
         throw new Error(
-            `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
+            `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
         )
     }
     return {
@@ -52,7 +52,7 @@ export const resolveFileInfo = (): BlobInfo => {
             rawRepoName,
             filePath,
             commitID: getCommitIDFromPermalink(),
-            rev: revAndFilePath.slice(0, -filePathWithLeadingSlash.length),
+            revision: revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length),
         },
     }
 }
@@ -80,12 +80,12 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): BlobInfo => {
     if (parsedURL.pageType !== 'blob') {
         throw new Error(`Snippet URL does not match a blob url: ${snippetPermalinkURL.href}`)
     }
-    const { revAndFilePath, rawRepoName } = parsedURL
-    if (!revAndFilePath.startsWith(commitID)) {
+    const { revisionAndFilePath, rawRepoName } = parsedURL
+    if (!revisionAndFilePath.startsWith(commitID)) {
         throw new Error(
-            `Could not parse filePath: revAndFilePath ${revAndFilePath} does not start with commitID ${commitID}`
+            `Could not parse filePath: revAndFilePath ${revisionAndFilePath} does not start with commitID ${commitID}`
         )
     }
-    const filePath = revAndFilePath.slice(commitID.length + 1)
-    return { blob: { rawRepoName, filePath, commitID, rev: commitID } }
+    const filePath = revisionAndFilePath.slice(commitID.length + 1)
+    return { blob: { rawRepoName, filePath, commitID, revision: commitID } }
 }

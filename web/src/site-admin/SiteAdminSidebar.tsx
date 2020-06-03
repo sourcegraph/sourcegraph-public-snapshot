@@ -26,9 +26,9 @@ export interface SiteAdminSidebarProps {
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups }) => (
     <div className={`site-admin-sidebar ${className}`}>
         {groups.map(
-            ({ header, items, condition = () => true }, i) =>
+            ({ header, items, condition = () => true }, index) =>
                 condition({}) && (
-                    <SidebarGroup key={i}>
+                    <SidebarGroup key={index}>
                         {header && <SidebarGroupHeader icon={header.icon} label={header.label} />}
                         <SidebarGroupItems>
                             {items.map(

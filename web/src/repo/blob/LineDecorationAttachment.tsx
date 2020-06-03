@@ -32,7 +32,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
     public UNSAFE_componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
             this.props.repoName !== nextProps.repoName ||
-            this.props.rev !== nextProps.rev ||
+            this.props.revision !== nextProps.revision ||
             this.props.filePath !== nextProps.filePath ||
             this.props.line !== nextProps.line ||
             this.props.portalID !== nextProps.portalID ||

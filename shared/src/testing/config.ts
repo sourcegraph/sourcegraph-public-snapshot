@@ -45,14 +45,14 @@ type ConfigFields = {
     [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
 }
 
-const parseBool = (s: string): boolean => {
-    if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
+const parseBool = (string: string): boolean => {
+    if (['1', 't', 'true'].some(trueString => trueString === string.toLowerCase())) {
         return true
     }
-    if (['0', 'f', 'false'].some(v => v.toLowerCase() === s)) {
+    if (['0', 'f', 'false'].some(falseString => falseString === string.toLowerCase())) {
         return false
     }
-    throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
+    throw new Error(`could not parse string ${JSON.stringify(string)} to boolean`)
 }
 
 const configFields: ConfigFields = {
@@ -212,17 +212,17 @@ export function getConfig<T extends keyof Config>(...required: T[]): Partial<Con
         if (field.defaultValue !== undefined) {
             config[fieldName] = field.defaultValue
         }
-        const envValue = process.env[field.envVar]
-        if (envValue) {
-            config[fieldName] = field.parser ? field.parser(envValue) : envValue
+        const environmentValue = process.env[field.envVar]
+        if (environmentValue) {
+            config[fieldName] = field.parser ? field.parser(environmentValue) : environmentValue
         }
     }
 
     // Check required fields for type safety
     const missingKeys = required.filter(key => config[key] === undefined)
     if (missingKeys.length > 0) {
-        const fieldInfo = (k: T): string => {
-            const field = configFields[k]
+        const fieldInfo = (key: T): string => {
+            const field = configFields[key]
             if (!field) {
                 return ''
             }
@@ -237,7 +237,7 @@ export function getConfig<T extends keyof Config>(...required: T[]): Partial<Con
         }
         throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
+${missingKeys.map(key => `- ${fieldInfo(key)}`).join('\n')}
 
 The recommended way to set them is to install direnv (https://direnv.net) and
 create a .envrc file at the root of this repository.

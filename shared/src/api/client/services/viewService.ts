@@ -80,8 +80,8 @@ export const createViewService = (): ViewService => {
             providers.value.set(id, provider as any) // TODO: find a type-safe way
             providers.next(providers.value)
             return new Subscription(() => {
-                const p = providers.value.get(id)
-                if (p?.provideView === provideView) {
+                const provider = providers.value.get(id)
+                if (provider?.provideView === provideView) {
                     // Check equality to ensure we only unsubscribe the exact same provider we
                     // registered, not some other provider that was registered later with the same
                     // ID.
@@ -112,7 +112,7 @@ export const createViewService = (): ViewService => {
 export const getView = <W extends ContributableViewContainer>(
     viewID: string,
     viewContainer: W,
-    params: ViewContexts[W],
+    parameters: ViewContexts[W],
     contributions: Observable<Pick<Evaluated<Contributions>, 'views'>>,
     viewService: Pick<ViewService, 'get'>
 ): Observable<View | undefined | null> =>
@@ -124,7 +124,7 @@ export const getView = <W extends ContributableViewContainer>(
                 )
             )
             .pipe(distinctUntilChanged()),
-        viewService.get<W>(viewID, params).pipe(distinctUntilChanged()),
+        viewService.get<W>(viewID, parameters).pipe(distinctUntilChanged()),
 
         // Wait for extensions to load for up to 5 seconds (grace period) before showing
         // "not found", to avoid showing an error for a brief period during initial
@@ -147,7 +147,7 @@ export interface ViewProviderResult {
 
 export const getViewsForContainer = <W extends ContributableViewContainer>(
     where: W,
-    params: ViewContexts[W],
+    parameters: ViewContexts[W],
     viewService: Pick<ViewService, 'getWhere'>
 ): Observable<ViewProviderResult[]> =>
     viewService.getWhere(where).pipe(
@@ -157,10 +157,10 @@ export const getViewsForContainer = <W extends ContributableViewContainer>(
                 ...providers.map(provider =>
                     concat(
                         [undefined],
-                        provider.provideView(params).pipe(
-                            catchError((err): [ErrorLike] => {
-                                console.error('View provider errored:', err)
-                                return [asError(err)]
+                        provider.provideView(parameters).pipe(
+                            catchError((error): [ErrorLike] => {
+                                console.error('View provider errored:', error)
+                                return [asError(error)]
                             })
                         )
                     ).pipe(map(view => ({ id: provider.id, view })))

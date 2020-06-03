@@ -1,10 +1,10 @@
 import expect from 'expect'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { retry } from '../../../shared/src/testing/utils'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 
 // By default, these tests run against a local Bitbucket instance and a local Sourcegraph instance.
 // You can run them against other instances by setting the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -38,7 +38,7 @@ async function createProject(driver: Driver): Promise<void> {
     await driver.page.goto(BITBUCKET_BASE_URL + '/projects')
     await driver.page.waitForSelector('.entity-table')
     const existingProject = await driver.page.evaluate(() =>
-        [...document.querySelectorAll('span.project-name')].some(p => p.textContent === 'SOURCEGRAPH')
+        [...document.querySelectorAll('span.project-name')].some(project => project.textContent === 'SOURCEGRAPH')
     )
     if (existingProject) {
         return

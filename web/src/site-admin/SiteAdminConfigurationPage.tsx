@@ -261,7 +261,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
                             // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
-                            refreshSiteFlags().subscribe({ error: err => console.error(err) })
+                            refreshSiteFlags().subscribe({ error: error => console.error(error) })
                         }
                         this.setState({ restartToApply })
                         this.remoteRefreshes.next()
@@ -282,8 +282,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     mergeMap(() =>
                         // wait for server to restart
                         fetchSite().pipe(
-                            retryWhen(x =>
-                                x.pipe(
+                            retryWhen(errors =>
+                                errors.pipe(
                                     tap(() => this.forceUpdate()),
                                     delay(500)
                                 )
@@ -358,9 +358,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <div key="validation-messages" className="alert alert-danger site-admin-configuration-page__alert">
                     <p>The server reported issues in the last-saved config:</p>
                     <ul>
-                        {this.state.site.configuration.validationMessages.map((e, i) => (
-                            <li key={i} className="site-admin-configuration-page__alert-item">
-                                {e}
+                        {this.state.site.configuration.validationMessages.map((message, index) => (
+                            <li key={index} className="site-admin-configuration-page__alert-item">
+                                {message}
                             </li>
                         ))}
                     </ul>
@@ -398,7 +398,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'rbac',
             'storageClass',
             'useAlertManager',
-        ].filter(prop => contents?.includes(`"${prop}"`))
+        ].filter(property => contents?.includes(`"${property}"`))
         if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
                 <div

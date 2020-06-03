@@ -13,7 +13,7 @@ import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
-import { defaultRevToCommitID } from '../code-hosts/shared/util/fileInfo'
+import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 
 export interface ButtonProps {
     className?: string
@@ -81,15 +81,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                 sourcegraphURL: props.sourcegraphURL,
                                 repoName: props.fileInfoOrError.base.repoName,
                                 filePath: props.fileInfoOrError.base.filePath,
-                                rev: defaultRevToCommitID(props.fileInfoOrError.base).rev,
+                                revision: defaultRevisionToCommitID(props.fileInfoOrError.base).revision,
                                 query: {
                                     diff: {
-                                        rev: props.fileInfoOrError.base.commitID,
+                                        revision: props.fileInfoOrError.base.commitID,
                                     },
                                 },
                                 commit: {
-                                    baseRev: defaultRevToCommitID(props.fileInfoOrError.base).rev,
-                                    headRev: defaultRevToCommitID(props.fileInfoOrError.head).rev,
+                                    baseRev: defaultRevisionToCommitID(props.fileInfoOrError.base).revision,
+                                    headRev: defaultRevisionToCommitID(props.fileInfoOrError.head).revision,
                                 },
                             }}
                         />
@@ -108,7 +108,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                     sourcegraphURL: props.sourcegraphURL,
                                     repoName: props.fileInfoOrError.blob.repoName,
                                     filePath: props.fileInfoOrError.blob.filePath,
-                                    rev: defaultRevToCommitID(props.fileInfoOrError.blob).rev,
+                                    revision: defaultRevisionToCommitID(props.fileInfoOrError.blob).revision,
                                 }}
                             />
                         </li>

@@ -13,9 +13,9 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
 import {
     RepoSpec,
-    RevSpec,
+    RevisionSpec,
     FileSpec,
-    ResolvedRevSpec,
+    ResolvedRevisionSpec,
     UIPositionSpec,
     ModeSpec,
 } from '../../../../../../shared/src/util/url'
@@ -44,12 +44,12 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     ) => Observable<Connection<GQL.IExternalChangeset>>
 }
 
-function getLSPTextDocumentPositionParams(
-    hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
+function getLSPTextDocumentPositionParameters(
+    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
     return {
         repoName: hoveredToken.repoName,
-        rev: hoveredToken.rev,
+        revision: hoveredToken.revision,
         filePath: hoveredToken.filePath,
         commitID: hoveredToken.commitID,
         position: hoveredToken,
@@ -81,7 +81,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             merge(of(undefined), changesetUpdates).pipe(
                 switchMap(() =>
                     queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
-                        repeatWhen(obs => obs.pipe(delay(5000)))
+                        repeatWhen(notifier => notifier.pipe(delay(5000)))
                     )
                 )
             ),
@@ -105,7 +105,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 
     const hoverifier = useMemo(
         () =>
-            createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>({
+            createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
                 closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: componentRerenders.pipe(
@@ -120,7 +120,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     filter(property('hoverOverlayElement', isDefined))
                 ),
                 getHover: hoveredToken =>
-                    getHover(getLSPTextDocumentPositionParams(hoveredToken), { extensionsController }),
+                    getHover(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
                 pinningEnabled: true,
             }),
@@ -146,7 +146,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             <select
                 className="form-control mx-2"
                 value={state}
-                onChange={e => setState((e.target.value || undefined) as GQL.ChangesetState | undefined)}
+                onChange={event => setState((event.target.value || undefined) as GQL.ChangesetState | undefined)}
                 id="changeset-state-filter"
             >
                 <option value="">All</option>
@@ -160,7 +160,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             <select
                 className="form-control mx-2"
                 value={reviewState}
-                onChange={e => setReviewState((e.target.value || undefined) as GQL.ChangesetReviewState | undefined)}
+                onChange={event =>
+                    setReviewState((event.target.value || undefined) as GQL.ChangesetReviewState | undefined)
+                }
                 id="changeset-review-state-filter"
             >
                 <option value="">All</option>
@@ -174,7 +176,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             <select
                 className="form-control mx-2"
                 value={checkState}
-                onChange={e => setCheckState((e.target.value || undefined) as GQL.ChangesetCheckState | undefined)}
+                onChange={event =>
+                    setCheckState((event.target.value || undefined) as GQL.ChangesetCheckState | undefined)
+                }
                 id="changeset-check-state-filter"
             >
                 <option value="">All</option>

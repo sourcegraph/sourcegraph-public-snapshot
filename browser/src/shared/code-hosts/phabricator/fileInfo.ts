@@ -3,7 +3,7 @@ import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 import { PhabricatorMode } from '.'
-import { queryConduitHelper, resolveDiffRev } from './backend'
+import { queryConduitHelper, resolveDiffRevision } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'
 
@@ -49,7 +49,7 @@ export const resolveDiffFileInfo = (
                 throw new Error(`Unexpected PhabricatorState for resolveDiffFileInfo, PhabricatorMode: ${state.mode}`)
             }
             const { filePath, baseFilePath } = getFilepathFromFileForDiff(codeView)
-            const resolveBaseCommitID = resolveDiffRev(
+            const resolveBaseCommitID = resolveDiffRevision(
                 {
                     repoName: state.baseRawRepoName,
                     revisionID: state.revisionID,
@@ -71,7 +71,7 @@ export const resolveDiffFileInfo = (
                     })
                 )
             )
-            const resolveHeadCommitID = resolveDiffRev(
+            const resolveHeadCommitID = resolveDiffRevision(
                 {
                     repoName: state.headRawRepoName,
                     revisionID: state.revisionID,

@@ -3,7 +3,7 @@ import { ContextValues } from 'sourcegraph'
 import { ClientContextAPI } from '../../client/api/context'
 
 /** @internal */
-export class ExtContext {
+export class ExtensionContext {
     constructor(private proxy: Remote<ClientContextAPI>) {}
 
     public updateContext(updates: ContextValues): void {

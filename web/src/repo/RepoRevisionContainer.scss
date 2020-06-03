@@ -1,13 +1,13 @@
 @import '../tree/Tree';
 @import './blob/BlobPage';
 @import './tree/TreePage';
-@import './GitRef';
+@import './GitReference';
 @import '../marketing/Toast';
-@import './RepoRevSidebar';
+@import './RepoRevisionSidebar';
 @import './RevisionsPopover';
 @import './commits/RepositoryCommitsPage';
 
-.repo-rev-container {
+.repo-revision-container {
     flex: 1 1 auto;
 
     display: flex;
@@ -49,7 +49,7 @@
 }
 
 .theme-light {
-    .repo-rev-container {
+    .repo-revision-container {
         &__sidebar {
             background: $color-light-bg-2;
 

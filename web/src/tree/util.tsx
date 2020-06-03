@@ -16,21 +16,21 @@ export interface SingleChildGitTree extends TreeEntryInfo {
     children: SingleChildGitTree[]
 }
 
-export function scrollIntoView(el: Element, scrollRoot: Element): void {
+export function scrollIntoView(element: Element, scrollRoot: Element): void {
     if (!scrollRoot.getBoundingClientRect) {
-        return el.scrollIntoView()
+        return element.scrollIntoView()
     }
 
-    const rootRect = scrollRoot.getBoundingClientRect()
-    const elRect = el.getBoundingClientRect()
+    const rootRectangle = scrollRoot.getBoundingClientRect()
+    const elementRectangle = element.getBoundingClientRect()
 
-    const elAbove = elRect.top <= rootRect.top + 30
-    const elBelow = elRect.bottom >= rootRect.bottom
+    const elementAbove = elementRectangle.top <= rootRectangle.top + 30
+    const elementBelow = elementRectangle.bottom >= rootRectangle.bottom
 
-    if (elAbove) {
-        el.scrollIntoView(true)
-    } else if (elBelow) {
-        el.scrollIntoView(false)
+    if (elementAbove) {
+        element.scrollIntoView(true)
+    } else if (elementBelow) {
+        element.scrollIntoView(false)
     }
 }
 
@@ -63,9 +63,9 @@ export const maxEntries = 2500
  */
 export function singleChildEntriesToGitTree(entries: TreeEntryInfo[]): SingleChildGitTree {
     const parentTree = gitTreeToTreeObject(entries[0])
-    for (const [i, entry] of entries.entries()) {
+    for (const [index, entry] of entries.entries()) {
         if (entry.path.split('/').length === parentTree.path.split('/').length + 1) {
-            parentTree.children.push({ ...entry, children: singleChildEntriesToGitTree(entries.slice(i)).children })
+            parentTree.children.push({ ...entry, children: singleChildEntriesToGitTree(entries.slice(index)).children })
         }
     }
 

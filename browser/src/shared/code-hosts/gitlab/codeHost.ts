@@ -7,7 +7,7 @@ import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
-import { subTypeOf } from '../../../../../shared/src/util/types'
+import { subtypeOf } from '../../../../../shared/src/util/types'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toAbsoluteBlobURL } from '../../../../../shared/src/util/url'
 
@@ -132,7 +132,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-export const gitlabCodeHost = subTypeOf<CodeHost>()({
+export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
     check: checkIsGitlab,
@@ -152,7 +152,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         }
 
         // Stay on same page in MR if possible.
-        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
+        // TODO to be entirely correct, this would need to compare the revision of the code view with the target revision.
         const currentPage = getPageInfo()
         if (currentPage.rawRepoName === target.rawRepoName && context.part !== undefined) {
             const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)
@@ -178,7 +178,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         }
 
         // Go to specific URL on this Gitlab instance.
-        const url = new URL(`https://${target.rawRepoName}/blob/${target.rev}/${target.filePath}`)
+        const url = new URL(`https://${target.rawRepoName}/blob/${target.revision}/${target.filePath}`)
         if (target.position) {
             const { line } = target.position
             url.hash = `#L${line}`

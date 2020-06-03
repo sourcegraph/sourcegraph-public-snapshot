@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../shared/src/util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -24,12 +24,12 @@ export interface FileDiffNodeProps extends ThemeProps {
 
     extensionInfo?: {
         /** The base repository and revision. */
-        base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+        base: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: GQL.ID }
 
         /** The head repository and revision. */
-        head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+        head: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: GQL.ID }
 
-        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
 
     /** Reflect selected line in url */
@@ -146,5 +146,5 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
         )
     }
 
-    private toggleExpand = (): void => this.setState(prevState => ({ expanded: !prevState.expanded }))
+    private toggleExpand = (): void => this.setState(previousState => ({ expanded: !previousState.expanded }))
 }

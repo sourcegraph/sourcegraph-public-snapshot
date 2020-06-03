@@ -1,8 +1,8 @@
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
+import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 
 // By default, these tests run against gitlab.com and a local Sourcegraph instance.
 // You can run them against other instances by setting the below env vars in addition to SOURCEGRAPH_BASE_URL.

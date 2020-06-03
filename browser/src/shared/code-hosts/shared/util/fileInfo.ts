@@ -3,7 +3,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../../../shared/src/platform/context'
-import { resolveRepo, resolveRev, retryWhenCloneInProgressError } from '../../../repo/backend'
+import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
 import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 
 /**
@@ -24,21 +24,21 @@ const resolveRepoNameForFileInfo = (
 ): Observable<FileInfoWithRepoName> =>
     resolveRepo({ rawRepoName: fileInfo.rawRepoName, requestGraphQL }).pipe(
         map(repoName => ({ ...fileInfo, repoName })),
-        catchError(err => {
+        catchError(error => {
             // ERPRIVATEREPOPUBLICSOURCEGRAPHCOM likely means that the user is viewing private code
             // without having pointed his browser extension to a self-hosted Sourcegraph instance that
             // has access to that code. In that case, it's impossible to resolve the repo names,
             // so we keep the repo names inferred from the code host's DOM.
-            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
                 return of(useRawRepoNameAsFallback(fileInfo))
             }
-            throw err
+            throw error
         })
     )
 
-export const defaultRevToCommitID = <T extends FileInfo>(fileInfo: T): T & { rev: string } => ({
+export const defaultRevisionToCommitID = <T extends FileInfo>(fileInfo: T): T & { revision: string } => ({
     ...fileInfo,
-    rev: fileInfo.rev || fileInfo.commitID,
+    revision: fileInfo.revision || fileInfo.commitID,
 })
 
 export const ensureRevisionIsClonedForFileInfo = (
@@ -49,7 +49,7 @@ export const ensureRevisionIsClonedForFileInfo = (
     // use `resolveRev` otherwise we can't guarantee Sourcegraph has the
     // revision cloned.
     const { repoName, commitID } = fileInfo
-    return resolveRev({ repoName, rev: commitID, requestGraphQL }).pipe(retryWhenCloneInProgressError())
+    return resolveRevision({ repoName, revision: commitID, requestGraphQL }).pipe(retryWhenCloneInProgressError())
 }
 
 export const resolveRepoNamesForDiffOrFileInfo = (
