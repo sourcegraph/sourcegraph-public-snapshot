@@ -12,6 +12,7 @@ import * as H from 'history'
 export interface CampaignStatusProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+        patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     }
 
@@ -37,7 +38,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
 
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
 
-    const isDraft = !campaign.publishedAt
+    const isDraft = campaign.patches.totalCount > 0
     let state: CampaignState
     if (campaign.closedAt) {
         state = 'closed'
@@ -97,7 +98,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                             </button>
                         )}
                         {!campaign.viewerCanAdminister && (
-                            <p className="mb-0 text-warning">You don't have permission to view error details.</p>
+                            <p className="mb-0">You don't have permission to view error details.</p>
                         )}
                     </div>
                 </>
@@ -136,7 +137,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
     return (
         <>
             {statusIndicator && <div>{statusIndicator}</div>}
-            {isDraft && state !== 'closed' && (
+            {!statusIndicator && isDraft && state !== 'closed' && state !== 'errored' && (
                 <>
                     <div className="d-flex align-items-center alert alert-warning my-4">
                         {campaign.viewerCanAdminister && (
@@ -145,7 +146,6 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                             </button>
                         )}
                         <p className="mb-0 ml-2">
-                            Campaign is a draft.{' '}
                             {campaign.changesets.totalCount === 0
                                 ? 'No changesets have'
                                 : 'Only a subset of changesets has'}{' '}
