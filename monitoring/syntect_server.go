@@ -71,10 +71,6 @@ func SyntectServer() *Container {
 						sharedProvisioningMemoryUsage1d("syntect-server"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("syntect-server"),
-						sharedProvisioningMemoryUsage1h("syntect-server"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("syntect-server"),
 						sharedProvisioningMemoryUsage5m("syntect-server"),
 					},

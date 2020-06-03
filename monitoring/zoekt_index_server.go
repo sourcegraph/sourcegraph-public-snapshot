@@ -43,10 +43,6 @@ func ZoektIndexServer() *Container {
 						sharedProvisioningMemoryUsage1d("zoekt-indexserver"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("zoekt-indexserver"),
-						sharedProvisioningMemoryUsage1h("zoekt-indexserver"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("zoekt-indexserver"),
 						sharedProvisioningMemoryUsage5m("zoekt-indexserver"),
 					},

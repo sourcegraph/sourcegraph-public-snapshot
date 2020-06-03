@@ -133,43 +133,7 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 	}
 }
 
-// Warn that instances might need more/less resources if medium-term usage is high or low.
-
-var sharedProvisioningCPUUsage1h sharedObservable = func(containerName string) Observable {
-	return Observable{
-		Name:            "provisioning_container_cpu_usage_1h",
-		Description:     "container cpu usage total (1h average) across all cores by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}[1h])`, containerName),
-		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 10},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
-		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values instead.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
-	}
-}
-
-var sharedProvisioningMemoryUsage1h sharedObservable = func(containerName string) Observable {
-	return Observable{
-		Name:            "provisioning_container_memory_usage_1h",
-		Description:     "container memory usage (1h average) by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}[1h])`, containerName),
-		DataMayNotExist: true,
-		Warning:         Alert{GreaterOrEqual: 90, LessOrEqual: 10},
-		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
-		PossibleSolutions: strings.Replace(`
-			If usage is high:
-			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			If usage is low, consider decreasing the above values instead.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
-	}
-}
-
-// Warn that instances might need less resources if long-term usage is low.
+// Warn that instances might need more/less resources if long-term usage is high or low.
 
 var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) Observable {
 	return Observable{

@@ -160,10 +160,6 @@ func PreciseCodeIntelWorker() *Container {
 						sharedProvisioningMemoryUsage1d("precise-code-intel-worker"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("precise-code-intel-worker"),
-						sharedProvisioningMemoryUsage1h("precise-code-intel-worker"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("precise-code-intel-worker"),
 						sharedProvisioningMemoryUsage5m("precise-code-intel-worker"),
 					},

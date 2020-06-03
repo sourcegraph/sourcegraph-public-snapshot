@@ -26,10 +26,6 @@ func GitHubProxy() *Container {
 						sharedProvisioningMemoryUsage1d("github-proxy"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("github-proxy"),
-						sharedProvisioningMemoryUsage1h("github-proxy"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("github-proxy"),
 						sharedProvisioningMemoryUsage5m("github-proxy"),
 					},

@@ -34,10 +34,6 @@ func QueryRunner() *Container {
 						sharedProvisioningMemoryUsage1d("query-runner"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("query-runner"),
-						sharedProvisioningMemoryUsage1h("query-runner"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("query-runner"),
 						sharedProvisioningMemoryUsage5m("query-runner"),
 					},

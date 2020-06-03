@@ -101,10 +101,6 @@ func GitServer() *Container {
 						sharedProvisioningMemoryUsage1d("gitserver"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("gitserver"),
-						sharedProvisioningMemoryUsage1h("gitserver"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("gitserver"),
 						sharedProvisioningMemoryUsage5m("gitserver"),
 					},

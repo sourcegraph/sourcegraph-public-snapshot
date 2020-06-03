@@ -34,10 +34,6 @@ func Replacer() *Container {
 						sharedProvisioningMemoryUsage1d("replacer"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("replacer"),
-						sharedProvisioningMemoryUsage1h("replacer"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("replacer"),
 						sharedProvisioningMemoryUsage5m("replacer"),
 					},

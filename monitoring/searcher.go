@@ -43,10 +43,6 @@ func Searcher() *Container {
 						sharedProvisioningMemoryUsage1d("searcher"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("searcher"),
-						sharedProvisioningMemoryUsage1h("searcher"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("searcher"),
 						sharedProvisioningMemoryUsage5m("searcher"),
 					},

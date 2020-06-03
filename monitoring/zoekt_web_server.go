@@ -42,10 +42,6 @@ func ZoektWebServer() *Container {
 						sharedProvisioningMemoryUsage1d("zoekt-webserver"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("zoekt-webserver"),
-						sharedProvisioningMemoryUsage1h("zoekt-webserver"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("zoekt-webserver"),
 						sharedProvisioningMemoryUsage5m("zoekt-webserver"),
 					},

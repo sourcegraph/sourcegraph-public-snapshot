@@ -54,10 +54,6 @@ func Symbols() *Container {
 						sharedProvisioningMemoryUsage1d("symbols"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("symbols"),
-						sharedProvisioningMemoryUsage1h("symbols"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("symbols"),
 						sharedProvisioningMemoryUsage5m("symbols"),
 					},

@@ -410,10 +410,6 @@ func Frontend() *Container {
 						sharedProvisioningMemoryUsage1d("frontend"),
 					},
 					{
-						sharedProvisioningCPUUsage1h("frontend"),
-						sharedProvisioningMemoryUsage1h("frontend"),
-					},
-					{
 						sharedProvisioningCPUUsage5m("frontend"),
 						sharedProvisioningMemoryUsage5m("frontend"),
 					},
