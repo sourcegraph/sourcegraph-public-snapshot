@@ -60,7 +60,7 @@ func render(message Message) (*gophermail.Message, error) {
 		return nil, err
 	}
 
-	if err := parsed.Render(message.Data, &m); err != nil {
+	if err := renderTemplate(parsed, message.Data, &m); err != nil {
 		return nil, err
 	}
 
