@@ -1,25 +1,31 @@
-import { RepoSettingsSideBarItems } from './RepoSettingsSidebar'
+import { RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
+import GearIcon from 'mdi-react/GearIcon'
 
-export const repoSettingsSidebarItems: RepoSettingsSideBarItems = [
+export const repoSettingsSideBarGroups: RepoSettingsSideBarGroups = [
     {
-        to: '',
-        exact: true,
-        label: 'Options',
-    },
-    {
-        to: '/index',
-        exact: true,
-        label: 'Indexing',
-    },
-    {
-        to: '/mirror',
-        exact: true,
-        label: 'Mirroring',
-    },
-    {
-        to: '/permissions',
-        exact: true,
-        label: 'Permissions',
-        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
+        header: { label: 'Settings', icon: GearIcon },
+        items: [
+            {
+                to: '',
+                exact: true,
+                label: 'Options',
+            },
+            {
+                to: '/index',
+                exact: true,
+                label: 'Indexing',
+            },
+            {
+                to: '/mirror',
+                exact: true,
+                label: 'Mirroring',
+            },
+            {
+                to: '/permissions',
+                exact: true,
+                label: 'Permissions',
+                condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
+            },
+        ],
     },
 ]

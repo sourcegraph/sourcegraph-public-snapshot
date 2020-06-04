@@ -1,10 +1,20 @@
-import { RepoSettingsSideBarItems } from '../../../repo/settings/RepoSettingsSidebar'
-import { repoSettingsSidebarItems } from '../../../repo/settings/sidebaritems'
+import { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
+import { repoSettingsSideBarGroups } from '../../../repo/settings/sidebaritems'
+import BrainIcon from 'mdi-react/BrainIcon'
 
-export const enterpriseRepoSettingsSidebarItems: RepoSettingsSideBarItems = [
-    ...repoSettingsSidebarItems,
+export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = [
+    ...repoSettingsSideBarGroups,
     {
-        to: '/code-intelligence',
-        label: 'Code intelligence',
+        header: { label: 'Code intelligence', icon: BrainIcon },
+        items: [
+            {
+                to: '/code-intelligence/uploads',
+                label: 'Uploads',
+            },
+            {
+                to: '/code-intelligence/indexes',
+                label: 'Auto indexing',
+            },
+        ],
     },
 ]
