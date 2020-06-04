@@ -1,8 +1,8 @@
 # Grafana image
 
-Vanilla Grafana image with one addition: embedded Sourcegraph provisioning.
+Vanilla Grafana image with two additions: embedded Sourcegraph provisioning, and a wrapper program around to enable synchronization with Sourcegraph site configuration.
 
-# Image API
+## Image API
 
 ```shell script
 docker run  \

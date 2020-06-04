@@ -1,12 +1,20 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
-COPY monitoring /go/src/monitoring-generator
-WORKDIR /go/src/monitoring-generator
+RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0 openssh=8.1_p1-r0 build-base=0.5-r1
+
+# set up sourcegraph/sourcegraph
+COPY sourcegraph /go/src/github.com/sourcegraph/sourcegraph
+
+# build everything set up in ./monitoring
+WORKDIR /go/src/github.com/sourcegraph/sourcegraph/monitoring
 RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
 RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
 
-RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0  openssh=8.1_p1-r0 build-base=0.5-r1
+# build the grafana wrapper
+COPY cmd/grafana-wrapper /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
+WORKDIR /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
+RUN CGO_ENABLED=0 go build -o /go/bin/grafana-wrapper
 
 WORKDIR /opt
 RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
@@ -42,6 +50,7 @@ COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 COPY --from=builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=builder /go/bin/grafana-wrapper /bin/grafana-wrapper
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /

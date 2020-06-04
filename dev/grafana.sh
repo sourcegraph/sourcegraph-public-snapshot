@@ -7,14 +7,18 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
-IMAGE=sourcegraph/grafana:61407_2020-04-18_9aa5791@sha256:27845c4e03643f2a774873abfe549956bdbb3a19508a6e3f96f83c80eb24d81f
+# IMAGE=sourcegraph/grafana:rob ./docker-images/grafana/build.sh
+IMAGE=sourcegraph/grafana:rob # TODO: remove
 CONTAINER=grafana
 
 mkdir -p "${GRAFANA_DISK}"/logs
 
+# docker containers must access things via docker host on non-linux platforms
 CONFIG_SUB_DIR="all"
+SRC_FRONTEND_INTERNAL="host.docker.internal:3090"
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  SRC_FRONTEND_INTERNAL="localhost:3090"
   CONFIG_SUB_DIR="linux"
 fi
 
@@ -34,6 +38,7 @@ docker run --rm \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
   -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
   -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
+  -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
   ${IMAGE} >>"${GRAFANA_DISK}"/logs/grafana.log 2>&1 &
 wait $!
 
