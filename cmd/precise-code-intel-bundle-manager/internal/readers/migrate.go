@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -16,7 +15,7 @@ import (
 )
 
 // NumMigrateRoutines is the number of goroutines launched to migrate bundle files.
-var NumMigrateRoutines = runtime.NumCPU() * 2
+var NumMigrateRoutines = 1 // runtime.NumCPU() * 2
 
 // Migrate runs through each SQLite database on disk and opens a reader instance which will perform
 // any necessary migrations to transform it to the newest schema. Because this may have a non-negligible
