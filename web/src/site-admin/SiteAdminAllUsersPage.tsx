@@ -88,7 +88,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             this.props.onDidUpdate()
                         }
                     },
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
     }

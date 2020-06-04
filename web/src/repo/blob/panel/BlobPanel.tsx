@@ -1,13 +1,12 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { from, Observable, Subject, Subscription } from 'rxjs'
+import { from, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
-    PanelViewWithComponent,
     ProvidePanelViewSignature,
     PanelViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/panelViews'
@@ -19,7 +18,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
-import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
+import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props
@@ -59,7 +58,7 @@ function toSubject(props: Props): PanelSubject {
         repoName: props.repoName,
         repoID: props.repoID,
         commitID: props.commitID,
-        rev: props.rev,
+        revision: props.revision,
         filePath: props.filePath,
         mode: props.mode,
         position:
@@ -91,7 +90,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             title: string,
             priority: number,
             registry: TextDocumentLocationProviderRegistry<P>,
-            extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+            extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
@@ -111,8 +110,10 @@ export class BlobPanel extends React.PureComponent<Props> {
                             if (!hasProviders) {
                                 return null
                             }
-                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
-                            if (!params) {
+                            const parameters: TextDocumentPositionParams | null = getActiveCodeEditorPosition(
+                                activeEditor
+                            )
+                            if (!parameters) {
                                 return null
                             }
                             return {
@@ -124,13 +125,15 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 // enough to know that (typeof params & typeof extraParams) is P.
                                 //
                                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                                locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                                    tap(({ result: locations }) => {
-                                        if (this.props.activation && id === 'references' && locations.length > 0) {
-                                            this.props.activation.update({ FoundReferences: true })
-                                        }
-                                    })
-                                ),
+                                locationProvider: registry
+                                    .getLocations({ ...parameters, ...extraParameters } as P)
+                                    .pipe(
+                                        tap(({ result: locations }) => {
+                                            if (this.props.activation && id === 'references' && locations.length > 0) {
+                                                this.props.activation.update({ FoundReferences: true })
+                                            }
+                                        })
+                                    ),
                             }
                         })
                     )
@@ -139,51 +142,45 @@ export class BlobPanel extends React.PureComponent<Props> {
         })
 
         this.subscriptions.add(
-            this.props.extensionsController.services.panelViews.registerProviders(
-                [
-                    entryForViewProviderRegistration(
-                        'def',
-                        'Definition',
-                        190,
-                        this.props.extensionsController.services.textDocumentDefinition
-                    ),
-                    entryForViewProviderRegistration(
-                        'references',
-                        'References',
-                        180,
-                        this.props.extensionsController.services.textDocumentReferences,
-                        {
-                            context: { includeDeclaration: false },
-                        }
-                    ),
-
+            this.props.extensionsController.services.panelViews.registerProviders([
+                entryForViewProviderRegistration(
+                    'def',
+                    'Definition',
+                    190,
+                    this.props.extensionsController.services.textDocumentDefinition
+                ),
+                entryForViewProviderRegistration(
+                    'references',
+                    'References',
+                    180,
+                    this.props.extensionsController.services.textDocumentReferences,
                     {
-                        // File history view.
-                        registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
-                        provider: subjectChanges.pipe(
-                            map((subject: PanelSubject) => ({
-                                title: 'History',
-                                content: '',
-                                priority: 150,
-                                locationProvider: null,
-                                reactElement: (
-                                    <RepoRevSidebarCommits
-                                        key="commits"
-                                        repoID={this.props.repoID}
-                                        rev={subject.rev}
-                                        filePath={subject.filePath}
-                                        history={this.props.history}
-                                        location={this.props.location}
-                                    />
-                                ),
-                            }))
-                        ),
-                    },
-                ].filter(
-                    (v): v is Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>> =>
-                        !!v
-                )
-            )
+                        context: { includeDeclaration: false },
+                    }
+                ),
+                {
+                    // File history view.
+                    registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
+                    provider: subjectChanges.pipe(
+                        map((subject: PanelSubject) => ({
+                            title: 'History',
+                            content: '',
+                            priority: 150,
+                            locationProvider: undefined,
+                            reactElement: (
+                                <RepoRevisionSidebarCommits
+                                    key="commits"
+                                    repoID={this.props.repoID}
+                                    revision={subject.revision}
+                                    filePath={subject.filePath}
+                                    history={this.props.history}
+                                    location={this.props.location}
+                                />
+                            ),
+                        }))
+                    ),
+                },
+            ])
         )
     }
 

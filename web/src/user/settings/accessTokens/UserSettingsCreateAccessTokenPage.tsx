@@ -73,7 +73,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     concatMap(() =>
                         concat(
                             [{ creationOrError: 'loading' }],
@@ -91,7 +91,7 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate as State),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -209,16 +209,16 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
         )
     }
 
-    private onNoteChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.setState({ note: e.currentTarget.value })
+    private onNoteChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+        this.setState({ note: event.currentTarget.value })
 
-    private onScopesChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        const checked = e.currentTarget.checked
-        const value = e.currentTarget.value
-        this.setState(prevState => ({
-            scopes: checked ? [...prevState.scopes, value] : prevState.scopes.filter(s => s !== value),
+    private onScopesChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        const checked = event.currentTarget.checked
+        const value = event.currentTarget.value
+        this.setState(previousState => ({
+            scopes: checked ? [...previousState.scopes, value] : previousState.scopes.filter(scope => scope !== value),
         }))
     }
 
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
 }

@@ -134,7 +134,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -160,7 +160,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -213,7 +213,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -359,7 +359,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []apitest.Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
+				Repository: apitest.Repository{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
@@ -405,7 +405,7 @@ func TestCampaigns(t *testing.T) {
 				},
 			},
 			{
-				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
+				Repository: apitest.Repository{ID: graphqlBBSRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "Release testing pr",
@@ -505,7 +505,11 @@ func TestCampaigns(t *testing.T) {
 				... on Org  { ...o }
 			}
 			changesets {
-				nodes { ...cs }
+				nodes {
+				  ... on ExternalChangeset {
+				    ...cs
+				  }
+				}
 				totalCount
 				pageInfo { hasNextPage }
 			}
@@ -778,7 +782,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalPatchSetID(0),
 		marshalPatchID(0),
 		campaigns.MarshalCampaignID(0),
-		marshalChangesetID(0),
+		marshalExternalChangesetID(0),
 	}
 
 	for _, id := range ids {
@@ -793,12 +797,11 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -948,42 +951,44 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
             id
             patches(first: %d) {
               nodes {
-                repository {
-                  name
-                }
-				diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
+			    ... on Patch {
+                  repository {
+                    name
+                  }
+				  diff {
+                    fileDiffs {
+                      rawDiff
+                      diffStat {
                         added
                         deleted
                         changed
                       }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
                         }
                       }
                     }
                   }
-                }
+				}
 			  }
             }
             previewURL
@@ -1119,46 +1124,51 @@ func TestPatchSetResolver(t *testing.T) {
               }
               patches(first: %d) {
                 nodes {
-                  repository {
-                    name
-                  }
-                  diff {
-                    fileDiffs(first: %d, after: %s) {
-                      rawDiff
-                      diffStat {
-                        added
-                        deleted
-                        changed
-                      }
-                      pageInfo {
-                        endCursor
-                        hasNextPage
-                      }
-                      nodes {
-                        oldPath
-                        newPath
-                        hunks {
-                          body
-                          section
-                          newRange { startLine, lines }
-                          oldRange { startLine, lines }
-                          oldNoNewlineAt
-                        }
-                        stat {
+				  ... on HiddenPatch {
+				    id
+				  }
+				  ... on Patch {
+                    repository {
+                      name
+                    }
+                    diff {
+                      fileDiffs(first: %d, after: %s) {
+                        rawDiff
+                        diffStat {
                           added
                           deleted
                           changed
                         }
-                        oldFile {
-                          name
-                          externalURLs {
-                            serviceType
-                            url
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
+                        nodes {
+                          oldPath
+                          newPath
+                          hunks {
+                            body
+                            section
+                            newRange { startLine, lines }
+                            oldRange { startLine, lines }
+                            oldNoNewlineAt
+                          }
+                          stat {
+                            added
+                            deleted
+                            changed
+                          }
+                          oldFile {
+                            name
+                            externalURLs {
+                              serviceType
+                              url
+                            }
                           }
                         }
                       }
                     }
-                  }
+				  }
                 }
               }
             }
@@ -1171,7 +1181,7 @@ func TestPatchSetResolver(t *testing.T) {
 	}
 
 	// Each patch has testDiff as diff, each with 2 lines changed
-	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
+	if have, want := response.Node.DiffStat.Changed, int32(len(patches)*2); have != want {
 		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
@@ -1184,7 +1194,7 @@ func TestPatchSetResolver(t *testing.T) {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, int32(2); have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
@@ -1288,7 +1298,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
 			"name":        "Campaign with PatchSet",
 			"description": "This campaign has a patchset",
-			"draft":       true,
 			"patchSet":    patchSetID,
 			"branch":      "my-cool-branch",
 		},
@@ -1299,45 +1308,52 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       id
       branch
       status { state }
+      hasUnpublishedPatches
       patches {
         nodes {
-          publicationEnqueued
-          repository {
-            name
+          ... on HiddenPatch {
+            id
           }
-          diff {
-            fileDiffs {
-              rawDiff
-              diffStat {
-                added
-                deleted
-                changed
-              }
-              nodes {
-                oldPath
-                newPath
-                hunks {
-                  body
-                  section
-                  newRange { startLine, lines }
-                  oldRange { startLine, lines }
-                  oldNoNewlineAt
-                }
-                stat {
+          ... on Patch {
+            id
+            publicationEnqueued
+            repository {
+              name
+            }
+            diff {
+              fileDiffs {
+                rawDiff
+                diffStat {
                   added
                   deleted
                   changed
                 }
-                oldFile {
-                  name
-                  externalURLs {
-                    serviceType
-                    url
+                nodes {
+                  oldPath
+                  newPath
+                  hunks {
+                    body
+                    section
+                    newRange { startLine, lines }
+                    oldRange { startLine, lines }
+                    oldNoNewlineAt
+                  }
+                  stat {
+                    added
+                    deleted
+                    changed
+                  }
+                  oldFile {
+                    name
+                    externalURLs {
+                      serviceType
+                      url
+                    }
                   }
                 }
               }
             }
-          }
+		  }
         }
       }
       diffStat {
@@ -1365,6 +1381,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
 	}
 
+	if !campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is false, want true")
+	}
+
 	patch := campaign.Patches.Nodes[0]
 	if have, want := campaign.DiffStat, patch.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
@@ -1374,29 +1394,12 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
-	var publishCampaignResponse struct{ PublishCampaign apitest.Campaign }
-	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
-      mutation {
-        publishCampaign(campaign: %q) {
-          id
-          status { state }
-          branch
-          patches {
-            nodes {
-              publicationEnqueued
-            }
-          }
-        }
-      }
-	`, campaign.ID))
-
-	publishedCampaign := publishCampaignResponse.PublishCampaign
-	if publishedCampaign.Status.State != "PROCESSING" {
-		t.Fatalf("campaign is not in state 'PROCESSING': %q", publishedCampaign.Status.State)
-	}
-	enqueuedPatch := publishedCampaign.Patches.Nodes[0]
-	if !enqueuedPatch.PublicationEnqueued {
-		t.Fatalf("patch is not enqueued for publication")
+	// Publish the changesets in the campaign
+	for _, p := range campaign.Patches.Nodes {
+		var res struct{}
+		input := map[string]interface{}{"patch": p.ID}
+		q := `mutation($patch: ID!) { publishChangeset(patch: $patch) { alwaysNil } }`
+		apitest.MustExec(ctx, t, s, input, &res, q)
 	}
 
 	// Now we need to run the created ChangsetJob
@@ -1406,7 +1409,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 
 	if len(changesetJobs) != 1 {
-		t.Fatalf("more than 1 changeset jobs created: %d", len(changesetJobs))
+		t.Fatalf("wrong number of changeset jobs created: %d", len(changesetJobs))
 	}
 
 	headRef := "refs/heads/" + campaign.Branch
@@ -1484,22 +1487,25 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	    fragment c on Campaign {
 	      id
 	      status { state }
+	      hasUnpublishedPatches
 	      branch
 	      patches {
 	        totalCount
 	      }
 	      changesets {
 	        nodes {
-	          state
-	          diff {
-	            fileDiffs {
-	              diffStat {
-	                added
-	                deleted
-	                changed
+			  ... on ExternalChangeset {
+	            state
+	            diff {
+	              fileDiffs {
+	                diffStat {
+	                  added
+	                  deleted
+	                  changed
+	                }
 	              }
 	            }
-	          }
+			  }
 	        }
 	        totalCount
 	      }
@@ -1521,6 +1527,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	campaign = queryCampaignResponse.Node
 	if campaign.Status.State != "COMPLETED" {
 		t.Fatalf("campaign is not in state 'COMPLETED': %q", campaign.Status.State)
+	}
+
+	if campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is true, want false")
 	}
 
 	if campaign.Patches.TotalCount != 0 {
@@ -1714,6 +1724,79 @@ func TestPermissionLevels(t *testing.T) {
 				}
 			})
 		}
+
+		t.Run("Campaigns", func(t *testing.T) {
+			tests := []struct {
+				name                string
+				currentUser         int32
+				viewerCanAdminister bool
+				wantCampaigns       []int64
+			}{
+				{
+					name:                "admin listing viewerCanAdminister: true",
+					currentUser:         adminID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: true",
+					currentUser:         userID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{userCampaign},
+				},
+				{
+					name:                "admin listing viewerCanAdminister: false",
+					currentUser:         adminID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: false",
+					currentUser:         userID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+			}
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
+					for _, c := range tc.wantCampaigns {
+						graphqlID := string(campaigns.MarshalCampaignID(c))
+						expectedIDs[graphqlID] = true
+					}
+
+					query := fmt.Sprintf(`
+				query {
+					campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					node(id: %q) {
+						id
+						... on ExternalChangeset {
+							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+						}
+					}
+					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					var res struct {
+						Campaigns apitest.CampaignConnection
+						Node      apitest.Changeset
+					}
+					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					for _, conn := range []apitest.CampaignConnection{res.Campaigns, res.Node.Campaigns} {
+						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
+							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
+						}
+						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
+							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+						}
+						for _, node := range conn.Nodes {
+							if _, ok := expectedIDs[node.ID]; !ok {
+								t.Fatalf("received wrong campaign with id %q", node.ID)
+							}
+						}
+					}
+				})
+			}
+		})
 	})
 
 	t.Run("mutations", func(t *testing.T) {
@@ -1734,15 +1817,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "retryCampaign",
+				name: "retryCampaignChangesets",
 				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaignID)
-				},
-			},
-			{
-				name: "publishCampaign",
-				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { publishCampaign(campaign: %q) { id } }`, campaignID)
+					return fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaignID)
 				},
 			},
 			{
@@ -1758,6 +1835,15 @@ func TestPermissionLevels(t *testing.T) {
 						`mutation { addChangesetsToCampaign(campaign: %q, changesets: [%q]) { id } }`,
 						campaignID,
 						changesetID,
+					)
+				},
+			},
+			{
+				name: "publishCampaignChangesets",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { publishCampaignChangesets(campaign: %q) { alwaysNil } }`,
+						campaignID,
 					)
 				},
 			},
@@ -1825,7 +1911,7 @@ func TestPermissionLevels(t *testing.T) {
 
 						mutation := m.mutationFunc(
 							string(campaigns.MarshalCampaignID(campaignID)),
-							string(marshalChangesetID(changeset.ID)),
+							string(marshalExternalChangesetID(changeset.ID)),
 							string(marshalPatchID(patchID)),
 						)
 

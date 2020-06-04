@@ -39,12 +39,12 @@ export const initMainThreadAPI = (
     // Workspace
     subscription.add(
         from(roots)
-            .pipe(concatMap(rs => extentionHost.syncRoots(rs)))
+            .pipe(concatMap(roots => extentionHost.syncRoots(roots)))
             .subscribe()
     )
     subscription.add(
         from(versionContext)
-            .pipe(concatMap(ctx => extentionHost.syncVersionContext(ctx)))
+            .pipe(concatMap(context => extentionHost.syncVersionContext(context)))
             .subscribe()
     )
 

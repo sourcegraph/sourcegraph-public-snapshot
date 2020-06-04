@@ -165,11 +165,11 @@ describe('PrefixSumComputer', () => {
     })
 })
 
-function toUint32Array(arr: number[]): Uint32Array {
-    const len = arr.length
-    const r = new Uint32Array(len)
-    for (let i = 0; i < len; i++) {
-        r[i] = toUint32(arr[i])
+function toUint32Array(array: number[]): Uint32Array {
+    const length = array.length
+    const uint32Array = new Uint32Array(length)
+    for (let index = 0; index < length; index++) {
+        uint32Array[index] = toUint32(array[index])
     }
-    return r
+    return uint32Array
 }

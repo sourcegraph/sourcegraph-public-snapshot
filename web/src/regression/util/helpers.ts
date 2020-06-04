@@ -1,6 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQlClient'
-import { Driver } from '../../../../shared/src/e2e/driver'
+import { Driver } from '../../../../shared/src/testing/driver'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs'
@@ -17,7 +17,7 @@ import {
     fetchSiteConfiguration,
     updateSiteConfiguration,
 } from './api'
-import { Config } from '../../../../shared/src/e2e/config'
+import { Config } from '../../../../shared/src/testing/config'
 import { ResourceDestructor } from './TestResourceManager'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
@@ -30,7 +30,7 @@ import {
 } from '../../schema/site.schema'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
-import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../../shared/src/testing/utils'
 import { asError } from '../../../../shared/src/util/errors'
 
 /**
@@ -94,12 +94,12 @@ async function createTestUser(
         )
         .pipe(
             map(dataOrThrowErrors),
-            catchError(err =>
+            catchError(error =>
                 throwError(
                     new Error(
                         `Could not create user ${JSON.stringify(
                             username
-                        )} (you may need to update the sudo access token used by the test): ${asError(err).message})`
+                        )} (you may need to update the sudo access token used by the test): ${asError(error).message})`
                     )
                 )
             ),
@@ -125,7 +125,12 @@ export async function createAuthProvider(
     const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
     const authProviders = siteConfigParsed['auth.providers']
-    if (authProviders?.some(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)) {
+    if (
+        authProviders?.some(
+            provider =>
+                provider.type === authProvider.type && (provider as any).displayName === authProvider.displayName
+        )
+    ) {
         return () => Promise.resolve() // provider already exists
     }
     const editFns = [
@@ -236,10 +241,10 @@ export async function editSiteConfig(
     return {
         result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),
         destroy: async () => {
-            const c = await fetchSiteConfiguration(gqlClient).toPromise()
+            const site = await fetchSiteConfiguration(gqlClient).toPromise()
             await updateSiteConfiguration(
                 gqlClient,
-                c.configuration.id,
+                site.configuration.id,
                 origConfig.configuration.effectiveContents
             ).toPromise()
         },

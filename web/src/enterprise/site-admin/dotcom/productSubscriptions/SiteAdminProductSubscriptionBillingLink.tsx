@@ -36,7 +36,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
                         setProductSubscriptionBilling({ id, billingSubscriptionID }).pipe(
                             mapTo(undefined),
                             tap(() => onDidUpdate()),
-                            catchError(err => [asError(err)]),
+                            catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )

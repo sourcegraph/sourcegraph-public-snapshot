@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"net/url"
@@ -13,10 +12,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -83,8 +83,31 @@ func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesO
 		return nil, err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
 	total := &graphqlbackend.DiffStat{}
 	for _, p := range patches {
+		// 🚨 SECURITY: We filter out the patches that belong to repositories the
+		// user does NOT have access to.
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
 		s, ok := p.DiffStat()
 		if !ok {
 			return nil, fmt.Errorf("patch %d has no diff stat", p.ID)
@@ -111,23 +134,27 @@ type patchesConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once                   sync.Once
 	patches                []*campaigns.Patch
-	reposByID              map[api.RepoID]*repos.Repo
+	reposByID              map[api.RepoID]*types.Repo
 	changesetJobsByPatchID map[int64]*campaigns.ChangesetJob
 	next                   int64
 	err                    error
 }
 
-func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
+func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchInterfaceResolver, error) {
 	patches, reposByID, changesetJobsByPatchID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.PatchResolver, 0, len(patches))
+	resolvers := make([]graphqlbackend.PatchInterfaceResolver, 0, len(patches))
 	for _, j := range patches {
 		repo, ok := reposByID[j.RepoID]
 		if !ok {
-			return nil, fmt.Errorf("failed to load repo %d", j.RepoID)
+			// If it's not in reposByID the repository was either deleted or
+			// filtered out by the authz-filter.
+			// Use a hiddenPatchResolver.
+			resolvers = append(resolvers, &hiddenPatchResolver{patch: j})
+			continue
 		}
 
 		resolver := &patchResolver{
@@ -149,26 +176,27 @@ func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 	return resolvers, nil
 }
 
-func (r *patchesConnectionResolver) compute(ctx context.Context) ([]*campaigns.Patch, map[api.RepoID]*repos.Repo, map[int64]*campaigns.ChangesetJob, int64, error) {
+func (r *patchesConnectionResolver) compute(ctx context.Context) ([]*campaigns.Patch, map[api.RepoID]*types.Repo, map[int64]*campaigns.ChangesetJob, int64, error) {
 	r.once.Do(func() {
 		r.patches, r.next, r.err = r.store.ListPatches(ctx, r.opts)
 		if r.err != nil {
 			return
 		}
 
-		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
 		repoIDs := make([]api.RepoID, len(r.patches))
 		for i, j := range r.patches {
 			repoIDs[i] = j.RepoID
 		}
 
-		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+		// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+		// filters out repositories that the user doesn't have access to.
+		rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
+		r.reposByID = make(map[api.RepoID]*types.Repo, len(rs))
 		for _, repo := range rs {
 			r.reposByID[repo.ID] = repo
 		}
@@ -211,7 +239,7 @@ type patchResolver struct {
 	store *ee.Store
 
 	patch         *campaigns.Patch
-	preloadedRepo *repos.Repo
+	preloadedRepo *types.Repo
 
 	// Set if we tried to preload the changesetjob
 	attemptedPreloadChangesetJob bool
@@ -226,10 +254,18 @@ type patchResolver struct {
 	commit *graphqlbackend.GitCommitResolver
 }
 
+func (r *patchResolver) ToPatch() (graphqlbackend.PatchResolver, bool) {
+	return r, true
+}
+
+func (r *patchResolver) ToHiddenPatch() (graphqlbackend.HiddenPatchResolver, bool) {
+	return nil, false
+}
+
 func (r *patchResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.RepositoryResolver, *graphqlbackend.GitCommitResolver, error) {
 	r.once.Do(func() {
 		if r.preloadedRepo != nil {
-			r.repo = newRepositoryResolver(r.preloadedRepo)
+			r.repo = graphqlbackend.NewRepositoryResolver(r.preloadedRepo)
 		} else {
 			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, r.patch.RepoID)
 			if r.err != nil {
@@ -405,4 +441,26 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
 		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
 	}
 	return strings.Join(newContentLines, "\n")
+}
+
+type hiddenPatchResolver struct {
+	patch *campaigns.Patch
+}
+
+func (r *hiddenPatchResolver) ToPatch() (graphqlbackend.PatchResolver, bool) {
+	return nil, false
+}
+
+func (r *hiddenPatchResolver) ToHiddenPatch() (graphqlbackend.HiddenPatchResolver, bool) {
+	return r, true
+}
+
+func (r *hiddenPatchResolver) ID() graphql.ID {
+	return marshalHiddenPatchID(r.patch.ID)
+}
+
+const hiddenPatchIDKind = "HiddenPatch"
+
+func marshalHiddenPatchID(id int64) graphql.ID {
+	return relay.MarshalID(hiddenPatchIDKind, id)
 }

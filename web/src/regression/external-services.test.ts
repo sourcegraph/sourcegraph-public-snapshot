@@ -3,8 +3,8 @@ import { describe, before, after, test } from 'mocha'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, login, loginToGitHub, editSiteConfig } from './util/helpers'
 import {
@@ -17,7 +17,7 @@ import {
     updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('External services GUI', () => {
     const testUsername = 'test-extsvc'

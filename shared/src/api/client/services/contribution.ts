@@ -45,13 +45,13 @@ export class ContributionRegistry {
      * Register contributions and return an unsubscribable that deregisters the contributions.
      * Any expressions in the contributions need to be already parsed for fast re-evaluation.
      */
-    public registerContributions(entry: ContributionsEntry): ContributionUnsubscribable {
-        this._entries.next([...this._entries.value, entry])
+    public registerContributions(entryToRegister: ContributionsEntry): ContributionUnsubscribable {
+        this._entries.next([...this._entries.value, entryToRegister])
         return {
             unsubscribe: () => {
-                this._entries.next(this._entries.value.filter(e => e !== entry))
+                this._entries.next(this._entries.value.filter(entry => entry !== entryToRegister))
             },
-            entry,
+            entry: entryToRegister,
         }
     }
 
@@ -64,10 +64,10 @@ export class ContributionRegistry {
         previous: ContributionUnsubscribable,
         next: ContributionsEntry
     ): ContributionUnsubscribable {
-        this._entries.next([...this._entries.value.filter(e => e !== previous.entry), next])
+        this._entries.next([...this._entries.value.filter(entry => entry !== previous.entry), next])
         return {
             unsubscribe: () => {
-                this._entries.next(this._entries.value.filter(e => e !== next))
+                this._entries.next(this._entries.value.filter(entry => entry !== next))
             },
             entry: next,
         }
@@ -155,7 +155,7 @@ export class ContributionRegistry {
                     }
                 })
             }),
-            map(c => mergeContributions(c)),
+            map(mergeContributions),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
     }
@@ -184,19 +184,19 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
         return contributions[0]
     }
     const merged: Evaluated<Contributions> = {}
-    for (const c of contributions) {
-        if (c.actions) {
+    for (const contribution of contributions) {
+        if (contribution.actions) {
             if (!merged.actions) {
-                merged.actions = [...c.actions]
+                merged.actions = [...contribution.actions]
             } else {
-                merged.actions = [...merged.actions, ...c.actions]
+                merged.actions = [...merged.actions, ...contribution.actions]
             }
         }
-        if (c.menus) {
+        if (contribution.menus) {
             if (!merged.menus) {
-                merged.menus = { ...c.menus }
+                merged.menus = { ...contribution.menus }
             } else {
-                for (const [menu, items] of Object.entries(c.menus) as [
+                for (const [menu, items] of Object.entries(contribution.menus) as [
                     ContributableMenu,
                     Evaluated<MenuItemContribution>[]
                 ][]) {
@@ -209,18 +209,18 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
                 }
             }
         }
-        if (c.views) {
+        if (contribution.views) {
             if (!merged.views) {
-                merged.views = [...c.views]
+                merged.views = [...contribution.views]
             } else {
-                merged.views = [...merged.views, ...c.views]
+                merged.views = [...merged.views, ...contribution.views]
             }
         }
-        if (c.searchFilters) {
+        if (contribution.searchFilters) {
             if (!merged.searchFilters) {
-                merged.searchFilters = [...c.searchFilters]
+                merged.searchFilters = [...contribution.searchFilters]
             } else {
-                merged.searchFilters = [...merged.searchFilters, ...c.searchFilters]
+                merged.searchFilters = [...merged.searchFilters, ...contribution.searchFilters]
             }
         }
     }
@@ -281,7 +281,9 @@ function evaluateActionContributions(
             iconDescription: action.actionItem.iconDescription?.exec(context),
             pressed: action.actionItem.pressed?.exec(context),
         },
-        commandArguments: action.commandArguments?.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
+        commandArguments: action.commandArguments?.map(argument =>
+            argument instanceof Expression ? argument.exec(context) : argument
+        ),
     }))
 }
 
@@ -303,8 +305,8 @@ export function parseContributionExpressions(contributions: Raw<Contributions>):
     }
 }
 
-const maybe = <T, R>(value: T | undefined, fn: (value: T) => R): R | undefined =>
-    value === undefined ? undefined : fn(value)
+const maybe = <T, R>(value: T | undefined, function_: (value: T) => R): R | undefined =>
+    value === undefined ? undefined : function_(value)
 
 /**
  * Evaluates expressions in contribution definitions against the given context.
@@ -324,6 +326,8 @@ function parseActionContributionExpressions(actions: Raw<Contributions['actions'
             iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
             pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
         },
-        commandArguments: action.commandArguments?.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
+        commandArguments: action.commandArguments?.map(argument =>
+            typeof argument === 'string' ? parseTemplate(argument) : argument
+        ),
     }))
 }

@@ -107,6 +107,9 @@ type MockDB struct {
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *DBResetStalledFunc
+	// ResetStalledIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method ResetStalledIndexes.
+	ResetStalledIndexesFunc *DBResetStalledIndexesFunc
 	// RollbackToSavepointFunc is an instance of a mock function object
 	// controlling the behavior of the method RollbackToSavepoint.
 	RollbackToSavepointFunc *DBRollbackToSavepointFunc
@@ -297,6 +300,11 @@ func NewMockDB() *MockDB {
 				return nil, nil
 			},
 		},
+		ResetStalledIndexesFunc: &DBResetStalledIndexesFunc{
+			defaultHook: func(context.Context, time.Time) ([]int, error) {
+				return nil, nil
+			},
+		},
 		RollbackToSavepointFunc: &DBRollbackToSavepointFunc{
 			defaultHook: func(context.Context, string) error {
 				return nil
@@ -441,6 +449,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: i.ResetStalled,
+		},
+		ResetStalledIndexesFunc: &DBResetStalledIndexesFunc{
+			defaultHook: i.ResetStalledIndexes,
 		},
 		RollbackToSavepointFunc: &DBRollbackToSavepointFunc{
 			defaultHook: i.RollbackToSavepoint,
@@ -3885,6 +3896,115 @@ func (c DBResetStalledFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBResetStalledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBResetStalledIndexesFunc describes the behavior when the
+// ResetStalledIndexes method of the parent MockDB instance is invoked.
+type DBResetStalledIndexesFunc struct {
+	defaultHook func(context.Context, time.Time) ([]int, error)
+	hooks       []func(context.Context, time.Time) ([]int, error)
+	history     []DBResetStalledIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// ResetStalledIndexes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) ResetStalledIndexes(v0 context.Context, v1 time.Time) ([]int, error) {
+	r0, r1 := m.ResetStalledIndexesFunc.nextHook()(v0, v1)
+	m.ResetStalledIndexesFunc.appendCall(DBResetStalledIndexesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResetStalledIndexes
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBResetStalledIndexesFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResetStalledIndexes method of the parent MockDB instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBResetStalledIndexesFunc) PushHook(hook func(context.Context, time.Time) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBResetStalledIndexesFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBResetStalledIndexesFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBResetStalledIndexesFunc) nextHook() func(context.Context, time.Time) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBResetStalledIndexesFunc) appendCall(r0 DBResetStalledIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBResetStalledIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *DBResetStalledIndexesFunc) History() []DBResetStalledIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBResetStalledIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBResetStalledIndexesFuncCall is an object that describes an invocation
+// of method ResetStalledIndexes on an instance of MockDB.
+type DBResetStalledIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBResetStalledIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBResetStalledIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

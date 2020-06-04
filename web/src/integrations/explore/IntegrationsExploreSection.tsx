@@ -30,9 +30,9 @@ export const IntegrationsExploreSection: React.FunctionComponent<Props> = () => 
     <div className="card">
         <h3 className="card-header">Popular integrations</h3>
         <div className="list-group list-group-flush">
-            {DATA.map(({ title, description, url }, i) => (
+            {DATA.map(({ title, description, url }, index) => (
                 <a
-                    key={i}
+                    key={index}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"

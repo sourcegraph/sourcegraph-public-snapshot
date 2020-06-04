@@ -24,7 +24,7 @@ import (
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
-	Input *struct {
+	Input struct {
 		Kind        string
 		DisplayName string
 		Config      string
@@ -56,12 +56,14 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	return res, nil
 }
 
+type UpdateExternalServiceInput struct {
+	ID          graphql.ID
+	DisplayName *string
+	Config      *string
+}
+
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
-	Input *struct {
-		ID          graphql.ID
-		DisplayName *string
-		Config      *string
-	}
+	Input UpdateExternalServiceInput
 }) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {

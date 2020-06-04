@@ -82,13 +82,13 @@ const TreeEntriesSection: React.FunctionComponent<{
         <section className="tree-page__section e2e-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
-                {entries.map((e, i) => (
+                {entries.map((entry, index) => (
                     <TreeEntry
-                        key={e.name + String(i)}
-                        isDir={e.isDirectory}
-                        name={e.name}
+                        key={entry.name + String(index)}
+                        isDir={entry.isDirectory}
+                        name={entry.name}
                         parentPath={parentPath}
-                        url={e.url}
+                        url={entry.url}
                     />
                 ))}
             </div>
@@ -160,7 +160,7 @@ interface Props
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
-    rev: string
+    revision: string
     location: H.Location
     history: H.History
 }
@@ -170,7 +170,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     repoID,
     repoDescription,
     commitID,
-    rev,
+    revision,
     filePath,
     patternType,
     caseSensitive,
@@ -188,8 +188,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 
     const onShowOlderCommitsClicked = useCallback(
-        (e: React.MouseEvent): void => {
-            e.preventDefault()
+        (event: React.MouseEvent): void => {
+            event.preventDefault()
             setShowOlderCommits(true)
         },
         [setShowOlderCommits]
@@ -201,11 +201,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 fetchTreeEntries({
                     repoName,
                     commitID,
-                    rev,
+                    revision,
                     filePath,
                     first: 2500,
-                }).pipe(catchError((err): [ErrorLike] => [asError(err)])),
-            [repoName, commitID, rev, filePath]
+                }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
+            [repoName, commitID, revision, filePath]
         )
     )
 
@@ -255,11 +255,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const getPageTitle = (): string => {
-        const repoStr = displayRepoName(repoName)
+        const repoString = displayRepoName(repoName)
         if (filePath) {
-            return `${basename(filePath)} - ${repoStr}`
+            return `${basename(filePath)} - ${repoString}`
         }
-        return `${repoStr}`
+        return `${repoString}`
     }
 
     const queryCommits = useCallback(
@@ -268,12 +268,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
             return fetchTreeCommits({
                 ...args,
                 repo: repoID,
-                revspec: rev || '',
+                revspec: revision || '',
                 filePath,
                 after,
             })
         },
-        [filePath, repoID, rev, showOlderCommits]
+        [filePath, repoID, revision, showOlderCommits]
     )
 
     const emptyElement = showOlderCommits ? (
@@ -318,7 +318,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 // If the tree is actually a blob, be helpful and redirect to the blob page.
                 // We don't have error names on GraphQL errors.
                 /not a directory/i.test(treeOrError.message) ? (
-                    <Redirect to={toPrettyBlobURL({ repoName, rev, commitID, filePath })} />
+                    <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
                 ) : (
                     <ErrorAlert error={treeOrError} history={props.history} />
                 )
@@ -344,8 +344,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Link
                                         className="btn btn-secondary"
                                         to={
-                                            rev
-                                                ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
+                                            revision
+                                                ? `/${repoName}/-/compare/...${encodeURIComponent(revision)}`
                                                 : `/${repoName}/-/compare`
                                         }
                                     >
@@ -411,7 +411,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 className: 'list-group-item',
                                 compact: true,
                             }}
-                            updateOnChange={`${repoName}:${rev}:${filePath}:${String(showOlderCommits)}`}
+                            updateOnChange={`${repoName}:${revision}:${filePath}:${String(showOlderCommits)}`}
                             defaultFirst={7}
                             useURLQuery={false}
                             hideSearch={true}

@@ -2,8 +2,8 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { setUserEmailVerified } from './util/api'
@@ -14,7 +14,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -170,8 +170,8 @@ describe('Core functionality regression test suite', () => {
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
-                const el = document.querySelector('.e2e-user-area-header__display-name')
-                return el?.textContent && el.textContent.trim() === displayName
+                const element = document.querySelector('.e2e-user-area-header__display-name')
+                return element?.textContent && element.textContent.trim() === displayName
             },
             undefined,
             displayName
@@ -214,15 +214,15 @@ describe('Core functionality regression test suite', () => {
         })
         await driver.findElementWithText('Copy', { action: 'click' })
         const token = await driver.page.evaluate(() => {
-            const tokenEl = document.querySelector('.e2e-access-token')
-            if (!tokenEl) {
+            const tokenElement = document.querySelector('.e2e-access-token')
+            if (!tokenElement) {
                 return null
             }
-            const inputEl = tokenEl.querySelector('input')
-            if (!inputEl) {
+            const inputElement = tokenElement.querySelector('input')
+            if (!inputElement) {
                 return null
             }
-            return inputEl.value
+            return inputElement.value
         })
         if (!token) {
             throw new Error('Could not obtain access token')

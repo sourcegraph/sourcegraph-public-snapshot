@@ -120,20 +120,20 @@ export type IntersectionObserverLike = Pick<IntersectionObserver, 'observe' | 'u
 export function delayUntilIntersecting<T extends View>(
     options: IntersectionObserverInit,
     createIntersectionObserver = (
-        cb: IntersectionObserverCallbackLike,
+        callback: IntersectionObserverCallbackLike,
         options: IntersectionObserverInit
-    ): IntersectionObserverLike => new IntersectionObserver(cb, options)
+    ): IntersectionObserverLike => new IntersectionObserver(callback, options)
 ): OperatorFunction<ViewWithSubscriptions<T>, ViewWithSubscriptions<T>> {
     return views =>
         new Observable(viewObserver => {
             const subscriptions = new Subscription()
             const delayedViews = new Map<HTMLElement, ViewWithSubscriptions<T>>()
-            const intersectionObserver = createIntersectionObserver((entries, obs) => {
+            const intersectionObserver = createIntersectionObserver((entries, observer) => {
                 for (const entry of entries) {
                     const target = entry.target as HTMLElement
                     if (entry.isIntersecting && delayedViews.get(target)) {
                         viewObserver.next(delayedViews.get(target))
-                        obs.unobserve(entry.target)
+                        observer.unobserve(entry.target)
                         delayedViews.delete(target)
                     }
                 }

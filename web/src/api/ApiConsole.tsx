@@ -191,13 +191,13 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     // so that we can update the browser URL.
 
     private onEditQuery = (newQuery: string): void =>
-        this.updateStateParameters(params => ({ ...params, query: newQuery }))
+        this.updateStateParameters(parameters => ({ ...parameters, query: newQuery }))
 
     private onEditVariables = (newVariables: string): void =>
-        this.updateStateParameters(params => ({ ...params, variables: newVariables }))
+        this.updateStateParameters(parameters => ({ ...parameters, variables: newVariables }))
 
     private onEditOperationName = (newOperationName: string): void =>
-        this.updateStateParameters(params => ({ ...params, operationName: newOperationName }))
+        this.updateStateParameters(parameters => ({ ...parameters, operationName: newOperationName }))
 
     private updateStateParameters(update: (params: Parameters) => Parameters): void {
         this.setState(
@@ -211,8 +211,8 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     // children into the GraphiQL toolbar unless you completely specify your
     // own.
 
-    private setGraphiQLRef = (ref: _graphiqlModule.default | null): void => {
-        this.graphiQLRef = ref
+    private setGraphiQLRef = (reference: _graphiqlModule.default | null): void => {
+        this.graphiQLRef = reference
     }
     private handlePrettifyQuery = (): void => {
         if (!this.graphiQLRef) {
@@ -228,10 +228,10 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     }
 }
 
-async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
+async function fetcher(graphQLParameters: _graphiqlModule.GraphQLParams): Promise<string> {
     const response = await fetch('/.api/graphql', {
         method: 'POST',
-        body: JSON.stringify(graphQLParams),
+        body: JSON.stringify(graphQLParameters),
         credentials: 'include',
         headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }),
     })

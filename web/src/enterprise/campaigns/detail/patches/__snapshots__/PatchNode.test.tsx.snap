@@ -16,14 +16,13 @@ Object {
           >
             <div>
               <Octicon
-                className="icon-inline mr-2"
+                className="icon-inline mr-2 text-success"
                 icon={[Function]}
                 size={16}
                 verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
-                  className="text-muted"
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"
@@ -167,14 +166,13 @@ Object {
           >
             <div>
               <Octicon
-                className="icon-inline mr-2"
+                className="icon-inline mr-2 text-success"
                 icon={[Function]}
                 size={16}
                 verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
-                  className="text-muted"
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"

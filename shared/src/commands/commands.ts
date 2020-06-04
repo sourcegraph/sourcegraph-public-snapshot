@@ -66,11 +66,11 @@ export function registerBuiltinClientCommands(
     subscription.add(
         commandRegistry.registerCommand({
             command: 'updateConfiguration',
-            run: (...anyArgs: any[]): Promise<void> => {
-                const args = anyArgs as Evaluated<
+            run: (...anyArguments: any[]): Promise<void> => {
+                const args = anyArguments as Evaluated<
                     ActionContributionClientCommandUpdateConfiguration
                 >['commandArguments']
-                return updateSettings(context, convertUpdateConfigurationCommandArgs(args))
+                return updateSettings(context, convertUpdateConfigurationCommandArguments(args))
             },
         })
     )
@@ -125,12 +125,12 @@ export function registerBuiltinClientCommands(
  */
 export function urlForOpenPanel(viewID: string, urlHash: string): string {
     // Preserve the existing URL fragment, if any.
-    const params = new URLSearchParams(urlHash.slice('#'.length))
-    params.set('tab', viewID)
+    const parameters = new URLSearchParams(urlHash.slice('#'.length))
+    parameters.set('tab', viewID)
     // In the URL fragment, the 'L1:2-3:4' is treated as a parameter with no value. Undo the escaping of ':'
     // and the addition of the '=' for the empty value, for aesthetic reasons.
-    const paramsString = params.toString().replace(/%3A/g, ':').replace(/=&/g, '&')
-    return `#${paramsString}`
+    const parametersString = parameters.toString().replace(/%3A/g, ':').replace(/=&/g, '&')
+    return `#${parametersString}`
 }
 
 /**
@@ -138,7 +138,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  * {@link ActionContributionClientCommandUpdateConfiguration#commandArguments})
  * to {@link SettingsUpdate}.
  */
-export function convertUpdateConfigurationCommandArgs(
+export function convertUpdateConfigurationCommandArguments(
     args: Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
 ): SettingsEdit {
     if (!Array.isArray(args) || !(args.length >= 2 && args.length <= 4)) {

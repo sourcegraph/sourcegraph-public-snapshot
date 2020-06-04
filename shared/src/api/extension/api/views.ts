@@ -10,7 +10,7 @@ import { ViewContexts } from '../../client/services/viewService'
 /**
  * @internal
  */
-class ExtPanelView implements sourcegraph.PanelView {
+class ExtensionPanelView implements sourcegraph.PanelView {
     private data: PanelViewData = {
         title: '',
         content: '',
@@ -64,14 +64,14 @@ class ExtPanelView implements sourcegraph.PanelView {
 }
 
 /** @internal */
-export class ExtViews implements comlink.ProxyMarked {
+export class ExtensionViewsApi implements comlink.ProxyMarked {
     public readonly [comlink.proxyMarker] = true
 
     constructor(private proxy: comlink.Remote<ClientViewsAPI>) {}
 
-    public createPanelView(id: string): ExtPanelView {
+    public createPanelView(id: string): ExtensionPanelView {
         const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
-        return new ExtPanelView(panelProxyPromise)
+        return new ExtensionPanelView(panelProxyPromise)
     }
 
     public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {

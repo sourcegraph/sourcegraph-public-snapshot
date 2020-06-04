@@ -8,7 +8,7 @@ import * as path from 'path'
 import execa from 'execa'
 const mkdtemp = promisify(original_mkdtemp)
 
-const formatDate = (d: Date): string => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+const formatDate = (date: Date): string => `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 
 export async function ensureTrackingIssue({
     majorVersion,
@@ -48,7 +48,7 @@ export async function ensureTrackingIssue({
         per_page: 100,
         direction: 'desc',
     })
-    const milestone = milestones.data.filter(m => m.title === milestoneTitle)
+    const milestone = milestones.data.filter(milestone => milestone.title === milestoneTitle)
     if (milestone.length === 0) {
         console.log(
             `Milestone ${JSON.stringify(
@@ -95,15 +95,15 @@ export async function ensurePatchReleaseIssue({
 
 async function getContent(
     octokit: Octokit,
-    params: {
+    parameters: {
         owner: string
         repo: string
         path: string
     }
 ): Promise<string> {
-    const resp = await octokit.repos.getContents(params)
+    const resp = await octokit.repos.getContents(parameters)
     if (Array.isArray(resp.data)) {
-        throw new TypeError(`${params.path} is a directory`)
+        throw new TypeError(`${parameters.path} is a directory`)
     }
     return Buffer.from(resp.data.content as string, 'base64').toString()
 }
@@ -189,7 +189,7 @@ export interface CreateBranchWithChangesOptions {
 export async function createBranchWithChanges({
     owner,
     repo,
-    base: baseRev,
+    base: baseRevision,
     head: headBranch,
     commitMessage,
     bashEditCommands,
@@ -202,7 +202,7 @@ export async function createBranchWithChanges({
     cd ${tmpdir};
     git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
     cd ./${repo};
-    git checkout ${baseRev};
+    git checkout ${baseRevision};
     ${bashEditCommands.join(';\n    ')};
     git add :/;
     git commit -a -m ${JSON.stringify(commitMessage)};

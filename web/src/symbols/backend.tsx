@@ -9,16 +9,16 @@ import { queryGraphQL } from '../backend/graphql'
  */
 export function fetchSymbols(
     repo: GQL.ID,
-    rev: string,
+    revision: string,
     args: { first?: number; query?: string; includePatterns?: string[] }
 ): Observable<GQL.ISymbolConnection> {
     return queryGraphQL(
         gql`
-            query Symbols($repo: ID!, $rev: String!, $first: Int, $query: String, $includePatterns: [String!]) {
+            query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
                 node(id: $repo) {
                     __typename
                     ... on Repository {
-                        commit(rev: $rev) {
+                        commit(rev: $revision) {
                             symbols(first: $first, query: $query, includePatterns: $includePatterns) {
                                 pageInfo {
                                     hasNextPage
@@ -51,7 +51,7 @@ export function fetchSymbols(
                 }
             }
         `,
-        { ...args, repo, rev }
+        { ...args, repo, revision }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

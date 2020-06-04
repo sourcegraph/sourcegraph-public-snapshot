@@ -28,8 +28,8 @@ interface Props extends ExtensionsControllerProps {
  */
 export const SnippetsPage: React.FunctionComponent<Props> = ({ location, history, extensionsController }) => {
     const [textArea, setTextArea] = useState<HTMLTextAreaElement | null>(null)
-    const textAreaRef = createRef<HTMLTextAreaElement>()
-    useLayoutEffect(() => setTextArea(textAreaRef.current), [textAreaRef])
+    const textAreaReference = createRef<HTMLTextAreaElement>()
+    useLayoutEffect(() => setTextArea(textAreaReference.current), [textAreaReference])
 
     const [viewerId, setViewerId] = useState<ViewerId | null>(null)
     const [modelUri, setModelUri] = useState<string | null>(null)
@@ -117,15 +117,15 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, history
                         autoFocus={true}
                         spellCheck={false}
                         rows={12}
-                        textAreaRef={textAreaRef}
+                        textAreaRef={textAreaReference}
                         extensionsController={extensionsController}
                     />
                 </>
             )}
             {allPanelViews &&
                 allPanelViews.length > 0 &&
-                allPanelViews.map((view, i) => (
-                    <div key={i} className="mt-3 card">
+                allPanelViews.map((view, index) => (
+                    <div key={index} className="mt-3 card">
                         <h3 className="card-header">{view.title}</h3>
                         <div className="card-body">
                             <WithLinkPreviews

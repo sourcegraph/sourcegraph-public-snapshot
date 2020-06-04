@@ -13,9 +13,9 @@ describe('CampaignChangesets', () => {
             createRenderer().render(
                 <CampaignChangesets
                     queryChangesets={() =>
-                        of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IExternalChangesetConnection)
+                        of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IChangesetConnection)
                     }
-                    campaign={{ id: '123', closedAt: null }}
+                    campaign={{ id: '123', closedAt: null, viewerCanAdminister: true }}
                     history={history}
                     location={history.location}
                     isLightTheme={true}

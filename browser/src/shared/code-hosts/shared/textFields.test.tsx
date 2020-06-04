@@ -33,10 +33,10 @@ describe('textFields', () => {
         })
 
         const createTestElement = (): HTMLTextAreaElement => {
-            const el = document.createElement('textarea')
-            el.className = `test test-${uniqueId()}`
-            document.body.append(el)
-            return el
+            const element = document.createElement('textarea')
+            element.className = `test test-${uniqueId()}`
+            document.body.append(element)
+            return element
         }
 
         test('detects addition and removal of text fields', async () => {
