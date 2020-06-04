@@ -362,7 +362,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 // If one of the changeset IDs is invalid an error is returned.
 func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64, changesetIDs []int64) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, changesets: %v", campaignID, changesetIDs)
-	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
+	tr, ctx := trace.New(ctx, "service.AddChangesetsToCampaign", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -492,6 +492,74 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	}
 
 	return campaign, nil
+}
+
+// EnqueueChangesetJobs enqueues ChangesetJob for each Patch associated with
+// the PatchSet in the given Campaign, creating it if necessary. The Patch has
+// to belong to a PatchSet
+func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", campaignID)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobs", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return err
+	}
+
+	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
+	if err != nil {
+		return err
+	}
+
+	if campaign.PatchSetID == 0 {
+		return ErrNoPatches
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:              campaign.PatchSetID,
+		Limit:                   -1,
+		OnlyWithDiff:            true,
+		OnlyWithoutChangesetJob: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		Limit:      -1,
+		CampaignID: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	jobsByPatchID := make(map[int64]*campaigns.ChangesetJob, len(existingJobs))
+	for _, j := range existingJobs {
+		jobsByPatchID[j.PatchID] = j
+	}
+
+	for _, p := range patches {
+		if _, ok := jobsByPatchID[p.ID]; ok {
+			continue
+		}
+
+		tx.CreateChangesetJob(ctx, &campaigns.ChangesetJob{
+			CampaignID: campaign.ID,
+			PatchID:    p.ID,
+		})
+	}
+
+	return nil
 }
 
 // EnqueueChangesetJobForPatch queues a ChangesetJob for the Patch with the

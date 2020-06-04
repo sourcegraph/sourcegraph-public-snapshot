@@ -79,6 +79,10 @@ type CreateChangesetsArgs struct {
 	}
 }
 
+type PublishCampaignChangesetsArgs struct {
+	Campaign graphql.ID
+}
+
 type PublishChangesetArgs struct {
 	Patch graphql.ID
 }
@@ -100,6 +104,7 @@ type CampaignsResolver interface {
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
+	PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (*EmptyResponse, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
@@ -143,6 +148,10 @@ func (defaultCampaignsResolver) RetryCampaignChangesets(ctx context.Context, arg
 }
 
 func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
