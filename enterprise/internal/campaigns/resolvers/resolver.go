@@ -618,7 +618,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlbackend.PublishCampaignChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlbackend.PublishCampaignChangesetsArgs) (_ graphqlbackend.CampaignResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.PublishCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
 		tr.SetError(err)
@@ -640,7 +640,11 @@ func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlb
 		return nil, errors.Wrap(err, "publishing campaign changesets")
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
