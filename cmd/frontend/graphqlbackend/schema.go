@@ -396,6 +396,12 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF index.
+    deleteLSIFIndex(id: ID!): EmptyResponse
+
     # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
