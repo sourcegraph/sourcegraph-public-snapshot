@@ -101,6 +101,11 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
           </p>
         </li>
       </ul>
+      <p
+        className="mb-0"
+      >
+        You don't have permission to view error details.
+      </p>
     </div>
   </React.Fragment>
 </div>
@@ -116,9 +121,9 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
         <Memo(SyncIcon)
           className="icon-inline"
         />
-         Creating
+         Creating 
         3
-
+         
         changesets
          on code hosts...
       </p>
@@ -374,9 +379,9 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
         <Memo(SyncIcon)
           className="icon-inline"
         />
-         Creating
+         Creating 
         3
-
+         
         changesets
          on code hosts...
       </p>
