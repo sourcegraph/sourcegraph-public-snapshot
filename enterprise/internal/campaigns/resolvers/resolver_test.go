@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	cmpgns "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -375,7 +375,8 @@ func TestCampaigns(t *testing.T) {
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 57,
 				},
-				NextSyncAt: now.Add(8 * time.Hour).Format(time.RFC3339),
+				// Not scheduled, not added to a campaign yet.
+				NextSyncAt: "",
 				Head: apitest.GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
 					AbbrevName:  "vo/add-type-issue-filter",
@@ -422,7 +423,8 @@ func TestCampaigns(t *testing.T) {
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 10,
 				},
-				NextSyncAt: now.Add(8 * time.Hour).Format(time.RFC3339),
+				// Not scheduled, not added to a campaign yet.
+				NextSyncAt: "",
 				Head: apitest.GitRef{
 					Name:        "refs/heads/release-testing-pr",
 					AbbrevName:  "release-testing-pr",
@@ -470,6 +472,36 @@ func TestCampaigns(t *testing.T) {
 		// Test node resolver has nextSyncAt correctly set.
 		for _, c := range result.Changesets {
 			var changesetResult struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
+				query {
+					node(id: %q) {
+						... on ExternalChangeset {
+							nextSyncAt
+						}
+					}
+				}
+			`, c.ID))
+			if have, want := changesetResult.Node.NextSyncAt, ""; have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
+			// Add to campaign.
+			cID, err := cmpgns.UnmarshalCampaignID(graphql.ID(campaigns.Admin.ID))
+			if err != nil {
+				t.Fatal(err)
+			}
+			cmp, err := sr.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: cID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ecID, err := unmarshalChangesetID(graphql.ID(c.ID))
+			if err != nil {
+				t.Fatal(err)
+			}
+			cmp.ChangesetIDs = append(cmp.ChangesetIDs, ecID)
+			err = sr.store.UpdateCampaign(ctx, cmp)
+			if err != nil {
+				t.Fatal(err)
+			}
 			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
 				query {
 					node(id: %q) {
@@ -698,7 +730,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
-	campaign := &campaigns.Campaign{
+	campaign := &cmpgns.Campaign{
 		Name:            "Test campaign",
 		Description:     "Testing changeset counts",
 		AuthorID:        u.ID,
@@ -710,7 +742,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesets := []*campaigns.Changeset{
+	changesets := []*cmpgns.Changeset{
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
@@ -801,7 +833,7 @@ func TestNullIDResilience(t *testing.T) {
 	ids := []graphql.ID{
 		marshalPatchSetID(0),
 		marshalPatchID(0),
-		campaigns.MarshalCampaignID(0),
+		cmpgns.MarshalCampaignID(0),
 		marshalExternalChangesetID(0),
 	}
 
@@ -817,9 +849,9 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, cmpgns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, cmpgns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, cmpgns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
 	}
@@ -1093,7 +1125,7 @@ func TestPatchSetResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 	user := createTestUser(ctx, t)
-	patchSet := &campaigns.PatchSet{UserID: user.ID}
+	patchSet := &cmpgns.PatchSet{UserID: user.ID}
 	err := store.CreatePatchSet(ctx, patchSet)
 	if err != nil {
 		t.Fatal(err)
@@ -1105,9 +1137,9 @@ func TestPatchSetResolver(t *testing.T) {
 		testDiffStatChanged int32 = 2
 	)
 
-	var patches []*campaigns.Patch
+	var patches []*cmpgns.Patch
 	for _, repo := range rs {
-		patch := &campaigns.Patch{
+		patch := &cmpgns.Patch{
 			PatchSetID:      patchSet.ID,
 			RepoID:          repo.ID,
 			Rev:             testingRev,
@@ -1591,7 +1623,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset := &campaigns.Changeset{
+	changeset := &cmpgns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
@@ -1603,12 +1635,12 @@ func TestPermissionLevels(t *testing.T) {
 	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64, patchID int64) {
 		t.Helper()
 
-		patchSet := &campaigns.PatchSet{UserID: userID}
+		patchSet := &cmpgns.PatchSet{UserID: userID}
 		if err := s.CreatePatchSet(ctx, patchSet); err != nil {
 			t.Fatal(err)
 		}
 
-		patch := &campaigns.Patch{
+		patch := &cmpgns.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
 			BaseRef:    "refs/heads/master",
@@ -1617,7 +1649,7 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := &campaigns.Campaign{
+		c := &cmpgns.Campaign{
 			PatchSetID:      patchSet.ID,
 			Name:            name,
 			AuthorID:        userID,
@@ -1629,7 +1661,7 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		job := &campaigns.ChangesetJob{CampaignID: c.ID, PatchID: patch.ID, Error: "This is an error"}
+		job := &cmpgns.ChangesetJob{CampaignID: c.ID, PatchID: patch.ID, Error: "This is an error"}
 		if err := s.CreateChangesetJob(ctx, job); err != nil {
 			t.Fatal(err)
 		}
@@ -1710,7 +1742,7 @@ func TestPermissionLevels(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
+				graphqlID := string(cmpgns.MarshalCampaignID(tc.campaign))
 
 				var res struct{ Node apitest.Campaign }
 
@@ -1773,7 +1805,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
 					for _, c := range tc.wantCampaigns {
-						graphqlID := string(campaigns.MarshalCampaignID(c))
+						graphqlID := string(cmpgns.MarshalCampaignID(c))
 						expectedIDs[graphqlID] = true
 					}
 
@@ -1912,7 +1944,7 @@ func TestPermissionLevels(t *testing.T) {
 						}
 
 						mutation := m.mutationFunc(
-							string(campaigns.MarshalCampaignID(campaignID)),
+							string(cmpgns.MarshalCampaignID(campaignID)),
 							string(marshalExternalChangesetID(changeset.ID)),
 							string(marshalPatchID(patchID)),
 						)
