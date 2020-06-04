@@ -161,6 +161,10 @@ type DB interface {
 	// false valued flag. This method must not be called from within a transaction.
 	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
 
+	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
+	// queued state. This method returns a list of updated index identifiers.
+	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error)
+
 	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 	// by search then precise event counts.

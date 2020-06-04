@@ -146,15 +146,6 @@ Array [
       className="mt-2"
     >
       <button
-        className="btn btn-secondary mr-1"
-        disabled={false}
-        form="campaign-form"
-        onClick={[Function]}
-        type="submit"
-      >
-        Create draft
-      </button>
-      <button
         className="btn btn-primary e2e-campaign-create-btn"
         disabled={false}
         form="campaign-form"
@@ -529,7 +520,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -638,7 +628,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -910,7 +899,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -1019,7 +1007,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -1381,7 +1368,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -1490,7 +1476,6 @@ Array [
         "patches": Object {
           "totalCount": 2,
         },
-        "publishedAt": "2020-01-01",
         "status": Object {
           "completedCount": 3,
           "errors": Array [

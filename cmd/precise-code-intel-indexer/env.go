@@ -11,6 +11,7 @@ import (
 
 var (
 	rawFrontendURL, _                   = os.LookupEnv("SRC_FRONTEND_INTERNAL")
+	rawResetInterval                    = env.Get("PRECISE_CODE_INTEL_RESET_INTERVAL", "1m", "How often to reset stalled indexes.")
 	rawIndexerPollInterval              = env.Get("PRECISE_CODE_INTEL_INDEXER_POLL_INTERVAL", "1s", "Interval between queries to the index queue.")
 	rawIndexabilityUpdaterInterval      = env.Get("PRECISE_CODE_INTEL_INDEXABILITY_UPDATER_INTERVAL", "30m", "Interval between scheduled indexability updates.")
 	rawSchedulerInterval                = env.Get("PRECISE_CODE_INTEL_SCHEDULER_INTERVAL", "30m", "Interval between scheduled index updates.")

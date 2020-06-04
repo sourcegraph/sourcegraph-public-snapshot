@@ -27,7 +27,6 @@ describe('CampaignUpdateDiff', () => {
                         location={location}
                         campaign={{
                             id: 'somecampaign',
-                            publishedAt: null,
                             changesets: { totalCount: 1 },
                             patches: { totalCount: 1 },
                             viewerCanAdminister: true,
@@ -65,7 +64,6 @@ describe('CampaignUpdateDiff', () => {
                 location={location}
                 campaign={{
                     id: 'somecampaign',
-                    publishedAt: null,
                     changesets: { totalCount: 1 },
                     patches: { totalCount: 1 },
                     viewerCanAdminister: true,

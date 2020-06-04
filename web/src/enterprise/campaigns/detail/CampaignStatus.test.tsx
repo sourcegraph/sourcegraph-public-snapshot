@@ -9,13 +9,12 @@ const PROPS = {
     history: createMemoryHistory(),
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+const CAMPAIGN: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'> & {
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
 } = {
     id: 'Q2FtcGFpZ246MQ==',
     closedAt: null,
     viewerCanAdminister: true,
-    publishedAt: '2020-01-01',
     changesets: {
         totalCount: 0,
     },
@@ -44,7 +43,6 @@ describe('CampaignStatus', () => {
                                     totalCount: 2,
                                 },
                             }}
-                            onPublish={() => undefined}
                         />
                     )
                 ).toMatchSnapshot())
@@ -56,7 +54,6 @@ describe('CampaignStatus', () => {
                             {...PROPS}
                             campaign={{
                                 ...campaign,
-                                publishedAt: null,
                                 status: {
                                     completedCount: 1,
                                     pendingCount: 0,
@@ -67,7 +64,6 @@ describe('CampaignStatus', () => {
                                     totalCount: 2,
                                 },
                             }}
-                            onPublish={() => undefined}
                         />
                     )
                 ).toMatchSnapshot())
@@ -79,7 +75,6 @@ describe('CampaignStatus', () => {
                             {...PROPS}
                             campaign={{
                                 ...campaign,
-                                publishedAt: null,
                                 changesets: { totalCount: 1 },
                                 status: {
                                     completedCount: 1,
@@ -91,7 +86,6 @@ describe('CampaignStatus', () => {
                                     totalCount: 1,
                                 },
                             }}
-                            onPublish={() => undefined}
                         />
                     )
                 ).toMatchSnapshot())
@@ -113,7 +107,6 @@ describe('CampaignStatus', () => {
                                     totalCount: 2,
                                 },
                             }}
-                            onPublish={() => undefined}
                         />
                     )
                 ).toMatchSnapshot())
@@ -135,7 +128,6 @@ describe('CampaignStatus', () => {
                                     totalCount: 2,
                                 },
                             }}
-                            onPublish={() => undefined}
                         />
                     )
                 ).toMatchSnapshot())

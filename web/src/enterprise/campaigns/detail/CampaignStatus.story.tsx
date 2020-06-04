@@ -39,10 +39,8 @@ add('Errored', () => (
             patches: {
                 totalCount: 2,
             },
-            publishedAt: boolean('Is draft', false) ? null : new Date().toISOString(),
             closedAt: null,
         }}
-        onPublish={action('Publish')}
         afterRetry={action('Retry')}
         history={createMemoryHistory()}
     />

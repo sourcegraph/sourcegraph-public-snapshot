@@ -26,7 +26,6 @@ export const queryCampaigns = ({
                         url
                         createdAt
                         closedAt
-                        publishedAt
                         changesets {
                             totalCount
                             nodes {

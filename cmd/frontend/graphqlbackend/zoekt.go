@@ -204,6 +204,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
+		var matchCount int
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -237,6 +238,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					}
 				}
 				if !isSymbol {
+					matchCount += len(offsets)
 					lines = append(lines, &lineMatch{
 						JPreview:          string(l.Line),
 						JLineNumber:       int32(l.LineNumber - 1),
@@ -249,6 +251,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
+			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
 			Repo:         repoRev.Repo,

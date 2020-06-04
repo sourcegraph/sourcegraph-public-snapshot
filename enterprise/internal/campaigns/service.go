@@ -97,7 +97,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 // Campaign and the Campaign is not created as a draft, it calls
 // CreateChangesetJobs inside the same transaction in which it creates the
 // Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, draft bool) error {
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -116,7 +116,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	defer tx.Done(&err)
 
 	if c.PatchSetID != 0 {
-		_, err := tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
 		if err != nil && err != ErrNoResults {
 			return err
 		}
@@ -129,61 +129,36 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err = tx.CreateCampaign(ctx, c); err != nil {
+	err = tx.CreateCampaign(ctx, c)
+	if err != nil {
 		return err
 	}
 
-	if c.PatchSetID != 0 {
-		if err := validateCampaignBranch(c.Branch); err != nil {
-			return err
-		}
-	}
-
-	if c.PatchSetID == 0 || draft {
+	if c.PatchSetID == 0 {
 		return nil
 	}
+	err = validateCampaignBranch(c.Branch)
+	if err != nil {
+		return err
+	}
+	// Validate we don't have an empty patchset.
+	var patchCount int64
+	patchCount, err = tx.CountPatches(ctx, CountPatchesOpts{PatchSetID: c.PatchSetID, OnlyWithDiff: true, OnlyUnpublishedInCampaign: c.ID})
+	if err != nil {
+		return err
+	}
+	if patchCount == 0 {
+		err = ErrNoPatches
+		return err
+	}
 
-	err = s.createChangesetJobsWithStore(ctx, tx, c)
-	return err
+	return nil
 }
 
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
 // PatchSetID was specified but the PatchSet does not have any
 // (finished) Patches.
 var ErrNoPatches = errors.New("cannot create or update a Campaign without any changesets")
-
-func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
-	if c.PatchSetID == 0 {
-		return errors.New("cannot create changesets for campaign with no patch set")
-	}
-
-	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:              c.PatchSetID,
-		Limit:                   -1,
-		OnlyWithDiff:            true,
-		OnlyWithoutChangesetJob: c.ID,
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(jobs) == 0 {
-		return ErrNoPatches
-	}
-
-	for _, job := range jobs {
-		changesetJob := &campaigns.ChangesetJob{
-			CampaignID: c.ID,
-			PatchID:    job.ID,
-		}
-		err = store.CreateChangesetJob(ctx, changesetJob)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
 // been published at the time of closing but its ChangesetJobs have not
@@ -260,36 +235,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 
 	return campaign, nil
-}
-
-// PublishCampaign publishes the Campaign with the given ID
-// by turning the Patches attached to the PatchSet of
-// the Campaign into ChangesetJobs and enqueuing them
-func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", id)
-	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-
-	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
-	if err != nil {
-		return nil, err
-	}
-
-	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
 }
 
 // ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
