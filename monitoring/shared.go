@@ -113,7 +113,7 @@ var sharedProvisioningCPUUsage5m sharedObservable = func(containerName string) O
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_5m",
 		Description:     "container cpu usage total (5m average) across all cores by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}[5m])`, containerName),
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -128,7 +128,7 @@ var sharedProvisioningMemoryUsage5m sharedObservable = func(containerName string
 	return Observable{
 		Name:            "provisioning_container_memory_usage_5m",
 		Description:     "container memory usage (5m average) by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}[5m])`, containerName),
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -145,7 +145,7 @@ var sharedProvisioningCPUUsage1d sharedObservable = func(containerName string) O
 	return Observable{
 		Name:            "provisioning_container_cpu_usage_1d",
 		Description:     "container cpu usage total (1d average) across all cores by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}[1d])`, containerName),
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -160,7 +160,7 @@ var sharedProvisioningMemoryUsage1d sharedObservable = func(containerName string
 	return Observable{
 		Name:            "provisioning_container_memory_usage_1d",
 		Description:     "container memory usage (1d average) by instance (not available on server)",
-		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}[1d])`, containerName),
+		Query:           fmt.Sprintf(`avg_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{LessOrEqual: 30, GreaterOrEqual: 80},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
