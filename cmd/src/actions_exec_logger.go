@@ -34,7 +34,7 @@ type actionLogger struct {
 	highlight func(a ...interface{}) string
 
 	progress *progress
-	out      io.Writer
+	out      io.WriteCloser
 
 	mu         sync.Mutex
 	logFiles   map[string]*os.File
@@ -82,6 +82,7 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 	if !a.verbose {
 		return
 	}
+	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	if perr, ok := err.(parallel.Errors); ok {
 		if len(patches) > 0 {
@@ -108,6 +109,7 @@ func (a *actionLogger) ActionSuccess(patches []PatchInput, newLines bool) {
 	if !a.verbose {
 		return
 	}
+	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	format := "✔  Action produced %d patches."
 	if newLines {
@@ -306,18 +308,17 @@ type progressWriter struct {
 	w                 io.Writer
 	shouldClear       bool
 	progressLogLength int
+	closed            bool
 }
 
 func (w *progressWriter) Write(data []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.shouldClear {
-		// Clear current progress
-		fmt.Fprintf(w.w, "\r")
-		fmt.Fprintf(w.w, strings.Repeat(" ", w.progressLogLength))
-		fmt.Fprintf(w.w, "\r")
+	if w.closed {
+		return 0, fmt.Errorf("writer closed")
 	}
+	w.clear()
 
 	if w.p.TotalSteps() == 0 {
 		// Don't display bar until we know number of steps
@@ -352,4 +353,23 @@ func (w *progressWriter) Write(data []byte) (int, error) {
 	w.shouldClear = true
 	w.progressLogLength = len(progessText)
 	return n, err
+}
+
+// Close clears the progress bar and disallows further writing
+func (w *progressWriter) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.clear()
+	w.closed = true
+	return nil
+}
+
+func (w *progressWriter) clear() {
+	if !w.shouldClear {
+		return
+	}
+	fmt.Fprintf(w.w, "\r")
+	fmt.Fprintf(w.w, strings.Repeat(" ", w.progressLogLength))
+	fmt.Fprintf(w.w, "\r")
 }
