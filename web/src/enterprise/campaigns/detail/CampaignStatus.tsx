@@ -3,20 +3,18 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorMessage } from '../../../components/alerts'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { retryCampaign } from './backend'
+import { retryCampaignChangesets } from './backend'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import * as H from 'history'
 
 export interface CampaignStatusProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     }
 
-    /** Called when the "Publish campaign" button is clicked. */
-    onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
     afterRetry: (updatedCampaign: GQL.ICampaign) => void
     history: H.History
@@ -27,17 +25,11 @@ type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
-    campaign,
-    onPublish,
-    afterRetry,
-    history,
-}) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ campaign, afterRetry, history }) => {
     const { status } = campaign
 
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
 
-    const isDraft = !campaign.publishedAt
     let state: CampaignState
     if (campaign.closedAt) {
         state = 'closed'
@@ -66,7 +58,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
     const onRetry: React.MouseEventHandler = async (): Promise<void> => {
         setIsRetrying(true)
         try {
-            const retriedCampaign = await retryCampaign(campaign.id)
+            const retriedCampaign = await retryCampaignChangesets(campaign.id)
             setIsRetrying(false)
             afterRetry(retriedCampaign)
         } catch (error) {
@@ -95,6 +87,9 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                                 {isRetrying === true && <LoadingSpinner className="icon-inline" />}
                                 Retry
                             </button>
+                        )}
+                        {!campaign.viewerCanAdminister && (
+                            <p className="mb-0">You don't have permission to view error details.</p>
                         )}
                     </div>
                 </>
@@ -130,27 +125,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
             break
     }
 
-    return (
-        <>
-            {statusIndicator && <div>{statusIndicator}</div>}
-            {isDraft && state !== 'closed' && (
-                <>
-                    <div className="d-flex align-items-center alert alert-warning my-4">
-                        {campaign.viewerCanAdminister && (
-                            <button type="button" className="btn btn-primary mb-0" onClick={onPublish}>
-                                Publish campaign
-                            </button>
-                        )}
-                        <p className="mb-0 ml-2">
-                            Campaign is a draft.{' '}
-                            {campaign.changesets.totalCount === 0
-                                ? 'No changesets have'
-                                : 'Only a subset of changesets has'}{' '}
-                            been created on code hosts yet.
-                        </p>
-                    </div>
-                </>
-            )}
-        </>
-    )
+    if (!statusIndicator) {
+        return null
+    }
+    return <div>{statusIndicator}</div>
 }

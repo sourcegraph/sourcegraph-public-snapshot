@@ -259,11 +259,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		campaign.PatchSetID = patchSetID
 	}
 
-	var draft bool
-	if args.Input.Draft != nil {
-		draft = *args.Input.Draft
-	}
-
 	switch relay.UnmarshalKind(args.Input.Namespace) {
 	case "User":
 		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
@@ -278,7 +273,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	err = svc.CreateCampaign(ctx, campaign, draft)
+	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		return nil, err
 	}
@@ -358,9 +353,9 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) RetryCampaignChangesets(ctx context.Context, args *graphqlbackend.RetryCampaignChangesetsArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.RetryCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	tr, ctx := trace.New(ctx, "Resolver.RetryCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -623,8 +618,8 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.PublishCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlbackend.PublishCampaignChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -640,15 +635,13 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	// 🚨 SECURITY: PublishCampaign checks whether current user is authorized.
-	campaign, err := svc.PublishCampaign(ctx, campaignID)
-	if err != nil {
-		return nil, errors.Wrap(err, "publishing campaign")
+	// 🚨 SECURITY: EnqueueChangesetJobs checks whether current user is authorized.
+	if err := svc.EnqueueChangesetJobs(ctx, campaignID); err != nil {
+		return nil, errors.Wrap(err, "publishing campaign changesets")
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &graphqlbackend.EmptyResponse{}, nil
 }
-
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
 	defer func() {

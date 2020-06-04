@@ -39,6 +39,7 @@ import { ChangesetStateIcon } from './ChangesetStateIcon'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset
+    viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
@@ -49,6 +50,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node,
+    viewerCanAdminister,
     campaignUpdates,
     isLightTheme,
     history,
@@ -111,7 +113,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         </strong>
                         <ChangesetLastSynced
                             changeset={node}
-                            disableRefresh={false}
+                            viewerCanAdminister={viewerCanAdminister}
                             campaignUpdates={campaignUpdates}
                         />
                     </div>

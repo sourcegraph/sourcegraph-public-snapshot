@@ -55,9 +55,12 @@ const config = {
     require.resolve('abort-controller/polyfill'),
     path.join(__dirname, 'shared/dev/fetch'),
     path.join(__dirname, 'shared/dev/setLinkComponentForTest.ts'),
+    // Enzyme setup file
+    path.join(__dirname, 'shared/dev/enzymeSetup.js'),
   ],
   setupFilesAfterEnv: [require.resolve('core-js/stable'), require.resolve('regenerator-runtime/runtime')],
   globalSetup: path.join(__dirname, 'shared/dev/jestGlobalSetup.js'),
+  snapshotSerializers: [path.join(__dirname, 'shared/dev/enzymeSerializer.js')],
 }
 
 module.exports = config
