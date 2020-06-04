@@ -218,6 +218,7 @@ type CampaignResolver interface {
 	Status(context.Context) (BackgroundProcessStatus, error)
 	ClosedAt() *DateTime
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+	HasUnpublishedPatches(ctx context.Context) (bool, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 

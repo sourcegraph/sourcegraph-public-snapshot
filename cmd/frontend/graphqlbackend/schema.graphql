@@ -629,7 +629,11 @@ type Campaign implements Node {
     # any nodes returned by this connection. When publishing a changeset, the number of nodes in
     # changesets will increase with each decrease in patches. The completed count in the
     # Campaign.status field increments with every patch turned into an ExternalChangeset.
+    # This can contain patches that have been enqueued for publication.
     patches(first: Int): PatchConnection!
+
+    # Returns whether "patches" contains patches that have not been enqueued for publication yet.
+    hasUnpublishedPatches: Boolean!
 
     # The diff stat for all the patches and changesets in the campaign.
     diffStat: DiffStat!

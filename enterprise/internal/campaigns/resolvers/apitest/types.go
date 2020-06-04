@@ -109,6 +109,7 @@ type Campaign struct {
 		Errors []string
 	}
 	Patches                 PatchConnection
+	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
 	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts

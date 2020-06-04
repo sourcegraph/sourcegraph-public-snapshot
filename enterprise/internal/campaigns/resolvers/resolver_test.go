@@ -1308,6 +1308,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       id
       branch
       status { state }
+      hasUnpublishedPatches
       patches {
         nodes {
           ... on HiddenPatch {
@@ -1378,6 +1379,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	if campaign.DiffStat.Changed != 2 {
 		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
+	}
+
+	if !campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is false, want true")
 	}
 
 	patch := campaign.Patches.Nodes[0]
@@ -1482,6 +1487,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	    fragment c on Campaign {
 	      id
 	      status { state }
+	      hasUnpublishedPatches
 	      branch
 	      patches {
 	        totalCount
@@ -1521,6 +1527,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	campaign = queryCampaignResponse.Node
 	if campaign.Status.State != "COMPLETED" {
 		t.Fatalf("campaign is not in state 'COMPLETED': %q", campaign.Status.State)
+	}
+
+	if campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is true, want false")
 	}
 
 	if campaign.Patches.TotalCount != 0 {

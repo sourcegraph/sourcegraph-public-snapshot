@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -173,6 +174,22 @@ func (r *campaignResolver) Patches(
 			OnlyUnpublishedInCampaign: r.Campaign.ID,
 		},
 	}
+}
+
+func (r *campaignResolver) HasUnpublishedPatches(ctx context.Context) (bool, error) {
+	if r.Campaign.PatchSetID == 0 {
+		return false, nil
+	}
+
+	unpublishedCount, err := r.store.CountPatches(ctx, ee.CountPatchesOpts{
+		PatchSetID:                r.Campaign.PatchSetID,
+		OnlyUnpublishedInCampaign: r.Campaign.ID,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "getting unpublished patches count")
+	}
+
+	return unpublishedCount != 0, nil
 }
 
 func (r *campaignResolver) ChangesetCountsOverTime(
