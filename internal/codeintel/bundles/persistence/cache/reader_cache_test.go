@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,11 +21,11 @@ func TestCacheBasic(t *testing.T) {
 		}
 	}
 
-	if *openerCalls != 1 {
-		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, *openerCalls)
+	if val := atomic.LoadUint32(openerCalls); val != 1 {
+		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, val)
 	}
-	if *handlerCalls != 10 {
-		t.Errorf("unexpected number of handler calls. want=%d have=%d", 10, *handlerCalls)
+	if val := atomic.LoadUint32(handlerCalls); val != 10 {
+		t.Errorf("unexpected number of handler calls. want=%d have=%d", 10, val)
 	}
 }
 
@@ -54,23 +55,23 @@ func TestCacheBasicEviction(t *testing.T) {
 		}
 	}
 
-	if *openerCalls != 8 {
-		t.Errorf("unexpected number of opener calls. want=%d have=%d", 8, *openerCalls)
+	if val := atomic.LoadUint32(openerCalls); val != 8 {
+		t.Errorf("unexpected number of opener calls. want=%d have=%d", 8, val)
 	}
-	if *handlerCalls != len(keys) {
-		t.Errorf("unexpected number of handler calls. want=%d have=%d", len(keys), *handlerCalls)
+	if val := atomic.LoadUint32(handlerCalls); val != uint32(len(keys)) {
+		t.Errorf("unexpected number of handler calls. want=%d have=%d", len(keys), val)
 	}
 }
 
 func TestCacheInitializationTimeout(t *testing.T) {
-	openerCalls := 0
+	openerCalls := uint32(0)
 	sync := make(chan struct{})
 	wait := make(chan struct{})
 	defer close(wait)
 
 	opener := func(filename string) (persistence.Reader, error) {
 		close(sync)
-		openerCalls++
+		atomic.AddUint32(&openerCalls, 1)
 		<-wait
 		return persistencemocks.NewMockReader(), nil
 	}
@@ -88,11 +89,11 @@ func TestCacheInitializationTimeout(t *testing.T) {
 		t.Errorf("unexpected error. want=%q have=%q", ErrReaderInitializationDeadlineExceeded, err)
 	}
 
-	if openerCalls != 1 {
-		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, openerCalls)
+	if val := atomic.LoadUint32(&openerCalls); val != 1 {
+		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, val)
 	}
-	if *handlerCalls != 0 {
-		t.Errorf("unexpected number of handler calls. want=%d have=%d", 0, handlerCalls)
+	if val := atomic.LoadUint32(handlerCalls); val != 0 {
+		t.Errorf("unexpected number of handler calls. want=%d have=%d", 0, val)
 	}
 }
 
@@ -115,11 +116,11 @@ func TestCacheInitializationTimeoutSecondAttempt(t *testing.T) {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	if *openerCalls != 1 {
-		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, *openerCalls)
+	if val := atomic.LoadUint32(openerCalls); val != 1 {
+		t.Errorf("unexpected number of opener calls. want=%d have=%d", 1, val)
 	}
-	if *handlerCalls != 1 {
-		t.Errorf("unexpected number of handler calls. want=%d have=%d", 1, *handlerCalls)
+	if val := atomic.LoadUint32(handlerCalls); val != 1 {
+		t.Errorf("unexpected number of handler calls. want=%d have=%d", 1, val)
 	}
 }
 
@@ -139,14 +140,14 @@ func TestCacheNotClosedWhileHeld(t *testing.T) {
 		}(key)
 	}
 
-	if *closeCalls != 0 {
-		t.Errorf("unexpected number of close calls. want=%d have=%d", 0, *closeCalls)
+	if val := atomic.LoadUint32(closeCalls); val != 0 {
+		t.Errorf("unexpected number of close calls. want=%d have=%d", 0, val)
 	}
 
 	close(wait)
 
 	for i := 0; i < 10; i++ {
-		if *closeCalls == len(keys)-1 {
+		if atomic.LoadUint32(closeCalls) == uint32(len(keys)-1) {
 			return
 		}
 
@@ -154,23 +155,23 @@ func TestCacheNotClosedWhileHeld(t *testing.T) {
 		time.Sleep(time.Millisecond * 10)
 	}
 
-	t.Errorf("unexpected number of close calls. want=%d have=%d", len(keys)-1, *closeCalls)
+	t.Errorf("unexpected number of close calls. want=%d have=%d", len(keys)-1, atomic.LoadUint32(closeCalls))
 }
 
-func testOpener() (ReaderOpener, *int) {
-	openerCalls := 0
+func testOpener() (ReaderOpener, *uint32) {
+	openerCalls := uint32(0)
 	opener := func(filename string) (persistence.Reader, error) {
-		openerCalls++
+		atomic.AddUint32(&openerCalls, 1)
 		return persistencemocks.NewMockReader(), nil
 	}
 
 	return opener, &openerCalls
 }
 
-func testBlockingOpener(ch <-chan struct{}) (ReaderOpener, *int) {
-	openerCalls := 0
+func testBlockingOpener(ch <-chan struct{}) (ReaderOpener, *uint32) {
+	openerCalls := uint32(0)
 	opener := func(filename string) (persistence.Reader, error) {
-		openerCalls++
+		atomic.AddUint32(&openerCalls, 1)
 		<-ch
 		return persistencemocks.NewMockReader(), nil
 	}
@@ -178,37 +179,37 @@ func testBlockingOpener(ch <-chan struct{}) (ReaderOpener, *int) {
 	return opener, &openerCalls
 }
 
-func testClosingOpener() (ReaderOpener, *int, *int) {
-	closeCalls := 0
+func testClosingOpener() (ReaderOpener, *uint32, *uint32) {
+	closeCalls := uint32(0)
 	mock := persistencemocks.NewMockReader()
 	mock.CloseFunc.SetDefaultHook(func() error {
-		closeCalls++
+		atomic.AddUint32(&closeCalls, 1)
 		return nil
 	})
 
-	openerCalls := 0
+	openerCalls := uint32(0)
 	opener := func(filename string) (persistence.Reader, error) {
-		openerCalls++
+		atomic.AddUint32(&openerCalls, 1)
 		return mock, nil
 	}
 
 	return opener, &openerCalls, &closeCalls
 }
 
-func testHandler() (CacheHandler, *int) {
-	handlerCalls := 0
+func testHandler() (CacheHandler, *uint32) {
+	handlerCalls := uint32(0)
 	handler := func(r persistence.Reader) error {
-		handlerCalls++
+		atomic.AddUint32(&handlerCalls, 1)
 		return nil
 	}
 
 	return handler, &handlerCalls
 }
 
-func testBlockingHandler(ch <-chan struct{}) (CacheHandler, *int) {
-	handlerCalls := 0
+func testBlockingHandler(ch <-chan struct{}) (CacheHandler, *uint32) {
+	handlerCalls := uint32(0)
 	handler := func(r persistence.Reader) error {
-		handlerCalls++
+		atomic.AddUint32(&handlerCalls, 1)
 		<-ch
 		return nil
 	}
