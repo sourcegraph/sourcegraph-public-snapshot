@@ -158,7 +158,7 @@
     "@types/storybook__addon-storyshots": "5.1.2",
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
-    "@types/uuid": "7.0.3",
+    "@types/uuid": "8.0.0",
     "@types/webpack": "4.41.17",
     "@types/webpack-dev-server": "3.11.0",
     "abort-controller": "^3.0.0",
@@ -305,7 +305,7 @@
     "ts-key-enum": "^2.0.2",
     "tslib": "^2.0.0",
     "utility-types": "^3.10.0",
-    "uuid": "^7.0.3",
+    "uuid": "^8.1.0",
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0"
   },
