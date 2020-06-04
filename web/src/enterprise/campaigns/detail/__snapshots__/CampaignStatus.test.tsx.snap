@@ -18,8 +18,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -56,13 +56,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -99,7 +99,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
         <p
@@ -131,8 +131,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 2`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -169,13 +169,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -212,7 +212,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
         <p
@@ -233,16 +233,14 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -268,8 +266,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -306,13 +304,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -349,7 +347,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
       </div>
@@ -365,16 +363,14 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 2`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -400,8 +396,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 2`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -438,13 +434,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -481,7 +477,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
       </div>
@@ -540,8 +536,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -578,13 +574,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -621,7 +617,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
         <button
@@ -675,8 +671,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 2`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -713,13 +709,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -756,7 +752,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
         <button
@@ -780,16 +776,14 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -815,8 +809,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -853,13 +847,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -896,7 +890,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
       </div>
@@ -931,16 +925,14 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 2`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -966,8 +958,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 2`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -1004,13 +996,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -1047,7 +1039,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 2`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
       </div>
