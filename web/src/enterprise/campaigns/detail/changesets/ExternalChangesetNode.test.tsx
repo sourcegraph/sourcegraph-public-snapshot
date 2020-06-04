@@ -27,6 +27,7 @@ describe('ExternalChangesetNode', () => {
                 isLightTheme={true}
                 history={history}
                 location={location}
+                viewerCanAdminister={true}
                 node={
                     {
                         __typename: 'ExternalChangeset',

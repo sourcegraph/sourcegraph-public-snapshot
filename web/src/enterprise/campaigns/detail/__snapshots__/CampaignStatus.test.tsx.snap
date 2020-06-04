@@ -101,6 +101,11 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
           </p>
         </li>
       </ul>
+      <p
+        className="mb-0"
+      >
+        You don't have permission to view error details.
+      </p>
     </div>
   </React.Fragment>
 </div>

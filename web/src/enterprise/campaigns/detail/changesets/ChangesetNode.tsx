@@ -14,6 +14,7 @@ import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: Changeset
+    viewerCanAdminister: boolean
     campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location

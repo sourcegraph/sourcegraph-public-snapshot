@@ -14,9 +14,10 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import classNames from 'classnames'
 import { PatchNode } from './patches/PatchNode'
+import { HeroPage } from '../../../components/HeroPage'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign, 'id'> & {
+    campaign: Pick<GQL.ICampaign, 'id' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     }
@@ -148,6 +149,9 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             [_queryChangesets, campaign.id, _queryPatchesFromPatchSet, _queryPatchesFromCampaign, patchSet.id]
         )
     )
+    if (!campaign.viewerCanAdminister) {
+        return <HeroPage body="Updating a campaign is not permitted without campaign admin permissions." />
+    }
     if (!queriedChangesets) {
         return (
             <div>
@@ -247,6 +251,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}
@@ -262,6 +267,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}

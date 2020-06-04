@@ -29,6 +29,7 @@ describe('CampaignUpdateDiff', () => {
                             id: 'somecampaign',
                             changesets: { totalCount: 1 },
                             patches: { totalCount: 1 },
+                            viewerCanAdminister: true,
                         }}
                         patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
                         _queryChangesets={() =>
@@ -65,6 +66,7 @@ describe('CampaignUpdateDiff', () => {
                     id: 'somecampaign',
                     changesets: { totalCount: 1 },
                     patches: { totalCount: 1 },
+                    viewerCanAdminister: true,
                 }}
                 patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
                 _queryChangesets={() =>

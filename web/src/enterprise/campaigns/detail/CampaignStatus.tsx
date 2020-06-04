@@ -88,6 +88,9 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                                 Retry
                             </button>
                         )}
+                        {!campaign.viewerCanAdminister && (
+                            <p className="mb-0">You don't have permission to view error details.</p>
+                        )}
                     </div>
                 </>
             )
@@ -122,5 +125,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             break
     }
 
-    return statusIndicator ? <div>{statusIndicator}</div> : null
+    if (!statusIndicator) {
+        return null
+    }
+    return <div>{statusIndicator}</div>
 }

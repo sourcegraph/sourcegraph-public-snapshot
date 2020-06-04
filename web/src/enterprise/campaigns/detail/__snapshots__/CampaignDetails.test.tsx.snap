@@ -931,7 +931,7 @@ Array [
         "thrownError": null,
       }
     }
-    enablePublishing={true}
+    enablePublishing={false}
     history={
       Object {
         "action": "POP",
