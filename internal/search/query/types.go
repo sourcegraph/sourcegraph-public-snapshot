@@ -104,12 +104,12 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
 	if field == "" {
-		VisitPattern(q.Query, func(value string, _, quoted bool, _ annotation) {
-			values = append(values, q.valueToTypedValue(field, value, quoted)...)
+		VisitPattern(q.Query, func(value string, _ bool, annotation annotation) {
+			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
 		})
 	} else {
 		VisitField(q.Query, field, func(value string, _ bool) {
-			values = append(values, q.valueToTypedValue(field, value, false)...)
+			values = append(values, q.valueToTypedValue(field, value, None)...)
 		})
 	}
 	return values
@@ -117,7 +117,7 @@ func (q AndOrQuery) Values(field string) []*types.Value {
 
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
-	VisitPattern(q.Query, func(value string, _, quoted bool, _ annotation) {
+	VisitPattern(q.Query, func(value string, _ bool, _ annotation) {
 		fields[""] = q.Values("")
 	})
 	VisitParameter(q.Query, func(field, _ string, _ bool) {
@@ -131,7 +131,7 @@ func (q AndOrQuery) Fields() map[string][]*types.Value {
 // not is significant for surfacing suggestions.
 func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
-	VisitPattern(q.Query, func(value string, negated, _ bool, _ annotation) {
+	VisitPattern(q.Query, func(value string, negated bool, _ annotation) {
 		expr := &syntax.Expr{
 			Field: "",
 			Value: value,
@@ -173,14 +173,14 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func (q AndOrQuery) valueToTypedValue(field, value string, quoted bool) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, labels label) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
 		// If a pattern is quoted, or we applied heuristics to interpret
 		// valid regexp metasyntax literally instead, this pattern is a
 		// string.
-		if quoted || q.HeuristicsApplied[parensAsPatterns] {
+		if (labels&Quoted != 0) || q.HeuristicsApplied[parensAsPatterns] {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {

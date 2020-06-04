@@ -41,6 +41,7 @@ func (Operator) node()  {}
 type label uint8
 
 const (
+	None          = 0
 	Literal label = 1 << iota
 	Quoted
 )
@@ -52,9 +53,8 @@ type annotation struct {
 
 // Pattern is a leaf node of expressions representing a search pattern fragment.
 type Pattern struct {
-	Value      string     `json:"value"`   // The sourcegraph part in repo:sourcegraph.
+	Value      string     `json:"value"`   // The pattern value.
 	Negated    bool       `json:"negated"` // True if this pattern is negated.
-	Quoted     bool       `json:"quoted"`  // True if the parsed value was quoted.
 	Annotation annotation `json:"-"`       // An annotation attached to this pattern.
 }
 
@@ -488,7 +488,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Quoted: true, Annotation: annotation{Labels: Literal | Quoted}}, true
+		return Pattern{Value: value, Annotation: annotation{Labels: Literal | Quoted}}, true
 	}
 
 	start := p.pos
@@ -638,20 +638,20 @@ func (p *parser) ParsePattern() Pattern {
 		// quoted strings as quoted, but interpret them literally.
 		value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
 		p.pos += advance
-		return Pattern{Value: value, Negated: false, Quoted: false, Annotation: annotation{Labels: Literal}}
+		return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: Literal}}
 	}
 
 	// If we can parse a well-delimited value, that takes precedence, and we
 	// denote it with Quoted set to true.
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Negated: false, Quoted: true, Annotation: annotation{Labels: Literal | Quoted}}
+		return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: Literal | Quoted}}
 	}
 
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], p.heuristic[allowDanglingParens])
 	p.heuristicsApplied[allowDanglingParens] = sawDanglingParen
 	p.pos += advance
 	// Invariant: the pattern can't be quoted since we checked for that.
-	return Pattern{Value: value, Negated: false, Quoted: false}
+	return Pattern{Value: value, Negated: false}
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
