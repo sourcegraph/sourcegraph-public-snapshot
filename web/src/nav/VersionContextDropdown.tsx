@@ -48,6 +48,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     setVersionContext,
     availableVersionContexts,
     versionContext: currentVersionContext,
+    alwaysExpanded,
+    portal,
 }: VersionContextDropdownProps) => {
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, 'false')
 
@@ -118,9 +120,9 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                 </ListboxButton>
                                 <ListboxPopover
                                     className={classNames('version-context-dropdown__popover dropdown-menu', {
-                                        show: isExpanded || props.alwaysExpanded,
+                                        show: isExpanded || alwaysExpanded,
                                     })}
-                                    portal={props.portal}
+                                    portal={portal}
                                 >
                                     {hasDismissedInfo === 'true' && (
                                         <div className="version-context-dropdown__title pl-2 mb-1">
