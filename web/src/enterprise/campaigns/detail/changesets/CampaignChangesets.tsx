@@ -31,7 +31,7 @@ import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
@@ -197,6 +197,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
+                        viewerCanAdminister: campaign.viewerCanAdminister,
                         history,
                         location,
                         campaignUpdates,

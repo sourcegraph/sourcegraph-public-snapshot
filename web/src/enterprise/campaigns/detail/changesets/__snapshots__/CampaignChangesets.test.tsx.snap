@@ -293,6 +293,7 @@ exports[`CampaignChangesets renders 1`] = `
             "search": "",
             "state": undefined,
           },
+          "viewerCanAdminister": true,
         }
       }
       noun="changeset"

@@ -104,12 +104,12 @@ type Campaign struct {
 	Namespace           UserOrg
 	CreatedAt           string
 	UpdatedAt           string
-	PublishedAt         string
 	Status              struct {
 		State  string
 		Errors []string
 	}
 	Patches                 PatchConnection
+	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
 	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts

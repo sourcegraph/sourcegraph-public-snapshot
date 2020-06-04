@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -129,21 +130,6 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
-func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	if r.Campaign.PatchSetID == 0 {
-		return &graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}, nil
-	}
-
-	createdAt, err := r.store.GetLatestChangesetJobCreatedAt(ctx, r.Campaign.ID)
-	if err != nil {
-		return nil, err
-	}
-	if createdAt.IsZero() {
-		return nil, nil
-	}
-	return &graphqlbackend.DateTime{Time: createdAt}, nil
-}
-
 func (r *campaignResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
@@ -188,6 +174,23 @@ func (r *campaignResolver) Patches(
 			OnlyUnpublishedInCampaign: r.Campaign.ID,
 		},
 	}
+}
+
+func (r *campaignResolver) HasUnpublishedPatches(ctx context.Context) (bool, error) {
+	if r.Campaign.PatchSetID == 0 {
+		return false, nil
+	}
+
+	unpublishedCount, err := r.store.CountPatches(ctx, ee.CountPatchesOpts{
+		PatchSetID:                        r.Campaign.PatchSetID,
+		OnlyWithoutChangesetJobInCampaign: r.Campaign.ID,
+		OnlyWithDiff:                      true,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "getting unpublished patches count")
+	}
+
+	return unpublishedCount != 0, nil
 }
 
 func (r *campaignResolver) ChangesetCountsOverTime(

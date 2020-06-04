@@ -20,7 +20,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
                             </h3>
                         </div>
                         <div>
-                            <ChangesetLastSynced changeset={node} disableRefresh={true} />
+                            <ChangesetLastSynced changeset={node} viewerCanAdminister={false} />
                         </div>
                     </div>
                 </div>

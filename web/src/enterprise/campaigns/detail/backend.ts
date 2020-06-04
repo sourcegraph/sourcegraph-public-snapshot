@@ -38,7 +38,6 @@ const campaignFragment = gql`
         branch
         createdAt
         updatedAt
-        publishedAt
         closedAt
         viewerCanAdminister
         changesets {
@@ -116,11 +115,11 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
+export async function retryCampaignChangesets(campaignID: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
-            mutation RetryCampaign($campaign: ID!) {
-                retryCampaign(campaign: $campaign) {
+            mutation RetryCampaignChangesets($campaign: ID!) {
+                retryCampaignChangesets(campaign: $campaign) {
                     ...CampaignFields
                 }
             }
@@ -129,7 +128,7 @@ export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
         `,
         { campaign: campaignID }
     ).toPromise()
-    return dataOrThrowErrors(result).retryCampaign
+    return dataOrThrowErrors(result).retryCampaignChangesets
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
@@ -398,21 +397,6 @@ export const queryPatchesFromPatchSet = (
             return node.patches
         })
     )
-
-export async function publishCampaign(campaign: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishCampaign($campaign: ID!) {
-                publishCampaign(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishCampaign
-}
 
 export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
     const result = await mutateGraphQL(
