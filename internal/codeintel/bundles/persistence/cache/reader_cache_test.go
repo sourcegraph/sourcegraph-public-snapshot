@@ -30,37 +30,48 @@ func TestCacheBasic(t *testing.T) {
 }
 
 func TestCacheBasicEviction(t *testing.T) {
-	opener, openerCalls := testOpener()
+	opener, openerCalls, closeCalls := testClosingOpener()
 	handler, handlerCalls := testHandler()
 	cache := New(3, opener)
 
-	keys := []string{
-		"foo",  // foo
-		"foo",  // foo
-		"foo",  // foo
-		"bar",  // bar foo
-		"baz",  // baz bar foo
-		"foo",  // foo baz bar
-		"bonk", // bonk foo baz
-		"bar",  // bar bonk foo
-		"quux", // quux bar bonk
-		"foo",  // foo quux bar
-		"bar",  // bar foo quux
-		"baz",  // baz bar foo
+	inputs := []struct {
+		key                string
+		expectedCloseCalls int
+	}{
+		{"foo", 0},  // foo
+		{"foo", 0},  // foo
+		{"foo", 0},  // foo
+		{"bar", 0},  // bar foo
+		{"baz", 0},  // baz bar foo
+		{"foo", 0},  // foo baz bar
+		{"bonk", 1}, // bonk foo baz -> evicts bar
+		{"bar", 2},  // bar bonk foo -> evicts baz
+		{"quux", 3}, // quux bar bonk -> evicts foo
+		{"foo", 4},  // foo quux bar -> evicts bonk
+		{"bar", 4},  // bar foo quux
+		{"baz", 5},  // baz bar foo -> evicts quux
 	}
 
-	for _, key := range keys {
-		if err := cache.WithReader(context.Background(), key, handler); err != nil {
+	for _, input := range inputs {
+		if err := cache.WithReader(context.Background(), input.key, handler); err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
+
+		assertEventually(
+			t,
+			"unexpected number of close calls",
+			func() interface{} { return atomic.LoadUint32(closeCalls) },
+			uint32(input.expectedCloseCalls),
+		)
 	}
 
 	if val := atomic.LoadUint32(openerCalls); val != 8 {
 		t.Errorf("unexpected number of opener calls. want=%d have=%d", 8, val)
 	}
-	if val := atomic.LoadUint32(handlerCalls); val != uint32(len(keys)) {
-		t.Errorf("unexpected number of handler calls. want=%d have=%d", len(keys), val)
+	if val := atomic.LoadUint32(handlerCalls); val != uint32(len(inputs)) {
+		t.Errorf("unexpected number of handler calls. want=%d have=%d", len(inputs), val)
 	}
+
 }
 
 func TestCacheInitializationTimeout(t *testing.T) {
@@ -146,16 +157,12 @@ func TestCacheNotClosedWhileHeld(t *testing.T) {
 
 	close(wait)
 
-	for i := 0; i < 10; i++ {
-		if atomic.LoadUint32(closeCalls) == uint32(len(keys)-1) {
-			return
-		}
-
-		// Wait for goroutines to finish up
-		time.Sleep(time.Millisecond * 10)
-	}
-
-	t.Errorf("unexpected number of close calls. want=%d have=%d", len(keys)-1, atomic.LoadUint32(closeCalls))
+	assertEventually(
+		t,
+		"unexpected number of close calls",
+		func() interface{} { return atomic.LoadUint32(closeCalls) },
+		uint32(len(keys)-1),
+	)
 }
 
 func testOpener() (ReaderOpener, *uint32) {
@@ -215,4 +222,20 @@ func testBlockingHandler(ch <-chan struct{}) (CacheHandler, *uint32) {
 	}
 
 	return handler, &handlerCalls
+}
+
+func assertEventually(t *testing.T, message string, fn func() interface{}, expected interface{}) {
+	i := 10
+	for {
+		if val := fn(); i == 0 || val == expected {
+			if i == 0 {
+				t.Errorf("%s. want=%v have=%v", message, expected, val)
+			}
+
+			return
+		}
+
+		i--
+		time.Sleep(time.Millisecond * 10)
+	}
 }
