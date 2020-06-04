@@ -83,7 +83,7 @@ func TestParseParameterList(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			parser := &parser{buf: []byte(tt.Input), heuristicsApplied: map[heuristic]bool{}}
+			parser := &parser{buf: []byte(tt.Input)}
 			result, err := parser.parseParameterList()
 			if err != nil {
 				t.Fatal("Unexpected error")
@@ -220,9 +220,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf:               []byte(in),
-		heuristic:         map[heuristic]bool{parensAsPatterns: false},
-		heuristicsApplied: map[heuristic]bool{},
+		buf:       []byte(in),
+		heuristic: map[heuristic]bool{parensAsPatterns: false},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -686,7 +685,7 @@ func TestParse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, _, err = ParseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {

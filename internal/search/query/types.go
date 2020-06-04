@@ -38,8 +38,7 @@ type OrdinaryQuery struct {
 
 // A query containing and/or expressions.
 type AndOrQuery struct {
-	Query             []Node
-	HeuristicsApplied map[heuristic]bool
+	Query []Node
 }
 
 func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
@@ -180,7 +179,7 @@ func (q AndOrQuery) valueToTypedValue(field, value string, labels labels) []*typ
 		// If a pattern is quoted, or we applied heuristics to interpret
 		// valid regexp metasyntax literally instead, this pattern is a
 		// string.
-		if (labels&Quoted != 0) || q.HeuristicsApplied[parensAsPatterns] {
+		if (labels&Quoted != 0) || (labels&HeuristicParensAsPatterns != 0) {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {

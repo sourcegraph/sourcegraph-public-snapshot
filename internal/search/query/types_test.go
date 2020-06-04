@@ -39,10 +39,8 @@ func TestValueToTypedValue(t *testing.T) {
 
 	value = "foo()"
 	t.Run("compilable regex becomes a literal string pattern when parensAsPatterns heuristic is applied", func(t *testing.T) {
-		q := &AndOrQuery{
-			HeuristicsApplied: map[heuristic]bool{parensAsPatterns: true},
-		}
-		got := q.valueToTypedValue("", value, None)
+		q := &AndOrQuery{}
+		got := q.valueToTypedValue("", value, HeuristicParensAsPatterns)
 		want := types.Value{String: &value}
 		if *got[0].String != *want.String {
 			t.Errorf("got %v, want %v", *got[0].String, *want.String)

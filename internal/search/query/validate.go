@@ -137,9 +137,8 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 func isPureSearchPattern(buf []byte) bool {
 	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the heuristic.
 	try := &parser{
-		buf:               buf,
-		heuristic:         map[heuristic]bool{parensAsPatterns: false},
-		heuristicsApplied: map[heuristic]bool{},
+		buf:       buf,
+		heuristic: map[heuristic]bool{parensAsPatterns: false},
 	}
 	result, err := try.parseOr()
 	if err != nil {

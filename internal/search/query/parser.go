@@ -44,6 +44,8 @@ const (
 	None    labels = 0
 	Literal        = 1 << iota
 	Quoted
+	HeuristicParensAsPatterns
+	HeuristicDanglingParens
 )
 
 // An annotation stores information associated with a node.
@@ -174,11 +176,10 @@ const (
 )
 
 type parser struct {
-	buf               []byte
-	heuristic         map[heuristic]bool
-	pos               int
-	balanced          int
-	heuristicsApplied map[heuristic]bool
+	buf       []byte
+	heuristic map[heuristic]bool
+	pos       int
+	balanced  int
 }
 
 func (p *parser) done() bool {
@@ -501,13 +502,12 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
-	p.heuristicsApplied[parensAsPatterns] = true
 	if len(pieces) == 1 {
-		return Pattern{Value: pieces[0], Annotation: annotation{Labels: Literal}}, true
+		return Pattern{Value: pieces[0], Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}}, true
 	}
 	patterns := []Node{}
 	for _, piece := range pieces {
-		patterns = append(patterns, Pattern{Value: piece, Annotation: annotation{Labels: Literal}})
+		patterns = append(patterns, Pattern{Value: piece, Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}})
 	}
 	return Operator{Kind: Concat, Operands: patterns}, true
 }
@@ -648,10 +648,13 @@ func (p *parser) ParsePattern() Pattern {
 	}
 
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], p.heuristic[allowDanglingParens])
-	p.heuristicsApplied[allowDanglingParens] = sawDanglingParen
+	var labels labels
+	if sawDanglingParen {
+		labels = HeuristicDanglingParens
+	}
 	p.pos += advance
 	// Invariant: the pattern can't be quoted since we checked for that.
-	return Pattern{Value: value, Negated: false}
+	return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: labels}} // FIXME: make literal?
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
@@ -749,8 +752,7 @@ loop:
 				// We parsed "()".
 				if p.heuristic[parensAsPatterns] {
 					// Interpret literally.
-					p.heuristicsApplied[parensAsPatterns] = true
-					nodes = []Node{Pattern{Value: "()", Annotation: annotation{Labels: Literal}}}
+					nodes = []Node{Pattern{Value: "()", Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}}}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}
@@ -890,45 +892,43 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-func tryFallbackParser(in string) ([]Node, map[heuristic]bool, error) {
+func tryFallbackParser(in string) ([]Node, error) {
 	parser := &parser{
-		buf:               []byte(in),
-		heuristic:         map[heuristic]bool{allowDanglingParens: true},
-		heuristicsApplied: map[heuristic]bool{},
+		buf:       []byte(in),
+		heuristic: map[heuristic]bool{allowDanglingParens: true},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
-		return nil, parser.heuristicsApplied, err
+		return nil, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), parser.heuristicsApplied, nil
+		return newOperator(hoistedNodes, And), nil
 	}
-	return newOperator(nodes, And), parser.heuristicsApplied, nil
+	return newOperator(nodes, And), nil
 }
 
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string) ([]Node, map[heuristic]bool, error) {
+func ParseAndOr(in string) ([]Node, error) {
 	if strings.TrimSpace(in) == "" {
-		return nil, map[heuristic]bool{}, nil
+		return nil, nil
 	}
 	parser := &parser{
-		buf:               []byte(in),
-		heuristic:         map[heuristic]bool{parensAsPatterns: true},
-		heuristicsApplied: map[heuristic]bool{},
+		buf:       []byte(in),
+		heuristic: map[heuristic]bool{parensAsPatterns: true},
 	}
 
 	nodes, err := parser.parseOr()
 	if err != nil {
-		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
-			return nodes, heuristicsApplied, nil
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
 		}
-		return nil, nil, err
+		return nil, err
 	}
 	if parser.balanced != 0 {
-		if nodes, heuristicsApplied, err := tryFallbackParser(in); err == nil {
-			return nodes, heuristicsApplied, nil
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
 		}
-		return nil, nil, errors.New("unbalanced expression")
+		return nil, errors.New("unbalanced expression")
 	}
 	if !parser.heuristic[disambiguated] {
 		// Hoist or expressions if this query is potential ambiguous.
@@ -936,7 +936,7 @@ func ParseAndOr(in string) ([]Node, map[heuristic]bool, error) {
 			nodes = hoistedNodes
 		}
 	}
-	return newOperator(nodes, And), parser.heuristicsApplied, nil
+	return newOperator(nodes, And), nil
 }
 
 func ParseLiteralSearch(in string) ([]Node, error) {
@@ -949,7 +949,6 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 			allowDanglingParens:   true,
 			literalSearchPatterns: true,
 		},
-		heuristicsApplied: map[heuristic]bool{},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -965,7 +964,7 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
 func ProcessAndOr(in string) (QueryInfo, error) {
-	query, heuristicsApplied, err := ParseAndOr(in)
+	query, err := ParseAndOr(in)
 	if err != nil {
 		return nil, err
 	}
@@ -975,5 +974,5 @@ func ProcessAndOr(in string) (QueryInfo, error) {
 		return nil, err
 	}
 
-	return &AndOrQuery{Query: query, HeuristicsApplied: heuristicsApplied}, nil
+	return &AndOrQuery{Query: query}, nil
 }
