@@ -74,12 +74,16 @@ type Mutation {
         closeChangesets: Boolean = false
     ): Campaign!
     # Create an ExternalChangeset on the code host asynchronously for each patch belonging to the
-    # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
-    # query the campaign's status to track the progress of this async operation.
+    # patchset that has been attached to a campaign; otherwise, an error is returned.
+    # Callers can query the campaign's status to track the progress of this async operation.
+    # If one of the patches has previously been published but the publication failed,
+    # publication is NOT retried.
     publishCampaignChangesets(campaign: ID!): EmptyResponse!
     # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
     # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
     # query the campaign's status to track the progress of this async operation.
+    # If the patch has previously been published but the publication failed,
+    # the patch is reset and publication is retried.
     publishChangeset(patch: ID!): EmptyResponse!
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
