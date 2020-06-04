@@ -185,7 +185,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private onSubmit = (): void => {
-        const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
+        const query = [this.state.builderQuery, this.state.userQueryState.query].filter(query => !!query).join(' ')
         submitSearch({
             ...this.props,
             query,

@@ -107,6 +107,7 @@ func (i *Indexer) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 			"id", index.ID,
 			"repository_id", index.RepositoryID,
 			"commit", index.Commit,
+			"err", processErr,
 		)
 
 		if markErr := tx.MarkIndexErrored(ctx, index.ID, processErr.Error(), ""); markErr != nil {

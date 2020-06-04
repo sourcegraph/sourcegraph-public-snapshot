@@ -22,9 +22,9 @@ add('Hover', () => (
 ))
 
 const PinnedTooltip: React.FunctionComponent = () => {
-    const clickElement = useCallback((e: HTMLElement | null) => {
-        if (e) {
-            e.click()
+    const clickElement = useCallback((element: HTMLElement | null) => {
+        if (element) {
+            element.click()
         }
     }, [])
     return (

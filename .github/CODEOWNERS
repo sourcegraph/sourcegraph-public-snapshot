@@ -101,12 +101,6 @@
 /cmd/frontend/internal/pkg/usagestatsdeprecated @dadlerj
 /internal/eventlogger @dadlerj
 
-# Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
-/enterprise/internal/campaigns @sourcegraph/campaigns
-/internal/campaigns @sourcegraph/campaigns
-/web/**/campaigns/** @sourcegraph/campaigns
-
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
 /cmd/frontend/internal/auth/ @beyang @unknwon
@@ -143,6 +137,12 @@
 /internal/vcs/ @sourcegraph/core-services
 /migrations/ @sourcegraph/core-services
 /schema/ @sourcegraph/core-services
+
+# Campaigns
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Search and code mod
 */search/**/* @sourcegraph/search

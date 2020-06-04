@@ -167,6 +167,10 @@ type DB interface {
 	// DeleteIndexByID deletes an index by its identifier.
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 
+	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
+	// queued state. This method returns a list of updated index identifiers.
+	ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error)
+
 	// RepoUsageStatistics reads recent event log records and returns the number of search-based and precise
 	// code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 	// by search then precise event counts.
@@ -207,7 +211,11 @@ func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, erro
 
 // queryForEffect performs a query and throws away the result.
 func (db *dbImpl) queryForEffect(ctx context.Context, query *sqlf.Query) error {
-	return closeRows(db.query(ctx, query))
+	rows, err := db.query(ctx, query)
+	if err != nil {
+		return err
+	}
+	return closeRows(rows, nil)
 }
 
 // scanStrings scans a slice of strings from the return value of `*dbImpl.query`.

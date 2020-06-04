@@ -64,7 +64,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
 				Description:  "All the Javascripts are belong to us",
 				Branch:       "upgrade-es-lint",
-				AuthorID:     23,
+				AuthorID:     int32(i) + 50,
 				ChangesetIDs: []int64{int64(i) + 1},
 				PatchSetID:   42 + int64(i),
 				ClosedAt:     clock.now(),
@@ -79,7 +79,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			if i%2 == 0 {
 				c.NamespaceOrgID = 23
 			} else {
-				c.NamespaceUserID = 42
+				c.NamespaceUserID = c.AuthorID
 			}
 
 			want := c.Clone()
@@ -140,10 +140,21 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if have, want := count, int64(2); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -269,6 +280,24 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 			if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{OnlyForAuthor: c.AuthorID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if next != 0 {
+					t.Fatal("Next value was true, but false expected")
+				}
+				if have, want := len(have), 1; have != want {
+					t.Fatalf("Incorrect number of campaigns returned, want=%d have=%d", want, have)
+				}
+				if diff := cmp.Diff(have[0], c); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 	})
@@ -2006,6 +2035,109 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 	})
 
+	t.Run("Listing and Counting OnlyWithoutChangesetJobInCampaign", func(t *testing.T) {
+		campaignID := int64(999)
+
+		listOpts := ListPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
+		countOpts := CountPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
+
+		have, _, err := s.ListPatches(ctx, listOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, want := have, patches
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err := s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if int(count) != len(want) {
+			t.Errorf("jobs counted: %d", count)
+		}
+
+		// Create successful job
+		changesetJob := &cmpgn.ChangesetJob{
+			PatchID:     patches[0].ID,
+			CampaignID:  campaignID,
+			ChangesetID: 789,
+			StartedAt:   clock.now(),
+			FinishedAt:  clock.now(),
+		}
+		err = s.CreateChangesetJob(ctx, changesetJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, _, err = s.ListPatches(ctx, listOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want = patches[1:] // Exclude the first patch.
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err = s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if int(count) != len(want) {
+			t.Errorf("jobs counted: %d", count)
+		}
+
+		// Set ChangesetJob to errored.
+		changesetJob.ChangesetID = 0
+		changesetJob.Error = "Very bad."
+		err = s.UpdateChangesetJob(ctx, changesetJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		have, _, err = s.ListPatches(ctx, listOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want = patches[1:] // Exclude the first patch.
+		if len(have) != len(want) {
+			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err = s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if int(count) != len(want) {
+			t.Errorf("jobs counted: %d", count)
+		}
+
+		// Reset state for other tests.
+		err = s.DeleteChangesetJob(ctx, changesetJob.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
 		campaignID := int64(999)
 		changesetJob := &cmpgn.ChangesetJob{
@@ -2777,8 +2909,19 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 
 		for campaignID, tc := range tests {
 			for i, j := range tc.jobs {
+				p := &cmpgn.Patch{
+					RepoID:     api.RepoID(i),
+					PatchSetID: int64(campaignID),
+					BaseRef:    "deadbeef",
+					Diff:       "foobar",
+				}
+
+				if err := s.CreatePatch(ctx, p); err != nil {
+					t.Fatal(err)
+				}
+
 				j.CampaignID = int64(campaignID)
-				j.PatchID = int64(i)
+				j.PatchID = p.ID
 
 				err := s.CreateChangesetJob(ctx, j)
 				if err != nil {
@@ -2797,6 +2940,93 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			if diff := cmp.Diff(status, tc.want); diff != "" {
 				t.Fatalf("wrong diff: %s", diff)
 			}
+		}
+	})
+	t.Run("BackgroundProcessStatus_ErrorsOnlyInRepos", func(t *testing.T) {
+		var campaignID int64 = 123456
+
+		patches := []*cmpgn.Patch{
+			{RepoID: 444, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 555, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 666, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+		}
+		for _, p := range patches {
+			if err := s.CreatePatch(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		jobs := []*cmpgn.ChangesetJob{
+			// completed, no errors
+			{PatchID: patches[0].ID, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+			// completed, error
+			{PatchID: patches[1].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+			// completed, another error
+			{PatchID: patches[2].ID, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+		}
+
+		for _, j := range jobs {
+			j.CampaignID = campaignID
+
+			err := s.CreateChangesetJob(ctx, j)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		opts := GetCampaignStatusOpts{
+			ID:                   campaignID,
+			ExcludeErrorsInRepos: []api.RepoID{patches[2].RepoID},
+		}
+
+		want := &cmpgn.BackgroundProcessStatus{
+			ProcessState:  cmpgn.BackgroundProcessStateErrored,
+			Total:         3,
+			Completed:     3,
+			Failed:        2,
+			Pending:       0,
+			ProcessErrors: []string{"error1"},
+			// error2 should be excluded
+		}
+
+		status, err := s.GetCampaignStatus(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(status, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
+		}
+
+		// Now we filter out all errors, but still want the ProcessState to be
+		// correct
+		opts = GetCampaignStatusOpts{
+			ID: campaignID,
+			ExcludeErrorsInRepos: []api.RepoID{
+				patches[0].RepoID,
+				patches[1].RepoID,
+				patches[2].RepoID,
+			},
+		}
+
+		want = &cmpgn.BackgroundProcessStatus{
+			// This should stay "Errored", even though no errors are returned.
+			ProcessState:  cmpgn.BackgroundProcessStateErrored,
+			Total:         3,
+			Completed:     3,
+			Failed:        2,
+			Pending:       0,
+			ProcessErrors: nil,
+			// error1 and error2 should be excluded
+		}
+
+		status, err = s.GetCampaignStatus(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(status, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
 		}
 	})
 
@@ -2910,113 +3140,65 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 	})
 
-	t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
-		patchSet := &cmpgn.PatchSet{}
-		err := s.CreatePatchSet(ctx, patchSet)
-		if err != nil {
-			t.Fatal(err)
+	t.Run("GetRepoIDsForFailedChangesetJobs", func(t *testing.T) {
+		var campaignID int64 = 654321
+
+		patches := []*cmpgn.Patch{
+			{RepoID: 111, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 222, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+			{RepoID: 333, PatchSetID: 888, BaseRef: "deadbeef", Diff: "foobar"},
+		}
+		for _, p := range patches {
+			if err := s.CreatePatch(ctx, p); err != nil {
+				t.Fatal(err)
+			}
 		}
 
-		campaign := testCampaign(123, patchSet.ID)
-		err = s.CreateCampaign(ctx, campaign)
-		if err != nil {
-			t.Fatal(err)
+		jobs := []*cmpgn.ChangesetJob{
+			// completed, no errors
+			{
+				PatchID:     patches[0].ID,
+				StartedAt:   clock.now(),
+				FinishedAt:  clock.now(),
+				ChangesetID: 23,
+			},
+			// completed, error
+			{
+				PatchID:    patches[1].ID,
+				StartedAt:  clock.now(),
+				FinishedAt: clock.now(),
+				Error:      "error1",
+			},
+			// completed, another error
+			{
+				PatchID:    patches[2].ID,
+				StartedAt:  clock.now(),
+				FinishedAt: clock.now(),
+				Error:      "error2",
+			},
 		}
 
-		// Cleanup existing ChangesetJobs so we don't have interference
-		// between the previous tests and this one.
-		chjs, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, j := range chjs {
-			err := s.DeleteChangesetJob(ctx, j.ID)
+		for _, j := range jobs {
+			j.CampaignID = campaignID
+
+			err := s.CreateChangesetJob(ctx, j)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		patch := &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
+		want := []api.RepoID{
+			patches[1].RepoID,
+			patches[2].RepoID,
 		}
-		err = s.CreatePatch(ctx, patch)
+
+		have, err := s.GetRepoIDsForFailedChangesetJobs(ctx, campaignID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// 0 ChangesetJob, 1 Patches
-		have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
-
-		changesetJob1 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob1)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 1 ChangesetJob, 1 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
-		}
-
-		// Create another patch to ensure that we get the latest date when
-		// there are more than one.
-		clock.add(5 * time.Minute)
-
-		patch = &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
-		}
-		err = s.CreatePatch(ctx, patch)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 1 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
-
-		// Add another changesetjob
-		changesetJob2 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob2)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// 2 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
 		}
 	})
 }

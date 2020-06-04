@@ -83,7 +83,7 @@ describe('Windows (integration)', () => {
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
-                    switchMap(w => w.activeViewComponentChanges),
+                    switchMap(activeWindow => activeWindow.activeViewComponentChanges),
                     filter(isDefined),
                     take(1)
                 )
@@ -125,7 +125,7 @@ describe('Windows (integration)', () => {
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
-                    switchMap(w => w.activeViewComponentChanges),
+                    switchMap(activeWindow => activeWindow.activeViewComponentChanges),
                     filter(isDefined),
                     take(2)
                 )
@@ -194,7 +194,7 @@ describe('Windows (integration)', () => {
                     selections: [],
                     isActive: true,
                 })
-                const values = await from(extensionAPI.app.activeWindowChanges)
+                const viewers = await from(extensionAPI.app.activeWindowChanges)
                     .pipe(
                         switchMap(activeWindow => (activeWindow ? activeWindow.activeViewComponentChanges : of(null))),
                         take(4),
@@ -202,7 +202,7 @@ describe('Windows (integration)', () => {
                     )
                     .toPromise()
                 assertToJSON(
-                    values.map(c => (c && c.type === 'CodeEditor' ? c.document.uri : null)),
+                    viewers.map(viewer => (viewer && viewer.type === 'CodeEditor' ? viewer.document.uri : null)),
                     [null, 'foo', null, 'bar']
                 )
             })

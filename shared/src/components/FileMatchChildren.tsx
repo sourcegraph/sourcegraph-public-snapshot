@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { ThemeProps } from '../theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
-import { toPositionOrRangeHash, appendSubtreeQueryParam } from '../util/url'
+import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
 import { CodeExcerpt, FetchFileCtx } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
@@ -79,8 +79,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             : 0
 
     const showItems = sortedItems.filter(
-        (item, i) =>
-            props.allMatches || i < props.subsetMatches || item.line <= highestLineNumberWithinSubsetMatches + context
+        (item, index) =>
+            props.allMatches ||
+            index < props.subsetMatches ||
+            item.line <= highestLineNumberWithinSubsetMatches + context
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
@@ -124,7 +126,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
                         <Link
-                            to={appendSubtreeQueryParam(
+                            to={appendSubtreeQueryParameter(
                                 `${props.result.file.url}${toPositionOrRangeHash({ position })}`
                             )}
                             className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"

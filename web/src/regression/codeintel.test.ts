@@ -14,11 +14,11 @@ import { TestResourceManager } from './util/TestResourceManager'
 import { ensureTestExternalService, getUser, setUserSiteAdmin } from './util/api'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { Config, getConfig } from '../../../shared/src/e2e/config'
+import { Driver } from '../../../shared/src/testing/driver'
+import { Config, getConfig } from '../../../shared/src/testing/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 import { asError } from '../../../shared/src/util/errors'
 
 describe('Code intelligence regression test suite', () => {
@@ -128,7 +128,7 @@ describe('Code intelligence regression test suite', () => {
                         repos: testRepoSlugs,
                         repositoryQuery: ['none'],
                     },
-                    waitForRepos: testRepoSlugs.map(r => `github.com/${r}`),
+                    waitForRepos: testRepoSlugs.map(slug => `github.com/${slug}`),
                 },
                 config
             )
@@ -194,7 +194,7 @@ describe('Code intelligence regression test suite', () => {
             for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
                 await driver.findElementWithText(file, {
                     action: 'click',
-                    selector: '.e2e-repo-rev-sidebar a',
+                    selector: '.e2e-repo-revision-sidebar a',
                     wait: { timeout: 2 * 1000 },
                 })
             }
@@ -211,12 +211,12 @@ describe('Code intelligence regression test suite', () => {
             )
             await driver.findElementWithText('SYMBOLS', {
                 action: 'click',
-                selector: '.e2e-repo-rev-sidebar button',
+                selector: '.e2e-repo-revision-sidebar button',
                 wait: { timeout: 10 * 1000 },
             })
             await driver.findElementWithText('backgroundEntry', {
                 action: 'click',
-                selector: '.e2e-repo-rev-sidebar a span',
+                selector: '.e2e-repo-revision-sidebar a span',
                 wait: { timeout: 2 * 1000 },
             })
             await driver.replaceText({
@@ -225,14 +225,14 @@ describe('Code intelligence regression test suite', () => {
             })
             await driver.page.waitForFunction(
                 () => {
-                    const sidebar = document.querySelector<HTMLElement>('.e2e-repo-rev-sidebar')
+                    const sidebar = document.querySelector<HTMLElement>('.e2e-repo-revision-sidebar')
                     return sidebar && !sidebar.textContent?.includes('backgroundEntry')
                 },
                 { timeout: 2 * 1000 }
             )
             await driver.findElementWithText('buildEntry', {
                 action: 'click',
-                selector: '.e2e-repo-rev-sidebar a span',
+                selector: '.e2e-repo-revision-sidebar a span',
                 wait: { timeout: 2 * 1000 },
             })
             await driver.waitUntilURL(
@@ -455,35 +455,35 @@ async function testCodeNavigation(
 ): Promise<void> {
     await driver.page.goto(config.sourcegraphBaseUrl + page)
     await driver.page.waitForSelector('.e2e-blob')
-    const tokenEl = await findTokenElement(driver, line, token)
+    const tokenElement = await findTokenElement(driver, line, token)
 
     // Check hover
-    await tokenEl.hover()
+    await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains, precise)
 
     // Check click
     await clickOnEmptyPartOfCodeView(driver)
-    await tokenEl.click()
+    await tokenElement.click()
     await waitForHover(driver, expectedHoverContains)
 
     // Find-references
     if (expectedReferences && expectedReferences.length > 0) {
         await clickOnEmptyPartOfCodeView(driver)
-        await tokenEl.hover()
+        await tokenElement.hover()
         await waitForHover(driver, expectedHoverContains)
         await (await driver.findElementWithText('Find references')).click()
 
         await driver.page.waitForSelector('.e2e-search-result')
-        const refLinks = await collectLinks(driver)
+        const referenceLinks = await collectLinks(driver)
         for (const expectedReference of expectedReferences) {
-            expect(refLinks).toContainEqual(expectedReference)
+            expect(referenceLinks).toContainEqual(expectedReference)
         }
         await clickOnEmptyPartOfCodeView(driver)
     }
 
     // Go-to-definition
     await clickOnEmptyPartOfCodeView(driver)
-    await tokenEl.hover()
+    await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains)
     await (await driver.findElementWithText('Go to definition')).click()
 
@@ -520,9 +520,9 @@ async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
 
     const links = new Set<TestLocation>()
     for (const title of panelTabTitles) {
-        const tabElem = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
-        if (tabElem.length > 0) {
-            await tabElem[0].click()
+        const tabElement = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
+        if (tabElement.length > 0) {
+            await tabElement[0].click()
         }
 
         for (const link of await collectVisibleLinks(driver)) {
@@ -540,8 +540,8 @@ async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
 async function getPanelTabTitles(driver: Driver): Promise<string[]> {
     return (
         await Promise.all(
-            (await driver.page.$$('.hierarchical-locations-view > div:nth-child(1) span[title]')).map(e =>
-                e.evaluate(e => e.getAttribute('title') || '')
+            (await driver.page.$$('.hierarchical-locations-view > div:nth-child(1) span[title]')).map(elementHandle =>
+                elementHandle.evaluate(element => element.getAttribute('title') || '')
             )
         )
     ).map(normalizeWhitespace)
@@ -617,8 +617,8 @@ async function getTooltip(driver: Driver): Promise<string> {
 /**
  * Collapse multiple spaces into one.
  */
-function normalizeWhitespace(s: string): string {
-    return s.replace(/\s+/g, ' ')
+function normalizeWhitespace(string: string): string {
+    return string.replace(/\s+/g, ' ')
 }
 
 //
@@ -695,15 +695,17 @@ async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise
 
     const indices = range(nodes.length)
     const args: { [k: string]: string } = {}
-    for (const i of indices) {
-        args[`upload${i}`] = nodes[i].id
+    for (const index of indices) {
+        args[`upload${index}`] = nodes[index].id
     }
 
     await gqlClient
         .mutateGraphQL(
             gql`
-                mutation(${indices.map(i => `$upload${i}: ID!`).join(', ')}) {
-                    ${indices.map(i => gql`delete${i}: deleteLSIFUpload(id: $upload${i}) { alwaysNil }`).join('\n')}
+                mutation(${indices.map(index => `$upload${index}: ID!`).join(', ')}) {
+                    ${indices
+                        .map(index => gql`delete${index}: deleteLSIFUpload(id: $upload${index}) { alwaysNil }`)
+                        .join('\n')}
                 }
             `,
             args
@@ -792,7 +794,7 @@ async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
     )
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
-        elem => elem.textContent
+        element => element.textContent
     )
     expect(isLatestForRepoText).toEqual('yes')
 }

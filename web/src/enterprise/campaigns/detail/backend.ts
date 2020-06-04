@@ -3,6 +3,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
 import {
+    Changeset,
     ID,
     ICampaign,
     IUpdateCampaignInput,
@@ -37,7 +38,6 @@ const campaignFragment = gql`
         branch
         createdAt
         updatedAt
-        publishedAt
         closedAt
         viewerCanAdminister
         changesets {
@@ -115,11 +115,11 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
+export async function retryCampaignChangesets(campaignID: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
-            mutation RetryCampaign($campaign: ID!) {
-                retryCampaign(campaign: $campaign) {
+            mutation RetryCampaignChangesets($campaign: ID!) {
+                retryCampaignChangesets(campaign: $campaign) {
                     ...CampaignFields
                 }
             }
@@ -128,7 +128,7 @@ export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
         `,
         { campaign: campaignID }
     ).toPromise()
-    return dataOrThrowErrors(result).retryCampaign
+    return dataOrThrowErrors(result).retryCampaignChangesets
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
@@ -216,7 +216,7 @@ export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<IExternalChangeset>> =>
+): Observable<Connection<Changeset>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -233,33 +233,40 @@ export const queryChangesets = (
                             totalCount
                             nodes {
                                 __typename
-                                id
-                                title
-                                body
+
                                 state
-                                reviewState
-                                checkState
-                                labels {
-                                    text
-                                    description
-                                    color
-                                }
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                externalURL {
-                                    url
-                                }
-                                externalID
                                 createdAt
                                 updatedAt
                                 nextSyncAt
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+
+                                ... on HiddenExternalChangeset {
+                                    id
+                                }
+                                ... on ExternalChangeset {
+                                    id
+                                    title
+                                    body
+                                    reviewState
+                                    checkState
+                                    labels {
+                                        text
+                                        description
+                                        color
+                                    }
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    externalURL {
+                                        url
+                                    }
+                                    externalID
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }
@@ -298,17 +305,22 @@ export const queryPatchesFromCampaign = (
                             totalCount
                             nodes {
                                 __typename
-                                id
-                                repository {
+                                ... on HiddenPatch {
                                     id
-                                    name
-                                    url
                                 }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+                                ... on Patch {
+                                    id
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    publicationEnqueued
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }
@@ -349,16 +361,18 @@ export const queryPatchesFromPatchSet = (
                             nodes {
                                 __typename
                                 id
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
+                                ... on Patch {
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    publicationEnqueued
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
                                         }
                                     }
                                 }
@@ -383,21 +397,6 @@ export const queryPatchesFromPatchSet = (
             return node.patches
         })
     )
-
-export async function publishCampaign(campaign: ID): Promise<ICampaign> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation PublishCampaign($campaign: ID!) {
-                publishCampaign(campaign: $campaign) {
-                    ...CampaignFields
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).toPromise()
-    return dataOrThrowErrors(result).publishCampaign
-}
 
 export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
     const result = await mutateGraphQL(

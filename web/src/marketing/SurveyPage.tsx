@@ -120,16 +120,16 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         this.setState({ error: undefined })
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ email: e.target.value })
+    private onEmailFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ email: event.target.value })
     }
 
-    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-        this.setState({ reason: e.target.value })
+    private onReasonFieldChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+        this.setState({ reason: event.target.value })
     }
 
-    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-        this.setState({ betterProduct: e.target.value })
+    private onBetterProductFieldChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+        this.setState({ betterProduct: event.target.value })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

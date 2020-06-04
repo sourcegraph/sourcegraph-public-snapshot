@@ -16,10 +16,10 @@ export const summarizeSearchResultsStatsLanguages = (
     languages: GQL.ISearchResultsStats['languages'],
     minFraction: number
 ): GQL.ISearchResultsStats['languages'] => {
-    const totalLines = languages.reduce((sum, l) => sum + l.totalLines, 0)
+    const totalLines = languages.reduce((sum, language) => sum + language.totalLines, 0)
     const minLines = minFraction * totalLines
-    const languagesAboveMin = languages.filter(l => l.totalLines >= minLines)
-    const otherLines = totalLines - languagesAboveMin.reduce((sum, l) => sum + l.totalLines, 0)
+    const languagesAboveMin = languages.filter(language => language.totalLines >= minLines)
+    const otherLines = totalLines - languagesAboveMin.reduce((sum, language) => sum + language.totalLines, 0)
     return [
         ...languagesAboveMin,
         { __typename: 'LanguageStatistics', name: OTHER_LANGUAGE, totalBytes: 0, totalLines: otherLines },
@@ -41,13 +41,13 @@ interface Props {
  * Shows language statistics about the results for a search query.
  */
 export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, stats }) => {
-    const chartData = summarizeSearchResultsStatsLanguages(stats.languages, 0.02).map((l, i) => ({
-        ...l,
-        name: l.name || UNKNOWN_LANGUAGE,
-        color: COLORS[i % COLORS.length],
+    const chartData = summarizeSearchResultsStatsLanguages(stats.languages, 0.02).map((language, index) => ({
+        ...language,
+        name: language.name || UNKNOWN_LANGUAGE,
+        color: COLORS[index % COLORS.length],
     }))
 
-    const totalLines = stats.languages.reduce((sum, l) => sum + l.totalLines, 0)
+    const totalLines = stats.languages.reduce((sum, language) => sum + language.totalLines, 0)
 
     const urlToSearchWithExtraQuery = useCallback(
         (extraQuery: string) =>
@@ -91,8 +91,8 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                                 </tr>
                             </thead>
                             <tbody>
-                                {stats.languages.map(({ name, totalLines: lines }, i) => (
-                                    <tr key={name || i}>
+                                {stats.languages.map(({ name, totalLines: lines }, index) => (
+                                    <tr key={name || index}>
                                         <td>
                                             {name ? (
                                                 <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
@@ -118,7 +118,7 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                                     data={chartData}
                                     label={labelRenderer}
                                 >
-                                    {chartData.map((entry, i) => (
+                                    {chartData.map((entry, index) => (
                                         <Cell
                                             key={entry.name}
                                             fill={
@@ -126,7 +126,7 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                                                     ? UNKNOWN_COLOR
                                                     : entry.name === OTHER_LANGUAGE
                                                     ? OTHER_COLOR
-                                                    : COLORS[i % COLORS.length]
+                                                    : COLORS[index % COLORS.length]
                                             }
                                         />
                                     ))}

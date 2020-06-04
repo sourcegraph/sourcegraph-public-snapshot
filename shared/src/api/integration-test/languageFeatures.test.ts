@@ -10,9 +10,10 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({
         name: 'registerHoverProvider',
-        registerProvider: extensionAPI => (s, p) => extensionAPI.languages.registerHoverProvider(s, p),
+        registerProvider: extensionAPI => (selector, provider) =>
+            extensionAPI.languages.registerHoverProvider(selector, provider),
         labeledProvider: label => ({
-            provideHover: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+            provideHover: (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) =>
                 of({
                     contents: { value: label, kind: MarkupKind.PlainText },
                 }).pipe(observeOn(asyncScheduler)),
@@ -32,7 +33,7 @@ describe('LanguageFeatures (integration)', () => {
         name: 'registerDefinitionProvider',
         registerProvider: extensionAPI => extensionAPI.languages.registerDefinitionProvider,
         labeledProvider: label => ({
-            provideDefinition: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+            provideDefinition: (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) =>
                 of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labeledDefinitionResults,
@@ -49,8 +50,8 @@ describe('LanguageFeatures (integration)', () => {
         registerProvider: extensionAPI => extensionAPI.languages.registerReferenceProvider,
         labeledProvider: label => ({
             provideReferences: (
-                doc: sourcegraph.TextDocument,
-                pos: sourcegraph.Position,
+                textDocument: sourcegraph.TextDocument,
+                position: sourcegraph.Position,
                 context: sourcegraph.ReferenceContext
             ) => of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
@@ -58,10 +59,10 @@ describe('LanguageFeatures (integration)', () => {
         providerWithImplementation: run =>
             ({
                 provideReferences: (
-                    doc: sourcegraph.TextDocument,
-                    pos: sourcegraph.Position,
+                    textDocument: sourcegraph.TextDocument,
+                    position: sourcegraph.Position,
                     _context: sourcegraph.ReferenceContext
-                ) => run(doc, pos),
+                ) => run(textDocument, position),
             } as sourcegraph.ReferenceProvider),
         getResult: (services, uri) =>
             services.textDocumentReferences.getLocations({
@@ -76,13 +77,14 @@ describe('LanguageFeatures (integration)', () => {
         registerProvider: extensionAPI => (selector, provider) =>
             extensionAPI.languages.registerLocationProvider('x', selector, provider),
         labeledProvider: label => ({
-            provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) =>
+            provideLocations: (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) =>
                 of([{ uri: new URL(`file:///${label}`) }]).pipe(observeOn(asyncScheduler)),
         }),
         labeledProviderResults: labels => labels.map(label => ({ uri: `file:///${label}`, range: undefined })),
         providerWithImplementation: run =>
             ({
-                provideLocations: (doc: sourcegraph.TextDocument, pos: sourcegraph.Position) => run(doc, pos),
+                provideLocations: (textDocument: sourcegraph.TextDocument, position: sourcegraph.Position) =>
+                    run(textDocument, position),
             } as sourcegraph.LocationProvider),
         getResult: (services, uri) =>
             services.textDocumentLocations.getLocations('x', {
@@ -175,9 +177,9 @@ function testLocationProvider<P>({
             const { wait, done } = createBarrier()
             registerProvider(extensionAPI)(
                 ['*'],
-                providerWithImplementation((doc, pos) => {
-                    assertToJSON(doc, { uri: 'file:///f', languageId: 'l', text: 't' })
-                    assertToJSON(pos, { line: 1, character: 2 })
+                providerWithImplementation((textDocument, position) => {
+                    assertToJSON(textDocument, { uri: 'file:///f', languageId: 'l', text: 't' })
+                    assertToJSON(position, { line: 1, character: 2 })
                     done()
                 })
             )

@@ -18,7 +18,7 @@ import './main.scss'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { repoContainerRoutes, repoRevContainerRoutes } from './repo/routes'
+import { repoContainerRoutes, repoRevisionContainerRoutes } from './repo/routes'
 import { routes } from './routes'
 import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { siteAdminAreaRoutes } from './site-admin/routes'
@@ -50,7 +50,7 @@ window.addEventListener('DOMContentLoaded', () => {
             orgAreaRoutes={orgAreaRoutes}
             orgAreaHeaderNavItems={orgAreaHeaderNavItems}
             repoContainerRoutes={repoContainerRoutes}
-            repoRevContainerRoutes={repoRevContainerRoutes}
+            repoRevisionContainerRoutes={repoRevisionContainerRoutes}
             repoHeaderActionButtons={repoHeaderActionButtons}
             repoSettingsAreaRoutes={repoSettingsAreaRoutes}
             repoSettingsSidebarItems={repoSettingsSidebarItems}

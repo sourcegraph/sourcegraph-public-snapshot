@@ -130,13 +130,13 @@ export function createController(context: PlatformContext): Controller {
     return {
         notifications,
         services,
-        executeCommand: (params, suppressNotificationOnError) =>
-            services.commands.executeCommand(params).catch(error => {
+        executeCommand: (parameters, suppressNotificationOnError) =>
+            services.commands.executeCommand(parameters).catch(error => {
                 if (!suppressNotificationOnError) {
                     notifications.next({
                         message: asError(error).message,
                         type: NotificationType.Error,
-                        source: params.command,
+                        source: parameters.command,
                     })
                 }
                 return Promise.reject(error)
@@ -183,19 +183,19 @@ export function registerExtensionContributions(
 
 /** Prints a nicely formatted console log or error message. */
 function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
-    let f: typeof console.log
+    let log: typeof console.log
     let color: string
     let backgroundColor: string
     if (level === 'info') {
-        f = console.log.bind(console)
+        log = console.log.bind(console)
         color = '#000'
         backgroundColor = '#eee'
     } else {
-        f = console.error.bind(console)
+        log = console.error.bind(console)
         color = 'white'
         backgroundColor = 'red'
     }
-    f(
+    log(
         '%c EXT %s %c',
         `font-weight:bold;background-color:${backgroundColor};color:${color}`,
         subject,

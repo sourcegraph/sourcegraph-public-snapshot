@@ -68,7 +68,7 @@ Sourcegraph's "active" model lets it:
 - synchronize the list of repositories on the code host (so that newly added repositories are searchable/browseable)
 - offer code host integrations and "View file on code host" links
 
-Sourcegraph also partially supports the "passive" model like OpenGrok, but it's not recommended because you lose these benefits. To use it anyway, see "[Add repositories already cloned to disk](../repo/add_from_local_disk.md)".
+Sourcegraph also partially supports the "passive" model like OpenGrok, but it's not recommended because you lose these benefits. To use it anyway, see "[Add repositories already cloned to disk](../repo/pre_load_from_local_disk.md)".
 
 To configure which repositories Sourcegraph will make available for searching and browsing:
 

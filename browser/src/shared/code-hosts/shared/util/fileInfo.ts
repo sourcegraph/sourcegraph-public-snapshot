@@ -3,7 +3,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../../../shared/src/platform/context'
-import { resolveRepo, resolveRev, retryWhenCloneInProgressError } from '../../../repo/backend'
+import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
 import { FileInfo, FileInfoWithRepoNames } from '../codeHost'
 
 export const ensureRevisionsAreCloned = (
@@ -15,18 +15,18 @@ export const ensureRevisionsAreCloned = (
     // revision cloned.
 
     // Head
-    const resolvingHeadRev = resolveRev({ repoName, rev: commitID, requestGraphQL }).pipe(
+    const resolvingHeadRevision = resolveRevision({ repoName, revision: commitID, requestGraphQL }).pipe(
         retryWhenCloneInProgressError()
     )
 
-    const requests = [resolvingHeadRev]
+    const requests = [resolvingHeadRevision]
 
     // If theres a base, resolve it as well.
     if (baseCommitID) {
-        const resolvingBaseRev = resolveRev({ repoName, rev: baseCommitID, requestGraphQL }).pipe(
+        const resolvingBaseRevision = resolveRevision({ repoName, revision: baseCommitID, requestGraphQL }).pipe(
             retryWhenCloneInProgressError()
         )
-        requests.push(resolvingBaseRev)
+        requests.push(resolvingBaseRevision)
     }
 
     return zip(...requests).pipe(map(() => ({ repoName, commitID, baseCommitID, ...rest })))
@@ -52,11 +52,11 @@ export const resolveRepoNames = (
         // without having pointed his browser extension to a self-hosted Sourcegraph instance that
         // has access to that code. In that case, it's impossible to resolve the repo names,
         // so we keep the repo names inferred from the code host's DOM.
-        catchError(err => {
-            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+        catchError(error => {
+            if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
                 return [{ rawRepoName, baseRawRepoName, repoName: rawRepoName, baseRepoName: baseRawRepoName, ...rest }]
             }
-            throw err
+            throw error
         })
     )
 }

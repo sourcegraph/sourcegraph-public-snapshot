@@ -3,7 +3,8 @@ import { LinkPreviewMerged } from '../../api/client/services/linkPreview'
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
 const OPTIONS: ApplyLinkPreviewOptions = {
-    setElementTooltip: (e, text) => (text !== null ? (e.dataset.tooltip = text) : e.removeAttribute('data-tooltip')),
+    setElementTooltip: (element, text) =>
+        text !== null ? (element.dataset.tooltip = text) : element.removeAttribute('data-tooltip'),
 }
 
 describe('applyLinkPreview', () => {

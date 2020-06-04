@@ -9,7 +9,7 @@ import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
 import { normalizeRepoName } from './util'
 import { isRepoNotFoundErrorLike } from '../../../../../shared/src/backend/errors'
-import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
+import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../../shared/src/backend/fetch'
 import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
@@ -124,9 +124,9 @@ export type QueryConduitHelper<T> = (endpoint: string, params: {}) => Observable
 /**
  * Generic helper to query the Phabricator Conduit API.
  */
-export function queryConduitHelper<T>(endpoint: string, params: {}): Observable<T> {
+export function queryConduitHelper<T>(endpoint: string, parameters: {}): Observable<T> {
     const form = createConduitRequestForm()
-    for (const [key, value] of Object.entries(params)) {
+    for (const [key, value] of Object.entries(parameters)) {
         form.set(`params[${key}]`, JSON.stringify(value))
     }
     return fromFetch(
@@ -410,7 +410,10 @@ interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'>,
  * Returns the commit ID of the one-off commit created on the Sourcegraph instance for the given
  * repo/diffID/patch, creating that commit if needed.
  */
-const resolveStagingRev = ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<ResolvedRevSpec> =>
+const resolveStagingRevision = ({
+    requestGraphQL,
+    ...variables
+}: ResolveStagingOptions): Observable<ResolvedRevisionSpec> =>
     requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation ResolveStagingRev(
@@ -447,7 +450,7 @@ const resolveStagingRev = ({ requestGraphQL, ...variables }: ResolveStagingOptio
             }
             const { oid } = resolvePhabricatorDiff
             if (!oid) {
-                throw new Error('Could not resolve staging rev: empty oid')
+                throw new Error('Could not resolve staging revision: empty oid')
             }
             return { commitID: oid }
         })
@@ -514,13 +517,13 @@ function getStagingDetails(
         const type = propsWithInfo.useBaseForDiff ? 'base' : 'diff'
         key = `refs/tags/phabricator/${type}/${propsWithInfo.diffID}`
     }
-    for (const ref of propsWithInfo.diffDetails.properties['arc.staging'].refs) {
-        if (ref.ref === key) {
-            const remote = ref.remote.uri
+    for (const reference of propsWithInfo.diffDetails.properties['arc.staging'].refs) {
+        if (reference.ref === key) {
+            const remote = reference.remote.uri
             if (remote) {
                 return {
                     repoName: normalizeRepoName(remote),
-                    ref,
+                    ref: reference,
                     unconfigured: stagingInfo.status === 'repository.unconfigured',
                 }
             }
@@ -529,7 +532,7 @@ function getStagingDetails(
     return undefined
 }
 
-interface ResolvedDiff extends ResolvedRevSpec {
+interface ResolvedDiff extends ResolvedRevisionSpec {
     /**
      * The name of the staging repository, if it is synced to the Sourcegraph instance.
      */
@@ -551,7 +554,7 @@ interface ResolvedDiff extends ResolvedRevSpec {
  * be returned ({@see resolveStagingRev}).
  *
  */
-export function resolveDiffRev(
+export function resolveDiffRevision(
     props: ResolveDiffOpt,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
@@ -580,7 +583,7 @@ export function resolveDiffRev(
                 // create a one-off commit on the Sourcegraph instance from the patch,
                 // and resolve to the commit ID returned by the Sourcegraph instance.
                 return getRawDiffFromConduit({ diffID: props.diffID, queryConduit }).pipe(
-                    switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
+                    switchMap(patch => resolveStagingRevision({ ...conduitProps, patch, requestGraphQL }))
                 )
             }
 
@@ -599,7 +602,7 @@ export function resolveDiffRev(
                         throw error
                     }
                     return getRawDiffFromConduit({ diffID: props.diffID, queryConduit }).pipe(
-                        switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
+                        switchMap(patch => resolveStagingRevision({ ...conduitProps, patch, requestGraphQL }))
                     )
                 })
             )

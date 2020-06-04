@@ -1,6 +1,6 @@
 import { Subscribable, Subject, BehaviorSubject, Observable, throwError } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { RefCount } from '../../../util/RefCount'
+import { ReferenceCounter } from '../../../util/ReferenceCounter'
 import { filter, takeWhile, map, startWith } from 'rxjs/operators'
 
 /**
@@ -104,7 +104,7 @@ export function createModelService(): ModelService {
     const models = new Map<string, TextModel>()
     const modelUpdates = new Subject<TextModelUpdate[]>()
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
-    const languageRefs = new RefCount<string>()
+    const languageReferences = new ReferenceCounter<string>()
     const getModel = (uri: string): TextModel => {
         const model = models.get(uri)
         if (!model) {
@@ -126,8 +126,8 @@ export function createModelService(): ModelService {
             try {
                 const model = getModel(uri)
                 return modelUpdates.pipe(
-                    filter(updates => updates.some(u => u.uri === uri)),
-                    takeWhile(updates => updates.every(u => u.uri !== uri || u.type !== 'deleted')),
+                    filter(updates => updates.some(update => update.uri === uri)),
+                    takeWhile(updates => updates.every(update => update.uri !== uri || update.type !== 'deleted')),
                     map(() => getModel(uri)),
                     startWith(model)
                 )
@@ -142,8 +142,8 @@ export function createModelService(): ModelService {
             models.set(model.uri, model)
             modelUpdates.next([{ type: 'added', ...model }])
             // Update activeLanguages if no other existing model has the same language.
-            if (languageRefs.increment(model.languageId)) {
-                activeLanguages.next(new Set<string>(languageRefs.keys()))
+            if (languageReferences.increment(model.languageId)) {
+                activeLanguages.next(new Set<string>(languageReferences.keys()))
             }
         },
         updateModel: (uri, text) => {
@@ -159,8 +159,8 @@ export function createModelService(): ModelService {
             const model = getModel(uri)
             models.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
-            if (languageRefs.decrement(model.languageId)) {
-                activeLanguages.next(new Set<string>(languageRefs.keys()))
+            if (languageReferences.decrement(model.languageId)) {
+                activeLanguages.next(new Set<string>(languageReferences.keys()))
             }
         },
     }

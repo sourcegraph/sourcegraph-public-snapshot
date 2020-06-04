@@ -190,11 +190,11 @@ describe('trackViews()', () => {
             .pipe(
                 trackViews([{ selector: '.view', resolveView: element => ({ element }) }]),
                 bufferCount(3),
-                switchMap(async ([v1, v2, v3]) => {
+                switchMap(async ([view1, view2, view3]) => {
                     const v2Removed = sinon.spy(() => undefined)
-                    v2.subscriptions.add(v2Removed)
-                    const v1Removed = new Promise(resolve => v1.subscriptions.add(resolve))
-                    const v3Removed = new Promise(resolve => v3.subscriptions.add(resolve))
+                    view2.subscriptions.add(v2Removed)
+                    const v1Removed = new Promise(resolve => view1.subscriptions.add(resolve))
+                    const v3Removed = new Promise(resolve => view3.subscriptions.add(resolve))
                     await Promise.all([v1Removed, v3Removed])
                     sinon.assert.notCalled(v2Removed)
                 })
@@ -288,8 +288,8 @@ describe('delayUntilIntersecting()', () => {
         subscriptions.add(
             from(views)
                 .pipe(
-                    delayUntilIntersecting({}, cb => {
-                        observerCallback = cb
+                    delayUntilIntersecting({}, callback => {
+                        observerCallback = callback
                         return {
                             observe,
                             unobserve,

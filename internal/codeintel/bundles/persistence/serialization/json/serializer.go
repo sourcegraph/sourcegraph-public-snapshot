@@ -16,9 +16,9 @@ func New() serialization.Serializer {
 	return &jsonSerializer{}
 }
 
-func (*jsonSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
-	rangePairs := make([]interface{}, 0, len(d.Ranges))
-	for k, v := range d.Ranges {
+func (*jsonSerializer) MarshalDocumentData(document types.DocumentData) ([]byte, error) {
+	rangePairs := make([]interface{}, 0, len(document.Ranges))
+	for k, v := range document.Ranges {
 		if v.MonikerIDs == nil {
 			v.MonikerIDs = []types.ID{}
 		}
@@ -37,18 +37,18 @@ func (*jsonSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error)
 		rangePairs = append(rangePairs, []interface{}{k, vs})
 	}
 
-	hoverResultPairs := make([]interface{}, 0, len(d.HoverResults))
-	for k, v := range d.HoverResults {
+	hoverResultPairs := make([]interface{}, 0, len(document.HoverResults))
+	for k, v := range document.HoverResults {
 		hoverResultPairs = append(hoverResultPairs, []interface{}{k, v})
 	}
 
-	monikerPairs := make([]interface{}, 0, len(d.Monikers))
-	for k, v := range d.Monikers {
+	monikerPairs := make([]interface{}, 0, len(document.Monikers))
+	for k, v := range document.Monikers {
 		monikerPairs = append(monikerPairs, []interface{}{k, v})
 	}
 
-	packageInformationPairs := make([]interface{}, 0, len(d.PackageInformation))
-	for k, v := range d.PackageInformation {
+	packageInformationPairs := make([]interface{}, 0, len(document.PackageInformation))
+	for k, v := range document.PackageInformation {
 		packageInformationPairs = append(packageInformationPairs, []interface{}{k, v})
 	}
 
@@ -65,14 +65,14 @@ func (*jsonSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error)
 	return compress(encoded)
 }
 
-func (jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
-	documentPathPairs := make([]interface{}, 0, len(rc.DocumentPaths))
-	for k, v := range rc.DocumentPaths {
+func (*jsonSerializer) MarshalResultChunkData(resultChunk types.ResultChunkData) ([]byte, error) {
+	documentPathPairs := make([]interface{}, 0, len(resultChunk.DocumentPaths))
+	for k, v := range resultChunk.DocumentPaths {
 		documentPathPairs = append(documentPathPairs, []interface{}{k, v})
 	}
 
-	documentIDRangeIDPairs := make([]interface{}, 0, len(rc.DocumentIDRangeIDs))
-	for k, v := range rc.DocumentIDRangeIDs {
+	documentIDRangeIDPairs := make([]interface{}, 0, len(resultChunk.DocumentIDRangeIDs))
+	for k, v := range resultChunk.DocumentIDRangeIDs {
 		documentIDRangeIDPairs = append(documentIDRangeIDPairs, []interface{}{k, v})
 	}
 
@@ -87,7 +87,27 @@ func (jsonSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, 
 	return compress(encoded)
 }
 
-func (jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
+func (*jsonSerializer) MarshalLocations(locations []types.Location) ([]byte, error) {
+	serializingLocations := make([]SerializingLocation, 0, len(locations))
+	for _, location := range locations {
+		serializingLocations = append(serializingLocations, SerializingLocation{
+			URI:            location.URI,
+			StartLine:      location.StartLine,
+			StartCharacter: location.StartCharacter,
+			EndLine:        location.EndLine,
+			EndCharacter:   location.EndCharacter,
+		})
+	}
+
+	encoded, err := json.Marshal(serializingLocations)
+	if err != nil {
+		return nil, err
+	}
+
+	return compress(encoded)
+}
+
+func (*jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
 	var payload SerializedDocument
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.DocumentData{}, err
@@ -121,7 +141,7 @@ func (jsonSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, er
 	}, nil
 }
 
-func (jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
+func (*jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
 	var payload SerializedResultChunk
 	if err := unmarshalGzippedJSON(data, &payload); err != nil {
 		return types.ResultChunkData{}, err
@@ -141,6 +161,26 @@ func (jsonSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkDa
 		DocumentPaths:      documentPaths,
 		DocumentIDRangeIDs: documentIDRangeIDs,
 	}, nil
+}
+
+func (*jsonSerializer) UnmarshalLocations(data []byte) ([]types.Location, error) {
+	var payload []SerializedLocation
+	if err := unmarshalGzippedJSON(data, &payload); err != nil {
+		return nil, err
+	}
+
+	locations := make([]types.Location, 0, len(payload))
+	for _, location := range payload {
+		locations = append(locations, types.Location{
+			URI:            location.URI,
+			StartLine:      location.StartLine,
+			StartCharacter: location.StartCharacter,
+			EndLine:        location.EndLine,
+			EndCharacter:   location.EndCharacter,
+		})
+	}
+
+	return locations, nil
 }
 
 func unmarshalWrappedRanges(pairs []json.RawMessage) (map[types.ID]types.RangeData, error) {

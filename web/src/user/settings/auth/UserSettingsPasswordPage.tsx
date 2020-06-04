@@ -39,8 +39,8 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     private newPasswordConfirmationField: HTMLInputElement | null = null
-    private setNewPasswordConfirmationField = (e: HTMLInputElement | null): void => {
-        this.newPasswordConfirmationField = e
+    private setNewPasswordConfirmationField = (element: HTMLInputElement | null): void => {
+        this.newPasswordConfirmationField = element
     }
 
     public componentDidMount(): void {
@@ -61,7 +61,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         }).pipe(
                             // Change URL after updating to trigger Chrome to show "Update password?" dialog.
                             tap(() => this.props.history.replace({ hash: 'updated' })),
-                            catchError(err => this.handleError(err))
+                            catchError(error => this.handleError(error))
                         )
                     )
                 )
@@ -75,7 +75,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             newPasswordConfirmation: '',
                             saved: true,
                         }),
-                    err => this.handleError(err)
+                    error => this.handleError(error)
                 )
         )
     }
@@ -166,16 +166,16 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         )
     }
 
-    private onOldPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ oldPassword: e.target.value })
+    private onOldPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ oldPassword: event.target.value })
     }
 
-    private onNewPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ newPassword: e.target.value }, () => this.validateForm())
+    private onNewPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ newPassword: event.target.value }, () => this.validateForm())
     }
 
-    private onNewPasswordConfirmationFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ newPasswordConfirmation: e.target.value }, () => this.validateForm())
+    private onNewPasswordConfirmationFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ newPasswordConfirmation: event.target.value }, () => this.validateForm())
     }
 
     private validateForm(): void {
@@ -192,9 +192,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error): [] => {
-        console.error(err)
-        this.setState({ loading: false, saved: false, error: err })
+    private handleError = (error: Error): [] => {
+        console.error(error)
+        this.setState({ loading: false, saved: false, error })
         return []
     }
 }

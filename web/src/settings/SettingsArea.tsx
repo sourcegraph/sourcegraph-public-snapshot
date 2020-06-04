@@ -92,13 +92,13 @@ export class SettingsArea extends React.Component<Props, State> {
                                 )
                             ),
                             catchError(error => [asError(error)]),
-                            map(c => ({ dataOrError: c }))
+                            map(dataOrError => ({ dataOrError }))
                         )
                     )
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 

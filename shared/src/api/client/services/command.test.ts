@@ -38,8 +38,8 @@ describe('CommandRegistry', () => {
         registry.registerCommand({
             command: 'command1',
             // eslint-disable-next-line @typescript-eslint/require-await
-            run: async arg => {
-                expect(arg).toBe(123)
+            run: async argument => {
+                expect(argument).toBe(123)
                 return 456
             },
         })
@@ -53,8 +53,8 @@ describe('executeCommand', () => {
             {
                 command: 'command1',
                 // eslint-disable-next-line @typescript-eslint/require-await
-                run: async arg => {
-                    expect(arg).toBe(123)
+                run: async argument => {
+                    expect(argument).toBe(123)
                     return 456
                 },
             },
@@ -64,7 +64,7 @@ describe('executeCommand', () => {
 
     test('runs the specified command with no args', async () => {
         // eslint-disable-next-line @typescript-eslint/require-await
-        const commands: CommandEntry[] = [{ command: 'command1', run: async arg => undefined }]
+        const commands: CommandEntry[] = [{ command: 'command1', run: async argument => undefined }]
         expect(await executeCommand(commands, { command: 'command1' })).toBe(undefined)
     })
 

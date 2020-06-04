@@ -51,6 +51,7 @@ type ObservedDB struct {
 	markIndexErroredOperation          *observation.Operation
 	dequeueIndexOperation              *observation.Operation
 	deleteIndexByIdOperation           *observation.Operation
+	resetStalledIndexesOperation       *observation.Operation
 	repoUsageStatisticsOperation       *observation.Operation
 	repoNameOperation                  *observation.Operation
 }
@@ -263,6 +264,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"delete_index_by_id"},
 			Metrics:      metrics,
 		}),
+		resetStalledIndexesOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.ResetStalledIndexes",
+			MetricLabels: []string{"reset_stalled_indexes"},
+			Metrics:      metrics,
+		}),
 		repoUsageStatisticsOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.RepoUsageStatistics",
 			MetricLabels: []string{"repo_usage_statistics"},
@@ -323,6 +329,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		markIndexErroredOperation:          db.markIndexErroredOperation,
 		dequeueIndexOperation:              db.dequeueIndexOperation,
 		deleteIndexByIdOperation:           db.deleteIndexByIdOperation,
+		resetStalledIndexesOperation:       db.resetStalledIndexesOperation,
 		repoUsageStatisticsOperation:       db.repoUsageStatisticsOperation,
 		repoNameOperation:                  db.repoNameOperation,
 	}
@@ -618,6 +625,13 @@ func (db *ObservedDB) DeleteIndexByID(ctx context.Context, id int) (_ bool, err 
 	ctx, endObservation := db.deleteIndexByIdOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.DeleteIndexByID(ctx, id)
+}
+
+// ResetStalledIndexes calls into the inner DB and registers the observed results.
+func (db *ObservedDB) ResetStalledIndexes(ctx context.Context, now time.Time) (_ []int, err error) {
+	ctx, endObservation := db.resetStalledIndexesOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.ResetStalledIndexes(ctx, now)
 }
 
 // RepoUsageStatistics calls into the inner DB and registers the observed results.
