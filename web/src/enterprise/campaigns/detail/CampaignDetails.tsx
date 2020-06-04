@@ -335,9 +335,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         [campaign, history]
     )
 
-    const afterCampaignModify = useCallback((updatedCampaign: Campaign): void => {
-        setCampaign(updatedCampaign)
-    }, [])
+    const afterCampaignModify = useCallback(
+        (updatedCampaign: Campaign): void => {
+            setCampaign(updatedCampaign)
+            campaignUpdates.next()
+        },
+        [campaignUpdates]
+    )
 
     // Is loading
     if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
