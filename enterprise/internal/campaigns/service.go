@@ -94,9 +94,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 }
 
 // CreateCampaign creates the Campaign. When a PatchSetID is set on the
-// Campaign and the Campaign is not created as a draft, it calls
-// CreateChangesetJobs inside the same transaction in which it creates the
-// Campaign.
+// Campaign it validates that the PatchSet contains Patches.
 func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))

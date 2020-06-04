@@ -1298,7 +1298,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
 			"name":        "Campaign with PatchSet",
 			"description": "This campaign has a patchset",
-			"draft":       true,
 			"patchSet":    patchSetID,
 			"branch":      "my-cool-branch",
 		},
