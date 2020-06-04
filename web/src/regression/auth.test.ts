@@ -1,8 +1,8 @@
 import { describe, before, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient } from './util/GraphQlClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import {
     ensureLoggedInOrCreateTestUser,
@@ -19,7 +19,7 @@ import {
     SAMLAuthProvider,
     OpenIDConnectAuthProvider,
 } from '../schema/site.schema'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
 

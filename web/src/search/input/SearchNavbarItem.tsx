@@ -35,8 +35,8 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
         submitSearch({ ...this.props, query: this.props.navbarSearchState.query, source: 'nav' })
     }
 
-    private onFormSubmit = (e: React.FormEvent): void => {
-        e.preventDefault()
+    private onFormSubmit = (event: React.FormEvent): void => {
+        event.preventDefault()
         this.onSubmit()
     }
 

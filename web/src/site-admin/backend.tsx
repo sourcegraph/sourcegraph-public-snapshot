@@ -166,7 +166,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
             result =>
                 result.nodes &&
                 result.nodes.length > 0 &&
-                result.nodes.every(n => !n.mirrorInfo.cloneInProgress && n.mirrorInfo.cloned),
+                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
             { delay: 5000 }
         )
     )
@@ -623,7 +623,7 @@ export function fetchSiteUpdateCheck(): Observable<{
  */
 export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
     // more details in /internal/prometheusutil.ErrPrometheusUnavailable
-    const errPrometheusUnavailable = 'prometheus API is unavailable'
+    const errorPrometheusUnavailable = 'prometheus API is unavailable'
     return queryGraphQL(
         gql`
             query SiteMonitoringStatistics($days: Int!) {
@@ -643,7 +643,7 @@ export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringSt
     ).pipe(
         map(result => {
             if (isErrorGraphQLResult(result)) {
-                if (result.errors.find(e => e.message.includes(errPrometheusUnavailable))) {
+                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
                     return false
                 }
                 throw createAggregateError(result.errors)

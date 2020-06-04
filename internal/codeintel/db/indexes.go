@@ -176,3 +176,30 @@ func (db *dbImpl) DequeueIndex(ctx context.Context) (Index, DB, bool, error) {
 
 	return index.(Index), tx, true, nil
 }
+
+// StalledIndexMaxAge is the maximum allowable duration between updating the state of an
+// index as "processing" and locking the index row during processing. An unlocked row that
+// is marked as processing likely indicates that the indexer that dequeued the index has
+// died. There should be a nearly-zero delay between these states during normal operation.
+const StalledIndexMaxAge = time.Second * 5
+
+// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
+// queued state. This method returns a list of updated index identifiers.
+func (db *dbImpl) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error) {
+	ids, err := scanInts(db.query(
+		ctx,
+		sqlf.Sprintf(`
+			UPDATE lsif_indexes u SET state = 'queued', started_at = null WHERE id = ANY(
+				SELECT id FROM lsif_indexes
+				WHERE state = 'processing' AND %s - started_at > (%s * interval '1 second')
+				FOR UPDATE SKIP LOCKED
+			)
+			RETURNING u.id
+		`, now.UTC(), StalledIndexMaxAge/time.Second),
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}

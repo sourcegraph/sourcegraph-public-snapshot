@@ -32,9 +32,9 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
             <p>This extension doesn't define any settings or actions. No configuration is required to use it.</p>
         )}
         {contributionGroups.map(
-            (group, i) =>
+            (group, index) =>
                 (group.error || group.rows.length > 0) && (
-                    <React.Fragment key={i}>
+                    <React.Fragment key={index}>
                         <h3>
                             {group.title} ({group.rows.length})
                         </h3>
@@ -42,16 +42,16 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
                         <table className="table mb-5">
                             <thead>
                                 <tr>
-                                    {group.columnHeaders.map((label, i) => (
-                                        <th key={i}>{label}</th>
+                                    {group.columnHeaders.map((label, index) => (
+                                        <th key={index}>{label}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {group.rows.map((cells, i) => (
-                                    <tr key={i}>
-                                        {cells.map((content, i) => (
-                                            <td key={i}>{content}</td>
+                                {group.rows.map((cells, index) => (
+                                    <tr key={index}>
+                                        {cells.map((content, index) => (
+                                            <td key={index}>{content}</td>
                                         ))}
                                     </tr>
                                 ))}
@@ -127,8 +127,8 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                     ) : (
                         description
                     ),
-                    menus.map((menu, i) => (
-                        <code key={i} className="mr-1 border p-1">
+                    menus.map((menu, index) => (
+                        <code key={index} className="mr-1 border p-1">
                             {menu}
                         </code>
                     )),

@@ -133,7 +133,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
                         return queryExtension(extensionID).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
-                            map((c): PartialStateUpdate => ({ extensionOrError: c })),
+                            map((extensionOrError): PartialStateUpdate => ({ extensionOrError })),
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
                             // loading.
@@ -143,7 +143,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 

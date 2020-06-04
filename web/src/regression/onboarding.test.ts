@@ -1,9 +1,9 @@
 import { describe, before, after, test } from 'mocha'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { Driver } from '../../../shared/src/e2e/driver'
+import { Driver } from '../../../shared/src/testing/driver'
 import { GraphQLClient } from './util/GraphQlClient'
 import { getTestTools } from './util/init'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
     ensureTestExternalService,
@@ -14,11 +14,11 @@ import {
     getExternalServices,
 } from './util/api'
 import { Key } from 'ts-key-enum'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../shared/src/testing/utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
 
@@ -37,8 +37,8 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
             throw new Error('No activation status dropdown menu')
         }
         const lineItems = [...dropdownMenu.querySelectorAll('.activation-dropdown-item')]
-        const complete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-success')]).length
-        const incomplete = lineItems.flatMap(el => [...el.querySelectorAll('.mdi-icon.text-muted')]).length
+        const complete = lineItems.flatMap(element => [...element.querySelectorAll('.mdi-icon.text-success')]).length
+        const incomplete = lineItems.flatMap(element => [...element.querySelectorAll('.mdi-icon.text-muted')]).length
         return {
             complete,
             total: complete + incomplete,
@@ -204,12 +204,12 @@ describe('Onboarding', () => {
         // await driver.page.mouse.move(100, 100)
         const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
         await driver.page.waitForXPath(defTokenXPath)
-        const elems = await driver.page.$x(defTokenXPath)
-        await Promise.all(elems.map(e => e.click()))
-        await Promise.all(elems.map(elem => elem.dispose()))
-        const findRefsSelector = '.e2e-tooltip-find-references'
-        await driver.page.waitForSelector(findRefsSelector)
-        await driver.page.click(findRefsSelector)
+        const elements = await driver.page.$x(defTokenXPath)
+        await Promise.all(elements.map(element => element.click()))
+        await Promise.all(elements.map(element => element.dispose()))
+        const findReferencesSelector = '.e2e-tooltip-find-references'
+        await driver.page.waitForSelector(findReferencesSelector)
+        await driver.page.click(findReferencesSelector)
         await driver.page.waitForSelector('.e2e-search-result')
 
         await delay(500) // allow some time for confetti to play

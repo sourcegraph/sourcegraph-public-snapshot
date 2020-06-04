@@ -9,8 +9,8 @@ interface Props {
 
 export const AddFilterDropdown: React.FunctionComponent<Props> = ({ onAddNewFilter }) => {
     const addNewFilter = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>): void => {
-            onAddNewFilter(e.target.value as FilterType)
+        (event: React.ChangeEvent<HTMLSelectElement>): void => {
+            onAddNewFilter(event.target.value as FilterType)
         },
         [onAddNewFilter]
     )

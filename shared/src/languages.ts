@@ -9,9 +9,9 @@ const PLAINTEXT_MODE = 'plaintext'
  */
 export function getModeFromPath(path: string): string {
     const fileName = basename(path)
-    const ext = getPathExtension(path)
+    const extension = getPathExtension(path)
 
-    return getModeFromExactFilename(fileName) || getModeFromExtension(ext) || PLAINTEXT_MODE
+    return getModeFromExactFilename(fileName) || getModeFromExtension(extension) || PLAINTEXT_MODE
 }
 
 /**
@@ -37,8 +37,8 @@ function getModeFromExactFilename(fileName: string): string | undefined {
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
  */
-function getModeFromExtension(ext: string): string | undefined {
-    switch (ext.toLowerCase()) {
+function getModeFromExtension(extension: string): string | undefined {
+    switch (extension.toLowerCase()) {
         // Ada
         case 'adb':
         case 'ada':

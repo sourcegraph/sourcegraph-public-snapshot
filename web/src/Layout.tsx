@@ -29,7 +29,7 @@ import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevContainerRoute } from './repo/RepoRevContainer'
+import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
 import {
     parseSearchURLQuery,
@@ -88,7 +88,7 @@ export interface LayoutProps
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
-    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]

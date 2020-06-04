@@ -83,7 +83,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            rev: 'master',
+                            revision: 'master',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -105,7 +105,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
-                            rev: 'master',
+                            revision: 'master',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -125,7 +125,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            rev: 'master',
+                            revision: 'master',
                             filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                             position: {
                                 line: 5,
@@ -154,7 +154,7 @@ describe('github/codeHost', () => {
                         {
                             repoName: 'sourcegraph/sourcegraph',
                             rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                            rev: 'core/gitserver-tracing',
+                            revision: 'core/gitserver-tracing',
                             filePath: 'cmd/gitserver/server/server.go',
                             position: {
                                 line: 1335,

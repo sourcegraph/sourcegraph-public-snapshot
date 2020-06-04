@@ -15,7 +15,6 @@ import {
     deleteCampaign,
     createCampaign,
     closeCampaign,
-    publishCampaign,
     fetchPatchSetById,
 } from './backend'
 import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
@@ -45,7 +44,7 @@ import { PatchSetPatches } from './patches/PatchSetPatches'
 import { CampaignBranchField } from './form/CampaignBranchField'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 
-export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
 interface Campaign
     extends Pick<
@@ -58,7 +57,6 @@ interface Campaign
         | 'changesetCountsOverTime'
         | 'createdAt'
         | 'updatedAt'
-        | 'publishedAt'
         | 'closedAt'
         | 'viewerCanAdminister'
         | 'branch'
@@ -177,15 +175,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [patchSetID])
 
     // To unblock the history after leaving edit mode
-    const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
+    const unblockHistoryReference = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
         if (!campaignID && patchSetID === null) {
-            unblockHistoryRef.current()
-            unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
+            unblockHistoryReference.current()
+            unblockHistoryReference.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
-        return () => unblockHistoryRef.current()
+        return () => unblockHistoryReference.current()
     }, [campaignID, history, patchSetID])
 
     const patchSet = useObservable(
@@ -216,50 +214,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const specifyingBranchAllowed =
         // on campaign creation
         (!campaign && patchSet) ||
-        // or when it's not yet published and no changesets have been published or are being published as well
+        // or when no changesets have been published or are being published as well
         (campaign &&
-            !campaign.publishedAt &&
             campaign.changesets.totalCount === 0 &&
             campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
-
-    const onDraft: React.FormEventHandler = useCallback(
-        async event => {
-            event.preventDefault()
-            setMode('saving')
-            try {
-                const createdCampaign = await createCampaign({
-                    name,
-                    description,
-                    namespace: authenticatedUser.id,
-                    patchSet: patchSet ? patchSet.id : undefined,
-                    branch: specifyingBranchAllowed ? branch : undefined,
-                    draft: true,
-                })
-                unblockHistoryRef.current()
-                history.push(`/campaigns/${createdCampaign.id}`)
-                setMode('viewing')
-                setAlertError(undefined)
-                campaignUpdates.next()
-            } catch (error) {
-                setMode('editing')
-                setAlertError(asError(error))
-            }
-        },
-        [authenticatedUser.id, branch, campaignUpdates, description, history, name, patchSet, specifyingBranchAllowed]
-    )
-
-    const onPublish = useCallback(async (): Promise<void> => {
-        setMode('publishing')
-        try {
-            await publishCampaign(campaign!.id)
-            setAlertError(undefined)
-            campaignUpdates.next()
-        } catch (error) {
-            setAlertError(asError(error))
-        } finally {
-            setMode('viewing')
-        }
-    }, [campaign, campaignUpdates])
 
     const onSubmit: React.FormEventHandler = useCallback(
         async event => {
@@ -279,7 +237,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setDescription(newCampaign.description ?? '')
                     setBranch(newCampaign.branch ?? '')
                     setBranchModified(false)
-                    unblockHistoryRef.current()
+                    unblockHistoryReference.current()
                     history.push(`/campaigns/${newCampaign.id}`)
                 } else {
                     const createdCampaign = await createCampaign({
@@ -289,7 +247,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         patchSet: patchSet ? patchSet.id : undefined,
                         branch: specifyingBranchAllowed ? branch : undefined,
                     })
-                    unblockHistoryRef.current()
+                    unblockHistoryReference.current()
                     history.push(`/campaigns/${createdCampaign.id}`)
                 }
                 setMode('viewing')
@@ -319,7 +277,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onEdit: React.MouseEventHandler = useCallback(
         event => {
             event.preventDefault()
-            unblockHistoryRef.current = history.block(discardChangesMessage)
+            unblockHistoryReference.current = history.block(discardChangesMessage)
             setMode('editing')
             setAlertError(undefined)
         },
@@ -332,7 +290,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             if (!confirm(discardChangesMessage)) {
                 return
             }
-            unblockHistoryRef.current()
+            unblockHistoryReference.current()
             // clear query params
             history.replace(location.pathname)
             setMode('viewing')
@@ -433,7 +391,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             />
             {alertError && <ErrorAlert error={alertError} history={history} />}
             {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} history={history} />
+                <CampaignStatus campaign={campaign} afterRetry={afterRetry} history={history} />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 {['saving', 'editing'].includes(mode) && (
@@ -535,19 +493,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {!campaign && (
                     <>
                         <div className="mt-2">
-                            {/* When creating from a patch set, allow draft campaigns */}
-                            {patchSet && (
-                                <button
-                                    type="submit"
-                                    form={campaignFormID}
-                                    className="btn btn-secondary mr-1"
-                                    // todo: doesn't trigger form validation
-                                    onClick={onDraft}
-                                    disabled={mode !== 'editing'}
-                                >
-                                    Create draft
-                                </button>
-                            )}
                             <button
                                 type="submit"
                                 form={campaignFormID}
@@ -633,7 +578,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         campaign={campaign}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
-                                        enablePublishing={!campaign.closedAt}
+                                        enablePublishing={!campaign.closedAt && campaign.viewerCanAdminister}
                                         history={history}
                                         location={location}
                                         isLightTheme={isLightTheme}
@@ -643,6 +588,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         patchSet={patchSet!}
                                         campaignUpdates={campaignUpdates}
                                         changesetUpdates={changesetUpdates}
+                                        // No publishing allowed in create view.
                                         enablePublishing={false}
                                         history={history}
                                         location={location}

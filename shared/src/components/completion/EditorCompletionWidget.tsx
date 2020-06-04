@@ -73,7 +73,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
                         .pipe(share())
                     return merge(of(LOADING).pipe(delay(2000), takeUntil(result)), result)
                 }),
-                catchError(err => [asError(err)])
+                catchError(error => [asError(error)])
             )
             .subscribe(setCompletionListOrError)
         return () => subscription.unsubscribe()
@@ -109,16 +109,16 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
             modelService.updateModel(editor.resource, beforeText + itemText + afterText)
 
             // TODO: Support multi-line completion insertions.
-            const pos: Position = {
+            const position: Position = {
                 line: replaceRange.start.line,
                 character: replaceRange.start.character + itemText.length,
             }
             viewerService.setSelections(editor, [
                 {
-                    active: pos,
-                    anchor: pos,
-                    start: pos,
-                    end: pos,
+                    active: position,
+                    anchor: position,
+                    start: position,
+                    end: position,
                     isReversed: false,
                 },
                 ...secondarySelections,

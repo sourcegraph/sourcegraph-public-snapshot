@@ -60,9 +60,9 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
             state.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
             rootChanges.next()
         },
-        syncVersionContext: ctx => {
-            state.versionContext = ctx
-            versionContextChanges.next(ctx)
+        syncVersionContext: context => {
+            state.versionContext = context
+            versionContextChanges.next(context)
         },
     }
 
@@ -92,8 +92,8 @@ export const initNewExtensionAPI = (mainAPI: Remote<MainThreadAPI>): InitResult 
 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
-        executeCommand: (cmd, ...args) => mainAPI.executeCommand(cmd, args),
-        registerCommand: (cmd, callback) => syncSubscription(mainAPI.registerCommand(cmd, proxy(callback))),
+        executeCommand: (command, ...args) => mainAPI.executeCommand(command, args),
+        registerCommand: (command, callback) => syncSubscription(mainAPI.registerCommand(command, proxy(callback))),
     }
 
     return {

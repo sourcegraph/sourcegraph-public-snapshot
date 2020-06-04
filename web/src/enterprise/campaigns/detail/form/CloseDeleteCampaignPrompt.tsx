@@ -27,26 +27,26 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     onButtonClick,
     buttonClassName = '',
 }) => {
-    const detailsMenuRef = React.createRef<HTMLDetailsElement>()
+    const detailsMenuReference = React.createRef<HTMLDetailsElement>()
     // Global click event listener, used for detecting interaction with other elements. Closes the menu then.
     useEffect(() => {
         const listener = (event: MouseEvent): void => {
-            if (!detailsMenuRef.current || !event.target || !(event.target instanceof HTMLElement)) {
+            if (!detailsMenuReference.current || !event.target || !(event.target instanceof HTMLElement)) {
                 return
             }
             // Only close if nothing within the details menu was clicked
-            if (event.target !== detailsMenuRef.current && !detailsMenuRef.current.contains(event.target)) {
-                detailsMenuRef.current.open = false
+            if (event.target !== detailsMenuReference.current && !detailsMenuReference.current.contains(event.target)) {
+                detailsMenuReference.current.open = false
             }
         }
         document.addEventListener('click', listener)
         return () => document.removeEventListener('click', listener)
-    }, [detailsMenuRef])
+    }, [detailsMenuReference])
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const onClick = useCallback(() => onButtonClick(closeChangesets), [onButtonClick, closeChangesets])
     return (
         <>
-            <details className="campaign-prompt__details" ref={detailsMenuRef}>
+            <details className="campaign-prompt__details" ref={detailsMenuReference}>
                 <summary>
                     <span
                         className={classNames('btn dropdown-toggle', buttonClassName, disabled && 'disabled')}
@@ -66,7 +66,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                                         <input
                                             type="checkbox"
                                             checked={closeChangesets}
-                                            onChange={e => setCloseChangesets(e.target.checked)}
+                                            onChange={event => setCloseChangesets(event.target.checked)}
                                         />{' '}
                                         Close {changesetsCount} open {pluralize('changeset', changesetsCount)} on code
                                         hosts

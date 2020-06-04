@@ -1335,6 +1335,8 @@ type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
 	HasPatchSet *bool
+	// Only return campaigns where author_id is the given.
+	OnlyForAuthor int32
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1372,6 +1374,10 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		} else {
 			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
+	}
+
+	if opts.OnlyForAuthor != 0 {
+		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
 	}
 
 	if len(preds) == 0 {
@@ -1451,6 +1457,8 @@ type ListCampaignsOpts struct {
 	Limit       int
 	State       campaigns.CampaignState
 	HasPatchSet *bool
+	// Only return campaigns where author_id is the given.
+	OnlyForAuthor int32
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1523,6 +1531,10 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		} else {
 			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
+	}
+
+	if opts.OnlyForAuthor != 0 {
+		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
 	}
 
 	return sqlf.Sprintf(
@@ -1744,6 +1756,13 @@ type GetCampaignStatusOpts struct {
 	// BackgroundProcessStatus returned by GetCampaignStatus won't be
 	// populated.
 	ExcludeErrors bool
+
+	// ExcludeErrorsInRepos filters out error messages from ChangesetJobs that
+	// are associated with Patches that have the given repository IDs set in
+	// `patches.repo_id`.
+	// This is used to filter out error messages from repositories the user
+	// doesn't have access to.
+	ExcludeErrorsInRepos []api.RepoID
 }
 
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
@@ -1765,6 +1784,19 @@ func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
 	var errorsPreds []*sqlf.Query
 	if opts.ExcludeErrors {
 		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
+	}
+
+	if len(opts.ExcludeErrorsInRepos) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ExcludeErrorsInRepos))
+
+		for _, repoID := range opts.ExcludeErrorsInRepos {
+			ids = append(ids, sqlf.Sprintf("%s", repoID))
+		}
+
+		joined := sqlf.Join(ids, ",")
+
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("patches.repo_id NOT IN (%s)", joined))
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
 	}
 
 	if len(errorsPreds) == 0 {
@@ -1813,6 +1845,7 @@ SELECT
   COUNT(*) FILTER (WHERE error != '') AS failed,
   array_agg(error) FILTER (WHERE %s) AS errors
 FROM changeset_jobs
+JOIN patches ON patches.id = changeset_jobs.patch_id
 WHERE %s
 LIMIT 1
 `
@@ -2029,6 +2062,11 @@ type CountPatchesOpts struct {
 	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
+
+	// If this is set to a Campaign ID only the Patches are returned that are
+	// _not_ associated with any ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
+	OnlyWithoutChangesetJobInCampaign int64
 }
 
 // CountPatches returns the number of Patches in the database.
@@ -2063,6 +2101,10 @@ func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	}
+
+	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
+		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
 	}
 
 	return sqlf.Sprintf(countPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -2143,6 +2185,11 @@ type ListPatchesOpts struct {
 	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
+	// If this is set to a Campaign ID only the Patches are returned that are
+	// _not_ associated with any ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
+	OnlyWithoutChangesetJobInCampaign int64
+
 	// If this is set only the Patches where diff_stat_added OR
 	// diff_stat_changed OR diff_stat_deleted are NULL.
 	OnlyWithoutDiffStats bool
@@ -2222,6 +2269,10 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
+	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
+		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
+	}
+
 	if opts.OnlyWithoutDiffStats {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
@@ -2262,6 +2313,21 @@ NOT EXISTS (
 
 func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
 	return sqlf.Sprintf(onlyUnpublishedInCampaignQueryFmtstr, campaignID)
+}
+
+var onlyWithoutChangesetJobInCampaignQueryFmtstr = `
+NOT EXISTS (
+  SELECT 1
+  FROM changeset_jobs
+  WHERE
+    changeset_jobs.patch_id = patches.id
+  AND
+    changeset_jobs.campaign_id = %s
+)
+`
+
+func onlyWithoutChangesetJobInCampaignQuery(campaignID int64) *sqlf.Query {
+	return sqlf.Sprintf(onlyWithoutChangesetJobInCampaignQueryFmtstr, campaignID)
 }
 
 // CreateChangesetJob creates the given ChangesetJob.
@@ -2434,34 +2500,6 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
-
-// GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
-// for a campaign. But only if they have all been created, one for each Patch belonging to the PatchSet attached to the Campaign. If not, it returns a zero time.Time.
-func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
-	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
-	var createdAt time.Time
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
-		if err != nil {
-			return 0, 0, err
-		}
-		return 0, 1, nil
-	})
-	if err != nil {
-		return createdAt, err
-	}
-	return createdAt, nil
-}
-
-var getLatestChangesetJobPublishedAtFmtstr = `
-SELECT
-  max(changeset_jobs.created_at)
-FROM patches
-INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
-LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
-WHERE campaigns.id = %s
-HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
-`
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
@@ -2695,6 +2733,42 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 			return 0, 0, err
 		}
 		ids = append(ids, s)
+		return 0, 1, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+// GetRepoIDsForFailedChangesetJobs returns the repository IDs of patches that
+// are associated with failed changeset jobs belonging to the specified
+// campaign.
+// The repository IDs are used to get filtered by our authzFilter so we can
+// then only load the error messages of the changeset jobs belonging to
+// repositories that are NOT filtered out.
+func (s *Store) GetRepoIDsForFailedChangesetJobs(ctx context.Context, campaign int64) ([]api.RepoID, error) {
+	const queryFmtString = `
+	SELECT patches.repo_id
+	FROM changeset_jobs
+	JOIN patches ON patches.id = changeset_jobs.patch_id
+	WHERE
+	  changeset_jobs.campaign_id = %s
+	AND
+	  changeset_jobs.error != ''
+	AND
+	  changeset_jobs.finished_at IS NOT NULL;
+	`
+
+	q := sqlf.Sprintf(queryFmtString, campaign)
+	var ids []api.RepoID
+	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var id api.RepoID
+		err = sc.Scan(&id)
+		if err != nil {
+			return 0, 0, err
+		}
+		ids = append(ids, id)
 		return 0, 1, nil
 	})
 	if err != nil {

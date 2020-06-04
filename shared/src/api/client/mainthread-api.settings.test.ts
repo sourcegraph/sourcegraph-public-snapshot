@@ -69,18 +69,18 @@ describe('configuration', () => {
             updateSettings: () => Promise.resolve(),
         }
 
-        const passedToExtHost: SettingsCascade<object>[] = []
+        const passedToExtensionHost: SettingsCascade<object>[] = []
         initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
                 syncSettingsData: data => {
-                    passedToExtHost.push(data)
+                    passedToExtensionHost.push(data)
                 },
             }),
             platformContext,
             defaultDependencies()
         )
 
-        expect(passedToExtHost).toEqual<SettingsCascade<{ a: string }>[]>([values[0], values[2]])
+        expect(passedToExtensionHost).toEqual<SettingsCascade<{ a: string }>[]>([values[0], values[2]])
     })
 
     test('changes of settings are not passed to ext host after unsub', () => {
@@ -90,11 +90,11 @@ describe('configuration', () => {
             updateSettings: () => Promise.resolve(),
         }
 
-        const passedToExtHost: SettingsCascade<object>[] = []
+        const passedToExtensionHost: SettingsCascade<object>[] = []
         const { subscription } = initMainThreadAPI(
             pretendRemote<FlatExtHostAPI>({
                 syncSettingsData: data => {
-                    passedToExtHost.push(data)
+                    passedToExtensionHost.push(data)
                 },
             }),
             platformContext,
@@ -112,10 +112,10 @@ describe('configuration', () => {
         }
 
         values.next(one)
-        expect(passedToExtHost).toEqual([one])
+        expect(passedToExtensionHost).toEqual([one])
 
         subscription.unsubscribe()
         values.next(two)
-        expect(passedToExtHost).toEqual([one]) // nothing happened after unsub
+        expect(passedToExtensionHost).toEqual([one]) // nothing happened after unsub
     })
 })

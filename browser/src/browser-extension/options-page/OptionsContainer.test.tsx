@@ -65,13 +65,13 @@ describe('OptionsContainer', () => {
         const buildRenderer = (): ((ui: React.ReactElement) => void) => {
             let rerender: RenderResult['rerender'] | undefined
 
-            return ui => {
+            return element => {
                 if (rerender) {
-                    rerender(ui)
+                    rerender(element)
                 } else {
-                    const renderedRes = render(ui)
+                    const renderedResult = render(element)
 
-                    rerender = renderedRes.rerender
+                    rerender = renderedResult.rerender
                 }
             }
         }

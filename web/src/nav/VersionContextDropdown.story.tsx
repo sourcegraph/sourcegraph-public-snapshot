@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import webMainStyles from '../SourcegraphWebApp.scss'
-import { subTypeOf } from '../../../shared/src/util/types'
+import { subtypeOf } from '../../../shared/src/util/types'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { action } from '@storybook/addon-actions'
 
@@ -16,7 +16,7 @@ const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(sto
 
 const setVersionContext = action('setVersionContext')
 const history = H.createMemoryHistory({ keyLength: 0 })
-const commonProps = subTypeOf<Partial<VersionContextDropdownProps>>()({
+const commonProps = subtypeOf<Partial<VersionContextDropdownProps>>()({
     alwaysShow: true,
     history,
     // Make sure the dropdown is not rendered outside the theme-light container

@@ -99,13 +99,13 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
                             catchError(error => [asError(error)]),
-                            map((c): Pick<State, 'userOrError'> => ({ userOrError: c }))
+                            map((userOrError): Pick<State, 'userOrError'> => ({ userOrError }))
                         )
                     )
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 
@@ -123,7 +123,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             username: this.state.username === undefined ? null : this.state.username,
                             displayName: this.state.displayName === undefined ? null : this.state.displayName,
                             avatarURL: this.state.avatarURL === undefined ? null : this.state.avatarURL,
-                        }).pipe(catchError(err => this.handleError(err)))
+                        }).pipe(catchError(error => this.handleError(error)))
                     ),
                     tap(() => {
                         this.setState({ loading: false, saved: true })
@@ -142,7 +142,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     // In case the edited user is the current user, immediately reflect the changes in the UI.
                     mergeMap(() => concat(refreshAuthenticatedUser(), [null]))
                 )
-                .subscribe({ error: err => this.handleError(err) })
+                .subscribe({ error: error => this.handleError(error) })
         )
         this.componentUpdates.next(this.props)
     }
@@ -278,25 +278,25 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         )
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ username: e.target.value })
+    private onUsernameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ username: event.target.value })
     }
 
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ displayName: e.target.value })
+    private onDisplayNameFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ displayName: event.target.value })
     }
 
-    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        this.setState({ avatarURL: e.target.value })
+    private onAvatarURLFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        this.setState({ avatarURL: event.target.value })
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error): [] => {
-        console.error(err)
-        this.setState({ loading: false, saved: false, error: err })
+    private handleError = (error: Error): [] => {
+        console.error(error)
+        this.setState({ loading: false, saved: false, error })
         return []
     }
 }

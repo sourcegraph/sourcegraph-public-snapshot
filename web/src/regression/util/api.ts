@@ -19,7 +19,7 @@ import {
 } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
-import { Config } from '../../../../shared/src/e2e/config'
+import { Config } from '../../../../shared/src/testing/config'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
 type WaitForRepoOptions = Partial<
@@ -86,7 +86,7 @@ export function waitForRepo(
         `,
         { repoName }
     )
-    const numRetries = Math.ceil(timeout / retryPeriod)
+    const numberRetries = Math.ceil(timeout / retryPeriod)
     return shouldNotExist
         ? request.pipe(
               map(result => {
@@ -110,7 +110,7 @@ export function waitForRepo(
                                       console.log(
                                           `Waiting for ${repoName} to be removed (attempt ${
                                               retryCount + 1
-                                          } of ${numRetries})`
+                                          } of ${numberRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)
@@ -118,7 +118,7 @@ export function waitForRepo(
                               // Throw all errors
                               throw error
                           }),
-                          take(numRetries)
+                          take(numberRetries)
                       ),
                       defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                   )
@@ -148,7 +148,7 @@ export function waitForRepo(
                                       console.log(
                                           `Waiting for ${repoName} to finish cloning (attempt ${
                                               retryCount + 1
-                                          } of ${numRetries})`
+                                          } of ${numberRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)
@@ -156,7 +156,7 @@ export function waitForRepo(
                               // Throw all errors other than ECLONEINPROGRESS
                               throw error
                           }),
-                          take(numRetries)
+                          take(numberRetries)
                       ),
                       defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                   )

@@ -166,7 +166,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         }).pipe(
                             filter(isDefined),
                             catchError(error => [asError(error)]),
-                            map((c): PartialStateUpdate => ({ userOrError: c })),
+                            map((userOrError): PartialStateUpdate => ({ userOrError })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.
@@ -176,7 +176,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 

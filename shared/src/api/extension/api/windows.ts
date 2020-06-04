@@ -6,8 +6,8 @@ import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
 import { ViewerUpdate } from '../../client/services/viewerService'
-import { ExtCodeEditor } from './codeEditor'
-import { ExtDocuments } from './documents'
+import { ExtensionCodeEditor } from './codeEditor'
+import { ExtensionDocuments } from './documents'
 
 interface WindowsProxyData {
     windows: ClientWindowsAPI
@@ -18,11 +18,11 @@ interface WindowsProxyData {
  * @todo Send the show{Notification,Message,InputBox} requests to the same window (right now they are global).
  * @internal
  */
-export class ExtWindow implements sourcegraph.Window {
+export class ExtensionWindow implements sourcegraph.Window {
     /** Mutable map of viewer ID to viewer. */
-    private viewComponents = new Map<string, ExtCodeEditor | sourcegraph.DirectoryViewer>()
+    private viewComponents = new Map<string, ExtensionCodeEditor | sourcegraph.DirectoryViewer>()
 
-    constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: ViewerUpdate[]) {
+    constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtensionDocuments, data: ViewerUpdate[]) {
         this.update(data)
     }
 
@@ -72,8 +72,8 @@ export class ExtWindow implements sourcegraph.Window {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 reporterProxy.next(progress)
             },
-            error: (err: any) => {
-                const error = asError(err)
+            error: (value: any) => {
+                const error = asError(value)
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 reporterProxy.error({
                     message: error.message,
@@ -97,10 +97,10 @@ export class ExtWindow implements sourcegraph.Window {
             switch (update.type) {
                 case 'added': {
                     const { viewerData } = update
-                    let viewer: ExtCodeEditor | sourcegraph.DirectoryViewer
+                    let viewer: ExtensionCodeEditor | sourcegraph.DirectoryViewer
                     switch (viewerData.type) {
                         case 'CodeEditor':
-                            viewer = new ExtCodeEditor(
+                            viewer = new ExtensionCodeEditor(
                                 { viewerId, ...viewerData },
                                 this.proxy.codeEditor,
                                 this.documents
@@ -150,7 +150,7 @@ export class ExtWindow implements sourcegraph.Window {
 }
 
 /** @internal */
-export interface ExtWindowsAPI extends ProxyMarked {
+export interface ExtensionWindowsAPI extends ProxyMarked {
     $acceptWindowData(viewerUpdates: ViewerUpdate[]): void
 }
 
@@ -158,18 +158,18 @@ export interface ExtWindowsAPI extends ProxyMarked {
  * @internal
  * @todo Support more than 1 window.
  */
-export class ExtWindows implements ExtWindowsAPI, ProxyMarked {
+export class ExtensionWindows implements ExtensionWindowsAPI, ProxyMarked {
     public readonly [proxyMarker] = true
 
-    public activeWindow: ExtWindow
+    public activeWindow: ExtensionWindow
     public readonly activeWindowChanges: Observable<sourcegraph.Window>
 
     /** @internal */
     constructor(
         private proxy: Remote<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
-        private documents: ExtDocuments
+        private documents: ExtensionDocuments
     ) {
-        this.activeWindow = new ExtWindow(this.proxy, this.documents, [])
+        this.activeWindow = new ExtensionWindow(this.proxy, this.documents, [])
         this.activeWindowChanges = of(this.activeWindow)
     }
 
