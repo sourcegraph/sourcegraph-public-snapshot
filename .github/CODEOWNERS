@@ -59,13 +59,13 @@
 /.yarnrc @felixfbecker
 .eslintrc.js @felixfbecker
 /internal/buildkite @ggilmore
-/internal/httpcli @sourcegraph/core-services
+/internal/httpcli @sourcegraph/cloud
 /dev/release-ping.sh @sourcegraph/distribution
 /dev/grafana.sh @sourcegraph/distribution
 /dev/grafana @sourcegraph/distribution
 /dev/prometheus.sh @sourcegraph/distribution
 /dev/prometheus @sourcegraph/distribution
-/dev/zoekt @sourcegraph/core-services
+/dev/zoekt @sourcegraph/cloud
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash_migrations.sh @efritz
@@ -114,29 +114,29 @@
 /internal/actor/ @beyang @unknwon
 
 # Core Services
-/cmd/frontend/authz/ @sourcegraph/core-services
-/cmd/frontend/db/ @sourcegraph/core-services
-/cmd/frontend/globals/ @sourcegraph/core-services @slimsag
-/cmd/frontend/graphqlbackend/ @sourcegraph/core-services @slimsag
-/cmd/frontend/internal/bg/ @sourcegraph/core-services @slimsag
-/cmd/github-proxy/ @sourcegraph/core-services
-/cmd/gitserver/ @sourcegraph/core-services
-/cmd/repo-updater/ @sourcegraph/core-services
-/enterprise/cmd/frontend/authz/ @sourcegraph/core-services
-/enterprise/cmd/frontend/db/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag
-/enterprise/cmd/repo-updater/ @sourcegraph/core-services
-/internal/api/ @sourcegraph/core-services
-/internal/extsvc/ @sourcegraph/core-services
-/internal/gitserver/ @sourcegraph/core-services
-/internal/jsonc/ @sourcegraph/core-services @tsenart @slimsag
-/internal/repoupdater/ @sourcegraph/core-services
-/internal/trace/ @sourcegraph/core-services
-/internal/tracer/ @sourcegraph/core-services
-/internal/vcs/ @sourcegraph/core-services
-/migrations/ @sourcegraph/core-services
-/schema/ @sourcegraph/core-services
+/cmd/frontend/authz/ @sourcegraph/cloud
+/cmd/frontend/db/ @sourcegraph/cloud
+/cmd/frontend/globals/ @sourcegraph/cloud @slimsag
+/cmd/frontend/graphqlbackend/ @sourcegraph/cloud @slimsag
+/cmd/frontend/internal/bg/ @sourcegraph/cloud @slimsag
+/cmd/github-proxy/ @sourcegraph/cloud
+/cmd/gitserver/ @sourcegraph/cloud
+/cmd/repo-updater/ @sourcegraph/cloud
+/enterprise/cmd/frontend/authz/ @sourcegraph/cloud
+/enterprise/cmd/frontend/db/ @sourcegraph/cloud
+/enterprise/cmd/frontend/internal/authz/ @sourcegraph/cloud
+/enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/cloud @slimsag
+/enterprise/cmd/repo-updater/ @sourcegraph/cloud
+/internal/api/ @sourcegraph/cloud
+/internal/extsvc/ @sourcegraph/cloud
+/internal/gitserver/ @sourcegraph/cloud
+/internal/jsonc/ @sourcegraph/cloud @tsenart @slimsag
+/internal/repoupdater/ @sourcegraph/cloud
+/internal/trace/ @sourcegraph/cloud
+/internal/tracer/ @sourcegraph/cloud
+/internal/vcs/ @sourcegraph/cloud
+/migrations/ @sourcegraph/cloud
+/schema/ @sourcegraph/cloud
 
 # Campaigns
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
@@ -239,7 +239,7 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
-/dev/repogen @sourcegraph/core-services
+/dev/repogen @sourcegraph/cloud
 /.vscode @felixfbecker
 /.graphqlconfig @felixfbecker
 
@@ -252,12 +252,12 @@ Dockerfile @sourcegraph/distribution
 /dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
-/ThirdPartyLicensesGo.csv @sourcegraph/core-services
+/ThirdPartyLicensesGo.csv @sourcegraph/cloud
 /ThirdPartyLicensesNpm.csv @sourcegraph/web
 /dev/licenses-npm.sh @sourcegraph/web
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
-/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/core-services
+/cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/cloud
 
 # These are configured through Renovate config.
 # See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
@@ -265,8 +265,8 @@ Dockerfile @sourcegraph/distribution
 **/package.json
 **/yarn.lock
 
-/go.sum @sourcegraph/core-services
-/go.mod @sourcegraph/core-services
+/go.sum @sourcegraph/cloud
+/go.mod @sourcegraph/cloud
 /CHANGELOG.md
 
 /.tool-versions @sourcegraph/distribution
