@@ -115,11 +115,11 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
+export async function retryCampaignChangesets(campaignID: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
-            mutation RetryCampaign($campaign: ID!) {
-                retryCampaign(campaign: $campaign) {
+            mutation RetryCampaignChangesets($campaign: ID!) {
+                retryCampaignChangesets(campaign: $campaign) {
                     ...CampaignFields
                 }
             }
@@ -128,7 +128,7 @@ export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
         `,
         { campaign: campaignID }
     ).toPromise()
-    return dataOrThrowErrors(result).retryCampaign
+    return dataOrThrowErrors(result).retryCampaignChangesets
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {

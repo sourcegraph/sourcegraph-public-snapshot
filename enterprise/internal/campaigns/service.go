@@ -94,9 +94,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 }
 
 // CreateCampaign creates the Campaign. When a PatchSetID is set on the
-// Campaign and the Campaign is not created as a draft, it calls
-// CreateChangesetJobs inside the same transaction in which it creates the
-// Campaign.
+// Campaign it validates that the PatchSet contains Patches.
 func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
@@ -364,7 +362,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 // If one of the changeset IDs is invalid an error is returned.
 func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64, changesetIDs []int64) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, changesets: %v", campaignID, changesetIDs)
-	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
+	tr, ctx := trace.New(ctx, "service.AddChangesetsToCampaign", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -494,6 +492,74 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	}
 
 	return campaign, nil
+}
+
+// EnqueueChangesetJobs enqueues ChangesetJob for each Patch associated with
+// the PatchSet in the given Campaign, creating it if necessary. The Patch has
+// to belong to a PatchSet
+func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", campaignID)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobs", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return err
+	}
+
+	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
+	if err != nil {
+		return err
+	}
+
+	if campaign.PatchSetID == 0 {
+		return ErrNoPatches
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:              campaign.PatchSetID,
+		Limit:                   -1,
+		OnlyWithDiff:            true,
+		OnlyWithoutChangesetJob: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		Limit:      -1,
+		CampaignID: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	jobsByPatchID := make(map[int64]*campaigns.ChangesetJob, len(existingJobs))
+	for _, j := range existingJobs {
+		jobsByPatchID[j.PatchID] = j
+	}
+
+	for _, p := range patches {
+		if _, ok := jobsByPatchID[p.ID]; ok {
+			continue
+		}
+
+		tx.CreateChangesetJob(ctx, &campaigns.ChangesetJob{
+			CampaignID: campaign.ID,
+			PatchID:    p.ID,
+		})
+	}
+
+	return nil
 }
 
 // EnqueueChangesetJobForPatch queues a ChangesetJob for the Patch with the
@@ -737,27 +803,34 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, err
 	}
 
+	// We check whether we have any ChangesetJobs currently being processed.
+	// If yes, we don't allow the update.
 	if status.Processing() {
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
-	published, err := campaignPublished(ctx, tx, campaign.ID)
+	// If they're not processing, we can assume that they've been published or
+	// failed.
+	unpublished, err := tx.CountPatches(ctx, CountPatchesOpts{
+		PatchSetID:                oldPatchSetID,
+		OnlyUnpublishedInCampaign: campaign.ID,
+	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "getting unpublished patches count")
 	}
-	partiallyPublished := !published && status.Total != 0
+	allPublished := unpublished == 0
+	partiallyPublished := !allPublished && status.Total != 0
 
 	if campaign.PatchSetID != 0 && updateBranch {
-		if published || partiallyPublished {
+		if allPublished || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
 		}
 	}
 
-	if !published && !partiallyPublished {
-		// If the campaign hasn't been published yet and no Changesets have
-		// been individually published (through the `PublishChangeset`
-		// mutation), we can simply update the attributes on the Campaign
-		// because no ChangesetJobs have been created yet that need updating.
+	if !allPublished && !partiallyPublished {
+		// If no ChangesetJobs have been created yet, we can simply update the
+		// attributes on the Campaign because no ChangesetJobs have been
+		// created yet that need updating.
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
@@ -836,18 +909,6 @@ func validateCampaignBranch(branch string) error {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
-}
-
-// campaignPublished returns true if all ChangesetJobs have been created yet
-// (they might still be processing).
-func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
-	if err != nil {
-		return false, errors.Wrap(err, "getting latest changesetjob creation time")
-	}
-	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
-	// ChangesetJobs have been created yet.
-	return !changesetCreation.IsZero(), nil
 }
 
 type campaignUpdateDiff struct {

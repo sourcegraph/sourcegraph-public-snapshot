@@ -163,6 +163,11 @@ func TestServicePermissionLevels(t *testing.T) {
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
+			t.Run("EnqueueChangesetJobs", func(t *testing.T) {
+				err = svc.EnqueueChangesetJobs(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
 			t.Run("RetryPublishCampaign", func(t *testing.T) {
 				_, err = svc.RetryPublishCampaign(currentUserCtx, campaign.ID)
 				tc.assertFunc(t, err)
@@ -510,6 +515,9 @@ func TestService(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if have, want := haveJob.PatchID, patch.ID; have != want {
+			t.Fatalf("ChangesetJob has wrong PatchID. want=%d, have=%d", want, have)
+		}
 
 		// Try to create again, check that it's the same one
 		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
@@ -562,6 +570,110 @@ func TestService(t *testing.T) {
 		}
 		if !haveJob3.FinishedAt.IsZero() {
 			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
+		}
+	})
+
+	t.Run("EnqueueChangesetJobs", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patches := make([]*campaigns.Patch, 0, len(rs))
+		patchesByID := make(map[int64]*campaigns.Patch, len(rs))
+		for _, r := range rs {
+			patch := testPatch(patchSet.ID, r.ID, now)
+			if err := store.CreatePatch(ctx, patch); err != nil {
+				t.Fatal(err)
+			}
+			patches = append(patches, patch)
+			patchesByID[patch.ID] = patch
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		svc := NewServiceWithClock(store, cf, clock)
+		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(haveJobs), len(patches); have != want {
+			t.Fatal("wrong number of changeset jobs created")
+		}
+
+		for _, job := range haveJobs {
+			if _, ok := patchesByID[job.PatchID]; !ok {
+				t.Fatalf("job %d has wrong patch id %d", job.ID, job.PatchID)
+			}
+		}
+
+		// Try again, check that no new jobs have been created
+		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+			t.Fatal(err)
+		}
+		haveJobs2, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(haveJobs2), len(haveJobs); have != want {
+			t.Fatal("wrong number of changeset jobs created")
+		}
+
+		for _, job := range haveJobs2 {
+			if _, ok := patchesByID[job.PatchID]; !ok {
+				t.Fatalf("job %d has wrong patch id %d", job.ID, job.PatchID)
+			}
+		}
+
+		// Now mark one ChangesetJob as failed and check that it's not reset
+		failedJob := haveJobs2[0]
+		failedJob.Error = "ruh roh"
+		failedJob.StartedAt = time.Now()
+		failedJob.FinishedAt = time.Now()
+		if err := store.UpdateChangesetJob(ctx, failedJob); err != nil {
+			t.Fatal(err)
+		}
+
+		// Try again, check that the job was not reset
+		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+			t.Fatal(err)
+		}
+		haveJobs3, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(haveJobs3), len(haveJobs2); have != want {
+			t.Fatal("wrong number of changeset jobs created")
+		}
+
+		found := false
+		for _, job := range haveJobs3 {
+			if job.ID == failedJob.ID {
+				found = true
+
+				if job.Error == "" {
+					t.Fatalf("job was reset")
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("failed job not found")
 		}
 	})
 
@@ -920,7 +1032,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		oldPatches repoNames
 
 		// Repositories for which the ChangesetJob/Changeset have been
-		// individually published while Campaign was in draft mode
+		// individually published
 		individuallyPublished repoNames
 
 		// Mapping of repository names to state of changesets after creating the campaign.

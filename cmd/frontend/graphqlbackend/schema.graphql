@@ -55,9 +55,10 @@ type Mutation {
     # - A plan is added to a manual campaign.
     # - A non-manual campaign has a changeset that is not published (or is being published).
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retry creating changesets from the patches in the campaign's patchset that could not be
-    # successfully created on the code host. Retrying will clear the errors list of a campaign.
-    retryCampaign(campaign: ID!): Campaign!
+    # Retry publishing all changesets in the campaign that could not be
+    # successfully created on the code host. Retrying will clear the errors
+    # list of a campaign.
+    retryCampaignChangesets(campaign: ID!): Campaign!
     # Delete a campaign.
     deleteCampaign(
         campaign: ID!
@@ -74,9 +75,17 @@ type Mutation {
         # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
+    # Create an ExternalChangeset on the code host asynchronously for each patch belonging to the
+    # patchset that has been attached to a campaign; otherwise, an error is returned.
+    # Callers can query the campaign's status to track the progress of this async operation.
+    # If one of the patches has previously been published but the publication failed,
+    # publication is NOT retried.
+    publishCampaignChangesets(campaign: ID!): EmptyResponse!
     # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
     # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
     # query the campaign's status to track the progress of this async operation.
+    # If the patch has previously been published but the publication failed,
+    # the patch is reset and publication is retried.
     publishChangeset(patch: ID!): EmptyResponse!
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
@@ -620,7 +629,11 @@ type Campaign implements Node {
     # any nodes returned by this connection. When publishing a changeset, the number of nodes in
     # changesets will increase with each decrease in patches. The completed count in the
     # Campaign.status field increments with every patch turned into an ExternalChangeset.
+    # This can contain patches that have been enqueued for publication.
     patches(first: Int): PatchConnection!
+
+    # Returns whether "patches" contains patches that have not been enqueued for publication yet.
+    hasUnpublishedPatches: Boolean!
 
     # The diff stat for all the patches and changesets in the campaign.
     diffStat: DiffStat!
