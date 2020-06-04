@@ -244,7 +244,7 @@ func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) 
 		}
 
 		for _, issue := range tracking.Issues {
-			if parsedIssueURL == issue.URL {
+			if parsedIssueURL == issue.URL && Assignee(issue.Assignees) == wl.Assignee {
 				wl.AddIssue(issue)
 			}
 		}

@@ -2,22 +2,19 @@
 <!-- BEGIN ASSIGNEE: Unassigned -->
 @Unassigned
 
-- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) 
+- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) `lsif-reliability` 
 <!-- END ASSIGNEE -->
 
 <!-- BEGIN ASSIGNEE: efritz -->
 @efritz
 
-- [ ] Add metrics (and dashboard) to new precise-code-intel services [#10238](https://github.com/sourcegraph/sourcegraph/issues/10238) 
-- [ ] Add tracing to new precise-code-intel services [#10237](https://github.com/sourcegraph/sourcegraph/issues/10237) 
-- [ ] Add Cobol support (lang filters, codeintel, and syntax highlighting) [#10154](https://github.com/sourcegraph/sourcegraph/issues/10154) 
-- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛
 - [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) 
-- [x] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) 
+- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛
 - [x] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) 
 - [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛
 - [x] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛
 - [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) 
+- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) 
 - [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) 
 - [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) 
 - [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) 
@@ -28,6 +25,10 @@
 - [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) 
 - [x] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛
 - [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) 
+- [ ] Add metrics (and dashboard) to new precise-code-intel services [#10238](https://github.com/sourcegraph/sourcegraph/issues/10238) 
+- [ ] Add tracing to new precise-code-intel services [#10237](https://github.com/sourcegraph/sourcegraph/issues/10237) 
+- [ ] Add Cobol support (lang filters, codeintel, and syntax highlighting) [#10154](https://github.com/sourcegraph/sourcegraph/issues/10154) 
+- [x] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) 
 <!-- END ASSIGNEE -->
 
 <!-- BEGIN ASSIGNEE: gbrik -->
@@ -40,10 +41,10 @@
 - [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) 
   - [ ] Update tracking issue tool to preserve issue order and display whitelisted labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:
 - [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) 
-- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) 
+- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) `lsif-reliability` 
 - [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) 
 - [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) 
-- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) 
+- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) `lsif-reliability` 
 - [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) 
   - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:
 <!-- END ASSIGNEE -->
