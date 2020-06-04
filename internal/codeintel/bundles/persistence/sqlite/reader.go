@@ -3,6 +3,8 @@ package sqlite
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +21,8 @@ import (
 var ErrNoMetadata = errors.New("no rows in meta table")
 
 type sqliteReader struct {
+	filename   string
+	cache      Cache
 	store      *store.Store
 	closer     func() error
 	serializer serialization.Serializer
@@ -26,7 +30,7 @@ type sqliteReader struct {
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err error) {
+func NewReader(ctx context.Context, filename string, cache Cache) (_ persistence.Reader, err error) {
 	store, closer, err := store.Open(filename)
 	if err != nil {
 		return nil, err
@@ -46,6 +50,8 @@ func NewReader(ctx context.Context, filename string) (_ persistence.Reader, err 
 	}
 
 	return &sqliteReader{
+		filename:   filename,
+		cache:      cache,
 		store:      store,
 		closer:     closer,
 		serializer: serializer,
@@ -69,6 +75,11 @@ func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
 }
 
 func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
+	key := r.makeCacheKey("document", path)
+	if documentData, ok := r.getFromCache(key).(types.DocumentData); ok {
+		return documentData, true, nil
+	}
+
 	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
 		`SELECT data FROM documents WHERE path = %s LIMIT 1`,
 		path,
@@ -81,10 +92,17 @@ func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.Doc
 	if err != nil {
 		return types.DocumentData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalDocumentData")
 	}
+
+	_ = r.cache.Set(key, documentData, int64(len(data)))
 	return documentData, true, nil
 }
 
 func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.ResultChunkData, bool, error) {
+	key := r.makeCacheKey("result-chunk", fmt.Sprintf("%d", id))
+	if resultChunkData, ok := r.getFromCache(key).(types.ResultChunkData); ok {
+		return resultChunkData, true, nil
+	}
+
 	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
 		`SELECT data FROM result_chunks WHERE id = %s LIMIT 1`,
 		id,
@@ -97,6 +115,8 @@ func (r *sqliteReader) ReadResultChunk(ctx context.Context, id int) (types.Resul
 	if err != nil {
 		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "serializer.UnmarshalResultChunkData")
 	}
+
+	_ = r.cache.Set(key, resultChunkData, int64(len(data)))
 	return resultChunkData, true, nil
 }
 
@@ -109,18 +129,9 @@ func (r *sqliteReader) ReadReferences(ctx context.Context, scheme, identifier st
 }
 
 func (r *sqliteReader) readDefinitionReferences(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]types.Location, int, error) {
-	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
-		`SELECT data FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s LIMIT 1`,
-		scheme,
-		identifier,
-	)))
-	if err != nil || !exists {
-		return nil, 0, err
-	}
-
-	locations, err := r.serializer.UnmarshalLocations(data)
+	locations, err := r.readMonikerLocations(ctx, tableName, scheme, identifier)
 	if err != nil {
-		return nil, 0, pkgerrors.Wrap(err, "serializer.UnmarshalLocations")
+		return nil, 0, err
 	}
 
 	if skip == 0 && take == 0 {
@@ -142,6 +153,39 @@ func (r *sqliteReader) readDefinitionReferences(ctx context.Context, tableName, 
 	return locations[lo:hi], len(locations), nil
 }
 
+func (r *sqliteReader) readMonikerLocations(ctx context.Context, tableName, scheme, identifier string) ([]types.Location, error) {
+	key := r.makeCacheKey(tableName, scheme, identifier)
+	if locations, ok := r.getFromCache(key).([]types.Location); ok {
+		return locations, nil
+	}
+
+	data, exists, err := store.ScanFirstBytes(r.store.Query(ctx, sqlf.Sprintf(
+		`SELECT data FROM "`+tableName+`" WHERE scheme = %s AND identifier = %s LIMIT 1`,
+		scheme,
+		identifier,
+	)))
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	locations, err := r.serializer.UnmarshalLocations(data)
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "serializer.UnmarshalLocations")
+	}
+
+	_ = r.cache.Set(key, locations, int64(len(data)))
+	return locations, nil
+}
+
 func (r *sqliteReader) Close() error {
 	return r.closer()
+}
+
+func (r *sqliteReader) getFromCache(key string) interface{} {
+	val, _ := r.cache.Get(key)
+	return val
+}
+
+func (r *sqliteReader) makeCacheKey(parts ...string) string {
+	return strings.Join(append(append([]string(nil), r.filename), parts...), ":")
 }
