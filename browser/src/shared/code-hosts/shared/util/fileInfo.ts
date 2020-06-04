@@ -7,7 +7,8 @@ import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../
 import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 
 /**
- * Use `rawRepoName` for the value of `repoName`, as a fallback if `repoName` was not available.
+ * Use `rawRepoName` for the value of `repoName`, as a fallback if `repoName`
+ * was not available.
  * */
 const useRawRepoNameAsFallback = (fileInfo: FileInfo): FileInfoWithRepoName => ({
     ...fileInfo,
@@ -36,11 +37,19 @@ const resolveRepoNameForFileInfo = (
         })
     )
 
+/**
+ * Uses the `commitID` as the default value for `revision`, if no `revision`
+ * value is present.
+ */
 export const defaultRevisionToCommitID = <T extends FileInfo>(fileInfo: T): T & { revision: string } => ({
     ...fileInfo,
     revision: fileInfo.revision || fileInfo.commitID,
 })
 
+/**
+ * Ensures that the revision is cloned on Sourcegraph, by issuing a
+ * `resolveRevision` request and retrying until the clone is complete.
+ */
 export const ensureRevisionIsClonedForFileInfo = (
     fileInfo: FileInfoWithRepoName,
     requestGraphQL: PlatformContext['requestGraphQL']

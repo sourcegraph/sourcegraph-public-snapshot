@@ -2,7 +2,7 @@ import { RawRepoSpec } from '../../../../../shared/src/util/url'
 import { DiffResolvedRevSpec } from '../../repo'
 
 /**
- * getFileContainers returns the elements on the page which should be marked
+ * Returns the elements on the page which should be marked
  * up with tooltips & links:
  *
  * 1. blob view: a single file
@@ -52,7 +52,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 }
 
 /**
- * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
+ * Returns the base and head revision SHA, or null for non-diff views.
  */
 export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { pageType } = parseURL()
