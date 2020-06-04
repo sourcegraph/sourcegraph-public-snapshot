@@ -27,6 +27,7 @@ type sqliteReader struct {
 	store      *store.Store
 	closer     func() error
 	serializer serialization.Serializer
+	meta       types.MetaData
 }
 
 var _ persistence.Reader = &sqliteReader{}
@@ -44,35 +45,44 @@ func NewReader(ctx context.Context, filename string, cache cache.DataCache) (_ p
 		}
 	}()
 
-	serializer := gobserializer.New()
-
-	if err := migrate.Migrate(ctx, store, serializer); err != nil {
-		return nil, err
-	}
-
-	return &sqliteReader{
+	reader := &sqliteReader{
 		filename:   filename,
 		cache:      cache,
 		store:      store,
 		closer:     closer,
-		serializer: serializer,
-	}, nil
+		serializer: gobserializer.New(),
+	}
+
+	if err := migrate.Migrate(ctx, store, reader.serializer); err != nil {
+		return nil, err
+	}
+
+	if err := reader.cacheMeta(ctx); err != nil {
+		return nil, err
+	}
+
+	return reader, nil
 }
 
-func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
+func (r *sqliteReader) cacheMeta(ctx context.Context) error {
 	numResultChunks, exists, err := store.ScanFirstInt(r.store.Query(ctx, sqlf.Sprintf(
 		`SELECT num_result_chunks FROM meta LIMIT 1`,
 	)))
 	if err != nil {
-		return types.MetaData{}, err
+		return err
 	}
 	if !exists {
-		return types.MetaData{}, ErrNoMetadata
+		return ErrNoMetadata
 	}
 
-	return types.MetaData{
+	r.meta = types.MetaData{
 		NumResultChunks: numResultChunks,
-	}, nil
+	}
+	return nil
+}
+
+func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
+	return r.meta, nil
 }
 
 func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {

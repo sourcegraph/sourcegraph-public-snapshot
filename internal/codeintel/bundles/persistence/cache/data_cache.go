@@ -2,7 +2,7 @@ package cache
 
 import "github.com/dgraph-io/ristretto"
 
-// DataCache is a LFU cache that holds the results of values deserialized by the reader.
+// DataCache is a LRU cache that holds the results of values deserialized by the reader.
 type DataCache interface {
 	// Get returns the value (if any) and a boolean representing whether the
 	// value was found or not.

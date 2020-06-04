@@ -336,12 +336,12 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	}()
 
 	return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(reader))
+		database, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
 		if err != nil {
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, s.wrapDatabase(database, filename))
+		payload, err := handler(ctx, database.NewObserved(database, filename, s.observationContext))
 		if err != nil {
 			return err
 		}
@@ -349,14 +349,6 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 		writeJSON(w, payload)
 		return nil
 	})
-}
-
-func (s *Server) wrapReader(innerReader persistence.Reader) persistence.Reader {
-	return persistence.NewObserved(innerReader, s.observationContext)
-}
-
-func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {
-	return database.NewObserved(innerDatabase, filename, s.observationContext)
 }
 
 // limitTransferRate applies a transfer limit to the given writer.
