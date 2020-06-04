@@ -920,7 +920,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		oldPatches repoNames
 
 		// Repositories for which the ChangesetJob/Changeset have been
-		// individually published while Campaign was in draft mode
+		// individually published
 		individuallyPublished repoNames
 
 		// Mapping of repository names to state of changesets after creating the campaign.

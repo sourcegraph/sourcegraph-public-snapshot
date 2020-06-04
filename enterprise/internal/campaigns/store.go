@@ -2468,33 +2468,6 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// CountUnpublishedPatches returns the number of patches in the given campaign that don't have a matching ChangesetJob.
-func (s *Store) CountUnpublishedPatches(ctx context.Context, campaignID int64) (int, error) {
-	q := sqlf.Sprintf(countUnpublishedPatchesFmtstr, campaignID)
-	var count int
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		if err != nil {
-			return 0, 0, err
-		}
-		return 0, 1, nil
-	})
-	if err != nil {
-		return count, err
-	}
-	return count, nil
-}
-
-var countUnpublishedPatchesFmtstr = `
-SELECT
-  COUNT(patches.id)
-FROM patches
-INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
-LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
-WHERE campaigns.id = %s
-AND changeset_jobs.created_at IS NULL;
-`
-
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
 	ID          int64
