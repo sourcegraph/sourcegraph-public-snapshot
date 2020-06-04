@@ -37,9 +37,9 @@ type cacheEntry struct {
 	key    string
 	reader persistence.Reader
 	err    error
-	init   chan struct{} // marks availability of reader field
-	once   sync.Once     // guards db.Close()
-	m      sync.RWMutex  // acts as a ref count
+	init   chan struct{}  // marks availability of reader field
+	once   sync.Once      // guards db.Close()
+	wg     sync.WaitGroup // concurrent use ref count
 }
 
 // New initializes a new cache with the given capacity and reader opener.
@@ -57,7 +57,7 @@ func New(size int, opener ReaderOpener) *Cache {
 // a context deadline here and will continue to run in the background until completion.
 func (c *Cache) WithReader(ctx context.Context, key string, fn CacheHandler) error {
 	entry := c.entry(key)
-	defer entry.m.RUnlock()
+	defer entry.wg.Done()
 
 	select {
 	case <-entry.init:
@@ -78,7 +78,7 @@ func (c *Cache) entry(key string) *cacheEntry {
 
 	if element, ok := c.entries[key]; ok {
 		entry := element.Value.(*cacheEntry)
-		entry.m.RLock()                  // Lock for use
+		entry.wg.Add(1)                  // Mark as in-use
 		c.evictList.MoveToFront(element) // Update recency data
 		return entry
 	}
@@ -87,7 +87,7 @@ func (c *Cache) entry(key string) *cacheEntry {
 		key:  key,
 		init: make(chan struct{}),
 	}
-	entry.m.RLock()                         // Lock for use
+	entry.wg.Add(1)                         // Mark as in-use
 	element := c.evictList.PushFront(entry) // Update recency data
 	c.entries[key] = element
 
@@ -129,12 +129,8 @@ func (c *Cache) removeOnce(entry *cacheEntry) {
 // removeOnce blocks until the entry is initialized and exclusive access is available.
 // The entry is then removed from the cache and the entry's reader is closed.
 func (c *Cache) remove(entry *cacheEntry) {
-	// Wait until initialized
-	<-entry.init
-
-	// Wait until there are no mor readers
-	entry.m.Lock()
-	defer entry.m.Unlock()
+	<-entry.init    // Wait until initialized
+	entry.wg.Wait() // Wait until there are no more readers
 
 	c.m.Lock()
 	defer c.m.Unlock()
