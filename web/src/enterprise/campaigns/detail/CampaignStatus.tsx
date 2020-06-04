@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorMessage } from '../../../components/alerts'
-import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { retryCampaignChangesets, publishCampaignChangesets } from './backend'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -53,9 +52,9 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
             <ul className="mt-2">
                 {status.errors.map((error, index) => (
                     <li className="mb-2" key={index}>
-                        <p className="mb-0">
+                        <div className="campaign-status__error">
                             <ErrorMessage error={error} history={history} />
-                        </p>
+                        </div>
                     </li>
                 ))}
             </ul>
@@ -107,7 +106,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                                 {isErrorLike(isRetrying) && (
                                     <ErrorIcon data-tooltip={isRetrying.message} className="mr-2" />
                                 )}
-                                {isRetrying === true && <LoadingSpinner className="icon-inline" />}
+                                {isRetrying === true && <LoadingSpinner className="icon-inline mr-2" />}
                                 Retry
                             </button>
                         )}
@@ -122,10 +121,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
             statusIndicator = (
                 <>
                     <div className="alert alert-info mt-4">
-                        <p>
-                            <SyncIcon className="icon-inline" /> Creating {status.pendingCount}{' '}
-                            {pluralize('changeset', status.pendingCount)} on code hosts...
-                        </p>
+                        <LoadingSpinner className="icon-inline" /> Creating {status.pendingCount}{' '}
+                        {pluralize('changeset', status.pendingCount)} on code hosts...
                         <div className="progress mt-2 mb-1">
                             {/* we need to set the width to control the progress bar, so: */}
                             {/* eslint-disable-next-line react/forbid-dom-props */}
@@ -162,7 +159,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                             {isErrorLike(isPublishing) && (
                                 <ErrorIcon data-tooltip={isPublishing.message} className="mr-2" />
                             )}
-                            {isPublishing === true && <LoadingSpinner className="icon-inline" />}
+                            {isPublishing === true && <LoadingSpinner className="icon-inline mr-2" />}
                             Publish all
                         </button>
                         <p className="mb-0 ml-2">Not all changesets in this campaign have been published yet.</p>
