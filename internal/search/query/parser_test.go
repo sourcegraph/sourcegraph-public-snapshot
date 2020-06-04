@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestScanParameter(t *testing.T) {
+func TestParseParameterList(t *testing.T) {
 	cases := []struct {
 		Name  string
 		Input string

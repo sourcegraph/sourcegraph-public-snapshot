@@ -91,7 +91,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 // SearchUppercase adds case:yes to queries if any pattern is mixed-case.
 func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _, _ bool) {
+	VisitPattern(nodes, func(value string, _, _ bool, _ annotation) {
 		// FIXME: make sure query maps content before calling this.
 		if match := containsUppercase(value); match {
 			foundMixedCase = true
