@@ -336,12 +336,12 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	}()
 
 	return s.readerCache.WithReader(ctx, filename, func(reader persistence.Reader) error {
-		database, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
+		db, err := database.OpenDatabase(ctx, filename, persistence.NewObserved(reader, s.observationContext))
 		if err != nil {
 			return pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
 
-		payload, err := handler(ctx, database.NewObserved(database, filename, s.observationContext))
+		payload, err := handler(ctx, database.NewObserved(db, filename, s.observationContext))
 		if err != nil {
 			return err
 		}
