@@ -220,8 +220,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: map[heuristic]bool{parensAsPatterns: false},
+		buf: []byte(in),
+		// heuristics: map[heuristic]bool{parensAsPatterns: false},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {

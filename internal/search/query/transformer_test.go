@@ -104,8 +104,8 @@ func TestHoist(t *testing.T) {
 			// does not perform the heuristic.
 			parse := func(in string) []Node {
 				parser := &parser{
-					buf:       []byte(in),
-					heuristic: map[heuristic]bool{parensAsPatterns: true},
+					buf:        []byte(in),
+					heuristics: parensAsPatterns,
 				}
 				nodes, _ := parser.parseOr()
 				return newOperator(nodes, And)

@@ -172,14 +172,19 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func (q AndOrQuery) valueToTypedValue(field, value string, labels labels) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, label labels) []*types.Value {
+
+	// Can't call the above parameter "labels" because then Go complains the
+	// type annotation here is "not a type".
+	isSet := func(l, label labels) bool { return l&label != 0 }
+
 	switch field {
 	case
 		FieldDefault:
 		// If a pattern is quoted, or we applied heuristics to interpret
 		// valid regexp metasyntax literally instead, this pattern is a
 		// string.
-		if (labels&Quoted != 0) || (labels&HeuristicParensAsPatterns != 0) {
+		if isSet(label, Quoted) || isSet(label, HeuristicParensAsPatterns) {
 			return []*types.Value{{String: &value}}
 		}
 		if regexp, err := regexp.Compile(value); err == nil {
