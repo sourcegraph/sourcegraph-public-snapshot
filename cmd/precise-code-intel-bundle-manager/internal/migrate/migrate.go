@@ -63,7 +63,7 @@ func Migrate(bundleDir string, cache *cache.Cache) error {
 				log15.Debug("Migrating bundle", "filename", filename)
 
 				// Open a reader to ensure the migrations have run
-				if err := cache.WithReader(context.Background(), filename, func(reader persistence.Reader) error { return nil }); err != nil {
+				if err := cache.WithReader(context.Background(), filename, noopHandler); err != nil {
 					log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 				}
 			}
@@ -133,4 +133,8 @@ func touchFile(filename string) {
 		log15.Error("Failed to create migration marker", "err", err)
 		return
 	}
+}
+
+func noopHandler(reader persistence.Reader) error {
+	return nil
 }
