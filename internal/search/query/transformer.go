@@ -22,8 +22,8 @@ func SubstituteAliases(nodes []Node) []Node {
 	}
 	return MapParameter(nodes, func(field, value string, negated bool) Node {
 		if field == "content" {
-			// Assume quoted is false if content is specified.
-			return Pattern{Value: value, Negated: negated, Quoted: false}
+			// The Quoted label is unset if content is specified.
+			return Pattern{Value: value, Negated: negated}
 		}
 		if canonical, ok := aliases[field]; ok {
 			field = canonical
@@ -91,7 +91,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 // SearchUppercase adds case:yes to queries if any pattern is mixed-case.
 func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _, _ bool) {
+	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
 		// FIXME: make sure query maps content before calling this.
 		if match := containsUppercase(value); match {
 			foundMixedCase = true

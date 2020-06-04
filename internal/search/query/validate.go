@@ -135,12 +135,8 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 // containing whitespace or balanced parentheses, can be treated as a search
 // pattern in the and/or grammar.
 func isPureSearchPattern(buf []byte) bool {
-	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the heuristic.
-	try := &parser{
-		buf:               buf,
-		heuristic:         map[heuristic]bool{parensAsPatterns: false},
-		heuristicsApplied: map[heuristic]bool{},
-	}
+	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the parensAsPatterns heuristic.
+	try := &parser{buf: buf}
 	result, err := try.parseOr()
 	if err != nil {
 		// This is not an and/or expression, but it is balanced. It
