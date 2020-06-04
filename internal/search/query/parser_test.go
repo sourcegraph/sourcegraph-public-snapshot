@@ -14,7 +14,7 @@ func TestParseParameterList(t *testing.T) {
 		Name       string
 		Input      string
 		Want       string
-		WantLabels label
+		WantLabels labels
 	}{
 		{
 			Name:       "Normal field:value",

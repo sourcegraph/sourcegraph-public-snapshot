@@ -37,18 +37,18 @@ func (Pattern) node()   {}
 func (Parameter) node() {}
 func (Operator) node()  {}
 
-// A label is a general-purpose annotation that stores information about a node.
-type label uint8
+// Labels are general-purpose annotations that store information about a node.
+type labels uint8
 
 const (
-	None          = 0
-	Literal label = 1 << iota
+	None    labels = 0
+	Literal        = 1 << iota
 	Quoted
 )
 
 // An annotation stores information associated with a node.
 type annotation struct {
-	Labels label
+	Labels labels
 }
 
 // Pattern is a leaf node of expressions representing a search pattern fragment.

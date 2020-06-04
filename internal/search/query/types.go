@@ -173,7 +173,7 @@ func parseRegexpOrPanic(field, value string) *regexp.Regexp {
 // valueToTypedValue approximately preserves the field validation for
 // OrdinaryQuery processing. It does not check the validity of field negation or
 // if the same field is specified more than once.
-func (q AndOrQuery) valueToTypedValue(field, value string, labels label) []*types.Value {
+func (q AndOrQuery) valueToTypedValue(field, value string, labels labels) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
