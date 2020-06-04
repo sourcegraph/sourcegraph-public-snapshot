@@ -494,7 +494,7 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 	return campaign, nil
 }
 
-// EnqueueChangesetJobs enqueues ChangesetJob for each Patch associated with
+// EnqueueChangesetJobs enqueues a ChangesetJob for each Patch associated with
 // the PatchSet in the given Campaign, creating it if necessary. The Patch has
 // to belong to a PatchSet
 func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (err error) {
