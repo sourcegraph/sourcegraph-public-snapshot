@@ -53,7 +53,7 @@ type Mutation {
     #
     # - The campaign has already been closed.
     # - A plan is added to a manual campaign.
-    # - A non-manual campaign has a changeset that is published (or is being published).
+    # - A non-manual campaign has a changeset that is not published (or is being published).
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retry creating changesets from the patches in the campaign's patchset that could not be
     # successfully created on the code host. Retrying will clear the errors list of a campaign.
