@@ -1311,10 +1311,11 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       status { state }
       patches {
         nodes {
-		  ... on HiddenPatch {
-		    id
-		  }
-		  ... on Patch {
+          ... on HiddenPatch {
+            id
+          }
+          ... on Patch {
+            id
             publicationEnqueued
             repository {
               name
@@ -1389,17 +1390,23 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
+	// Publish the changesets in the campaign
+	for _, p := range campaign.Patches.Nodes {
+		var res struct{}
+		input := map[string]interface{}{"patch": p.ID}
+		q := `mutation($patch: ID!) { publishChangeset(patch: $patch) { alwaysNil } }`
+		apitest.MustExec(ctx, t, s, input, &res, q)
+	}
+
 	// Now we need to run the created ChangsetJob
 	changesetJobs, _, err := store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(changesetJobs) != 0 {
-		t.Fatalf("changeset jobs were created: %d", len(changesetJobs))
+	if len(changesetJobs) != 1 {
+		t.Fatalf("wrong number of changeset jobs created: %d", len(changesetJobs))
 	}
-
-	// TODO @mrnugget: From here on, the changeset jobs don't exist, we should probably use a mutation to publish them here?
 
 	headRef := "refs/heads/" + campaign.Branch
 
