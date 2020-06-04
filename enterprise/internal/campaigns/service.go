@@ -745,10 +745,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	// If they're not processing, we can assume that they've been published or
 	// failed.
-	allPublished, err := allChangesetJobsCreated(ctx, tx, campaign.ID)
+	unpublished, err := tx.CountUnpublishedPatches(ctx, campaign.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "getting unpublished patches count")
 	}
+	allPublished := unpublished == 0
 	partiallyPublished := !allPublished && status.Total != 0
 
 	if campaign.PatchSetID != 0 && updateBranch {
@@ -839,16 +840,6 @@ func validateCampaignBranch(branch string) error {
 		return ErrCampaignBranchInvalid
 	}
 	return nil
-}
-
-// allChangesetJobsCreated returns true if all ChangesetJobs have been created yet
-// (they might still be processing).
-func allChangesetJobsCreated(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	count, err := store.CountUnpublishedPatches(ctx, campaign)
-	if err != nil {
-		return false, errors.Wrap(err, "getting unpublished patches count")
-	}
-	return count == 0, nil
 }
 
 type campaignUpdateDiff struct {
