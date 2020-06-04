@@ -119,7 +119,7 @@ func readMonikerLocations(ctx context.Context, s *store.Store, tableName string,
 }
 
 // Delimiter is the text used to separate values of distinct rows when performing a the GROUP BY query.
-const Delimiter = "$"
+const Delimiter = ":"
 
 // GroupedDefinitionReferenceRow is a row of all moniker locations grouped by scheme and identifier. The
 // remaining columns are string values concatenated by the delimiter defined above.
@@ -156,6 +156,12 @@ func scanDefinitionReferenceRow(rows *sql.Rows) (types.MonikerLocations, error) 
 	v4 := strings.Split(row.EndLines, Delimiter)
 	v5 := strings.Split(row.EndCharacters, Delimiter)
 
+	// Ensure that all slices have the same length so that we don't panic if we
+	// index a short slice because some document path included the delimiter. This
+	// REALLY should never happen as the delimilter is illegal in Unix/Windows paths.
+	if n := len(v1); len(v2) != n || len(v3) != n || len(v4) != n || len(v5) != n {
+		return types.MonikerLocations{}, fmt.Errorf("unexpected '%s' in path", Delimiter)
+	}
 	locations := make([]types.Location, 0, len(v1))
 	for i := range v1 {
 		i2, _ := strconv.Atoi(v2[i])
