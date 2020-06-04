@@ -48,7 +48,6 @@ Examples:
 		descriptionFlag = flagSet.String("desc", "", "Description for the campaign in Markdown.")
 		namespaceFlag   = flagSet.String("namespace", "", "ID of the namespace under which to create the campaign. The namespace can be the GraphQL ID of a Sourcegraph user or organisation. If not specified, the ID of the authenticated user is queried and used. (Required)")
 		patchsetIDFlag  = flagSet.String("patchset", "", "ID of patch set the campaign should turn into changesets. If no patch set is specified, a campaign is created to which changesets can be added manually.")
-		draftFlag       = flagSet.Bool("draft", false, "Create the campaign as a draft (which won't create pull requests on code hosts)")
 		branchFlag      = flagSet.String("branch", "", "Name of the branch that will be created in each repository on the code host. Required for Sourcegraph >= 3.13 when 'patchset' is specified.")
 
 		changesetsFlag = flagSet.Int("changesets", 1000, "Returns the first n changesets per campaign.")
@@ -138,7 +137,6 @@ Examples:
 			"description": description,
 			"namespace":   namespace,
 			"patchSet":    nullString(*patchsetIDFlag),
-			"draft":       *draftFlag,
 			"branch":      *branchFlag,
 		}
 
