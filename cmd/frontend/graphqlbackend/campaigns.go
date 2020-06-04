@@ -63,7 +63,7 @@ type DeleteCampaignArgs struct {
 	CloseChangesets bool
 }
 
-type RetryCampaignArgs struct {
+type RetryCampaignChangesetsArgs struct {
 	Campaign graphql.ID
 }
 
@@ -98,7 +98,7 @@ type CampaignsResolver interface {
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error)
+	RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
@@ -138,7 +138,7 @@ func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *Delete
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

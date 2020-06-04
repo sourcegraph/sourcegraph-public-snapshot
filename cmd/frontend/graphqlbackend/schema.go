@@ -53,9 +53,10 @@ type Mutation {
     # - A plan is added to a manual campaign.
     # - A non-manual campaign has a changeset that is not published (or is being published).
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retry creating changesets from the patches in the campaign's patchset that could not be
-    # successfully created on the code host. Retrying will clear the errors list of a campaign.
-    retryCampaign(campaign: ID!): Campaign!
+    # Retry publishing all changesets in the campaign that could not be
+    # successfully created on the code host. Retrying will clear the errors
+    # list of a campaign.
+    retryCampaignChangesets(campaign: ID!): Campaign!
     # Delete a campaign.
     deleteCampaign(
         campaign: ID!

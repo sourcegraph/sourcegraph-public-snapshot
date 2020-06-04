@@ -353,9 +353,9 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) RetryCampaignChangesets(ctx context.Context, args *graphqlbackend.RetryCampaignChangesetsArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.RetryCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	tr, ctx := trace.New(ctx, "Resolver.RetryCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

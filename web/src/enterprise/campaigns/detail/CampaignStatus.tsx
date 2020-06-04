@@ -3,7 +3,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorMessage } from '../../../components/alerts'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { retryCampaign } from './backend'
+import { retryCampaignChangesets } from './backend'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
@@ -58,7 +58,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
     const onRetry: React.MouseEventHandler = async (): Promise<void> => {
         setIsRetrying(true)
         try {
-            const retriedCampaign = await retryCampaign(campaign.id)
+            const retriedCampaign = await retryCampaignChangesets(campaign.id)
             setIsRetrying(false)
             afterRetry(retriedCampaign)
         } catch (error) {

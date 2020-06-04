@@ -797,7 +797,7 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
@@ -1807,9 +1807,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "retryCampaign",
+				name: "retryCampaignChangesets",
 				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaignID)
+					return fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaignID)
 				},
 			},
 			{
