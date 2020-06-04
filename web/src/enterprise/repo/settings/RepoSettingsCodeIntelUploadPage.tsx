@@ -37,7 +37,7 @@ function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): b
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
+export const RepoSettingsCodeIntelUploadPage: FunctionComponent<Props> = ({
     repo,
     scheduler,
     match: {
@@ -45,7 +45,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     },
     history,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
+    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelUpload'))
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -90,7 +90,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="LSIF uploads - Admin" />
+            <PageTitle title="Code intelligence - uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError ? (

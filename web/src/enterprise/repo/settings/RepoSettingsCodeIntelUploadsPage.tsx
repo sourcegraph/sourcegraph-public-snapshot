@@ -77,7 +77,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
                     <span className="ml-2">
                         -
                         <span className="ml-2">
-                            <Link to={`./code-intelligence/lsif-uploads/${node.id}`}>
+                            <Link to={`./uploads/${node.id}`}>
                                 {node.state === GQL.LSIFUploadState.UPLOADING ? (
                                     <span>Uploading</span>
                                 ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
@@ -117,10 +117,10 @@ interface Props extends RouteComponentProps<{}> {
 }
 
 /**
- * The repository settings code intelligence page.
+ * The repository settings code intel uploads page.
  */
-export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ repo, ...props }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelligence'), [])
+export const RepoSettingsCodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {
@@ -155,8 +155,8 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
 
     return (
         <div className="repo-settings-code-intelligence-page">
-            <PageTitle title="Code intelligence" />
-            <h2>Code intelligence</h2>
+            <PageTitle title="Code intelligence - uploads" />
+            <h2>Code intelligence - precise code intel uploads</h2>
             <p>
                 Enable precise code intelligence by{' '}
                 <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
