@@ -595,6 +595,20 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// Filter out one repository to make sure it's skipped
+		filteredOutPatch := patches[len(patches)-1]
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			var filtered []*types.Repo
+			for _, r := range repos {
+				if r.ID == filteredOutPatch.RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		defer func() { db.MockAuthzFilter = nil }()
+
 		svc := NewServiceWithClock(store, cf, clock)
 		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
 			t.Fatal(err)
@@ -607,11 +621,15 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if have, want := len(haveJobs), len(patches); have != want {
+		wantJobsCount := len(patches) - 1 // We filtered out one repository
+		if have, want := len(haveJobs), wantJobsCount; have != want {
 			t.Fatal("wrong number of changeset jobs created")
 		}
 
 		for _, job := range haveJobs {
+			if job.PatchID == filteredOutPatch.ID {
+				continue
+			}
 			if _, ok := patchesByID[job.PatchID]; !ok {
 				t.Fatalf("job %d has wrong patch id %d", job.ID, job.PatchID)
 			}

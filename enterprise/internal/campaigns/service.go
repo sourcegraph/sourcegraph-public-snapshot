@@ -535,6 +535,23 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 		return err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
 	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		Limit:      -1,
 		CampaignID: campaign.ID,
@@ -550,6 +567,10 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 
 	for _, p := range patches {
 		if _, ok := jobsByPatchID[p.ID]; ok {
+			continue
+		}
+
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
 			continue
 		}
 
