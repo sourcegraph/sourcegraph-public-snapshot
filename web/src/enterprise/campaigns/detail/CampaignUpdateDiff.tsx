@@ -150,7 +150,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
         )
     )
     if (!campaign.viewerCanAdminister) {
-        return <HeroPage body="Cannot update campaign you don't have write-access to" />
+        return <HeroPage body="Updating a campaign is not permitted without campaign admin permissions." />
     }
     if (!queriedChangesets) {
         return (
