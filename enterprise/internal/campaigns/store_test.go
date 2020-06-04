@@ -2035,11 +2035,11 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 	})
 
-	t.Run("Listing and Counting OnlyNeverPublishedInCampaign", func(t *testing.T) {
+	t.Run("Listing and Counting OnlyWithoutChangesetJobInCampaign", func(t *testing.T) {
 		campaignID := int64(999)
 
-		listOpts := ListPatchesOpts{OnlyNeverPublishedInCampaign: campaignID}
-		countOpts := CountPatchesOpts{OnlyNeverPublishedInCampaign: campaignID}
+		listOpts := ListPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
+		countOpts := CountPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
 
 		have, _, err := s.ListPatches(ctx, listOpts)
 		if err != nil {
