@@ -12,7 +12,6 @@ import * as H from 'history'
 export interface CampaignStatusProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-        patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     }
 

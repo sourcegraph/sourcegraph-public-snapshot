@@ -39,9 +39,6 @@ describe('CampaignStatus', () => {
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
                                 },
-                                patches: {
-                                    totalCount: 2,
-                                },
                             }}
                         />
                     )
@@ -59,9 +56,6 @@ describe('CampaignStatus', () => {
                                     pendingCount: 0,
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
-                                },
-                                patches: {
-                                    totalCount: 2,
                                 },
                             }}
                         />
@@ -82,9 +76,6 @@ describe('CampaignStatus', () => {
                                     errors: [],
                                     state: GQL.BackgroundProcessState.COMPLETED,
                                 },
-                                patches: {
-                                    totalCount: 1,
-                                },
                             }}
                         />
                     )
@@ -103,9 +94,6 @@ describe('CampaignStatus', () => {
                                     errors: ['a', 'b'],
                                     state: GQL.BackgroundProcessState.PROCESSING,
                                 },
-                                patches: {
-                                    totalCount: 2,
-                                },
                             }}
                         />
                     )
@@ -123,9 +111,6 @@ describe('CampaignStatus', () => {
                                     pendingCount: 0,
                                     errors: ['a', 'b'],
                                     state: GQL.BackgroundProcessState.ERRORED,
-                                },
-                                patches: {
-                                    totalCount: 2,
                                 },
                             }}
                         />
