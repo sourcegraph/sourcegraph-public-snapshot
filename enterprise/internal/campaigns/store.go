@@ -628,7 +628,7 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
         r.sources
  FROM changesets
  LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
- JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
+ LEFT JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
  JOIN repo r ON changesets.repo_id = r.id
  WHERE %s
  GROUP BY changesets.id, r.id
