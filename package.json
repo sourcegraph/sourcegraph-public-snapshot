@@ -226,7 +226,7 @@
     "socket.io-client": "^2.3.0",
     "string-width": "^4.2.0",
     "style-loader": "^1.2.1",
-    "stylelint": "^13.5.0",
+    "stylelint": "^13.6.0",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^3.0.2",
     "thread-loader": "^2.1.3",
