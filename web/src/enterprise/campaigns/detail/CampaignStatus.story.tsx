@@ -36,9 +36,6 @@ add('Errored', () => (
             changesets: {
                 totalCount: 0,
             },
-            patches: {
-                totalCount: 2,
-            },
             closedAt: null,
         }}
         afterRetry={action('Retry')}
