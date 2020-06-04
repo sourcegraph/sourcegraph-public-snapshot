@@ -3037,16 +3037,14 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 	})
 
-	t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
+	t.Run("CountUnpublishedPatches", func(t *testing.T) {
 		patchSet := &cmpgn.PatchSet{}
-		err := s.CreatePatchSet(ctx, patchSet)
-		if err != nil {
+		if err := s.CreatePatchSet(ctx, patchSet); err != nil {
 			t.Fatal(err)
 		}
 
 		campaign := testCampaign(123, patchSet.ID)
-		err = s.CreateCampaign(ctx, campaign)
-		if err != nil {
+		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -3057,94 +3055,56 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 			t.Fatal(err)
 		}
 		for _, j := range chjs {
-			err := s.DeleteChangesetJob(ctx, j.ID)
-			if err != nil {
+			if err := s.DeleteChangesetJob(ctx, j.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		patch := &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
+		assertCount := func(t *testing.T, want int) {
+			t.Helper()
+			have, err := s.CountUnpublishedPatches(ctx, campaign.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have != want {
+				t.Fatalf("want %v, got %v", want, have)
+			}
 		}
-		err = s.CreatePatch(ctx, patch)
-		if err != nil {
+
+		patch := &cmpgn.Patch{PatchSetID: patchSet.ID, BaseRef: "x", RepoID: api.RepoID(123)}
+		if err = s.CreatePatch(ctx, patch); err != nil {
 			t.Fatal(err)
 		}
 
 		// 0 ChangesetJob, 1 Patches
-		have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
+		assertCount(t, 1)
 
-		changesetJob1 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
+		// Add changesetjob
+		changesetJob1 := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
 		err = s.CreateChangesetJob(ctx, changesetJob1)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// 1 ChangesetJob, 1 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
-		}
+		assertCount(t, 0)
 
-		// Create another patch to ensure that we get the latest date when
-		// there are more than one.
-		clock.add(5 * time.Minute)
-
-		patch = &cmpgn.Patch{
-			PatchSetID: patchSet.ID,
-			BaseRef:    "x",
-			RepoID:     api.RepoID(123),
-		}
-		err = s.CreatePatch(ctx, patch)
-		if err != nil {
+		patch = &cmpgn.Patch{PatchSetID: patchSet.ID, BaseRef: "x", RepoID: api.RepoID(123)}
+		if err = s.CreatePatch(ctx, patch); err != nil {
 			t.Fatal(err)
 		}
 
 		// 1 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts don't match, should get back null
-		if !have.IsZero() {
-			t.Fatalf("publishedAt is not zero: %v", have)
-		}
+		assertCount(t, 1)
 
 		// Add another changesetjob
-		changesetJob2 := &cmpgn.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    patch.ID,
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob2)
-		if err != nil {
+		changesetJob2 := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
+		if err = s.CreateChangesetJob(ctx, changesetJob2); err != nil {
 			t.Fatal(err)
 		}
 
 		// 2 ChangesetJob, 2 Patches
-		have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Job counts are the same, we should get a valid time
-		if !have.Equal(clock.now()) {
-			t.Fatalf("want %v, got %v", clock.now(), have)
-		}
+		assertCount(t, 0)
 	})
 
 	t.Run("GetRepoIDsForFailedChangesetJobs", func(t *testing.T) {

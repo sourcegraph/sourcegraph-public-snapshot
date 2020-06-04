@@ -2468,32 +2468,31 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
-// for a campaign. But only if they have all been created, one for each Patch belonging to the PatchSet attached to the Campaign. If not, it returns a zero time.Time.
-func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
-	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
-	var createdAt time.Time
+// CountUnpublishedPatches returns the number of patches in the given campaign that don't have a matching ChangesetJob.
+func (s *Store) CountUnpublishedPatches(ctx context.Context, campaignID int64) (int, error) {
+	q := sqlf.Sprintf(countUnpublishedPatchesFmtstr, campaignID)
+	var count int
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
+		err = sc.Scan(&count)
 		if err != nil {
 			return 0, 0, err
 		}
 		return 0, 1, nil
 	})
 	if err != nil {
-		return createdAt, err
+		return count, err
 	}
-	return createdAt, nil
+	return count, nil
 }
 
-var getLatestChangesetJobPublishedAtFmtstr = `
+var countUnpublishedPatchesFmtstr = `
 SELECT
-  max(changeset_jobs.created_at)
+  COUNT(patches.id)
 FROM patches
 INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
 LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
 WHERE campaigns.id = %s
-HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
+AND changeset_jobs.created_at IS NULL;
 `
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob

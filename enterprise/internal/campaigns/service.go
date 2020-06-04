@@ -737,27 +737,30 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, err
 	}
 
+	// We check whether we have any ChangesetJobs currently being processed.
+	// If yes, we don't allow the update.
 	if status.Processing() {
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
-	published, err := campaignPublished(ctx, tx, campaign.ID)
+	// If they're not processing, we can assume that they've been published or
+	// failed.
+	allPublished, err := allChangesetJobsCreated(ctx, tx, campaign.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-	partiallyPublished := !published && status.Total != 0
+	partiallyPublished := !allPublished && status.Total != 0
 
 	if campaign.PatchSetID != 0 && updateBranch {
-		if published || partiallyPublished {
+		if allPublished || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
 		}
 	}
 
-	if !published && !partiallyPublished {
-		// If the campaign hasn't been published yet and no Changesets have
-		// been individually published (through the `PublishChangeset`
-		// mutation), we can simply update the attributes on the Campaign
-		// because no ChangesetJobs have been created yet that need updating.
+	if !allPublished && !partiallyPublished {
+		// If no ChangesetJobs have been created yet, we can simply update the
+		// attributes on the Campaign because no ChangesetJobs have been
+		// created yet that need updating.
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
@@ -838,16 +841,14 @@ func validateCampaignBranch(branch string) error {
 	return nil
 }
 
-// campaignPublished returns true if all ChangesetJobs have been created yet
+// allChangesetJobsCreated returns true if all ChangesetJobs have been created yet
 // (they might still be processing).
-func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
+func allChangesetJobsCreated(ctx context.Context, store *Store, campaign int64) (bool, error) {
+	count, err := store.CountUnpublishedPatches(ctx, campaign)
 	if err != nil {
-		return false, errors.Wrap(err, "getting latest changesetjob creation time")
+		return false, errors.Wrap(err, "getting unpublished patches count")
 	}
-	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
-	// ChangesetJobs have been created yet.
-	return !changesetCreation.IsZero(), nil
+	return count == 0, nil
 }
 
 type campaignUpdateDiff struct {
