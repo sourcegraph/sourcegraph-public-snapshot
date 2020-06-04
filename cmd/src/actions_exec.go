@@ -295,9 +295,24 @@ Format of the action JSON files:
 				os.Exit(1)
 			}
 
-			logger.ActionSuccess(patches, true)
+			err = json.NewEncoder(outputWriter).Encode(patches)
+			if err != nil {
+				return errors.Wrap(err, "writing patches")
+			}
 
-			return json.NewEncoder(outputWriter).Encode(patches)
+			logger.ActionSuccess(patches)
+
+			if out, ok := outputWriter.(*os.File); ok && out == os.Stdout {
+				// Don't print instructions when piping
+				return nil
+			}
+
+			// Print instructions when we've written patches to a file, even when not in verbose mode
+			fmt.Fprintf(os.Stderr, "\n\nPatches saved to %s, to create a patch set on your Sourcegraph instance please do the following:\n", *outputFlag)
+			fmt.Fprintln(os.Stderr, "\n ", color.HiCyanString("▶"), fmt.Sprintf("src campaign patchset create-from-patches < %s", *outputFlag))
+			fmt.Fprintln(os.Stderr)
+
+			return nil
 		}
 
 		if err != nil {
@@ -319,7 +334,7 @@ Format of the action JSON files:
 				}
 			}
 		} else {
-			logger.ActionSuccess(patches, false)
+			logger.ActionSuccess(patches)
 		}
 
 		tmpl, err := parseTemplate("{{friendlyPatchSetCreatedMessage .}}")

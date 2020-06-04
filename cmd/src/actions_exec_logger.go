@@ -105,16 +105,13 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 	}
 }
 
-func (a *actionLogger) ActionSuccess(patches []PatchInput, newLines bool) {
+func (a *actionLogger) ActionSuccess(patches []PatchInput) {
 	if !a.verbose {
 		return
 	}
 	a.out.Close()
 	fmt.Fprintln(os.Stderr)
 	format := "✔  Action produced %d patches."
-	if newLines {
-		format = format + "\n\n"
-	}
 	hiGreen.Fprintf(os.Stderr, format, len(patches))
 }
 
