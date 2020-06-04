@@ -103,7 +103,7 @@ func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
 func (q AndOrQuery) Values(field string) []*types.Value {
 	var values []*types.Value
 	if field == "" {
-		VisitPattern(q.Query, func(value string, _ bool, annotation annotation) {
+		VisitPattern(q.Query, func(value string, _ bool, annotation Annotation) {
 			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
 		})
 	} else {
@@ -116,7 +116,7 @@ func (q AndOrQuery) Values(field string) []*types.Value {
 
 func (q AndOrQuery) Fields() map[string][]*types.Value {
 	fields := make(map[string][]*types.Value)
-	VisitPattern(q.Query, func(value string, _ bool, _ annotation) {
+	VisitPattern(q.Query, func(value string, _ bool, _ Annotation) {
 		fields[""] = q.Values("")
 	})
 	VisitParameter(q.Query, func(field, _ string, _ bool) {
@@ -130,7 +130,7 @@ func (q AndOrQuery) Fields() map[string][]*types.Value {
 // not is significant for surfacing suggestions.
 func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	var tree syntax.ParseTree
-	VisitPattern(q.Query, func(value string, negated bool, _ annotation) {
+	VisitPattern(q.Query, func(value string, negated bool, _ Annotation) {
 		expr := &syntax.Expr{
 			Field: "",
 			Value: value,

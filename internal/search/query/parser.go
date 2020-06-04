@@ -49,7 +49,7 @@ const (
 )
 
 // An annotation stores information associated with a node.
-type annotation struct {
+type Annotation struct {
 	Labels labels
 }
 
@@ -57,7 +57,7 @@ type annotation struct {
 type Pattern struct {
 	Value      string     `json:"value"`   // The pattern value.
 	Negated    bool       `json:"negated"` // True if this pattern is negated.
-	Annotation annotation `json:"-"`       // An annotation attached to this pattern.
+	Annotation Annotation `json:"-"`       // An annotation attached to this pattern.
 }
 
 // Parameter is a leaf node of expressions representing a parameter of format "repo:foo".
@@ -491,7 +491,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Annotation: annotation{Labels: Literal | Quoted}}, true
+		return Pattern{Value: value, Annotation: Annotation{Labels: Literal | Quoted}}, true
 	}
 
 	start := p.pos
@@ -505,11 +505,11 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
 	if len(pieces) == 1 {
-		return Pattern{Value: pieces[0], Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}}, true
+		return Pattern{Value: pieces[0], Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}}, true
 	}
 	patterns := []Node{}
 	for _, piece := range pieces {
-		patterns = append(patterns, Pattern{Value: piece, Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}})
+		patterns = append(patterns, Pattern{Value: piece, Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}})
 	}
 	return Operator{Kind: Concat, Operands: patterns}, true
 }
@@ -640,13 +640,13 @@ func (p *parser) ParsePattern() Pattern {
 		// quoted strings as quoted, but interpret them literally.
 		value, advance := ScanSearchPatternLiteral(p.buf[p.pos:])
 		p.pos += advance
-		return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: Literal}}
+		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal}}
 	}
 
 	// If we can parse a well-delimited value, that takes precedence, and we
 	// denote it with Quoted set to true.
 	if value, ok := p.TryParseDelimiter(); ok {
-		return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: Literal | Quoted}}
+		return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: Literal | Quoted}}
 	}
 
 	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
@@ -656,7 +656,7 @@ func (p *parser) ParsePattern() Pattern {
 	}
 	p.pos += advance
 	// Invariant: the pattern can't be quoted since we checked for that.
-	return Pattern{Value: value, Negated: false, Annotation: annotation{Labels: labels}} // FIXME: make literal?
+	return Pattern{Value: value, Negated: false, Annotation: Annotation{Labels: labels}} // FIXME: make literal?
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
@@ -754,7 +754,7 @@ loop:
 				// We parsed "()".
 				if isSet(p.heuristics, parensAsPatterns) {
 					// Interpret literally.
-					nodes = []Node{Pattern{Value: "()", Annotation: annotation{Labels: Literal | HeuristicParensAsPatterns}}}
+					nodes = []Node{Pattern{Value: "()", Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}}}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}

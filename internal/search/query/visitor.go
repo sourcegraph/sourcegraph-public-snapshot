@@ -6,7 +6,7 @@ type Visitor interface {
 	VisitNodes(v Visitor, node []Node)
 	VisitOperator(v Visitor, kind operatorKind, operands []Node)
 	VisitParameter(v Visitor, field, value string, negated bool)
-	VisitPattern(v Visitor, value string, negated bool, annotation annotation)
+	VisitPattern(v Visitor, value string, negated bool, Annotation Annotation)
 }
 
 // BaseVisitor is a visitor that recursively visits each node in a query. A
@@ -35,7 +35,7 @@ func (*BaseVisitor) VisitOperator(visitor Visitor, kind operatorKind, operands [
 
 func (*BaseVisitor) VisitParameter(visitor Visitor, field, value string, negated bool) {}
 
-func (*BaseVisitor) VisitPattern(visitor Visitor, value string, negated bool, annotation annotation) {
+func (*BaseVisitor) VisitPattern(visitor Visitor, value string, negated bool, Annotation Annotation) {
 }
 
 // ParameterVisitor is a helper visitor that only visits operators in a query,
@@ -65,11 +65,11 @@ func (s *ParameterVisitor) VisitParameter(visitor Visitor, field, value string, 
 // and supplies the pattern members via a callback.
 type PatternVisitor struct {
 	BaseVisitor
-	callback func(value string, negated bool, annotation annotation)
+	callback func(value string, negated bool, Annotation Annotation)
 }
 
-func (s *PatternVisitor) VisitPattern(visitor Visitor, value string, negated bool, annotation annotation) {
-	s.callback(value, negated, annotation)
+func (s *PatternVisitor) VisitPattern(visitor Visitor, value string, negated bool, Annotation Annotation) {
+	s.callback(value, negated, Annotation)
 }
 
 // FieldVisitor is a helper visitor that only visits parameter fields in a
@@ -105,7 +105,7 @@ func VisitParameter(nodes []Node, callback func(field, value string, negated boo
 // VisitPattern is a convenience function that calls callback on all pattern
 // nodes. callback supplies the node's value value, and whether the value is
 // negated or quoted.
-func VisitPattern(nodes []Node, callback func(value string, negated bool, annotation annotation)) {
+func VisitPattern(nodes []Node, callback func(value string, negated bool, Annotation Annotation)) {
 	visitor := &PatternVisitor{callback: callback}
 	visitor.VisitNodes(visitor, nodes)
 }
