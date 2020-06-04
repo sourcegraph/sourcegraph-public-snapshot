@@ -8,7 +8,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
 # IMAGE=sourcegraph/grafana:rob ./docker-images/grafana/build.sh
-IMAGE=sourcegraph/grafana:rob # TODO: remove
+IMAGE=sourcegraph/grafana:rob # TODO(@bobheadxi): remove
 CONTAINER=grafana
 
 mkdir -p "${GRAFANA_DISK}"/logs
