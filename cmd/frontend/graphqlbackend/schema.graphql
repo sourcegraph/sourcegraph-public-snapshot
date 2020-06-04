@@ -53,8 +53,7 @@ type Mutation {
     #
     # - The campaign has already been closed.
     # - A plan is added to a manual campaign.
-    # - A non-manual campaign is being published.
-    # - The branch of a (partially or fully) published campaign is changed.
+    # - A non-manual campaign has a changeset that is not published (or is being published).
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retry creating changesets from the patches in the campaign's patchset that could not be
     # successfully created on the code host. Retrying will clear the errors list of a campaign.
@@ -75,10 +74,6 @@ type Mutation {
         # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Publish the campaign by turning its patches into changesets on the code hosts. The
-    # Campaign.draft field will be set to false and Campaign.status will update according to the
-    # progress of turning the patches into changesets.
-    publishCampaign(campaign: ID!): Campaign!
     # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
     # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
     # query the campaign's status to track the progress of this async operation.
@@ -472,11 +467,6 @@ input CreateCampaignInput {
     # patchset has expired. Using a patchset to create or update a campaign will retain it for the
     # lifetime of the campaign and prevent it from expiring.
     patchSet: ID
-
-    # Whether to create the campaign in draft mode. Default is false. A draft campaign lets you
-    # preview the changesets before creating them on the code host. When you're ready, you can
-    # publish changesets individually or all at once.
-    draft: Boolean
 }
 
 # Input arguments for updating a campaign.
@@ -625,14 +615,9 @@ type Campaign implements Node {
     # The date and time when the campaign was closed.
     closedAt: DateTime
 
-    # The date and time when the campaign changed from draft mode to published. If the campaign has
-    # not been published yet (i.e., it is still in draft mode), this is null. If the campaign was never in
-    # draft mode, the value is the same as Campaign.createdAt.
-    publishedAt: DateTime
-
-    # The patches that will be turned into changesets on the code host when publishing the campaign.
+    # The patches that will be turned into changesets on the code host when published.
     # If the campaign is a "manual" campaign and doesn't have a patchset attached, there won't be
-    # any nodes returned by this connection. When publishing a campaign, the number of nodes in
+    # any nodes returned by this connection. When publishing a changeset, the number of nodes in
     # changesets will increase with each decrease in patches. The completed count in the
     # Campaign.status field increments with every patch turned into an ExternalChangeset.
     patches(first: Int): PatchConnection!
@@ -730,7 +715,6 @@ type Patch implements PatchInterface & Node {
     # the following has occurred:
     #
     # - A campaign has been created with the patchset to which this patch belongs.
-    # - A campaign with the patchset has been published after being in draft mode.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
 }
