@@ -15,6 +15,9 @@ export interface ExtState {
     // Workspace
     roots: readonly sourcegraph.WorkspaceRoot[]
     versionContext: string | undefined
+
+    // Search
+    queryTransformers: sourcegraph.QueryTransformer[]
 }
 
 export interface InitResult {
@@ -24,6 +27,7 @@ export interface InitResult {
     // todo this is needed as a temp solution for getter problem
     state: Readonly<ExtState>
     commands: typeof sourcegraph['commands']
+    search: typeof sourcegraph['search']
 }
 
 /**
@@ -44,7 +48,7 @@ export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
     initialSettings: Readonly<SettingsCascade<object>>
 ): InitResult => {
-    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings }
+    const state: ExtState = { roots: [], versionContext: undefined, settings: initialSettings, queryTransformers: [] }
 
     const configChanges = new BehaviorSubject<void>(undefined)
     // Most extensions never call `configuration.get()` synchronously in `activate()` to get
@@ -70,6 +74,19 @@ export const initNewExtensionAPI = (
             state.versionContext = context
             versionContextChanges.next(context)
         },
+
+        // Search
+        transformSearchQuery: query =>
+            // this is racy because a transformer can be executed after it unsubscribed
+            state.queryTransformers.reduce(
+                (queryPromise, transformer) =>
+                    // transformer can be unsubscribed in the middle of transformation chain
+                    // Note that we don't include new ones but exclude the ones that are unsubsribed
+                    state.queryTransformers.includes(transformer)
+                        ? queryPromise.then(q => transformer.transformQuery(q))
+                        : queryPromise,
+                Promise.resolve(query)
+            ),
     }
 
     // Configuration
@@ -98,6 +115,26 @@ export const initNewExtensionAPI = (
         registerCommand: (command, callback) => syncSubscription(mainAPI.registerCommand(command, proxy(callback))),
     }
 
+    // Search
+    // this is basically an optimization to skip round trip to the worker
+    const notifyAboutQueryTransformerChanges = (): void => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        mainAPI.notifyIfThereAreQueryTransformers(state.queryTransformers.length > 0)
+    }
+
+    const search: typeof sourcegraph['search'] = {
+        registerQueryTransformer: transformer => {
+            state.queryTransformers.push(transformer)
+            notifyAboutQueryTransformerChanges()
+            return {
+                unsubscribe: () => {
+                    notifyAboutQueryTransformerChanges()
+                    state.queryTransformers = state.queryTransformers.filter(t => t !== transformer)
+                },
+            }
+        },
+    }
+
     return {
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
@@ -106,5 +143,6 @@ export const initNewExtensionAPI = (
         workspace,
         state,
         commands,
+        search,
     }
 }

@@ -1,6 +1,6 @@
 import { Observable, of, combineLatest, defer } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+// import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
@@ -8,6 +8,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
+import { Services } from '../../../shared/src/api/client/services'
 
 // TODO: Make this a proper fragment, blocked by https://github.com/graph-gophers/graphql-go/issues/241.
 const genericSearchResultInterfaceFields = `
@@ -39,12 +40,10 @@ export function search(
     version: string,
     patternType: GQL.SearchPatternType,
     versionContext: string | undefined,
-    { extensionsController }: ExtensionsControllerProps<'services'>
+    services: Services
+    // { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
-    /**
-     * Emits whenever a search is executed, and whenever an extension registers a query transformer.
-     */
-    return extensionsController.services.queryTransformer.transformQuery(query).pipe(
+    return of(services.queryTransformer.transformQuery?.(query) ?? query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`

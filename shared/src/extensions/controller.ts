@@ -41,6 +41,11 @@ export interface Controller extends Unsubscribable {
      * Frees all resources associated with this client.
      */
     unsubscribe(): void
+
+    /**
+     * Tnransforms a query via registered extensions
+     */
+    // transformSearchQuery: (query: string) => Promise<string>
 }
 
 /**

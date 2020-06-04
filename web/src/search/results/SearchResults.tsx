@@ -35,6 +35,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import { Services } from '../../../../shared/src/api/client/services'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -57,7 +58,7 @@ export interface SearchResultsProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        { extensionsController }: ExtensionsControllerProps<'services'>
+        services: Services
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
@@ -178,7 +179,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
-                                    this.props
+                                    this.props.extensionsController.services
                                 )
                                 .pipe(
                                     // Log telemetry

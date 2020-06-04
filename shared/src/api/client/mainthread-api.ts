@@ -7,6 +7,7 @@ import { switchMap, concatMap } from 'rxjs/operators'
 import { FlatExtHostAPI, MainThreadAPI } from '../contract'
 import { ProxySubscription } from './api/common'
 import { Services } from './services'
+import { TransformQuerySignature } from './services/queryTransformer'
 
 // for now it will partially mimic Services object but hopefully will be incrementally reworked in the process
 export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
@@ -15,7 +16,7 @@ export const initMainThreadAPI = (
     extentionHost: Remote<FlatExtHostAPI>,
     platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
     dependencies: MainThreadAPIDependencies
-): { api: MainThreadAPI; subscription: Subscription } => {
+): { api: MainThreadAPI; subscription: Subscription; transformQuery: TransformQuerySignature } => {
     const {
         workspace: { roots, versionContext },
         commands,
@@ -48,6 +49,13 @@ export const initMainThreadAPI = (
             .subscribe()
     )
 
+    // Search
+    // this is basically an optimization to skip round trip to the worker if we don't have any transformers
+    // which is probably the norm
+    let hasRegisteredTransformers = false
+    const transformQuery: TransformQuerySignature = query =>
+        hasRegisteredTransformers ? extentionHost.transformSearchQuery(query) : Promise.resolve(query)
+
     // Commands
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
@@ -58,7 +66,8 @@ export const initMainThreadAPI = (
             subscription.add(new ProxySubscription(run))
             return proxy(subscription)
         },
+        notifyIfThereAreQueryTransformers: yesThereIsSome => (hasRegisteredTransformers = yesThereIsSome),
     }
 
-    return { api, subscription }
+    return { api, subscription, transformQuery }
 }

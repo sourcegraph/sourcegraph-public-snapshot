@@ -15,8 +15,11 @@ export interface FlatExtHostAPI {
      */
     syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
 
-    syncRoots(roots: readonly clientType.WorkspaceRoot[]): void
-    syncVersionContext(versionContext: string | undefined): void
+    syncRoots: (roots: readonly clientType.WorkspaceRoot[]) => void
+    syncVersionContext: (versionContext: string | undefined) => void
+
+    // Search
+    transformSearchQuery: (query: string) => Promise<string>
 }
 
 /**
@@ -36,4 +39,7 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
+
+    // Search
+    notifyIfThereAreQueryTransformers: (yesThereIsSome: boolean) => void
 }

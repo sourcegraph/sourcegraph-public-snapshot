@@ -57,6 +57,7 @@ import { VersionContextProps } from '../../shared/src/search/util'
 import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
+import { Services } from '../../shared/src/api/client/services'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -114,7 +115,7 @@ export interface LayoutProps
         version: string,
         patternType: GQL.SearchPatternType,
         versionContext: string | undefined,
-        { extensionsController }: ExtensionsControllerProps<'services'>
+        services: Services
     ) => Observable<GQL.ISearchResults | ErrorLike>
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined

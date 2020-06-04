@@ -11,7 +11,7 @@ import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientSearch } from './api/search'
+// import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { Services } from './services'
@@ -137,19 +137,24 @@ export async function createExtensionHostClientConnection(
         services.textDocumentLocations,
         services.completionItems
     )
-    const clientSearch = new ClientSearch(services.queryTransformer)
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
+    const { api: newAPI, subscription: apiSubscriptions, transformQuery } = initMainThreadAPI(
+        proxy,
+        platformContext,
+        services
+    )
 
     subscription.add(apiSubscriptions)
+
+    services.queryTransformer.transformQuery = transformQuery
+    subscription.add(() => (services.queryTransformer.transformQuery = undefined))
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
-        search: clientSearch,
         languageFeatures: clientLanguageFeatures,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
@@ -157,6 +162,7 @@ export async function createExtensionHostClientConnection(
         content: clientContent,
         ...newAPI,
     }
+
     comlink.expose(clientAPI, endpoints.expose)
 
     return subscription
