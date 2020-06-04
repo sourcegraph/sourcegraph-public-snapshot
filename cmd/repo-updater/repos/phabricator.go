@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -184,7 +185,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 
 	for {
 		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
-			Kinds: []string{"PHABRICATOR"},
+			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {
 			log15.Error("unable to fetch Phabricator connections", "err", err)
