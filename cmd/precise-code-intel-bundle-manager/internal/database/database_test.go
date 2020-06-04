@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -246,7 +247,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 func openTestDatabase(t *testing.T) Database {
 	filename := copyFile(t, "../../../../internal/codeintel/bundles/persistence/sqlite/testdata/lsif-go@ad3507cb.lsif.db")
 
-	cache, err := sqlitereader.NewCache(10)
+	cache, err := cache.NewDataCache(10)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
