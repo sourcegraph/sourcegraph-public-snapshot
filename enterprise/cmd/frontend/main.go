@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
@@ -74,9 +75,11 @@ func main() {
 		}
 	}()
 
-	go licensing.StartMaxUserCount(&usersStore{})
+	goroutine.Go(func() {
+		licensing.StartMaxUserCount(&usersStore{})
+	})
 	if envvar.SourcegraphDotComMode() {
-		go productsubscription.StartCheckForUpcomingLicenseExpirations()
+		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
 	}
 
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
