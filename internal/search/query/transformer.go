@@ -126,7 +126,7 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
-func convertOrToRegexp(nodes []Node) []Node {
+func substituteOrForRegexp(nodes []Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true
@@ -145,10 +145,10 @@ func convertOrToRegexp(nodes []Node) []Node {
 				}
 				valueString := strings.Join(values, "|")
 				new = append(new, Pattern{Value: valueString})
-				rest = convertOrToRegexp(rest)
+				rest = substituteOrForRegexp(rest)
 				new = newOperator(append(new, rest...), Or)
 			} else {
-				new = append(new, newOperator(convertOrToRegexp(v.Operands), v.Kind)...)
+				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
 			new = append(new, node)

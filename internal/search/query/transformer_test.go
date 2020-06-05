@@ -216,7 +216,7 @@ func TestOrOperator(t *testing.T) {
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
-			got := prettyPrint(convertOrToRegexp(query))
+			got := prettyPrint(substituteOrForRegexp(query))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
