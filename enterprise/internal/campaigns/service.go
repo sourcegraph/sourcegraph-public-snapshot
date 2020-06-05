@@ -811,9 +811,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	// If they're not processing, we can assume that they've been published or
 	// failed.
+	// How many patches do we have that are not published or failed to publish?
 	unpublished, err := tx.CountPatches(ctx, CountPatchesOpts{
-		PatchSetID:                oldPatchSetID,
-		OnlyUnpublishedInCampaign: campaign.ID,
+		PatchSetID:                        oldPatchSetID,
+		OnlyWithoutChangesetJobInCampaign: campaign.ID,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting unpublished patches count")
