@@ -487,7 +487,7 @@ loop:
 // parentheses as part of the pattern. It only succeeds if the value parsed can
 // be interpreted as a pattern, and not, e.g., as a filter:value parameter.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
-	if !isSet(p.heuristics, parensAsPatterns) || isSet(p.heuristics, allowDanglingParens) {
+	if !isSet(p.heuristics, parensAsPatterns) || isSet(p.heuristics, allowDanglingParens) || isSet(p.heuristics, literalSearchPatterns) {
 		return Pattern{}, false
 	}
 	if value, ok := p.TryParseDelimiter(); ok {
@@ -947,11 +947,14 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 	}
 	parser := &parser{
 		buf:        []byte(in),
-		heuristics: allowDanglingParens | literalSearchPatterns,
+		heuristics: parensAsPatterns | literalSearchPatterns,
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
+	}
+	if hoistedNodes, err := Hoist(nodes); err == nil {
+		return newOperator(hoistedNodes, And), nil
 	}
 	nodes = Map(nodes, LowercaseFieldNames, SubstituteAliases)
 	err = validate(nodes)
@@ -963,7 +966,14 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
 func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
-	query, err := ParseAndOr(in)
+	var query []Node
+	var err error
+	switch searchType {
+	case SearchTypeLiteral, SearchTypeStructural:
+		query, err = ParseLiteralSearch(in)
+	case SearchTypeRegex:
+		query, err = ParseAndOr(in)
+	}
 	if err != nil {
 		return nil, err
 	}
