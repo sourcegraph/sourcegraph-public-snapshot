@@ -106,7 +106,7 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 }
 
 /**
@@ -142,8 +142,8 @@ export const CodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props 
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryIndexes = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo.id, ...args }),
-        [repo.id]
+        (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo?.id, ...args }),
+        [repo?.id]
     )
 
     return (

@@ -113,7 +113,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 }
 
 /**
@@ -149,8 +149,8 @@ export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props 
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo.id, ...args }),
-        [repo.id]
+        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
+        [repo?.id]
     )
 
     return (
