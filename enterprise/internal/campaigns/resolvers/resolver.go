@@ -353,9 +353,9 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) RetryCampaignChangesets(ctx context.Context, args *graphqlbackend.RetryCampaignChangesetsArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.RetryCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	tr, ctx := trace.New(ctx, "Resolver.RetryCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -447,8 +447,6 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 	defer tx.Done(&err)
 
-	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
@@ -486,12 +484,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		}
 	}
 
-	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
+	repoStore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
 	// NOTE: We are performing a blocking sync here in order to ensure
 	// that the remote changeset exists and also to remove the possibility
 	// of an unsynced changeset entering our database
-	if err = ee.SyncChangesets(ctx, store, tx, r.httpFactory, cs...); err != nil {
+	if err = ee.SyncChangesets(ctx, repoStore, tx, r.httpFactory, cs...); err != nil {
 		return nil, errors.Wrap(err, "syncing changesets")
 	}
 
@@ -618,6 +616,30 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 
+func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlbackend.PublishCampaignChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishCampaignChangesets", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaignID, err := campaigns.UnmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
+	}
+
+	if campaignID == 0 {
+		return nil, ErrIDIsZero
+	}
+
+	svc := ee.NewService(r.store, r.httpFactory)
+	// 🚨 SECURITY: EnqueueChangesetJobs checks whether current user is authorized.
+	if err := svc.EnqueueChangesetJobs(ctx, campaignID); err != nil {
+		return nil, errors.Wrap(err, "publishing campaign changesets")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
 	defer func() {

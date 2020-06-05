@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -43,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -232,7 +232,7 @@ func TestCampaigns(t *testing.T) {
 
 	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -249,7 +249,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	bbsExtSvc := &repos.ExternalService{
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   bbsURL,
@@ -699,7 +699,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -849,7 +849,7 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, cmpgns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, cmpgns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, cmpgns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, cmpgns.MarshalCampaignID(0)),
 		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
@@ -1350,7 +1350,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
 			"name":        "Campaign with PatchSet",
 			"description": "This campaign has a patchset",
-			"draft":       true,
 			"patchSet":    patchSetID,
 			"branch":      "my-cool-branch",
 		},
@@ -1361,6 +1360,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       id
       branch
       status { state }
+      hasUnpublishedPatches
       patches {
         nodes {
           ... on HiddenPatch {
@@ -1431,6 +1431,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	if campaign.DiffStat.Changed != 2 {
 		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
+	}
+
+	if !campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is false, want true")
 	}
 
 	patch := campaign.Patches.Nodes[0]
@@ -1535,6 +1539,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	    fragment c on Campaign {
 	      id
 	      status { state }
+	      hasUnpublishedPatches
 	      branch
 	      patches {
 	        totalCount
@@ -1574,6 +1579,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	campaign = queryCampaignResponse.Node
 	if campaign.Status.State != "COMPLETED" {
 		t.Fatalf("campaign is not in state 'COMPLETED': %q", campaign.Status.State)
+	}
+
+	if campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is true, want false")
 	}
 
 	if campaign.Patches.TotalCount != 0 {
@@ -1860,9 +1869,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "retryCampaign",
+				name: "retryCampaignChangesets",
 				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
-					return fmt.Sprintf(`mutation { retryCampaign(campaign: %q) { id } }`, campaignID)
+					return fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaignID)
 				},
 			},
 			{
@@ -1878,6 +1887,15 @@ func TestPermissionLevels(t *testing.T) {
 						`mutation { addChangesetsToCampaign(campaign: %q, changesets: [%q]) { id } }`,
 						campaignID,
 						changesetID,
+					)
+				},
+			},
+			{
+				name: "publishCampaignChangesets",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { publishCampaignChangesets(campaign: %q) { alwaysNil } }`,
+						campaignID,
 					)
 				},
 			},

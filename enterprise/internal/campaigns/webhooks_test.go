@@ -19,16 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -55,7 +53,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
 		extSvc := &repos.ExternalService{
-			Kind:        "GITHUB",
+			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
@@ -205,7 +203,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
 		extSvc := &repos.ExternalService{
-			Kind:        "BITBUCKETSERVER",
+			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: marshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
