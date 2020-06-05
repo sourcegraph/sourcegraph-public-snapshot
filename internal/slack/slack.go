@@ -62,7 +62,7 @@ type Field struct {
 }
 
 // Post sends payload to a Slack channel.
-func (c *Client) Post(payload *Payload) error {
+func (c *Client) Post(ctx context.Context, payload *Payload) error {
 	if c.WebhookURL == "" {
 		return nil
 	}
@@ -77,10 +77,10 @@ func (c *Client) Post(payload *Payload) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := http.DefaultClient.Do(req.WithContext(timeoutCtx))
 	if err != nil {
 		return errors.Wrap(err, "slack: http request")
 	}
