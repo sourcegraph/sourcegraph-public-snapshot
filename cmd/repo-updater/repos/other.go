@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -130,7 +131,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 		URI:  repoURI,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 			ServiceID:   serviceID,
 		},
 		Sources: map[string]*SourceInfo{
@@ -181,7 +182,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 		// Fields that src-expose isn't allowed to control
 		r.ExternalRepo = api.ExternalRepoSpec{
 			ID:          r.URI,
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
 		r.Sources = map[string]*SourceInfo{

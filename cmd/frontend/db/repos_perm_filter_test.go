@@ -679,7 +679,7 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 	}, {
 		UserID: 23,
 		AccountSpec: extsvc.AccountSpec{
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 			ServiceID:   "https://other.mine/",
 			AccountID:   "99",
 		},

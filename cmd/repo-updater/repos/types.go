@@ -186,7 +186,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "other" {
+			if r.ExternalRepo.ServiceType != extsvc.TypeOther {
 				continue
 			}
 

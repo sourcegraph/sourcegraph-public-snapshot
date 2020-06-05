@@ -549,7 +549,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "git-host.com/org/foo",
 				ServiceID:   "https://git-host.com/",
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 			},
 			Sources: map[string]*repos.SourceInfo{
 				"extsvc:5": {
@@ -833,7 +833,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 		},
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:4": {

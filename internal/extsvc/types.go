@@ -104,6 +104,8 @@ const (
 	TypeGitolite = "gitolite"
 
 	TypePhabricator = "phabricator"
+
+	TypeOther = "other"
 )
 
 // AccountID is a descriptive type for the external identifier of an external account on the
