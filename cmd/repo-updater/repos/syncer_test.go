@@ -478,7 +478,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
-				case "bitbucketcloud":
+				case extsvc.TypeBitbucketCloud:
 					update = &bitbucketcloud.Repo{IsPrivate: true}
 				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
