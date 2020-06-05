@@ -81,7 +81,7 @@ type Mutation {
     # Callers can query the campaign's status to track the progress of this async operation.
     # If one of the patches has previously been published but the publication failed,
     # publication is NOT retried.
-    publishCampaignChangesets(campaign: ID!): EmptyResponse!
+    publishCampaignChangesets(campaign: ID!): Campaign!
     # Create an ExternalChangeset on the code host asynchronously. The patch
     # must belong to a patchset that has been attached to a campaign;
     # otherwise, an error is returned and no ExternalChangeset is created.

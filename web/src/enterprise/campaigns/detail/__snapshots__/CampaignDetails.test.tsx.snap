@@ -509,6 +509,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {
@@ -617,6 +618,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {
@@ -888,6 +890,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {
@@ -996,6 +999,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {
@@ -1357,6 +1361,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {
@@ -1465,6 +1470,7 @@ Array [
           "changed": 3,
           "deleted": 2,
         },
+        "hasUnpublishedPatches": false,
         "id": "c",
         "name": "n",
         "openChangesets": Object {

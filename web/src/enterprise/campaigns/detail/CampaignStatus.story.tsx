@@ -33,12 +33,14 @@ add('Errored', () => (
                         '```'
                 ),
             },
+            hasUnpublishedPatches: false,
             changesets: {
                 totalCount: 0,
             },
             closedAt: null,
         }}
         afterRetry={action('Retry')}
+        afterPublish={action('Publish')}
         history={createMemoryHistory()}
     />
 ))

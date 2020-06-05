@@ -497,7 +497,7 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 // EnqueueChangesetJobs enqueues a ChangesetJob for each Patch associated with
 // the PatchSet in the given Campaign, creating it if necessary. The Patch has
 // to belong to a PatchSet
-func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_ *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", campaignID)
 	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobs", traceTitle)
 	defer func() {
@@ -507,21 +507,21 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 
 	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if campaign.PatchSetID == 0 {
-		return ErrNoPatches
+		return nil, ErrNoPatches
 	}
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Done(&err)
 
@@ -532,7 +532,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 		OnlyWithoutChangesetJob: campaign.ID,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -540,7 +540,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 		CampaignID: campaign.ID,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	jobsByPatchID := make(map[int64]*campaigns.ChangesetJob, len(existingJobs))
@@ -559,7 +559,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 		}
 	}
 
-	return nil
+	return campaign, nil
 }
 
 // EnqueueChangesetJobForPatch queues a ChangesetJob for the Patch with the

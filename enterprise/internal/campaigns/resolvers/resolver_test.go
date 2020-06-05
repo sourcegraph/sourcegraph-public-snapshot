@@ -1842,7 +1842,7 @@ func TestPermissionLevels(t *testing.T) {
 				name: "publishCampaignChangesets",
 				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
 					return fmt.Sprintf(
-						`mutation { publishCampaignChangesets(campaign: %q) { alwaysNil } }`,
+						`mutation { publishCampaignChangesets(campaign: %q) { id } }`,
 						campaignID,
 					)
 				},
