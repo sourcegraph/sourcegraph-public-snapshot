@@ -21,7 +21,7 @@ import * as H from 'history'
 const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -144,7 +144,7 @@ export const CodeIntelIndexPage: FunctionComponent<Props> = ({
                                             {indexOrError.projectRoot.commit.repository.name}
                                         </Link>
                                     ) : (
-                                        repo.name
+                                        repo?.name || 'unknown'
                                     )}
                                 </td>
                             </tr>
