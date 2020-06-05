@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"time"
 )
@@ -51,7 +52,11 @@ func HowLongOutOfDate(currentVersion string) (int, error) {
 	}
 	daysSinceBuild := now.Sub(buildTime).Hours() / 24
 
-	return monthsFromDays(daysSinceBuild), nil
+	months := monthsFromDays(daysSinceBuild)
+	if debug := os.Getenv("DEBUG_MONTHS_OUT_OF_DATE"); debug != "" {
+		months, _ = strconv.Atoi(debug)
+	}
+	return months, nil
 }
 
 // monthsFromDays roughly determines the number of months given days
