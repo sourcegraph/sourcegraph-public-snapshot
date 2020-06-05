@@ -171,38 +171,19 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 	}
 
 	if isAdmin {
-		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
-			"for the latest features and bug fixes please upgrade", months)
+		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes please upgrade", months)
 		key := fmt.Sprintf("months-out-of-date-%d", months)
 		switch {
 		case months < 3:
-			return &Alert{
-				TypeValue:                 AlertTypeInfo,
-				MessageValue:              message,
-				IsDismissibleWithKeyValue: key,
-			}
+			return &Alert{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}
 		case months == 3:
-			return &Alert{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date",
-			}
+			return &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date"}
 		case months == 4:
-			return &Alert{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: message,
-			}
-
+			return &Alert{TypeValue: AlertTypeWarning, MessageValue: message}
 		case months == 5:
-			return &Alert{
-				TypeValue:    AlertTypeError,
-				MessageValue: message,
-			}
-
+			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
 		default:
-			return &Alert{
-				TypeValue:    AlertTypeError,
-				MessageValue: message,
-			}
+			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
 		}
 	}
 
@@ -214,22 +195,10 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
 	case 4:
-		return &Alert{
-			TypeValue:                 AlertTypeWarning,
-			MessageValue:              message,
-			IsDismissibleWithKeyValue: key,
-		}
+		return &Alert{TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
 	case 5:
-		return &Alert{
-			TypeValue:                 AlertTypeError,
-			MessageValue:              message,
-			IsDismissibleWithKeyValue: key,
-		}
-
+		return &Alert{TypeValue: AlertTypeError, MessageValue: message, IsDismissibleWithKeyValue: key}
 	default:
-		return &Alert{
-			TypeValue:    AlertTypeError,
-			MessageValue: message,
-		}
+		return &Alert{TypeValue: AlertTypeError, MessageValue: message}
 	}
 }
