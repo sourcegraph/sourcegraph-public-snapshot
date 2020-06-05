@@ -138,14 +138,14 @@ func convertOrToRegexp(nodes []Node) []Node {
 		switch v := node.(type) {
 		case Operator:
 			if v.Kind == Or {
-				patterns, other := partition(v.Operands, isPattern)
+				patterns, rest := partition(v.Operands, isPattern)
 				var values []string
 				for _, node := range patterns {
 					values = append(values, node.(Pattern).Value)
 				}
 				valueString := strings.Join(values, "|")
 				new = append(new, Pattern{Value: valueString})
-				rest := convertOrToRegexp(other)
+				rest = convertOrToRegexp(rest)
 				new = newOperator(append(new, rest...), Or)
 			} else {
 				new = append(new, newOperator(convertOrToRegexp(v.Operands), v.Kind)...)
