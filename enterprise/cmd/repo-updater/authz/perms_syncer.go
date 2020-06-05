@@ -263,22 +263,19 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "wait for rate limiter")
 	}
 
-	extAccountIDs, err := func() ([]extsvc.AccountID, error) {
-		ids, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
-			URI:              repo.URI,
-			ExternalRepoSpec: repo.ExternalRepo,
-		})
-		if err != nil {
-			// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
-			// when the owner of the token only has READ access. However, we don't want to fail entirely
-			// so the scheduler won't keep trying to fetch permissions of this same repository.
-			if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
-				log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
-				return []extsvc.AccountID{}, nil
-			}
-		}
-		return ids, err
-	}()
+	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
+		URI:              repo.URI,
+		ExternalRepoSpec: repo.ExternalRepo,
+	})
+
+	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
+	// when the owner of the token only has READ access. However, we don't want to fail entirely
+	// so the scheduler won't keep trying to fetch permissions of this same repository.
+	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+		log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
+		err = nil
+	}
+
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
