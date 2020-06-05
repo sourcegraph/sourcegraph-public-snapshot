@@ -1140,7 +1140,6 @@ func TestService(t *testing.T) {
 			}
 			return filtered, nil
 		}
-		// Reset filter
 		t.Cleanup(func() { db.MockAuthzFilter = nil })
 
 		fakeSource := &FakeChangesetSource{Err: nil}
@@ -1162,6 +1161,85 @@ func TestService(t *testing.T) {
 
 		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
 			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
+		}
+	})
+
+	t.Run("RetryPublishCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patches := make([]*campaigns.Patch, 0, len(rs))
+		for _, repo := range rs {
+			patch := testPatch(patchSet.ID, repo.ID, now)
+			if err := store.CreatePatch(ctx, patch); err != nil {
+				t.Fatal(err)
+			}
+			patches = append(patches, patch)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
+		for _, p := range patches {
+			job := &campaigns.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    p.ID,
+				StartedAt:  clock(),
+				FinishedAt: clock(),
+				Error:      "error",
+			}
+			if err = store.CreateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+			changesetJobs = append(changesetJobs, job)
+		}
+
+		// Repo of patches[0]/changesetJobs[0] filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
+			for _, r := range repos {
+				if r.ID == patches[0].RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		svc := NewServiceWithClock(store, cf, clock)
+		_, err := svc.RetryPublishCampaign(ctx, campaign.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reloadedJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(reloadedJobs), len(changesetJobs); have != want {
+			t.Fatalf("wrong number of failed changeset jobs. want=%d, have=%d", want, have)
+		}
+
+		for _, j := range reloadedJobs {
+			if j.PatchID == patches[0].ID {
+				if !j.UnsuccessfullyCompleted() {
+					t.Fatalf("ChangesetJob %d reset, but should have been filtered out", j.ID)
+				}
+				continue
+			}
+
+			if j.UnsuccessfullyCompleted() {
+				t.Fatalf("ChangesetJob %d not reset", j.ID)
+			}
 		}
 	})
 }

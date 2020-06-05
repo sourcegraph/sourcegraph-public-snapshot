@@ -523,7 +523,38 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 		return nil, err
 	}
 
-	err = s.store.ResetFailedChangesetJobs(ctx, campaign.ID)
+	patches, _, err := s.store.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID: campaign.PatchSetID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repoIDs, err := s.store.GetRepoIDsForFailedChangesetJobs(ctx, campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	var resetPatchIDs []int64
+	for _, p := range patches {
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
+		resetPatchIDs = append(resetPatchIDs, p.ID)
+	}
+
+	err = s.store.ResetChangesetJobs(ctx, ResetChangesetJobsOpts{
+		CampaignID: id,
+		OnlyFailed: true,
+		PatchIDs:   resetPatchIDs,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "resetting failed changeset jobs")
 	}
@@ -900,7 +931,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		if err != nil {
 			return campaign, nil, err
 		}
-		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
+
+		opts := ResetChangesetJobsOpts{CampaignID: campaign.ID, OnlyFailed: false}
+		return campaign, nil, tx.ResetChangesetJobs(ctx, opts)
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPatchSetID, updateAttributes)
