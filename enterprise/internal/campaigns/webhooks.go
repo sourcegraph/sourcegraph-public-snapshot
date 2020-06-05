@@ -30,7 +30,7 @@ type Webhook struct {
 	Now   func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
-	// Example values: extsvc.TypeBitbucketServer, github.ServiceType
+	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
 	ServiceType string
 }
 
@@ -192,7 +192,7 @@ type BitbucketServerWebhook struct {
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
+	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
 // ServeHTTP implements the http.Handler interface.

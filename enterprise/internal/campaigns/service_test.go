@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -57,7 +58,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -233,7 +234,7 @@ func TestService(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -1006,7 +1007,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})

@@ -196,7 +196,7 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
 
 	ext := &repos.ExternalService{
-		Kind:        github.ServiceType,
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -208,7 +208,7 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 		t.Fatal(err)
 	}
 
-	repo := testRepo(0, github.ServiceType)
+	repo := testRepo(0, extsvc.TypeGitHub)
 	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {
 		ID: ext.URN(),
 	}}

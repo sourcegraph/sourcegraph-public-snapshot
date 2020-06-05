@@ -305,8 +305,8 @@ func TestCampaigns(t *testing.T) {
 		Changesets []apitest.Changeset
 	}
 
-	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
-	graphqlBBSRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(bbsRepo.ID)))
+	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(githubRepo.ID))
+	graphqlBBSRepoID := string(graphqlbackend.MarshalRepositoryID(bbsRepo.ID))
 
 	in := fmt.Sprintf(
 		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,
@@ -1000,7 +1000,7 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
           }
         }
       }
-	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
+	`, graphqlbackend.MarshalRepositoryID(repo.ID), testDiff, 1))
 
 		result := response.CreatePatchSetFromPatches
 
@@ -1242,14 +1242,14 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		if string(a) != testBaseRef || string(b) != testHeadRef {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
-		return api.CommitID(testBaseRevision), nil
+		return testBaseRevision, nil
 	}
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	// repo & external service setup
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	ext := &repos.ExternalService{
-		Kind:        github.ServiceType,
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -1287,7 +1287,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 				}
 			}
 		}
-	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testBaseRevision, testBaseRef, testDiff))
+	`, graphqlbackend.MarshalRepositoryID(repo.ID), testBaseRevision, testBaseRef, testDiff))
 
 	patchSetID := createPatchSetResponse.CreatePatchSetFromPatches.ID
 

@@ -25,7 +25,7 @@ import (
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
-	github.ServiceType:         {},
+	extsvc.TypeGitHub:          {},
 	extsvc.TypeBitbucketServer: {},
 }
 
@@ -374,7 +374,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = github.ServiceType
+		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:

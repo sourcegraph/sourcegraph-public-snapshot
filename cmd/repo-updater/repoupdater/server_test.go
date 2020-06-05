@@ -114,7 +114,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/c/d",
@@ -672,7 +672,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				}
 			}
@@ -872,7 +872,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -921,7 +921,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -948,7 +948,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",

@@ -2856,7 +2856,7 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
-	case github.ServiceType:
+	case extsvc.TypeGitHub:
 		t.Metadata = new(github.PullRequest)
 	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)

@@ -445,7 +445,7 @@ func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campai
 
 func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 	return &campaigns.Changeset{
-		ExternalServiceType: github.ServiceType,
+		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
 	}
