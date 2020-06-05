@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"os"
-	"os/exec"
 
 	"github.com/inconshreveable/log15"
 )
@@ -18,22 +17,30 @@ func main() {
 	log := log15.New("cmd", "grafana-wrapper")
 	ctx := context.Background()
 
+	// controller for running/stopping grafana
+	grafana := newGrafanaController(log)
+
+	// subscribe to configuration
 	if noConfig != "true" {
 		log.Info("initializing configuration")
-		alertsSubscriber, err := newGrafanaAlertsSubscriber(ctx, log)
+		config, err := newConfigSubscriber(ctx, log)
 		if err != nil {
-			log.Crit("failed to initialize alerts", "error", err)
+			log.Crit("failed to initialize configuration", "error", err)
 			os.Exit(1)
 		}
-		alertsSubscriber.subscribe()
+		config.Subscribe(grafana)
 	} else {
 		log.Info("configuration sync disabled")
 	}
 
-	log.Info("starting grafana")
-	grafanaRun := exec.Command("/run.sh")
-	grafanaRun.Env = os.Environ()
-	if err := grafanaRun.Run(); err != nil {
-		log.Error(err.Error())
+	// initial grafana startup
+	if err := grafana.Restart(); err != nil {
+		log.Error("failed to start grafana", "error", err)
+		os.Exit(1)
+	}
+
+	// block
+	select {
+	case <-ctx.Done():
 	}
 }

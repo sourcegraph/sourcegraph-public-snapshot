@@ -6,12 +6,15 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
+
+var grafanaConfigPath = os.Getenv("GF_PATHS_CONFIG")
 
 func generateAlertsChecksum(alerts []interface{}) []byte {
 	b, err := json.Marshal(alerts)
@@ -22,14 +25,16 @@ func generateAlertsChecksum(alerts []interface{}) []byte {
 	return sum[:]
 }
 
-type grafanaAlertsSubscriber struct {
-	log       log15.Logger
-	mux       sync.RWMutex
+type configSubscriber struct {
+	log log15.Logger
+	mux sync.RWMutex
+
 	alerts    []interface{} // can be any conf.GrafanaNotifierX
 	alertsSum []byte
 }
 
-func newGrafanaAlertsSubscriber(ctx context.Context, log log15.Logger) (*grafanaAlertsSubscriber, error) {
+func newConfigSubscriber(ctx context.Context, logger log15.Logger) (*configSubscriber, error) {
+	log := logger.New("logger", "config-subscriber")
 	// Syncing relies on access to frontend, so wait until it is ready
 	log.Info("waiting for frontend", "url", api.InternalClient.URL)
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
@@ -40,35 +45,45 @@ func newGrafanaAlertsSubscriber(ctx context.Context, log log15.Logger) (*grafana
 	// Load initial alerts configuration
 	alerts := conf.Get().ObservabilityAlerts
 	sum := generateAlertsChecksum(alerts)
-	subscriber := &grafanaAlertsSubscriber{log: log}
-	return subscriber, subscriber.updateGrafana(alerts, sum)
+	subscriber := &configSubscriber{log: log}
+	return subscriber, subscriber.updateGrafanaConfig(alerts, sum)
 }
 
-func (a *grafanaAlertsSubscriber) subscribe() {
+func (c *configSubscriber) Subscribe(grafana *grafanaController) {
 	conf.Watch(func() {
-		a.mux.RLock()
+		// check if update is worth acting on
+		c.mux.RLock()
 		newAlerts := conf.Get().ObservabilityAlerts
 		newAlertsSum := generateAlertsChecksum(newAlerts)
-		isUnchanged := bytes.Equal(a.alertsSum, newAlertsSum)
-		a.mux.RUnlock()
+		isUnchanged := bytes.Equal(c.alertsSum, newAlertsSum)
+		c.mux.RUnlock()
 		if isUnchanged {
+			c.log.Debug("config updated contained no relevant changes - ignoring")
 			return
 		}
-		if err := a.updateGrafana(newAlerts, newAlertsSum); err != nil {
-			a.log.Error("grafana update failed", "error", err)
+
+		// update configuration
+		if err := c.updateGrafanaConfig(newAlerts, newAlertsSum); err != nil {
+			c.log.Error("failed to apply config changes - ignoring update", "error", err)
+		} else {
+			// grafana must be restarted for config changes to apply
+			if err := grafana.Restart(); err != nil {
+				c.log.Crit("error occured while restarting grafana", "error", err)
+			}
 		}
 	})
 }
 
-func (a *grafanaAlertsSubscriber) updateGrafana(newAlerts []interface{}, newSum []byte) error {
-	a.mux.Lock()
-	defer a.mux.Unlock()
+// updateGrafanaConfig updates grafanaAlertsSubscriber state and writes it to disk
+func (c *configSubscriber) updateGrafanaConfig(newAlerts []interface{}, newSum []byte) error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 
-	a.alerts = newAlerts
-	a.alertsSum = newSum
+	c.alerts = newAlerts
+	c.alertsSum = newSum
 
-	// TODO
-	a.log.Info("got updated alerts")
+	// TODO - write config to disk
+	c.log.Info("got updated alerts")
 
 	return nil
 }
