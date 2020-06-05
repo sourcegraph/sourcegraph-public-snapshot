@@ -6,6 +6,7 @@ import { RepoSettingsCodeIntelUploadPage } from './RepoSettingsCodeIntelUploadPa
 import { RepoSettingsCodeIntelIndexPage } from './RepoSettingsCodeIntelIndexPage'
 import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
 import { RepoSettingsCodeIntelUploadsPage } from './RepoSettingsCodeIntelUploadsPage'
+import { Redirect } from 'react-router'
 
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
@@ -19,6 +20,15 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
         path: '/code-intelligence/uploads',
         exact: true,
         render: props => <RepoSettingsCodeIntelUploadsPage {...props} />,
+    },
+    {
+        path: '/code-intelligence/lsif-uploads/:id',
+        exact: true,
+        render: ({
+            match: {
+                params: { id },
+            },
+        }) => <Redirect to={`../uploads/${id}`} />,
     },
     {
         path: '/code-intelligence/uploads/:id',
