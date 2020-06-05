@@ -1912,8 +1912,8 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		// List the patches and see what we get back.
-		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
-		have, _, err := s.ListPatches(ctx, opts)
+		listOpts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		have, _, err := s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1926,7 +1926,17 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		countOpts := CountPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		count, err := s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches[2:])); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 
 		// Update the changeset jobs to change the campaign IDs and try again.
@@ -1938,7 +1948,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 			}
 		}
 
-		have, _, err = s.ListPatches(ctx, opts)
+		have, _, err = s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1949,7 +1959,16 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err = s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches)); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 	})
 

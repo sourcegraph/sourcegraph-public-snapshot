@@ -2058,6 +2058,12 @@ type CountPatchesOpts struct {
 	PatchSetID   int64
 	OnlyWithDiff bool
 
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
 	// If this is set to a Campaign ID only the Patches are returned that are
 	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
@@ -2092,6 +2098,10 @@ func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
+	}
+
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
 	}
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
