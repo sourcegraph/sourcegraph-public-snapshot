@@ -669,7 +669,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 						ext := api.ExternalRepoSpec{
 							ID:          repo.PHID,
-							ServiceType: "phabricator",
+							ServiceType: extsvc.TypePhabricator,
 							ServiceID:   "https://secure.phabricator.com",
 						}
 
@@ -809,7 +809,7 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 
 		// Phabricator requests include a token in the form and body.
 		ua := i.Request.Headers.Get("User-Agent")
-		if strings.Contains(strings.ToLower(ua), "phabricator") {
+		if strings.Contains(strings.ToLower(ua), extsvc.TypePhabricator) {
 			i.Request.Body = ""
 			i.Request.Form = nil
 		}
