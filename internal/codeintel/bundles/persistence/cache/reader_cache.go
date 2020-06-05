@@ -27,10 +27,10 @@ type Cache struct {
 // ReaderOpener initializes a new reader for the given key.
 type ReaderOpener func(key string) (persistence.Reader, error)
 
-// CacheHandler performs an operation on a reader. The invocation of this function is
+// Handler performs an operation on a reader. The invocation of this function is
 // a critical section that locks the given reader argument so tha it is not closed while
 // in use.
-type CacheHandler func(reader persistence.Reader) error
+type Handler func(reader persistence.Reader) error
 
 // cacheEntry wraps a reader which may still be initializing.
 type cacheEntry struct {
@@ -55,7 +55,7 @@ func New(size int, opener ReaderOpener) *Cache {
 // WithReader calls the given function with a reader. If the reader has not yet initialized and does not
 // do so before context deadline, an error is returned. The reader initialization is not canceled due to
 // a context deadline here and will continue to run in the background until completion.
-func (c *Cache) WithReader(ctx context.Context, key string, fn CacheHandler) error {
+func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 	entry := c.entry(key)
 	defer entry.wg.Done()
 

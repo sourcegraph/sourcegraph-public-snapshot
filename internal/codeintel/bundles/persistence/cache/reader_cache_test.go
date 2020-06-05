@@ -203,7 +203,7 @@ func testClosingOpener() (ReaderOpener, *uint32, *uint32) {
 	return opener, &openerCalls, &closeCalls
 }
 
-func testHandler() (CacheHandler, *uint32) {
+func testHandler() (Handler, *uint32) {
 	handlerCalls := uint32(0)
 	handler := func(r persistence.Reader) error {
 		atomic.AddUint32(&handlerCalls, 1)
@@ -213,7 +213,7 @@ func testHandler() (CacheHandler, *uint32) {
 	return handler, &handlerCalls
 }
 
-func testBlockingHandler(ch <-chan struct{}) (CacheHandler, *uint32) {
+func testBlockingHandler(ch <-chan struct{}) (Handler, *uint32) {
 	handlerCalls := uint32(0)
 	handler := func(r persistence.Reader) error {
 		atomic.AddUint32(&handlerCalls, 1)
