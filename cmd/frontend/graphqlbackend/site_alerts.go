@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"os"
+	"strconv"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -67,6 +68,10 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 }
 
 func init() {
+	if disableSecurityNotices {
+		log15.Warn("SECURITY NOTICES DISABLED: this is not recommended, please unset DISABLE_SECURITY_NOTICES")
+	}
+
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if c.ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
@@ -143,23 +148,27 @@ func init() {
 	})
 }
 
-func outOfDateAlert(isAdmin bool) *Alert {
+var disableSecurityNotices, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY_NOTICES", "false", "disables security upgrade notices"))
 
-	if os.Getenv("DISABLE_SECURITY_NOTICES") != "" {
-		log15.Warn("DISABLED SECURITY NOTICES, this is not recommended")
-		return &Alert{}
-	}
+func outOfDateAlert(isAdmin bool) *Alert {
 	var alert Alert
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return &alert
 	}
-	months := globalUpdateStatus.MonthsOutOfDate
+	return determineOutOfDateAlert(isAdmin, globalUpdateStatus.MonthsOutOfDate, globalUpdateStatus.Offline)
+}
+
+func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
+	if disableSecurityNotices {
+		return &Alert{}
+	}
+	var alert Alert
 	if months <= 0 {
 		return &alert
 	}
 	// online instances will still be prompt site admins to upgrade via site_update_check
-	if months < 3 && !globalUpdateStatus.Offline {
+	if months < 3 && !offline {
 		return &alert
 	}
 
