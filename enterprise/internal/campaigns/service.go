@@ -553,10 +553,10 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 			continue
 		}
 
-		tx.CreateChangesetJob(ctx, &campaigns.ChangesetJob{
-			CampaignID: campaign.ID,
-			PatchID:    p.ID,
-		})
+		j := &campaigns.ChangesetJob{CampaignID: campaign.ID, PatchID: p.ID}
+		if err := tx.CreateChangesetJob(ctx, j); err != nil {
+			return err
+		}
 	}
 
 	return nil
