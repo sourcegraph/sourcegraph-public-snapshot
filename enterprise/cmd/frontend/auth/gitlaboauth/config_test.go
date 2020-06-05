@@ -42,7 +42,7 @@ func TestParseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://gitlab.com",
 					},
 				}},
@@ -52,7 +52,7 @@ func TestParseConfig(t *testing.T) {
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://gitlab.com",
 				}: provider("https://gitlab.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
@@ -75,7 +75,7 @@ func TestParseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://gitlab.com",
 					},
 				}, {
@@ -83,7 +83,7 @@ func TestParseConfig(t *testing.T) {
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
 						DisplayName:  "GitLab Enterprise",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://mycompany.com",
 					},
 				}},
@@ -93,7 +93,7 @@ func TestParseConfig(t *testing.T) {
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://gitlab.com",
 				}: provider("https://gitlab.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
@@ -109,7 +109,7 @@ func TestParseConfig(t *testing.T) {
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitLab Enterprise",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://mycompany.com",
 				}: provider("https://mycompany.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",

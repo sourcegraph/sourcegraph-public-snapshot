@@ -39,7 +39,7 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	return "gitlab"
+	return extsvc.TypeGitLab
 }
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
@@ -90,7 +90,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -128,7 +128,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.com",
 						},
 					}},
@@ -179,7 +179,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.com",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.com",
 							},
 						}, {
@@ -187,7 +187,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.mine",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.mine",
 							},
 						},
@@ -241,7 +241,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -266,7 +266,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -467,7 +467,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},

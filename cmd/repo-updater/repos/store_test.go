@@ -112,7 +112,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 					},
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "bar",
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "http://gitlab.com",
 					},
 				},
@@ -491,7 +491,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
-				ServiceType: "gitlab",
+				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "http://gitlab.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -790,7 +790,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		},
 		Metadata: new(gitlab.Project),
 		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 			ID:          "123",
 		},
@@ -959,7 +959,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored: repositories,
 		args: func(repos.Repos) repos.StoreListReposArgs {
 			return repos.StoreListReposArgs{
-				Kinds: []string{"github", "gitlab"},
+				Kinds: []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			}
 		},
 		repos: repos.Assert.ReposEqual(&github, &gitlab),

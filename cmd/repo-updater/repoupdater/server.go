@@ -679,7 +679,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		proj := r.Metadata.(*gitlab.Project)
 		info.Links = &protocol.RepoLinks{
 			Root:   proj.WebURL,

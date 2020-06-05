@@ -92,7 +92,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
-				ServiceType: "gitlab",
+				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "https://gitlab.com/",
 			},
 			AccountData: extsvc.AccountData{

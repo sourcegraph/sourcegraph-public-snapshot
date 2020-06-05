@@ -27,8 +27,8 @@ func TestSyncer_Sync(t *testing.T) {
 
 	testSyncerSync(new(repos.FakeStore))(t)
 
-	github := repos.ExternalService{ID: 1, Kind: "github"}
-	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
+	github := repos.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	gitlab := repos.ExternalService{ID: 2, Kind: extsvc.KindGitLab}
 
 	for _, tc := range []struct {
 		name    string
@@ -117,7 +117,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "12345",
 			ServiceID:   "https://gitlab.com/",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 		},
 	}).With(
 		repos.Opt.RepoSources(gitlabService.URN()),
@@ -474,18 +474,18 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
 				case "github":
 					update = &github.Repository{IsArchived: true}
-				case "gitlab":
+				case extsvc.TypeGitLab:
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
-				case extsvc.TypeBitbucketCloud:
+				case "bitbucketcloud":
 					update = &bitbucketcloud.Repo{IsPrivate: true}
 				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
 				case "other", extsvc.TypeGitolite:
 					return testCase{}
 				default:
-					panic("test must be extended with new external service kind")
+					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
 				}
 
 				return testCase{

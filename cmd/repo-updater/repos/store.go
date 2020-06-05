@@ -844,7 +844,7 @@ func scanRepo(r *Repo, s scanner) error {
 	switch typ {
 	case "github":
 		r.Metadata = new(github.Repository)
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)

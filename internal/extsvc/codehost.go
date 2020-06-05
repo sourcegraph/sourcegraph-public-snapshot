@@ -19,7 +19,7 @@ var (
 	GitHubDotCom    = NewCodeHost(GitHubDotComURL, "github")
 
 	GitLabDotComURL = mustParseURL("https://gitlab.com")
-	GitLabDotCom    = NewCodeHost(GitLabDotComURL, "gitlab")
+	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,

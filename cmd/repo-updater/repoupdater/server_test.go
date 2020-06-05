@@ -177,7 +177,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "gitlab.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "http://gitlab.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -822,7 +822,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "2009901",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
