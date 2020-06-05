@@ -15,34 +15,22 @@ func Test_determineOutOfDateAlert(t *testing.T) {
 		wantOfflineAdmin, wantOnlineAdmin *Alert
 	}{
 		{
-			name:             "0_months",
-			monthsOutOfDate:  0,
-			wantOffline:      &Alert{},
-			wantOnline:       &Alert{},
-			wantOfflineAdmin: &Alert{},
-			wantOnlineAdmin:  &Alert{},
+			name:            "0_months",
+			monthsOutOfDate: 0,
 		},
 		{
 			name:             "1_months",
 			monthsOutOfDate:  1,
-			wantOffline:      &Alert{},
-			wantOnline:       &Alert{},
 			wantOfflineAdmin: &Alert{TypeValue: AlertTypeInfo, MessageValue: "Sourcegraph is 1+ months out of date, for the latest features and bug fixes please upgrade", IsDismissibleWithKeyValue: "months-out-of-date-1"},
-			wantOnlineAdmin:  &Alert{},
 		},
 		{
 			name:             "2_months",
 			monthsOutOfDate:  2,
-			wantOffline:      &Alert{},
-			wantOnline:       &Alert{},
 			wantOfflineAdmin: &Alert{TypeValue: AlertTypeInfo, MessageValue: "Sourcegraph is 2+ months out of date, for the latest features and bug fixes please upgrade", IsDismissibleWithKeyValue: "months-out-of-date-2"},
-			wantOnlineAdmin:  &Alert{},
 		},
 		{
 			name:             "3_months",
 			monthsOutOfDate:  3,
-			wantOffline:      &Alert{},
-			wantOnline:       &Alert{},
 			wantOfflineAdmin: &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date"},
 			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date"},
 		},
