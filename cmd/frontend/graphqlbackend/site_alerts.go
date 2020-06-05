@@ -82,17 +82,15 @@ func init() {
 		return problems
 	})
 
+	// Warn about Sourcegraph being out of date.
+	AlertFuncs = append(AlertFuncs, outOfDateAlert)
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin cares about this. The only time a user should receive a site alert is if
 		// sourcegraph is very out of date and or basic setup is still needed (https/ external URL)
 		if !args.IsSiteAdmin {
-			// users will see alerts if Sourcegraph is >4 months out of date
-			alert := outOfDateAlert(args.IsSiteAdmin)
-			if alert == nil {
-				return nil
-			}
-			return []*Alert{alert}
+			return nil
 		}
 
 		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
@@ -116,16 +114,10 @@ func init() {
 		}
 		problems = append(problems, warnings...)
 
-		alerts := make([]*Alert, 0, 3)
-
-		alert := outOfDateAlert(args.IsSiteAdmin)
-		if alert == nil {
-			alerts = append(alerts, alert)
-		}
-
-		if len(problems) == 0 && len(alerts) == 0 {
+		if len(problems) == 0 {
 			return nil
 		}
+		alerts := make([]*Alert, 0, 2)
 
 		siteProblems := problems.Site()
 		if len(siteProblems) > 0 {
@@ -150,12 +142,16 @@ func init() {
 
 var disableSecurityNotices, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY_NOTICES", "false", "disables security upgrade notices"))
 
-func outOfDateAlert(isAdmin bool) *Alert {
+func outOfDateAlert(args AlertFuncArgs) []*Alert { {
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil
 	}
-	return determineOutOfDateAlert(isAdmin, globalUpdateStatus.MonthsOutOfDate, globalUpdateStatus.Offline)
+	alert := determineOutOfDateAlert(args.IsSiteAdmin, globalUpdateStatus.MonthsOutOfDate, globalUpdateStatus.Offline)
+	if alert == nil {
+		return nil
+	}
+	return []*Alert{alert}
 }
 
 func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
@@ -190,8 +186,7 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 	if months <= 3 {
 		return nil
 	}
-	message := fmt.Sprintf("Sourcegraph is %d+ months out of date, "+
-		"for the latest features and bug fixes ask your site administrator to upgrade.", months)
+	message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", months)
 	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
 	case 4:
