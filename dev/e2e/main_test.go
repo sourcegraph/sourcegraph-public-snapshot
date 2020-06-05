@@ -1,3 +1,5 @@
+// +build e2e
+
 package main
 
 import (
@@ -21,11 +23,6 @@ import (
 var client *e2eutil.Client
 
 func TestMain(m *testing.M) {
-	if os.Getenv("BUILDKITE_PIPELINE_SLUG") != "e2e" {
-		log.Println("Please set BUILDKITE_PIPELINE_SLUG=e2e to enable e2e tests, skipping")
-		return
-	}
-
 	baseURL := flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
 	email := flag.String("email", "e2e@sourcegraph.com", "The email of the admin user")
 	username := flag.String("username", "e2e-admin", "The username of the admin user")
