@@ -167,30 +167,35 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 	}
 
 	if isAdmin {
-		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes please upgrade", months)
 		key := fmt.Sprintf("months-out-of-date-%d", months)
 		switch {
 		case months < 3:
+			message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes please upgrade ([changelog](http://about.sourcegraph.com/changelog))", months)
 			return &Alert{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}
 		case months == 3:
-			return &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3 months out of date, at 4 months users will be warned Sourcegraph is out of date"}
+			message := "Sourcegraph is 3+ months out of date, you may be missing important security or bug fixes. Users will be notified at 4+ months. ([changelog](http://about.sourcegraph.com/changelog))"
+			return &Alert{TypeValue: AlertTypeWarning, MessageValue: message}
 		case months == 4:
+			message := "Sourcegraph is 4+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"
 			return &Alert{TypeValue: AlertTypeWarning, MessageValue: message}
 		case months == 5:
+			message := "Sourcegraph is 5+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"
 			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
 		default:
+			message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))", months)
 			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
 		}
 	}
 
-	message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", months)
 	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
 	case 0, 1, 2, 3:
 		return nil
-	case 4:
+	case 4, 5:
+		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", months)
 		return &Alert{TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
 	default:
+		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", months)
 		return &Alert{TypeValue: AlertTypeError, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
 }
