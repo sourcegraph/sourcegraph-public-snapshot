@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -90,7 +91,7 @@ func TestSyncer_Sync(t *testing.T) {
 func testSyncerSync(s repos.Store) func(*testing.T) {
 	githubService := &repos.ExternalService{
 		ID:   1,
-		Kind: "GITHUB",
+		Kind: extsvc.KindGitHub,
 	}
 
 	githubRepo := (&repos.Repo{
@@ -107,7 +108,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	gitlabService := &repos.ExternalService{
 		ID:   10,
-		Kind: "GITLAB",
+		Kind: extsvc.KindGitLab,
 	}
 
 	gitlabRepo := (&repos.Repo{
@@ -124,7 +125,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	bitbucketServerService := &repos.ExternalService{
 		ID:   20,
-		Kind: "BITBUCKETSERVER",
+		Kind: extsvc.KindBitbucketServer,
 	}
 
 	bitbucketServerRepo := (&repos.Repo{
@@ -141,7 +142,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	awsCodeCommitService := &repos.ExternalService{
 		ID:   30,
-		Kind: "AWSCODECOMMIT",
+		Kind: extsvc.KindAWSCodeCommit,
 	}
 
 	awsCodeCommitRepo := (&repos.Repo{
@@ -158,7 +159,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	otherService := &repos.ExternalService{
 		ID:   40,
-		Kind: "OTHER",
+		Kind: extsvc.KindOther,
 	}
 
 	otherRepo := (&repos.Repo{
@@ -174,7 +175,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	gitoliteService := &repos.ExternalService{
 		ID:   50,
-		Kind: "GITOLITE",
+		Kind: extsvc.KindGitolite,
 	}
 
 	gitoliteRepo := (&repos.Repo{
@@ -191,7 +192,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 	bitbucketCloudService := &repos.ExternalService{
 		ID:   60,
-		Kind: "BITBUCKETCLOUD",
+		Kind: extsvc.KindBitbucketCloud,
 	}
 
 	bitbucketCloudRepo := (&repos.Repo{

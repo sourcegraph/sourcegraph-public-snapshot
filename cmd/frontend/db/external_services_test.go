@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
@@ -25,15 +26,15 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		},
 		{
 			name:      "only one kind: GitHub",
-			kinds:     []string{"GITHUB"},
+			kinds:     []string{extsvc.KindGitHub},
 			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
-			wantArgs:  []interface{}{"GITHUB"},
+			wantArgs:  []interface{}{extsvc.KindGitHub},
 		},
 		{
 			name:      "two kinds: GitHub and GitLab",
-			kinds:     []string{"GITHUB", "GITLAB"},
+			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
-			wantArgs:  []interface{}{"GITHUB", "GITLAB"},
+			wantArgs:  []interface{}{extsvc.KindGitHub, extsvc.KindGitLab},
 		},
 	}
 	for _, test := range tests {
@@ -61,25 +62,25 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	}{
 		{
 			name:    "0 errors",
-			kind:    "GITHUB",
+			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			wantErr: "<nil>",
 		},
 		{
 			name:    "1 error",
-			kind:    "GITHUB",
+			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
 			wantErr: "1 error occurred:\n\t* token: String length must be greater than or equal to 1\n\n",
 		},
 		{
 			name:    "2 errors",
-			kind:    "GITHUB",
+			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "", "x": 123}`,
 			wantErr: "2 errors occurred:\n\t* Additional property x is not allowed\n\t* token: String length must be greater than or equal to 1\n\n",
 		},
 		{
 			name:   "no conflicting rate limit",
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
@@ -93,7 +94,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		},
 		{
 			name:   "conflicting rate limit",
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
@@ -103,7 +104,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 					return []*types.ExternalService{
 						{
 							ID:          1,
-							Kind:        "GITHUB",
+							Kind:        extsvc.KindGitHub,
 							DisplayName: "GITHUB 1",
 							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 						},
@@ -140,7 +141,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
@@ -172,7 +173,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
@@ -218,7 +219,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
@@ -254,7 +255,7 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
@@ -296,7 +297,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
@@ -329,7 +330,7 @@ func TestExternalServicesStore_Count(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}

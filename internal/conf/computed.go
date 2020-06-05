@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,7 +39,7 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var config []*schema.AWSCodeCommitConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindAWSCodeCommit, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -46,7 +47,7 @@ func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnectio
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var config []*schema.BitbucketServerConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -54,7 +55,7 @@ func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConne
 
 func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 	var config []*schema.GitHubConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindGitHub, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -62,7 +63,7 @@ func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 
 func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 	var config []*schema.GitLabConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindGitLab, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -70,7 +71,7 @@ func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 
 func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
 	var config []*schema.GitoliteConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindGitolite, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -78,7 +79,7 @@ func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) 
 
 func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	var config []*schema.PhabricatorConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
+	if err := api.InternalClient.ExternalServiceConfigs(ctx, extsvc.KindPhabricator, &config); err != nil {
 		return nil, err
 	}
 	return config, nil

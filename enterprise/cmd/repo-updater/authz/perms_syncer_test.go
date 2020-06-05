@@ -284,7 +284,7 @@ func (*fakeExternalServiceLister) ListExternalServices(context.Context, repos.St
 	return []*repos.ExternalService{
 		{
 			ID:          1,
-			Kind:        "GITHUB",
+			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub.com",
 			Config:      `{"url": "https://github.com"}`,
 		},

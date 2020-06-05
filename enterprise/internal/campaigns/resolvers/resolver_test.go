@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -43,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -232,7 +232,7 @@ func TestCampaigns(t *testing.T) {
 
 	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -249,7 +249,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	bbsExtSvc := &repos.ExternalService{
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   bbsURL,
@@ -647,7 +647,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
