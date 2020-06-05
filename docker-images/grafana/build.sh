@@ -10,9 +10,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # entire repository back into the build context. We use rsync to do this since it
 # supports excluding files better.
 rm -rf ./sourcegraph
-rsync -r --exclude={'.*','docker-images','node_modules','browser','web','ui','doc'} ../../ sourcegraph
+rsync -r --exclude={'.*','docker-images','node_modules','browser','web','ui','doc','packages','migrations'} ../../ sourcegraph
 
-docker build --no-cache -t "${IMAGE:-sourcegraph/grafana}" . \
+BUILD_CACHE="--no-cache"
+if [[ "$CACHE" == "true" ]]; then
+  BUILD_CACHE=""
+fi
+
+docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

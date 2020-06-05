@@ -2,6 +2,17 @@ FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877
 
 RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0 openssh=8.1_p1-r0 build-base=0.5-r1
 
+# build the jsonnet dashboards
+WORKDIR /opt
+RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
+WORKDIR /opt/jsonnet
+RUN make
+RUN mkdir /dashboards
+COPY jsonnet /dashboards
+WORKDIR /dashboards
+ENV PATH="/opt/jsonnet:${PATH}"
+RUN ./build.sh
+
 # set up sourcegraph/sourcegraph
 COPY sourcegraph /go/src/github.com/sourcegraph/sourcegraph
 
@@ -15,20 +26,6 @@ RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/b
 COPY cmd/grafana-wrapper /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
 WORKDIR /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
 RUN CGO_ENABLED=0 go build -o /go/bin/grafana-wrapper
-
-WORKDIR /opt
-RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
-
-WORKDIR /opt/jsonnet
-RUN make
-
-RUN mkdir /dashboards
-COPY jsonnet /dashboards
-WORKDIR /dashboards
-
-ENV PATH="/opt/jsonnet:${PATH}"
-
-RUN ./build.sh
 
 FROM grafana/grafana:6.7.1@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
 
