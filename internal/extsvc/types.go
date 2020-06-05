@@ -79,6 +79,13 @@ const (
 	KindOther           = "OTHER"
 )
 
+const (
+	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
+	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
+	TypeAWSCodeCommit = "awscodecommit"
+)
+
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
 // (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.

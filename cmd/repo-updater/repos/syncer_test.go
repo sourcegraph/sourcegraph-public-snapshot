@@ -151,7 +151,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-			ServiceType: "awscodecommit",
+			ServiceType: extsvc.TypeAWSCodeCommit,
 		},
 	}).With(
 		repos.Opt.RepoSources(awsCodeCommitService.URN()),
@@ -480,7 +480,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &bitbucketserver.Repo{Public: true}
 				case "bitbucketcloud":
 					update = &bitbucketcloud.Repo{IsPrivate: true}
-				case "awscodecommit":
+				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
 				case "other", "gitolite":
 					return testCase{}

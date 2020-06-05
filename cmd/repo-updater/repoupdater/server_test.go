@@ -794,7 +794,7 @@ func TestRepoLookup(t *testing.T) {
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: awscodecommit.ServiceType,
+			ServiceType: extsvc.TypeAWSCodeCommit,
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -895,7 +895,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-					ServiceType: awscodecommit.ServiceType,
+					ServiceType: extsvc.TypeAWSCodeCommit,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 				},
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",

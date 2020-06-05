@@ -531,7 +531,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-				ServiceType: "awscodecommit",
+				ServiceType: extsvc.TypeAWSCodeCommit,
 				ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -816,7 +816,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		Name: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: "awscodecommit",
+			ServiceType: extsvc.TypeAWSCodeCommit,
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{

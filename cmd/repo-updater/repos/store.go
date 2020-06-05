@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -849,7 +850,7 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(bitbucketserver.Repo)
 	case "bitbucketcloud":
 		r.Metadata = new(bitbucketcloud.Repo)
-	case "awscodecommit":
+	case extsvc.TypeAWSCodeCommit:
 		r.Metadata = new(awscodecommit.Repository)
 	case "gitolite":
 		r.Metadata = new(gitolite.Repo)
