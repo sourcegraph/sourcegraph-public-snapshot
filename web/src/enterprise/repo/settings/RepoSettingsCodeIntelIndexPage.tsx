@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { catchError, takeWhile, concatMap } from 'rxjs/operators'
+import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ErrorAlert } from '../../../components/alerts'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { fetchLsifIndex, deleteLsifIndex } from './backend'
@@ -53,7 +53,12 @@ export const RepoSettingsCodeIntelIndexPage: FunctionComponent<Props> = ({
         useMemo(
             () =>
                 timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
-                    concatMap(() => fetchLsifIndex({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))),
+                    concatMap(() =>
+                        fetchLsifIndex({ id }).pipe(
+                            catchError((error): [ErrorLike] => [asError(error)]),
+                            repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
+                        )
+                    ),
                     takeWhile(shouldReload, true)
                 ),
             [id, scheduler]
