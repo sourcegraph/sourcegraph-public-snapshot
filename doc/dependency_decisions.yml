@@ -64,3 +64,9 @@
 - - :permit
   - MPL-2.0
   - *2
+- - :ignore_group
+  - devDependencies
+  - :who:
+    :why: Exclude development dependencies that are not included in bundles
+    :versions: []
+    :when: 2020-06-05 21:28:58.197862000 Z
