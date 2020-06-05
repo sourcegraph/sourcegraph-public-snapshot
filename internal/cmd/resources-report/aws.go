@@ -47,7 +47,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 							Platform:   PlatformAWS,
 							Identifier: *instance.InstanceId,
 							Location:   *instance.Placement.AvailabilityZone,
-							Owner:      *reservation.OwnerId,
+							Owner:      "-",
 							Type:       fmt.Sprintf("EC2::Instances::%s", string(instance.InstanceType)),
 							Created:    *instance.LaunchTime,
 							Meta: map[string]interface{}{
