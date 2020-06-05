@@ -852,7 +852,7 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(bitbucketcloud.Repo)
 	case extsvc.TypeAWSCodeCommit:
 		r.Metadata = new(awscodecommit.Repository)
-	case "gitolite":
+	case extsvc.TypeGitolite:
 		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil

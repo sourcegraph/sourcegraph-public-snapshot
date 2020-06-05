@@ -184,7 +184,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo",
 			ServiceID:   "git@gitolite.mycorp.com",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 		},
 	}).With(
 		repos.Opt.RepoSources(gitoliteService.URN()),
@@ -482,7 +482,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &bitbucketcloud.Repo{IsPrivate: true}
 				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
-				case "other", "gitolite":
+				case "other", extsvc.TypeGitolite:
 					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")

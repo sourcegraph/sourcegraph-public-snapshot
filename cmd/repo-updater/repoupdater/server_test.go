@@ -479,7 +479,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "gitolite.example.com/oldschool",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "nosources",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 			ServiceID:   "http://gitolite.my.corp",
 		},
 	}

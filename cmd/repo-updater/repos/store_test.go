@@ -565,7 +565,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
-				ServiceType: "gitolite",
+				ServiceType: extsvc.TypeGitolite,
 				ServiceID:   "git@gitolite.mycorp.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -848,7 +848,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		CreatedAt: now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 			ServiceID:   "git@gitolite.mycorp.com",
 		},
 		Sources: map[string]*repos.SourceInfo{
