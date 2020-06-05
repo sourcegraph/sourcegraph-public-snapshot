@@ -6,8 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/efritz/glock"
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -15,13 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
 
-const key = "last_license_expiration_check"
+const lastLicenseExpirationCheckKey = "last_license_expiration_check"
 
-var (
-	licenseExpirationCheckers uint32
-
-	pool = redispool.Store
-)
+var licenseExpirationCheckers uint32
 
 // StartCheckForUpcomingLicenseExpirations checks for upcoming license expirations once per day.
 func StartCheckForUpcomingLicenseExpirations() {
@@ -29,32 +27,35 @@ func StartCheckForUpcomingLicenseExpirations() {
 		panic("StartCheckForUpcomingLicenseExpirations called more than once")
 	}
 
+	c := redispool.Store.Get()
+	defer func() { _ = c.Close() }()
+
+	client := slack.New(conf.Get().Dotcom.SlackLicenseExpirationWebhook)
+
 	t := time.NewTicker(1 * time.Hour)
-	c := pool.Get()
-	defer c.Close()
-
 	for range t.C {
-		now := time.Now()
-		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+		today := time.Now().UTC().Format("2006-01-02")
 
-		last_check_day, err := redis.String(c.Do("GETSET", key, today))
+		lastCheckDate, err := redis.String(c.Do("GETSET", lastLicenseExpirationCheckKey, today))
 		if err != nil {
-			log15.Error("startCheckForUpcomingLicenseExpirations: error getting/setting last license expiration check day", "error", err)
+			log15.Error("startCheckForUpcomingLicenseExpirations: error GETSET last license expiration check date", "error", err)
 			continue
 		}
 
-		if today != last_check_day {
-			check()
+		if today != lastCheckDate {
+			checkForUpcomingLicenseExpirations(glock.NewRealClock(), client)
 		}
 	}
 }
 
-func check() {
+type slackClient interface {
+	Post(payload *slack.Payload) error
+}
+
+func checkForUpcomingLicenseExpirations(clock glock.Clock, client slackClient) {
 	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseExpirationWebhook == "" {
 		return
 	}
-
-	client := slack.New(conf.Get().Dotcom.SlackLicenseExpirationWebhook)
 
 	ctx := context.Background()
 
@@ -90,8 +91,8 @@ func check() {
 			return
 		}
 
-		weekAway := time.Now().Add(7 * 24 * time.Hour)
-		dayAway := time.Now().Add(24 * time.Hour)
+		weekAway := clock.Now().Add(7 * 24 * time.Hour)
+		dayAway := clock.Now().Add(24 * time.Hour)
 
 		if info.ExpiresAt.After(weekAway) && info.ExpiresAt.Before(weekAway.Add(24*time.Hour)) {
 			err = client.Post(&slack.Payload{
