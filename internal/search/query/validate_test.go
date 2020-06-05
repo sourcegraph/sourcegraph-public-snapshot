@@ -48,7 +48,9 @@ func TestAndOrQuery_Validation(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input)
+			query, _ := ParseAndOr(c.input)
+			query = Map(query, LowercaseFieldNames, SubstituteAliases)
+			err := validate(query)
 			if err == nil {
 				t.Fatal("expected test to fail")
 			}
@@ -85,11 +87,14 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			query, err := ProcessAndOr(c.input)
+			query, _ := ParseAndOr(c.input)
+			query = Map(query, LowercaseFieldNames, SubstituteAliases)
+			err := validate(query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := query.IsCaseSensitive()
+			andOrQuery := &AndOrQuery{Query: query}
+			got := andOrQuery.IsCaseSensitive()
 			if got != c.want {
 				t.Errorf("got %v, want %v", got, c.want)
 			}
@@ -115,11 +120,14 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		},
 	}
 	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ProcessAndOr(c.query)
+		query, _ := ParseAndOr(c.query)
+		query = Map(query, LowercaseFieldNames, SubstituteAliases)
+		err := validate(query)
 		if err != nil {
 			t.Fatal(err)
 		}
-		gotValues, gotNegatedValues := query.RegexpPatterns(c.field)
+		andOrQuery := &AndOrQuery{Query: query}
+		gotValues, gotNegatedValues := andOrQuery.RegexpPatterns(c.field)
 		if diff := cmp.Diff(c.want.values, gotValues); diff != "" {
 			t.Error(diff)
 		}
@@ -130,17 +138,20 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 }
 
 func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
-	query, err := ProcessAndOr("repoHasFile:foo")
+	query, _ := ParseAndOr("repoHasFile:foo")
+	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+	err := validate(query)
 	if err != nil {
 		t.Fatal(err)
 	}
+	andOrQuery := &AndOrQuery{Query: query}
 
-	values, _ := query.RegexpPatterns(FieldRepoHasFile)
+	values, _ := andOrQuery.RegexpPatterns(FieldRepoHasFile)
 	if len(values) != 1 || values[0] != "foo" {
 		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
 	}
 
-	fields := types.Fields(query.Fields())
+	fields := types.Fields(andOrQuery.Fields())
 	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
 		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
 	}
