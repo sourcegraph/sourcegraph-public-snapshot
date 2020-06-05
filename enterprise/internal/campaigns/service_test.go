@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -226,19 +227,34 @@ func TestService(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
-
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	ext := &repos.ExternalService{
+		Kind:        github.ServiceType,
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	var rs []*repos.Repo
+	for i := 0; i < 4; i++ {
+		r := testRepo(i, github.ServiceType)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+
+		rs = append(rs, r)
+	}
+
 	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
@@ -1104,6 +1120,48 @@ func TestService(t *testing.T) {
 		_, err = svc.AddChangesetsToCampaign(ctx, campaign.ID, []int64{changeset2.ID})
 		if !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %s", err)
+		}
+	})
+
+	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		changeset1 := testChangeset(rs[0].ID, 0, 121314, campaigns.ChangesetStateOpen)
+		changeset2 := testChangeset(rs[1].ID, 0, 141516, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset1, changeset2); err != nil {
+			t.Fatal(err)
+		}
+
+		// Repo of changeset2 filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
+			for _, r := range repos {
+				if r.ID == changeset2.RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		// Reset filter
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		fakeSource := &FakeChangesetSource{Err: nil}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		svc.sourcer = sourcer
+
+		// Try to close open changesets
+		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Only changeset1 should be closed
+		if have, want := len(fakeSource.ClosedChangesets), 1; have != want {
+			t.Fatalf("ClosedChangesets has wrong length. want=%d, have=%d", want, have)
+		}
+
+		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
+			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
 		}
 	})
 }

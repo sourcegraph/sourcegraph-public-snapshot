@@ -37,6 +37,8 @@ type Service struct {
 	store *Store
 	cf    *httpcli.Factory
 
+	sourcer repos.Sourcer
+
 	clock func() time.Time
 }
 
@@ -328,16 +330,30 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 		return nil
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(cs))
+	for _, c := range cs {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return err
+	}
+
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, nil, cs...)
+	bySource, err := groupChangesetsBySource(ctx, reposStore, s.cf, s.sourcer, nil, cs...)
 	if err != nil {
 		return err
 	}
 
 	errs := &multierror.Error{}
-	for _, s := range bySource {
-		for _, c := range s.Changesets {
-			if err := s.CloseChangeset(ctx, c); err != nil {
+	for _, group := range bySource {
+		for _, c := range group.Changesets {
+			if _, ok := accessibleReposByID[c.RepoID]; !ok {
+				continue
+			}
+
+			if err := group.CloseChangeset(ctx, c); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}
@@ -351,9 +367,9 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// CloseChangesets updates the given Changesets too), because closing a
 	// Changeset often produces a ChangesetEvent on the codehost and if we were
 	// to close the Changesets and not update the events (which is what
-	// SyncChangesetsWithSources does) our burndown chart will be outdated
+	// syncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	return SyncChangesetsWithSources(ctx, s.store, bySource)
+	return syncChangesetsWithSources(ctx, s.store, bySource)
 }
 
 // AddChangesetsToCampaign adds the given changeset IDs to the given campaign's
@@ -402,17 +418,9 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 		repoIDs = append(repoIDs, c.RepoID)
 	}
 
-	// TODO: Create a function that takes in repo IDs and returns accessible repoIDs
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = struct{}{}
 	}
 
 	for _, c := range changesets {
@@ -569,16 +577,9 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (e
 		repoIDs = append(repoIDs, p.RepoID)
 	}
 
-	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
-	// user doesn't have access to.
-	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
 		return err
-	}
-
-	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
-	for _, r := range accessibleRepos {
-		accessibleRepoIDs[r.ID] = struct{}{}
 	}
 
 	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -1199,4 +1200,23 @@ func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bo
 		return false, err
 	}
 	return true, nil
+}
+
+// accessibleRepos collects the RepoIDs of the changesets and returns a set of
+// the api.RepoID for which the subset of repositories for which the actor in
+// ctx has read permissions.
+func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]struct{}, error) {
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	return accessibleRepoIDs, nil
 }
