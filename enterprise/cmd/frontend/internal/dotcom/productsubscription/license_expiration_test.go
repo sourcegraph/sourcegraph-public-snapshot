@@ -7,6 +7,7 @@ import (
 
 	"github.com/efritz/glock"
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
