@@ -609,6 +609,12 @@ func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64
 		return err
 	}
 
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, job.RepoID); err != nil {
+		return err
+	}
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -503,11 +504,22 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
-		if err != nil {
-			t.Fatal(err)
+
+		// Filter out the repository in the authz filter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		// should result in a not found error
+		if err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("want not found error, got: %s", err)
 		}
 
+		// Now reset the filter
+		db.MockAuthzFilter = nil
+
+		if err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID); err != nil {
+			t.Fatal(err)
+		}
 		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
 			CampaignID: campaign.ID,
 			PatchID:    patch.ID,
