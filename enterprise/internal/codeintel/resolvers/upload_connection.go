@@ -90,7 +90,7 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload
 		if r.opt.Query != nil {
 			query = *r.opt.Query
 		}
-		visibileAtTip := r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo
+		visibleAtTip := r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo
 
 		state := ""
 		if r.opt.State != nil {
@@ -107,15 +107,14 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		uploads, totalCount, err := r.db.GetUploadsByRepo(
-			ctx,
-			id,
-			state,
-			query,
-			visibileAtTip,
-			limit,
-			offset,
-		)
+		uploads, totalCount, err := r.db.GetUploads(ctx, db.GetUploadsOptions{
+			RepositoryID: id,
+			State:        state,
+			Term:         query,
+			VisibleAtTip: visibleAtTip,
+			Limit:        limit,
+			Offset:       offset,
+		})
 		if err != nil {
 			r.err = err
 			return

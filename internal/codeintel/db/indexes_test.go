@@ -96,7 +96,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	}
 }
 
-func TestGetIndexesByRepo(t *testing.T) {
+func TestGetIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -149,7 +149,13 @@ func TestGetIndexesByRepo(t *testing.T) {
 					hi = len(testCase.expectedIDs)
 				}
 
-				indexes, totalCount, err := db.GetIndexesByRepo(context.Background(), 50, testCase.state, testCase.term, 3, lo)
+				indexes, totalCount, err := db.GetIndexes(context.Background(), GetIndexesOptions{
+					RepositoryID: 50,
+					State:        testCase.state,
+					Term:         testCase.term,
+					Limit:        3,
+					Offset:       lo,
+				})
 				if err != nil {
 					t.Fatalf("unexpected error getting indexes for repo: %s", err)
 				}

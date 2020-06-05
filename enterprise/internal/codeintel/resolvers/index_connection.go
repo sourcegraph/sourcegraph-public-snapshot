@@ -105,14 +105,13 @@ func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]db.Index, 
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		indexes, totalCount, err := r.db.GetIndexesByRepo(
-			ctx,
-			id,
-			state,
-			query,
-			limit,
-			offset,
-		)
+		indexes, totalCount, err := r.db.GetIndexes(ctx, db.GetIndexesOptions{
+			RepositoryID: id,
+			State:        state,
+			Term:         query,
+			Limit:        limit,
+			Offset:       offset,
+		})
 		if err != nil {
 			r.err = err
 			return
