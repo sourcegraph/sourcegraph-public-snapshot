@@ -30,7 +30,7 @@ type Webhook struct {
 	Now   func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
-	// Example values: bitbucketserver.ServiceType, github.ServiceType
+	// Example values: extsvc.TypeBitbucketServer, github.ServiceType
 	ServiceType string
 }
 
@@ -778,7 +778,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, repos, now, bitbucketserver.ServiceType},
+		Webhook:     &Webhook{store, repos, now, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}

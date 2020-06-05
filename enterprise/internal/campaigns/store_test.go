@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -975,7 +976,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		clock.add(1 * time.Second)
 		for _, c := range changesets {
 			c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-			c.ExternalServiceType = bitbucketserver.ServiceType
+			c.ExternalServiceType = extsvc.TypeBitbucketServer
 
 			have = append(have, c.Clone())
 

@@ -84,6 +84,10 @@ const (
 	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
 	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
 	TypeAWSCodeCommit = "awscodecommit"
+
+	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
+	// ServiceID value is the base URL to the Bitbucket Server instance.
+	TypeBitbucketServer = "bitbucketServer"
 )
 
 // AccountID is a descriptive type for the external identifier of an external account on the

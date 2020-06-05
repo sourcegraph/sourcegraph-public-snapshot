@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
 func BenchmarkStore(b *testing.B) {
@@ -33,7 +32,7 @@ func BenchmarkStore(b *testing.B) {
 
 	c := extsvc.CodeHost{
 		ServiceID:   "https://bitbucketserver.example.com",
-		ServiceType: bitbucketserver.ServiceType,
+		ServiceType: extsvc.TypeBitbucketServer,
 	}
 
 	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
@@ -98,7 +97,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		codeHost := extsvc.CodeHost{
 			ServiceID:   "https://bitbucketserver.example.com",
-			ServiceType: bitbucketserver.ServiceType,
+			ServiceType: extsvc.TypeBitbucketServer,
 		}
 
 		rs := make([]*repos.Repo, 0, 7)

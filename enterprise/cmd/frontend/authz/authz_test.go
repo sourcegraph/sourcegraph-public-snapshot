@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -448,7 +447,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					t.Fatalf("no providers")
 				}
 
-				if have[0].ServiceType() != bitbucketserver.ServiceType {
+				if have[0].ServiceType() != extsvc.TypeBitbucketServer {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
