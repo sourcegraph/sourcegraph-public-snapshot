@@ -455,12 +455,12 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		t.Helper()
 
 		kinds := []string{
-			"github",
-			"gitlab",
-			"bitbucketserver",
-			"awscodecommit",
-			"other",
-			"gitolite",
+			extsvc.KindGitHub,
+			extsvc.KindGitLab,
+			extsvc.KindBitbucketServer,
+			extsvc.KindAWSCodeCommit,
+			extsvc.KindOther,
+			extsvc.KindGitolite,
 		}
 
 		github := repos.Repo{
@@ -870,12 +870,12 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	kinds := []string{
-		"github",
-		"gitlab",
-		"bitbucketserver",
-		"awscodecommit",
-		"other",
-		"gitolite",
+		extsvc.KindGitHub,
+		extsvc.KindGitLab,
+		extsvc.KindBitbucketServer,
+		extsvc.KindAWSCodeCommit,
+		extsvc.KindOther,
+		extsvc.KindGitolite,
 	}
 
 	type testCase struct {
