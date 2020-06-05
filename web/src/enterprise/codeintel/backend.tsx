@@ -1,12 +1,12 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     dataOrThrowErrors,
     gql,
     createInvalidGraphQLMutationResponseError,
-} from '../../../../../shared/src/graphql/graphql'
+} from '../../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
-import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
+import { queryGraphQL, mutateGraphQL } from '../../backend/graphql'
 
 /**
  * Fetch LSIF uploads for a repository.
