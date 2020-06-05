@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"net/http"
 	"regexp"
 	"strings"
@@ -164,7 +165,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 	var ids []int64
 	grouped := make(map[int64]Repos)
 	for _, r := range repos {
-		if r.ExternalRepo.ServiceType != gitolite.ServiceType || r.IsDeleted() {
+		if r.ExternalRepo.ServiceType != extsvc.TypeGitolite || r.IsDeleted() {
 			continue
 		}
 
