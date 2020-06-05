@@ -431,7 +431,14 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	}()
 
 	// Check for existence of changeset so we don't swallow that error.
-	if _, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id}); err != nil {
+	changeset, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id})
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, changeset.RepoID); err != nil {
 		return err
 	}
 

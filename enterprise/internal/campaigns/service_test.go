@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
 func init() {
@@ -1008,6 +1009,54 @@ func TestService(t *testing.T) {
 		_, _, err := svc.UpdateCampaign(ctx, args)
 		if err != ErrPatchSetDuplicate {
 			t.Fatal("no error even though another campaign has same patch set")
+		}
+	})
+
+	t.Run("EnqueueChangesetSync", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		campaign := testCampaign(user.ID, 0)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, campaign.ID, 888, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = []int64{changeset.ID}
+		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		called := false
+		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+			if len(ids) != 1 && ids[0] != changeset.ID {
+				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
+			}
+			called = true
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		if !called {
+			t.Fatal("MockEnqueueChangesetSync not called")
+		}
+
+		// Repo filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		// should result in a not found error
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %s", err)
 		}
 	})
 }
