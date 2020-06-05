@@ -7,4 +7,4 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 yarn --mutex network --frozen-lockfile
 
-./dev/licenses-npm.sh
+LICENSE_CHECK=true ./dev/licenses.sh

@@ -1,0 +1,66 @@
+---
+- - :restrict
+  - unknown
+  - &1
+    :who:
+    :why: Import licenses-npm.sh FAIL_ON
+    :versions: []
+    :when: 2020-06-05 18:25:53.630259000 Z
+- - :restrict
+  - GPL-1.0-only
+  - *1
+- - :restrict
+  - GPL-1.0-or-later
+  - *1
+- - :restrict
+  - GPL-2.0-only
+  - *1
+- - :restrict
+  - GPL-2.0-or-later
+  - *1
+- - :restrict
+  - GPL-3.0-only
+  - *1
+- - :restrict
+  - GPL-3.0-or-later
+  - *1
+- - :permit
+  - 0BSD
+  - &2
+    :who:
+    :why: Import approved licenses from ThirdPartyLicensesNpm.csv
+    :versions: []
+    :when: 2020-06-05 19:02:14.987331000 Z
+- - :permit
+  - BSD
+  - *2
+- - :permit
+  - Apache-2.0
+  - *2
+- - :permit
+  - BSD-2-Clause
+  - *2
+- - :permit
+  - BSD-3-Clause
+  - *2
+- - :permit
+  - CC-BY-3.0
+  - *2
+- - :permit
+  - CC0-1.0
+  - *2
+- - :permit
+  - ISC
+  - *2
+- - :permit
+  - MIT
+  - *2
+- - :permit
+  - Unlicense
+  - *2
+- - :permit
+  - W3C
+  - *2
+- - :permit
+  - MPL-2.0
+  - *2
