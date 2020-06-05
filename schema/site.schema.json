@@ -639,7 +639,7 @@
       "group": "Sourcegraph Enterprise license"
     },
     "dotcom": {
-      "description": "Internal use only. Configuration options for Sourcegraph.com.",
+      "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
         "slackLicenseExpirationWebhook": {
