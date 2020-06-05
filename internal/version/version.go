@@ -6,14 +6,15 @@ import (
 	"math"
 	"strconv"
 	"time"
-
-	"github.com/Masterminds/semver"
 )
 
-const devVersion = "0.0.0+dev" // version string for unreleased development builds
+const devVersion = "0.0.0+dev"                              // version string for unreleased development builds
+var devTimestamp = strconv.FormatInt(time.Now().Unix(), 10) // build timestamp for unreleased development builds
 
 // version is configured at build time via ldflags like this:
-// -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=1.2.3+UnixTimestamp"
+// -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=1.2.3"
+//
+// The version may not be semver-compatible, e.g. `insiders` or `65769_2020-06-05_9bd91a3`.
 var version = devVersion
 
 // Version returns the version string configured at build time.
@@ -31,37 +32,26 @@ func Mock(mockVersion string) {
 	version = mockVersion
 }
 
-// HowLongOutOfDate returns a time in months since the last Sourcegraph release based on semantic versions  &
-// the fact that Sourcegraph releases every month. It works without needing to call sourcegraph.com and works
-// in airgap situations
+// timestamp is the build timestamp configured at build time via ldflags like this:
+// -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$UNIX_SECONDS"
+var timestamp = devTimestamp
+
+// HowLongOutOfDate returns a time in months since this build of Sourcegraph was created. It is
+// based on a constant baked into the Go binary at build time.
 func HowLongOutOfDate(currentVersion string) (int, error) {
-	if IsDev(currentVersion) {
-		return 0, nil
-	}
-
-	sv, err := semver.NewVersion(currentVersion)
+	buildUnixTimestamp, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
-		return 0, err
-	}
-
-	// expecting major.minor.patch+UnixTimestamp
-	if sv.Metadata() == "" {
-		return 0, errors.New("no metadata in semver")
-	}
-	buildUnixTimestamp, err := strconv.ParseInt(sv.Metadata(), 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("unable to parse semver metadata, is it a unix timestamp? %w", err)
+		return 0, fmt.Errorf("unable to parse version build timestamp: %w", err)
 	}
 	buildTime := time.Unix(buildUnixTimestamp, 0)
 
 	now := time.Now()
 	if buildTime.After(now) {
-		return 0, errors.New("sourcegraph release version occurs in the future")
+		return 0, errors.New("version build timestamp is in the future")
 	}
 	daysSinceBuild := now.Sub(buildTime).Hours() / 24
 
-	months := monthsFromDays(daysSinceBuild)
-	return months, nil
+	return monthsFromDays(daysSinceBuild), nil
 }
 
 // monthsFromDays roughly determines the number of months given days
