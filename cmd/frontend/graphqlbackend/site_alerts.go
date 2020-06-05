@@ -67,11 +67,12 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
-func init() {
-	if disableSecurityNotices {
-		log15.Warn("SECURITY NOTICES DISABLED: this is not recommended, please unset DISABLE_SECURITY_NOTICES")
-	}
+// Intentionally named "DISABLE_SECURITY" and not something else, so that anyone considering
+// disabling this thinks twice about the risks associated with disabling these and considers
+// keeping up-to-date more frequently instead.
+var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", "disables security upgrade notices"))
 
+func init() {
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if c.ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
@@ -82,8 +83,12 @@ func init() {
 		return problems
 	})
 
-	// Warn about Sourcegraph being out of date.
-	AlertFuncs = append(AlertFuncs, outOfDateAlert)
+	if !disableSecurity {
+		// Warn about Sourcegraph being out of date.
+		AlertFuncs = append(AlertFuncs, outOfDateAlert)
+	} else {
+		log15.Warn("WARNING: SECURITY NOTICES DISABLED: this is not recommended, please unset DISABLE_SECURITY=true")
+	}
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -140,8 +145,6 @@ func init() {
 	})
 }
 
-var disableSecurityNotices, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY_NOTICES", "false", "disables security upgrade notices"))
-
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
@@ -155,9 +158,6 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 }
 
 func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
-	if disableSecurityNotices {
-		return nil
-	}
 	if months <= 0 {
 		return nil
 	}
