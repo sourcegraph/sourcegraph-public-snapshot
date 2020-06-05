@@ -1912,8 +1912,8 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		// List the patches and see what we get back.
-		opts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
-		have, _, err := s.ListPatches(ctx, opts)
+		listOpts := ListPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		have, _, err := s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1926,7 +1926,17 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		countOpts := CountPatchesOpts{OnlyWithoutChangesetJob: campaignID}
+		count, err := s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches[2:])); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 
 		// Update the changeset jobs to change the campaign IDs and try again.
@@ -1938,7 +1948,7 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 			}
 		}
 
-		have, _, err = s.ListPatches(ctx, opts)
+		have, _, err = s.ListPatches(ctx, listOpts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1949,7 +1959,16 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 		}
 
 		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+		}
+
+		count, err = s.CountPatches(ctx, countOpts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := count, int64(len(patches)); have != want {
+			t.Fatalf("Invalid count retrieved: want=%d have=%d", want, have)
 		}
 	})
 
@@ -2032,109 +2051,6 @@ func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore re
 
 		if count != 0 {
 			t.Errorf("jobs counted: %d", count)
-		}
-	})
-
-	t.Run("Listing and Counting OnlyWithoutChangesetJobInCampaign", func(t *testing.T) {
-		campaignID := int64(999)
-
-		listOpts := ListPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
-		countOpts := CountPatchesOpts{OnlyWithoutChangesetJobInCampaign: campaignID}
-
-		have, _, err := s.ListPatches(ctx, listOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, want := have, patches
-		if len(have) != len(want) {
-			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-		}
-
-		count, err := s.CountPatches(ctx, countOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if int(count) != len(want) {
-			t.Errorf("jobs counted: %d", count)
-		}
-
-		// Create successful job
-		changesetJob := &cmpgn.ChangesetJob{
-			PatchID:     patches[0].ID,
-			CampaignID:  campaignID,
-			ChangesetID: 789,
-			StartedAt:   clock.now(),
-			FinishedAt:  clock.now(),
-		}
-		err = s.CreateChangesetJob(ctx, changesetJob)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err = s.ListPatches(ctx, listOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		want = patches[1:] // Exclude the first patch.
-		if len(have) != len(want) {
-			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-		}
-
-		count, err = s.CountPatches(ctx, countOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if int(count) != len(want) {
-			t.Errorf("jobs counted: %d", count)
-		}
-
-		// Set ChangesetJob to errored.
-		changesetJob.ChangesetID = 0
-		changesetJob.Error = "Very bad."
-		err = s.UpdateChangesetJob(ctx, changesetJob)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err = s.ListPatches(ctx, listOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		want = patches[1:] // Exclude the first patch.
-		if len(have) != len(want) {
-			t.Fatalf("listed %d patches, want: %d", len(have), len(want))
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-		}
-
-		count, err = s.CountPatches(ctx, countOpts)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if int(count) != len(want) {
-			t.Errorf("jobs counted: %d", count)
-		}
-
-		// Reset state for other tests.
-		err = s.DeleteChangesetJob(ctx, changesetJob.ID)
-		if err != nil {
-			t.Fatal(err)
 		}
 	})
 
