@@ -298,14 +298,14 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 }
 
 func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
 func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexes(ctx, &LSIFRepositoryIndexesQueryArgs{
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})

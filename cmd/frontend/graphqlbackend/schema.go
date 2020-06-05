@@ -1292,6 +1292,58 @@ type Query {
     # Returns a list of usernames or emails that have associated pending permissions.
     # The returned list can be used to query authorizedUserRepositories for pending permissions.
     usersWithPendingPermissions: [String!]!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifUploads(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFUploadConnection!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
 }
 
 # The version of the search syntax.

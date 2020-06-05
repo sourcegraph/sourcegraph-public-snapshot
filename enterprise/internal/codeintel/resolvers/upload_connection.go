@@ -80,17 +80,20 @@ func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 
 func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
-		r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
-		if r.err != nil {
-			return
-		}
+		var id int
+		if r.opt.RepositoryID != "" {
+			r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+			if r.err != nil {
+				return
+			}
 
-		id := int(r.repositoryResolver.Type().ID)
+			id = int(r.repositoryResolver.Type().ID)
+		}
 		query := ""
+
 		if r.opt.Query != nil {
 			query = *r.opt.Query
 		}
-		visibleAtTip := r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo
 
 		state := ""
 		if r.opt.State != nil {
@@ -111,7 +114,7 @@ func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]db.Upload
 			RepositoryID: id,
 			State:        state,
 			Term:         query,
-			VisibleAtTip: visibleAtTip,
+			VisibleAtTip: r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo,
 			Limit:        limit,
 			Offset:       offset,
 		})

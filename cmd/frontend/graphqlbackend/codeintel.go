@@ -14,10 +14,12 @@ var NewCodeIntelResolver func() CodeIntelResolver
 
 type CodeIntelResolver interface {
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error)
-	LSIFIndexes(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
@@ -30,7 +32,11 @@ func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.I
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
@@ -42,7 +48,11 @@ func (defaultCodeIntelResolver) LSIFIndexByID(ctx context.Context, id graphql.ID
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIFIndexes(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+func (defaultCodeIntelResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
@@ -54,13 +64,19 @@ func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (r *schemaResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFUploads(ctx, args)
+}
+
+func (r *schemaResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFIndexes(ctx, args)
+}
+
 func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	// We need to override the embedded method here as it takes slightly different arguments
 	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
 }
 
 func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	// We need to override the embedded method here as it takes slightly different arguments
 	return r.CodeIntelResolver.DeleteLSIFIndex(ctx, args.ID)
 }
 
