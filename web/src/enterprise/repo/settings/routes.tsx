@@ -6,7 +6,7 @@ import { RepoSettingsCodeIntelUploadPage } from './RepoSettingsCodeIntelUploadPa
 import { RepoSettingsCodeIntelIndexPage } from './RepoSettingsCodeIntelIndexPage'
 import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
 import { RepoSettingsCodeIntelUploadsPage } from './RepoSettingsCodeIntelUploadsPage'
-import { Redirect } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
@@ -28,7 +28,7 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
             match: {
                 params: { id },
             },
-        }) => <Redirect to={`../uploads/${id}`} />,
+        }: RouteComponentProps<{ id: string }>) => <Redirect to={`../uploads/${id}`} />,
     },
     {
         path: '/code-intelligence/uploads/:id',
