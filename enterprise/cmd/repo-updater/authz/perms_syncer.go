@@ -276,9 +276,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 				log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
 				return []extsvc.AccountID{}, nil
 			}
-			return nil, err
 		}
-		return ids, nil
+		return ids, err
 	}()
 	if err != nil {
 		// Process partial results if this is an initial fetch.
