@@ -16,7 +16,6 @@ interface Props extends ThemeProps, ThemePreferenceProps {
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
     showDotComMarketing: boolean
-    showDiscussions: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
 
@@ -35,9 +34,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(previousProps: Props): void {
         // Close dropdown after clicking on a dropdown item.
-        if (this.state.isOpen && this.props.location !== prevProps.location) {
+        if (this.state.isOpen && this.props.location !== previousProps.location) {
             /* eslint react/no-did-update-set-state: warn */
             this.setState({ isOpen: false })
         }
@@ -68,11 +67,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/extensions" className="dropdown-item">
                         Extensions
                     </Link>
-                    {this.props.showDiscussions && (
-                        <Link to="/discussions" className="dropdown-item">
-                            Discussions
-                        </Link>
-                    )}
                     <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
                         Saved searches
                     </Link>
@@ -105,8 +99,8 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                             </div>
                         )}
                         {this.props.keyboardShortcutForSwitchTheme &&
-                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
-                                <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
+                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, index) => (
+                                <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
                             ))}
                     </div>
                     {this.props.authenticatedUser.organizations.nodes.length > 0 && (
@@ -155,7 +149,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)

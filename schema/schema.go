@@ -265,6 +265,8 @@ type BitbucketServerPlugin struct {
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
+	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
 }
@@ -331,15 +333,7 @@ type DebugLog struct {
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
 }
 
-// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
-type Discussions struct {
-	// AbuseEmails description: Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
-	AbuseEmails []string `json:"abuseEmails,omitempty"`
-	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
-	AbuseProtection bool `json:"abuseProtection,omitempty"`
-}
-
-// Dotcom description: Internal use only. Configuration options for Sourcegraph.com.
+// Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
@@ -401,8 +395,6 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.
-	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: Enables searching multiple revisions of the same repository (using `repo:myrepo@branch1:branch2`).
@@ -411,6 +403,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// VersionContexts description: JSON array of version context configuration
+	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -642,18 +636,6 @@ type HTTPHeaderAuthProvider struct {
 	Type                      string `json:"type"`
 	// UsernameHeader description: The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 	UsernameHeader string `json:"usernameHeader"`
-}
-
-// IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
-type IMAPServerConfig struct {
-	// Host description: The IMAP server host.
-	Host string `json:"host"`
-	// Password description: The username to use when communicating with the IMAP server.
-	Password string `json:"password,omitempty"`
-	// Port description: The IMAP server port.
-	Port int `json:"port"`
-	// Username description: The username to use when communicating with the IMAP server.
-	Username string `json:"username,omitempty"`
 }
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
@@ -907,8 +889,6 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
-	// SearchUpperCase description: When active, any upper case characters in the pattern will make the entire query case-sensitive.
-	SearchUpperCase *bool `json:"search.UpperCase,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
@@ -923,10 +903,16 @@ type Settings struct {
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
+	// SearchUppercase description: When active, any uppercase characters in the pattern will make the entire query case-sensitive.
+	SearchUppercase *bool `json:"search.uppercase,omitempty"`
 }
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// CodeInsights description: Enables code insights on directory pages.
+	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
+	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
@@ -985,16 +971,12 @@ type SiteConfiguration struct {
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
-	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
-	Discussions *Discussions `json:"discussions,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
-	// Dotcom description: Internal use only. Configuration options for Sourcegraph.com.
+	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailImap description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
-	EmailImap *IMAPServerConfig `json:"email.imap,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -1067,6 +1049,24 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VersionContext description: Configuration of the version context
+type VersionContext struct {
+	// Description description: Description of the version context
+	Description string `json:"description,omitempty"`
+	// Name description: Name of the version context, it must be unique.
+	Name string `json:"name"`
+	// Revisions description: List of repositories of the version context
+	Revisions []*VersionContextRevision `json:"revisions"`
+}
+
+// VersionContextRevision description: Description of the chosen repository and revision
+type VersionContextRevision struct {
+	// Repo description: Repository name
+	Repo string `json:"repo"`
+	// Rev description: Branch, tag, or commit hash
+	Rev string `json:"rev"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"

@@ -23,6 +23,12 @@ const SettingsSchemaJSON = `{
           "default": true,
           "!go": { "pointer": true }
         },
+        "codeInsights": {
+          "description": "Enables code insights on directory pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "searchStats": {
           "description": "Enables a new page that shows language statistics about the results for a search query.",
           "type": "boolean",
@@ -37,6 +43,12 @@ const SettingsSchemaJSON = `{
         },
         "smartSearchField": {
           "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "copyQueryButton": {
+          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -177,8 +189,8 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": false
     },
-    "search.UpperCase": {
-      "description": "When active, any upper case characters in the pattern will make the entire query case-sensitive.",
+    "search.uppercase": {
+      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }

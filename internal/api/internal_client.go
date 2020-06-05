@@ -29,11 +29,9 @@ type internalClient struct {
 var InternalClient = &internalClient{URL: "http://" + frontendInternal}
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "frontend_internal",
-	Name:      "request_duration_seconds",
-	Help:      "Time (in seconds) spent on request.",
-	Buckets:   prometheus.DefBuckets,
+	Name:    "src_frontend_internal_request_duration_seconds",
+	Help:    "Time (in seconds) spent on request.",
+	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
 func init() {

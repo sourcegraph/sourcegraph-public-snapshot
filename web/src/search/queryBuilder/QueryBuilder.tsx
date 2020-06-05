@@ -129,7 +129,7 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
     }
 
     public render(): JSX.Element | null {
-        const docsURLPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
+        const documentationUrlPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <div className="query-builder">
                 <div className="query-builder__header">
@@ -359,7 +359,7 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                     />
                 </div>
                 <div className="query-builder__docs-link">
-                    <a target="blank" href={`${docsURLPrefix}/user/search/queries`}>
+                    <a target="blank" href={`${documentationUrlPrefix}/user/search/queries`}>
                         View all search options in docs <ExternalLinkIcon className="icon-inline small" />
                     </a>
                 </div>
@@ -386,7 +386,7 @@ function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean
 
     // See if we need to double-quote value.
     const jsonValue = JSON.stringify(value)
-    if (value.includes(' ') || jsonValue.slice(1, jsonValue.length - 1) !== value || alwaysQuote) {
+    if (value.includes(' ') || jsonValue.slice(1, -1) !== value || alwaysQuote) {
         value = jsonValue
     }
 

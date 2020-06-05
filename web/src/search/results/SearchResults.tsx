@@ -10,6 +10,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
+    resolveVersionContext,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -30,6 +31,10 @@ import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContext } from '../../schema/site.schema'
+import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -39,7 +44,8 @@ export interface SearchResultsProps
         ThemeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps {
+        InteractiveSearchProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -50,10 +56,14 @@ export interface SearchResultsProps
         query: string,
         version: string,
         patternType: GQL.SearchPatternType,
+        versionContext: string | undefined,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
+    previousVersionContext: string | null
 }
 
 interface SearchResultsState {
@@ -67,6 +77,12 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
+
+    /** Whether to show a warning saying that the URL has changed the version context. */
+    showVersionContextWarning: boolean
+
+    /** Whether the user has dismissed the version context warning. */
+    dismissedVersionContextWarning?: boolean
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
@@ -82,6 +98,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
+        showVersionContextWarning: false,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -95,12 +112,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
 
-            const q = parseSearchURLQuery(this.props.location.search) || ''
-            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
-            const newLoc =
+            const query = parseSearchURLQuery(this.props.location.search) || ''
+            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(query)
+            const newLocation =
                 '/search?' +
-                buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
-            window.location.replace(newLoc)
+                buildSearchURLQuery(
+                    navbarQuery,
+                    GQL.SearchPatternType.regexp,
+                    this.props.caseSensitive,
+                    this.props.versionContext,
+                    filtersInQuery
+                )
+            this.props.history.replace(newLocation)
         }
 
         this.props.telemetryService.logViewEvent('SearchResults')
@@ -119,6 +142,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             query: string
                             patternType: GQL.SearchPatternType
                             caseSensitive: boolean
+                            versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {
@@ -137,7 +161,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive }) =>
+                    switchMap(({ query, patternType, caseSensitive, versionContext }) =>
                         concat(
                             // Reset view state
                             [
@@ -153,6 +177,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
+                                    resolveVersionContext(versionContext, this.props.availableVersionContexts),
                                     this.props
                                 )
                                 .pipe(
@@ -178,6 +203,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             if (caseSensitive !== this.props.caseSensitive) {
                                                 this.props.setCaseSensitivity(caseSensitive)
                                             }
+
+                                            this.props.setVersionContext(versionContext)
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {
@@ -195,8 +222,38 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
                 .subscribe(
                     newState => this.setState(newState as SearchResultsState),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
+        )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(this.props),
+                    distinctUntilChanged((a, b) => isEqual(a.location, b.location))
+                )
+                .subscribe(props => {
+                    const searchParameters = new URLSearchParams(props.location.search)
+                    const versionFromURL = searchParameters.get('c')
+
+                    if (searchParameters.has('from-context-toggle')) {
+                        // The query param `from-context-toggle` indicates that the version context
+                        // changed from the version context toggle. In this case, we don't warn
+                        // users that the version context has changed.
+                        searchParameters.delete('from-context-toggle')
+                        this.props.history.replace({
+                            search: searchParameters.toString(),
+                            hash: this.props.history.location.hash,
+                        })
+                        this.setState({ showVersionContextWarning: false })
+                    } else {
+                        this.setState({
+                            showVersionContextWarning:
+                                (props.availableVersionContexts && versionFromURL !== props.previousVersionContext) ||
+                                false,
+                        })
+                    }
+                })
         )
 
         this.subscriptions.add(
@@ -228,6 +285,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
+    private onDismissWarning = (): void => {
+        this.setState({ showVersionContextWarning: false })
+    }
+
     public render(): JSX.Element | null {
         const query = parseSearchURLQuery(this.props.location.search)
         const filters = this.getFilters()
@@ -250,6 +311,21 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         onShowMoreResultsClick={this.showMoreResults}
                         calculateShowMoreResultsCount={this.calculateCount}
                     />
+                )}
+                {this.state.showVersionContextWarning && (
+                    <div className="mt-2 mx-2">
+                        <div className="d-flex alert alert-warning mb-0 justify-content-between">
+                            <div>
+                                <AlertOutlineIcon className="icon-inline mr-2" />
+                                This link changed your version context to{' '}
+                                <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with
+                                the selector to the left of the search bar.
+                            </div>
+                            <div onClick={this.onDismissWarning}>
+                                <CloseIcon className="icon-inline ml-2" />
+                            </div>
+                        </div>
+                    </div>
                 )}
                 <SearchResultTypeTabs
                     {...this.props}
@@ -279,8 +355,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
             dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
-            for (const d of dynamicFilters) {
-                filters.set(d.value, d)
+            for (const filter of dynamicFilters) {
+                filters.set(filter.value, filter)
             }
         }
         const scopes =
@@ -306,12 +382,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             }
         }
 
-        return Array.from(filters.values())
+        return [...filters.values()]
     }
     private showMoreResults = (): void => {
         // Requery with an increased max result count.
-        const params = new URLSearchParams(this.props.location.search)
-        let query = params.get('q') || ''
+        const parameters = new URLSearchParams(this.props.location.search)
+        let query = parameters.get('q') || ''
 
         const count = this.calculateCount()
         if (/count:(\d+)/.test(query)) {
@@ -319,8 +395,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         } else {
             query = `${query} count:${count}`
         }
-        params.set('q', query)
-        this.props.history.replace({ search: params.toString() })
+        parameters.set('q', query)
+        this.props.history.replace({ search: parameters.toString() })
     }
 
     private calculateCount = (): number => {
@@ -328,8 +404,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         // so casting is the right thing to do here
         const results = this.state.resultsOrError as GQL.ISearchResults
 
-        const params = new URLSearchParams(this.props.location.search)
-        const query = params.get('q') || ''
+        const parameters = new URLSearchParams(this.props.location.search)
+        const query = parameters.get('q') || ''
 
         if (/count:(\d+)/.test(query)) {
             return Math.max(results.matchCount * 2, 1000)

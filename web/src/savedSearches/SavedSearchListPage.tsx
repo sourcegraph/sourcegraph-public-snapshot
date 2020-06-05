@@ -41,8 +41,8 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     switchMap(search =>
                         deleteSavedSearch(search.id).pipe(
                             mapTo(undefined),
-                            catchError(err => {
-                                console.error(err)
+                            catchError(error => {
+                                console.error(error)
                                 return []
                             })
                         )

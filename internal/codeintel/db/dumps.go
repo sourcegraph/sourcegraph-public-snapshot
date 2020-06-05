@@ -21,14 +21,60 @@ type Dump struct {
 	FailureStacktrace *string    `json:"failureStacktrace"`
 	StartedAt         *time.Time `json:"startedAt"`
 	FinishedAt        *time.Time `json:"finishedAt"`
-	TracingContext    string     `json:"tracingContext"`
 	RepositoryID      int        `json:"repositoryId"`
 	Indexer           string     `json:"indexer"`
 }
 
+// scanDumps scans a slice of dumps from the return value of `*dbImpl.query`.
+func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var dumps []Dump
+	for rows.Next() {
+		var dump Dump
+		if err := rows.Scan(
+			&dump.ID,
+			&dump.Commit,
+			&dump.Root,
+			&dump.VisibleAtTip,
+			&dump.UploadedAt,
+			&dump.State,
+			&dump.FailureSummary,
+			&dump.FailureStacktrace,
+			&dump.StartedAt,
+			&dump.FinishedAt,
+			&dump.RepositoryID,
+			&dump.Indexer,
+		); err != nil {
+			return nil, err
+		}
+
+		dumps = append(dumps, dump)
+	}
+
+	return dumps, nil
+}
+
+// scanFirstDump scans a slice of dumps from the return value of `*dbImpl.query` and returns the first.
+func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
+	dumps, err := scanDumps(rows, err)
+	if err != nil || len(dumps) == 0 {
+		return Dump{}, false, err
+	}
+	return dumps[0], true, nil
+}
+
+// GetDumpIDs returns all dump ids in chronological order.
+func (db *dbImpl) GetDumpIDs(ctx context.Context) ([]int, error) {
+	return scanInts(db.query(ctx, sqlf.Sprintf(`SELECT d.id FROM lsif_dumps d ORDER BY uploaded_at`)))
+}
+
 // GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
-	query := `
+	return scanFirstDump(db.query(ctx, sqlf.Sprintf(`
 		SELECT
 			d.id,
 			d.commit,
@@ -40,70 +86,58 @@ func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.failure_stacktrace,
 			d.started_at,
 			d.finished_at,
-			d.tracing_context,
 			d.repository_id,
 			d.indexer
 		FROM lsif_dumps d WHERE id = %d
-	`
-
-	dump, err := scanDump(db.queryRow(ctx, sqlf.Sprintf(query, id)))
-	if err != nil {
-		return Dump{}, false, ignoreErrNoRows(err)
-	}
-
-	return dump, true, nil
+	`, id)))
 }
 
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, and file.
-func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]Dump, error) {
-	tw, err := db.beginTx(ctx)
+func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (_ []Dump, err error) {
+	tx, started, err := db.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		err = closeTx(tw.tx, err)
-	}()
+	if started {
+		defer func() { err = tx.Done(err) }()
+	}
 
-	visibleIDsQuery := `
-		SELECT d.dump_id FROM lineage_with_dumps d
-		WHERE %s LIKE (d.root || '%%%%') AND d.dump_id IN (SELECT * FROM visible_ids)
-		ORDER BY d.n
-	`
-
-	ids, err := scanInts(tw.query(ctx, withBidirectionalLineage(visibleIDsQuery, repositoryID, commit, file)))
-	if err != nil {
+	ids, err := scanInts(tx.query(
+		ctx,
+		withBidirectionalLineage(`
+			SELECT d.dump_id FROM lineage_with_dumps d
+			WHERE %s LIKE (d.root || '%%%%') AND d.dump_id IN (SELECT * FROM visible_ids)
+			ORDER BY d.n
+		`, repositoryID, commit, file),
+	))
+	if err != nil || len(ids) == 0 {
 		return nil, err
 	}
 
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	query := `
-		SELECT
-			d.id,
-			d.commit,
-			d.root,
-			d.visible_at_tip,
-			d.uploaded_at,
-			d.state,
-			d.failure_summary,
-			d.failure_stacktrace,
-			d.started_at,
-			d.finished_at,
-			d.tracing_context,
-			d.repository_id,
-			d.indexer
-		FROM lsif_dumps d WHERE id IN (%s)
-	`
-
-	dumps, err := scanDumps(tw.query(ctx, sqlf.Sprintf(query, sqlf.Join(intsToQueries(ids), ", "))))
+	dumps, err := scanDumps(tx.query(
+		ctx,
+		sqlf.Sprintf(`
+			SELECT
+				d.id,
+				d.commit,
+				d.root,
+				d.visible_at_tip,
+				d.uploaded_at,
+				d.state,
+				d.failure_summary,
+				d.failure_stacktrace,
+				d.started_at,
+				d.finished_at,
+				d.repository_id,
+				d.indexer
+			FROM lsif_dumps d WHERE id IN (%s)
+		`, sqlf.Join(intsToQueries(ids), ", ")),
+	))
 	if err != nil {
 		return nil, err
 	}
 
 	return deduplicateDumps(dumps), nil
-
 }
 
 // deduplicateDumps returns a copy of the given slice of dumps with duplicate identifiers removed.
@@ -125,7 +159,7 @@ func deduplicateDumps(allDumps []Dump) (dumps []Dump) {
 // DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 // This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
 func (db *dbImpl) DeleteOldestDump(ctx context.Context) (int, bool, error) {
-	query := `
+	return scanFirstInt(db.query(ctx, sqlf.Sprintf(`
 		DELETE FROM lsif_uploads
 		WHERE id IN (
 			SELECT id FROM lsif_dumps
@@ -133,62 +167,24 @@ func (db *dbImpl) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 			ORDER BY uploaded_at
 			LIMIT 1
 		) RETURNING id
-	`
-
-	id, err := scanInt(db.queryRow(ctx, sqlf.Sprintf(query)))
-	if err != nil {
-		return 0, false, ignoreErrNoRows(err)
-	}
-
-	return id, true, nil
+	`)))
 }
 
 // UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, tx *sql.Tx, repositoryID int, tipCommit string) (err error) {
-	if tx == nil {
-		tx, err = db.db.BeginTx(ctx, nil)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			err = closeTx(tx, err)
-		}()
-	}
-	tw := &transactionWrapper{tx}
-
-	// Update dump records by:
-	//   (1) unsetting the visibility flag of all previously visible dumps, and
-	//   (2) setting the visibility flag of all currently visible dumps
-	query := `
+func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
+	return db.queryForEffect(ctx, withAncestorLineage(`
 		UPDATE lsif_dumps d
 		SET visible_at_tip = id IN (SELECT * from visible_ids)
 		WHERE d.repository_id = %s AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
-	`
-
-	_, err = tw.exec(ctx, withAncestorLineage(query, repositoryID, tipCommit, repositoryID))
-	return err
+	`, repositoryID, tipCommit, repositoryID))
 }
 
 // DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
-func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, tx *sql.Tx, repositoryID int, commit, root, indexer string) (err error) {
-	if tx == nil {
-		tx, err = db.db.BeginTx(ctx, nil)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			err = closeTx(tx, err)
-		}()
-	}
-	tw := &transactionWrapper{tx}
-
-	query := `
+func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		DELETE from lsif_uploads
 		WHERE repository_id = %d AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
-	`
-
-	_, err = tw.exec(ctx, sqlf.Sprintf(query, repositoryID, commit, root, indexer))
-	return err
+	`, repositoryID, commit, root, indexer))
 }

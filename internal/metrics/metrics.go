@@ -12,6 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
+type testRegisterer struct{}
+
+func (testRegisterer) Register(prometheus.Collector) error  { return nil }
+func (testRegisterer) MustRegister(...prometheus.Collector) {}
+func (testRegisterer) Unregister(prometheus.Collector) bool { return true }
+
+// TestRegisterer is a behaviorless Prometheus Registerer usable for unit tests.
+var TestRegisterer prometheus.Registerer = testRegisterer{}
+
 // registerer exists so we can override it in tests
 var registerer = prometheus.DefaultRegisterer
 
@@ -130,7 +139,6 @@ func MustRegisterDiskMonitor(path string) {
 		_ = syscall.Statfs(path, &stat)
 		return float64(stat.Blocks * uint64(stat.Bsize))
 	}))
-
 }
 
 func mustRegisterOnce(c prometheus.Collector) {

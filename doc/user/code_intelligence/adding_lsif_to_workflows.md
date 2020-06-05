@@ -26,6 +26,8 @@ Some indexers will work out of the box by just running them in your project root
 ```yaml
 jobs:
   lsif-go:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go:latest
     steps:
@@ -34,7 +36,8 @@ jobs:
         run: lsif-go
       - name: Upload LSIF data
         # this will upload to Sourcegraph.com, you may need to substitute a different command
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
 ### Sub-projects
@@ -43,6 +46,8 @@ If your repository contains multiple code projects in different folders, your CI
 ```yaml
 jobs:
   lsif-go:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go:latest
     steps:
@@ -54,7 +59,8 @@ jobs:
         # note that the upload command also needs to happen in the same directory!
         working-directory: backend/
         # this will upload to Sourcegraph.com, you may need to substitute a different command
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
 ### Custom build environments
@@ -68,6 +74,8 @@ This second step is easy in GitHub actions because our container can be used as 
 ```yaml
 jobs:
   lsif-node:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: my-awesome-container
     steps:
@@ -75,13 +83,15 @@ jobs:
       - name: Install dependencies
         run: <install dependencies>
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node:latest
+        uses: docker://sourcegraph/lsif-node:latest
         with:
           args: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/src-cli:latest
+        uses: docker://sourcegraph/src-cli:latest
         with:
-          args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+          # this will upload to Sourcegraph.com, you may need to substitute a different command
+          # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+          args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
 Other frameworks may require you to explicitly cache artifacts between jobs. In CircleCI this might look like:
@@ -108,7 +118,9 @@ jobs:
           keys:
             - dependencies
       - run: lsif-tsc -p .
-      - run: src lsif upload -github-token=<<parameters.github-token>>
+        # this will upload to Sourcegraph.com, you may need to substitute a different command
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failures
 
 workflows:
   lsif-node:

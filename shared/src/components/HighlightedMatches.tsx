@@ -12,9 +12,9 @@ export const HighlightedMatches: React.FunctionComponent<{
     className?: string
 }> = ({ text, pattern, className }) => (
     <span>
-        {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map((span, i) =>
+        {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map((span, index) =>
             span.match ? (
-                <strong key={i} className={className}>
+                <strong key={index} className={className}>
                     {text.slice(span.start, span.end)}
                 </strong>
             ) : (
@@ -32,27 +32,27 @@ export interface Span {
 
 export function fuzzyMatches(text: string, pattern: string): Span[] {
     const matches: Span[] = []
-    let i = 0
+    let index = 0
     let last: Span | undefined
-    for (let pos = 0; pos < pattern.length; pos++) {
-        const ti = text.indexOf(pattern.charAt(pos), i)
-        if (ti === -1) {
+    for (let position = 0; position < pattern.length; position++) {
+        const textIndex = text.indexOf(pattern.charAt(position), index)
+        if (textIndex === -1) {
             break
         }
-        if (last?.match && ti === i) {
-            last.end = ti + 1
-        } else if ((last && !last.match) || ti > i) {
-            matches.push({ start: i, end: ti, match: false })
+        if (last?.match && textIndex === index) {
+            last.end = textIndex + 1
+        } else if ((last && !last.match) || textIndex > index) {
+            matches.push({ start: index, end: textIndex, match: false })
             last = undefined
         }
         if (!last) {
-            last = { start: ti, end: ti + 1, match: true }
+            last = { start: textIndex, end: textIndex + 1, match: true }
             matches.push(last)
         }
-        i = ti + 1
+        index = textIndex + 1
     }
-    if (text && i < text.length) {
-        matches.push({ start: i, end: text.length, match: false })
+    if (text && index < text.length) {
+        matches.push({ start: index, end: text.length, match: false })
     }
     return matches
 }

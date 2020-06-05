@@ -27,11 +27,11 @@ describe('Windows (integration)', () => {
         // Skipped, as sourcegraph.app.activeWindow is always defined.
         test.skip('reflects changes to the active window', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
             } = await integrationTestContext(undefined, {
                 roots: [],
-                editors: [],
+                viewers: [],
             })
             expect(extensionAPI.app.activeWindow).toBeUndefined()
             modelService.addModel({
@@ -39,7 +39,7 @@ describe('Windows (integration)', () => {
                 languageId: 'l',
                 text: 't',
             })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
@@ -69,12 +69,12 @@ describe('Windows (integration)', () => {
 
         test('adds new text documents', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
-            } = await integrationTestContext(undefined, { editors: [], roots: [] })
+            } = await integrationTestContext(undefined, { viewers: [], roots: [] })
 
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'file:///f2',
                 selections: [],
@@ -83,7 +83,7 @@ describe('Windows (integration)', () => {
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
-                    switchMap(w => w.activeViewComponentChanges),
+                    switchMap(activeWindow => activeWindow.activeViewComponentChanges),
                     filter(isDefined),
                     take(1)
                 )
@@ -107,7 +107,7 @@ describe('Windows (integration)', () => {
     describe('Window', () => {
         test('Window#visibleViewComponents', async () => {
             const {
-                services: { editor: editorService, model: modelService },
+                services: { viewer: viewerService, model: modelService },
                 extensionAPI,
             } = await integrationTestContext()
 
@@ -116,7 +116,7 @@ describe('Windows (integration)', () => {
                 languageId: 'l2',
                 text: 't2',
             })
-            editorService.addEditor({
+            viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u2',
                 selections: [],
@@ -125,7 +125,7 @@ describe('Windows (integration)', () => {
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     filter(isDefined),
-                    switchMap(w => w.activeViewComponentChanges),
+                    switchMap(activeWindow => activeWindow.activeViewComponentChanges),
                     filter(isDefined),
                     take(2)
                 )
@@ -146,7 +146,7 @@ describe('Windows (integration)', () => {
         describe('Window#activeViewComponent', () => {
             test('ignores inactive components', async () => {
                 const {
-                    services: { editor: editorService, model: modelService },
+                    services: { viewer: viewerService, model: modelService },
                     extensionAPI,
                 } = await integrationTestContext()
 
@@ -155,7 +155,7 @@ describe('Windows (integration)', () => {
                     languageId: 'inactive',
                     text: 'inactive',
                 })
-                editorService.addEditor({
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'file:///inactive',
                     selections: [],
@@ -173,28 +173,28 @@ describe('Windows (integration)', () => {
             // Skipped, as sourcegraph.app.activeWindow is always defined.
             test.skip('reflects changes to the active window', async () => {
                 const {
-                    services: { editor: editorService, model: modelService },
+                    services: { viewer: viewerService, model: modelService },
                     extensionAPI,
                 } = await integrationTestContext(undefined, {
                     roots: [],
-                    editors: [],
+                    viewers: [],
                 })
                 modelService.addModel({ uri: 'foo', languageId: 'l1', text: 't1' })
                 modelService.addModel({ uri: 'bar', languageId: 'l2', text: 't2' })
-                editorService.addEditor({
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'foo',
                     selections: [],
                     isActive: true,
                 })
-                editorService.removeAllEditors()
-                editorService.addEditor({
+                viewerService.removeAllViewers()
+                viewerService.addViewer({
                     type: 'CodeEditor',
                     resource: 'bar',
                     selections: [],
                     isActive: true,
                 })
-                const values = await from(extensionAPI.app.activeWindowChanges)
+                const viewers = await from(extensionAPI.app.activeWindowChanges)
                     .pipe(
                         switchMap(activeWindow => (activeWindow ? activeWindow.activeViewComponentChanges : of(null))),
                         take(4),
@@ -202,7 +202,7 @@ describe('Windows (integration)', () => {
                     )
                     .toPromise()
                 assertToJSON(
-                    values.map(c => (c ? c.document.uri : null)),
+                    viewers.map(viewer => (viewer && viewer.type === 'CodeEditor' ? viewer.document.uri : null)),
                     [null, 'foo', null, 'bar']
                 )
             })

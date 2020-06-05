@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { getModeFromPath } from '../../../languages'
 import { parseRepoURI } from '../../../util/url'
@@ -15,7 +15,7 @@ export interface Entry<O, P> {
 export abstract class FeatureProviderRegistry<O, P> {
     protected entries = new BehaviorSubject<Entry<O, P>[]>([])
 
-    public registerProvider(registrationOptions: O, provider: P): Unsubscribable {
+    public registerProvider(registrationOptions: O, provider: P): Subscription {
         return this.registerProviders([{ registrationOptions, provider }])
     }
 
@@ -24,13 +24,11 @@ export abstract class FeatureProviderRegistry<O, P> {
      * at once means there is only one emission from {@link FeatureProviderRegistry#entries} (instead of one per
      * entry).
      */
-    public registerProviders(entries: Entry<O, P>[]): Unsubscribable {
+    public registerProviders(entries: Entry<O, P>[]): Subscription {
         this.entries.next([...this.entries.value, ...entries])
-        return {
-            unsubscribe: () => {
-                this.entries.next([...this.entries.value.filter(e => !entries.includes(e))])
-            },
-        }
+        return new Subscription(() => {
+            this.entries.next([...this.entries.value.filter(entry => !entries.includes(entry))])
+        })
     }
 
     /** All providers, emitted whenever the set of registered providers changed. */

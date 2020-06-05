@@ -55,7 +55,7 @@ const GitHubSchemaJSON = `{
       },
       "default": {
         "enabled": true,
-        "requestsPeHour": 5000
+        "requestsPerHour": 5000
       }
     },
     "certificate": {

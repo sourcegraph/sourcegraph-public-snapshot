@@ -227,7 +227,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 	}
 }
 
-func Test_fetchUserRepos(t *testing.T) {
+func TestFetchUserRepos(t *testing.T) {
 	mockClient := &mockClient{
 		MockGetRepositoriesByNodeIDFromAPI: func(ctx context.Context, nodeIDs []string) (map[string]*github.Repository, error) {
 			return map[string]*github.Repository{
@@ -355,7 +355,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	mockClient := &mockClient{
-		MockListAffiliatedRepositories: func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
+		MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
 				return []*github.Repository{

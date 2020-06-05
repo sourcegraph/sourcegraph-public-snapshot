@@ -86,7 +86,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(({ e
                     isErrorLike(extension.manifest) || !extension.manifest?.url
                         ? of(DEFAULT_SOURCE)
                         : fromFetch(extension.manifest.url, undefined, resp => resp.text()).pipe(
-                              catchError(err => [asError(err)])
+                              catchError(error => [asError(error)])
                           ),
                     bundleChanges
                 ),
@@ -106,7 +106,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(({ e
                         return concat(
                             [LOADING],
                             from(publishExtension({ extensionID: extension.id, manifest, bundle: bundleOrError })).pipe(
-                                catchError(err => [asError(err)])
+                                catchError(error => [asError(error)])
                             )
                         )
                     })

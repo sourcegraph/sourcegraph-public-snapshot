@@ -1,11 +1,11 @@
-import { Endpoint } from '@sourcegraph/comlink'
+import { Endpoint } from 'comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
@@ -139,7 +139,12 @@ export interface PlatformContext {
      * @returns The URL to the file with the specified options.
      */
     urlToFile(
-        target: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        target: RepoSpec &
+            Partial<RawRepoSpec> &
+            RevisionSpec &
+            FileSpec &
+            Partial<UIPositionSpec> &
+            Partial<ViewStateSpec>,
         context: URLToFileContext
     ): string
 

@@ -56,9 +56,9 @@ export class CopyableText extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClickInput: React.MouseEventHandler<HTMLInputElement> = e => {
-        e.currentTarget.focus()
-        e.currentTarget.setSelectionRange(0, this.props.text.length)
+    private onClickInput: React.MouseEventHandler<HTMLInputElement> = event => {
+        event.currentTarget.focus()
+        event.currentTarget.setSelectionRange(0, this.props.text.length)
         this.copyToClipboard()
     }
 

@@ -10,32 +10,42 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { FileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../backend/diff'
+import { FileDiffFields, DiffStatFields } from '../../backend/diff'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
     base: string | null
     head: string | null
     first?: number
+    after?: string
+    isLightTheme: boolean
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $isLightTheme: Boolean!
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first) {
+                            fileDiffs(first: $first, after: $after) {
                                 nodes {
                                     ...FileDiffFields
                                 }
                                 totalCount
                                 pageInfo {
+                                    endCursor
                                     hasNextPage
                                 }
                                 diffStat {
@@ -48,8 +58,6 @@ export function queryRepositoryComparisonFileDiffs(args: {
             }
 
             ${FileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,
@@ -75,11 +83,11 @@ interface RepositoryCompareDiffPageProps
         ExtensionsControllerProps,
         ThemeProps {
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
+    base: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    head: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
+    hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
 /** A page with the file diffs in the comparison. */
@@ -96,18 +104,20 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     nodeComponentProps={{
                         ...this.props,
                         extensionInfo: {
-                            base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
-                            head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
+                            base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
+                            head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
                             hoverifier: this.props.hoverifier,
                             extensionsController: this.props.extensionsController,
                         },
                         lineNumbers: true,
                     }}
-                    defaultFirst={25}
+                    updateOnChange={String(this.props.isLightTheme)}
+                    defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    cursorPaging={true}
                 />
             </div>
         )
@@ -119,5 +129,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            isLightTheme: this.props.isLightTheme,
         })
 }

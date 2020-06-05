@@ -31,8 +31,8 @@ describe('search (integration)', () => {
         const { services, extensionAPI } = await integrationTestContext()
 
         // Register the provider and call it
-        extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
-        extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
+        extensionAPI.search.registerQueryTransformer({ transformQuery: (query: string) => `${query} bar` })
+        extensionAPI.search.registerQueryTransformer({ transformQuery: (query: string) => `${query} qux` })
         await extensionAPI.internal.sync()
         expect(await services.queryTransformer.transformQuery('foo').pipe(take(1)).toPromise()).toEqual('foo bar qux')
     })

@@ -24,7 +24,7 @@ There are four fields for configuring which repositories are mirrored:
 
 The [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) enables the Bitbucket Server instance to send webhooks to Sourcegraph.
 
-Using webhooks is highly recommended when using [Campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [campaigns](../../user/campaigns/index.md), since they speed up the syncing of pull request data between Bitbucket Server and Sourcegraph and make it more efficient.
 
 To set up webhooks:
 
@@ -33,10 +33,17 @@ To set up webhooks:
 1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the Bitbucket Server configuration.
 1. Add the `"webhooks"` property to `"plugin"` (you can generate a secret with `openssl rand -hex 32`):<br /> `"plugin": {"webhooks": {"secret": "verylongrandomsecret"}}`
 1. Click **Update repositories**.
-1. Sourcegraph now automatically creates a webhook on your Bitbucket Server instance with the name `sourcegraph-`, followed by the unique ID of your Sourcegraph instance. It is configured to deliver `pr` and `repo` events.
-1. On your Bitbucket Server instance, go to **Administration > Add-ons > Sourcegraph** and make sure that the new `sourcegraph-campaigns` webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
+1. Note the webhook URL displayed below the **Update repositories** button.
+1. On your Bitbucket Server instance, go to **Administration > Add-ons > Sourcegraph**
+1. Fill in the **Add a webhook** form
+   * Name: A unique name representing your Sourcegraph instance
+   * Scope: `global`
+   * Endpoint: The URL from step 6
+   * Events: `pr, repo`
+   * Secret: The secret you configured in step 4
+1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
-Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [Campaigns](../../user/campaigns/index.md), fast and more efficiently.
+Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [campaigns](../../user/campaigns/index.md), faster and more efficiently.
 
 ## Repository permissions
 
@@ -72,6 +79,14 @@ Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S
 ## Repository labels
 
 Sourcegraph will mark repositories as archived if they have the `archived` label on Bitbucket Server. You can exclude these repositories in search with `archived:no` [search syntax](../../user/search/queries.md).
+
+## Internal rate limits
+
+Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Server. 
+
+If enabled, the default rate is set at 28,800 per hour (8 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+
+**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../user/campaigns/index.md) changesets.
 
 ## Configuration
 

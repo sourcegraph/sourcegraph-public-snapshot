@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -257,4 +258,199 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestComputeReviewState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+
+	tests := []struct {
+		name      string
+		changeset *campaigns.Changeset
+		history   []changesetStatesAtTime
+		want      cmpgn.ChangesetReviewState
+	}{
+		{
+			name:      "github - no events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStatePending,
+		},
+		{
+			name:      "github - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name:      "github - changeset newer than events",
+			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateApproved,
+		},
+		{
+			name:      "bitbucketserver - no events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetReviewStateChangesRequested,
+		},
+
+		{
+			name:      "bitbucketserver - changeset older than events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateApproved,
+		},
+
+		{
+			name:      "bitbucketserver - changeset newer than events",
+			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
+			},
+			want: cmpgn.ChangesetReviewStateChangesRequested,
+		},
+	}
+
+	for i, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			changeset := tc.changeset
+
+			have, err := ComputeReviewState(changeset, tc.history)
+			if err != nil {
+				t.Fatalf("got error: %s", err)
+			}
+
+			if have, want := have, tc.want; have != want {
+				t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
+			}
+		})
+	}
+}
+
+func TestComputeChangesetState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+
+	tests := []struct {
+		name      string
+		changeset *campaigns.Changeset
+		history   []changesetStatesAtTime
+		want      cmpgn.ChangesetState
+	}{
+		{
+			name:      "github - no events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "github - changeset older than events",
+			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "github - changeset newer than events",
+			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "github - changeset newer and deleted",
+			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateDeleted,
+		},
+		{
+			name:      "bitbucketserver - no events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []changesetStatesAtTime{},
+			want:      cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "bitbucketserver - changeset older than events",
+			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(0), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateClosed,
+		},
+		{
+			name:      "bitbucketserver - changeset newer than events",
+			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateOpen,
+		},
+		{
+			name:      "bitbucketserver - changeset newer and deleted",
+			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
+			history: []changesetStatesAtTime{
+				{t: daysAgo(10), state: campaigns.ChangesetStateClosed},
+			},
+			want: cmpgn.ChangesetStateDeleted,
+		},
+	}
+
+	for i, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			changeset := tc.changeset
+
+			have, err := ComputeChangesetState(changeset, tc.history)
+			if err != nil {
+				t.Fatalf("got error: %s", err)
+			}
+
+			if have, want := have, tc.want; have != want {
+				t.Errorf("%d: wrong changeset state. have=%s, want=%s", i, have, want)
+			}
+		})
+	}
+}
+
+func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: bitbucketserver.ServiceType,
+		UpdatedAt:           updatedAt,
+		Metadata: &bitbucketserver.PullRequest{
+			State: state,
+			// TODO: Reviewers should be its own struct
+			Reviewers: []struct {
+				User               *bitbucketserver.User `json:"user"`
+				LastReviewedCommit string                `json:"lastReviewedCommit"`
+				Role               string                `json:"role"`
+				Approved           bool                  `json:"approved"`
+				Status             string                `json:"status"`
+			}{
+				{Status: reviewStatus},
+			},
+		},
+	}
+}
+
+func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
+	return &campaigns.Changeset{
+		ExternalServiceType: github.ServiceType,
+		UpdatedAt:           updatedAt,
+		Metadata:            &github.PullRequest{State: state},
+	}
+}
+
+func setDeletedAt(c *campaigns.Changeset, deletedAt time.Time) *campaigns.Changeset {
+	c.ExternalDeletedAt = deletedAt
+	return c
 }

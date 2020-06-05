@@ -65,11 +65,11 @@ describe('SearchResultsList', () => {
         limitHit,
         resultCount,
         approximateResultCount: `${resultCount}`,
-        results: range(resultCount).map(i => ({
+        results: range(resultCount).map(index => ({
             ...RESULT,
             file: {
                 ...RESULT.file,
-                url: `${i}`,
+                url: `${index}`,
             },
         })),
     })
@@ -122,6 +122,7 @@ describe('SearchResultsList', () => {
         toggleSearchMode: sinon.fake(),
         onFiltersInQueryChange: sinon.fake(),
         splitSearchModes: false,
+        versionContext: undefined,
     }
 
     it('displays loading text when results is undefined', () => {

@@ -3,14 +3,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 
 /** Displays the price of a tiered plan. */
 export const ProductPlanTiered: React.FunctionComponent<{
-    planTiers: GQL.IPlanTier[]
-    tierMode: string
-    minQuantity: number | null
-}> = ({ planTiers, tierMode, minQuantity }) => (
+    plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity'>
+}> = ({ plan: { planTiers, tiersMode, minQuantity } }) => (
     <>
-        {planTiers.map((tier, i) => (
-            <div key={i}>
-                {formatAmountForTier(tier, minQuantity)} {formatLabelForTier(tier, tierMode, planTiers[i - 1])}
+        {planTiers.map((tier, index) => (
+            <div key={index}>
+                {formatAmountForTier(tier, minQuantity)} {formatLabelForTier(tier, tiersMode, planTiers[index - 1])}
             </div>
         ))}
     </>
@@ -30,14 +28,21 @@ function formatAmountForTier(tier: GQL.IPlanTier, minQuantity: number | null): s
         return `${localizedAmount}/year total`
     }
 
+    if (tier.unitAmount === 0) {
+        // Quote the flat amount.
+        const amount = (tier.flatAmount / 100 /* cents in a USD */ / 12) /* months */
+            .toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })
+        return `${amount}/month`
+    }
+
     // Quote the $/user/month amount.
     const amount = (tier.unitAmount / 100 /* cents in a USD */ / 12) /* months */
         .toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })
     return `${amount}/user/month`
 }
 
-function formatLabelForTier(tier: GQL.IPlanTier, tierMode: string, previousTier?: GQL.IPlanTier): string {
-    if (tierMode === 'volume') {
+function formatLabelForTier(tier: GQL.IPlanTier, tiersMode: string, previousTier?: GQL.IPlanTier): string {
+    if (tiersMode === 'volume') {
         if (!previousTier) {
             return `for 1–${tier.upTo} users`
         }
@@ -51,10 +56,10 @@ function formatLabelForTier(tier: GQL.IPlanTier, tierMode: string, previousTier?
         return `for the first ${tier.upTo} users`
     }
     if (tier.upTo === 0) {
-        return 'for the rest (paid yearly)'
+        return 'for each additional user (paid yearly)'
     }
     if (previousTier) {
-        return `for the next ${previousTier.upTo + 1}–${tier.upTo} users`
+        return `for the next ${tier.upTo - previousTier.upTo} users`
     }
     return `up to ${tier.upTo} users`
 }

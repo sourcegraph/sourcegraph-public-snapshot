@@ -32,7 +32,7 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             fetchSiteUsageStatistics()
-                .pipe(catchError(err => [asError(err)]))
+                .pipe(catchError(error => [asError(error)]))
                 .subscribe(siteUsageStatisticsOrError => this.setState({ siteUsageStatisticsOrError }))
         )
     }
@@ -57,9 +57,11 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
                             width={500}
                             height={200}
                             isLightTheme={this.props.isLightTheme}
-                            data={this.state.siteUsageStatisticsOrError.waus.slice(0, 4).map(p => ({
-                                xLabel: format(Date.parse(p.startTime) + 1000 * 60 * 60 * 24, 'E, MMM d'),
-                                yValues: { 'Weekly users': p.registeredUserCount + p.anonymousUserCount },
+                            data={this.state.siteUsageStatisticsOrError.waus.slice(0, 4).map(usagePeriod => ({
+                                xLabel: format(Date.parse(usagePeriod.startTime) + 1000 * 60 * 60 * 24, 'E, MMM d'),
+                                yValues: {
+                                    'Weekly users': usagePeriod.registeredUserCount + usagePeriod.anonymousUserCount,
+                                },
                             }))}
                         />
                     </div>

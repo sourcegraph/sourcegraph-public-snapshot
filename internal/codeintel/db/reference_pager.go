@@ -1,39 +1,46 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// ReferencePager holds state for a reference result in a SQL transaction. Each page
-// requested should have a consistent view into the database.
+// ReferencePager holds state for a reference result within a SQL transaction so that
+// each page requested has a consistent view into the database.
 type ReferencePager interface {
-	TxCloser
-
 	// PageFromOffset returns the page of package references that starts at the given offset.
-	PageFromOffset(offset int) ([]types.PackageReference, error)
+	PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error)
+
+	// Done closes the underlying transaction. If the reference pager was called on a
+	// Database instance that was already in a transaction, this method does nothing.
+	Done(err error) error
 }
 
+// PageFromOffsetFn is the function type of ReferencePager's PageFromOffset method.
+type PageFromOffsetFn func(ctx context.Context, offset int) ([]types.PackageReference, error)
+
+// noopPageFromOffsetFn is a behaviorless PageFromOffsetFn.
+func noopPageFromOffsetFn(ctx context.Context, offset int) ([]types.PackageReference, error) {
+	return nil, nil
+}
+
+// referencePager is a small struct that conforms to the ReferencePager interface.
 type referencePager struct {
-	*txCloser
-	pageFromOffset func(offset int) ([]types.PackageReference, error)
+	pageFromOffset PageFromOffsetFn
+	done           DoneFn
 }
 
 // PageFromOffset returns the page of package references that starts at the given offset.
-func (rp *referencePager) PageFromOffset(offset int) ([]types.PackageReference, error) {
-	return rp.pageFromOffset(offset)
+func (rp *referencePager) PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error) {
+	return rp.pageFromOffset(ctx, offset)
 }
 
-func newReferencePager(tx *sql.Tx, pageFromOffset func(offset int) ([]types.PackageReference, error)) ReferencePager {
-	return &referencePager{
-		txCloser:       &txCloser{tx},
-		pageFromOffset: pageFromOffset,
-	}
+// PageFromOffset returns the page of package references that starts at the given offset.
+func (rp *referencePager) Done(err error) error {
+	return rp.done(err)
 }
 
-func newEmptyReferencePager(tx *sql.Tx) ReferencePager {
-	return newReferencePager(tx, func(offset int) ([]types.PackageReference, error) {
-		return nil, nil
-	})
+func newReferencePager(pageFromOffset PageFromOffsetFn, done DoneFn) ReferencePager {
+	return &referencePager{pageFromOffset: pageFromOffset, done: done}
 }

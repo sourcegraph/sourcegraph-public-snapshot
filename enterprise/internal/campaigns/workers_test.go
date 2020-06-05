@@ -93,6 +93,8 @@ func TestExecChangesetJob(t *testing.T) {
 				// for the same repository already exists in the DB, but with
 				// empty metadata, so we can later check that it was properly
 				// updated.
+				// We also leave CreatedByCampaign false to ensure that it is set on
+				// update too.
 				ch := &cmpgn.Changeset{
 					RepoID:    repo.ID,
 					CreatedAt: oldCreatedAt,
@@ -100,7 +102,9 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 				// This sets ExternalID, which we need to trigger the
 				// AlreadyExistsError.
-				ch.SetMetadata(meta)
+				if err := ch.SetMetadata(meta); err != nil {
+					t.Fatal(err)
+				}
 				// Now we can remove metadata.
 				ch.Metadata = nil
 
@@ -125,7 +129,9 @@ func TestExecChangesetJob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
+			err := ExecChangesetJob(ctx, campaign, changesetJob, ExecChangesetJobOpts{
+				Clock: clock, Store: s, GitClient: gitClient, Sourcer: sourcer, ExternalURL: "http://localhost",
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -148,6 +154,7 @@ func TestExecChangesetJob(t *testing.T) {
 				ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
 				CreatedAt:           now,
 				UpdatedAt:           now,
+				CreatedByCampaign:   true,
 			}
 			err = wantChangeset.SetMetadata(meta)
 			if err != nil {
@@ -273,12 +280,6 @@ func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *St
 	}
 
 	return campaign, patch
-}
-
-var githubActor = github.Actor{
-	AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-	Login:     "mrnugget",
-	URL:       "https://github.com/mrnugget",
 }
 
 func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {

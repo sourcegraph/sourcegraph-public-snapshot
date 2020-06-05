@@ -1,10 +1,10 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'
 import { syncSubscription } from '../../util'
 
-export class ExtSearch {
+export class ExtensionSearch {
     constructor(private proxy: comlink.Remote<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {

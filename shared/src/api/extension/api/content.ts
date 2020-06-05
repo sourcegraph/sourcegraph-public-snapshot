@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { LinkPreviewProvider } from 'sourcegraph'
 import { ClientContentAPI } from '../../client/api/content'
@@ -6,7 +6,7 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 
 /** @internal */
-export class ExtContent {
+export class ExtensionContent {
     constructor(private proxy: comlink.Remote<ClientContentAPI>) {}
 
     public registerLinkPreviewProvider(urlMatchPattern: string, provider: LinkPreviewProvider): Unsubscribable {

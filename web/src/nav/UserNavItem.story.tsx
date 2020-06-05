@@ -10,7 +10,7 @@ import webStyles from '../SourcegraphWebApp.scss'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 
-const { add } = storiesOf('UserNavItem', module).addDecorator(story => (
+const { add } = storiesOf('web/UserNavItem', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="theme-light">{story()}</div>
@@ -18,9 +18,9 @@ const { add } = storiesOf('UserNavItem', module).addDecorator(story => (
 ))
 
 const OpenUserNavItem: React.FunctionComponent<UserNavItem['props']> = props => {
-    const openDropdown = useCallback((e: UserNavItem | null) => {
-        if (e) {
-            e.setState({ isOpen: true })
+    const openDropdown = useCallback((userNavItem: UserNavItem | null) => {
+        if (userNavItem) {
+            userNavItem.setState({ isOpen: true })
         }
     }, [])
     return <UserNavItem {...props} ref={openDropdown} />
@@ -48,7 +48,6 @@ add('Site admin', () => (
             themePreference={ThemePreference.Light}
             location={H.createMemoryHistory().location}
             onThemePreferenceChange={onThemePreferenceChange}
-            showDiscussions={true}
             showDotComMarketing={true}
         />
     </MemoryRouter>

@@ -177,6 +177,45 @@ func TestChangesetEvents(t *testing.T) {
 				Metadata:    commit,
 			}},
 		})
+
+		reviewRequestedActorEvent := &github.ReviewRequestedEvent{
+			RequestedReviewer: github.Actor{Login: "the-great-tortellini"},
+			Actor:             actor,
+			CreatedAt:         now,
+		}
+		reviewRequestedTeamEvent := &github.ReviewRequestedEvent{
+			RequestedTeam: github.Team{Name: "the-belgian-waffles"},
+			Actor:         actor,
+			CreatedAt:     now,
+		}
+
+		cases = append(cases, testCase{"github-blank-review-requested",
+			Changeset{
+				ID: 23,
+				Metadata: &github.PullRequest{
+					TimelineItems: []github.TimelineItem{
+						{Type: "ReviewRequestedEvent", Item: reviewRequestedActorEvent},
+						{Type: "ReviewRequestedEvent", Item: reviewRequestedTeamEvent},
+						{Type: "ReviewRequestedEvent", Item: &github.ReviewRequestedEvent{
+							// Both Team and Reviewer are blank.
+							Actor:     actor,
+							CreatedAt: now,
+						}},
+					},
+				},
+			},
+			[]*ChangesetEvent{{
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewRequested,
+				Key:         reviewRequestedActorEvent.Key(),
+				Metadata:    reviewRequestedActorEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewRequested,
+				Key:         reviewRequestedTeamEvent.Key(),
+				Metadata:    reviewRequestedTeamEvent,
+			}},
+		})
 	}
 
 	{ // Bitbucket Server

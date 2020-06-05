@@ -1,18 +1,22 @@
 package campaigns
 
 import (
+	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -31,7 +35,7 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// A PatchSet is a collection of multiple Patchs.
+// A PatchSet is a collection of multiple Patches.
 type PatchSet struct {
 	ID int64
 
@@ -59,14 +63,64 @@ type Patch struct {
 
 	Diff string
 
+	DiffStatAdded   *int32
+	DiffStatChanged *int32
+	DiffStatDeleted *int32
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a Patch.
-func (c *Patch) Clone() *Patch {
-	cc := *c
+func (p *Patch) Clone() *Patch {
+	cc := *p
 	return &cc
+}
+
+// ComputeDiffStat parses the Diff of the Patch and sets the diff stat fields
+// that can be retrieved with DiffStat().
+// If the Diff is invalid or parsing failed, an error is returned.
+func (p *Patch) ComputeDiffStat() error {
+	stats := diff.Stat{}
+
+	diffReader := diff.NewMultiFileDiffReader(strings.NewReader(p.Diff))
+	for {
+		diff, err := diffReader.ReadFile()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		stat := diff.Stat()
+		stats.Added += stat.Added
+		stats.Deleted += stat.Deleted
+		stats.Changed += stat.Changed
+	}
+
+	p.DiffStatAdded = &stats.Added
+	p.DiffStatDeleted = &stats.Deleted
+	p.DiffStatChanged = &stats.Changed
+
+	return nil
+}
+
+// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged,
+// DiffStatDeleted are set. The second return value indicates whether these
+// fields are set and a diff.Stat has been returned.
+func (p *Patch) DiffStat() (diff.Stat, bool) {
+	s := diff.Stat{}
+
+	if p.DiffStatAdded == nil || p.DiffStatDeleted == nil || p.DiffStatChanged == nil {
+		return s, false
+	}
+
+	s.Added = *p.DiffStatAdded
+	s.Deleted = *p.DiffStatDeleted
+	s.Changed = *p.DiffStatChanged
+
+	return s, true
 }
 
 // A Campaign of changesets over multiple Repos over time.
@@ -100,6 +154,15 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 			c.ChangesetIDs = append(c.ChangesetIDs[:i], c.ChangesetIDs[i+1:]...)
 		}
 	}
+}
+
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
 }
 
 // ChangesetState defines the possible states of a Changeset.
@@ -148,6 +211,7 @@ type BackgroundProcessStatus struct {
 	Total         int32
 	Completed     int32
 	Pending       int32
+	Failed        int32
 	ProcessState  BackgroundProcessState
 	ProcessErrors []string
 }
@@ -252,9 +316,20 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// Completed returns true for jobs that have completed, regardless of whether
+// that was successful or not.
+func (c *ChangesetJob) Completed() bool {
+	return !c.FinishedAt.IsZero()
+}
+
 // SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+	return c.Error == "" && c.ChangesetID != 0 && c.Completed()
+}
+
+// UnsuccessfullyCompleted returns true for jobs that have run, but failed.
+func (c *ChangesetJob) UnsuccessfullyCompleted() bool {
+	return c.Error != "" && c.ChangesetID == 0 && c.Completed()
 }
 
 // Reset sets the Error, StartedAt and FinishedAt fields to their respective
@@ -282,6 +357,8 @@ type Changeset struct {
 	ExternalState       ChangesetState
 	ExternalReviewState ChangesetReviewState
 	ExternalCheckState  ChangesetCheckState
+	CreatedByCampaign   bool
+	AddedToCampaign     bool
 }
 
 // Clone returns a clone of a Changeset.
@@ -436,6 +513,19 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Metadata = c
 					events = append(events, &ev)
 				}
+
+			case *github.ReviewRequestedEvent:
+				// If the reviewer of a ReviewRequestedEvent has been deleted,
+				// the fields are blank and we cannot match the event to an
+				// entry in the database and/or reliably use it, so we drop it.
+				if e.ReviewerDeleted() {
+					continue
+				}
+				ev.Key = e.Key()
+				ev.Kind = ChangesetEventKindFor(e)
+				ev.Metadata = e
+				events = append(events, &ev)
+
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
@@ -613,6 +703,14 @@ func (e *ChangesetEvent) ReviewAuthor() (string, error) {
 			return "", errors.New("activity user is blank")
 		}
 		return username, nil
+
+	case *bitbucketserver.ParticipantStatusEvent:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+
 	default:
 		return "", nil
 	}
@@ -644,7 +742,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		return s, nil
 
 	case ChangesetEventKindGitHubReviewDismissed,
-		ChangesetEventKindBitbucketServerUnapproved:
+		ChangesetEventKindBitbucketServerUnapproved,
+		ChangesetEventKindBitbucketServerDismissed:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -701,6 +800,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *github.CheckRun:
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
+		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.ParticipantStatusEvent:
 		t = unixMilliToTime(int64(e.CreatedDate))
 	case *bitbucketserver.CommitStatus:
 		t = unixMilliToTime(int64(e.Status.DateAdded))
@@ -1006,6 +1107,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Commit = o.Commit
 		}
 
+	case *bitbucketserver.ParticipantStatusEvent:
+		o := o.Metadata.(*bitbucketserver.ParticipantStatusEvent)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
 	case *bitbucketserver.CommitStatus:
 		o := o.Metadata.(*bitbucketserver.CommitStatus)
 		// We always get the full event, so safe to replace it
@@ -1154,6 +1270,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.ParticipantStatusEvent:
+		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
 	case *bitbucketserver.CommitStatus:
 		return ChangesetEventKindBitbucketServerCommitStatus
 	default:
@@ -1169,6 +1287,8 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:
 			return new(bitbucketserver.CommitStatus), nil
+		case ChangesetEventKindBitbucketServerDismissed:
+			return new(bitbucketserver.ParticipantStatusEvent), nil
 		default:
 			return new(bitbucketserver.Activity), nil
 		}
@@ -1252,6 +1372,10 @@ const (
 	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
 	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
 	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
+
+	// BitbucketServer calls this an Unapprove event but we've called it Dismissed to more
+	// clearly convey that it only occurs when a request for changes has been dismissed.
+	ChangesetEventKindBitbucketServerDismissed ChangesetEventKind = "bitbucketserver:participant_status:unapproved"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset
@@ -1265,6 +1389,15 @@ type ChangesetSyncData struct {
 	ExternalUpdatedAt time.Time
 	// ExternalServiceID is the ID of the external service to which the changeset belongs
 	ExternalServiceIDs []int64
+}
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID("Campaign", id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {

@@ -40,6 +40,8 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 ```yaml
 jobs:
   lsif-go:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go:latest
     steps:
@@ -47,7 +49,9 @@ jobs:
       - name: Generate LSIF data
         run: lsif-go
       - name: Upload LSIF data
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        # this will upload to Sourcegraph.com, you may need to substitute a different command.
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failures
 ```
 
 ### CircleCI
@@ -59,7 +63,9 @@ jobs:
     steps:
       - checkout
       - run: lsif-go
-      - run: src lsif upload -github-token=<<parameters.github-token>>
+        # this will upload to Sourcegraph.com, you may need to substitute a different command.
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
+      - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failures
 
 workflows:
   lsif-node:
@@ -75,8 +81,10 @@ services:
 jobs:
   include:
     - stage: lsif-go
+      # this will upload to Sourcegraph.com, you may need to substitute a different command.
+      # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
       script:
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go:latest /bin/sh -c \
-          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN"
+          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN -ignore-upload-failures"
 ```

@@ -34,7 +34,6 @@ Our backend is composed of multiple services:
 
 - Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) folder.
 - [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
-- [Precise code intel system](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel) provides precise code intelligence based on the LSIF data format. It is written in TypeScript.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. They are written in Go.
 
 ## Infrastructure

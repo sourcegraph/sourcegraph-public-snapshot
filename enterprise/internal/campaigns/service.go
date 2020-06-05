@@ -10,10 +10,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -92,10 +94,8 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 }
 
 // CreateCampaign creates the Campaign. When a PatchSetID is set on the
-// Campaign and the Campaign is not created as a draft, it calls
-// CreateChangesetJobs inside the same transaction in which it creates the
-// Campaign.
-func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, draft bool) error {
+// Campaign it validates that the PatchSet contains Patches.
+func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -114,7 +114,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	defer tx.Done(&err)
 
 	if c.PatchSetID != 0 {
-		_, err := tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
 		if err != nil && err != ErrNoResults {
 			return err
 		}
@@ -127,21 +127,30 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err = tx.CreateCampaign(ctx, c); err != nil {
+	err = tx.CreateCampaign(ctx, c)
+	if err != nil {
 		return err
 	}
 
-	if c.PatchSetID != 0 && c.Branch == "" {
-		err = ErrCampaignBranchBlank
-		return err
-	}
-
-	if c.PatchSetID == 0 || draft {
+	if c.PatchSetID == 0 {
 		return nil
 	}
+	err = validateCampaignBranch(c.Branch)
+	if err != nil {
+		return err
+	}
+	// Validate we don't have an empty patchset.
+	var patchCount int64
+	patchCount, err = tx.CountPatches(ctx, CountPatchesOpts{PatchSetID: c.PatchSetID, OnlyWithDiff: true, OnlyUnpublishedInCampaign: c.ID})
+	if err != nil {
+		return err
+	}
+	if patchCount == 0 {
+		err = ErrNoPatches
+		return err
+	}
 
-	err = s.createChangesetJobsWithStore(ctx, tx, c)
-	return err
+	return nil
 }
 
 // ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
@@ -149,43 +158,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 // (finished) Patches.
 var ErrNoPatches = errors.New("cannot create or update a Campaign without any changesets")
 
-func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
-	if c.PatchSetID == 0 {
-		return errors.New("cannot create changesets for campaign with no patch set")
-	}
-
-	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
-		PatchSetID:                c.PatchSetID,
-		Limit:                     -1,
-		OnlyWithDiff:              true,
-		OnlyUnpublishedInCampaign: c.ID,
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(jobs) == 0 {
-		return ErrNoPatches
-	}
-
-	for _, job := range jobs {
-		changesetJob := &campaigns.ChangesetJob{
-			CampaignID: c.ID,
-			PatchID:    job.ID,
-		}
-		err = store.CreateChangesetJob(ctx, changesetJob)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ErrCloseProcessingCampaign is returned by CloseCampaign if the Campaign has
 // been published at the time of closing but its ChangesetJobs have not
 // finished execution.
-var ErrCloseProcessingCampaign = errors.New("cannot delete a Campaign while changesets are being created on codehosts")
+var ErrCloseProcessingCampaign = errors.New("cannot close a Campaign while changesets are being created on codehosts")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
 func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *campaigns.Campaign, err error) {
@@ -203,18 +179,22 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		}
 		defer tx.Done(&err)
 
+		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+		if err != nil {
+			return errors.Wrap(err, "getting campaign")
+		}
+
+		if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+			return err
+		}
+
 		processing, err := campaignIsProcessing(ctx, tx, id)
 		if err != nil {
 			return err
 		}
 		if processing {
-			err = ErrDeleteProcessingCampaign
+			err = ErrCloseProcessingCampaign
 			return err
-		}
-
-		campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-		if err != nil {
-			return errors.Wrap(err, "getting campaign")
 		}
 
 		if !campaign.ClosedAt.IsZero() {
@@ -255,30 +235,6 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
-// PublishCampaign publishes the Campaign with the given ID
-// by turning the Patches attached to the PatchSet of
-// the Campaign into ChangesetJobs and enqueuing them
-func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", id)
-	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Done(&err)
-
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
-}
-
 // ErrDeleteProcessingCampaign is returned by DeleteCampaign if the Campaign
 // has been published at the time of deletion but its ChangesetJobs have not
 // finished execution.
@@ -294,6 +250,15 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return err
+	}
+
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+		return err
+	}
 
 	transaction := func() (cs []*campaigns.Changeset, err error) {
 		tx, err := s.store.Transact(ctx)
@@ -319,7 +284,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 
 		// First load the Changesets with the given campaignID, before deleting
 		// the campaign would remove the association.
-		cs, _, err = s.store.ListChangesets(ctx, ListChangesetsOpts{
+		cs, _, err = tx.ListChangesets(ctx, ListChangesetsOpts{
 			CampaignID: id,
 			Limit:      -1,
 		})
@@ -334,7 +299,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 			c.RemoveCampaignID(id)
 		}
 
-		return cs, s.store.DeleteCampaign(ctx, id)
+		return cs, tx.DeleteCampaign(ctx, id)
 	}
 
 	cs, err := transaction()
@@ -391,12 +356,218 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	return SyncChangesetsWithSources(ctx, s.store, bySource)
 }
 
-// CreateChangesetJobForPatch creates a ChangesetJob for the
-// Patch with the given ID. The Patch has to belong to a
-// PatchSet that was attached to a Campaign.
-func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
+// AddChangesetsToCampaign adds the given changeset IDs to the given campaign's
+// ChangesetIDs and the campaign ID to the CampaignIDs of each changeset.
+// It updates the campaign and the changesets in the database.
+// If one of the changeset IDs is invalid an error is returned.
+func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64, changesetIDs []int64) (campaign *campaigns.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d, changesets: %v", campaignID, changesetIDs)
+	tr, ctx := trace.New(ctx, "service.AddChangesetsToCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+		return nil, err
+	}
+
+	if campaign.PatchSetID != 0 {
+		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
+	}
+
+	set := map[int64]struct{}{}
+	for _, id := range changesetIDs {
+		set[id] = struct{}{}
+	}
+
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range changesets {
+		delete(set, c.ID)
+		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
+		c.AddedToCampaign = true
+	}
+
+	if len(set) > 0 {
+		return nil, errors.Errorf("changesets %v not found", set)
+	}
+
+	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
+		return nil, err
+	}
+
+	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changesetIDs...)
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return campaign, nil
+}
+
+// EnqueueChangesetSync loads the given changeset from the database, checks
+// whether the actor in the context has permission to enqueue a sync and then
+// enqueues a sync by calling the repoupdater client.
+func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
+	traceTitle := fmt.Sprintf("changeset: %d", id)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Check for existence of changeset so we don't swallow that error.
+	if _, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id}); err != nil {
+		return err
+	}
+
+	campaigns, _, err := s.store.ListCampaigns(ctx, ListCampaignsOpts{ChangesetID: id})
+	if err != nil {
+		return err
+	}
+
+	// Check whether the user has admin rights for one of the campaigns.
+	var (
+		authErr        error
+		hasAdminRights bool
+	)
+
+	for _, c := range campaigns {
+		err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID)
+		if err != nil {
+			authErr = err
+		} else {
+			hasAdminRights = true
+			break
+		}
+	}
+
+	if !hasAdminRights {
+		return authErr
+	}
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{id}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RetryPublishCampaign resets the failed (!) ChangesetJobs for the given
+// campaign, which causes them to be re-run in the background.
+func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", id)
+	tr, ctx := trace.New(ctx, "service.RetryPublishCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaign, err = s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID); err != nil {
+		return nil, err
+	}
+
+	err = s.store.ResetFailedChangesetJobs(ctx, campaign.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "resetting failed changeset jobs")
+	}
+
+	return campaign, nil
+}
+
+// EnqueueChangesetJobs enqueues a ChangesetJob for each Patch associated with
+// the PatchSet in the given Campaign, creating it if necessary. The Patch has
+// to belong to a PatchSet
+func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", campaignID)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobs", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return err
+	}
+
+	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
+	if err != nil {
+		return err
+	}
+
+	if campaign.PatchSetID == 0 {
+		return ErrNoPatches
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:              campaign.PatchSetID,
+		Limit:                   -1,
+		OnlyWithDiff:            true,
+		OnlyWithoutChangesetJob: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		Limit:      -1,
+		CampaignID: campaign.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	jobsByPatchID := make(map[int64]*campaigns.ChangesetJob, len(existingJobs))
+	for _, j := range existingJobs {
+		jobsByPatchID[j.PatchID] = j
+	}
+
+	for _, p := range patches {
+		if _, ok := jobsByPatchID[p.ID]; ok {
+			continue
+		}
+
+		tx.CreateChangesetJob(ctx, &campaigns.ChangesetJob{
+			CampaignID: campaign.ID,
+			PatchID:    p.ID,
+		})
+	}
+
+	return nil
+}
+
+// EnqueueChangesetJobForPatch queues a ChangesetJob for the Patch with the
+// given ID, creating it if necessary. The Patch has to belong to a PatchSet
+// that was attached to a Campaign.
+func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
 	traceTitle := fmt.Sprintf("patch: %d", patchID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForPatch", traceTitle)
+	tr, ctx := trace.New(ctx, "service.EnqueueChangesetJobForPatch", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -408,6 +579,11 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 	}
 
 	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{PatchSetID: job.PatchSetID})
+	if err != nil {
+		return err
+	}
+
+	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
 	if err != nil {
 		return err
 	}
@@ -426,7 +602,13 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		return err
 	}
 	if existing != nil {
-		// Already exists
+		// An extant changeset job that failed should be reset so
+		// ProcessPendingChangesetJobs can try to publish it again.
+		if existing.UnsuccessfullyCompleted() {
+			existing.Reset()
+			return tx.UpdateChangesetJob(ctx, existing)
+		}
+
 		return nil
 	}
 
@@ -434,11 +616,68 @@ func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64)
 		CampaignID: campaign.ID,
 		PatchID:    job.ID,
 	}
-	err = tx.CreateChangesetJob(ctx, changesetJob)
+	return tx.CreateChangesetJob(ctx, changesetJob)
+}
+
+// GetCampaignStatus returns the BackgroundProcessStatus for the given campaign.
+func (s *Service) GetCampaignStatus(ctx context.Context, c *campaigns.Campaign) (status *campaigns.BackgroundProcessStatus, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", c.ID)
+	tr, ctx := trace.New(ctx, "service.GetCampaignStatus", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	canAdmin, err := hasCampaignAdminPermissions(ctx, c)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	if !canAdmin {
+		// If the user doesn't have admin permissions for this campaign, we
+		// don't need to filter out specific errors, but can simply exclude
+		// _all_ errors.
+		return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
+			ID:            c.ID,
+			ExcludeErrors: true,
+		})
+	}
+
+	// We need to filter out error messages the user is not allowed to see,
+	// because they don't have permissions to access the repository associated
+	// with a given patch/changesetJob.
+
+	// First we load the repo IDs of the failed changesetJobs
+	repoIDs, err := s.store.GetRepoIDsForFailedChangesetJobs(ctx, c.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	// We now check which repositories in `repoIDs` are not in `accessibleRepoIDs`.
+	// We have to filter the error messages associated with those out.
+	excludedRepos := make([]api.RepoID, 0, len(accessibleRepoIDs))
+	for _, id := range repoIDs {
+		if _, ok := accessibleRepoIDs[id]; !ok {
+			excludedRepos = append(excludedRepos, id)
+		}
+	}
+
+	return s.store.GetCampaignStatus(ctx, GetCampaignStatusOpts{
+		ID:                   c.ID,
+		ExcludeErrorsInRepos: excludedRepos,
+	})
 }
 
 // ErrUpdateProcessingCampaign is returned by UpdateCampaign if the Campaign
@@ -458,9 +697,13 @@ type UpdateCampaignArgs struct {
 // specified Campaign name is blank.
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
-// ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
+// ErrCampaignBranchBlank is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
 // branch is blank. This is only enforced when creating published campaigns with a patch set.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
+
+// ErrCampaignBranchInvalid is returned by CreateCampaign or UpdateCampaign if the specified Campaign's
+// branch is invalid. This is only enforced when creating published campaigns with a patch set.
+var ErrCampaignBranchInvalid = errors.New("Campaign branch is invalid")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
 // attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
@@ -497,6 +740,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: args.Campaign})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting campaign")
+	}
+
+	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if !campaign.ClosedAt.IsZero() {
@@ -538,8 +786,8 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	if args.Branch != nil && campaign.Branch != *args.Branch {
-		if *args.Branch == "" {
-			return nil, nil, ErrCampaignBranchBlank
+		if err := validateCampaignBranch(*args.Branch); err != nil {
+			return nil, nil, err
 		}
 
 		campaign.Branch = *args.Branch
@@ -550,32 +798,40 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, nil
 	}
 
-	status, err := tx.GetCampaignStatus(ctx, campaign.ID)
+	status, err := tx.GetCampaignStatus(ctx, GetCampaignStatusOpts{ID: campaign.ID})
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// We check whether we have any ChangesetJobs currently being processed.
+	// If yes, we don't allow the update.
 	if status.Processing() {
 		return nil, nil, ErrUpdateProcessingCampaign
 	}
 
-	published, err := campaignPublished(ctx, tx, campaign.ID)
+	// If they're not processing, we can assume that they've been published or
+	// failed.
+	// How many patches do we have that are not published or failed to publish?
+	unpublished, err := tx.CountPatches(ctx, CountPatchesOpts{
+		PatchSetID:                        oldPatchSetID,
+		OnlyWithoutChangesetJobInCampaign: campaign.ID,
+	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "getting unpublished patches count")
 	}
-	partiallyPublished := !published && status.Total != 0
+	allPublished := unpublished == 0
+	partiallyPublished := !allPublished && status.Total != 0
 
 	if campaign.PatchSetID != 0 && updateBranch {
-		if published || partiallyPublished {
+		if allPublished || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
 		}
 	}
 
-	if !published && !partiallyPublished {
-		// If the campaign hasn't been published yet and no Changesets have
-		// been individually published (through the `PublishChangeset`
-		// mutation), we can simply update the attributes on the Campaign
-		// because no ChangesetJobs have been created yet that need updating.
+	if !allPublished && !partiallyPublished {
+		// If no ChangesetJobs have been created yet, we can simply update the
+		// attributes on the Campaign because no ChangesetJobs have been
+		// created yet that need updating.
 		return campaign, nil, tx.UpdateCampaign(ctx, campaign)
 	}
 
@@ -646,16 +902,14 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	return campaign, changesets, tx.UpdateCampaign(ctx, campaign)
 }
 
-// campaignPublished returns true if all ChangesetJobs have been created yet
-// (they might still be processing).
-func campaignPublished(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	changesetCreation, err := store.GetLatestChangesetJobCreatedAt(ctx, campaign)
-	if err != nil {
-		return false, errors.Wrap(err, "getting latest changesetjob creation time")
+func validateCampaignBranch(branch string) error {
+	if branch == "" {
+		return ErrCampaignBranchBlank
 	}
-	// GetLatestChangesetJobCreatedAt returns a zero time.Time if not all
-	// ChangesetJobs have been created yet.
-	return !changesetCreation.IsZero(), nil
+	if !git.ValidateBranchName(branch) {
+		return ErrCampaignBranchInvalid
+	}
+	return nil
 }
 
 type campaignUpdateDiff struct {
@@ -870,9 +1124,23 @@ func mergeByRepoID(
 }
 
 func campaignIsProcessing(ctx context.Context, store *Store, campaign int64) (bool, error) {
-	status, err := store.GetCampaignStatus(ctx, campaign)
+	status, err := store.GetCampaignStatus(ctx, GetCampaignStatusOpts{ID: campaign})
 	if err != nil {
 		return false, err
 	}
 	return status.Processing(), nil
+}
+
+// hasCampaignAdminPermissions returns true when the actor in the given context
+// is either a site-admin or the author of the given campaign.
+func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bool, error) {
+	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign admin rights.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, c.AuthorID); err != nil {
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			return false, nil
+		}
+
+		return false, err
+	}
+	return true, nil
 }

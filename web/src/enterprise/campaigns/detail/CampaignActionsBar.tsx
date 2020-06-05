@@ -10,10 +10,8 @@ interface Props {
     mode: CampaignUIMode
     previewingPatchSet: boolean
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
-            nodes: Pick<GQL.IExternalChangeset, 'state'>[]
-        }
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
+        openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -38,10 +36,9 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
 
     const campaignClosed = campaign?.closedAt
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
+    const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
 
-    const openChangesetsCount =
-        campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
+    const openChangesetsCount = campaign?.openChangesets.totalCount ?? 0
 
     let stateBadge: JSX.Element
 
@@ -51,12 +48,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
         stateBadge = (
             <span className="badge badge-danger mr-2">
                 <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Closed
-            </span>
-        )
-    } else if (!campaign.publishedAt) {
-        stateBadge = (
-            <span className="badge badge-info mr-2">
-                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Draft
             </span>
         )
     } else {

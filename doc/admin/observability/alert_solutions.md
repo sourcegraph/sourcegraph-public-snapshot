@@ -339,42 +339,34 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 
-# precise-code-intel-api-server: container_restarts
+# precise-code-intel-bundle-manager: disk_space_remaining
 
 **Descriptions:**
 
-- _precise-code-intel-api-server: 1+ container restarts every 5m by instance (not available on k8s or server)_
+- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_
+
+
+- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_
 
 **Possible solutions:**
 
+- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
+
+# precise-code-intel-bundle-manager: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-bundle-manager: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-api-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-api-server`.
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-bundle-manager` for logs indicate request failures to `frontend` or `frontend-internal`.
 - **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-api-server` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-api-server container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-api-server` (note this will include logs from the previous and currently running container).
-
-# precise-code-intel-api-server: container_memory_usage
-
-**Descriptions:**
-
-- _precise-code-intel-api-server: 90%+ container memory usage by instance (not available on k8s or server)_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-api-server container in `docker-compose.yml`.
-
-# precise-code-intel-api-server: container_cpu_usage
-
-**Descriptions:**
-
-- _precise-code-intel-api-server: 90%+ container cpu usage total (5m average) across all cores by instance (not available on k8s or server)_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-api-server container in `docker-compose.yml`.
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
 
 # precise-code-intel-bundle-manager: container_restarts
 
@@ -413,6 +405,22 @@ for assistance.
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
 
+# precise-code-intel-worker: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-worker` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
+
 # precise-code-intel-worker: container_restarts
 
 **Descriptions:**
@@ -449,6 +457,59 @@ for assistance.
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+
+# precise-code-intel-indexer: frontend_internal_api_error_responses
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 5+ frontend-internal API error responses every 5m by route_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs precise-code-intel-indexer` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
+
+# precise-code-intel-indexer: container_restarts
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance (not available on k8s or server)_
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-indexer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-indexer`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
+
+# precise-code-intel-indexer: container_memory_usage
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 90%+ container memory usage by instance (not available on k8s or server)_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
+
+# precise-code-intel-indexer: container_cpu_usage
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m average) across all cores by instance (not available on k8s or server)_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
 
 # query-runner: frontend_internal_api_error_responses
 

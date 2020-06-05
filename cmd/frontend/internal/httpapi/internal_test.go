@@ -12,11 +12,52 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+func TestGitServiceHandlers(t *testing.T) {
+	m := apirouter.NewInternal(mux.NewRouter())
+
+	gitService := &gitServiceHandler{
+		Gitserver: mockAddrForRepo{},
+	}
+	m.Get(apirouter.GitInfoRefs).Handler(http.HandlerFunc(gitService.serveInfoRefs))
+	m.Get(apirouter.GitUploadPack).Handler(http.HandlerFunc(gitService.serveGitUploadPack))
+
+	cases := map[string]string{
+		"/git/foo/bar/info/refs?service=git-upload-pack": "http://foo.bar.gitserver/git/foo/bar/info/refs?service=git-upload-pack",
+		"/git/foo/bar/git-upload-pack":                   "http://foo.bar.gitserver/git/foo/bar/git-upload-pack",
+	}
+
+	for target, want := range cases {
+		req := httptest.NewRequest("GET", target, nil)
+		w := httptest.NewRecorder()
+		m.ServeHTTP(w, req)
+
+		resp := w.Result()
+		if resp.StatusCode != http.StatusTemporaryRedirect {
+			body, _ := ioutil.ReadAll(resp.Body)
+			t.Errorf("expected redirect for %q, got status %d. Body: %s", target, resp.StatusCode, body)
+			continue
+		}
+
+		got := resp.Header.Get("Location")
+		if got != want {
+			t.Errorf("mismatched location for %q:\ngot:  %s\nwant: %s", target, got, want)
+		}
+	}
+}
+
+type mockAddrForRepo struct{}
+
+func (mockAddrForRepo) AddrForRepo(_ context.Context, name api.RepoName) string {
+	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
+}
 
 func TestReposList(t *testing.T) {
 	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}

@@ -21,6 +21,10 @@ func SubstituteAliases(nodes []Node) []Node {
 		"msg":      FieldMessage,
 	}
 	return MapParameter(nodes, func(field, value string, negated bool) Node {
+		if field == "content" {
+			// The Quoted label is unset if content is specified.
+			return Pattern{Value: value, Negated: negated}
+		}
 		if canonical, ok := aliases[field]; ok {
 			field = canonical
 		}
@@ -84,14 +88,13 @@ func Hoist(nodes []Node) ([]Node, error) {
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }
 
-// SearchUpperCase adds case:yes to queries if any pattern is mixed-case.
-func SearchUpperCase(nodes []Node) []Node {
+// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
+func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
-	VisitParameter(nodes, func(field, value string, negated, _ bool) {
-		if field == "" || field == "content" {
-			if match := containsUpperCase(value); match {
-				foundMixedCase = true
-			}
+	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
+		// FIXME: make sure query maps content before calling this.
+		if match := containsUppercase(value); match {
+			foundMixedCase = true
 		}
 	})
 	if foundMixedCase {
@@ -101,11 +104,19 @@ func SearchUpperCase(nodes []Node) []Node {
 	return nodes
 }
 
-func containsUpperCase(s string) bool {
+func containsUppercase(s string) bool {
 	for _, r := range s {
 		if unicode.IsUpper(r) && unicode.IsLetter(r) {
 			return true
 		}
 	}
 	return false
+}
+
+// Map pipes query through one or more query transformer functions.
+func Map(query []Node, fns ...func([]Node) []Node) []Node {
+	for _, fn := range fns {
+		query = fn(query)
+	}
+	return query
 }

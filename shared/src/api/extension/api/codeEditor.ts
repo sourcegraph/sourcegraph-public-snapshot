@@ -1,12 +1,12 @@
-import { Remote } from '@sourcegraph/comlink'
+import { Remote } from 'comlink'
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { CodeEditorData, ViewerId } from '../../client/services/viewerService'
 import { createDecorationType } from './decorations'
-import { ExtDocuments } from './documents'
+import { ExtensionDocuments } from './documents'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
@@ -24,14 +24,14 @@ const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextD
     isEmptyObjectDeep(contents)
 
 /** @internal */
-export class ExtCodeEditor implements sourcegraph.CodeEditor {
+export class ExtensionCodeEditor implements sourcegraph.CodeEditor {
     /** The URI of this editor's document. */
     private resource: string
 
     constructor(
-        data: CodeEditorData & EditorId,
+        data: CodeEditorData & ViewerId,
         private proxy: Remote<ClientCodeEditorAPI>,
-        private documents: ExtDocuments
+        private documents: ExtensionDocuments
     ) {
         this.resource = data.resource
         this.update(data)
@@ -69,7 +69,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
-        this.selectionsChanges.next(data.selections.map(s => Selection.fromPlain(s)))
+        this.selectionsChanges.next(data.selections.map(selection => Selection.fromPlain(selection)))
     }
 
     public toJSON(): any {

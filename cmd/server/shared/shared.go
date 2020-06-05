@@ -39,6 +39,7 @@ var defaultEnv = map[string]string{
 	"GITHUB_BASE_URL":                       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
+	"JAEGER_SERVER_URL":  "http://127.0.0.0.1:16686",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -89,7 +90,7 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		SetDefaultEnv("LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif-storage"))
+		SetDefaultEnv("PRECISE_CODE_INTEL_BUNDLE_DIR", filepath.Join(DataDir, "lsif-storage"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
@@ -136,20 +137,24 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`precise-code-intel-api-server: node /precise-code-intel/out/api-server/api.js`,
-		`precise-code-intel-bundle-manager: node /precise-code-intel/out/bundle-manager/manager.js`,
-		`precise-code-intel-worker: node /precise-code-intel/out/worker/worker.js`,
+		`precise-code-intel-bundle-manager: precise-code-intel-bundle-manager`,
+		`precise-code-intel-worker: precise-code-intel-worker`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
-		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml --web.enable-admin-api --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
-		`grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`,
-		`jaeger: jaeger --memory.max-traces=20000 >> /var/opt/sourcegraph/jaeger.log 2>&1`,
 		postgresExporterLine,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
+
+	monitoringLines, err := maybeMonitoring()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(monitoringLines) != 0 {
+		procfile = append(procfile, monitoringLines...)
+	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()
 	if err != nil {

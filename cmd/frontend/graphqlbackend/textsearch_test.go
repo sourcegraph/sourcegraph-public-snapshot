@@ -482,7 +482,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
 	}
 	return r
 }
@@ -520,7 +520,7 @@ func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt
 	return nil, es.err
 }
 
-func Test_zoektSearchHEAD(t *testing.T) {
+func TestZoektSearchHEAD(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -533,13 +533,13 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 
 	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	rr.SetIndexedHEADCommit("abc")
 	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
 
 	tests := []struct {
 		name              string
 		args              args
 		wantFm            []*FileMatchResolver
+		wantMatchCount    int
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
 		wantErr           bool
@@ -604,6 +604,73 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			wantReposLimitHit: nil,
 			wantErr:           true,
 		},
+		{
+			name: "returns accurate match count of 5 line fragment matches across two files",
+			args: args{
+				ctx:             context.Background(),
+				query:           &search.TextPatternInfo{PathPatternsAreRegExps: true, FileMatchLimit: 100},
+				repos:           makeRepositoryRevisions("foo/bar@master", "foo/foobar@master"),
+				useFullDeadline: false,
+				searcher: &fakeSearcher{
+					repos: &zoekt.RepoList{
+						Repos: []*zoekt.RepoListEntry{
+							{
+								Repository: zoekt.Repository{
+									Name: "foo/bar",
+								},
+							},
+							{
+								Repository: zoekt.Repository{
+									Name: "foo/foobar",
+								},
+							},
+						},
+					},
+					result: &zoekt.SearchResult{
+						Files: []zoekt.FileMatch{
+							{
+								Repository: "foo/bar",
+								FileName:   "baz.go",
+								LineMatches: []zoekt.LineMatch{
+									{
+										Line: []byte("I'm like 1.5+ hours into writing this test :'("),
+										LineFragments: []zoekt.LineFragmentMatch{
+											{LineOffset: 0, MatchLength: 5},
+										},
+									},
+									{
+										Line: []byte("I'm ready for the rain to stop."),
+										LineFragments: []zoekt.LineFragmentMatch{
+											{LineOffset: 0, MatchLength: 5},
+											{LineOffset: 5, MatchLength: 10},
+										},
+									},
+								},
+							},
+							{
+								Repository: "foo/foobar",
+								FileName:   "baz.go",
+								LineMatches: []zoekt.LineMatch{
+									{
+										Line: []byte("s/rain/pain"),
+										LineFragments: []zoekt.LineFragmentMatch{
+											{LineOffset: 0, MatchLength: 5},
+											{LineOffset: 5, MatchLength: 2},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				since: func(time.Time) time.Duration { return 0 },
+			},
+			wantFm:            nil,
+			wantLimitHit:      false,
+			wantReposLimitHit: map[string]struct{}{},
+			wantMatchCount:    5,
+			wantErr:           false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -617,14 +684,24 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
+			if tt.wantFm != nil {
+				if !reflect.DeepEqual(gotFm, tt.wantFm) {
+					t.Errorf("zoektSearchHEAD() gotFm = %v, want %v", gotFm, tt.wantFm)
+				}
 			}
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
 			if !reflect.DeepEqual(gotReposLimitHit, tt.wantReposLimitHit) {
 				t.Errorf("zoektSearchHEAD() gotReposLimitHit = %v, want %v", gotReposLimitHit, tt.wantReposLimitHit)
+			}
+
+			var gotMatchCount int
+			for _, m := range gotFm {
+				gotMatchCount += m.MatchCount
+			}
+			if gotMatchCount != tt.wantMatchCount {
+				t.Errorf("zoektSearchHEAD() gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
 			}
 		})
 	}
@@ -726,7 +803,7 @@ func (repoURLsFakeSearcher) Close() {
 	panic("unimplemented")
 }
 
-func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
+func TestCreateNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	searcher := repoURLsFakeSearcher{
 		"github.com/test/1": []string{"1.md"},
 		"github.com/test/2": []string{"2.md"},
@@ -832,7 +909,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	}
 }
 
-func Test_zoektIndexedRepos(t *testing.T) {
+func TestZoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
 		"foo/indexed-one@",
 		"foo/indexed-two@",
@@ -878,7 +955,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 				Repo: r.Repo,
 				Revs: r.Revs,
 			}
-			rev.SetIndexedHEADCommit("deadbeef")
 			indexed = append(indexed, rev)
 		}
 		return indexed

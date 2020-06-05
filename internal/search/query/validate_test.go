@@ -34,10 +34,6 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			want:  `invalid boolean "???"`,
 		},
 		{
-			input: "mr:potato",
-			want:  `unrecognized field "mr"`,
-		},
-		{
 			input: "count:sedonuts",
 			want:  "field count has value sedonuts, sedonuts is not a number",
 		},
@@ -150,7 +146,7 @@ func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
 	}
 }
 
-func Test_PartitionSearchPattern(t *testing.T) {
+func TestPartitionSearchPattern(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
@@ -246,7 +242,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	}
 }
 
-func Test_ContainsAndOrKeyword(t *testing.T) {
+func TestContainsAndOrKeyword(t *testing.T) {
 	if !ContainsAndOrKeyword("foo OR bar") {
 		t.Errorf("Expected query to contain keyword")
 	}
@@ -255,5 +251,19 @@ func Test_ContainsAndOrKeyword(t *testing.T) {
 	}
 	if ContainsAndOrKeyword("repo:foo bar") {
 		t.Errorf("Did not expect query to contain keyword")
+	}
+}
+
+func TestForAll(t *testing.T) {
+	nodes := []Node{
+		Parameter{Field: "repo", Value: "foo"},
+		Parameter{Field: "repo", Value: "bar"},
+	}
+	result := forAll(nodes, func(node Node) bool {
+		_, ok := node.(Parameter)
+		return ok
+	})
+	if !result {
+		t.Errorf("Expected all nodes to be parameters.")
 	}
 }

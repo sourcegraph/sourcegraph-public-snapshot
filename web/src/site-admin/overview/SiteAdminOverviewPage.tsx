@@ -126,8 +126,8 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Overview - Admin" />
             {overviewComponents.length > 0 && (
                 <div className="mb-4">
-                    {overviewComponents.map((C, i) => (
-                        <C key={i} />
+                    {overviewComponents.map((Component, index) => (
+                        <Component key={index} />
                     ))}
                 </div>
             )}

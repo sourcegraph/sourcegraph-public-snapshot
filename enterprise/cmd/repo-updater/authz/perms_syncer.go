@@ -35,6 +35,8 @@ type PermsSyncer struct {
 	permsStore *edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
+	// The rate limit registry for code hosts.
+	rateLimiterRegistry *repos.RateLimiterRegistry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
@@ -53,26 +55,28 @@ func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
+	rateLimiterRegistry *repos.RateLimiterRegistry,
 ) *PermsSyncer {
 	s := &PermsSyncer{
-		queue:            newRequestQueue(),
-		reposStore:       reposStore,
-		permsStore:       permsStore,
-		clock:            clock,
-		scheduleInterval: time.Minute,
+		queue:               newRequestQueue(),
+		reposStore:          reposStore,
+		permsStore:          permsStore,
+		clock:               clock,
+		rateLimiterRegistry: rateLimiterRegistry,
+		scheduleInterval:    time.Minute,
 	}
 	return s
 }
 
-// ScheduleUsers schedules new permissions syncing requests for given users
-// in desired priority.
+// ScheduleUsers schedules new permissions syncing requests for given users.
+// By design, all schedules triggered by user actions are in high priority.
 //
-// This method implements the authz.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) {
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
 	users := make([]scheduledUser, len(userIDs))
 	for i := range userIDs {
 		users[i] = scheduledUser{
-			priority: priority,
+			priority: priorityHigh,
 			userID:   userIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
@@ -102,15 +106,15 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 	}
 }
 
-// ScheduleRepos schedules new permissions syncing requests for given repositories
-// in desired priority.
+// ScheduleRepos schedules new permissions syncing requests for given repositories.
+// By design, all schedules triggered by user actions are in high priority.
 //
-// This method implements the authz.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) {
+// This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
 	repos := make([]scheduledRepo, len(repoIDs))
 	for i := range repoIDs {
 		repos[i] = scheduledRepo{
-			priority: priority,
+			priority: priorityHigh,
 			repoID:   repoIDs[i],
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
@@ -168,6 +172,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		if provider == nil {
 			// We have no authz provider configured for this external account.
 			continue
+		}
+
+		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+			return errors.Wrap(err, "wait for rate limiter")
 		}
 
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
@@ -246,6 +254,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	if provider == nil {
 		// We have no authz provider configured for this repository.
 		return nil
+	}
+
+	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+		return errors.Wrap(err, "wait for rate limiter")
 	}
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
@@ -327,6 +339,22 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	return nil
 }
 
+// waitForRateLimit blocks until rate limit permits n events to happen. It returns
+// an error if n exceeds the limiter's burst size, the context is canceled, or the
+// expected wait time exceeds the context's deadline. The burst limit is ignored if
+// the rate limit is Inf.
+func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int) error {
+	if s.rateLimiterRegistry == nil {
+		return nil
+	}
+
+	rl := s.rateLimiterRegistry.GetRateLimiter(serviceID)
+	if err := rl.WaitN(ctx, n); err != nil {
+		return err
+	}
+	return nil
+}
+
 // syncPerms processes the permissions syncing request and remove the request from
 // the queue once it is done (independent of success or failure).
 func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
@@ -398,7 +426,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 	users := make([]scheduledUser, len(ids))
 	for i, id := range ids {
 		users[i] = scheduledUser{
-			priority: PriorityLow,
+			priority: priorityLow,
 			userID:   id,
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
@@ -419,7 +447,7 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 	repos := make([]scheduledRepo, len(ids))
 	for i, id := range ids {
 		repos[i] = scheduledRepo{
-			priority: PriorityLow,
+			priority: priorityLow,
 			repoID:   id,
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
@@ -439,7 +467,7 @@ func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit in
 	users := make([]scheduledUser, 0, len(results))
 	for id, t := range results {
 		users = append(users, scheduledUser{
-			priority:   PriorityLow,
+			priority:   priorityLow,
 			userID:     id,
 			nextSyncAt: t,
 		})
@@ -458,7 +486,7 @@ func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit in
 	repos := make([]scheduledRepo, 0, len(results))
 	for id, t := range results {
 		repos = append(repos, scheduledRepo{
-			priority:   PriorityLow,
+			priority:   priorityLow,
 			repoID:     id,
 			nextSyncAt: t,
 		})
@@ -474,7 +502,7 @@ type schedule struct {
 
 // scheduledUser contains information for scheduling a user.
 type scheduledUser struct {
-	priority   Priority
+	priority   priority
 	userID     int32
 	nextSyncAt time.Time
 
@@ -485,7 +513,7 @@ type scheduledUser struct {
 
 // scheduledRepo contains for scheduling a repository.
 type scheduledRepo struct {
-	priority   Priority
+	priority   priority
 	repoID     api.RepoID
 	nextSyncAt time.Time
 
@@ -557,7 +585,9 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		if !globals.PermissionsBackgroundSync().Enabled {
+		// Skip if not enabled or no authz provider is configured
+		if !globals.PermissionsBackgroundSync().Enabled ||
+			len(s.providers()) == 0 {
 			continue
 		}
 
@@ -652,41 +682,29 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 // registerMetrics registers exposed metrics with Prometheus default register.
 func (s *PermsSyncer) registerMetrics() {
 	s.metrics.noPerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_no_perms",
-		Help:      "The number of records that do not have any permissions",
+		Name: "src_repoupdater_perms_syncer_no_perms",
+		Help: "The number of records that do not have any permissions",
 	}, []string{"type"})
 	s.metrics.stalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_stale_perms",
-		Help:      "The number of records that have stale permissions",
+		Name: "src_repoupdater_perms_syncer_stale_perms",
+		Help: "The number of records that have stale permissions",
 	}, []string{"type"})
 	s.metrics.permsGap = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_perms_gap_seconds",
-		Help:      "The time gap between least and most up to date permissions",
+		Name: "src_repoupdater_perms_syncer_perms_gap_seconds",
+		Help: "The time gap between least and most up to date permissions",
 	}, []string{"type"})
 	s.metrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_sync_duration_seconds",
-		Help:      "Time spent on syncing permissions",
-		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
+		Name:    "src_repoupdater_perms_syncer_sync_duration_seconds",
+		Help:    "Time spent on syncing permissions",
+		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
 	}, []string{"type", "success"})
 	s.metrics.syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_sync_errors_total",
-		Help:      "Total number of permissions sync errors",
+		Name: "src_repoupdater_perms_syncer_sync_errors_total",
+		Help: "Total number of permissions sync errors",
 	}, []string{"type"})
 	s.metrics.queueSize = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_queue_size",
-		Help:      "The size of the sync request queue",
+		Name: "src_repoupdater_perms_syncer_queue_size",
+		Help: "The size of the sync request queue",
 	})
 }
 

@@ -11,8 +11,9 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
 fi
 
 # Warn if dev-private needs to be updated.
-if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
-  echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/pull/10."
+required_commit="ce8181197b942853068d82c04b21963bdc745a2a"
+if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; then
+  echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/commit/$required_commit."
   echo
   echo "Try running:"
   echo
@@ -30,6 +31,9 @@ export GLOBAL_SETTINGS_FILE=$PWD/../dev/global-settings.json
 export SITE_CONFIG_ALLOW_EDITS=true
 export GLOBAL_SETTINGS_ALLOW_EDITS=true
 export EXTSVC_CONFIG_ALLOW_EDITS=true
+
+SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
+export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/internal"
 export ENTERPRISE_COMMANDS="frontend repo-updater"

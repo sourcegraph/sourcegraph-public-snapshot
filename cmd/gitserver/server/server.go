@@ -238,6 +238,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
+	}))
+
 	return mux
 }
 
@@ -609,17 +614,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if cloneInProgress {
-		status = "clone-in-progress"
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
-		return
-	}
 	if !repoCloned(dir) {
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
 		if req.URL == "" {
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
@@ -1006,35 +1012,25 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_running",
-		Help:      "number of gitserver.Command running concurrently.",
+		Name: "src_gitserver_exec_running",
+		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
 	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "exec_duration_seconds",
-		Help:      "gitserver.Command latencies in seconds.",
-		Buckets:   trace.UserLatencyBuckets,
+		Name:    "src_gitserver_exec_duration_seconds",
+		Help:    "gitserver.Command latencies in seconds.",
+		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
 	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "clone_queue",
-		Help:      "number of repos waiting to be cloned.",
+		Name: "src_gitserver_clone_queue",
+		Help: "number of repos waiting to be cloned.",
 	})
 	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "lsremote_queue",
-		Help:      "number of repos waiting to check existence on remote code host (git ls-remote).",
+		Name: "src_gitserver_lsremote_queue",
+		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "gitserver",
-		Name:      "repo_cloned",
-		Help:      "number of successful git clones run",
+		Name: "src_gitserver_repo_cloned",
+		Help: "number of successful git clones run",
 	})
 )
 
@@ -1311,7 +1307,17 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url,
+			// Normal git refs
+			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
+			// GitHub pull requests
+			"+refs/pull/*:refs/pull/*",
+			// GitLab merge requests
+			"+refs/merge-requests/*:refs/merge-requests/*",
+			// Bitbucket pull requests
+			"+refs/pull-requests/*:refs/pull-requests/*",
+			// Possibly deprecated refs for sourcegraph zap experiment?
+			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
 	cmd.Dir = string(dir)
 

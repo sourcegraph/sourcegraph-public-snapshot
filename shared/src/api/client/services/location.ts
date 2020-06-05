@@ -1,12 +1,13 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import { from, Observable, of, concat } from 'rxjs'
+import { Observable, of, concat } from 'rxjs'
 import { catchError, map, switchMap, defaultIfEmpty } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
-import { CodeEditorWithPartialModel } from './editorService'
+import { CodeEditorWithPartialModel } from './viewerService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
+import { finallyReleaseProxy } from '../api/common'
 
 /**
  * Function signature for retrieving related locations given a location (e.g., definition, implementation, and type
@@ -34,8 +35,8 @@ export class TextDocumentLocationProviderRegistry<
      * outer observable never completes because providers may be registered and unregistered at any
      * time.
      */
-    public getLocations(params: P): Observable<MaybeLoadingResult<L[]>> {
-        return getLocationsFromProviders(this.providersForDocument(params.textDocument), params)
+    public getLocations(parameters: P): Observable<MaybeLoadingResult<L[]>> {
+        return getLocationsFromProviders(this.providersForDocument(parameters.textDocument), parameters)
     }
 
     /**
@@ -111,8 +112,11 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      *
      * @param id The provider ID.
      */
-    public getLocations(id: string, params: TextDocumentPositionParams): Observable<MaybeLoadingResult<Location[]>> {
-        return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
+    public getLocations(
+        id: string,
+        parameters: TextDocumentPositionParams
+    ): Observable<MaybeLoadingResult<Location[]>> {
+        return getLocationsFromProviders(this.providersForDocumentWithID(id, parameters.textDocument), parameters)
     }
 }
 
@@ -127,21 +131,25 @@ export function getLocationsFromProviders<
     L extends Location = Location
 >(
     providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>,
-    params: P,
+    parameters: P,
     logErrors = true
 ): Observable<MaybeLoadingResult<L[]>> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
-                    concat([LOADING], from(provider(params))).pipe(
-                        defaultIfEmpty<typeof LOADING | L[] | null>([]),
-                        catchError(err => {
-                            if (logErrors) {
-                                console.error('Location provider errored:', err)
-                            }
-                            return [null]
-                        })
+                    concat(
+                        [LOADING],
+                        provider(parameters).pipe(
+                            finallyReleaseProxy(),
+                            defaultIfEmpty<typeof LOADING | L[] | null>([]),
+                            catchError(error => {
+                                if (logErrors) {
+                                    console.error('Location provider errored:', error)
+                                }
+                                return [null]
+                            })
+                        )
                     )
                 )
             ).pipe(

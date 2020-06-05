@@ -44,6 +44,8 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 ```yaml
 jobs:
   lsif-node:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node:latest
     steps:
@@ -53,12 +55,16 @@ jobs:
       - name: Generate LSIF data
         run: lsif-tsc -p .
       - name: Upload LSIF data
+        # this will upload to Sourcegraph.com, you may need to substitute a different command
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 ```
 Note that if you need to install your dependencies in a custom container, you can use our containers as github actions. Try these steps instead:
 ```yaml
 jobs:
   lsif-node:
+    # this line will prevent forks of this repo from uploading lsif indexes
+    if: github.repository == '<insert your repo name>'
     runs-on: ubuntu-latest
     container: my-awesome-container
     steps:
@@ -66,12 +72,14 @@ jobs:
       - name: Install dependencies
         run: <install dependencies>
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node:latest
+        uses: docker://sourcegraph/lsif-node:latest
         with:
           args: lsif-tsc -p .
       - name: Upload LSIF data
-        uses: sourcegraph/src-cli:latest
+        uses: docker://sourcegraph/src-cli:latest
         with:
+          # this will upload to Sourcegraph.com, you may need to substitute a different command
+          # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
           args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -85,6 +93,8 @@ jobs:
       - checkout
       - run: npm install
       - run: lsif-tsc -p .
+        # this will upload to Sourcegraph.com, you may need to substitute a different command
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
       - run: src lsif upload -github-token=<<parameters.github-token>>
 
 workflows:
@@ -116,6 +126,8 @@ jobs:
           keys:
             - dependencies
       - run: lsif-tsc -p .
+        # this will upload to Sourcegraph.com, you may need to substitute a different command
+        # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
       - run: src lsif upload -github-token=<<parameters.github-token>>
 
 workflows:
@@ -135,6 +147,8 @@ services:
 jobs:
   include:
     - stage: lsif-node
+      # this will upload to Sourcegraph.com, you may need to substitute a different command
+      # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
       script:
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-node:latest /bin/sh -c \

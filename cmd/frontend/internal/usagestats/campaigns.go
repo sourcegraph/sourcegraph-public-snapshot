@@ -9,14 +9,38 @@ import (
 
 // GetCampaignsUsageStatistics returns the current site's campaigns usage.
 func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
-	const q = "SELECT COUNT(*) FROM campaigns;"
+	const q = `
+SELECT
+    (SELECT COUNT(*) FROM campaigns) AS campaigns_count,
+    COUNT(*) FILTER (WHERE created_by_campaign) AS action_changesets,
+    COUNT(*) FILTER (WHERE created_by_campaign AND external_state = 'MERGED') AS action_changesets_merged,
+    COUNT(*) FILTER (WHERE added_to_campaign) AS manual_changesets,
+    COUNT(*) FILTER (WHERE added_to_campaign AND external_state = 'MERGED') AS manual_changesets_merged
+FROM changesets;
+`
+	var (
+		campaignsCount         int
+		actionChangesets       int
+		actionChangesetsMerged int
+		manualChangesets       int
+		manualChangesetsMerged int
+	)
 
-	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(&count); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
+		&campaignsCount,
+		&actionChangesets,
+		&actionChangesetsMerged,
+		&manualChangesets,
+		&manualChangesetsMerged,
+	); err != nil {
 		return nil, err
 	}
 
 	return &types.CampaignsUsageStatistics{
-		CampaignsCount: int32(count),
+		CampaignsCount:              int32(campaignsCount),
+		ActionChangesetsCount:       int32(actionChangesets),
+		ActionChangesetsMergedCount: int32(actionChangesetsMerged),
+		ManualChangesetsCount:       int32(manualChangesets),
+		ManualChangesetsMergedCount: int32(manualChangesetsMerged),
 	}, nil
 }

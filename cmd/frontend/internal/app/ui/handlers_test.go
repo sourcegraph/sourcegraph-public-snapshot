@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -20,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 func TestRedirects(t *testing.T) {
@@ -154,6 +157,234 @@ func TestNewCommon_repo_error(t *testing.T) {
 			}
 			if tt.code != code {
 				t.Errorf("unexpected status code: got=%d want=%d", code, tt.code)
+			}
+		})
+	}
+}
+
+func TestRedirectTreeOrBlob(t *testing.T) {
+	tests := []struct {
+		name          string
+		route         string
+		path          string
+		common        *Common
+		mockStat      os.FileInfo
+		expHandled    bool
+		expStatusCode int
+		expLocation   string
+	}{
+		{
+			name:          "empty commit ID, no redirect",
+			common:        &Common{},
+			expStatusCode: http.StatusOK,
+		},
+		{
+			name:  "empty path, no redirect",
+			route: routeRepo,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expStatusCode: http.StatusOK,
+		},
+		{
+			name:  "root path, no redirect",
+			route: routeRepo,
+			path:  "/",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expStatusCode: http.StatusOK,
+		},
+		{
+			name:  "view tree, no redirect",
+			route: routeTree,
+			path:  "/some/dir",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
+			expStatusCode: http.StatusOK,
+		},
+		{
+			name:  "view blob, no redirect",
+			route: routeBlob,
+			path:  "/some/file.go",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{}, // Not a directory
+			expStatusCode: http.StatusOK,
+		},
+
+		// "/github.com/user/repo/-/tree/some/file.go" -> "/github.com/user/repo/-/blob/some/file.go"
+		{
+			name:  "redirct tree to blob",
+			route: routeTree,
+			path:  "/some/file.go",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{}, // Not a directory
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo/-/blob/some/file.go",
+		},
+		// "/github.com/user/repo/-/blob/some/dir" -> "/github.com/user/repo/-/tree/some/dir"
+		{
+			name:  "redirct blob to tree",
+			route: routeBlob,
+			path:  "/some/dir",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo/-/tree/some/dir",
+		},
+		// "/github.com/user/repo@master/-/tree/some/file.go" -> "/github.com/user/repo@master/-/blob/some/file.go"
+		{
+			name:  "redirct tree to blob on a revision",
+			route: routeTree,
+			path:  "/some/file.go",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{}, // Not a directory
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo@master/-/blob/some/file.go",
+		},
+		// "/github.com/user/repo@master/-/blob/some/dir" -> "/github.com/user/repo@master/-/tree/some/dir"
+		{
+			name:  "redirct blob to tree on a revision",
+			route: routeBlob,
+			path:  "/some/dir",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			mockStat:      &util.FileInfo{Mode_: os.ModeDir},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo@master/-/tree/some/dir",
+		},
+
+		// "/github.com/user/repo/-/tree" -> "/github.com/user/repo"
+		{
+			name:  "redirct tree to root",
+			route: routeTree,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo",
+		},
+		// "/github.com/user/repo/-/blob" -> "/github.com/user/repo"
+		{
+			name:  "redirct blob to root",
+			route: routeBlob,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo",
+		},
+		// "/github.com/user/repo@master/-/tree" -> "/github.com/user/repo"
+		{
+			name:  "redirct tree to root on a revision",
+			route: routeTree,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo@master",
+		},
+		// "/github.com/user/repo@master/-/blob" -> "/github.com/user/repo"
+		{
+			name:  "redirct blob to root on a revision",
+			route: routeBlob,
+			path:  "",
+			common: &Common{
+				Repo: &types.Repo{
+					Name: "github.com/user/repo",
+				},
+				Rev:      "@master",
+				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+			},
+			expHandled:    true,
+			expStatusCode: http.StatusTemporaryRedirect,
+			expLocation:   "/github.com/user/repo@master",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+				return test.mockStat, nil
+			}
+			t.Cleanup(git.ResetMocks)
+
+			w := httptest.NewRecorder()
+			r, err := http.NewRequest("GET", test.path, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if handled != test.expHandled {
+				t.Fatalf("handled: want %v but got %v", test.expHandled, handled)
+			} else if w.Code != test.expStatusCode {
+				t.Fatalf("code: want %d but got %d", test.expStatusCode, w.Code)
+			}
+
+			if got := w.Header().Get("Location"); got != test.expLocation {
+				t.Fatalf("redirect location: want %q but got %q", test.expLocation, got)
 			}
 		})
 	}

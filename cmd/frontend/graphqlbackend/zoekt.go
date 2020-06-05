@@ -204,6 +204,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
+		var matchCount int
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -217,7 +218,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &GitCommitResolver{
 							repo:     &RepositoryResolver{repo: repoRev.Repo},
-							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
+							oid:      GitObjectID(file.Version),
 							inputRev: &inputRev,
 						}
 
@@ -237,6 +238,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					}
 				}
 				if !isSymbol {
+					matchCount += len(offsets)
 					lines = append(lines, &lineMatch{
 						JPreview:          string(l.Line),
 						JLineNumber:       int32(l.LineNumber - 1),
@@ -249,10 +251,11 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
+			MatchCount:   matchCount, // We do not use resp.MatchCount because it counts the number of lines matched, not the number of fragments.
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
 			Repo:         repoRev.Repo,
-			CommitID:     repoRev.IndexedHEADCommit(),
+			CommitID:     api.CommitID(file.Version),
 		}
 	}
 
@@ -471,13 +474,6 @@ func zoektSingleIndexedRepo(ctx context.Context, z *searchbackend.Zoekt, rev *se
 		return indexed, append(unindexed, rev), nil
 	}
 
-	for _, branch := range repo.Branches {
-		if branch.Name == "HEAD" {
-			rev.SetIndexedHEADCommit(api.CommitID(branch.Version))
-			break
-		}
-	}
-
 	if len(rev.Revs) == 1 {
 		revSpecToSearch := rev.Revs[0].RevSpec
 		if len(revSpecToSearch) > 0 && len(revSpecToSearch) < 4 {
@@ -487,8 +483,13 @@ func zoektSingleIndexedRepo(ctx context.Context, z *searchbackend.Zoekt, rev *se
 			// branch name.
 			return indexed, append(unindexed, rev), nil
 		}
-		if revSpecToSearch == "" || revSpecToSearch == "HEAD" || strings.HasPrefix(string(rev.IndexedHEADCommit()), revSpecToSearch) {
+		if revSpecToSearch == "" || revSpecToSearch == "HEAD" {
 			return append(indexed, rev), unindexed, nil
+		}
+		for _, branch := range repo.Branches {
+			if branch.Name == revSpecToSearch || strings.HasPrefix(branch.Version, revSpecToSearch) {
+				return append(indexed, rev), unindexed, nil
+			}
 		}
 	}
 
@@ -538,13 +539,6 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)
 			continue
-		}
-
-		for _, branch := range repo.Branches {
-			if branch.Name == "HEAD" {
-				rev.SetIndexedHEADCommit(api.CommitID(branch.Version))
-				break
-			}
 		}
 
 		indexed = append(indexed, rev)

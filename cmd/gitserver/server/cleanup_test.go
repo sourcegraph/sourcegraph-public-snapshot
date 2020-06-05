@@ -165,8 +165,7 @@ func TestCleanupExpired(t *testing.T) {
 }
 
 func TestCleanupOldLocks(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	// Only recent lock files should remain.
 	mkFiles(t, root,
@@ -232,8 +231,7 @@ func TestCleanupOldLocks(t *testing.T) {
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	s := &Server{ReposDir: root}
 
@@ -295,8 +293,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 }
 
 func TestSetupAndClearTmp_Empty(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	s := &Server{ReposDir: root}
 
@@ -310,8 +307,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -341,8 +337,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory_Empty(t *testing.T) {
-	root, cleanup := tmpDir(t)
-	defer cleanup()
+	root := tmpDir(t)
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -360,7 +355,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	)
 }
 
-func Test_howManyBytesToFree(t *testing.T) {
+func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
 		DesiredPercentFree: 10,
@@ -422,13 +417,14 @@ func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 	return f.diskSize, nil
 }
 
-func tmpDir(t *testing.T) (string, func()) {
+func tmpDir(t *testing.T) string {
 	t.Helper()
-	dir, err := ioutil.TempDir("", t.Name())
+	dir, err := ioutil.TempDir("", filepath.Base(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return dir, func() { os.RemoveAll(dir) }
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
 }
 
 func mkFiles(t *testing.T, root string, paths ...string) {

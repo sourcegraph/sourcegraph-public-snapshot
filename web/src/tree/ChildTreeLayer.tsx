@@ -26,7 +26,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
         expandedTrees: props.expandedTrees,
         parent: props.parent,
         repoName: props.repoName,
-        rev: props.rev,
+        revision: props.revision,
         onToggleExpand: props.onToggleExpand,
         onHover: props.onHover,
         selectedNode: props.selectedNode,
@@ -53,11 +53,11 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                     childrenEntries={props.singleChildTreeEntry.children}
                                 />
                             ) : (
-                                props.entries.map((item, i) => (
+                                props.entries.map((item, index) => (
                                     <TreeLayer
                                         {...sharedProps}
                                         key={item.path}
-                                        index={i}
+                                        index={index}
                                         isExpanded={props.expandedTrees.includes(item.path)}
                                         parentPath={item.path}
                                         entryInfo={item}

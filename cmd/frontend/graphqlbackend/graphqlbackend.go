@@ -27,19 +27,15 @@ import (
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "field_seconds",
-	Help:      "GraphQL field resolver latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_field_seconds",
+	Help:    "GraphQL field resolver latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"type", "field", "error", "source", "request_name"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "code_intel_search_seconds",
-	Help:      "Code intel search latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Name:    "src_graphql_code_intel_search_seconds",
+	Help:    "Code intel search latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"exact", "error"})
 
 func init() {
@@ -218,7 +214,6 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Mutation", "logUserEvent"}:                {},
 	{"Query", "clientConfiguration"}:            {},
 	{"Query", "currentUser"}:                    {},
-	{"Query", "discussionThreads"}:              {},
 	{"Query", "dotcom"}:                         {},
 	{"Query", "extensionRegistry"}:              {},
 	{"Query", "highlightCode"}:                  {},
@@ -393,27 +388,39 @@ func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
-	n, ok := r.Node.(ExternalChangesetResolver)
-	return n, ok
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToExternalChangeset()
+}
+
+func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToHiddenExternalChangeset()
 }
 
 func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
-	n, ok := r.Node.(PatchResolver)
-	return n, ok
+	n, ok := r.Node.(PatchInterfaceResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToPatch()
+}
+
+func (r *NodeResolver) ToHiddenPatch() (HiddenPatchResolver, bool) {
+	n, ok := r.Node.(PatchInterfaceResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToHiddenPatch()
 }
 
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	n, ok := r.Node.(ChangesetEventResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.Node.(*discussionCommentResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.Node.(*discussionThreadResolver)
 	return n, ok
 }
 
@@ -489,6 +496,11 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
+	n, ok := r.Node.(*versionContextResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -534,12 +546,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.PatchSetByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
+	case "HiddenExternalChangeset":
+		return r.ChangesetByID(ctx, id)
 	case "Patch":
 		return r.PatchByID(ctx, id)
-	case "DiscussionComment":
-		return discussionCommentByID(ctx, id)
-	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
+	case "HiddenPatch":
+		return r.PatchByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

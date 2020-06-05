@@ -10,8 +10,8 @@ import { asError, createAggregateError, ErrorLike } from './errors'
 export function parseJSONCOrError<T>(input: string): T | ErrorLike {
     try {
         return parseJSON(input) as T
-    } catch (err) {
-        return asError(err)
+    } catch (error) {
+        return asError(error)
     }
 }
 
@@ -20,15 +20,15 @@ export function parseJSONCOrError<T>(input: string): T | ErrorLike {
  */
 function parseJSON(input: string): any {
     const errors: ParseError[] = []
-    const o = parse(input, errors, { allowTrailingComma: true, disallowComments: false })
+    const parsed = parse(input, errors, { allowTrailingComma: true, disallowComments: false })
     if (errors.length > 0) {
         throw createAggregateError(
-            errors.map(v => ({
-                ...v,
-                code: ParseErrorCode[v.error],
-                message: `parse error (code: ${v.error}, offset: ${v.offset}, length: ${v.length})`,
+            errors.map(error => ({
+                ...error,
+                code: ParseErrorCode[error.error],
+                message: `parse error (code: ${error.error}, offset: ${error.offset}, length: ${error.length})`,
             }))
         )
     }
-    return o
+    return parsed
 }

@@ -19,8 +19,7 @@ export function useError(): (error: any) => void {
  * If the Observable errors, will throw an error that can be caught with `try`/`catch` or with a React error boundary.
  * The Observable is subscribed on the first render and unsubscribed on unmount or whenever it changes (wrap it in `useMemo()` to prevent this).
  *
- * @param observable The Observable to subscribe to.
- *                   If this is the return value of a function, you should use `useMemo()` to make sure it is not resubscribed on every render.
+ * @param observable The Observable to subscribe to. If this is the return value of a function, you should use `useMemo()` to make sure it is not resubscribed on every render.
  * @throws If the Observable pipeline errors.
  */
 export function useObservable<T>(observable: Observable<T>): T | undefined {

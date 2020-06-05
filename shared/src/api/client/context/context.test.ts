@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel } from '../services/editorService'
+import { CodeEditorWithPartialModel } from '../services/viewerService'
 import { getComputedContextProperty } from './context'
 
 describe('getComputedContextProperty', () => {
@@ -21,7 +21,7 @@ describe('getComputedContextProperty', () => {
 
     describe('with code editors', () => {
         const editor: CodeEditorWithPartialModel = {
-            editorId: 'editor2',
+            viewerId: 'editor2',
             type: 'CodeEditor',
             resource: 'file:///a/b.c',
             model: { languageId: 'l' },
@@ -70,26 +70,30 @@ describe('getComputedContextProperty', () => {
             test('returns null when there are no code editors', () =>
                 expect(getComputedContextProperty(undefined, EMPTY_SETTINGS_CASCADE, {}, 'component.type')).toBe(null))
 
-            function assertSelection(editor: CodeEditorWithPartialModel, expr: string, expected: Selection): void {
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, expr)).toEqual(expected)
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start`)).toEqual(
+            function assertSelection(
+                editor: CodeEditorWithPartialModel,
+                expression: string,
+                expected: Selection
+            ): void {
+                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, expression)).toEqual(expected)
+                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start`)).toEqual(
                     expected.start
                 )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end`)).toEqual(
+                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end`)).toEqual(
                     expected.end
                 )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.line`)).toBe(
+                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start.line`)).toBe(
                     expected.start.line
                 )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.start.character`)).toBe(
-                    expected.start.character
-                )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.line`)).toBe(
+                expect(
+                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.start.character`)
+                ).toBe(expected.start.character)
+                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end.line`)).toBe(
                     expected.end.line
                 )
-                expect(getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expr}.end.character`)).toBe(
-                    expected.end.character
-                )
+                expect(
+                    getComputedContextProperty(editor, EMPTY_SETTINGS_CASCADE, {}, `${expression}.end.character`)
+                ).toBe(expected.end.character)
             }
 
             test('provides primary selection', () =>
@@ -141,7 +145,7 @@ describe('getComputedContextProperty', () => {
 
             test('returns null when there is no selection', () => {
                 assertNoSelection({
-                    editorId: 'editor1',
+                    viewerId: 'editor1',
                     type: 'CodeEditor' as const,
                     resource: 'file:///a/b.c',
                     model: { languageId: 'l' },

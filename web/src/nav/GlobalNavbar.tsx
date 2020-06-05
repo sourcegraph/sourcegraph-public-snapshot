@@ -13,6 +13,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     SmartSearchFieldProps,
+    CopyQueryButtonProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -27,6 +28,9 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 import { Link } from '../../../shared/src/components/Link'
 import { convertPlainTextToInteractiveQuery } from '../search/input/helpers'
+import { VersionContextDropdown } from './VersionContextDropdown'
+import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContext } from '../schema/site.schema'
 
 interface Props
     extends SettingsCascadeProps,
@@ -40,7 +44,9 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        SmartSearchFieldProps {
+        SmartSearchFieldProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -65,6 +71,8 @@ interface Props
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
     hideNavLinks: boolean
@@ -103,8 +111,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         this.subscriptions.add(authRequired.subscribe(authRequired => this.setState({ authRequired })))
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.location !== this.props.location) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (previousProps.location !== this.props.location) {
             if (!this.props.isSearchRelatedPage) {
                 // On a non-search related page or non-repo page, we clear the query in
                 // the main query input and interactive mode UI to avoid misleading users
@@ -114,7 +122,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
             }
         }
 
-        if (prevProps.location.search !== this.props.location.search) {
+        if (previousProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
             if (query) {
                 if (this.props.interactiveSearchMode) {
@@ -136,24 +144,24 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
 
         const branding = window.context ? window.context.branding : null
         if (branding) {
             if (this.props.isLightTheme) {
                 if (branding.light && branding.light.symbol) {
-                    logoSrc = branding.light.symbol
+                    logoSource = branding.light.symbol
                 }
             } else if (branding.dark && branding.dark.symbol) {
-                logoSrc = branding.dark.symbol
+                logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {
                 logoLinkClassName = 'global-navbar__logo-link'
             }
         }
 
-        const logo = <img className="global-navbar__logo" src={logoSrc} />
+        const logo = <img className="global-navbar__logo" src={logoSource} />
         const logoLink = !this.state.authRequired ? (
             <Link to="/search" className={logoLinkClassName}>
                 {logo}
@@ -194,6 +202,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
                                     lowProfile={!this.props.isSearchRelatedPage}
+                                    versionContext={this.props.versionContext}
                                 />
                             )
                         ) : (
@@ -207,6 +216,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
                                             />
                                         )}
+                                        <VersionContextDropdown
+                                            history={this.props.history}
+                                            navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                            setVersionContext={this.props.setVersionContext}
+                                            availableVersionContexts={this.props.availableVersionContexts}
+                                        />
                                         <SearchNavbarItem
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}

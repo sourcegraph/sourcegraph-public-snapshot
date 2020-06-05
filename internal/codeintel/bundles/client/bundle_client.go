@@ -3,13 +3,13 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/url"
 )
 
 // BundleClient is the interface to the precise-code-intel-bundle-manager service scoped to a particular dump.
 type BundleClient interface {
+	// ID gets the identifier of the target bundle.
+	ID() int
+
 	// Exists determines if the given path exists in the dump.
 	Exists(ctx context.Context, path string) (bool, error)
 
@@ -35,11 +35,16 @@ type BundleClient interface {
 }
 
 type bundleClientImpl struct {
-	bundleManagerURL string
-	bundleID         int
+	base     baseClient
+	bundleID int
 }
 
 var _ BundleClient = &bundleClientImpl{}
+
+// ID gets the identifier of the target bundle.
+func (c *bundleClientImpl) ID() int {
+	return c.bundleID
+}
 
 // Exists determines if the given path exists in the dump.
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (exists bool, err error) {
@@ -154,34 +159,7 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, package
 }
 
 func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[string]interface{}, target interface{}) error {
-	values := url.Values{}
-	for k, v := range qs {
-		values[k] = []string{fmt.Sprintf("%v", v)}
-	}
-
-	url, err := url.Parse(fmt.Sprintf("%s/dbs/%d/%s", c.bundleManagerURL, c.bundleID, path))
-	if err != nil {
-		return err
-	}
-	url.RawQuery = values.Encode()
-
-	req, err := http.NewRequest("GET", url.String(), nil)
-	if err != nil {
-		return err
-	}
-
-	// TODO - use context
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %d", resp.StatusCode)
-	}
-
-	return json.NewDecoder(resp.Body).Decode(&target)
+	return c.base.QueryBundle(ctx, c.bundleID, path, qs, &target)
 }
 
 func (c *bundleClientImpl) addBundleIDToLocations(locations []Location) {

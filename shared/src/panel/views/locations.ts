@@ -54,32 +54,32 @@ export function groupLocations<L = Location, G = string>(
     }
 
     const visibleLocations: L[] = []
-    for (const loc of locations) {
-        for (const [i, groupKey] of groupKeys.entries()) {
-            const group = groupKey(loc)
+    for (const location of locations) {
+        for (const [index, groupKey] of groupKeys.entries()) {
+            const group = groupKey(location)
             if (group === undefined) {
                 break
             }
-            if (!groups[i]) {
-                groups[i] = []
+            if (!groups[index]) {
+                groups[index] = []
             }
-            const groupEntry = groups[i].find(g => g.key === group)
+            const groupEntry = groups[index].find(groupEntry => groupEntry.key === group)
             if (groupEntry) {
                 groupEntry.count++
             } else {
-                groups[i].push({ key: group, count: 1 })
+                groups[index].push({ key: group, count: 1 })
             }
-            if (selectedGroups[i] === undefined) {
-                selectedGroups[i] = group
+            if (selectedGroups[index] === undefined) {
+                selectedGroups[index] = group
             }
-            if (selectedGroups[i] !== group) {
+            if (selectedGroups[index] !== group) {
                 // This location won't be visible and won't contribute to any more groups, so stop processing it.
                 break
             }
 
             // If this location is the rightmost selected group, it is visible.
-            if (i === groupKeys.length - 1) {
-                visibleLocations.push(loc)
+            if (index === groupKeys.length - 1) {
+                visibleLocations.push(location)
             }
         }
     }

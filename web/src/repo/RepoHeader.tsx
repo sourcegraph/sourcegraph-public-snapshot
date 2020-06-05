@@ -15,7 +15,7 @@ import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { WebActionsNavItems } from '../components/shared'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
-import { ResolvedRev } from './backend'
+import { ResolvedRevision } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -34,11 +34,13 @@ class RepoHeaderContributionStore {
             throw new Error('RepoHeaderContribution has no element')
         }
         if (typeof item.element.key !== 'string') {
-            throw new Error(`RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`)
+            throw new TypeError(
+                `RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`
+            )
         }
 
-        this.setState((prevState: RepoHeaderContributionsProps) => ({
-            repoHeaderContributions: prevState.repoHeaderContributions
+        this.setState((previousState: RepoHeaderContributionsProps) => ({
+            repoHeaderContributions: previousState.repoHeaderContributions
                 .filter(({ element }) => element.key !== item.element.key)
                 .concat(item)
                 .sort(byPriority),
@@ -46,8 +48,10 @@ class RepoHeaderContributionStore {
     }
 
     private onRepoHeaderContributionRemove(key: string): void {
-        this.setState(prevState => ({
-            repoHeaderContributions: prevState.repoHeaderContributions.filter(c => c.element.key !== key),
+        this.setState(previousState => ({
+            repoHeaderContributions: previousState.repoHeaderContributions.filter(
+                contribution => contribution.element.key !== key
+            ),
         }))
     }
 
@@ -145,10 +149,10 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
           }
 
     /** Information about the revision of the repository. */
-    resolvedRev: ResolvedRev | ErrorLike | undefined
+    resolvedRev: ResolvedRevision | ErrorLike | undefined
 
     /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
-    rev?: string
+    revision?: string
 
     /**
      * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
@@ -182,10 +186,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
         const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
-        const [repoDir, repoBase] = splitPath(displayRepoName(this.props.repo.name))
+        const [repoDirectory, repoBase] = splitPath(displayRepoName(this.props.repo.name))
         const context: RepoHeaderContext = {
             repoName: this.props.repo.name,
-            encodedRev: this.props.rev,
+            encodedRev: this.props.revision,
         }
         return (
             <nav className="repo-header navbar navbar-expand">
@@ -198,7 +202,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         }
                         className="repo-header__repo"
                     >
-                        {repoDir ? `${repoDir}/` : ''}
+                        {repoDirectory ? `${repoDirectory}/` : ''}
                         <span className="repo-header__repo-basename">{repoBase}</span>
                     </Link>
                     <button type="button" id="repo-popover" className="btn btn-link px-0">
@@ -212,15 +216,15 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         />
                     </UncontrolledPopover>
                 </div>
-                {navActions.map((a, i) => (
-                    <div className="navbar-nav" key={a.element.key || i}>
+                {navActions.map((a, index) => (
+                    <div className="navbar-nav" key={a.element.key || index}>
                         <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
                         {a.element}
                     </div>
                 ))}
                 <ul className="navbar-nav">
-                    {leftActions.map((a, i) => (
-                        <li className="nav-item" key={a.element.key || i}>
+                    {leftActions.map((a, index) => (
+                        <li className="nav-item" key={a.element.key || index}>
                             {a.element}
                         </li>
                     ))}
@@ -246,8 +250,8 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                                 </li>
                             )
                     )}
-                    {rightActions.map((a, i) => (
-                        <li className="nav-item repo-header__action-list-item" key={a.element.key || i}>
+                    {rightActions.map((a, index) => (
+                        <li className="nav-item repo-header__action-list-item" key={a.element.key || index}>
                             {a.element}
                         </li>
                     ))}

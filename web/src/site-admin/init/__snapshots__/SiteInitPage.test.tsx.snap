@@ -55,7 +55,7 @@ exports[`SiteInitPage normal 1`] = `
             maxLength={255}
             name="username"
             onChange={[Function]}
-            pattern="^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$"
+            pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
             placeholder="Username"
             required={true}
             spellCheck={false}
