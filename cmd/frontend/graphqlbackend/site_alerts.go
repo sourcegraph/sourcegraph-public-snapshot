@@ -142,7 +142,7 @@ func init() {
 
 var disableSecurityNotices, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY_NOTICES", "false", "disables security upgrade notices"))
 
-func outOfDateAlert(args AlertFuncArgs) []*Alert { {
+func outOfDateAlert(args AlertFuncArgs) []*Alert {
 	globalUpdateStatus := updatecheck.Last()
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil
@@ -183,17 +183,14 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		}
 	}
 
-	if months <= 3 {
-		return nil
-	}
 	message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", months)
 	key := fmt.Sprintf("months-out-of-date-%d", months)
 	switch months {
+	case 0, 1, 2, 3:
+		return nil
 	case 4:
 		return &Alert{TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
-	case 5:
-		return &Alert{TypeValue: AlertTypeError, MessageValue: message, IsDismissibleWithKeyValue: key}
 	default:
-		return &Alert{TypeValue: AlertTypeError, MessageValue: message}
+		return &Alert{TypeValue: AlertTypeError, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
 }

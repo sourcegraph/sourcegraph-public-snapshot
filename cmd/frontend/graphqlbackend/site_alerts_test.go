@@ -53,18 +53,26 @@ func Test_determineOutOfDateAlert(t *testing.T) {
 		{
 			name:             "6_months",
 			monthsOutOfDate:  6,
-			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade."},
-			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade."},
+			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-6"},
+			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-6"},
 			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes please upgrade"},
 			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, for the latest features and bug fixes please upgrade"},
 		},
 		{
 			name:             "7_months",
 			monthsOutOfDate:  7,
-			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade."},
-			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade."},
+			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-7"},
+			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-7"},
 			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes please upgrade"},
 			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, for the latest features and bug fixes please upgrade"},
+		},
+		{
+			name:             "13_months",
+			monthsOutOfDate:  13,
+			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-13"},
+			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, for the latest features and bug fixes ask your site administrator to upgrade.", IsDismissibleWithKeyValue: "months-out-of-date-13"},
+			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, for the latest features and bug fixes please upgrade"},
+			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, for the latest features and bug fixes please upgrade"},
 		},
 	}
 	for _, tst := range tests {
