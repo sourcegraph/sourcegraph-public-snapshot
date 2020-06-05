@@ -21,7 +21,7 @@ type fakeSlackClient struct {
 	payloads []*slack.Payload
 }
 
-func (c *fakeSlackClient) Post(payload *slack.Payload) error {
+func (c *fakeSlackClient) Post(ctx context.Context, payload *slack.Payload) error {
 	c.payloads = append(c.payloads, payload)
 	return nil
 }
