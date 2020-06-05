@@ -183,7 +183,7 @@ func TestSearchUppercase(t *testing.T) {
 	}
 }
 
-func TestOrOperator(t *testing.T) {
+func TestSubstituteOrForRegexp(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
