@@ -96,6 +96,10 @@ const (
 	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
 	TypeGitHub = "github"
+
+	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
+	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
+	TypeGitLab = "gitlab"
 )
 
 // AccountID is a descriptive type for the external identifier of an external account on the
