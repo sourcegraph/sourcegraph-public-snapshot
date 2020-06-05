@@ -46,7 +46,11 @@ func newSlackButtonDocs() slackBlock {
 	}
 }
 
-func newSlackButtonSheet(sheetID string) slackBlock {
+func newSlackButtonSheet(sheetID, sheetPage string) slackBlock {
+	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID)
+	if sheetPage != "" {
+		url = fmt.Sprintf("%s#gid=%s", url, sheetPage)
+	}
 	return slackBlock{
 		"type": "button",
 		"text": slackText{
@@ -54,7 +58,7 @@ func newSlackButtonSheet(sheetID string) slackBlock {
 			Text: "Report",
 		},
 		"style": "primary",
-		"url":   fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID),
+		"url":   url,
 	}
 }
 
