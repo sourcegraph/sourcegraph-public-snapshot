@@ -152,9 +152,22 @@ export const RepoSettingsCodeIntelIndexesPage: FunctionComponent<Props> = ({ rep
             <h2>Code intelligence - auto-indexing</h2>
             <p>
                 Popular Go repositories will be indexed automatically via{' '}
-                <a href="https://github.com/sourcegraph/lsif-go">lsif-go</a> on{' '}
-                <a href="https://sourcegraph.com">Sourcegraph.com</a>. Enable precise code intelligence for non-Go code
-                by <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
+                <a href="https://github.com/sourcegraph/lsif-go" target="_blank" rel="noreferrer noopener">
+                    lsif-go
+                </a>{' '}
+                on{' '}
+                <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
+                    Sourcegraph.com
+                </a>
+                . Enable precise code intelligence for non-Go code by{' '}
+                <a
+                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    uploading LSIF data
+                </a>
+                .
             </p>
 
             <FilteredConnection<GQL.ILSIFIndex, Omit<LsifIndexNodeProps, 'node'>>

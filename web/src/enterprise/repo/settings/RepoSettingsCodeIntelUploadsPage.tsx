@@ -159,7 +159,14 @@ export const RepoSettingsCodeIntelUploadsPage: FunctionComponent<Props> = ({ rep
             <h2>Code intelligence - precise code intel uploads</h2>
             <p>
                 Enable precise code intelligence by{' '}
-                <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
+                <a
+                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    uploading LSIF data
+                </a>
+                .
             </p>
 
             <p>
