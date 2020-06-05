@@ -80,31 +80,34 @@ const (
 )
 
 const (
-	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+	// TypeAWSCodeCommit is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
 	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
 	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
 	TypeAWSCodeCommit = "awscodecommit"
 
-	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
+	// TypeBitbucketServer is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
 	// ServiceID value is the base URL to the Bitbucket Server instance.
 	TypeBitbucketServer = "bitbucketServer"
 
-	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
+	// TypeBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
 	// ServiceID value is the base URL to the Bitbucket Cloud.
 	TypeBitbucketCloud = "bitbucketCloud"
 
-	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
+	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
 	TypeGitHub = "github"
 
-	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
+	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
 	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
 	TypeGitLab = "gitlab"
 
+	// TypeGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
 	TypeGitolite = "gitolite"
 
+	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
 	TypePhabricator = "phabricator"
 
+	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
 )
 
