@@ -962,7 +962,7 @@ func ParseLiteralSearch(in string) ([]Node, error) {
 }
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string) (QueryInfo, error) {
+func ProcessAndOr(in string, searchType SearchType) (QueryInfo, error) {
 	query, err := ParseAndOr(in)
 	if err != nil {
 		return nil, err
