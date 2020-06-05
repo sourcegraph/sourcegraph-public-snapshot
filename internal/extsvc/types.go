@@ -88,6 +88,10 @@ const (
 	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
 	// ServiceID value is the base URL to the Bitbucket Server instance.
 	TypeBitbucketServer = "bitbucketServer"
+
+	// ServiceType is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
+	// ServiceID value is the base URL to the Bitbucket Cloud.
+	TypeBitbucketCloud = "bitbucketCloud"
 )
 
 // AccountID is a descriptive type for the external identifier of an external account on the

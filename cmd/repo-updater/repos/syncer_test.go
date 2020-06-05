@@ -201,7 +201,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
 			ServiceID:   "https://bitbucket.org/",
-			ServiceType: "bitbucketCloud",
+			ServiceType: extsvc.TypeBitbucketCloud,
 		},
 	}).With(
 		repos.Opt.RepoSources(bitbucketCloudService.URN()),
