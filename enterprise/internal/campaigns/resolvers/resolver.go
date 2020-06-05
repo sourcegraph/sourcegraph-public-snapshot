@@ -447,8 +447,6 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 	defer tx.Done(&err)
 
-	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
@@ -486,12 +484,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		}
 	}
 
-	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
+	repoStore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 
 	// NOTE: We are performing a blocking sync here in order to ensure
 	// that the remote changeset exists and also to remove the possibility
 	// of an unsynced changeset entering our database
-	if err = ee.SyncChangesets(ctx, store, tx, r.httpFactory, cs...); err != nil {
+	if err = ee.SyncChangesets(ctx, repoStore, tx, r.httpFactory, cs...); err != nil {
 		return nil, errors.Wrap(err, "syncing changesets")
 	}
 
