@@ -397,7 +397,29 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 		return nil, err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(changesets))
 	for _, c := range changesets {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	// TODO: Create a function that takes in repo IDs and returns accessible repoIDs
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	for _, c := range changesets {
+		if _, ok := accessibleRepoIDs[c.RepoID]; !ok {
+			return nil, &db.RepoNotFoundErr{ID: c.RepoID}
+		}
+
 		delete(set, c.ID)
 		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
 		c.AddedToCampaign = true

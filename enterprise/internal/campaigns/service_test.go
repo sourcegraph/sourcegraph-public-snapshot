@@ -1020,7 +1020,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, 888, campaigns.ChangesetStateOpen)
+		changeset := testChangeset(rs[0].ID, campaign.ID, 0, campaigns.ChangesetStateOpen)
 		if err = store.CreateChangesets(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -1056,6 +1056,53 @@ func TestService(t *testing.T) {
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %s", err)
+		}
+	})
+
+	t.Run("AddChangesetsToCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		campaign := testCampaign(user.ID, 0)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, 0, 98765, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset2 := testChangeset(rs[1].ID, 0, 12345, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset2); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign, err = svc.AddChangesetsToCampaign(ctx, campaign.ID, []int64{changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]int64{changeset.ID}, campaign.ChangesetIDs); diff != "" {
+			t.Fatalf("campaign.ChangesetIDs is wrong: %s", diff)
+		}
+
+		changeset, err = store.GetChangeset(ctx, GetChangesetOpts{ID: changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff([]int64{campaign.ID}, changeset.CampaignIDs); diff != "" {
+			t.Fatalf("changeset.CampaignIDs is wrong: %s", diff)
+		}
+
+		// Repo filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		_, err = svc.AddChangesetsToCampaign(ctx, campaign.ID, []int64{changeset2.ID})
+		if !errcode.IsNotFound(err) {
 			t.Fatalf("expected not-found error but got %s", err)
 		}
 	})
@@ -1711,13 +1758,17 @@ func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 }
 
 func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
-	pr := &github.PullRequest{State: string(state)}
-	return &campaigns.Changeset{
+	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
-		CampaignIDs:         []int64{campaign},
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
-		Metadata:            pr,
+		Metadata:            &github.PullRequest{State: string(state)},
 		ExternalState:       state,
 	}
+
+	if campaign != 0 {
+		changeset.CampaignIDs = []int64{campaign}
+	}
+
+	return changeset
 }
