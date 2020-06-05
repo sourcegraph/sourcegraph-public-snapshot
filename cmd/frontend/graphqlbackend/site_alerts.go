@@ -195,7 +195,11 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", months)
 		return &Alert{TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
 	default:
+		alertType := AlertTypeWarning
+		if months > 12 {
+			alertType = AlertTypeError
+		}
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", months)
-		return &Alert{TypeValue: AlertTypeError, MessageValue: message, IsDismissibleWithKeyValue: key}
+		return &Alert{TypeValue: alertType, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
 }
