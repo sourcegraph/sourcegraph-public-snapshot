@@ -18,9 +18,10 @@ var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization 
 // handle open to a given reader, and that the initialization of the reader (which may run migrations)
 // is only attempted once at a time.
 type Cache struct {
-	size      int
-	opener    ReaderOpener
-	m         sync.Mutex               // guards mutation of entries/evictList
+	size   int
+	opener ReaderOpener
+
+	m         sync.Mutex
 	entries   map[string]*list.Element // keys to evict list nodes
 	evictList *list.List               // LRU ordering of cache entries
 }
@@ -28,9 +29,8 @@ type Cache struct {
 // ReaderOpener initializes a new reader for the given key.
 type ReaderOpener func(key string) (persistence.Reader, error)
 
-// Handler performs an operation on a reader. The invocation of this function is
-// a critical section that locks the given reader argument so tha it is not closed while
-// in use.
+// Handler performs an operation on a reader. The invocation of this function is a critical section that
+// locks the given reader argument so that it is not closed while in use.
 type Handler func(reader persistence.Reader) error
 
 // New initializes a new cache with the given capacity and reader opener.
@@ -145,18 +145,26 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	element := c.evictList.PushFront(entry) // Update recency data
 	c.entries[key] = element
 
+	// Perform the open procedure in a goroutine. The close of the init channel will signal
+	// all consumers of the cache that the entry's underlying reader is now ready for use.
+	// This allows us to have several consumers concurrently waiting on the same cache entry
+	// to initialize.
+	//
+	// Previous constructions of this cache did not guarantee this property:
+	//   (1) holding a lock during initialization stops independent readers for initializing
+	//       concurrently, which can severely decrease request throughput
+	//   (2) not synchronizing during initialization can allow the same reader to be
+	//       initialized multiple times as there is no "pending" entry in the cache for the
+	//       second request to the same key to wait on.
 	go func() {
 		// Mark as initialized
 		defer close(entry.init)
 
-		// Perform open procedure in a goroutine. We organize it this way so that if multiple differnet
-		// goroutines want to use the the same reader they do not all try to initialize it at once. In
-		// this situation, each goroutine will get a reference to the same entry and will block on the
-		// init channel being closed to signal that the handler cna be called.
 		entry.reader, entry.err = c.opener(key)
 		if entry.err != nil {
-			// Immediately remove from cache on error so that we do not permanently hold on to handles
-			// to missing bundles, as they may be uploaded in the future.
+			// Do not hold on to cache entries that failed to initialize. In the case of a
+			// transient error (e.g., a missing bundle file that is later uploaded), we do
+			// not want a poison cache value occupying that key until a process restart.
 			c.remove(entry)
 		}
 	}()
@@ -171,9 +179,15 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	return entry
 }
 
-// evict attempts to remove n elements from the back of the list.
+// evict attempts to remove n elements from the back of the list.  This function assumes that the cache's
+// mutex is held by the caller.
 func (c *Cache) evict(n int) {
-	for i, element := n, c.evictList.Back(); i > 0 && element != nil; i, element = i-1, element.Prev() {
+	for element := c.evictList.Back(); element != nil; element = element.Prev() {
+		if n <= 0 {
+			return
+		}
+
+		n--
 		c.remove(element.Value.(*cacheEntry))
 	}
 }
