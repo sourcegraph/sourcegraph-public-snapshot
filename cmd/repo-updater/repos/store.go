@@ -842,7 +842,7 @@ func scanRepo(r *Repo, s scanner) error {
 
 	typ := strings.ToLower(r.ExternalRepo.ServiceType)
 	switch typ {
-	case "github":
+	case extsvc.TypeGitHub:
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)

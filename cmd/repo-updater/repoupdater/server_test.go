@@ -150,7 +150,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -336,7 +336,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -488,7 +488,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "github.com/foo/sources",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "sources",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -767,7 +767,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{

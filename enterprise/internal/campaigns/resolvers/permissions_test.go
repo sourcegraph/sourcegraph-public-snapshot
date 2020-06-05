@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -90,7 +91,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	for _, r := range repos[0:2] {
 		c := &campaigns.Changeset{
 			RepoID:              r.ID,
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalID:          fmt.Sprintf("external-%d", r.ID),
 			ExternalState:       campaigns.ChangesetStateOpen,
 			Metadata: &github.PullRequest{

@@ -100,7 +100,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 		},
 	}).With(
 		repos.Opt.RepoSources(githubService.URN()),
@@ -472,7 +472,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			func() testCase {
 				var update interface{}
 				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
-				case "github":
+				case extsvc.TypeGitHub:
 					update = &github.Repository{IsArchived: true}
 				case extsvc.TypeGitLab:
 					update = &gitlab.Project{Archived: true}
@@ -593,7 +593,7 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 		Fork:        false,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{

@@ -367,7 +367,7 @@ func TestCampaigns(t *testing.T) {
 				State:      "MERGED",
 				ExternalURL: struct{ URL, ServiceType string }{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
-					ServiceType: "github",
+					ServiceType: extsvc.TypeGitHub,
 				},
 				ReviewState: "APPROVED",
 				CheckState:  "PASSED",
@@ -1582,7 +1582,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	changeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          "1234",
 	}
 	if err := store.CreateChangesets(ctx, changeset); err != nil {
@@ -2067,7 +2067,7 @@ func newGitHubTestRepo(name string, externalID int) *repos.Repo {
 		Name: name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalID),
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{

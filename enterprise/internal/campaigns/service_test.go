@@ -1637,7 +1637,7 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 	return &campaigns.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
 		Metadata:            pr,
 		ExternalState:       state,

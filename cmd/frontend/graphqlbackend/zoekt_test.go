@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -147,7 +148,7 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			Name: api.RepoName(name),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          name,
-				ServiceType: "github",
+				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com",
 			}}
 

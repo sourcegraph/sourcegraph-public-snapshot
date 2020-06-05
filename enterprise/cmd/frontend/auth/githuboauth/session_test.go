@@ -66,7 +66,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
@@ -90,7 +90,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example3.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
@@ -183,7 +183,7 @@ func TestGetOrCreateUser(t *testing.T) {
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
 				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct("github", "https://github.com/", clientID, "101"),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 	}

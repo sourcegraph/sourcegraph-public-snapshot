@@ -671,7 +671,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	}
 
 	switch strings.ToLower(r.ExternalRepo.ServiceType) {
-	case "github":
+	case extsvc.TypeGitHub:
 		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
 			Root:   ghrepo.URL,

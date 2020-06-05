@@ -384,7 +384,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
 			ServiceID:   externalServiceID,
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 		}
 
 		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)

@@ -451,8 +451,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
@@ -463,7 +463,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	deletedRepoChangeset := &cmpgn.Changeset{
 		RepoID:              deletedRepo.ID,
 		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -476,7 +476,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				Metadata:            githubPR,
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
-				ExternalServiceType: "github",
+				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "campaigns/test",
 				ExternalUpdatedAt:   clock.now(),
 				ExternalState:       cmpgn.ChangesetStateOpen,
@@ -532,7 +532,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
@@ -548,7 +548,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "invalid",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -564,7 +564,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
 		spec := api.ExternalRepoSpec{
 			ID:          "external-id",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "invalid",
 		}
 		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
@@ -861,7 +861,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{1},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       "",
@@ -1313,7 +1313,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	var extSvcID int64 = 1
-	repo := testRepo(int(extSvcID), "github")
+	repo := testRepo(int(extSvcID), extsvc.TypeGitHub)
 	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -1329,7 +1329,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{int64(i) + 1},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: "github",
+			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "campaigns/test",
 			ExternalUpdatedAt:   clock.now(),
 			ExternalState:       cmpgn.ChangesetStateOpen,
@@ -1683,8 +1683,8 @@ func testStorePatchSets(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 func testStorePatches(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
 	patches := make([]*cmpgn.Patch, 0, 3)
 
-	repo := testRepo(1, "github")
-	deletedRepo := testRepo(2, "github").With(repos.Opt.RepoDeletedAt(clock.now()))
+	repo := testRepo(1, extsvc.TypeGitHub)
+	deletedRepo := testRepo(2, extsvc.TypeGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -2396,7 +2396,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 					Metadata:            &github.PullRequest{},
 					CampaignIDs:         []int64{otherCampaign.ID},
 					ExternalID:          fmt.Sprintf("foobar-%d", i),
-					ExternalServiceType: "github",
+					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalBranch:      "campaigns/test",
 					ExternalUpdatedAt:   clock.now(),
 					ExternalState:       cmpgn.ChangesetStateOpen,
@@ -3216,7 +3216,7 @@ func testProcessChangesetJob(db *sql.DB, userID int32) func(*testing.T) {
 			Name: "github.com/sourcegraph/changeset-job-test",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
-				ServiceType: "github",
+				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
 			Sources: map[string]*repos.SourceInfo{
