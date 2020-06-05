@@ -484,36 +484,6 @@ func TestCampaigns(t *testing.T) {
 			if have, want := changesetResult.Node.NextSyncAt, ""; have != want {
 				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
 			}
-			// Add to campaign.
-			cID, err := cmpgns.UnmarshalCampaignID(graphql.ID(campaigns.Admin.ID))
-			if err != nil {
-				t.Fatal(err)
-			}
-			cmp, err := sr.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: cID})
-			if err != nil {
-				t.Fatal(err)
-			}
-			ecID, err := unmarshalChangesetID(graphql.ID(c.ID))
-			if err != nil {
-				t.Fatal(err)
-			}
-			cmp.ChangesetIDs = append(cmp.ChangesetIDs, ecID)
-			err = sr.store.UpdateCampaign(ctx, cmp)
-			if err != nil {
-				t.Fatal(err)
-			}
-			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
-				query {
-					node(id: %q) {
-						... on ExternalChangeset {
-							nextSyncAt
-						}
-					}
-				}
-			`, c.ID))
-			if have, want := changesetResult.Node.NextSyncAt, now.Add(8*time.Hour).Format(time.RFC3339); have != want {
-				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
-			}
 		}
 	}
 
@@ -538,6 +508,7 @@ func TestCampaigns(t *testing.T) {
 			repository { id }
 			createdAt
 			updatedAt
+			nextSyncAt
 			campaigns { nodes { id } }
 			title
 			body
@@ -651,6 +622,27 @@ func TestCampaigns(t *testing.T) {
 		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
+		}
+	}
+
+	{
+		for _, c := range addChangesetsResult.Campaign.Changesets.Nodes {
+			if have, want := c.NextSyncAt, now.Add(8*time.Hour).Format(time.RFC3339); have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
+			var changesetResult struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
+				query {
+					node(id: %q) {
+						... on ExternalChangeset {
+							nextSyncAt
+						}
+					}
+				}
+			`, c.ID))
+			if have, want := changesetResult.Node.NextSyncAt, now.Add(8*time.Hour).Format(time.RFC3339); have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
 		}
 	}
 
