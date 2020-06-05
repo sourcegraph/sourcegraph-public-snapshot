@@ -848,7 +848,7 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)
-	case extsvc.TypeBitbucketCloud:
+	case "bitbucketcloud":
 		r.Metadata = new(bitbucketcloud.Repo)
 	case extsvc.TypeAWSCodeCommit:
 		r.Metadata = new(awscodecommit.Repository)
