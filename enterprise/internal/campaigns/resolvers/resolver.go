@@ -636,14 +636,11 @@ func (r *Resolver) PublishCampaignChangesets(ctx context.Context, args *graphqlb
 
 	svc := ee.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: EnqueueChangesetJobs checks whether current user is authorized.
-	if err := svc.EnqueueChangesetJobs(ctx, campaignID); err != nil {
+	campaign, err := svc.EnqueueChangesetJobs(ctx, campaignID)
+	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign changesets")
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, err
-	}
 	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
 }
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
