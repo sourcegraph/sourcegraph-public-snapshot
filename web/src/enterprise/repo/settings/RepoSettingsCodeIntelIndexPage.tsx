@@ -158,7 +158,7 @@ export const RepoSettingsCodeIntelIndexPage: FunctionComponent<Props> = ({
                             </tr>
 
                             <tr>
-                                <td>queued</td>
+                                <td>Queued</td>
                                 <td>
                                     <Timestamp date={indexOrError.queuedAt} noAbout={true} />
                                 </td>
