@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -51,14 +53,21 @@ var AlertFuncs []func(AlertFuncArgs) []*Alert
 // Site.alerts value. They allow the functions to customize the returned alerts based on the
 // identity of the viewer (without needing to query for that on their own, which would be slow).
 type AlertFuncArgs struct {
-	IsAuthenticated bool // whether the viewer is authenticated
-	IsSiteAdmin     bool // whether the viewer is a site admin
+	IsAuthenticated     bool             // whether the viewer is authenticated
+	IsSiteAdmin         bool             // whether the viewer is a site admin
+	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	args := AlertFuncArgs{
-		IsAuthenticated: actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:     backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
+		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
+		IsSiteAdmin:         backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
+		ViewerFinalSettings: settings,
 	}
 
 	var alerts []*Alert
@@ -90,6 +99,9 @@ func init() {
 	} else {
 		log15.Warn("WARNING: SECURITY NOTICES DISABLED: this is not recommended, please unset DISABLE_SECURITY=true")
 	}
+
+	// Notify when updates are available, if the instance can access the public internet.
+	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -145,6 +157,44 @@ func init() {
 		}
 		return alerts
 	})
+}
+
+func updateAvailableAlert(args AlertFuncArgs) []*Alert {
+	// We only show update alerts to admins. This is not for security reasons, as we already
+	// expose the version number of the instance to all users via the user settings page.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	globalUpdateStatus := updatecheck.Last()
+	if globalUpdateStatus == nil || updatecheck.IsPending() || !globalUpdateStatus.HasUpdate() || globalUpdateStatus.Err != nil {
+		return nil
+	}
+	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
+		return nil
+	}
+	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
+
+	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
+	key := fmt.Sprintf("update-available-", globalUpdateStatus.UpdateVersion)
+	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}
+}
+
+// isMinorUpdateAvailable tells if upgrading from the current version to the specified upgrade
+// candidate would be a major/minor update and NOT a patch update.
+func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
+	// If either current or update versions aren't semvers (e.g., a user is on a date-based build version, or "dev"),
+	// always return true and allow any alerts to be shown. This has the effect of simply deferring to the response
+	// from Sourcegraph.com about whether an update alert is needed.
+	cv, err := semver.NewVersion(currentVersion)
+	if err != nil {
+		return true
+	}
+	uv, err := semver.NewVersion(updateVersion)
+	if err != nil {
+		return true
+	}
+	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
