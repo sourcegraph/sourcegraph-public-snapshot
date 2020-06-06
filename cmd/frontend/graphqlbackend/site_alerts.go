@@ -92,8 +92,9 @@ func init() {
 
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
-		// 🚨 SECURITY: Only the site admin cares about this. The only time a user should receive a site alert is if
-		// sourcegraph is very out of date and or basic setup is still needed (https/ external URL)
+		// 🚨 SECURITY: Only the site admin should care about the site configuration being invalid, as they
+		// are the only one who can take action on that. Additionally, it may be unsafe to expose information
+		// about the problems with the configuration (e.g. if the error message contains sensitive information).
 		if !args.IsSiteAdmin {
 			return nil
 		}
