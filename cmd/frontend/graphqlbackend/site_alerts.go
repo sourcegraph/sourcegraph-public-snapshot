@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -151,7 +152,13 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 	if globalUpdateStatus == nil || updatecheck.IsPending() {
 		return nil
 	}
-	alert := determineOutOfDateAlert(args.IsSiteAdmin, globalUpdateStatus.MonthsOutOfDate, globalUpdateStatus.Offline)
+	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
+	monthsOutOfDate, err := version.HowLongOutOfDate(version.Version())
+	if err == nil {
+		log15.Error("failed to determine how out of date Sourcegraph is", "error", err)
+		return nil
+	}
+	alert := determineOutOfDateAlert(args.IsSiteAdmin, monthsOutOfDate, offline)
 	if alert == nil {
 		return nil
 	}
