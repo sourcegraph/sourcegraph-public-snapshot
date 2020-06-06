@@ -80,7 +80,7 @@ After you've [created a campaign](#creating-a-new-campaign), you tell it what ch
 1. In your terminal, run the command shown. The command will execute your [campaign action](actions.md) to generate patches and then upload them to the campaign for you to preview and accept.
 
     > You need [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) for this step. For reference, the command shown by the campaign is the following (with <code><em>CAMPAIGN-ID</em></code> filled in):
-   <pre><code>src actions exec -f action.json | src campaign set-patches -preview -id=<em>CAMPAIGN-ID</em></code></pre>
+   <pre><code>src actions exec -f action.json | src campaign update -preview -id=<em>CAMPAIGN-ID</em></code></pre>
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the patches' diffs are what you intended.
    
@@ -149,13 +149,12 @@ You can edit a campaign's name and description, and upload new patches, at any t
 To update a campaign, you need [admin access to the campaign](managing_access.md#campaign-access-for-each-permission-level), and [write access to all affected repositories](managing_access.md#repository-permissions-for-campaigns) with published changesets.
 
 1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
-1. In the list of campaigns, click the campaign that you want to edit.
-<!-- TODO(sqs): needs to handle edit name case as well, not just upload patches -->
+1. In the list of campaigns, click the campaign that you want to update.
 1. In the campaign, click the ***Upload patches** button.
 1. In your terminal, run the command shown. The command will execute your [campaign action](actions.md) to generate patches and then upload them to the campaign for you to preview and accept.
 
     > You need [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) for this step. For reference, the command shown by the campaign is the following (with <code><em>CAMPAIGN-ID</em></code> filled in):
-   <pre><code>src actions exec -f action.json | src campaign set-patches -preview -id=<em>CAMPAIGN-ID</em></code></pre>
+   <pre><code>src campaign update -preview -action action.json -id=<em>CAMPAIGN-ID</em></code></pre>
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the patches' diffs are what you intended.
    
@@ -190,7 +189,7 @@ Any person with [admin access to the campaign](managing_access.md#permission-lev
 
 1. Click the <img src="campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar.
 1. In the list of campaigns, click the campaign that you'd like to close or delete.
-1. In the top right, click the **Close** or **Delete** button.
+1. In the top right, click the **Close**.
 1. Select whether you want to close all of the campaign's changesets (e.g., closing all associated GitHub pull requests on the code host).
 1. Click **TODO(sqs)** <!-- decide/confirm button label -->.
 
@@ -217,9 +216,9 @@ Site admins can also:
 ## Concepts
 
 - A **campaign** is group of related changes to code, along with a title and description.
-- You supply a set of **patches** to a campaign. Each patch is a unified diff describing changes to a specific commit and branch in a repository. (To produce the patches, you provide a script that runs in the root of each repository and changes files.)
-- The campaign converts the patches into **changesets**, which is a generic term for pull requests, merge requests, or any other reviewable chunk of code. (Code hosts use different terms for this, which is why we chose a generic term.)
-- Initially a changeset is just a **preview** and is not actually pushed to or created on the code host.
+- You supply a **campaign plan** that describes the changes. A plan contains patches (diffs) that describe changes to files in specific repositories (at specific commits). To produce the patches, you provide a script that runs in the root of each repository and changes files.
+- The campaign converts the plan into **changesets**, which is a generic term for pull requests, merge requests, or any other reviewable chunk of code. (Code hosts use different terms for this, which is why we chose a generic term.)
+- Initially a changeset is **unpublished** and is not actually pushed to or created on the code host.
 - You **publish** a changeset when you're ready to push the branch and create the changeset on the code host.
 
 ## Roadmap

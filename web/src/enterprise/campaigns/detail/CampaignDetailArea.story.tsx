@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import React from 'react'
-import { CampaignDetails } from './CampaignDetails'
+import { CampaignDetailArea } from './CampaignDetailArea'
 import webStyles from '../../../SourcegraphWebApp.scss'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
@@ -11,7 +11,7 @@ import { MemoryRouter } from 'react-router'
 const history = H.createMemoryHistory()
 
 const COMMON_PROPS: Pick<
-    React.ComponentProps<typeof CampaignDetails>,
+    React.ComponentProps<typeof CampaignDetailArea>,
     'isLightTheme' | 'history' | 'location' | 'extensionsController' | 'platformContext' | 'telemetryService'
 > = {
     isLightTheme: true,
@@ -24,12 +24,13 @@ const COMMON_PROPS: Pick<
 
 const COMMON_CAMPAIGN_FIELDS: Pick<
     GQL.ICampaign,
-    '__typename' | 'id' | 'name' | 'description' | 'author' | 'branch' | 'createdAt' | 'updatedAt' | 'diffStat'
+    '__typename' | 'id' | 'name' | 'description' | 'url' | 'author' | 'branch' | 'createdAt' | 'updatedAt' | 'diffStat'
 > = {
     __typename: 'Campaign' as const,
     id: 'c',
     name: 'My campaign',
     description: 'My description',
+    url: 'https://example.com',
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     author: { username: 'alice' } as GQL.IUser,
     branch: 'b',
@@ -43,7 +44,7 @@ const COMMON_CAMPAIGN_FIELDS: Pick<
     },
 }
 
-const SAMPLE_PatchConnection: GQL.IPatchConnection = {
+export const SAMPLE_PatchConnection: GQL.IPatchConnection = {
     __typename: 'PatchConnection' as const,
     nodes: [
         {
@@ -62,7 +63,7 @@ const SAMPLE_PatchConnection: GQL.IPatchConnection = {
     totalCount: 1,
 }
 
-const SAMPLE_FileDiffConnection: GQL.IFileDiffConnection = {
+export const SAMPLE_FileDiffConnection: GQL.IFileDiffConnection = {
     __typename: 'FileDiffConnection' as const,
     nodes: [
         {
@@ -94,18 +95,18 @@ const SAMPLE_FileDiffConnection: GQL.IFileDiffConnection = {
     rawDiff: 'abc',
 }
 
-const SAMPLE_ExternalChangesetConnection: GQL.IExternalChangesetConnection = {
+export const SAMPLE_ExternalChangesetConnection: GQL.IExternalChangesetConnection = {
     __typename: 'ExternalChangesetConnection' as const,
     nodes: [
         {
             __typename: 'ExternalChangeset' as const,
             id: 'c1',
-            title: 'My changeset 2',
-            externalID: '123',
+            title: 'My changeset 1',
+            externalID: '1',
             labels: [
-                { __typename: 'ChangesetLabel' as const, text: 'a', color: 'blue', description: null },
+                { __typename: 'ChangesetLabel' as const, text: 'foo', color: 'blue', description: null },
             ] as GQL.IChangesetLabel[],
-            repository: { name: 'my/repo2', url: 'https://example.com' },
+            repository: { name: 'my/repo1', url: 'https://example.com' },
             state: GQL.ChangesetState.OPEN,
             checkState: GQL.ChangesetCheckState.PASSED,
             reviewState: GQL.ChangesetReviewState.APPROVED,
@@ -115,14 +116,34 @@ const SAMPLE_ExternalChangesetConnection: GQL.IExternalChangesetConnection = {
                 serviceType: 'github',
             },
             createdAt: '2020-01-01',
-            updatedAt: '2020-02-01',
+            updatedAt: '2020-01-02',
+        },
+        {
+            __typename: 'ExternalChangeset' as const,
+            id: 'c2',
+            title: 'My changeset 2',
+            externalID: '2',
+            labels: [
+                { __typename: 'ChangesetLabel' as const, text: 'bar', color: 'blue', description: null },
+            ] as GQL.IChangesetLabel[],
+            repository: { name: 'my/repo2', url: 'https://example.com' },
+            state: GQL.ChangesetState.OPEN,
+            checkState: GQL.ChangesetCheckState.PENDING,
+            reviewState: GQL.ChangesetReviewState.CHANGES_REQUESTED,
+            externalURL: {
+                __typename: 'ExternalLink',
+                url: 'https://example.com',
+                serviceType: 'github',
+            },
+            createdAt: '2020-01-02',
+            updatedAt: '2020-01-03',
         },
     ] as GQL.IExternalChangeset[],
     pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
-    totalCount: 1,
+    totalCount: 2,
 }
 
-const SAMPLE_PatchSet: GQL.IPatchSet = {
+export const SAMPLE_PatchSet: GQL.IPatchSet = {
     __typename: 'PatchSet' as const,
     id: 'c',
     previewURL: 'https://example.com',
@@ -149,79 +170,69 @@ const SAMPLE_ChangesetCounts: GQL.IChangesetCounts[] = [
     { date: '2020-01-06', open: 0, merged: 4, openApproved: 0, total: 4 },
 ] as GQL.IChangesetCounts[]
 
-const { add } = storiesOf('CampaignDetails', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/CampaignDetailArea', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light container mt-3">{story()}</div>
+        <div className="theme-light mt-3">{story()}</div>
     </>
-))
-
-add('New form', () => (
-    <CampaignDetails
-        {...COMMON_PROPS}
-        authenticatedUser={{ id: 'u', username: 'alice', avatarURL: null }}
-        campaignID={undefined}
-    />
 ))
 
 add('With patches', () => (
     <MemoryRouter>
-        <CampaignDetails
+        <CampaignDetailArea
             {...COMMON_PROPS}
             authenticatedUser={{ id: 'u', username: 'alice', avatarURL: null }}
-            campaignID="c"
-            _fetchCampaignById={() =>
-                of({
-                    ...COMMON_CAMPAIGN_FIELDS,
-                    patchSet: { id: 'p' },
-                    changesets: { totalCount: 1 },
-                    openChangesets: { totalCount: 1 },
-                    patches: { totalCount: 1 },
-                    changesetCountsOverTime: SAMPLE_ChangesetCounts,
-                    viewerCanAdminister: true as boolean,
-                    status: {
-                        completedCount: 0,
-                        pendingCount: 0,
-                        errors: [],
-                        state: GQL.BackgroundProcessState.COMPLETED,
-                    },
-                    closedAt: null,
-                })
-            }
-            _fetchPatchSetById={() => of(SAMPLE_PatchSet)}
-            _queryPatchesFromCampaign={() => of(SAMPLE_PatchConnection)}
-            _queryPatchFileDiffs={() => of(SAMPLE_FileDiffConnection)}
-            _queryChangesets={() => of(SAMPLE_ExternalChangesetConnection)}
+            campaign={{
+                ...COMMON_CAMPAIGN_FIELDS,
+                patchSet: { id: 'p' },
+                changesets: { totalCount: 2 },
+                openChangesets: { totalCount: 2 },
+                patches: { totalCount: 1 },
+                changesetCountsOverTime: SAMPLE_ChangesetCounts,
+                hasUnpublishedPatches: true,
+                viewerCanAdminister: true as boolean,
+                status: {
+                    completedCount: 0,
+                    pendingCount: 0,
+                    errors: [],
+                    state: GQL.BackgroundProcessState.COMPLETED,
+                },
+                closedAt: null,
+            }}
+            fetchPatchSetById={() => of(SAMPLE_PatchSet)}
+            queryPatchesFromCampaign={() => of(SAMPLE_PatchConnection)}
+            queryPatchesFromPatchSet={() => of(SAMPLE_PatchConnection)}
+            queryPatchFileDiffs={() => of(SAMPLE_FileDiffConnection)}
+            queryChangesets={() => of(SAMPLE_ExternalChangesetConnection)}
         />
     </MemoryRouter>
 ))
 
 add('Publishing', () => (
-    <CampaignDetails
+    <CampaignDetailArea
         {...COMMON_PROPS}
         authenticatedUser={{ id: 'u', username: 'alice', avatarURL: null }}
-        campaignID="c"
-        _fetchCampaignById={() =>
-            of({
-                ...COMMON_CAMPAIGN_FIELDS,
-                patchSet: { id: 'p' },
-                changesets: { totalCount: 1 },
-                openChangesets: { totalCount: 1 },
-                patches: { totalCount: 1 },
-                changesetCountsOverTime: SAMPLE_ChangesetCounts,
-                viewerCanAdminister: true as boolean,
-                status: {
-                    completedCount: 1,
-                    pendingCount: 1,
-                    errors: ['a'],
-                    state: GQL.BackgroundProcessState.PROCESSING,
-                },
-                closedAt: null,
-            })
-        }
-        _fetchPatchSetById={() => of(SAMPLE_PatchSet)}
-        _queryPatchesFromCampaign={() => of(SAMPLE_PatchConnection)}
-        _queryPatchFileDiffs={() => of(SAMPLE_FileDiffConnection)}
-        _queryChangesets={() => of(SAMPLE_ExternalChangesetConnection)}
+        campaign={{
+            ...COMMON_CAMPAIGN_FIELDS,
+            patchSet: { id: 'p' },
+            changesets: { totalCount: 1 },
+            openChangesets: { totalCount: 1 },
+            patches: { totalCount: 1 },
+            changesetCountsOverTime: SAMPLE_ChangesetCounts,
+            hasUnpublishedPatches: true,
+            viewerCanAdminister: true as boolean,
+            status: {
+                completedCount: 1,
+                pendingCount: 1,
+                errors: ['a'],
+                state: GQL.BackgroundProcessState.PROCESSING,
+            },
+            closedAt: null,
+        }}
+        fetchPatchSetById={() => of(SAMPLE_PatchSet)}
+        queryPatchesFromCampaign={() => of(SAMPLE_PatchConnection)}
+        queryPatchesFromPatchSet={() => of(SAMPLE_PatchConnection)}
+        queryPatchFileDiffs={() => of(SAMPLE_FileDiffConnection)}
+        queryChangesets={() => of(SAMPLE_ExternalChangesetConnection)}
     />
 ))

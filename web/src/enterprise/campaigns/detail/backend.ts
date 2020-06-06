@@ -15,6 +15,12 @@ import {
     IPatchSet,
     IPatchesOnCampaignArguments,
     IPatchConnection,
+    IPatch,
+    IChangeset,
+    ChangesetState,
+    ChangesetReviewState,
+    ChangesetCheckState,
+    IChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
@@ -39,6 +45,7 @@ const campaignFragment = gql`
         createdAt
         updatedAt
         closedAt
+        url
         viewerCanAdminister
         hasUnpublishedPatches
         changesets {
@@ -230,7 +237,7 @@ export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<Changeset>> =>
+): Observable<IChangesetConnection> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -243,8 +250,32 @@ export const queryChangesets = (
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
+                        updatedAt
+                        name
                         changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
                             totalCount
+                            filters {
+                                openCount
+                                closedCount
+                                label {
+                                    label {
+                                        text
+                                        description
+                                        color
+                                    }
+                                    labelName
+                                    count
+                                    isApplied
+                                }
+                                repository {
+                                    repository {
+                                        id
+                                        name
+                                    }
+                                    count
+                                    isApplied
+                                }
+                            }
                             nodes {
                                 __typename
 
@@ -286,6 +317,27 @@ export const queryChangesets = (
                                 }
                             }
                         }
+                        patches(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                ... on Patch {
+                                    repository {
+                                        id
+                                        name
+                                        url
+                                    }
+                                    diff {
+                                        fileDiffs {
+                                            diffStat {
+                                                ...DiffStatFields
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -302,7 +354,36 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return {
+                ...node.changesets,
+                // TODO(sqs): remove when backend unifies changesets and patches
+                nodes: [
+                    ...node.changesets.nodes,
+                    ...node.patches.nodes.map(
+                        patch =>
+                            ({
+                                ...patch,
+                                __typename: 'ExternalChangeset',
+                                title: node.name,
+                                externalID: '0',
+                                createdAt: node.updatedAt,
+                                updatedAt: node.updatedAt,
+                                nextSyncAt: null,
+                                state: ChangesetState.OPEN,
+                                reviewState: ChangesetReviewState.PENDING,
+                                checkState: ChangesetCheckState.PENDING,
+                                labels: [],
+                            } as Changeset)
+                    ),
+                ],
+                totalCount: node.changesets.totalCount + node.patches.totalCount,
+                filters: node.changesets.filters || {
+                    closedCount: 12,
+                    openCount: 45,
+                    label: [{ labelName: 'mylabel', count: 3, isApplied: false }],
+                    repository: [{ repository: { id: 'myrepo1', name: 'myrepo1' }, count: 2, isApplied: false }],
+                },
+            } as IChangesetConnection
         })
     )
 export const queryPatchesFromCampaign = (

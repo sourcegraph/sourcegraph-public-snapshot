@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { CampaignActionsBar } from './CampaignActionsBar'
+import { CampaignBreadcrumbs } from './CampaignActionsBar'
 import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
 
 const PROPS = {
@@ -14,23 +14,23 @@ const PROPS = {
     onDelete: async () => undefined,
 }
 
-describe('CampaignActionsBar', () => {
-    test('new with patch set', () =>
+describe('CampaignBreadcrumbs', () => {
+    test('new', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />
+                <CampaignBreadcrumbs {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />
             )
         ).toMatchSnapshot())
-    test('new without patch set', () =>
+    test('existing', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />
+                <CampaignBreadcrumbs {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />
             )
         ).toMatchSnapshot())
     test('not editable', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="viewing"
                     previewingPatchSet={false}
@@ -48,7 +48,7 @@ describe('CampaignActionsBar', () => {
     test('editable', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="viewing"
                     previewingPatchSet={false}
@@ -66,7 +66,7 @@ describe('CampaignActionsBar', () => {
     test('closed', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="viewing"
                     previewingPatchSet={false}
@@ -84,7 +84,7 @@ describe('CampaignActionsBar', () => {
     test('edit mode', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="editing"
                     previewingPatchSet={false}
@@ -102,7 +102,7 @@ describe('CampaignActionsBar', () => {
     test('processing', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="editing"
                     previewingPatchSet={false}
@@ -120,7 +120,7 @@ describe('CampaignActionsBar', () => {
     test('mode: saving', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="saving"
                     previewingPatchSet={false}
@@ -138,7 +138,7 @@ describe('CampaignActionsBar', () => {
     test('mode: deleting', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="deleting"
                     previewingPatchSet={false}
@@ -156,7 +156,7 @@ describe('CampaignActionsBar', () => {
     test('mode: closing', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="closing"
                     previewingPatchSet={false}
@@ -174,7 +174,7 @@ describe('CampaignActionsBar', () => {
     test('some changesets still open', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="viewing"
                     previewingPatchSet={false}
@@ -192,7 +192,7 @@ describe('CampaignActionsBar', () => {
     test('all changesets not open', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar
+                <CampaignBreadcrumbs
                     {...PROPS}
                     mode="viewing"
                     previewingPatchSet={false}

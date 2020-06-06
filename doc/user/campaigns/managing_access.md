@@ -69,7 +69,10 @@ When you perform any campaign operation that involves repositories or code host 
 - Adding existing changesets to a campaign: You must have read access to the existing changesets' repository.
 - Closing or deleting a campaign: If you choose to also close associated changesets on the code host, you must have access to do so on the code host. If you do not have access to close a changeset on the code host, the changeset will remain in its current state. A person with repository permissions for the remaining changesets can view them and manually close them.
 
-Your repository permissions can change at any time. If you've already published a changeset to a repository that you no longer have access to, then you won't be able to view its details or update it in your campaign. The changeset on the code host will remain in its current state. A person with permissions to the changeset on the code host will need to manually manage or close it. When possible, you'll be informed of this when updating a campaign that contains changesets you've lost access to.
+Your repository permissions can change at any time:
+
+- If you've already published a changeset to a repository that you no longer have access to, then you won't be able to view its details or update it in your campaign. The changeset on the code host will remain in its current state. A person with permissions to the changeset on the code host will need to manually manage or close it. When possible, you'll be informed of this when updating a campaign that contains changesets you've lost access to.
+- You need access to all repositories mentioned in a campaign plan to use it when updating a campaign.
 
 If you are not permitted to view a repository on Sourcegraph, then you won't be able to perform any operations on it, even if you are authorized on the code host.
 

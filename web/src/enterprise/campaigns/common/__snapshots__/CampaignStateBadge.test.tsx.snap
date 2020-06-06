@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignStateBadge  1`] = `
+<span
+  className="badge badge-success mr-2"
+>
+  <Memo(ImageAutoAdjustIcon)
+    className="icon-inline"
+  />
+   
+  Open
+</span>
+`;

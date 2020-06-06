@@ -1,0 +1,19 @@
+.timeline {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    margin: 0;
+
+    position: relative;
+    &__line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: map-get($spacers, 4);
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1px;
+        background-color: var(--border-color);
+        z-index: -1;
+    }
+}

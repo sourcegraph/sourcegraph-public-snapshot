@@ -204,6 +204,9 @@ body,
 
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
+.popover {
+    z-index: $zindex-popover;
+}
 .popover-inner {
     background-color: var(--body-bg);
     border: solid 1px var(--border-color);
@@ -218,6 +221,10 @@ body,
 :focus-visible {
     outline: 0;
     box-shadow: $btn-focus-box-shadow;
+}
+
+.font-family-monospace {
+    font-family: $font-family-monospace;
 }
 
 // Pages
@@ -247,6 +254,7 @@ body,
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
+@import './components/overviewPagesArea/index';
 @import './components/SaveToolbar';
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
@@ -266,6 +274,7 @@ body,
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';
+@import './components/timeline/Timeline';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';

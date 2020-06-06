@@ -1,11 +1,10 @@
 import * as H from 'history'
 import * as React from 'react'
-import { forkJoin, Observable } from 'rxjs'
+import { forkJoin } from 'rxjs'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetNode } from './changesets/ChangesetNode'
 import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { queryChangesets, queryPatchesFromPatchSet, queryPatchesFromCampaign, queryPatchFileDiffs } from './backend'
@@ -28,21 +27,9 @@ interface Props extends ThemeProps {
     location: H.Location
     className?: string
 
-    /** Only for testing purposes */
-    _queryChangesets?: (
-        campaign: GQL.ID,
-        { first }: GQL.IChangesetsOnCampaignArguments
-    ) => Observable<Connection<GQL.IExternalChangeset>>
-    /** Only for testing purposes */
-    _queryPatchesFromCampaign?: (
-        patchSet: GQL.ID,
-        { first }: GQL.IPatchesOnCampaignArguments
-    ) => Observable<GQL.IPatchConnection>
-    /** Only for testing purposes */
-    _queryPatchesFromPatchSet?: (
-        patchSet: GQL.ID,
-        { first }: GQL.IPatchesOnPatchSetArguments
-    ) => Observable<GQL.IPatchConnection>
+    queryChangesets: typeof queryChangesets
+    queryPatchesFromCampaign: typeof queryPatchesFromCampaign
+    queryPatchesFromPatchSet: typeof queryPatchesFromPatchSet
     queryPatchFileDiffs: typeof queryPatchFileDiffs
 }
 
@@ -141,20 +128,20 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     history,
     location,
     className,
-    _queryChangesets = queryChangesets,
-    _queryPatchesFromCampaign = queryPatchesFromCampaign,
-    _queryPatchesFromPatchSet = queryPatchesFromPatchSet,
+    queryChangesets,
+    queryPatchesFromCampaign,
+    queryPatchesFromPatchSet,
     queryPatchFileDiffs,
 }) => {
     const queriedChangesets = useObservable(
         React.useMemo(
             () =>
                 forkJoin([
-                    _queryChangesets(campaign.id, { first: 1000 }),
-                    _queryPatchesFromCampaign(campaign.id, { first: 1000 }),
-                    _queryPatchesFromPatchSet(patchSet.id, { first: 1000 }),
+                    queryChangesets(campaign.id, { first: 1000 }),
+                    queryPatchesFromCampaign(campaign.id, { first: 1000 }),
+                    queryPatchesFromPatchSet(patchSet.id, { first: 1000 }),
                 ]),
-            [_queryChangesets, campaign.id, _queryPatchesFromPatchSet, _queryPatchesFromCampaign, patchSet.id]
+            [queryChangesets, campaign.id, queryPatchesFromPatchSet, queryPatchesFromCampaign, patchSet.id]
         )
     )
     if (!campaign.viewerCanAdminister) {

@@ -1491,7 +1491,7 @@ describe('e2e test suite', () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
                 try {
                     // wait for splash page to disappear
-                    await driver.page.waitForSelector('.e2e-campaign-form', { visible: true, timeout: 1000 })
+                    await driver.page.waitForSelector('.e2e-new-campaign-form', { visible: true, timeout: 1000 })
                 } catch (error) {
                     await new Promise(resolve => setTimeout(resolve, 1000))
                     throw asError(error)
@@ -1511,7 +1511,7 @@ describe('e2e test suite', () => {
             snapshotName: string
         }): Promise<void> {
             await driver.page.goto(previewURL.replace('127.0.0.1', 'localhost'))
-            await driver.page.waitForSelector('.e2e-campaign-form')
+            await driver.page.waitForSelector('.e2e-new-campaign-form')
 
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
@@ -1549,7 +1549,7 @@ describe('e2e test suite', () => {
         // TODO(eseliger): reenable once the dates of the chart are stable
         test.skip('Manual campaign workflow', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-            await driver.page.waitForSelector('.e2e-campaign-form')
+            await driver.page.waitForSelector('.e2e-new-campaign-form')
             await percySnapshot(driver.page, 'Create manual campaign form')
             await driver.page.type('.e2e-campaign-title', 'E2E manual campaign')
             await driver.page.click('.e2e-campaign-create-btn')

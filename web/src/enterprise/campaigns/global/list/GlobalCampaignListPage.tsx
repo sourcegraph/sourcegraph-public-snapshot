@@ -56,7 +56,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
                     </p>
                 </div>
                 {props.authenticatedUser.siteAdmin && (
-                    <Link to="/campaigns/create" className="btn btn-primary ml-3">
+                    <Link to="/campaigns/new" className="btn btn-primary ml-3">
                         <AddIcon className="icon-inline" /> New campaign
                     </Link>
                 )}

@@ -7,6 +7,9 @@
         .btn-#{$color} {
             @include button-variant($value, $value);
         }
+        .btn-outline-#{$color} {
+            @include button-outline-variant($value, $value);
+        }
     }
 }
 

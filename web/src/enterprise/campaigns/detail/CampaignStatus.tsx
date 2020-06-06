@@ -19,6 +19,8 @@ export interface CampaignStatusProps {
     /** Called when the "Publish campaign" button is clicked. */
     afterPublish: (updatedCampaign: GQL.ICampaign) => void
     history: H.History
+
+    className?: string
 }
 
 type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
@@ -31,6 +33,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
     afterRetry,
     afterPublish,
     history,
+    className = '',
 }) => {
     const { status } = campaign
 
@@ -88,10 +91,11 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
         }
     }, [campaign.id, afterPublish])
 
-    let statusIndicator: JSX.Element | undefined
     switch (state) {
+        case 'completed':
+            return null
         case 'errored':
-            statusIndicator = (
+            return (
                 <>
                     <div className="alert alert-danger my-4">
                         <h3 className="alert-heading mb-0">Creating changesets failed</h3>
@@ -116,9 +120,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                     </div>
                 </>
             )
-            break
         case 'processing':
-            statusIndicator = (
+            return (
                 <>
                     <div className="alert alert-info mt-4">
                         <LoadingSpinner className="icon-inline" /> Creating {status.pendingCount}{' '}
@@ -135,37 +138,11 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                     </div>
                 </>
             )
-            break
         case 'closed':
-            statusIndicator = (
-                <div className="alert alert-secondary mt-2">
+            return (
+                <div className={`alert alert-secondary ${className}`}>
                     Campaign is closed. No changes can be made to this campaign anymore.
                 </div>
             )
-            break
     }
-    return (
-        <>
-            {statusIndicator && <div>{statusIndicator}</div>}
-            {!campaign.closedAt && campaign.hasUnpublishedPatches && campaign.viewerCanAdminister && (
-                <>
-                    <div className="d-flex align-items-center alert alert-info my-4">
-                        <button
-                            type="button"
-                            className="btn btn-primary mb-0"
-                            onClick={onPublish}
-                            disabled={isPublishing === true}
-                        >
-                            {isErrorLike(isPublishing) && (
-                                <ErrorIcon data-tooltip={isPublishing.message} className="mr-2" />
-                            )}
-                            {isPublishing === true && <LoadingSpinner className="icon-inline mr-2" />}
-                            Publish all
-                        </button>
-                        <p className="mb-0 ml-2">Not all changesets in this campaign have been published yet.</p>
-                    </div>
-                </>
-            )}
-        </>
-    )
 }

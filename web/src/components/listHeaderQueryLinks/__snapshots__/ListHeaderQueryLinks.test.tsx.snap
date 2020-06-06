@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ListHeaderQueryLinks simple 1`] = `
+<ul
+  className="nav "
+>
+  <li
+    className="nav-item"
+  >
+    <a
+      className="nav-link  "
+      to={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "a=b&q=is%3Aa",
+          "state": "",
+        }
+      }
+    >
+      1
+       
+      a
+    </a>
+  </li>
+  <li
+    className="nav-item"
+  >
+    <a
+      className="nav-link  "
+      to={
+        Object {
+          "hash": "",
+          "pathname": "/",
+          "search": "a=b&q=is%3Ab",
+          "state": "",
+        }
+      }
+    >
+      2
+       
+      b
+    </a>
+  </li>
+</ul>
+`;

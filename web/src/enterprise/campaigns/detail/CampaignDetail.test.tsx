@@ -1,7 +1,7 @@
 import React from 'react'
 import renderer, { act } from 'react-test-renderer'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { CampaignDetails } from './CampaignDetails'
+import { CampaignDetailArea } from './CampaignDetailArea'
 import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
@@ -32,7 +32,7 @@ describe('CampaignDetails', () => {
     test('creation form for empty manual campaign', () =>
         expect(
             createRenderer().render(
-                <CampaignDetails
+                <CampaignDetailArea
                     campaignID={undefined}
                     history={history}
                     location={history.location}
@@ -48,7 +48,7 @@ describe('CampaignDetails', () => {
 
     test('creation form given existing patch set', () => {
         const component = renderer.create(
-            <CampaignDetails
+            <CampaignDetailArea
                 campaignID={undefined}
                 history={history}
                 location={{ ...history.location, search: 'patchSet=p' }}
@@ -77,7 +77,7 @@ describe('CampaignDetails', () => {
     })
 
     const renderCampaignDetails = ({ viewerCanAdminister }: { viewerCanAdminister: boolean }) => (
-        <CampaignDetails
+        <CampaignDetailArea
             campaignID="c"
             history={history}
             location={history.location}

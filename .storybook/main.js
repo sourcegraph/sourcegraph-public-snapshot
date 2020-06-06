@@ -4,7 +4,12 @@ const { DefinePlugin, ProgressPlugin } = require('webpack')
 
 const config = {
   stories: ['../**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', '@storybook/addon-options'],
+  addons: [
+    '@storybook/preset-typescript',
+    '@storybook/addon-knobs',
+    '@storybook/addon-actions',
+    '@storybook/addon-options',
+  ],
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}
@@ -19,21 +24,21 @@ const config = {
     definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify('development')
 
     // We don't use Storybook's default config for our repo, it doesn't handle TypeScript.
-    config.module.rules.splice(0, 1)
+    ///// config.module.rules.splice(0, 1)
 
     if (process.env.CI) {
       remove(config.plugins, plugin => plugin instanceof ProgressPlugin)
     }
 
-    config.module.rules.push({
-      test: /\.tsx?$/,
-      loader: require.resolve('babel-loader'),
-      options: {
-        configFile: path.resolve(__dirname, '..', 'babel.config.js'),
-      },
-    })
-
-    config.resolve.extensions.push('.ts', '.tsx')
+    // config.module.rules.push({
+    //   test: /\.tsx?$/,
+    //   loader: require.resolve('babel-loader'),
+    //   options: {
+    //     configFile: path.resolve(__dirname, '..', 'babel.config.js'),
+    //   },
+    // })
+    //
+    // config.resolve.extensions.push('.ts', '.tsx')
 
     const storybookDirectory = path.resolve(__dirname, '../node_modules/@storybook')
 

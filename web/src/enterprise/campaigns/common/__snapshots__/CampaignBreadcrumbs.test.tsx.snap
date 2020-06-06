@@ -1,0 +1,325 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignBreadcrumbs all changesets not open 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs closed 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs edit mode 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs editable 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs existing 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <li
+      aria-current="page"
+      className="breadcrumb-item active"
+    >
+      Campaigns
+    </li>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs mode: closing 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs mode: deleting 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs mode: saving 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs new 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <li
+      aria-current="page"
+      className="breadcrumb-item active"
+    >
+      Campaigns
+    </li>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs not editable 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs processing 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;
+
+exports[`CampaignBreadcrumbs some changesets still open 1`] = `
+<nav
+  aria-label="breadcrumb"
+>
+  <ol
+    className="breadcrumb"
+  >
+    <React.Fragment>
+      <li
+        className="breadcrumb-item"
+      >
+        <AnchorLink
+          to="/campaigns"
+        >
+          Campaigns
+        </AnchorLink>
+      </li>
+      <li
+        className="breadcrumb-item active"
+      >
+        <AnchorLink>
+          Super campaign
+        </AnchorLink>
+      </li>
+    </React.Fragment>
+  </ol>
+</nav>
+`;

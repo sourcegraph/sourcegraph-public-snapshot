@@ -92,50 +92,46 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     )
     return (
         <>
-            <h3 className="mb-2 mt-4">Add changeset</h3>
-            <Form onSubmit={submit}>
-                <div className="d-flex">
-                    <div className="form-group mr-3 mb-0">
-                        <label htmlFor="changeset-repo">Repository path</label>
-                        <input
-                            required={true}
-                            id="changeset-repo"
-                            type="text"
-                            size={35}
-                            className="form-control mr-1 e2e-track-changeset-repo"
-                            placeholder="codehost.example.com/example-org/example-repository"
-                            value={repoName}
-                            onChange={event => setRepoName(event.target.value)}
-                        />
-                        <p className="form-text text-muted">
-                            The location of the repository in Sourcegraph. See the repository's directory URL:{' '}
-                            {/* False positive */}
-                            {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
-                            {window.location.protocol}//
-                            {window.location.host}/<strong>&lt;REPOSITORY_PATH&gt;</strong>
-                            <br />
-                            (Depending on your instance's configuration the path may or may not contain the code host
-                            name)
-                        </p>
-                    </div>
-                    <div className="form-group mr-3 mb-0">
-                        <label htmlFor="changeset-number">Changeset number</label>
-                        <input
-                            required={true}
-                            id="changeset-number"
-                            type="number"
-                            min={1}
-                            step={1}
-                            size={16}
-                            className="form-control mr-1 e2e-track-changeset-id"
-                            placeholder="1234"
-                            value={externalID}
-                            onChange={event => setExternalID(event.target.value + '')}
-                        />
-                    </div>
+            <Form className="form" onSubmit={submit}>
+                <div className="form-group">
+                    <label htmlFor="changeset-repo">Repository path</label>
+                    <input
+                        required={true}
+                        id="changeset-repo"
+                        type="text"
+                        size={35}
+                        className="form-control mr-1 e2e-track-changeset-repo"
+                        placeholder="codehost.example.com/example-org/example-repository"
+                        value={repoName}
+                        onChange={event => setRepoName(event.target.value)}
+                    />
+                    <p className="form-text text-muted small">
+                        The location of the repository in Sourcegraph. See the repository's directory URL:{' '}
+                        {/* False positive */}
+                        {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
+                        {window.location.protocol}//
+                        {window.location.host}/<strong>&lt;REPOSITORY_PATH&gt;</strong>
+                        <br />
+                        (Depending on your instance's configuration the path may or may not contain the code host name)
+                    </p>
                 </div>
-                <button type="submit" className="btn btn-primary mr-1 e2e-track-changeset-btn" disabled={isLoading}>
-                    Add changeset
+                <div className="form-group">
+                    <label htmlFor="changeset-number">Changeset number</label>
+                    <input
+                        required={true}
+                        id="changeset-number"
+                        type="number"
+                        min={1}
+                        step={1}
+                        size={16}
+                        className="form-control mr-1 e2e-track-changeset-id"
+                        placeholder="1234"
+                        value={externalID}
+                        onChange={event => setExternalID(event.target.value + '')}
+                    />
+                </div>
+                <button type="submit" className="btn btn-primary e2e-track-changeset-btn" disabled={isLoading}>
+                    Track existing changeset
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
             </Form>

@@ -278,7 +278,7 @@ Array [
     </div>
     <a
       className="btn btn-primary ml-3"
-      href="/campaigns/create"
+      href="/campaigns/new"
     >
       <svg
         className="mdi-icon icon-inline"
@@ -362,7 +362,7 @@ Array [
     </div>
     <a
       className="btn btn-primary ml-3"
-      href="/campaigns/create"
+      href="/campaigns/new"
     >
       <svg
         className="mdi-icon icon-inline"

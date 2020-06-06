@@ -79,12 +79,12 @@ $teal: $oc-teal-7;
 $cyan: $oc-cyan-7;
 
 $primary: $blue;
-$secondary: #2b3750;
+$secondary: #5970a1;
 $success: $green;
 $info: $cyan;
 $warning: $yellow;
 $danger: $red;
-$secondary-light: darken($gray-01, 5%);
+$secondary-light: $gray-04;
 $merged: $purple;
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
