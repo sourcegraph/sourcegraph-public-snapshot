@@ -77,6 +77,7 @@ func TestResolverTo(t *testing.T) {
 		&searchSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{},
+		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)

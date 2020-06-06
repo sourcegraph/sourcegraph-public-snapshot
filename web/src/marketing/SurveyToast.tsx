@@ -5,6 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
+import { range } from 'lodash'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
@@ -19,25 +20,23 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
             <div className={this.props.className}>
-                {Array(11)
-                    .fill(1)
-                    .map((_, i) => {
-                        const pressed = i === this.props.score
-                        return (
-                            /* eslint-disable react/jsx-no-bind */
-                            <Link
-                                key={i}
-                                className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
-                                aria-pressed={pressed || undefined}
-                                onClick={() => this.onClick(i)}
-                                to={`/survey/${i}`}
-                                target={this.props.openSurveyInNewTab ? '_blank' : undefined}
-                            >
-                                {i}
-                            </Link>
-                            /* eslint-enable react/jsx-no-bind */
-                        )
-                    })}
+                {range(0, 10).map(score => {
+                    const pressed = score === this.props.score
+                    return (
+                        /* eslint-disable react/jsx-no-bind */
+                        <Link
+                            key={score}
+                            className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
+                            aria-pressed={pressed || undefined}
+                            onClick={() => this.onClick(score)}
+                            to={`/survey/${score}`}
+                            target={this.props.openSurveyInNewTab ? '_blank' : undefined}
+                        >
+                            {score}
+                        </Link>
+                        /* eslint-enable react/jsx-no-bind */
+                    )
+                })}
             </div>
         )
     }

@@ -10,7 +10,7 @@
     &__title {
         display: flex;
         align-items: center;
-        margin-left: -0.5rem; // icon flush with left
+        margin-left: -0.25rem; // icon flush with left
     }
 
     &__section {
@@ -21,7 +21,8 @@
             margin-bottom: 0.125rem;
         }
 
-        max-width: 64rem;
+        max-width: $media-xl;
+
         &-search {
             display: flex;
             .search-help {

@@ -29,6 +29,7 @@ exports[`ScopePage renders 1`] = `
         authenticatedUser={null}
         autoFocus={true}
         caseSensitive={false}
+        copyQueryButton={false}
         history={
           Object {
             "action": "POP",

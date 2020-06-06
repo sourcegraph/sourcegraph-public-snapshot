@@ -2,7 +2,6 @@ import * as React from 'react'
 import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
 import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
-import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
 import { RepoSettingsAreaRoute } from './RepoSettingsArea'
 
 export const repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
@@ -20,10 +19,5 @@ export const repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
         path: '/mirror',
         exact: true,
         render: props => <RepoSettingsMirrorPage {...props} />,
-    },
-    {
-        path: '/permissions',
-        exact: true,
-        render: props => <RepoSettingsPermissionsPage {...props} />,
     },
 ]

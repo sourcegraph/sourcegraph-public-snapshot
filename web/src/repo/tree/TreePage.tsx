@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -26,7 +27,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -41,6 +42,7 @@ import { toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -50,7 +52,15 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
+        <Link
+            to={url}
+            className={classNames(
+                'tree-entry',
+                isDir && 'font-weight-bold',
+                `e2e-tree-entry-${isDir ? 'directory' : 'file'}`
+            )}
+            title={filePath}
+        >
             {name}
             {isDir && '/'}
         </Link>
@@ -69,16 +79,16 @@ const TreeEntriesSection: React.FunctionComponent<{
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url'>[]
 }> = ({ title, parentPath, entries }) =>
     entries.length > 0 ? (
-        <section className="tree-page__section">
+        <section className="tree-page__section e2e-tree-entries">
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
-                {entries.map((e, i) => (
+                {entries.map((entry, index) => (
                     <TreeEntry
-                        key={e.name + String(i)}
-                        isDir={e.isDirectory}
-                        name={e.name}
+                        key={entry.name + String(index)}
+                        isDir={entry.isDirectory}
+                        name={entry.name}
                         parentPath={parentPath}
-                        url={e.url}
+                        url={entry.url}
                     />
                 ))}
             </div>
@@ -141,14 +151,16 @@ interface Props
         EventLoggerProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
-    rev: string
+    revision: string
     location: H.Location
     history: H.History
 }
@@ -158,7 +170,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     repoID,
     repoDescription,
     commitID,
-    rev,
+    revision,
     filePath,
     patternType,
     caseSensitive,
@@ -176,8 +188,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const [showOlderCommits, setShowOlderCommits] = useState(false)
 
     const onShowOlderCommitsClicked = useCallback(
-        (e: React.MouseEvent): void => {
-            e.preventDefault()
+        (event: React.MouseEvent): void => {
+            event.preventDefault()
             setShowOlderCommits(true)
         },
         [setShowOlderCommits]
@@ -189,11 +201,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 fetchTreeEntries({
                     repoName,
                     commitID,
-                    rev,
+                    revision,
                     filePath,
                     first: 2500,
-                }).pipe(catchError((err): [ErrorLike] => [asError(err)])),
-            [repoName, commitID, rev, filePath]
+                }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
+            [repoName, commitID, revision, filePath]
         )
     )
 
@@ -243,11 +255,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const getPageTitle = (): string => {
-        const repoStr = displayRepoName(repoName)
+        const repoString = displayRepoName(repoName)
         if (filePath) {
-            return `${basename(filePath)} - ${repoStr}`
+            return `${basename(filePath)} - ${repoString}`
         }
-        return `${repoStr}`
+        return `${repoString}`
     }
 
     const queryCommits = useCallback(
@@ -256,12 +268,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
             return fetchTreeCommits({
                 ...args,
                 repo: repoID,
-                revspec: rev || '',
+                revspec: revision || '',
                 filePath,
                 after,
             })
         },
-        [filePath, repoID, rev, showOlderCommits]
+        [filePath, repoID, revision, showOlderCommits]
     )
 
     const emptyElement = showOlderCommits ? (
@@ -306,50 +318,50 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 // If the tree is actually a blob, be helpful and redirect to the blob page.
                 // We don't have error names on GraphQL errors.
                 /not a directory/i.test(treeOrError.message) ? (
-                    <Redirect to={toPrettyBlobURL({ repoName, rev, commitID, filePath })} />
+                    <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
                 ) : (
                     <ErrorAlert error={treeOrError} history={props.history} />
                 )
             ) : (
                 <>
-                    {treeOrError.isRoot ? (
-                        <header>
-                            <h2 className="tree-page__title">
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
-                            </h2>
-                            {repoDescription && <p>{repoDescription}</p>}
-                            <div className="btn-group mb-3">
-                                <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
-                                    <SourceCommitIcon className="icon-inline" /> Commits
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
-                                    <SourceBranchIcon className="icon-inline" /> Branches
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
-                                    <TagIcon className="icon-inline" /> Tags
-                                </Link>
-                                <Link
-                                    className="btn btn-secondary"
-                                    to={
-                                        rev
-                                            ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
-                                            : `/${repoName}/-/compare`
-                                    }
-                                >
-                                    <HistoryIcon className="icon-inline" /> Compare
-                                </Link>
-                                <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
-                                    <UserIcon className="icon-inline" /> Contributors
-                                </Link>
-                            </div>
-                        </header>
-                    ) : (
-                        <header>
+                    <header className="mb-3">
+                        {treeOrError.isRoot ? (
+                            <>
+                                <h2 className="tree-page__title">
+                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
+                                </h2>
+                                {repoDescription && <p>{repoDescription}</p>}
+                                <div className="btn-group mb-3">
+                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
+                                        <SourceCommitIcon className="icon-inline" /> Commits
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
+                                        <SourceBranchIcon className="icon-inline" /> Branches
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
+                                        <TagIcon className="icon-inline" /> Tags
+                                    </Link>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={
+                                            revision
+                                                ? `/${repoName}/-/compare/...${encodeURIComponent(revision)}`
+                                                : `/${repoName}/-/compare`
+                                        }
+                                    >
+                                        <HistoryIcon className="icon-inline" /> Compare
+                                    </Link>
+                                    <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
+                                        <UserIcon className="icon-inline" /> Contributors
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
                             <h2 className="tree-page__title">
                                 <FolderIcon className="icon-inline" /> {filePath}
                             </h2>
-                        </header>
-                    )}
+                        )}
+                    </header>
                     {views && (
                         <ViewGrid
                             {...props}
@@ -399,7 +411,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 className: 'list-group-item',
                                 compact: true,
                             }}
-                            updateOnChange={`${repoName}:${rev}:${filePath}:${String(showOlderCommits)}`}
+                            updateOnChange={`${repoName}:${revision}:${filePath}:${String(showOlderCommits)}`}
                             defaultFirst={7}
                             useURLQuery={false}
                             hideSearch={true}

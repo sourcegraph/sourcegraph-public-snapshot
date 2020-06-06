@@ -17,13 +17,14 @@ import { fetchReposByQuery } from './backend'
 import { submitSearch, QueryState } from './helpers'
 import { QueryInput } from './input/QueryInput'
 import { SearchButton } from './input/SearchButton'
-import { PatternTypeProps, CaseSensitivityProps } from '.'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '.'
 import { ErrorAlert } from '../components/alerts'
 import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { pluralize } from '../../../shared/src/util/strings'
 import * as H from 'history'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -43,7 +44,9 @@ interface Props
     extends RouteComponentProps<{ id: GQL.ID }>,
         SettingsCascadeProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        CopyQueryButtonProps,
+        VersionContextProps {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
     history: H.History
@@ -62,7 +65,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
         [settingsCascade]
     )
     const searchScope = useMemo(
-        () => (searchScopes ? searchScopes.find(o => o.id === props.match.params.id) : undefined),
+        () => (searchScopes ? searchScopes.find(scope => scope.id === props.match.params.id) : undefined),
         [props.match.params.id, searchScopes]
     )
     useEffect(() => {
@@ -77,9 +80,11 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
     const scopeRepositories = useObservable(
         useMemo(() => {
             if (searchScope?.value.includes('repo:') || searchScope?.value.includes('repogroup:')) {
-                return fetchReposByQuery(searchScope.value).pipe(catchError(err => of(asError(err))))
+                return fetchReposByQuery(searchScope.value).pipe(catchError(error => of(asError(error))))
             }
             return of([])
+            // False positive: https://github.com/facebook/react/issues/19064
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [searchScope])
     )
 
@@ -96,7 +101,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
     )
 
     const [repositoriesFirst, setRepositoriesFirst] = useState(50)
-    const showMoreRepositories = useCallback(() => setRepositoriesFirst(prevValue => prevValue + 50), [])
+    const showMoreRepositories = useCallback(() => setRepositoriesFirst(previousValue => previousValue + 50), [])
 
     if (!searchScopes) {
         return null

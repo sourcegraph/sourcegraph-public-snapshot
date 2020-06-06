@@ -4,7 +4,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { GitRefNode, queryGitRefs } from '../GitRef'
+import { GitReferenceNode, queryGitReferences } from '../GitReference'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { Observable } from 'rxjs'
 
@@ -26,7 +26,7 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
                     noun="branch"
                     pluralNoun="branches"
                     queryConnection={this.queryBranches}
-                    nodeComponent={GitRefNode}
+                    nodeComponent={GitReferenceNode}
                     defaultFirst={20}
                     autoFocus={true}
                     history={this.props.history}
@@ -37,5 +37,5 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
     }
 
     private queryBranches = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
-        queryGitRefs({ ...args, repo: this.props.repo.id, type: GQL.GitRefType.GIT_BRANCH })
+        queryGitReferences({ ...args, repo: this.props.repo.id, type: GQL.GitRefType.GIT_BRANCH })
 }

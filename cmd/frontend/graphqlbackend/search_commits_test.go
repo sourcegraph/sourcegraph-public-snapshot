@@ -129,7 +129,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 	}
 }
 
-func Test_highlightMatches(t *testing.T) {
+func TestHighlightMatches(t *testing.T) {
 	type args struct {
 		pattern *regexp.Regexp
 		data    []byte

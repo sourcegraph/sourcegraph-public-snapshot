@@ -16,12 +16,14 @@ export type DeepReplace<T, M, R> = {
  * @template U The type to check for (explicitly specify this)
  * @template T The actual type (inferred, don't specify this)
  */
-export const subTypeOf = <U>() => <T extends U>(value: T): T => value
+// needed for type parameter
+// eslint-disable-next-line unicorn/consistent-function-scoping
+export const subtypeOf = <U>() => <T extends U>(value: T): T => value
 
 /**
  * Returns true if `val` is not `null` or `undefined`
  */
-export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined && val !== null
+export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null
 
 /**
  * Returns a type guard that checks whether the given value is strictly equal to a specific value.
@@ -72,10 +74,11 @@ export const isTaggedUnionMember = <O extends object, K extends keyof O, V exten
 /**
  * Returns a function that returns `true` if the given value is an instance of the given class.
  *
- * @param of A reference to a class, e.g. `HTMLElement`
+ * @param constructor A reference to a class, e.g. `HTMLElement`
  */
-export const isInstanceOf = <C extends new () => object>(of: C) => (val: unknown): val is InstanceType<C> =>
-    val instanceof of
+export const isInstanceOf = <C extends new () => object>(constructor: C) => (
+    value: unknown
+): value is InstanceType<C> => value instanceof constructor
 
 /**
  * Combines multiple type guards into one type guard that checks if the value passes any of the provided type guards.

@@ -9,79 +9,100 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func Test_ScanParameter(t *testing.T) {
+func TestParseParameterList(t *testing.T) {
 	cases := []struct {
-		Name  string
-		Input string
-		Want  string
+		Name       string
+		Input      string
+		Want       string
+		WantLabels labels
 	}{
 		{
-			Name:  "Normal field:value",
-			Input: `file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":false,"quoted":false}`,
+			Name:       "Normal field:value",
+			Input:      `file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "First char is colon",
-			Input: `:foo`,
-			Want:  `{"field":"","value":":foo","negated":false,"quoted":false}`,
+			Name:       "First char is colon",
+			Input:      `:foo`,
+			Want:       `{"value":":foo","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Last char is colon",
-			Input: `foo:`,
-			Want:  `{"field":"foo","value":"","negated":false,"quoted":false}`,
+			Name:       "Last char is colon",
+			Input:      `foo:`,
+			Want:       `{"value":"foo:","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Match first colon",
-			Input: `foo:bar:baz`,
-			Want:  `{"field":"foo","value":"bar:baz","negated":false,"quoted":false}`,
+			Name:       "Match first colon",
+			Input:      `file:bar:baz`,
+			Want:       `{"field":"file","value":"bar:baz","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "No field, start with minus",
-			Input: `-:foo`,
-			Want:  `{"field":"","value":"-:foo","negated":false,"quoted":false}`,
+			Name:       "No field, start with minus",
+			Input:      `-:foo`,
+			Want:       `{"value":"-:foo","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Minus prefix on field",
-			Input: `-file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":true,"quoted":false}`,
+			Name:       "Minus prefix on field",
+			Input:      `-file:README.md`,
+			Want:       `{"field":"file","value":"README.md","negated":true}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Double minus prefix on field",
-			Input: `--foo:bar`,
-			Want:  `{"field":"","value":"--foo:bar","negated":false,"quoted":false}`,
+			Name:       "Double minus prefix on field",
+			Input:      `--foo:bar`,
+			Want:       `{"value":"--foo:bar","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Minus in the middle is not a valid field",
-			Input: `fie-ld:bar`,
-			Want:  `{"field":"","value":"fie-ld:bar","negated":false,"quoted":false}`,
+			Name:       "Minus in the middle is not a valid field",
+			Input:      `fie-ld:bar`,
+			Want:       `{"value":"fie-ld:bar","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Name:  "Interpret escaped whitespace",
-			Input: `a\ pattern`,
-			Want:  `{"field":"","value":"a pattern","negated":false,"quoted":false}`,
+			Name:       "Interpret escaped whitespace",
+			Input:      `a\ pattern`,
+			Want:       `{"value":"a pattern","negated":false}`,
+			WantLabels: None,
 		},
 		{
-			Input: `"quoted"`,
-			Want:  `{"field":"","value":"quoted","negated":false,"quoted":true}`,
+			Input:      `"quoted"`,
+			Want:       `{"value":"quoted","negated":false}`,
+			WantLabels: Literal | Quoted,
 		},
 		{
-			Input: `'\''`,
-			Want:  `{"field":"","value":"'","negated":false,"quoted":true}`,
+			Input:      `'\''`,
+			Want:       `{"value":"'","negated":false}`,
+			WantLabels: Literal | Quoted,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
 			parser := &parser{buf: []byte(tt.Input)}
-			result := parser.ParseParameter()
-			got, _ := json.Marshal(result)
+			result, err := parser.parseParameterList()
+			if err != nil {
+				t.Fatal("Unexpected error")
+			}
+			resultNode := result[0]
+			got, _ := json.Marshal(resultNode)
 			if diff := cmp.Diff(tt.Want, string(got)); diff != "" {
 				t.Error(diff)
+			}
+			if patternNode, ok := resultNode.(Pattern); ok {
+				if diff := cmp.Diff(tt.WantLabels, patternNode.Annotation.Labels); diff != "" {
+					t.Error(diff)
+				}
 			}
 		})
 	}
 }
 
-func Test_ScanField(t *testing.T) {
+func TestScanField(t *testing.T) {
 	type value struct {
 		Field   string
 		Advance int
@@ -199,8 +220,8 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 		return nil, nil
 	}
 	parser := &parser{
-		buf:       []byte(in),
-		heuristic: heuristic{parensAsPatterns: false},
+		buf: []byte(in),
+		// heuristics: map[heuristic]bool{parensAsPatterns: false},
 	}
 	nodes, err := parser.parseOr()
 	if err != nil {
@@ -212,7 +233,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-func Test_Parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	type relation string         // a relation for comparing test outputs of queries parsed according to grammar and heuristics.
 	const Same relation = "Same" // a constant that says heuristic output is interpreted the same as the grammar spec.
 	type Spec = relation         // constructor for expected output of the grammar spec without heuristics.
@@ -527,6 +548,12 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		{
+			Name:          "disable parens as patterns heuristic if containing recognized operator",
+			Input:         "(() or ())",
+			WantGrammar:   Spec(`""`),
+			WantHeuristic: Diff(`(or "()" "()")`),
+		},
 		// Escaping.
 		{
 			Input:         `\(\)`,
@@ -577,7 +604,7 @@ func Test_Parse(t *testing.T) {
 		// Quotes and escape sequences.
 		{
 			Input:         `"`,
-			WantGrammar:   `""`,
+			WantGrammar:   `"\""`,
 			WantHeuristic: Same,
 		},
 		{
@@ -668,7 +695,7 @@ func Test_Parse(t *testing.T) {
 	}
 }
 
-func Test_ScanDelimited(t *testing.T) {
+func TestScanDelimited(t *testing.T) {
 	type result struct {
 		Value  string
 		Count  int
@@ -754,7 +781,162 @@ func Test_ScanDelimited(t *testing.T) {
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
 			}
+		})
+	}
+}
 
+func TestParseLiteralSearch(t *testing.T) {
+	cases := []struct {
+		Input string
+		Want  string
+	}{
+		{
+			Input: "",
+			Want:  "",
+		},
+		{
+			Input: " ",
+			Want:  "",
+		},
+		{
+			Input: "  ",
+			Want:  "",
+		},
+		{
+			Input: "a",
+			Want:  `"a"`,
+		},
+		{
+			Input: " a",
+			Want:  `"a"`,
+		},
+		{
+			Input: `a `,
+			Want:  `"a"`,
+		},
+		{
+			Input: ` a b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `a  b`,
+			Want:  `(concat "a" "b")`,
+		},
+		{
+			Input: `:`,
+			Want:  `":"`,
+		},
+		{
+			Input: `:=`,
+			Want:  `":="`,
+		},
+		{
+			Input: `:= range`,
+			Want:  `(concat ":=" "range")`,
+		},
+		{
+			Input: "`",
+			Want:  "\"`\"",
+		},
+		{
+			Input: `'`,
+			Want:  `"'"`,
+		},
+		{
+			Input: "file:a",
+			Want:  `"file:a"`,
+		},
+		{
+			Input: `"file:a"`,
+			Want:  `"\"file:a\""`,
+		},
+		{
+			Input: `"x foo:bar`,
+			Want:  `(concat "\"x" "foo:bar")`,
+		},
+		// -repo:c" is considered valid. "repo:b is a literal pattern.
+		{
+			Input: `"repo:b -repo:c"`,
+			Want:  `(and "-repo:c\"" "\"repo:b")`,
+		},
+		{
+			Input: `".*"`,
+			Want:  `"\".*\""`,
+		},
+		{
+			Input: `-pattern: ok`,
+			Want:  `(concat "-pattern:" "ok")`,
+		},
+		{
+			Input: `a:b "patterntype:regexp"`,
+			Want:  `(concat "a:b" "\"patterntype:regexp\"")`,
+		},
+		// Whitespace is removed. content: exists for preserving whitespace.
+		{
+			Input: `lang:go func  main`,
+			Want:  `(and "lang:go" (concat "func" "main"))`,
+		},
+		{
+			Input: `\n`,
+			Want:  `"\\n"`,
+		},
+		{
+			Input: `\t`,
+			Want:  `"\\t"`,
+		},
+		{
+			Input: `\\`,
+			Want:  `"\\\\"`,
+		},
+		{
+			Input: `foo\d "bar*"`,
+			Want:  `(concat "foo\\d" "\"bar*\"")`,
+		},
+		{
+			Input: `\d`,
+			Want:  `"\\d"`,
+		},
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago"`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago")`,
+		},
+		{
+			Input: `type:commit message:"a commit message" after:"10 days ago" test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago' test test2`,
+			Want:  `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2"))`,
+		},
+		{
+			Input: `type:commit message:"a com"mit message" after:"10 days ago"`,
+			Want:  `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\""))`,
+		},
+		{
+			Input: `bar and (foo or x\) ()`,
+			Want:  `(or (and "bar" "(foo") (concat "x\\)" "()"))`,
+		},
+		// This test input should error because the single quote in 'after' is unclosed.
+		{
+			Input: `type:commit message:'a commit message' after:'10 days ago" test test2`,
+			Want:  "",
+		},
+		{
+			Input: `"quoted"`,
+			Want:  `"\"quoted\""`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run("literal search parse", func(t *testing.T) {
+			result, _ := ParseLiteralSearch(tt.Input)
+			var resultStr []string
+			for _, node := range result {
+				resultStr = append(resultStr, node.String())
+			}
+			got := strings.Join(resultStr, " ")
+			if diff := cmp.Diff(tt.Want, got); diff != "" {
+				t.Error(diff)
+			}
 		})
 	}
 }

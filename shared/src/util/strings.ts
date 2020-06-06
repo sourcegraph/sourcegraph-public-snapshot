@@ -3,26 +3,26 @@
  *
  * @param patterns Patterns to match in the string.
  */
-export function count(str: string, ...patterns: RegExp[]): number {
-    let n = 0
-    for (const p of patterns) {
-        if (!p.global) {
+export function count(string: string, ...patterns: RegExp[]): number {
+    let count = 0
+    for (const pattern of patterns) {
+        if (!pattern.global) {
             throw new Error('expected RegExp to be global (or else count is inaccurate)')
         }
-        const m = str.match(p)
-        if (m) {
-            n += m.length
+        const match = string.match(pattern)
+        if (match) {
+            count += match.length
         }
     }
-    return n
+    return count
 }
 
-export function numberWithCommas(x: string | number): string {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+export function numberWithCommas(number: string | number): string {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-export function pluralize(str: string, n: number, plural = str + 's'): string {
-    return n === 1 ? str : plural
+export function pluralize(string: string, count: number, plural = string + 's'): string {
+    return count === 1 ? string : plural
 }
 
 /**
@@ -52,11 +52,10 @@ export function isQuoted(value: string): boolean {
 /**
  * Replaces a substring within a string.
  *
- * @param s Original string
- * @param start starting index of the substring to be replaced
- * @param end starting index of the substring to be replaced
- * @param an optional replacement string
+ * @param string Original string
+ * @param range The range in of the substring to be replaced
+ * @param replacement an optional replacement string
  */
-export function replaceRange(s: string, { start, end }: { start: number; end: number }, replacement = ''): string {
-    return s.slice(0, start) + replacement + s.slice(end)
+export function replaceRange(string: string, { start, end }: { start: number; end: number }, replacement = ''): string {
+    return string.slice(0, start) + replacement + string.slice(end)
 }

@@ -30,7 +30,7 @@ export const ViewPage: React.FunctionComponent<Props> = ({
     _getView = getView,
     ...props
 }) => {
-    const queryParams = useMemo<Record<string, string>>(
+    const queryParameters = useMemo<Record<string, string>>(
         () => ({ ...Object.fromEntries(new URLSearchParams(location.search).entries()), extraPath }),
         [extraPath, location.search]
     )
@@ -44,11 +44,11 @@ export const ViewPage: React.FunctionComponent<Props> = ({
                 _getView(
                     viewID,
                     ContributableViewContainer.GlobalPage,
-                    queryParams,
+                    queryParameters,
                     contributions,
                     extensionsController.services.view
                 ),
-            [_getView, contributions, extensionsController.services.view, queryParams, viewID]
+            [_getView, contributions, extensionsController.services.view, queryParameters, viewID]
         )
     )
 

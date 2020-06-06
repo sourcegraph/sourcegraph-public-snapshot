@@ -16,14 +16,13 @@ Object {
           >
             <div>
               <Octicon
-                className="icon-inline mr-2"
+                className="icon-inline mr-2 text-success"
                 icon={[Function]}
                 size={16}
                 verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
-                  className="text-muted"
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"
@@ -50,7 +49,8 @@ Object {
     wholeTitleClickable={false}
   >
     <FileDiffConnection
-      defaultFirst={25}
+      cursorPaging={true}
+      defaultFirst={15}
       hideSearch={true}
       history={
         Object {
@@ -166,14 +166,13 @@ Object {
           >
             <div>
               <Octicon
-                className="icon-inline mr-2"
+                className="icon-inline mr-2 text-success"
                 icon={[Function]}
                 size={16}
                 verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
-                  className="text-muted"
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"
@@ -211,7 +210,8 @@ Object {
     wholeTitleClickable={false}
   >
     <FileDiffConnection
-      defaultFirst={25}
+      cursorPaging={true}
+      defaultFirst={15}
       hideSearch={true}
       history={
         Object {

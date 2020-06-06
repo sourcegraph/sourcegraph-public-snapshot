@@ -93,6 +93,8 @@ func TestExecChangesetJob(t *testing.T) {
 				// for the same repository already exists in the DB, but with
 				// empty metadata, so we can later check that it was properly
 				// updated.
+				// We also leave CreatedByCampaign false to ensure that it is set on
+				// update too.
 				ch := &cmpgn.Changeset{
 					RepoID:    repo.ID,
 					CreatedAt: oldCreatedAt,
@@ -127,7 +129,9 @@ func TestExecChangesetJob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
+			err := ExecChangesetJob(ctx, campaign, changesetJob, ExecChangesetJobOpts{
+				Clock: clock, Store: s, GitClient: gitClient, Sourcer: sourcer, ExternalURL: "http://localhost",
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,6 +154,7 @@ func TestExecChangesetJob(t *testing.T) {
 				ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
 				CreatedAt:           now,
 				UpdatedAt:           now,
+				CreatedByCampaign:   true,
 			}
 			err = wantChangeset.SetMetadata(meta)
 			if err != nil {

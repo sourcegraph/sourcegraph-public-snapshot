@@ -13,7 +13,6 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -40,7 +39,7 @@ type Changeset struct {
 	*Repo
 }
 
-// An ExternalService is defines a Source that yields Repos.
+// An ExternalService defines a Source that yields Repos.
 type ExternalService struct {
 	ID          int64
 	Kind        string
@@ -95,21 +94,57 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 
+// BaseURL will fetch the normalised base URL from the service if
+// supported.
+func (e ExternalService) BaseURL() (*url.URL, error) {
+	config, err := extsvc.ParseConfig(e.Kind, e.Config)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing config")
+	}
+
+	var rawURL string
+	switch c := config.(type) {
+	case *schema.AWSCodeCommitConnection:
+		return nil, errors.New("BaseURL unavailable for AWSCodeCommit")
+	case *schema.BitbucketServerConnection:
+		rawURL = c.Url
+	case *schema.GitHubConnection:
+		rawURL = c.Url
+	case *schema.GitLabConnection:
+		rawURL = c.Url
+	case *schema.GitoliteConnection:
+		rawURL = c.Host
+	case *schema.PhabricatorConnection:
+		rawURL = c.Url
+	case *schema.OtherExternalServiceConnection:
+		rawURL = c.Url
+	default:
+		return nil, fmt.Errorf("unknown external service type %T", config)
+	}
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing service URL")
+	}
+
+	return extsvc.NormalizeBaseURL(parsed), nil
+}
+
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
 func (e *ExternalService) Exclude(rs ...*Repo) error {
-	switch strings.ToLower(e.Kind) {
-	case "github":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindGitHub:
 		return e.excludeGithubRepos(rs...)
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return e.excludeGitLabRepos(rs...)
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return e.excludeBitbucketServerRepos(rs...)
-	case "awscodecommit":
+	case extsvc.KindAWSCodeCommit:
 		return e.excludeAWSCodeCommitRepos(rs...)
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return e.excludeGitoliteRepos(rs...)
-	case "other":
+	case extsvc.KindOther:
 		return e.excludeOtherRepos(rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
@@ -444,20 +479,20 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 }
 
 func (e ExternalService) schema() string {
-	switch strings.ToLower(e.Kind) {
-	case "awscodecommit":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindAWSCodeCommit:
 		return schema.AWSCodeCommitSchemaJSON
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return schema.BitbucketServerSchemaJSON
-	case "github":
+	case extsvc.KindGitHub:
 		return schema.GitHubSchemaJSON
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return schema.GitLabSchemaJSON
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return schema.GitoliteSchemaJSON
-	case "phabricator":
+	case extsvc.KindPhabricator:
 		return schema.PhabricatorSchemaJSON
-	case "other":
+	case extsvc.KindOther:
 		return schema.OtherExternalServiceSchemaJSON
 	default:
 		return ""
@@ -767,6 +802,15 @@ func (rs Repos) Names() []string {
 	return names
 }
 
+// NamesSummary caps the number of repos to 20 when composing a space-separated list string.
+// Used in logging statements.
+func (rs Repos) NamesSummary() string {
+	if len(rs) > 20 {
+		return strings.Join(rs[:20].Names(), " ") + "..."
+	}
+	return strings.Join(rs.Names(), " ")
+}
+
 // Kinds returns the unique set of kinds from all Repos.
 func (rs Repos) Kinds() (kinds []string) {
 	set := map[string]bool{}
@@ -910,127 +954,83 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	return clone
 }
 
+type externalServiceLister interface {
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
+}
+
 type RateLimiterRegistry struct {
+	serviceLister externalServiceLister
+
 	mu sync.Mutex
-	// Rate limiter per external service, keys are database ID of external services.
-	rateLimiters map[int64]*rate.Limiter
+	// Rate limiter per code host, keys are the normalized base URL for a
+	// code host.
+	rateLimiters map[string]*rate.Limiter
 }
 
 // NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
 // empty registry is returned which can still to handle syncs.
-func NewRateLimiterRegistry(ctx context.Context, store Store) (*RateLimiterRegistry, error) {
+func NewRateLimiterRegistry(ctx context.Context, serviceLister externalServiceLister) (*RateLimiterRegistry, error) {
 	r := &RateLimiterRegistry{
-		rateLimiters: make(map[int64]*rate.Limiter),
+		serviceLister: serviceLister,
+		rateLimiters:  make(map[string]*rate.Limiter),
 	}
 
-	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
-	if err != nil {
-		return r, errors.Wrap(err, "fetching external services")
-	}
-
-	for _, svc := range svcs {
-		err = r.updateRateLimiter(svc)
-		if err != nil {
-			if _, ok := err.(errRateLimitUnsupported); ok {
-				continue
-			}
-			// Errors here are not fatal, so we can log them
-			log15.Warn("Updating rate limiter", "kind", svc.Kind, "err", err)
-		}
-	}
-
-	return r, nil
+	// We'll return r either way as we'll try again if a service is added or updated
+	return r, r.SyncRateLimiters(ctx)
 }
 
-// GetRateLimiter fetches the rate limiter associated with the given external service. If none has been
+// GetRateLimiter fetches the rate limiter associated with the given code host. If none has been
 // configured an infinite limiter is returned.
-func (r *RateLimiterRegistry) GetRateLimiter(externalServiceID int64) *rate.Limiter {
+func (r *RateLimiterRegistry) GetRateLimiter(baseURL string) *rate.Limiter {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	l := r.rateLimiters[externalServiceID]
+	l := r.rateLimiters[baseURL]
 	if l == nil {
 		l = rate.NewLimiter(rate.Inf, 100)
-		r.rateLimiters[externalServiceID] = l
+		r.rateLimiters[baseURL] = l
 	}
 	return l
 }
 
-// HandleExternalServiceSync will update the rate limiter associated with the supplied external service
-// so that it's settings match the service config.
-func (r *RateLimiterRegistry) HandleExternalServiceSync(apiService api.ExternalService) error {
-	svc := &ExternalService{
-		ID:          apiService.ID,
-		Kind:        apiService.Kind,
-		DisplayName: apiService.DisplayName,
-		Config:      apiService.Config,
-		CreatedAt:   apiService.CreatedAt,
-		UpdatedAt:   apiService.UpdatedAt,
-		DeletedAt:   time.Time{},
-	}
-	if apiService.DeletedAt != nil {
-		svc.DeletedAt = *apiService.DeletedAt
-	}
-	return r.updateRateLimiter(svc)
-}
-
-func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
-	config, err := svc.Configuration()
+// SyncRateLimiters syncs all rate limiters using current config.
+// We sync them all as we need to pick the most restrictive configured limit per code host
+// and rate limits can be defined in multiple external services for the same host.
+func (r *RateLimiterRegistry) SyncRateLimiters(ctx context.Context) error {
+	services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
-		return errors.Wrap(err, "getting external service configuration")
+		return errors.Wrap(err, "listing external services")
 	}
 
-	// Rate limit config can be in a few states:
-	// 1. Not defined: We fall back to default specified in code.
-	// 2. Defined and enabled: We use their defined limit.
-	// 3. Defined and disabled: We use an infinite limiter.
-
-	var limit rate.Limit
-	switch c := config.(type) {
-	case *schema.GitLabConnection:
-		// 10/s is the default enforced by GitLab on their end
-		limit = rate.Limit(10)
-		if c != nil && c.RateLimit != nil {
-			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+	var limits []extsvc.RateLimitConfig
+	for _, svc := range services {
+		rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
+		if err != nil {
+			if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+				continue
+			}
+			return errors.Wrap(err, "getting rate limit configuration")
 		}
-	case *schema.GitHubConnection:
-		// 5000 per hour is the default enforced by GitHub on their end
-		limit = rate.Limit(5000.0 / 3600.0)
-		if c != nil && c.RateLimit != nil {
-			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
-	case *schema.BitbucketServerConnection:
-		// 8/s is the default limit we enforce
-		limit = rate.Limit(8)
-		if c != nil && c.RateLimit != nil {
-			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
-	case *schema.BitbucketCloudConnection:
-		// 2/s is the default limit we enforce
-		limit = rate.Limit(2)
-		if c != nil && c.RateLimit != nil {
-			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
-	default:
-		return errRateLimitUnsupported{codehostKind: svc.Kind}
+		limits = append(limits, rlc)
 	}
 
-	l := r.GetRateLimiter(svc.ID)
-	l.SetLimit(limit)
+	byURL := make(map[string]extsvc.RateLimitConfig)
+	for _, rlc := range limits {
+		current, ok := byURL[rlc.BaseURL]
+		if !ok || (ok && current.IsDefault) {
+			byURL[rlc.BaseURL] = rlc
+			continue
+		}
+		// Use the lower limit, but a default value should not override
+		// a limit that has been configured
+		if rlc.Limit < current.Limit && !rlc.IsDefault {
+			byURL[rlc.BaseURL] = rlc
+		}
+	}
+
+	for u, rl := range byURL {
+		l := r.GetRateLimiter(u)
+		l.SetLimit(rl.Limit)
+	}
 
 	return nil
-}
-
-func getLimit(enabled bool, perHour float64) rate.Limit {
-	if enabled {
-		return rate.Limit(perHour / 3600)
-	}
-	return rate.Inf
-}
-
-type errRateLimitUnsupported struct {
-	codehostKind string
-}
-
-func (e errRateLimitUnsupported) Error() string {
-	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }

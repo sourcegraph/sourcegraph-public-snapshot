@@ -170,6 +170,17 @@ type ChangesetSyncResponse struct {
 	Error string
 }
 
+// PermsSyncRequest is a request to sync permissions.
+type PermsSyncRequest struct {
+	UserIDs []int32      `json:"user_ids"`
+	RepoIDs []api.RepoID `json:"repo_ids"`
+}
+
+// PermsSyncResponse is a response to sync permissions.
+type PermsSyncResponse struct {
+	Error string
+}
+
 // ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or

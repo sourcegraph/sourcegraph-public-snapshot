@@ -6,13 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-
-	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestNextSync(t *testing.T) {
@@ -360,7 +358,7 @@ func TestSyncRegistry(t *testing.T) {
 			return []*repos.ExternalService{
 				{
 					ID:          1,
-					Kind:        "GITHUB",
+					Kind:        extsvc.KindGitHub,
 					DisplayName: "",
 					Config:      "",
 					CreatedAt:   time.Time{},
@@ -401,7 +399,7 @@ func TestSyncRegistry(t *testing.T) {
 	// Simulate a service being removed
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
-		Kind:      "GITHUB",
+		Kind:      extsvc.KindGitHub,
 		DeletedAt: &now,
 	})
 	assertSyncerCount(0)
@@ -409,7 +407,7 @@ func TestSyncRegistry(t *testing.T) {
 	// And added again
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
-		Kind:      "GITHUB",
+		Kind:      extsvc.KindGitHub,
 		DeletedAt: nil,
 	})
 	assertSyncerCount(1)
@@ -488,6 +486,18 @@ func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 type MockRepoStore struct {
 	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
 	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
+func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*repos.ExternalService) error {
+	panic("implement me")
+}
+
+func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
+	panic("implement me")
+}
+
+func (m MockRepoStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error) {
+	panic("implement me")
 }
 
 func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {

@@ -2,10 +2,15 @@ package database
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
 
@@ -239,20 +244,50 @@ func TestDatabasePackageInformation(t *testing.T) {
 }
 
 func openTestDatabase(t *testing.T) Database {
-	documentDataCache, err := NewDocumentDataCache(1)
+	filename := copyFile(t, "../../../../internal/codeintel/bundles/persistence/sqlite/testdata/lsif-go@ad3507cb.lsif.db")
+
+	// TODO(efritz) - rewrite test not to require actual reader
+	reader, err := sqlitereader.NewReader(context.Background(), filename)
+	if err != nil {
+		t.Fatalf("unexpected error creating reader: %s", err)
+	}
+
+	documentCache, _, err := NewDocumentCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	resultChunkDataCache, err := NewResultChunkDataCache(1)
+	resultChunkCache, _, err := NewResultChunkCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	db, err := OpenDatabase(context.Background(), "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
+	db, err := OpenDatabase(context.Background(), filename, reader, documentCache, resultChunkCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
 	t.Cleanup(func() { _ = db.Close })
-	return db
+
+	// Wrap in observed, as that's how it's used in production
+	return NewObserved(db, filename, &observation.TestContext)
+}
+
+func copyFile(t *testing.T, source string) string {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error creating temp dir: %s", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+
+	input, err := ioutil.ReadFile(source)
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+
+	dest := filepath.Join(tempDir, "test.sqlite")
+	if err := ioutil.WriteFile(dest, input, os.ModePerm); err != nil {
+		t.Fatalf("unexpected error writing file: %s", err)
+	}
+
+	return dest
 }

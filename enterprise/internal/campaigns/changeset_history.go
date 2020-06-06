@@ -43,7 +43,7 @@ type changesetStatesAtTime struct {
 	reviewState cmpgn.ChangesetReviewState
 }
 
-// computeHistory calcuates the changesetHistory for the given Changeset and
+// computeHistory calculates the changesetHistory for the given Changeset and
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
 func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, error) {
@@ -143,13 +143,16 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 				pushStates(et)
 			}
 
-		case campaigns.ChangesetEventKindBitbucketServerUnapproved:
+		case campaigns.ChangesetEventKindGitHubReviewDismissed:
 			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
 			// events since GitHub updates the original
 			// ChangesetEventKindGitHubReviewed event when a review has been
 			// dismissed.
 			// See: https://github.com/sourcegraph/sourcegraph/pull/9461
+			continue
 
+		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
+			campaigns.ChangesetEventKindBitbucketServerDismissed:
 			author, err := e.ReviewAuthor()
 			if err != nil {
 				return nil, err
@@ -168,12 +171,12 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) (changesetHistory, 
 				}
 			}
 
-			if e.Type() == campaigns.ChangesetEventKindGitHubReviewDismissed {
-				// A GitHub Review Dismissed can only follow a previous review by
-				// the author of the review included in the event.
-				_, ok := lastReviewByAuthor[author]
-				if !ok {
-					log15.Warn("GitHub review dismissal not following a review", "event", e)
+			if e.Type() == campaigns.ChangesetEventKindBitbucketServerDismissed {
+				// A BitbucketServer Dismissed event can only follow a previous "Changes Requested" review by
+				// the same author.
+				lastReview, ok := lastReviewByAuthor[author]
+				if !ok || lastReview != campaigns.ChangesetReviewStateChangesRequested {
+					log15.Warn("Bitbucket Server Dismissal not following a Review", "event", e)
 					continue
 				}
 			}

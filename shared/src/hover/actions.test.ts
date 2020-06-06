@@ -25,7 +25,7 @@ import {
     UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
-    RevSpec,
+    RevisionSpec,
     ViewStateSpec,
     toAbsoluteBlobURL,
     toPrettyBlobURL,
@@ -50,16 +50,17 @@ const FIXTURE_LOCATION: Location = {
 const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     repoName: 'r',
     commitID: 'c',
-    rev: 'v',
+    revision: 'v',
     filePath: 'f',
     line: 2,
     character: 2,
 }
 
 function testWorkspaceService(
-    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
+    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }],
+    versionContext: string | undefined = undefined
 ): WorkspaceService {
-    return { roots: new BehaviorSubject(roots) }
+    return { roots: new BehaviorSubject(roots), versionContext: new BehaviorSubject(versionContext) }
 }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
@@ -419,7 +420,7 @@ describe('getDefinitionURL', () => {
                 (
                     _location: RepoSpec &
                         Partial<RawRepoSpec> &
-                        RevSpec &
+                        RevisionSpec &
                         FileSpec &
                         Partial<UIPositionSpec> &
                         Partial<ViewStateSpec>
@@ -447,7 +448,7 @@ describe('getDefinitionURL', () => {
                 position: undefined,
                 rawRepoName: 'github.com/r3',
                 repoName: 'r3',
-                rev: 'v3',
+                revision: 'v3',
             })
         })
 
@@ -479,7 +480,7 @@ describe('getDefinitionURL', () => {
                 range: undefined,
                 rawRepoName: 'r3',
                 repoName: 'r3',
-                rev: 'v3',
+                revision: 'v3',
             })
         })
 
@@ -583,7 +584,7 @@ describe('registerHoverContributions()', () => {
             {
                 getPartialModel: () => ({ languageId: 'x' }),
             },
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         commands = new CommandRegistry()

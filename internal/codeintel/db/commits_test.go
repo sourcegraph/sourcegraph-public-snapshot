@@ -53,7 +53,7 @@ func TestUpdateCommits(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
@@ -105,12 +105,12 @@ func TestUpdateCommits(t *testing.T) {
 	}
 }
 
-func TestUpdateCommitsWithConflicts(t *testing.T) {
+func TestUpdateCommitsWithOverlap(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
@@ -170,6 +170,32 @@ func TestUpdateCommitsWithConflicts(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedCommitPairs, commitPairs); diff != "" {
 		t.Errorf("unexpected commits (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateCommitsNoUnknownData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
+		makeCommit(1): {},
+		makeCommit(2): {makeCommit(1)},
+		makeCommit(3): {makeCommit(1)},
+		makeCommit(4): {makeCommit(2), makeCommit(3)},
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
+	}
+
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
+		makeCommit(1): {},
+		makeCommit(2): {makeCommit(1)},
+		makeCommit(3): {makeCommit(1)},
+		makeCommit(4): {makeCommit(2), makeCommit(3)},
+	}); err != nil {
+		t.Fatalf("unexpected error updating commits: %s", err)
 	}
 }
 

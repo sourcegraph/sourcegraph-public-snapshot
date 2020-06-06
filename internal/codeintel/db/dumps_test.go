@@ -11,12 +11,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func TestGetDumpIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(1 * time.Minute)
+	t3 := t1.Add(2 * time.Minute)
+	t4 := t1.Add(3 * time.Minute)
+	t5 := t1.Add(4 * time.Minute)
+	t6 := t1.Add(5 * time.Minute)
+
+	insertUploads(t, dbconn.Global,
+		Upload{ID: 1, Commit: makeCommit(1), State: "completed", UploadedAt: t2},
+		Upload{ID: 2, Commit: makeCommit(2), State: "completed", UploadedAt: t6},
+		Upload{ID: 3, Commit: makeCommit(3), State: "completed", UploadedAt: t3},
+		Upload{ID: 4, Commit: makeCommit(4), State: "completed", UploadedAt: t4},
+		Upload{ID: 5, Commit: makeCommit(5), State: "completed", UploadedAt: t5},
+		Upload{ID: 6, Commit: makeCommit(6), State: "errored", UploadedAt: t2},
+	)
+
+	ids, err := db.GetDumpIDs(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting dump ids: %s", err)
+	}
+
+	if diff := cmp.Diff([]int{1, 3, 4, 5, 2}, ids); diff != "" {
+		t.Errorf("unexpected ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestGetDumpByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Dump does not exist initially
 	if _, exists, err := db.GetDumpByID(context.Background(), 1); err != nil {
@@ -39,7 +72,6 @@ func TestGetDumpByID(t *testing.T) {
 		FailureStacktrace: nil,
 		StartedAt:         &startedAt,
 		FinishedAt:        &finishedAt,
-		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
 	}
@@ -55,7 +87,6 @@ func TestGetDumpByID(t *testing.T) {
 		FailureStacktrace: expected.FailureStacktrace,
 		StartedAt:         expected.StartedAt,
 		FinishedAt:        expected.FinishedAt,
-		TracingContext:    expected.TracingContext,
 		RepositoryID:      expected.RepositoryID,
 		Indexer:           expected.Indexer,
 	})
@@ -74,7 +105,7 @@ func TestFindClosestDumps(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -118,7 +149,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -162,7 +193,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -194,7 +225,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -253,7 +284,7 @@ func TestFindClosestDumpsMaxTraversalLimit(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This repository has the following commit graph (ancestors to the left):
 	//
@@ -298,7 +329,7 @@ func TestDeleteOldestDump(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// Cannot prune empty dump set
 	if _, prunable, err := db.DeleteOldestDump(context.Background()); err != nil {
@@ -418,7 +449,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -463,7 +494,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -510,7 +541,7 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This database has the following commit graph:
 	//
@@ -561,7 +592,7 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	// This repository has the following commit graph (ancestors to the left):
 	//
@@ -614,7 +645,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global, Upload{
 		ID:      1,
@@ -641,7 +672,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global, Upload{
 		ID:      1,
@@ -680,7 +711,7 @@ func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	db := &dbImpl{db: dbconn.Global}
+	db := testDB()
 
 	insertUploads(t, dbconn.Global, Upload{
 		ID:      1,

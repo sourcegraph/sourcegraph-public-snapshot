@@ -262,6 +262,20 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	}
 }
 
+func TestNewTimeoutOpt(t *testing.T) {
+	var cli http.Client
+
+	timeout := 42 * time.Second
+	err := NewTimeoutOpt(timeout)(&cli)
+	if err != nil {
+		t.Fatalf("unexpected error %v", err)
+	}
+
+	if have, want := cli.Timeout, timeout; have != want {
+		t.Errorf("have Timeout %s, want %s", have, want)
+	}
+}
+
 func newFakeClient(code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()

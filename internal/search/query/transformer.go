@@ -21,6 +21,10 @@ func SubstituteAliases(nodes []Node) []Node {
 		"msg":      FieldMessage,
 	}
 	return MapParameter(nodes, func(field, value string, negated bool) Node {
+		if field == "content" {
+			// The Quoted label is unset if content is specified.
+			return Pattern{Value: value, Negated: negated}
+		}
 		if canonical, ok := aliases[field]; ok {
 			field = canonical
 		}
@@ -87,11 +91,10 @@ func Hoist(nodes []Node) ([]Node, error) {
 // SearchUppercase adds case:yes to queries if any pattern is mixed-case.
 func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
-	VisitParameter(nodes, func(field, value string, negated, _ bool) {
-		if field == "" || field == "content" {
-			if match := containsUppercase(value); match {
-				foundMixedCase = true
-			}
+	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
+		// FIXME: make sure query maps content before calling this.
+		if match := containsUppercase(value); match {
+			foundMixedCase = true
 		}
 	})
 	if foundMixedCase {
@@ -108,4 +111,56 @@ func containsUppercase(s string) bool {
 		}
 	}
 	return false
+}
+
+// partition partitions nodes into left and right groups. A node is put in the
+// left group if fn evaluates to true, or in the right group if fn evaluates to false.
+func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
+	for _, node := range nodes {
+		if fn(node) {
+			left = append(left, node)
+		} else {
+			right = append(right, node)
+		}
+	}
+	return left, right
+}
+
+func substituteOrForRegexp(nodes []Node) []Node {
+	isPattern := func(node Node) bool {
+		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+			return true
+		}
+		return false
+	}
+	new := []Node{}
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			if v.Kind == Or {
+				patterns, rest := partition(v.Operands, isPattern)
+				var values []string
+				for _, node := range patterns {
+					values = append(values, node.(Pattern).Value)
+				}
+				valueString := strings.Join(values, "|")
+				new = append(new, Pattern{Value: valueString})
+				rest = substituteOrForRegexp(rest)
+				new = newOperator(append(new, rest...), Or)
+			} else {
+				new = append(new, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+			}
+		case Parameter, Pattern:
+			new = append(new, node)
+		}
+	}
+	return new
+}
+
+// Map pipes query through one or more query transformer functions.
+func Map(query []Node, fns ...func([]Node) []Node) []Node {
+	for _, fn := range fns {
+		query = fn(query)
+	}
+	return query
 }

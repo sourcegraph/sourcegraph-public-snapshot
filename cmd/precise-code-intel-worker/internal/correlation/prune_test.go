@@ -10,8 +10,8 @@ import (
 
 func TestPrune(t *testing.T) {
 	gitContentsOracle := map[string][]string{
-		"root":     {"sub/", "foo.go", "bar.go"},
-		"root/sub": {"sub/baz.go"},
+		"root":     {"root/sub/", "root/foo.go", "root/bar.go"},
+		"root/sub": {"root/sub/baz.go"},
 	}
 
 	getChildren := func(dirnames []string) (map[string][]string, error) {
@@ -24,7 +24,7 @@ func TestPrune(t *testing.T) {
 	}
 
 	state := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go"},
 			"d02": {URI: "bar.go"},
 			"d03": {URI: "sub/baz.go"},
@@ -46,7 +46,7 @@ func TestPrune(t *testing.T) {
 	}
 
 	expectedState := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go"},
 			"d02": {URI: "bar.go"},
 			"d03": {URI: "sub/baz.go"},

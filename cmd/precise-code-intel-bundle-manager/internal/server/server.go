@@ -1,67 +1,71 @@
 package server
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
+const Port = 3187
+
 type Server struct {
-	host                 string
-	port                 int
-	bundleDir            string
-	databaseCache        *database.DatabaseCache
-	documentDataCache    *database.DocumentDataCache
-	resultChunkDataCache *database.ResultChunkDataCache
+	bundleDir          string
+	databaseCache      *database.DatabaseCache
+	documentCache      *database.DocumentCache
+	resultChunkCache   *database.ResultChunkCache
+	observationContext *observation.Context
+	server             *http.Server
+	once               sync.Once
 }
 
-type ServerOpts struct {
-	Host                     string
-	Port                     int
-	BundleDir                string
-	DatabaseCacheSize        int64
-	DocumentDataCacheSize    int64
-	ResultChunkDataCacheSize int64
-}
-
-func New(opts ServerOpts) (*Server, error) {
-	databaseCache, err := database.NewDatabaseCache(opts.DatabaseCacheSize)
-	if err != nil {
-		return nil, err
+func New(
+	bundleDir string,
+	databaseCache *database.DatabaseCache,
+	documentCache *database.DocumentCache,
+	resultChunkCache *database.ResultChunkCache,
+	observationContext *observation.Context,
+) *Server {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
 	}
 
-	documentDataCache, err := database.NewDocumentDataCache(opts.DocumentDataCacheSize)
-	if err != nil {
-		return nil, err
+	s := &Server{
+		bundleDir:          bundleDir,
+		databaseCache:      databaseCache,
+		documentCache:      documentCache,
+		resultChunkCache:   resultChunkCache,
+		observationContext: observationContext,
 	}
 
-	resultChunkDataCache, err := database.NewResultChunkDataCache(opts.ResultChunkDataCacheSize)
-	if err != nil {
-		return nil, err
+	s.server = &http.Server{
+		Addr:    net.JoinHostPort(host, strconv.FormatInt(int64(Port), 10)),
+		Handler: ot.Middleware(s.handler()),
 	}
 
-	return &Server{
-		host:                 opts.Host,
-		port:                 opts.Port,
-		bundleDir:            opts.BundleDir,
-		databaseCache:        databaseCache,
-		documentDataCache:    documentDataCache,
-		resultChunkDataCache: resultChunkDataCache,
-	}, nil
+	return s
 }
 
 func (s *Server) Start() {
-	addr := net.JoinHostPort(s.host, strconv.FormatInt(int64(s.port), 10))
-	handler := ot.Middleware(s.handler())
-	server := &http.Server{Addr: addr, Handler: handler}
-
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log15.Error("Failed to start server", "err", err)
+	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
+		log15.Error("Failed to start server", "error", err)
 		os.Exit(1)
 	}
+}
+
+func (s *Server) Stop() {
+	s.once.Do(func() {
+		if err := s.server.Shutdown(context.Background()); err != nil {
+			log15.Error("Failed to shutdown server", "error", err)
+		}
+	})
 }

@@ -4,6 +4,12 @@ This document describes the exact changes needed to update a Docker Compose Sour
 
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## v3.15.1 -> v3.16.0
+
+No manual migration is required. 
+
+Please upgrade to the [`v3.16.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
 ## (v3.14.2, v3.14.4) -> v3.15.1
 
 No manual migration is required. 
@@ -16,7 +22,7 @@ If your users have uploaded LSIF precise code intelligence data, you may keep it
 
 ```
 docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'cp -R /docker/volumes/docker-compose_lsif-server/_data/* /docker/volumes/docker-compose_precise-code-intel-bundle-manager/_data/'
-````
+```
 
 (No restart is required after running the above command.)
 

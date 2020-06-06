@@ -16,12 +16,12 @@ export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, classNa
     if (user?.avatarURL) {
         let url = user.avatarURL
         try {
-            const urlObj = new URL(user.avatarURL)
+            const urlObject = new URL(user.avatarURL)
             if (size) {
-                urlObj.searchParams.set('s', size.toString())
+                urlObject.searchParams.set('s', size.toString())
             }
-            url = urlObj.href
-        } catch (e) {
+            url = urlObject.href
+        } catch {
             // noop
         }
         return <img className={`user-avatar ${className || ''}`} src={url} {...otherProps} />

@@ -614,17 +614,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if cloneInProgress {
-		status = "clone-in-progress"
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
-		return
-	}
 	if !repoCloned(dir) {
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			status = "clone-in-progress"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
 		if req.URL == "" {
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
@@ -1306,7 +1307,17 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, url)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url,
+			// Normal git refs
+			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
+			// GitHub pull requests
+			"+refs/pull/*:refs/pull/*",
+			// GitLab merge requests
+			"+refs/merge-requests/*:refs/merge-requests/*",
+			// Bitbucket pull requests
+			"+refs/pull-requests/*:refs/pull-requests/*",
+			// Possibly deprecated refs for sourcegraph zap experiment?
+			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
 	cmd.Dir = string(dir)
 

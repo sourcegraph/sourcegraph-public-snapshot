@@ -36,6 +36,7 @@ const defaultProps = {
     onSelect,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     isLightTheme: true,
+    versionContext: undefined,
 }
 
 describe('FileMatchChildren', () => {

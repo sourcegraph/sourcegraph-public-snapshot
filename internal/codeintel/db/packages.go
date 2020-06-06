@@ -21,7 +21,6 @@ func (db *dbImpl) GetPackage(ctx context.Context, scheme, name, version string) 
 			d.failure_stacktrace,
 			d.started_at,
 			d.finished_at,
-			d.tracing_context,
 			d.repository_id,
 			d.indexer
 		FROM lsif_packages p
@@ -42,7 +41,7 @@ func (db *dbImpl) UpdatePackages(ctx context.Context, packages []types.Package) 
 		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s)", p.DumpID, p.Scheme, p.Name, p.Version))
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_packages (dump_id, scheme, name, version)
 		VALUES %s
 		ON CONFLICT DO NOTHING

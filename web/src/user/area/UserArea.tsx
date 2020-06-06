@@ -25,10 +25,10 @@ import { PatternTypeProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 
-const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
+const fetchUser = (args: { username: string; siteAdmin: boolean }): Observable<GQL.IUser> =>
     queryGraphQL(
         gql`
-            query User($username: String!) {
+            query User($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
                     __typename
                     id
@@ -51,6 +51,10 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
                             displayName
                             name
                         }
+                    }
+                    permissionsInfo @include(if: $siteAdmin) {
+                        syncedAt
+                        updatedAt
                     }
                 }
             }
@@ -156,10 +160,13 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
-                        return fetchUser({ username }).pipe(
+                        return fetchUser({
+                            username,
+                            siteAdmin: !!this.props.authenticatedUser?.siteAdmin,
+                        }).pipe(
                             filter(isDefined),
                             catchError(error => [asError(error)]),
-                            map((c): PartialStateUpdate => ({ userOrError: c })),
+                            map((userOrError): PartialStateUpdate => ({ userOrError })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.
@@ -169,7 +176,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
+                    error => console.error(error)
                 )
         )
 

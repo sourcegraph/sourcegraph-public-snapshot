@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/time/rate"
 )
@@ -83,7 +84,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	service := services[0]
 
 	switch service.Kind {
-	case "GITHUB", "BITBUCKETSERVER":
+	case extsvc.KindGitHub, extsvc.KindBitbucketServer:
 	// Supported by campaigns
 	default:
 		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)
@@ -628,7 +629,11 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 	for _, e := range es {
 		var rl *rate.Limiter
 		if rlr != nil {
-			rl = rlr.GetRateLimiter(e.ID)
+			u, err := e.BaseURL()
+			if err != nil {
+				return nil, errors.Wrap(err, "getting base URL")
+			}
+			rl = rlr.GetRateLimiter(u.String())
 		}
 		css, err := repos.NewChangesetSource(e, cf, rl)
 		if err != nil {
@@ -747,7 +752,7 @@ func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
 	return pq.items[0], true
 }
 
-// SyncWebhooks modifies at item if it exists or adds a new item if not.
+// Upsert modifies at item if it exists or adds a new item if not.
 // NOTE: If an existing item is high priority, it will not be changed back
 // to normal. This allows high priority items to stay that way through reschedules.
 func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {

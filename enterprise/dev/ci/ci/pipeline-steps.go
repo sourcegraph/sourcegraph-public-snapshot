@@ -19,11 +19,12 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel/api-server",
-	"precise-code-intel/bundle-manager",
-	"precise-code-intel/worker",
+	"precise-code-intel-bundle-manager",
+	"precise-code-intel-worker",
+	"precise-code-intel-indexer",
 
 	// Images under docker-images/
+	"cadvisor",
 	"grafana",
 	"indexed-searcher",
 	"postgres-11.4",
@@ -100,13 +101,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
-// Tests the precise code intel system.
-func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F unit"))
-}
-
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
@@ -114,8 +108,18 @@ func addSharedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 
-	// Storybook
-	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
+	// Storybook coverage
+	pipeline.AddStep(":storybook::codecov:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
+		bk.Cmd("yarn run cover-storybook"),
+		bk.Cmd("yarn nyc report -r json"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
+
+	// Upload storybook to Percy
+	pipeline.AddStep(":storybook::percy:",
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		bk.Cmd("dev/ci/yarn-run.sh build-storybook percy-storybook"))
 }
 
 // Adds PostgreSQL backcompat tests.
@@ -156,7 +160,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts ./src/e2e/gitlab.test.ts"),
+			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -198,10 +202,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests for renovate and release branches
+	// Run e2e tests for release branches
 	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	runE2E := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",

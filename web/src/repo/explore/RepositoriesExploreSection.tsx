@@ -7,7 +7,6 @@ import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
@@ -49,7 +48,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     public componentDidMount(): void {
         this.subscriptions.add(
             queryRepositories(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS)
-                .pipe(catchError(err => [asError(err)]))
+                .pipe(catchError(error => [asError(error)]))
                 .subscribe(repositoriesOrError => this.setState({ repositoriesOrError }))
         )
     }
@@ -61,22 +60,12 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     public render(): JSX.Element | null {
         const repositoriesOrError: (typeof LOADING | GQL.IRepository)[] | ErrorLike =
             this.state.repositoriesOrError === LOADING
-                ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
+                ? new Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
                 ? this.state.repositoriesOrError
                 : this.state.repositoriesOrError.nodes
 
         const itemClass = 'py-2'
-
-        // Only show total count if it is counting *all* repositories (i.e., no filter args are specified).
-        const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
-        const totalCount =
-            queryingAllRepositories &&
-            this.state.repositoriesOrError !== LOADING &&
-            !isErrorLike(this.state.repositoriesOrError) &&
-            typeof this.state.repositoriesOrError.totalCount === 'number'
-                ? this.state.repositoriesOrError.totalCount
-                : undefined
 
         return (
             <div className="card">
@@ -87,14 +76,14 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                     ) : repositoriesOrError.length === 0 ? (
                         <p>No repositories.</p>
                     ) : (
-                        repositoriesOrError.map((repo /* or loading */, i) =>
+                        repositoriesOrError.map((repo /* or loading */, index) =>
                             repo === LOADING ? (
-                                <div key={i} className={`${itemClass} list-group-item`}>
+                                <div key={index} className={`${itemClass} list-group-item`}>
                                     <h4 className="text-muted mb-0">⋯</h4>&nbsp;
                                 </div>
                             ) : (
                                 <Link
-                                    key={i}
+                                    key={index}
                                     className={`${itemClass} list-group-item list-group-item-action text-truncate`}
                                     to={repo.url}
                                 >
@@ -107,14 +96,12 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                         )
                     )}
                 </div>
-                {typeof totalCount === 'number' && totalCount > 0 && (
-                    <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
-                            View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
-                            <ChevronRightIcon className="icon-inline" />
-                        </Link>
-                    </div>
-                )}
+                <div className="card-footer">
+                    <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
+                        View all repositories
+                        <ChevronRightIcon className="icon-inline" />
+                    </Link>
+                </div>
             </div>
         )
     }
@@ -132,7 +119,6 @@ function queryRepositories(
                         description
                         url
                     }
-                    totalCount(precise: false)
                 }
             }
         `,

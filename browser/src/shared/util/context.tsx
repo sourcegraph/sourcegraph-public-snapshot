@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { observeStorageKey } from '../../browser/storage'
+import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
 

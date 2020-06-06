@@ -27,6 +27,6 @@
     "./build/**/*",
     "coverage",
     "stories", // TODO fix type errors and include
-    "src/e2e",
+    "src/end-to-end",
   ],
 }

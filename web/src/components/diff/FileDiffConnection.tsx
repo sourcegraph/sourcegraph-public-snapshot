@@ -6,10 +6,7 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { Connection, FilteredConnection } from '../FilteredConnection'
 import { FileDiffNodeProps } from './FileDiffNode'
 
-class FilteredFileDiffConnection extends FilteredConnection<
-    GQL.IFileDiff | GQL.IPreviewFileDiff,
-    Omit<FileDiffNodeProps, 'node'>
-> {}
+class FilteredFileDiffConnection extends FilteredConnection<GQL.IFileDiff, Omit<FileDiffNodeProps, 'node'>> {}
 
 type Props = FilteredFileDiffConnection['props']
 
@@ -21,9 +18,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         return <FilteredFileDiffConnection {...this.props} onUpdate={this.onUpdate} />
     }
 
-    private onUpdate = (
-        fileDiffsOrError: Connection<GQL.IFileDiff | GQL.IPreviewFileDiff> | ErrorLike | undefined
-    ): void => {
+    private onUpdate = (fileDiffsOrError: Connection<GQL.IFileDiff> | ErrorLike | undefined): void => {
         const nodeProps = this.props.nodeComponentProps!
 
         // TODO(sqs): This reports to extensions that these files are empty. This is wrong, but we don't have any

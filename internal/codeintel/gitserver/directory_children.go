@@ -1,35 +1,23 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
 	"sort"
 	"strings"
 
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
 // of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 // that key are the files nested under that directory.
-func DirectoryChildren(db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
-	// TODO(efritz) - remove dependency on codeintel/db package
-	repoName, err := db.RepoName(context.Background(), repositoryID)
+func DirectoryChildren(ctx context.Context, db db.DB, repositoryID int, commit string, dirnames []string) (map[string][]string, error) {
+	out, err := execGitCommand(ctx, db, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
 	if err != nil {
-		return nil, errors.Wrap(err, "db.RepoName")
+		return nil, err
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
-	cmd.Repo = gitserver.Repo{Name: api.RepoName(repoName)}
-	out, err := cmd.CombinedOutput(context.Background())
-	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.Command")
-	}
-
-	return parseDirectoryChildren(dirnames, strings.Split(string(bytes.TrimSpace(out)), "\n")), nil
+	return parseDirectoryChildren(dirnames, strings.Split(out, "\n")), nil
 }
 
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a

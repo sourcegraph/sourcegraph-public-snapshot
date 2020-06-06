@@ -82,7 +82,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         deleteExternalAccount(this.props.node.id).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
-                            map(c => ({ deletionOrError: c })),
+                            map(deletionOrError => ({ deletionOrError })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
                                     this.props.onDidUpdate()
@@ -174,5 +174,5 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
 
     private deleteExternalAccount = (): void => this.deletes.next()
 
-    private toggleShowData = (): void => this.setState(prev => ({ showData: !prev.showData }))
+    private toggleShowData = (): void => this.setState(previous => ({ showData: !previous.showData }))
 }

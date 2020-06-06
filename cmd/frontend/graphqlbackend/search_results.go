@@ -54,6 +54,7 @@ type searchResultsCommon struct {
 	indexed  []*types.Repo             // repos that were searched using an index
 	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
 	missing  []*types.Repo             // repos that could not be searched because they do not exist
+	excluded excludedRepos             // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
@@ -122,6 +123,8 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.indexed = append(c.indexed, other.indexed...)
 	c.cloning = append(c.cloning, other.cloning...)
 	c.missing = append(c.missing, other.missing...)
+	c.excluded.forks = c.excluded.forks + other.excluded.forks
+	c.excluded.archived = c.excluded.archived + other.excluded.archived
 	c.timedout = append(c.timedout, other.timedout...)
 	c.resultCount += other.resultCount
 
@@ -221,7 +224,7 @@ var commonFileFilters = []struct {
 func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
-	add := func(value string, label string, count int, limitHit bool, kind string) {
+	add := func(value string, label string, count int, limitHit bool, kind string, score score) {
 		sf, ok := filters[value]
 		if !ok {
 			sf = &searchFilterResolver{
@@ -236,24 +239,26 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			sf.count = int32(count)
 		}
 
-		sf.score++
+		sf.score = score
 	}
 
 	addRepoFilter := func(uri string, rev string, lineMatchCount int) {
 		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
 		if rev != "" {
-			filter = filter + fmt.Sprintf(`@%s`, regexp.QuoteMeta(rev))
+			// We don't need to quote rev. The only special characters we interpret
+			// are @ and :, both of which are disallowed in git refs
+			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
 		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
-		add(filter, uri, repoToMatchCount[uri], limitHit, "repo")
+		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		for _, ff := range commonFileFilters {
 			if ff.Regexp.MatchString(fileMatchPath) {
-				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file")
+				add(ff.Filter, ff.Filter, lineMatchCount, limitHit, "file", scoreDefault)
 			}
 		}
 	}
@@ -270,11 +275,17 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				add(value, value, lineMatchCount, limitHit, "lang")
+				add(value, value, lineMatchCount, limitHit, "lang", scoreDefault)
 			}
 		}
 	}
 
+	if sr.searchResultsCommon.excluded.forks > 0 {
+		add("fork:yes", "fork:yes", sr.searchResultsCommon.excluded.forks, sr.limitHit, "repo", scoreImportant)
+	}
+	if sr.searchResultsCommon.excluded.archived > 0 {
+		add("archived:yes", "archived:yes", sr.searchResultsCommon.excluded.archived, sr.limitHit, "repo", scoreImportant)
+	}
 	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
@@ -286,7 +297,7 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
 			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
+				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol", scoreDefault)
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -315,7 +326,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 
 	allFilters := append(filterSlice, repoFilterSlice...)
 	sort.Slice(allFilters, func(i, j int) bool {
-		return allFilters[j].score < allFilters[i].score
+		left := allFilters[i]
+		right := allFilters[j]
+		if left.score == right.score {
+			// Order alphabetically for equal scores.
+			return strings.Compare(left.value, right.value) < 0
+		}
+		return left.score < right.score
 	})
 
 	return allFilters
@@ -336,9 +353,16 @@ type searchFilterResolver struct {
 	// the kind of filter. Should be "repo", "file", or "lang".
 	kind string
 
-	// score is used to select potential filters
-	score int
+	// score is used to prioritize the order that filters appear in
+	score score
 }
+
+type score int
+
+const (
+	scoreImportant score = iota
+	scoreDefault
+)
 
 func (sf *searchFilterResolver) Value() string {
 	return sf.value
@@ -716,7 +740,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	want := 5
 
 	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -788,7 +812,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
 		countStr = value
 	})
 	if countStr != "" {
@@ -847,13 +871,16 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 			return r.evaluateOperator(ctx, scopeParameters, term)
 		} else if term.Kind == query.Concat {
 			q := append(scopeParameters, term)
-			r.query = query.AndOrQuery{Query: q}
+			r.query.(*query.AndOrQuery).Query = q
 			return r.evaluateLeaf(ctx)
 		}
-	case query.Parameter:
+	case query.Pattern:
 		q := append(scopeParameters, term)
-		r.query = query.AndOrQuery{Query: q}
+		r.query.(*query.AndOrQuery).Query = q
 		return r.evaluateLeaf(ctx)
+	case query.Parameter:
+		// evaluatePatternExpression does not process Parameter nodes.
+		return nil, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
@@ -866,7 +893,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
 	}
 	if pattern == nil {
-		r.query = query.AndOrQuery{Query: scopeParameters}
+		r.query.(*query.AndOrQuery).Query = scopeParameters
 		return r.evaluateLeaf(ctx)
 	}
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
@@ -1282,27 +1309,27 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	return resultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, excludedRepos *excludedRepos, res *SearchResultsResolver, err error) {
+	repos, missingRepoRevs, excludedRepos, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+			return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 		}
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
-	return repos, missingRepoRevs, nil, nil
+	return repos, missingRepoRevs, excludedRepos, nil, nil
 }
 
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
@@ -1354,7 +1381,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
+	repos, missingRepoRevs, excludedRepos, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
@@ -1430,6 +1457,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			return &requiredWg
 		}
 		return &optionalWg
+	}
+
+	if excludedRepos != nil {
+		common.excluded = *excludedRepos
 	}
 
 	// Apply search limits and generate warnings before firing off workers.
@@ -1678,7 +1709,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
+		len(results),
+		common.limitHit,
+		len(common.cloning),
+		len(common.missing),
+		common.excluded.forks,
+		common.excluded.archived,
+		len(common.timedout))
 
 	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
