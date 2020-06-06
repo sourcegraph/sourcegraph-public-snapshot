@@ -54,6 +54,8 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
 }
 
+var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
+
 // ParseProductLicenseKeyWithBuiltinOrGenerationKey is like ParseProductLicenseKey, except it tries
 // parsing and verifying the license key with the license generation key (if set), instead of always
 // using the builtin license key.
@@ -61,6 +63,10 @@ func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, er
 // It is useful for local development when using a test license generation key (whose signatures
 // aren't considered valid when verified using the builtin public key).
 func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*Info, string, error) {
+	if MockParseProductLicenseKeyWithBuiltinOrGenerationKey != nil {
+		return MockParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey)
+	}
+
 	var k ssh.PublicKey
 	if licenseGenerationPrivateKey != nil {
 		k = licenseGenerationPrivateKey.PublicKey()
