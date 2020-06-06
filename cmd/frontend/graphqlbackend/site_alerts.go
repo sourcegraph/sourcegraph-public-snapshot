@@ -176,7 +176,7 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
 
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
-	key := fmt.Sprintf("update-available-", globalUpdateStatus.UpdateVersion)
+	key := "update-available-" + globalUpdateStatus.UpdateVersion
 	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}
 }
 
