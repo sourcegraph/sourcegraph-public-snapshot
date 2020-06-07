@@ -9,15 +9,14 @@ import (
 )
 
 var (
-	rawBundleDir            = env.Get("PRECISE_CODE_INTEL_BUNDLE_DIR", "/lsif-storage", "Root dir containing uploads and converted bundles.")
-	rawDatabaseCacheSize    = env.Get("PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY", "100", "Maximum number of SQLite connections that can be open at once.")
-	rawDocumentCacheSize    = env.Get("PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY", "1000000", "Size of decoded document cache. A document's cost is the number of fields.")
-	rawResultChunkCacheSize = env.Get("PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY", "1000000", "Size of decoded result chunk cache. A result chunk's cost is the number of fields.")
-	rawDesiredPercentFree   = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
-	rawJanitorInterval      = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
-	rawMaxUploadAge         = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
-	rawMaxUploadPartAge     = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE", "2h", "The maximum time an upload part file can sit on disk.")
-	rawMaxDatabasePartAge   = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time a database part file can sit on disk.")
+	rawBundleDir          = env.Get("PRECISE_CODE_INTEL_BUNDLE_DIR", "/lsif-storage", "Root dir containing uploads and converted bundles.")
+	rawDatabaseCacheSize  = env.Get("PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY", "100", "Maximum number of SQLite connections that can be open at once.")
+	rawReaderCacheSize    = env.Get("PRECISE_CODE_INTEL_READER_CACHE_CAPACITY", "10000", "Maximum capacity of the sqlite data cache.")
+	rawDesiredPercentFree = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
+	rawJanitorInterval    = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
+	rawMaxUploadAge       = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
+	rawMaxUploadPartAge   = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE", "2h", "The maximum time an upload part file can sit on disk.")
+	rawMaxDatabasePartAge = env.Get("PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE", "2h", "The maximum time a database part file can sit on disk.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
