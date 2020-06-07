@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -134,7 +135,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 func TestServer_SetRepoEnabled(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -161,7 +162,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	gitlabService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITLAB",
+		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab.com - test",
 		Config: formatJSON(`
 		{
@@ -190,7 +191,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	bitbucketServerService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config: formatJSON(`
 		{
@@ -452,7 +453,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -463,7 +464,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	}
 	service2 := &repos.ExternalService{
 		ID:          2,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test2",
 		Config: formatJSON(`
 		{
@@ -544,7 +545,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 func TestServer_StatusMessages(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 	}
 

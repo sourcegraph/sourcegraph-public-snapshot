@@ -133,18 +133,18 @@ func (e ExternalService) BaseURL() (*url.URL, error) {
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
 func (e *ExternalService) Exclude(rs ...*Repo) error {
-	switch strings.ToLower(e.Kind) {
-	case "github":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindGitHub:
 		return e.excludeGithubRepos(rs...)
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return e.excludeGitLabRepos(rs...)
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return e.excludeBitbucketServerRepos(rs...)
-	case "awscodecommit":
+	case extsvc.KindAWSCodeCommit:
 		return e.excludeAWSCodeCommitRepos(rs...)
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return e.excludeGitoliteRepos(rs...)
-	case "other":
+	case extsvc.KindOther:
 		return e.excludeOtherRepos(rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
@@ -479,20 +479,20 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 }
 
 func (e ExternalService) schema() string {
-	switch strings.ToLower(e.Kind) {
-	case "awscodecommit":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindAWSCodeCommit:
 		return schema.AWSCodeCommitSchemaJSON
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return schema.BitbucketServerSchemaJSON
-	case "github":
+	case extsvc.KindGitHub:
 		return schema.GitHubSchemaJSON
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return schema.GitLabSchemaJSON
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return schema.GitoliteSchemaJSON
-	case "phabricator":
+	case extsvc.KindPhabricator:
 		return schema.PhabricatorSchemaJSON
-	case "other":
+	case extsvc.KindOther:
 		return schema.OtherExternalServiceSchemaJSON
 	default:
 		return ""

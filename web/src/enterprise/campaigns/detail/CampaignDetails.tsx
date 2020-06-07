@@ -60,6 +60,7 @@ interface Campaign
         | 'closedAt'
         | 'viewerCanAdminister'
         | 'branch'
+        | 'hasUnpublishedPatches'
     > {
     patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
@@ -334,7 +335,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         [campaign, history]
     )
 
-    const afterRetry = useCallback(
+    const afterCampaignModify = useCallback(
         (updatedCampaign: Campaign): void => {
             setCampaign(updatedCampaign)
             campaignUpdates.next()
@@ -391,7 +392,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             />
             {alertError && <ErrorAlert error={alertError} history={history} />}
             {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} afterRetry={afterRetry} history={history} />
+                <CampaignStatus
+                    campaign={campaign}
+                    afterRetry={afterCampaignModify}
+                    afterPublish={afterCampaignModify}
+                    history={history}
+                />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 {['saving', 'editing'].includes(mode) && (

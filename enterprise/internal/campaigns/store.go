@@ -2058,15 +2058,16 @@ type CountPatchesOpts struct {
 	PatchSetID   int64
 	OnlyWithDiff bool
 
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
 	// If this is set to a Campaign ID only the Patches are returned that are
 	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
-
-	// If this is set to a Campaign ID only the Patches are returned that are
-	// _not_ associated with any ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
-	OnlyWithoutChangesetJobInCampaign int64
 }
 
 // CountPatches returns the number of Patches in the database.
@@ -2099,12 +2100,12 @@ func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
 
-	if opts.OnlyUnpublishedInCampaign != 0 {
-		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
 	}
 
-	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
-		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
 	return sqlf.Sprintf(countPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -2185,11 +2186,6 @@ type ListPatchesOpts struct {
 	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
-	// If this is set to a Campaign ID only the Patches are returned that are
-	// _not_ associated with any ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
-	OnlyWithoutChangesetJobInCampaign int64
-
 	// If this is set only the Patches where diff_stat_added OR
 	// diff_stat_changed OR diff_stat_deleted are NULL.
 	OnlyWithoutDiffStats bool
@@ -2269,10 +2265,6 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
-	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
-		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
-	}
-
 	if opts.OnlyWithoutDiffStats {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
@@ -2313,21 +2305,6 @@ NOT EXISTS (
 
 func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
 	return sqlf.Sprintf(onlyUnpublishedInCampaignQueryFmtstr, campaignID)
-}
-
-var onlyWithoutChangesetJobInCampaignQueryFmtstr = `
-NOT EXISTS (
-  SELECT 1
-  FROM changeset_jobs
-  WHERE
-    changeset_jobs.patch_id = patches.id
-  AND
-    changeset_jobs.campaign_id = %s
-)
-`
-
-func onlyWithoutChangesetJobInCampaignQuery(campaignID int64) *sqlf.Query {
-	return sqlf.Sprintf(onlyWithoutChangesetJobInCampaignQueryFmtstr, campaignID)
 }
 
 // CreateChangesetJob creates the given ChangesetJob.

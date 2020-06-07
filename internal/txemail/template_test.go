@@ -22,7 +22,7 @@ func TestParseTemplate(t *testing.T) {
 	}
 
 	var m gophermail.Message
-	if err := pt.Render(struct {
+	if err := renderTemplate(pt, struct {
 		A string
 		B string
 	}{

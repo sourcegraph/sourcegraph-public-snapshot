@@ -164,7 +164,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
 			t.Run("EnqueueChangesetJobs", func(t *testing.T) {
-				err = svc.EnqueueChangesetJobs(currentUserCtx, campaign.ID)
+				_, err = svc.EnqueueChangesetJobs(currentUserCtx, campaign.ID)
 				tc.assertFunc(t, err)
 			})
 
@@ -596,7 +596,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, cf, clock)
-		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+		if _, err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -618,7 +618,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try again, check that no new jobs have been created
-		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+		if _, err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
 			t.Fatal(err)
 		}
 		haveJobs2, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -648,7 +648,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try again, check that the job was not reset
-		if err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
+		if _, err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
 			t.Fatal(err)
 		}
 		haveJobs3, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
