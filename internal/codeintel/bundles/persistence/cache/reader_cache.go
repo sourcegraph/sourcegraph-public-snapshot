@@ -179,7 +179,7 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	return entry
 }
 
-// evict attempts to remove n elements from the back of the list.  This function assumes that the cache's
+// evict attempts to remove n elements from the back of the list. This function assumes that the cache's
 // mutex is held by the caller.
 func (c *Cache) evict(n int) {
 	for element := c.evictList.Back(); element != nil; element = element.Prev() {
