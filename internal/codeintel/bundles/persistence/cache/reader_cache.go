@@ -51,7 +51,7 @@ func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 	if !ok {
 		return ErrReaderInitializationDeadlineExceeded
 	}
-	defer entry.wg.Done()
+	defer entry.refCount.Done()
 
 	select {
 	case <-entry.init:
@@ -121,7 +121,7 @@ func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 	}
 
 	entry := element.Value.(*cacheEntry)
-	entry.wg.Add(1)                  // Mark as in-use
+	entry.refCount.Add(1)            // Mark as in-use
 	c.evictList.MoveToFront(element) // Update recency data
 
 	select {
@@ -129,7 +129,7 @@ func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 		// We optimistically added one to the wait group above. If the entry is draining at this
 		// point, it is not safe for use as the close procedure may have already unblocked on the
 		// wait group. Undo our mark here and try to get a new entry.
-		entry.wg.Done()
+		entry.refCount.Done()
 		return nil, true, true
 	default:
 	}
@@ -141,7 +141,7 @@ func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 // held by the caller.
 func (c *Cache) createEntry(key string) *cacheEntry {
 	entry := newCacheEntry(key)
-	entry.wg.Add(1)                         // Mark as in-use
+	entry.refCount.Add(1)                   // Mark as in-use
 	element := c.evictList.PushFront(entry) // Update recency data
 	c.entries[key] = element
 
@@ -150,7 +150,7 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	// This allows us to have several consumers concurrently waiting on the same cache entry
 	// to initialize.
 	//
-	// Previous constructions of this cache did not guarantee this property:
+	// Previous implementation attempts of this cache did not guarantee this property:
 	//   (1) holding a lock during initialization stops independent readers for initializing
 	//       concurrently, which can severely decrease request throughput
 	//   (2) not synchronizing during initialization can allow the same reader to be
@@ -170,10 +170,9 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	}()
 
 	// We just created a new entry so we may now be over capcity. Remove as many entries
-	// as necessary to get us back under our maximum size. This may call end up calling
-	// remove on an entry that is already draining, but is safe to do as that function
-	// is idempotent and is guaranteed to remove the underlying entry at some point in
-	// the future.
+	// as necessary to get us back under our maximum size. This may call remove on an entry
+	// that is already draining, but is safe to do as that function is idempotent and is
+	// guaranteed to remove the underlying entry at some point in the future.
 	c.evict(len(c.entries) - c.size)
 
 	return entry
@@ -196,7 +195,7 @@ func (c *Cache) evict(n int) {
 // then waits for all current readers to drain. The entry is then removed from the cache
 // mapping. This function is safe to call on the same entry multiple times.
 func (c *Cache) remove(entry *cacheEntry) {
-	entry.once.Do(func() {
+	entry.closeOnce.Do(func() {
 		go func() {
 			entry.close()
 
@@ -212,13 +211,13 @@ func (c *Cache) remove(entry *cacheEntry) {
 
 // cacheEntry wraps a reader which may still be initializing.
 type cacheEntry struct {
-	key      string
-	reader   persistence.Reader
-	err      error
-	init     chan struct{}  // marks init completion
-	draining chan struct{}  // marks intent to close
-	wg       sync.WaitGroup // concurrent use ref count
-	once     sync.Once      // guards close function
+	key       string
+	reader    persistence.Reader
+	err       error
+	init      chan struct{}  // marks init completion
+	draining  chan struct{}  // marks intent to close
+	refCount  sync.WaitGroup // acts as concurrent use gauge
+	closeOnce sync.Once
 }
 
 func newCacheEntry(key string) *cacheEntry {
@@ -235,7 +234,7 @@ func newCacheEntry(key string) *cacheEntry {
 func (e *cacheEntry) close() {
 	close(e.draining) // Reject future readers
 	<-e.init          // Wait until initialized
-	e.wg.Wait()       // Wait until there are no more readers
+	e.refCount.Wait() // Wait until there are no more readers
 
 	if e.reader == nil {
 		return
