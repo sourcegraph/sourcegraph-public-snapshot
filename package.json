@@ -76,7 +76,7 @@
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
-    "@octokit/rest": "^16.36.0",
+    "@octokit/rest": "^17.11.0",
     "@percy/puppeteer": "^1.1.0",
     "@percy/storybook": "^3.3.0",
     "@slack/web-api": "^5.8.1",
