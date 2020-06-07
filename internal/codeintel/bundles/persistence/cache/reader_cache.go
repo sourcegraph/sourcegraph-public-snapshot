@@ -112,8 +112,9 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 }
 
 // getEntry attempts to return an existing entry for the given key. This function returns boolen flags
-// indicating whether an entry exists, and whether or not that entry is currently draining. This function
-// assumes that the cache's mutex is held by the caller.
+// indicating whether an entry exists, and whether or not that entry is currently draining.
+//
+// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
 func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 	element, ok := c.entries[key]
 	if !ok {
@@ -121,14 +122,21 @@ func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 	}
 
 	entry := element.Value.(*cacheEntry)
-	entry.refCount.Add(1)            // Mark as in-use
-	c.evictList.MoveToFront(element) // Update recency data
+
+	// Update recency data
+	c.evictList.MoveToFront(element)
+
+	// Mark as in-use.
+	//
+	// NOTE: 🔐 This refCount is decreased after the handler function completes in the calling
+	// function so that we do not try to close a reader that's currently active in some other
+	// goroutine. If the entry is currently draining (the condition below), we also need to
+	// decrease the use count immediately as the calling function will not attempt to invoke
+	// the handler function at all.
+	entry.refCount.Add(1)
 
 	select {
 	case <-entry.draining:
-		// We optimistically added one to the wait group above. If the entry is draining at this
-		// point, it is not safe for use as the close procedure may have already unblocked on the
-		// wait group. Undo our mark here and try to get a new entry.
 		entry.refCount.Done()
 		return nil, true, true
 	default:
@@ -137,13 +145,22 @@ func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
 	return entry, true, false
 }
 
-// createEntry creates a new cache entry for the given key. This function assumes that the cache's mutex is
-// held by the caller.
+// createEntry creates a new cache entry for the given key.
+//
+// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
 func (c *Cache) createEntry(key string) *cacheEntry {
 	entry := newCacheEntry(key)
-	entry.refCount.Add(1)                   // Mark as in-use
-	element := c.evictList.PushFront(entry) // Update recency data
+
+	// Update recency data and make it accessible by key to future calls
+	element := c.evictList.PushFront(entry)
 	c.entries[key] = element
+
+	// Mark as in-use.
+	//
+	// NOTE: 🔐 This refCount is decreased after the handler function completes in the calling
+	// function so that we do not try to close a reader that's currently active in some other
+	// goroutine.
+	entry.refCount.Add(1)
 
 	// Perform the open procedure in a goroutine. The close of the init channel will signal
 	// all consumers of the cache that the entry's underlying reader is now ready for use.
@@ -178,8 +195,9 @@ func (c *Cache) createEntry(key string) *cacheEntry {
 	return entry
 }
 
-// evict attempts to remove n elements from the back of the list.  This function assumes that the cache's
-// mutex is held by the caller.
+// evict attempts to remove n elements from the back of the list.
+//
+// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
 func (c *Cache) evict(n int) {
 	for element := c.evictList.Back(); element != nil; element = element.Prev() {
 		if n <= 0 {
