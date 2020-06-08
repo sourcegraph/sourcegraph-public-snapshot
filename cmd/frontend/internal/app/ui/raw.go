@@ -13,14 +13,15 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/golang/gddo/httputil"
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-
-	"github.com/golang/gddo/httputil"
-	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
@@ -230,9 +231,12 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 
-		archiveFS := vfsutil.NewGitServer(common.Repo.Name, common.CommitID)
-		defer archiveFS.Close()
-		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
+		cachedRepo, err := backend.CachedGitRepo(r.Context(), common.Repo)
+		if err != nil {
+			return err
+		}
+
+		fi, err := git.Stat(r.Context(), *cachedRepo, common.CommitID, requestedPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				requestType = "404"
@@ -241,16 +245,19 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 			return err
 		}
+
 		if fi.IsDir() {
 			requestType = "dir"
-			infos, err := archiveFS.ReadDir(r.Context(), requestedPath)
+			infos, err := git.ReadDir(r.Context(), *cachedRepo, common.CommitID, requestedPath, false)
 			if err != nil {
 				return err
 			}
 			size = int64(len(infos))
 			var names []string
 			for _, info := range infos {
-				name := info.Name()
+				// A previous version of this code returned relative paths so we trim the paths
+				// here too so as not to break backwards compatibility
+				name := path.Base(info.Name())
 				if info.IsDir() {
 					name = name + "/"
 				}
@@ -264,7 +271,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 		// File
 		requestType = "file"
 		size = fi.Size()
-		f, err := archiveFS.Open(r.Context(), requestedPath)
+		f, err := git.NewFileReader(r.Context(), *cachedRepo, common.CommitID, requestedPath)
 		if err != nil {
 			return err
 		}

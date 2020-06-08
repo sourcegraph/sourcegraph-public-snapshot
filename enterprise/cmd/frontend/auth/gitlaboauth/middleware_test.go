@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -283,7 +284,7 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 		Url:          baseURL,
 		ClientSecret: clientSecret,
 		ClientID:     clientID,
-		Type:         "gitlab",
+		Type:         extsvc.TypeGitLab,
 	}}
 	mp.Provider, problems = parseProvider("https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
 	if len(problems) > 0 {

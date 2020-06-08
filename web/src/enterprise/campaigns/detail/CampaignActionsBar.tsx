@@ -10,8 +10,7 @@ interface Props {
     mode: CampaignUIMode
     previewingPatchSet: boolean
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-        openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -36,9 +35,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
 
     const campaignClosed = campaign?.closedAt
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
-
-    const openChangesetsCount = campaign?.openChangesets.totalCount ?? 0
+    const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
 
     let stateBadge: JSX.Element
 
@@ -48,12 +45,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
         stateBadge = (
             <span className="badge badge-danger mr-2">
                 <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Closed
-            </span>
-        )
-    } else if (!campaign.publishedAt) {
-        stateBadge = (
-            <span className="badge badge-info mr-2">
-                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Draft
             </span>
         )
     } else {
@@ -118,7 +109,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                                 Close campaign <strong>{campaign.name}</strong>?
                                             </p>
                                         }
-                                        changesetsCount={openChangesetsCount}
                                         buttonText="Close"
                                         onButtonClick={onClose}
                                         buttonClassName="btn-secondary mr-1"
@@ -133,7 +123,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                         Delete campaign <strong>{campaign.name}</strong>?
                                     </p>
                                 }
-                                changesetsCount={openChangesetsCount}
                                 buttonText="Delete"
                                 onButtonClick={onDelete}
                                 buttonClassName="btn-danger"

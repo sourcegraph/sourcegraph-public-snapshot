@@ -104,100 +104,6 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	assertUsageValue(t, values[2], startDate, 2)
 }
 
-func TestEventLogs_CountEventsPerPeriod(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 3)
-	secondDay := startDate.Add(time.Hour * 24)
-	thirdDay := startDate.Add(time.Hour * 24 * 2)
-
-	events := []*Event{
-		makeTestEvent(&Event{Timestamp: startDate}),
-		makeTestEvent(&Event{Timestamp: startDate}),
-		makeTestEvent(&Event{Timestamp: startDate}),
-		makeTestEvent(&Event{Timestamp: startDate}),
-		makeTestEvent(&Event{Timestamp: startDate}),
-		makeTestEvent(&Event{Timestamp: startDate}),
-
-		makeTestEvent(&Event{Timestamp: secondDay}),
-		makeTestEvent(&Event{Timestamp: secondDay}),
-		makeTestEvent(&Event{Timestamp: secondDay}),
-		makeTestEvent(&Event{Timestamp: secondDay}),
-
-		makeTestEvent(&Event{Timestamp: thirdDay}),
-		makeTestEvent(&Event{Timestamp: thirdDay}),
-		makeTestEvent(&Event{Timestamp: thirdDay}),
-	}
-
-	for _, e := range events {
-		if err := EventLogs.Insert(ctx, e); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	values, err := EventLogs.CountEventsPerPeriod(ctx, Daily, now, 3, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertUsageValue(t, values[0], startDate.Add(time.Hour*24*2), 3)
-	assertUsageValue(t, values[1], startDate.Add(time.Hour*24), 4)
-	assertUsageValue(t, values[2], startDate, 6)
-}
-
-func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-
-	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 3)
-	secondDay := startDate.Add(time.Hour * 24)
-	thirdDay := startDate.Add(time.Hour * 24 * 2)
-
-	events := []*Event{
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 10}`), Timestamp: startDate}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 20}`), Timestamp: startDate}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: startDate}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: startDate}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: startDate}),
-
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 20}`), Timestamp: secondDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: secondDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: secondDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: secondDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 60}`), Timestamp: secondDay}),
-
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 30}`), Timestamp: thirdDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 40}`), Timestamp: thirdDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 50}`), Timestamp: thirdDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 60}`), Timestamp: thirdDay}),
-		makeTestEvent(&Event{Argument: json.RawMessage(`{"durationMs": 70}`), Timestamp: thirdDay}),
-	}
-
-	for _, e := range events {
-		if err := EventLogs.Insert(ctx, e); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	values, err := EventLogs.PercentilesPerPeriod(ctx, Daily, now, 3, "durationMs", []float64{0.5, 0.8}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertPercentileValue(t, values[0], startDate.Add(time.Hour*24*2), []float64{50, 62})
-	assertPercentileValue(t, values[1], startDate.Add(time.Hour*24), []float64{40, 52})
-	assertPercentileValue(t, values[2], startDate, []float64{30, 42})
-}
-
 func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -543,17 +449,5 @@ func assertUsageValue(t *testing.T, v UsageValue, start time.Time, count int) {
 	}
 	if v.Count != count {
 		t.Errorf("got Count %d, want %d", v.Count, count)
-	}
-}
-
-func assertPercentileValue(t *testing.T, v PercentileValue, start time.Time, values []float64) {
-	if v.Start != start {
-		t.Errorf("got Start %q, want %q", v.Start, start)
-	}
-
-	for i, value := range v.Values {
-		if value != values[i] {
-			t.Errorf("got Values[%d] %f, want %f", i, value, values[i])
-		}
 	}
 }

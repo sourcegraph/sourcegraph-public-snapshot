@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
+import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { Observable, Subject, merge, of } from 'rxjs'
@@ -31,17 +31,14 @@ import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    queryChangesets?: (
-        campaignID: GQL.ID,
-        args: FilteredConnectionQueryArgs
-    ) => Observable<Connection<GQL.IExternalChangeset>>
+    queryChangesets?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<Connection<GQL.Changeset>>
 }
 
 function getLSPTextDocumentPositionParameters(
@@ -195,11 +192,12 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         <>
             {changesetFiltersRow}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<GQL.IExternalChangeset, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<GQL.Changeset, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
+                        viewerCanAdminister: campaign.viewerCanAdminister,
                         history,
                         location,
                         campaignUpdates,

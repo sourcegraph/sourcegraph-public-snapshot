@@ -19,12 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type repoNotFoundErr struct {
+type RepoNotFoundErr struct {
 	ID   api.RepoID
 	Name api.RepoName
 }
 
-func (e *repoNotFoundErr) Error() string {
+func (e *RepoNotFoundErr) Error() string {
 	if e.Name != "" {
 		return fmt.Sprintf("repo not found: name=%q", e.Name)
 	}
@@ -34,7 +34,7 @@ func (e *repoNotFoundErr) Error() string {
 	return "repo not found"
 }
 
-func (e *repoNotFoundErr) NotFound() bool {
+func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
@@ -57,7 +57,7 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{ID: id}
+		return nil, &RepoNotFoundErr{ID: id}
 	}
 	return repos[0], nil
 }
@@ -92,7 +92,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{Name: nameOrURI}
+		return nil, &RepoNotFoundErr{Name: nameOrURI}
 	}
 
 	return repos[0], nil

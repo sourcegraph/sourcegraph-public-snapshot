@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -839,19 +840,22 @@ func scanRepo(r *Repo, s scanner) error {
 		return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
 	}
 
-	typ := strings.ToLower(r.ExternalRepo.ServiceType)
+	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	if !ok {
+		return nil
+	}
 	switch typ {
-	case "github":
+	case extsvc.TypeGitHub:
 		r.Metadata = new(github.Repository)
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
-	case "bitbucketserver":
+	case extsvc.TypeBitbucketServer:
 		r.Metadata = new(bitbucketserver.Repo)
-	case "bitbucketcloud":
+	case extsvc.TypeBitbucketCloud:
 		r.Metadata = new(bitbucketcloud.Repo)
-	case "awscodecommit":
+	case extsvc.TypeAWSCodeCommit:
 		r.Metadata = new(awscodecommit.Repository)
-	case "gitolite":
+	case extsvc.TypeGitolite:
 		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil

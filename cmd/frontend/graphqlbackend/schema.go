@@ -51,12 +51,12 @@ type Mutation {
     #
     # - The campaign has already been closed.
     # - A plan is added to a manual campaign.
-    # - A non-manual campaign is being published.
-    # - The branch of a (partially or fully) published campaign is changed.
+    # - A non-manual campaign has a changeset that is not published (or is being published).
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retry creating changesets from the patches in the campaign's patchset that could not be
-    # successfully created on the code host. Retrying will clear the errors list of a campaign.
-    retryCampaign(campaign: ID!): Campaign!
+    # Retry publishing all changesets in the campaign that could not be
+    # successfully created on the code host. Retrying will clear the errors
+    # list of a campaign.
+    retryCampaignChangesets(campaign: ID!): Campaign!
     # Delete a campaign.
     deleteCampaign(
         campaign: ID!
@@ -73,13 +73,19 @@ type Mutation {
         # GitHub and "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Publish the campaign by turning its patches into changesets on the code hosts. The
-    # Campaign.draft field will be set to false and Campaign.status will update according to the
-    # progress of turning the patches into changesets.
-    publishCampaign(campaign: ID!): Campaign!
-    # Create an ExternalChangeset on the code host asynchronously. The patch must belong to a
-    # patchset that has been attached to a campaign; otherwise, an error is returned. Callers can
-    # query the campaign's status to track the progress of this async operation.
+    # Create an ExternalChangeset on the code host asynchronously for each
+    # patch belonging to the patchset that has been attached to a campaign;
+    # otherwise, an error is returned and no ExternalChangesets are created.
+    # Callers can query the campaign's status to track the progress of this async operation.
+    # If one of the patches has previously been published but the publication failed,
+    # publication is NOT retried.
+    publishCampaignChangesets(campaign: ID!): Campaign!
+    # Create an ExternalChangeset on the code host asynchronously. The patch
+    # must belong to a patchset that has been attached to a campaign;
+    # otherwise, an error is returned and no ExternalChangeset is created.
+    # Callers can query the campaign's status to track the progress of this async operation.
+    # If the patch has previously been published but the publication failed,
+    # the patch is reset and publication will be retried.
     publishChangeset(patch: ID!): EmptyResponse!
     # Enqueue the given changeset for high-priority syncing.
     syncChangeset(changeset: ID!): EmptyResponse!
@@ -390,6 +396,12 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF index.
+    deleteLSIFIndex(id: ID!): EmptyResponse
+
     # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
@@ -465,11 +477,6 @@ input CreateCampaignInput {
     # patchset has expired. Using a patchset to create or update a campaign will retain it for the
     # lifetime of the campaign and prevent it from expiring.
     patchSet: ID
-
-    # Whether to create the campaign in draft mode. Default is false. A draft campaign lets you
-    # preview the changesets before creating them on the code host. When you're ready, you can
-    # publish changesets individually or all at once.
-    draft: Boolean
 }
 
 # Input arguments for updating a campaign.
@@ -600,10 +607,10 @@ type Campaign implements Node {
         reviewState: ChangesetReviewState
         # Only include changesets with the given check state.
         checkState: ChangesetCheckState
-    ): ExternalChangesetConnection!
+    ): ChangesetConnection!
 
     # All the changesets in this campaign whose state is ChangesetState.OPEN.
-    openChangesets: ExternalChangesetConnection!
+    openChangesets: ChangesetConnection!
 
     # The changeset counts over time, in 1-day intervals backwards from the point in time given in
     # the "to" parameter.
@@ -618,17 +625,16 @@ type Campaign implements Node {
     # The date and time when the campaign was closed.
     closedAt: DateTime
 
-    # The date and time when the campaign changed from draft mode to published. If the campaign has
-    # not been published yet (i.e., it is still in draft mode), this is null. If the campaign was never in
-    # draft mode, the value is the same as Campaign.createdAt.
-    publishedAt: DateTime
-
-    # The patches that will be turned into changesets on the code host when publishing the campaign.
+    # The patches that will be turned into changesets on the code host when published.
     # If the campaign is a "manual" campaign and doesn't have a patchset attached, there won't be
-    # any nodes returned by this connection. When publishing a campaign, the number of nodes in
+    # any nodes returned by this connection. When publishing a changeset, the number of nodes in
     # changesets will increase with each decrease in patches. The completed count in the
     # Campaign.status field increments with every patch turned into an ExternalChangeset.
+    # This can contain patches that have been enqueued for publication.
     patches(first: Int): PatchConnection!
+
+    # Returns whether "patches" contains patches that have not been enqueued for publication yet.
+    hasUnpublishedPatches: Boolean!
 
     # The diff stat for all the patches and changesets in the campaign.
     diffStat: DiffStat!
@@ -699,9 +705,17 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# A patch is a code change on a repository branch. It is used to create a changeset on a code host
-# as part of a campaign.
-type Patch implements Node {
+# A campaign patch is code change on a repository branch that a user might or might not
+# have access to.
+# It is used to create a changeset on a code host as part of a campaign.
+interface PatchInterface {
+    # The id of the patch.
+    id: ID!
+}
+
+# A patch is a patch in a repository that the user has read-access
+# to.
+type Patch implements PatchInterface & Node {
     # The id of the patch.
     id: ID!
 
@@ -715,9 +729,15 @@ type Patch implements Node {
     # the following has occurred:
     #
     # - A campaign has been created with the patchset to which this patch belongs.
-    # - A campaign with the patchset has been published after being in draft mode.
     # - The patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
+}
+
+# A hidden patch is a patch in a repository that the user does NOT have
+# read-access to.
+type HiddenPatch implements PatchInterface & Node {
+    # The id of the patch.
+    id: ID!
 }
 
 # A label attached to a changeset on a code host.
@@ -730,8 +750,64 @@ type ChangesetLabel {
     description: String
 }
 
+# A changeset on a codehost.
+interface Changeset {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The state of the changeset.
+    state: ChangesetState!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+}
+
+# A changeset on a code host that the user does not have access to.
+type HiddenExternalChangeset implements Node & Changeset {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The campaigns that contain this changeset.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Only return campaigns in this state.
+        state: CampaignState
+        # Only return campaigns that have a patchset.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The state of the changeset.
+    state: ChangesetState!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+    nextSyncAt: DateTime
+}
+
 # A changeset on a code host (e.g., a pull request on GitHub).
-type ExternalChangeset implements Node {
+type ExternalChangeset implements Node & Changeset {
     # The unique ID for the changeset.
     id: ID!
 
@@ -750,6 +826,8 @@ type ExternalChangeset implements Node {
         state: CampaignState
         # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # The events belonging to this changeset.
@@ -799,9 +877,9 @@ type ExternalChangeset implements Node {
 }
 
 # A list of changesets.
-type ExternalChangesetConnection {
+type ChangesetConnection {
     # A list of changesets.
-    nodes: [ExternalChangeset!]!
+    nodes: [Changeset!]!
 
     # The total number of changesets in the connection.
     totalCount: Int!
@@ -813,7 +891,7 @@ type ExternalChangesetConnection {
 # A list of patches.
 type PatchConnection {
     # A list of patches.
-    nodes: [Patch!]!
+    nodes: [PatchInterface!]!
 
     # The total number of patches in the connection.
     totalCount: Int!
@@ -1026,6 +1104,8 @@ type Query {
         state: CampaignState
         # Only return campaigns that have a patchset.
         hasPatchSet: Boolean
+        # Only include campaigns that the viewer can administer.
+        viewerCanAdminister: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
@@ -1212,6 +1292,58 @@ type Query {
     # Returns a list of usernames or emails that have associated pending permissions.
     # The returned list can be used to query authorizedUserRepositories for pending permissions.
     usersWithPendingPermissions: [String!]!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifUploads(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFUploadConnection!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
 }
 
 # The version of the search syntax.
@@ -1760,6 +1892,31 @@ type Repository implements Node & GenericSearchResultInterface {
         # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFUploadConnection!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
 
     # A list of authorized users to access this repository with the given permission.
     # This API currently only returns permissions from the Sourcegraph provider, i.e.
@@ -3332,18 +3489,6 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): SiteUsageStatistics!
-    # (experimental) The extended usage statistics API may change substantially in the near
-    # future as we continue to adjust it for our use cases. Changes will not be documented
-    # in the CHANGELOG during this time.
-    # Usage statistics of code intelligence features.
-    codeIntelUsageStatistics(
-        # Days of history (based on current UTC time).
-        days: Int
-        # Weeks of history (based on current UTC time).
-        weeks: Int
-        # Months of history (based on current UTC time).
-        months: Int
-    ): CodeIntelUsageStatistics!
     # Monitoring overview for this site.
     #
     # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -3591,62 +3736,6 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
-}
-
-# A site's aggregate usage statistics of code intel features.
-#
-# This information is visible to all viewers.
-type CodeIntelUsageStatistics {
-    # Recent daily code intel usage statistics.
-    daily: [CodeIntelUsagePeriod!]!
-    # Recent weekly code intel usage statistics.
-    weekly: [CodeIntelUsagePeriod!]!
-    # Recent monthly code intel usage statistics.
-    monthly: [CodeIntelUsagePeriod!]!
-}
-
-# Usage statistics of code intel features in a given timespan.
-#
-# This information is visible to all viewers.
-type CodeIntelUsagePeriod {
-    # The time when this started.
-    startTime: DateTime!
-    # Recent hover statistics.
-    hover: CodeIntelEventCategoryStatistics!
-    # Recent definitions statistics.
-    definitions: CodeIntelEventCategoryStatistics!
-    # Recent references statistics.
-    references: CodeIntelEventCategoryStatistics!
-}
-
-# Statistics about aparticular family of code intel features in a given timestan.
-type CodeIntelEventCategoryStatistics {
-    # Recent LSIF-based code intel event statistics.
-    lsif: CodeIntelEventStatistics!
-    # Recent LSP-based code intel event statistics.
-    lsp: CodeIntelEventStatistics!
-    # Recent search-based code intel event statistics.
-    search: CodeIntelEventStatistics!
-}
-
-# Statistics about a particular code intel feature in a given timespan.
-type CodeIntelEventStatistics {
-    # The number of unique users that performed this event in this timespan.
-    usersCount: Int!
-    # The total number of events in this timespan.
-    eventsCount: Int!
-    # Latency percentiles of all events in this timespan.
-    eventLatencies: CodeIntelEventLatencies!
-}
-
-# A collection of event latencies for a particular event in a given timespan.
-type CodeIntelEventLatencies {
-    # The 50th percentile latency in this timespan.
-    p50: Float!
-    # The 90th percentile latency in this timespan.
-    p90: Float!
-    # The 99th percentile latency in this timespan.
-    p99: Float!
 }
 
 # A deployment configuration.
@@ -4044,6 +4133,72 @@ type LSIFUploadConnection {
     nodes: [LSIFUpload!]!
 
     # The total number of uploads in this result set.
+    totalCount: Int
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state an LSIF index can be in.
+enum LSIFIndexState {
+    # This index is being processed.
+    PROCESSING
+
+    # This index failed to be processed.
+    ERRORED
+
+    # This index was processed successfully.
+    COMPLETED
+
+    # This index is queued to be processed later.
+    QUEUED
+}
+
+# Metadata and status about an LSIF index.
+type LSIFIndex implements Node {
+    # The ID.
+    id: ID!
+
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree
+
+    # The original 40-character commit commit supplied at index time.
+    inputCommit: String!
+
+    # The index's current state.
+    state: LSIFIndexState!
+
+    # The time the index was queued.
+    queuedAt: DateTime!
+
+    # The time the index was processed.
+    startedAt: DateTime
+
+    # The time the index compelted or errored.
+    finishedAt: DateTime
+
+    # Metadata about an index's failure (not set if state is not ERRORED).
+    failure: LSIFIndexFailureReason
+
+    # The rank of this index in the queue. The value of this field is null if the index has been processed.
+    placeInQueue: Int
+}
+
+# Metadata about a LSIF index failure.
+type LSIFIndexFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace of the failure.
+    stacktrace: String!
+}
+
+# A list of LSIF indexes.
+type LSIFIndexConnection {
+    # A list of LSIF indexes.
+    nodes: [LSIFIndex!]!
+
+    # The total number of indexes in this result set.
     totalCount: Int
 
     # Pagination information.

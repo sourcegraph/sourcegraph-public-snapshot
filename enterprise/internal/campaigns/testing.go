@@ -29,9 +29,15 @@ type FakeChangesetSource struct {
 
 	// error to be returned from every method
 	Err error
+
+	// ClosedChangesets contains the changesets that were passed to CloseChangeset
+	ClosedChangesets []*repos.Changeset
+
+	// LoadedChangesets contains the changesets that were passed to LoadChangesets
+	LoadedChangesets []*repos.Changeset
 }
 
-func (s FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
 	if s.Err != nil {
 		return s.ChangesetExists, s.Err
 	}
@@ -51,7 +57,7 @@ func (s FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chang
 	return s.ChangesetExists, s.Err
 }
 
-func (s FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
 	if s.Err != nil {
 		return s.Err
 	}
@@ -65,18 +71,26 @@ func (s FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chang
 
 var fakeNotImplemented = errors.New("not implement in FakeChangesetSource")
 
-func (s FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
+func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
 	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
 }
 
-func (s FakeChangesetSource) ExternalServices() repos.ExternalServices {
+func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
 	return repos.ExternalServices{s.Svc}
 }
-func (s FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	return fakeNotImplemented
+func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
+	if s.Err != nil {
+		return s.Err
+	}
+	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
+	return nil
 }
-func (s FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
-	return fakeNotImplemented
+func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
+	if s.Err != nil {
+		return s.Err
+	}
+	s.ClosedChangesets = append(s.ClosedChangesets, c)
+	return nil
 }
 
 // FakeGitserverClient is a test implementation of the GitserverClient

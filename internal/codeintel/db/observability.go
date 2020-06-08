@@ -16,7 +16,7 @@ type ObservedDB struct {
 	rollbackToSavepointOperation       *observation.Operation
 	doneOperation                      *observation.Operation
 	getUploadByIDOperation             *observation.Operation
-	getUploadsByRepoOperation          *observation.Operation
+	getUploadsOperation                *observation.Operation
 	queueSizeOperation                 *observation.Operation
 	insertUploadOperation              *observation.Operation
 	addUploadPartOperation             *observation.Operation
@@ -43,12 +43,15 @@ type ObservedDB struct {
 	indexableRepositoriesOperation     *observation.Operation
 	updateIndexableRepositoryOperation *observation.Operation
 	getIndexByIDOperation              *observation.Operation
+	getIndexesOperation                *observation.Operation
 	indexQueueSizeOperation            *observation.Operation
 	isQueuedOperation                  *observation.Operation
 	insertIndexOperation               *observation.Operation
 	markIndexCompleteOperation         *observation.Operation
 	markIndexErroredOperation          *observation.Operation
 	dequeueIndexOperation              *observation.Operation
+	deleteIndexByIdOperation           *observation.Operation
+	resetStalledIndexesOperation       *observation.Operation
 	repoUsageStatisticsOperation       *observation.Operation
 	repoNameOperation                  *observation.Operation
 }
@@ -86,9 +89,9 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"get_upload_by_id"},
 			Metrics:      metrics,
 		}),
-		getUploadsByRepoOperation: observationContext.Operation(observation.Op{
-			Name:         "DB.GetUploadsByRepo",
-			MetricLabels: []string{"get_uploads_by_repo"},
+		getUploadsOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.GetUploads",
+			MetricLabels: []string{"get_uploads"},
 			Metrics:      metrics,
 		}),
 		queueSizeOperation: observationContext.Operation(observation.Op{
@@ -221,6 +224,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"get_index_by_id"},
 			Metrics:      metrics,
 		}),
+		getIndexesOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.GetIndexes",
+			MetricLabels: []string{"get_indexes"},
+			Metrics:      metrics,
+		}),
 		indexQueueSizeOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.IndexQueueSize",
 			MetricLabels: []string{"index_queue_size"},
@@ -251,6 +259,16 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"dequeue_index"},
 			Metrics:      metrics,
 		}),
+		deleteIndexByIdOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.DeleteIndexByID",
+			MetricLabels: []string{"delete_index_by_id"},
+			Metrics:      metrics,
+		}),
+		resetStalledIndexesOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.ResetStalledIndexes",
+			MetricLabels: []string{"reset_stalled_indexes"},
+			Metrics:      metrics,
+		}),
 		repoUsageStatisticsOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.RepoUsageStatistics",
 			MetricLabels: []string{"repo_usage_statistics"},
@@ -276,7 +294,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		rollbackToSavepointOperation:       db.rollbackToSavepointOperation,
 		doneOperation:                      db.doneOperation,
 		getUploadByIDOperation:             db.getUploadByIDOperation,
-		getUploadsByRepoOperation:          db.getUploadsByRepoOperation,
+		getUploadsOperation:                db.getUploadsOperation,
 		queueSizeOperation:                 db.queueSizeOperation,
 		insertUploadOperation:              db.insertUploadOperation,
 		addUploadPartOperation:             db.addUploadPartOperation,
@@ -303,12 +321,15 @@ func (db *ObservedDB) wrap(other DB) DB {
 		indexableRepositoriesOperation:     db.indexableRepositoriesOperation,
 		updateIndexableRepositoryOperation: db.updateIndexableRepositoryOperation,
 		getIndexByIDOperation:              db.getIndexByIDOperation,
+		getIndexesOperation:                db.getIndexesOperation,
 		indexQueueSizeOperation:            db.indexQueueSizeOperation,
 		isQueuedOperation:                  db.isQueuedOperation,
 		insertIndexOperation:               db.insertIndexOperation,
 		markIndexCompleteOperation:         db.markIndexCompleteOperation,
 		markIndexErroredOperation:          db.markIndexErroredOperation,
 		dequeueIndexOperation:              db.dequeueIndexOperation,
+		deleteIndexByIdOperation:           db.deleteIndexByIdOperation,
+		resetStalledIndexesOperation:       db.resetStalledIndexesOperation,
 		repoUsageStatisticsOperation:       db.repoUsageStatisticsOperation,
 		repoNameOperation:                  db.repoNameOperation,
 	}
@@ -359,11 +380,11 @@ func (db *ObservedDB) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bo
 	return db.db.GetUploadByID(ctx, id)
 }
 
-// GetUploadsByRepo calls into the inner DB and registers the observed results.
-func (db *ObservedDB) GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) (uploads []Upload, _ int, err error) {
-	ctx, endObservation := db.getUploadsByRepoOperation.With(ctx, &err, observation.Args{})
+// GetUploads calls into the inner DB and registers the observed results.
+func (db *ObservedDB) GetUploads(ctx context.Context, opts GetUploadsOptions) (uploads []Upload, _ int, err error) {
+	ctx, endObservation := db.getUploadsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(uploads)), observation.Args{}) }()
-	return db.db.GetUploadsByRepo(ctx, repositoryID, state, term, visibleAtTip, limit, offset)
+	return db.db.GetUploads(ctx, opts)
 }
 
 // QueueSize  calls into the inner DB and registers the observed results.
@@ -550,6 +571,13 @@ func (db *ObservedDB) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool
 	return db.db.GetIndexByID(ctx, id)
 }
 
+// GetIndexes calls into the inner DB and registers the observed results.
+func (db *ObservedDB) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
+	ctx, endObservation := db.getIndexesOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.GetIndexes(ctx, opts)
+}
+
 // IndexableRepositories calls into the inner DB and registers the observed results.
 func (db *ObservedDB) IndexQueueSize(ctx context.Context) (_ int, err error) {
 	ctx, endObservation := db.indexQueueSizeOperation.With(ctx, &err, observation.Args{})
@@ -590,6 +618,20 @@ func (db *ObservedDB) DequeueIndex(ctx context.Context) (_ Index, _ DB, _ bool, 
 	ctx, endObservation := db.dequeueIndexOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.DequeueIndex(ctx)
+}
+
+// DeleteIndexByID calls into the inner DB and registers the observed results.
+func (db *ObservedDB) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, endObservation := db.deleteIndexByIdOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.DeleteIndexByID(ctx, id)
+}
+
+// ResetStalledIndexes calls into the inner DB and registers the observed results.
+func (db *ObservedDB) ResetStalledIndexes(ctx context.Context, now time.Time) (_ []int, err error) {
+	ctx, endObservation := db.resetStalledIndexesOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.ResetStalledIndexes(ctx, now)
 }
 
 // RepoUsageStatistics calls into the inner DB and registers the observed results.

@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-// MockClient is a mock impelementation of the Client interface (from the
+// MockClient is a mock implementation of the Client interface (from the
 // package github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver)
 // used for unit testing.
 type MockClient struct {

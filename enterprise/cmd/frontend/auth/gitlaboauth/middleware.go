@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,9 +19,9 @@ func init() {
 
 var Middleware = &auth.Middleware{
 	API: func(next http.Handler) http.Handler {
-		return oauth.NewHandler(gitlab.ServiceType, authPrefix, true, next)
+		return oauth.NewHandler(extsvc.TypeGitLab, authPrefix, true, next)
 	},
 	App: func(next http.Handler) http.Handler {
-		return oauth.NewHandler(gitlab.ServiceType, authPrefix, false, next)
+		return oauth.NewHandler(extsvc.TypeGitLab, authPrefix, false, next)
 	},
 }

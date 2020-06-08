@@ -307,13 +307,15 @@ var ErrUnknownDatabase = errors.New("unknown database")
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
 func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
+	id := idFromRequest(r)
+
 	if err := s.dbQueryErr(w, r, handler); err != nil {
 		if err == ErrUnknownDatabase {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		log15.Error("Failed to handle query", "err", err)
+		log15.Error("Failed to handle query", "err", err, "id", id)
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -348,7 +350,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := sqlitereader.NewReader(ctx, filename)
+		sqliteReader, err := sqlitereader.NewReader(ctx, filename, s.readerCache)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "sqlitereader.NewReader")
 		}
@@ -365,7 +367,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader))
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
