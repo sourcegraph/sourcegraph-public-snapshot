@@ -97,7 +97,7 @@ func (c *Cache) getOrCreateActiveEntry(ctx context.Context, key string) (*cacheE
 	backoff := minBackoff
 
 	for attempts := maxAttempts; attempts > 0; attempts-- {
-		if entry, draining := c.getOrCreateRawEntry(key); !draining {
+		if entry, ok := c.getOrCreateRawEntry(key); ok {
 			return entry, true
 		}
 
@@ -117,8 +117,9 @@ func (c *Cache) getOrCreateActiveEntry(ctx context.Context, key string) (*cacheE
 }
 
 // getOrCreateRawEntry gets or creates a cache entry for the given key and a boolean flag indicating
-// whether or not the entry is "active". False indicates that the entry was marked as draining. In this
-// case the entry's wait group value is not modified and the entry's close procedure is unaffected.
+// whether or not the entry is "active". True indicates that the entry is not currently marked as
+// draining and can be used. In this case the entry's wait group value is not modified and the entry's
+// close procedure is unaffected.
 func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -137,11 +138,11 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 	case <-entry.draining:
 		// Caller won't invoke handler, so we decrease our use count immediately
 		entry.refCount.Done()
-		return nil, true
+		return nil, false
 	default:
 	}
 
-	return entry, false
+	return entry, true
 }
 
 // makeEntry creates a new empty cache entry. This will be
