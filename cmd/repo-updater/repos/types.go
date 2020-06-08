@@ -133,18 +133,18 @@ func (e ExternalService) BaseURL() (*url.URL, error) {
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
 func (e *ExternalService) Exclude(rs ...*Repo) error {
-	switch strings.ToLower(e.Kind) {
-	case "github":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindGitHub:
 		return e.excludeGithubRepos(rs...)
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return e.excludeGitLabRepos(rs...)
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return e.excludeBitbucketServerRepos(rs...)
-	case "awscodecommit":
+	case extsvc.KindAWSCodeCommit:
 		return e.excludeAWSCodeCommitRepos(rs...)
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return e.excludeGitoliteRepos(rs...)
-	case "other":
+	case extsvc.KindOther:
 		return e.excludeOtherRepos(rs...)
 	default:
 		return errors.Errorf("external service kind %q doesn't have an exclude list", e.Kind)
@@ -158,7 +158,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("other", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindOther, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.OtherExternalServiceConnection)
 
 		var base *url.URL
@@ -186,7 +186,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "other" {
+			if r.ExternalRepo.ServiceType != extsvc.TypeOther {
 				continue
 			}
 
@@ -221,7 +221,7 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitlab", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitLab, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitLabConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -270,7 +270,7 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("bitbucketserver", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindBitbucketServer, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.BitbucketServerConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -325,7 +325,7 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitolite", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitolite, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitoliteConnection)
 		set := make(map[string]bool, len(c.Exclude))
 		for _, ex := range c.Exclude {
@@ -353,7 +353,7 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("github", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitHub, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitHubConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -402,7 +402,7 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("awscodecommit", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindAWSCodeCommit, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.AWSCodeCommitConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -453,7 +453,7 @@ func nameWithOwner(name string) string {
 }
 
 func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
-	if strings.ToLower(e.Kind) != kind {
+	if !strings.EqualFold(kind, e.Kind) {
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
 
@@ -479,20 +479,20 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 }
 
 func (e ExternalService) schema() string {
-	switch strings.ToLower(e.Kind) {
-	case "awscodecommit":
+	switch strings.ToUpper(e.Kind) {
+	case extsvc.KindAWSCodeCommit:
 		return schema.AWSCodeCommitSchemaJSON
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return schema.BitbucketServerSchemaJSON
-	case "github":
+	case extsvc.KindGitHub:
 		return schema.GitHubSchemaJSON
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return schema.GitLabSchemaJSON
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return schema.GitoliteSchemaJSON
-	case "phabricator":
+	case extsvc.KindPhabricator:
 		return schema.PhabricatorSchemaJSON
-	case "other":
+	case extsvc.KindOther:
 		return schema.OtherExternalServiceSchemaJSON
 	default:
 		return ""

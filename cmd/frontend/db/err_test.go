@@ -13,7 +13,7 @@ func TestErrorsInterface(t *testing.T) {
 		Err       error
 		Predicate func(error) bool
 	}{
-		{&repoNotFoundErr{}, errcode.IsNotFound},
+		{&RepoNotFoundErr{}, errcode.IsNotFound},
 		{userNotFoundErr{}, errcode.IsNotFound},
 	}
 	for _, c := range cases {

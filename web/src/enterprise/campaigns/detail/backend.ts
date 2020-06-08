@@ -40,10 +40,8 @@ const campaignFragment = gql`
         updatedAt
         closedAt
         viewerCanAdminister
+        hasUnpublishedPatches
         changesets {
-            totalCount
-        }
-        openChangesets {
             totalCount
         }
         patches {
@@ -129,6 +127,22 @@ export async function retryCampaignChangesets(campaignID: ID): Promise<ICampaign
         { campaign: campaignID }
     ).toPromise()
     return dataOrThrowErrors(result).retryCampaignChangesets
+}
+
+export async function publishCampaignChangesets(campaignID: ID): Promise<ICampaign> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation PublishCampaignChangesets($campaign: ID!) {
+                publishCampaignChangesets(campaign: $campaign) {
+                    ...CampaignFields
+                }
+            }
+
+            ${campaignFragment}
+        `,
+        { campaign: campaignID }
+    ).toPromise()
+    return dataOrThrowErrors(result).publishCampaignChangesets
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {

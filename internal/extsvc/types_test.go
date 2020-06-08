@@ -16,7 +16,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "GitLab default",
 			config:      `{"url": "https://example.com/"}`,
-			kind:        "GITLAB",
+			kind:        KindGitLab,
 			displayName: "GitLab 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -28,7 +28,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "GitHub default",
 			config:      `{"url": "https://example.com/"}`,
-			kind:        "GITHUB",
+			kind:        KindGitHub,
 			displayName: "GitHub 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -40,7 +40,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "Bitbucket Server default",
 			config:      `{"url": "https://example.com/"}`,
-			kind:        "BITBUCKETSERVER",
+			kind:        KindBitbucketServer,
 			displayName: "BitbucketServer 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -52,7 +52,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "Bitbucket Cloud default",
 			config:      `{"url": "https://example.com/"}`,
-			kind:        "BITBUCKETCLOUD",
+			kind:        KindBitbucketCloud,
 			displayName: "BitbucketCloud 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -64,7 +64,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "GitLab non-default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        "GITLAB",
+			kind:        KindGitLab,
 			displayName: "GitLab 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -76,7 +76,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "GitHub default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        "GITHUB",
+			kind:        KindGitHub,
 			displayName: "GitHub 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -88,7 +88,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "Bitbucket Server default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        "BITBUCKETSERVER",
+			kind:        KindBitbucketServer,
 			displayName: "BitbucketServer 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",
@@ -100,7 +100,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 		{
 			name:        "Bitbucket Cloud default",
 			config:      `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:        "BITBUCKETCLOUD",
+			kind:        KindBitbucketCloud,
 			displayName: "BitbucketCloud 1",
 			want: RateLimitConfig{
 				BaseURL:     "https://example.com/",

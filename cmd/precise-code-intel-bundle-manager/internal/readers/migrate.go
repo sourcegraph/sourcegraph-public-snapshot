@@ -22,7 +22,7 @@ var NumMigrateRoutines = 1 // runtime.NumCPU() * 2
 // cost cost some intersection of migrations and database size, we try to pay this cost up-front instead
 // of being paid on-demand when the database is opened within the query path. This method does not block
 // the startup of the bundle manager as it does not change the correctness of the service.
-func Migrate(bundleDir string) error {
+func Migrate(bundleDir string, cache sqlitereader.Cache) error {
 	version := migrate.CurrentSchemaVersion
 	migrationMarkerFilename := paths.MigrationMarkerFilename(bundleDir, version)
 
@@ -60,7 +60,7 @@ func Migrate(bundleDir string) error {
 			for filename := range ch {
 				log15.Debug("Migrating bundle", "filename", filename)
 
-				if err := migrateDB(context.Background(), filename); err != nil {
+				if err := migrateDB(context.Background(), filename, cache); err != nil {
 					log15.Error("Failed to migrate bundle", "err", err, "filename", filename)
 				}
 			}
@@ -81,8 +81,8 @@ func Migrate(bundleDir string) error {
 }
 
 // migrateDB opens then immediately closes a reader instance for the given db filename.
-func migrateDB(ctx context.Context, filename string) error {
-	sqliteReader, err := sqlitereader.NewReader(ctx, filename)
+func migrateDB(ctx context.Context, filename string, cache sqlitereader.Cache) error {
+	sqliteReader, err := sqlitereader.NewReader(ctx, filename, cache)
 	if err != nil {
 		return err
 	}

@@ -302,7 +302,7 @@ func rp(name, ghid, serviceID string) *types.Repo {
 		Name: api.RepoName(name),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          ghid,
-			ServiceType: github.ServiceType,
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   serviceID,
 		},
 	}

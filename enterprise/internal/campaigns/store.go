@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -2058,15 +2059,16 @@ type CountPatchesOpts struct {
 	PatchSetID   int64
 	OnlyWithDiff bool
 
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
 	// If this is set to a Campaign ID only the Patches are returned that are
 	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
-
-	// If this is set to a Campaign ID only the Patches are returned that are
-	// _not_ associated with any ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
-	OnlyWithoutChangesetJobInCampaign int64
 }
 
 // CountPatches returns the number of Patches in the database.
@@ -2099,12 +2101,12 @@ func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
 
-	if opts.OnlyUnpublishedInCampaign != 0 {
-		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
 	}
 
-	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
-		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
 	return sqlf.Sprintf(countPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -2185,11 +2187,6 @@ type ListPatchesOpts struct {
 	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
-	// If this is set to a Campaign ID only the Patches are returned that are
-	// _not_ associated with any ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
-	OnlyWithoutChangesetJobInCampaign int64
-
 	// If this is set only the Patches where diff_stat_added OR
 	// diff_stat_changed OR diff_stat_deleted are NULL.
 	OnlyWithoutDiffStats bool
@@ -2269,10 +2266,6 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
-	if opts.OnlyWithoutChangesetJobInCampaign != 0 {
-		preds = append(preds, onlyWithoutChangesetJobInCampaignQuery(opts.OnlyWithoutChangesetJobInCampaign))
-	}
-
 	if opts.OnlyWithoutDiffStats {
 		preds = append(preds, sqlf.Sprintf("(patches.diff_stat_added IS NULL OR patches.diff_stat_deleted IS NULL OR patches.diff_stat_changed IS NULL)"))
 	}
@@ -2313,21 +2306,6 @@ NOT EXISTS (
 
 func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
 	return sqlf.Sprintf(onlyUnpublishedInCampaignQueryFmtstr, campaignID)
-}
-
-var onlyWithoutChangesetJobInCampaignQueryFmtstr = `
-NOT EXISTS (
-  SELECT 1
-  FROM changeset_jobs
-  WHERE
-    changeset_jobs.patch_id = patches.id
-  AND
-    changeset_jobs.campaign_id = %s
-)
-`
-
-func onlyWithoutChangesetJobInCampaignQuery(campaignID int64) *sqlf.Query {
-	return sqlf.Sprintf(onlyWithoutChangesetJobInCampaignQueryFmtstr, campaignID)
 }
 
 // CreateChangesetJob creates the given ChangesetJob.
@@ -2655,34 +2633,49 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
 
+type ResetChangesetJobsOpts struct {
+	// The CampaignID of the ChangesetJobs to be reset.
+	CampaignID int64
+
+	// When PatchIDs is set, only the ChangesetJobs with the given
+	// PatchIDs are reset.
+	PatchIDs []int64
+
+	// If OnlyFailed is set, only ChangesetJobs were Error != '' are reset.
+	OnlyFailed bool
+}
+
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of the ChangesetJobs belonging to the Campaign with the given ID that
-// resulted in an error.
-func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, true)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-// ResetChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of all ChangesetJobs belonging to the Campaign with the given ID.
-func (s *Store) ResetChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, false)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("campaign_id = %s", campaignID),
+// of the ChangesetJobs matching the conditions in ResetChangesetJobsOpts.
+func (s *Store) ResetChangesetJobs(ctx context.Context, opts ResetChangesetJobsOpts) (err error) {
+	if opts.CampaignID == 0 {
+		return errors.New("CampaignID cannot be zero")
 	}
 
-	if onlyErrored {
+	q := resetChangesetJobsQuery(opts)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+func resetChangesetJobsQuery(opts ResetChangesetJobsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaign_id = %s", opts.CampaignID),
+	}
+
+	if opts.OnlyFailed {
 		preds = append(preds, sqlf.Sprintf("error != ''"))
+	}
+
+	if len(opts.PatchIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.PatchIDs))
+		for _, id := range opts.PatchIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("patch_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
@@ -2855,9 +2848,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
-	case github.ServiceType:
+	case extsvc.TypeGitHub:
 		t.Metadata = new(github.PullRequest)
-	case bitbucketserver.ServiceType:
+	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)
 	default:
 		return errors.New("unknown external service type")
