@@ -4,7 +4,7 @@ import { storiesOf } from '@storybook/react'
 import { OptionsMenu } from './OptionsMenu'
 import optionsStyles from '../../options.scss'
 
-storiesOf('Options - OptionsMenu', module)
+storiesOf('browser/Options/OptionsMenu', module)
     .addDecorator(story => (
         <>
             <style>{optionsStyles}</style>

@@ -20,6 +20,17 @@ import execa from 'execa'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
+const formatDate = (date: Date): string =>
+    `${date.toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (SF time) / ${date.toLocaleString('en-US', {
+        timeZone: 'Europe/Berlin',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    } as Intl.DateTimeFormatOptions)} (Berlin time)`
+
 interface Config {
     teamEmail: string
 
@@ -67,7 +78,9 @@ const steps: Step[] = [
                         ({ id, argNames }) =>
                             '\t' +
                             id +
-                            (argNames && argNames.length > 0 ? ' ' + argNames.map(n => `<${n}>`).join(' ') : '')
+                            (argNames && argNames.length > 0
+                                ? ' ' + argNames.map(argumentName => `<${argumentName}>`).join(' ')
+                                : '')
                     )
                     .join('\n')
             )
@@ -75,13 +88,13 @@ const steps: Step[] = [
     },
     {
         id: '_test:google-calendar',
-        run: async c => {
+        run: async config => {
             const googleCalendar = await getClient()
             await ensureEvent(
                 {
                     title: 'TEST EVENT',
-                    startDateTime: new Date(c.releaseDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(c.releaseDateTime), 1).toISOString(),
+                    startDateTime: new Date(config.releaseDateTime).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
                 googleCalendar
             )
@@ -95,53 +108,53 @@ const steps: Step[] = [
     },
     {
         id: 'add-timeline-to-calendar',
-        run: async c => {
+        run: async config => {
             const googleCalendar = await getClient()
             const events: EventOptions[] = [
                 {
                     title: 'Release captain: prepare for branch cut (5 working days until release)',
                     description: 'See the release tracking issue for TODOs',
-                    startDateTime: new Date(c.fiveWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.fiveWorkingDaysBeforeRelease), 1).toISOString(),
+                    startDateTime: new Date(config.fiveWorkingDaysBeforeRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.fiveWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: 'Release captain: branch cut (4 working days until release)',
                     description: 'See the release tracking issue for TODOs',
-                    startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
+                    startDateTime: new Date(config.fourWorkingDaysBeforeRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 ...eachDayOfInterval({
-                    start: addDays(new Date(c.fourWorkingDaysBeforeRelease), 1),
-                    end: subDays(new Date(c.oneWorkingDayBeforeRelease), 1),
+                    start: addDays(new Date(config.fourWorkingDaysBeforeRelease), 1),
+                    end: subDays(new Date(config.oneWorkingDayBeforeRelease), 1),
                 })
-                    .filter(d => !isWeekend(d))
-                    .map(d => ({
+                    .filter(date => !isWeekend(date))
+                    .map(date => ({
                         title: 'Release captain: cut new release candidate',
                         description: 'See release tracking issue for TODOs',
-                        startDateTime: d.toISOString(),
-                        endDateTime: addMinutes(d, 1).toISOString(),
+                        startDateTime: date.toISOString(),
+                        endDateTime: addMinutes(date, 1).toISOString(),
                     })),
                 {
                     title: 'Release captain: tag final release (1 working day before release)',
                     description: 'See the release tracking issue for TODOs',
-                    startDateTime: new Date(c.oneWorkingDayBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
+                    startDateTime: new Date(config.oneWorkingDayBeforeRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Cut release branch ${c.majorVersion}.${c.minorVersion}`,
+                    title: `Cut release branch ${config.majorVersion}.${config.minorVersion}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [c.teamEmail],
-                    startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.fourWorkingDaysBeforeRelease).toISOString(),
+                    endDateTime: addMinutes(new Date(config.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Release Sourcegraph ${c.majorVersion}.${c.minorVersion}`,
+                    title: `Release Sourcegraph ${config.majorVersion}.${config.minorVersion}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [c.teamEmail],
-                    startDateTime: new Date(c.releaseDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(c.releaseDateTime), 1).toISOString(),
+                    attendees: [config.teamEmail],
+                    startDateTime: new Date(config.releaseDateTime).toISOString(),
+                    endDateTime: addMinutes(new Date(config.releaseDateTime), 1).toISOString(),
                 },
             ]
 
@@ -176,35 +189,25 @@ const steps: Step[] = [
     },
     {
         id: 'tracking-issue:announce',
-        run: async c => {
+        run: async config => {
             const trackingIssueURL = await getIssueByTitle(
                 await getAuthenticatedGitHubClient(),
-                trackingIssueTitle(c.majorVersion, c.minorVersion)
+                trackingIssueTitle(config.majorVersion, config.minorVersion)
             )
             if (!trackingIssueURL) {
                 throw new Error(
-                    `Tracking issue for version ${c.majorVersion}.${c.minorVersion} not found--has it been create yet?`
+                    `Tracking issue for version ${config.majorVersion}.${config.minorVersion} not found--has it been create yet?`
                 )
             }
-            const formatDate = (d: Date): string =>
-                `${d.toLocaleString('en-US', {
-                    timeZone: 'America/Los_Angeles',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (SF time) / ${d.toLocaleString('en-US', {
-                    timeZone: 'Europe/Berlin',
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                } as Intl.DateTimeFormatOptions)} (Berlin time)`
             await postMessage(
-                `:captain: ${c.majorVersion}.${c.minorVersion} Release :captain:
-Release captain: @${c.captainSlackUsername}
+                `:captain: ${config.majorVersion}.${config.minorVersion} Release :captain:
+Release captain: @${config.captainSlackUsername}
 Tracking issue: ${trackingIssueURL}
 Key dates:
-- Release branch cut, testing commences: ${formatDate(new Date(c.fourWorkingDaysBeforeRelease))}
-- Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(c.releaseDateTime))}`,
-                c.slackAnnounceChannel
+- Release branch cut, testing commences: ${formatDate(new Date(config.fourWorkingDaysBeforeRelease))}
+- Final release tag: ${formatDate(new Date(config.oneWorkingDayBeforeRelease))}
+- Release: ${formatDate(new Date(config.releaseDateTime))}`,
+                config.slackAnnounceChannel
             )
         },
     },
@@ -231,13 +234,13 @@ Key dates:
     },
     {
         id: 'release-candidate:dev-announce',
-        run: async (c, version) => {
+        run: async (config, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
             }
 
-            const query = `is:open is:issue milestone:${c.majorVersion}.${c.minorVersion} label:release-blocker`
+            const query = `is:open is:issue milestone:${config.majorVersion}.${config.minorVersion} label:release-blocker`
             const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
             const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
             const releaseBlockerMessage =
@@ -254,7 +257,7 @@ Key dates:
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
             `
-            await postMessage(message, c.slackAnnounceChannel)
+            await postMessage(message, config.slackAnnounceChannel)
         },
     },
     {
@@ -298,11 +301,11 @@ Key dates:
                 throw new Error(`version ${version} is pre-release`)
             }
             const requiredCommands = ['comby', sed, 'find']
-            for (const cmd of requiredCommands) {
+            for (const command of requiredCommands) {
                 try {
-                    await commandExists(cmd)
-                } catch (err) {
-                    throw new Error(`Required command ${cmd} does not exist`)
+                    await commandExists(command)
+                } catch {
+                    throw new Error(`Required command ${command} does not exist`)
                 }
             }
 
@@ -360,13 +363,13 @@ Key dates:
     },
 ]
 
-async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): Promise<void> {
+async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string[]): Promise<void> {
     await Promise.all(
         steps
             .filter(({ id }) => id === stepIDToRun)
             .map(async step => {
                 if (step.run) {
-                    await step.run(config, ...stepArgs)
+                    await step.run(config, ...stepArguments)
                 }
             })
     )
@@ -378,7 +381,7 @@ async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): 
 async function main(): Promise<void> {
     const config = persistedConfig
     const args = process.argv.slice(2)
-    if (args.length < 1) {
+    if (args.length === 0) {
         console.error('This command expects at least 1 argument')
         await run(config, 'help')
         return
@@ -388,8 +391,8 @@ async function main(): Promise<void> {
         console.error('Unrecognized step', JSON.stringify(step))
         return
     }
-    const stepArgs = args.slice(1)
-    await run(config, step as StepID, ...stepArgs)
+    const stepArguments = args.slice(1)
+    await run(config, step as StepID, ...stepArguments)
 }
 
-main().catch(err => console.error(err))
+main().catch(error => console.error(error))

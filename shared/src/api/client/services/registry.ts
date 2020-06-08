@@ -27,7 +27,7 @@ export abstract class FeatureProviderRegistry<O, P> {
     public registerProviders(entries: Entry<O, P>[]): Subscription {
         this.entries.next([...this.entries.value, ...entries])
         return new Subscription(() => {
-            this.entries.next([...this.entries.value.filter(e => !entries.includes(e))])
+            this.entries.next([...this.entries.value.filter(entry => !entries.includes(entry))])
         })
     }
 

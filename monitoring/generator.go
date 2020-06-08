@@ -2,6 +2,7 @@
 //go:generate go build -o /tmp/monitoring-generator
 //go:generate /tmp/monitoring-generator
 
+//nolint:golint,gocritic
 package main
 
 import (
@@ -204,10 +205,10 @@ func (o Observable) validate() error {
 		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
 	}
 	if err := o.Warning.validate(); err != nil && !o.Warning.isEmpty() {
-		return fmt.Errorf("Warning: %v", err)
+		return fmt.Errorf("warning: %v", err)
 	}
 	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
-		return fmt.Errorf("Critical: %v", err)
+		return fmt.Errorf("critical: %v", err)
 	}
 	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
 		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
@@ -781,7 +782,7 @@ func goMarkdown(m string) (string, error) {
 	baseIndention := lines[len(lines)-1]
 	if strings.TrimSpace(baseIndention) == "" {
 		if strings.Contains(baseIndention, " ") {
-			return "", errors.New("Go string literal indention must be tabs")
+			return "", errors.New("go string literal indention must be tabs")
 		}
 		indentionLevel := strings.Count(baseIndention, "\t")
 		removeIndention := strings.Repeat("\t", indentionLevel+1)
@@ -845,6 +846,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+			// #nosec G306  prometheus runs as nobody
 			err = ioutil.WriteFile(filepath.Join(grafanaDir, container.Name+".json"), data, 0666)
 			if err != nil {
 				log.Fatal(err)
@@ -866,6 +868,7 @@ func main() {
 				log.Fatal(err)
 			}
 			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
+			// #nosec G306  grafana runs as UID 472
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
 			if err != nil {
 				log.Fatal(err)
@@ -878,6 +881,7 @@ func main() {
 		if err != nil {
 			log.Fatal("reloading Prometheus rules, got error:", err)
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			log.Fatal("reloading Prometheus rules, got status code:", resp.StatusCode)
 		}
@@ -888,6 +892,7 @@ func main() {
 
 	if docSolutionsFile != "" {
 		solutions := generateDocs(containers)
+		// #nosec G306
 		err := ioutil.WriteFile(docSolutionsFile, solutions, 0666)
 		if err != nil {
 			log.Fatal(err)

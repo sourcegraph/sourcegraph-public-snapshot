@@ -79,9 +79,9 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.allExpanded !== this.props.allExpanded) {
-            if (this.state.expanded === prevProps.allExpanded) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (previousProps.allExpanded !== this.props.allExpanded) {
+            if (this.state.expanded === previousProps.allExpanded) {
                 // eslint-disable-next-line react/no-did-update-set-state
                 this.setState({ expanded: this.props.allExpanded })
             } else {
@@ -144,6 +144,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
     }
 }
 
-function blockExpandAndCollapse(e: React.MouseEvent<HTMLElement>): void {
-    e.stopPropagation()
+function blockExpandAndCollapse(event: React.MouseEvent<HTMLElement>): void {
+    event.stopPropagation()
 }

@@ -24,6 +24,7 @@ var Mocks, emptyMocks struct {
 	Stat             func(commit api.CommitID, name string) (os.FileInfo, error)
 	GetObject        func(objectName string) (OID, ObjectType, error)
 	Commits          func(repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error)
+	MergeBase        func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

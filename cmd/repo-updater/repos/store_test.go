@@ -14,9 +14,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -60,7 +61,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 
 		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			github := repos.ExternalService{
-				Kind:        "GITHUB",
+				Kind:        extsvc.KindGitHub,
 				DisplayName: "Github - Test",
 				Config:      `{"url": "https://github.com"}`,
 				CreatedAt:   now,
@@ -68,7 +69,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 			}
 
 			gitlab := repos.ExternalService{
-				Kind:        "GITLAB",
+				Kind:        extsvc.KindGitLab,
 				DisplayName: "GitLab - Test",
 				Config:      `{"url": "https://gitlab.com"}`,
 				CreatedAt:   now,
@@ -140,7 +141,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	now := clock.Now()
 
 	github := repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
 		CreatedAt:   now,
@@ -148,7 +149,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	gitlab := repos.ExternalService{
-		Kind:        "GITLAB",
+		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
 		Config:      `{"url": "https://gitlab.com"}`,
 		CreatedAt:   now,
@@ -156,7 +157,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	bitbucketServer := repos.ExternalService{
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config:      `{"url": "https://bitbucketserver.mycorp.com"}`,
 		CreatedAt:   now,
@@ -164,7 +165,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	awsCodeCommit := repos.ExternalService{
-		Kind:        "AWSCODECOMMIT",
+		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit - Test",
 		Config:      `{"region": "us-west-1"}`,
 		CreatedAt:   now,
@@ -172,7 +173,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	otherService := repos.ExternalService{
-		Kind:        "OTHER",
+		Kind:        extsvc.KindOther,
 		DisplayName: "Other code hosts",
 		Config:      `{"url": "https://git-host.mycorp.com"}`,
 		CreatedAt:   now,
@@ -180,7 +181,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	gitoliteService := repos.ExternalService{
-		Kind:        "GITOLITE",
+		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite Server - Test",
 		Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
 		CreatedAt:   now,
@@ -188,7 +189,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 	}
 
 	phabricatorService := repos.ExternalService{
-		Kind:        "PHABRICATOR",
+		Kind:        extsvc.KindPhabricator,
 		DisplayName: "Phabricator - Test",
 		Config:      `{"url": "https://phab.org", "token": "foo"}`,
 		CreatedAt:   now,
@@ -255,7 +256,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			stored: svcs,
 			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
 				for _, e := range svcs {
-					if e.Kind != "PHABRICATOR" {
+					if e.Kind != extsvc.KindPhabricator {
 						es = append(es, e)
 					}
 				}
@@ -266,7 +267,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 			name:   "includes phabricator if specified in Kinds",
 			stored: svcs,
 			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
-				args.Kinds = []string{"PHABRICATOR"}
+				args.Kinds = []string{extsvc.KindPhabricator}
 				return args
 			},
 			assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
@@ -323,7 +324,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		t.Helper()
 
 		github := repos.ExternalService{
-			Kind:        "GITHUB",
+			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test",
 			Config:      `{"url": "https://github.com"}`,
 			CreatedAt:   now,
@@ -331,7 +332,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		}
 
 		gitlab := repos.ExternalService{
-			Kind:        "GITLAB",
+			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab - Test",
 			Config:      `{"url": "https://gitlab.com"}`,
 			CreatedAt:   now,
@@ -339,7 +340,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		}
 
 		bitbucketServer := repos.ExternalService{
-			Kind:        "BITBUCKETSERVER",
+			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket Server - Test",
 			Config:      `{"url": "https://bitbucketserver.mycorp.com"}`,
 			CreatedAt:   now,
@@ -347,7 +348,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		}
 
 		awsCodeCommit := repos.ExternalService{
-			Kind:        "AWSCODECOMMIT",
+			Kind:        extsvc.KindAWSCodeCommit,
 			DisplayName: "AWS CodeCommit - Test",
 			Config:      `{"region": "us-west-1"}`,
 			CreatedAt:   now,
@@ -355,7 +356,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		}
 
 		otherService := repos.ExternalService{
-			Kind:        "OTHER",
+			Kind:        extsvc.KindOther,
 			DisplayName: "Other code hosts",
 			Config:      `{"url": "https://git-host.mycorp.com"}`,
 			CreatedAt:   now,
@@ -363,7 +364,7 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 		}
 
 		gitoliteService := repos.ExternalService{
-			Kind:        "GITOLITE",
+			Kind:        extsvc.KindGitolite,
 			DisplayName: "Gitolite Server - Test",
 			Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
 			CreatedAt:   now,

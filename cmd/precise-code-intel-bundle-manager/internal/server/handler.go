@@ -18,9 +18,10 @@ import (
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/reader"
-	jsonserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/serializer/json"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -126,13 +127,20 @@ func (s *Server) handlePostDatabasePart(w http.ResponseWriter, r *http.Request) 
 // POST /dbs/{id:[0-9]+}/stitch
 func (s *Server) handlePostDatabaseStitch(w http.ResponseWriter, r *http.Request) {
 	id := idFromRequest(r)
-	filename := paths.DBFilename(s.bundleDir, id)
+	dirname := paths.DBDir(s.bundleDir, id)
 	makePartFilename := func(index int) string {
 		return paths.DBPartFilename(s.bundleDir, id, int64(index))
 	}
 
-	if err := codeintelutils.StitchFiles(filename, makePartFilename, false); err != nil {
+	stitchedReader, err := codeintelutils.StitchFilesReader(makePartFilename, false)
+	if err != nil {
 		log15.Error("Failed to stitch multipart database", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tar.Extract(dirname, stitchedReader); err != nil {
+		log15.Error("Failed to extract database archive", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -299,13 +307,15 @@ var ErrUnknownDatabase = errors.New("unknown database")
 // route's id value and serializes the resulting value to the response writer. If an
 // error occurs it will be written to the body of a 500-level response.
 func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) {
+	id := idFromRequest(r)
+
 	if err := s.dbQueryErr(w, r, handler); err != nil {
 		if err == ErrUnknownDatabase {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		log15.Error("Failed to handle query", "err", err)
+		log15.Error("Failed to handle query", "err", err, "id", id)
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -316,7 +326,7 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler dbQuery
 // error occurs it will be returned.
 func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQueryHandlerFn) (err error) {
 	ctx := r.Context()
-	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
+	filename := paths.SQLiteDBFilename(s.bundleDir, idFromRequest(r))
 	cached := true
 
 	span, ctx := ot.StartSpanFromContext(ctx, "dbQuery")
@@ -340,9 +350,9 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := reader.NewSQLiteReader(filename, jsonserializer.New())
+		sqliteReader, err := sqlitereader.NewReader(ctx, filename, s.readerCache)
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "reader.NewSQLiteReader")
+			return nil, pkgerrors.Wrap(err, "sqlitereader.NewReader")
 		}
 
 		// Check to see if the database exists after opening it. If it doesn't, then
@@ -357,7 +367,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader))
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}
@@ -378,8 +388,8 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 	return s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler)
 }
 
-func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
-	return reader.NewObserved(innerReader, s.observationContext)
+func (s *Server) wrapReader(innerReader persistence.Reader) persistence.Reader {
+	return persistence.NewObserved(innerReader, s.observationContext)
 }
 
 func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) database.Database {

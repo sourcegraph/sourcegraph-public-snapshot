@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.15.1"}} {{$previousReleaseVersion := "3.15"}} {{$currentReleaseRevspec := "v3.16.0"}} {{$currentReleaseVersion := "3.16"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.15.1"}} {{$previousReleaseVersion := "3.15"}} {{$currentReleaseRevspec := "v3.16.1"}} {{$currentReleaseVersion := "3.16"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -170,6 +170,7 @@
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
+                                    <li><a href="/admin/install/managed">Setting up a managed instance</a></li>
                                 </ul>
                             </li>
                             <li><a href="/admin/config">Configuring Sourcegraph</a></li>
@@ -226,7 +227,7 @@
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/admin/repo/add">Add repositories (from code hosts) to Sourcegraph</a></li>
-                                    <li><a href="/admin/repo/add_from_local_disk">Add repositories already cloned to disk</a></li>
+                                    <li><a href="/admin/repo/pre_load_from_local_disk">Pre-load repositories already cloned to disk</a></li>
                                     <li><a href="/admin/repo/auth">Repositories that need HTTP(S) or SSH authentication</a></li>
                                     <li><a href="/admin/repo/permissions">Repository permissions</a></li>
                                     <li><a href="/admin/repo/webhooks">Repository webhooks</a></li>
@@ -445,7 +446,7 @@
 {{end}}
 
 {{define "afterBody"}}
-    <script src="{{asset "docs.js"}}?15"></script>
+    <script src="{{asset "docs.js"}}?16"></script>
     {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
     {{else}}

@@ -49,6 +49,7 @@ type ObservedDB struct {
 	markIndexCompleteOperation         *observation.Operation
 	markIndexErroredOperation          *observation.Operation
 	dequeueIndexOperation              *observation.Operation
+	resetStalledIndexesOperation       *observation.Operation
 	repoUsageStatisticsOperation       *observation.Operation
 	repoNameOperation                  *observation.Operation
 }
@@ -251,6 +252,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"dequeue_index"},
 			Metrics:      metrics,
 		}),
+		resetStalledIndexesOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.ResetStalledIndexes",
+			MetricLabels: []string{"reset_stalled_indexes"},
+			Metrics:      metrics,
+		}),
 		repoUsageStatisticsOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.RepoUsageStatistics",
 			MetricLabels: []string{"repo_usage_statistics"},
@@ -309,6 +315,7 @@ func (db *ObservedDB) wrap(other DB) DB {
 		markIndexCompleteOperation:         db.markIndexCompleteOperation,
 		markIndexErroredOperation:          db.markIndexErroredOperation,
 		dequeueIndexOperation:              db.dequeueIndexOperation,
+		resetStalledIndexesOperation:       db.resetStalledIndexesOperation,
 		repoUsageStatisticsOperation:       db.repoUsageStatisticsOperation,
 		repoNameOperation:                  db.repoNameOperation,
 	}
@@ -590,6 +597,13 @@ func (db *ObservedDB) DequeueIndex(ctx context.Context) (_ Index, _ DB, _ bool, 
 	ctx, endObservation := db.dequeueIndexOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.DequeueIndex(ctx)
+}
+
+// ResetStalledIndexes calls into the inner DB and registers the observed results.
+func (db *ObservedDB) ResetStalledIndexes(ctx context.Context, now time.Time) (_ []int, err error) {
+	ctx, endObservation := db.resetStalledIndexesOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.ResetStalledIndexes(ctx, now)
 }
 
 // RepoUsageStatistics calls into the inner DB and registers the observed results.

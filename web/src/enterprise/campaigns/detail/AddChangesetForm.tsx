@@ -82,8 +82,8 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                 await addChangeset({ campaignID, repoName, externalID })
                 setExternalID('')
                 onAdd()
-            } catch (err) {
-                setError(asError(err))
+            } catch (error) {
+                setError(asError(error))
             } finally {
                 setIsLoading(false)
             }
@@ -109,6 +109,8 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         />
                         <p className="form-text text-muted">
                             The location of the repository in Sourcegraph. See the repository's directory URL:{' '}
+                            {/* False positive */}
+                            {/* eslint-disable-next-line react/jsx-no-comment-textnodes */}
                             {window.location.protocol}//
                             {window.location.host}/<strong>&lt;REPOSITORY_PATH&gt;</strong>
                             <br />

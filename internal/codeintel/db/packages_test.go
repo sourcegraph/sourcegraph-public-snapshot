@@ -98,7 +98,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := scanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -118,7 +118,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := scanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -159,7 +159,7 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := scanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}

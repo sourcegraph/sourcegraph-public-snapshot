@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/time/rate"
 )
@@ -71,30 +71,27 @@ func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limi
 }
 
 func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
-	switch strings.ToLower(svc.Kind) {
-	case "github":
+	switch strings.ToUpper(svc.Kind) {
+	case extsvc.KindGitHub:
 		return NewGithubSource(svc, cf, rl)
-	case "gitlab":
+	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
-	case "bitbucketserver":
+	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(svc, cf, rl)
-	case "bitbucketcloud":
+	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(svc, cf)
-	case "gitolite":
+	case extsvc.KindGitolite:
 		return NewGitoliteSource(svc, cf)
-	case "phabricator":
+	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(svc, cf)
-	case "awscodecommit":
+	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(svc, cf)
-	case "other":
+	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
 }
-
-// sourceTimeout is the default timeout to use on Source.ListRepos
-const sourceTimeout = 30 * time.Minute
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.

@@ -54,4 +54,13 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	if diff := cmp.Diff(newFileContent, wantContent); diff != "" {
 		t.Fatalf("wrong newFileContent: %s", diff)
 	}
+
+	newByteSize, err := gitTree.ByteSize(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if have, want := newByteSize, int32(len([]byte(wantContent))); have != want {
+		t.Fatalf("wrong file size, want=%d have=%d", want, have)
+	}
 }

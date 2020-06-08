@@ -21,6 +21,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dnaeon/go-vcr v1.0.1
+	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/ericchiang/k8s v1.2.0
@@ -43,6 +44,7 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v28 v28.1.1
+	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20200324103759-172db892e9a2
@@ -101,6 +103,7 @@ require (
 	github.com/russellhaering/gosaml2 v0.4.0
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
+	github.com/schollz/progressbar/v3 v3.3.3
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.1.0
 	github.com/shirou/gopsutil v2.20.3+incompatible // indirect
@@ -115,7 +118,7 @@ require (
 	github.com/sirupsen/logrus v1.5.0 // indirect
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/codeintelutils v0.0.0-20200526222402-589c34503031
+	github.com/sourcegraph/codeintelutils v0.0.0-20200602000243-9543a4b9c9f8
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
@@ -124,6 +127,7 @@ require (
 	github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.11.0+incompatible
@@ -154,7 +158,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200511113954-b56036a3b745
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

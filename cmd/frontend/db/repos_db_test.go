@@ -141,7 +141,7 @@ func (s *repos) Upsert(ctx context.Context, op InsertRepoOp) error {
 	// log_statement='mod'.
 	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
-		if _, ok := err.(*repoNotFoundErr); !ok {
+		if _, ok := err.(*RepoNotFoundErr); !ok {
 			return err
 		}
 		insert = true // missing

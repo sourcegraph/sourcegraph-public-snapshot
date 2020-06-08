@@ -11,7 +11,7 @@ import classNames from 'classnames'
 export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
-    const docsURLPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
+    const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
     return (
         <Menu>
             {({ isExpanded }) => (
@@ -108,18 +108,18 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                                 // eslint-disable-next-line react/jsx-no-target-blank
                                 target="_blank"
                                 rel="noopener"
-                                href={`${docsURLPrefix}/user/search/queries`}
+                                href={`${documentationUrlPrefix}/user/search/queries`}
                                 className="dropdown-item"
                                 onClick={toggleIsOpen}
                             >
                                 <ExternalLinkIcon className="icon-inline small" /> All search keywords
                             </a>
-                            {/* {window.context?.sourcegraphDotComMode && ( */}
-                            <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
-                                On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
-                                repositories.
-                            </div>
-                            {/* )} */}
+                            {window.context?.sourcegraphDotComMode && (
+                                <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
+                                    On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
+                                    repositories.
+                                </div>
+                            )}
                         </div>
                     </MenuPopover>
                 </>

@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/readers"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
+	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -33,19 +35,15 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir             = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		databaseCacheSize     = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
-		documentCacheSize     = mustParseInt(rawDocumentCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
-		resultChunkCacheSize  = mustParseInt(rawResultChunkCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
-		desiredPercentFree    = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval       = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge          = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
-		rawMaxDatabasePartAge = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
+		bundleDir          = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		databaseCacheSize  = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
+		readerCacheSize    = mustParseInt(rawReaderCacheSize, "PRECISE_CODE_INTEL_READER_CACHE_CAPACITY")
+		desiredPercentFree = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval    = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge       = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		maxUploadPartAge   = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
+		maxDatabasePartAge = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
-
-	if err := paths.PrepDirectories(bundleDir); err != nil {
-		log.Fatalf("failed to prepare directories: %s", err)
-	}
 
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
@@ -53,18 +51,26 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	databaseCache, documentCache, resultChunkCache := prepCaches(
-		observationContext.Registerer,
-		databaseCacheSize,
-		documentCacheSize,
-		resultChunkCacheSize,
-	)
+	databaseCache, readerCache := prepCaches(observationContext.Registerer, databaseCacheSize, readerCacheSize)
+
+	if err := paths.PrepDirectories(bundleDir); err != nil {
+		log.Fatalf("failed to prepare directories: %s", err)
+	}
+
+	if err := paths.Migrate(bundleDir); err != nil {
+		log.Fatalf("failed to migrate paths: %s", err)
+	}
+
+	if err := readers.Migrate(bundleDir, readerCache); err != nil {
+		log.Fatalf("failed to migrate readers: %s", err)
+	}
 
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
-	server := server.New(bundleDir, databaseCache, documentCache, resultChunkCache, observationContext)
+
+	server := server.New(bundleDir, databaseCache, readerCache, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
-	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, rawMaxDatabasePartAge, janitorMetrics)
+	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
 	go server.Start()
 	go janitor.Run()
@@ -85,31 +91,18 @@ func main() {
 	janitor.Stop()
 }
 
-func prepCaches(r prometheus.Registerer, databaseCacheSize, documentCacheSize, resultChunkCacheSize int) (
-	*database.DatabaseCache,
-	*database.DocumentCache,
-	*database.ResultChunkCache,
-) {
-	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
+func prepCaches(r prometheus.Registerer, databaseCacheSize, readerCacheSize int) (*database.DatabaseCache, sqlitereader.Cache) {
+	databaseCache, _, err := database.NewDatabaseCache(int64(databaseCacheSize))
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
 	}
 
-	documentCache, documentCacheMetrics, err := database.NewDocumentCache(int64(documentCacheSize))
+	readerCache, err := sqlitereader.NewCache(int64(readerCacheSize))
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize document cache"))
+		log.Fatal(errors.Wrap(err, "failed to initialize reader cache"))
 	}
 
-	resultChunkCache, resultChunkCacheMetrics, err := database.NewResultChunkCache(int64(resultChunkCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize result chunk cache"))
-	}
-
-	MustRegisterCacheMonitor(r, "precise-code-intel-database", databaseCacheSize, databaseCacheMetrics)
-	MustRegisterCacheMonitor(r, "precise-code-intel-document", documentCacheSize, documentCacheMetrics)
-	MustRegisterCacheMonitor(r, "precise-code-intel-result-chunk", resultChunkCacheSize, resultChunkCacheMetrics)
-
-	return databaseCache, documentCache, resultChunkCache
+	return databaseCache, readerCache
 }
 
 func mustInitializeDatabase() db.DB {

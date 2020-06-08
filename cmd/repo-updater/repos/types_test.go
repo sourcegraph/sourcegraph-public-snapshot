@@ -3,17 +3,19 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 )
 
@@ -28,7 +30,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 
 	githubService := ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github",
 		Config: `{
 			// Some comment
@@ -41,7 +43,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 
 	gitlabService := ExternalService{
-		Kind:        "GITLAB",
+		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: `{
 			// Some comment
@@ -54,7 +56,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 
 	bitbucketServerService := ExternalService{
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: `{
 			// Some comment
@@ -69,7 +71,7 @@ func TestExternalService_Exclude(t *testing.T) {
 
 	awsCodeCommitService := ExternalService{
 		ID:          9,
-		Kind:        "AWSCODECOMMIT",
+		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS CodeCommit",
 		Config: `{
 			"region": "us-west-1",
@@ -82,7 +84,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 
 	gitoliteService := ExternalService{
-		Kind:        "GITOLITE",
+		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite",
 		Config: `{
 			// Some comment
@@ -94,7 +96,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 
 	otherService := ExternalService{
-		Kind:        "OTHER",
+		Kind:        extsvc.KindOther,
 		DisplayName: "Other code hosts",
 		Config: formatJSON(t, `{
 			"url": "https://git-host.mycorp.com",
@@ -438,6 +440,40 @@ func TestExternalService_Exclude(t *testing.T) {
 				tc.assert(t, svcs)
 			}
 		})
+	}
+}
+
+func TestReposNamesSummary(t *testing.T) {
+	var rps Repos
+
+	eid := func(id int) api.ExternalRepoSpec {
+		return api.ExternalRepoSpec{
+			ID:          strconv.Itoa(id),
+			ServiceType: "fake",
+			ServiceID:   "https://fake.com",
+		}
+	}
+
+	for i := 0; i < 5; i++ {
+		rps = append(rps, &Repo{Name: "bar", ExternalRepo: eid(i)})
+	}
+
+	expected := "bar bar bar bar bar"
+	ns := rps.NamesSummary()
+	if ns != expected {
+		t.Errorf("expected %s, got %s", expected, ns)
+	}
+
+	rps = nil
+
+	for i := 0; i < 22; i++ {
+		rps = append(rps, &Repo{Name: "b", ExternalRepo: eid(i)})
+	}
+
+	expected = "b b b b b b b b b b b b b b b b b b b b..."
+	ns = rps.NamesSummary()
+	if ns != expected {
+		t.Errorf("expected %s, got %s", expected, ns)
 	}
 }
 

@@ -23,8 +23,8 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
      * hovers. If any provider emits an error, the error is logged and the provider is omitted from the emission of
      * the observable (the observable does not emit the error).
      */
-    public getHover(params: TextDocumentPositionParams): Observable<MaybeLoadingResult<HoverMerged | null>> {
-        return getHover(this.providersForDocument(params.textDocument), params)
+    public getHover(parameters: TextDocumentPositionParams): Observable<MaybeLoadingResult<HoverMerged | null>> {
+        return getHover(this.providersForDocument(parameters.textDocument), parameters)
     }
 }
 
@@ -38,7 +38,7 @@ export class TextDocumentHoverProviderRegistry extends DocumentFeatureProviderRe
  */
 export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
-    params: TextDocumentPositionParams,
+    parameters: TextDocumentPositionParams,
     logErrors = true
 ): Observable<MaybeLoadingResult<HoverMerged | null>> {
     return providers.pipe(
@@ -47,12 +47,12 @@ export function getHover(
                 providers.map(provider =>
                     concat(
                         [LOADING],
-                        provider(params).pipe(
+                        provider(parameters).pipe(
                             finallyReleaseProxy(),
                             defaultIfEmpty<typeof LOADING | Hover | null | undefined>(null),
-                            catchError(err => {
+                            catchError(error => {
                                 if (logErrors) {
-                                    console.error('Hover provider errored:', err)
+                                    console.error('Hover provider errored:', error)
                                 }
                                 return [null]
                             })

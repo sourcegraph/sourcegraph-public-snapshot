@@ -58,6 +58,8 @@
 // 1528395677_add_index_user_external_accounts_user_id.up.sql (157B)
 // 1528395678_lsif_auto_index.down.sql (110B)
 // 1528395678_lsif_auto_index.up.sql (868B)
+// 1528395679_change_error_index_on_changeset_jobs.down.sql (132B)
+// 1528395679_change_error_index_on_changeset_jobs.up.sql (146B)
 
 package migrations
 
@@ -1286,6 +1288,46 @@ func _1528395678_lsif_auto_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395679_change_error_index_on_changeset_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\x8e\x4f\x2d\x2a\xca\x2f\x8a\xcf\xcb\x2f\x89\xcf\x2b\xcd\xc9\xb1\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x85\x6a\xc3\xa6\x58\xc1\xdf\x0f\x4d\x5c\x41\x03\x2c\xa1\x09\xd2\xed\xef\xeb\xeb\x19\x62\xcd\xc5\x05\x08\x00\x00\xff\xff\x64\x09\xf8\xd1\x84\x00\x00\x00")
+
+func _1528395679_change_error_index_on_changeset_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395679_change_error_index_on_changeset_jobsDownSql,
+		"1528395679_change_error_index_on_changeset_jobs.down.sql",
+	)
+}
+
+func _1528395679_change_error_index_on_changeset_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395679_change_error_index_on_changeset_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395679_change_error_index_on_changeset_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x33, 0x34, 0xb0, 0xb1, 0x1c, 0x70, 0xe6, 0xbe, 0xcf, 0xe5, 0x1d, 0x4b, 0xbd, 0xcc, 0xa9, 0x10, 0x93, 0x3c, 0x25, 0x62, 0x34, 0x4, 0xf4, 0x33, 0x61, 0xf1, 0x5a, 0x7e, 0xf4, 0x70, 0xc0, 0x7}}
+	return a, nil
+}
+
+var __1528395679_change_error_index_on_changeset_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\x8e\x4f\x2d\x2a\xca\x2f\xb2\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x85\xaa\xc6\xa6\x26\x3e\x2f\xbf\x24\x3e\xaf\x34\x27\x47\xc1\xdf\x0f\x4d\x81\x82\x86\x06\x58\x89\x82\x67\xb0\x82\x9f\x7f\x88\x82\x5f\xa8\x8f\x8f\xa6\x26\xc8\x50\x7f\x5f\x5f\xcf\x10\x6b\x2e\x2e\x40\x00\x00\x00\xff\xff\xb0\x36\x8b\x13\x92\x00\x00\x00")
+
+func _1528395679_change_error_index_on_changeset_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395679_change_error_index_on_changeset_jobsUpSql,
+		"1528395679_change_error_index_on_changeset_jobs.up.sql",
+	)
+}
+
+func _1528395679_change_error_index_on_changeset_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395679_change_error_index_on_changeset_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395679_change_error_index_on_changeset_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcb, 0x96, 0xad, 0x68, 0x10, 0xc8, 0x37, 0x46, 0xa2, 0x71, 0xae, 0x8, 0x56, 0x47, 0xe6, 0x54, 0x5c, 0x5e, 0xd, 0x87, 0x86, 0xf4, 0x42, 0x0, 0xf2, 0xca, 0x80, 0x25, 0x5c, 0xa6, 0xa0, 0x8f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1435,6 +1477,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395677_add_index_user_external_accounts_user_id.up.sql":              _1528395677_add_index_user_external_accounts_user_idUpSql,
 	"1528395678_lsif_auto_index.down.sql":                                     _1528395678_lsif_auto_indexDownSql,
 	"1528395678_lsif_auto_index.up.sql":                                       _1528395678_lsif_auto_indexUpSql,
+	"1528395679_change_error_index_on_changeset_jobs.down.sql":                _1528395679_change_error_index_on_changeset_jobsDownSql,
+	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  _1528395679_change_error_index_on_changeset_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1536,6 +1580,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395677_add_index_user_external_accounts_user_id.up.sql":              {_1528395677_add_index_user_external_accounts_user_idUpSql, map[string]*bintree{}},
 	"1528395678_lsif_auto_index.down.sql":                                     {_1528395678_lsif_auto_indexDownSql, map[string]*bintree{}},
 	"1528395678_lsif_auto_index.up.sql":                                       {_1528395678_lsif_auto_indexUpSql, map[string]*bintree{}},
+	"1528395679_change_error_index_on_changeset_jobs.down.sql":                {_1528395679_change_error_index_on_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  {_1528395679_change_error_index_on_changeset_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

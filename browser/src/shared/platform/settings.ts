@@ -153,30 +153,30 @@ export function fetchViewerSettings(
  * Applies an edit and persists the result to client settings.
  */
 export async function editClientSettings(edit: SettingsEdit | string): Promise<void> {
-    const getNext = (prev: string): string =>
+    const getNext = (previous: string): string =>
         typeof edit === 'string'
             ? edit
             : applyEdits(
-                  prev,
+                  previous,
                   // TODO(chris): remove `.slice()` (which guards against mutation) once
                   // https://github.com/Microsoft/node-jsonc-parser/pull/12 is merged in.
-                  setProperty(prev, edit.path.slice(), edit.value, {
+                  setProperty(previous, edit.path.slice(), edit.value, {
                       tabSize: 2,
                       insertSpaces: true,
                       eol: '\n',
                   })
               )
     if (isInPage) {
-        const prev = localStorage.getItem(inPageClientSettingsKey) || ''
-        const next = getNext(prev)
+        const previous = localStorage.getItem(inPageClientSettingsKey) || ''
+        const next = getNext(previous)
 
         localStorage.setItem(inPageClientSettingsKey, next)
 
         return Promise.resolve()
     }
 
-    const { clientSettings: prev = '{}' } = await storage.sync.get()
-    const next = getNext(prev)
+    const { clientSettings: previous = '{}' } = await storage.sync.get()
+    const next = getNext(previous)
 
     await storage.sync.set({ clientSettings: next })
 }

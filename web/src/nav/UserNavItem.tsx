@@ -35,9 +35,9 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(previousProps: Props): void {
         // Close dropdown after clicking on a dropdown item.
-        if (this.state.isOpen && this.props.location !== prevProps.location) {
+        if (this.state.isOpen && this.props.location !== previousProps.location) {
             /* eslint react/no-did-update-set-state: warn */
             this.setState({ isOpen: false })
         }
@@ -173,7 +173,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)

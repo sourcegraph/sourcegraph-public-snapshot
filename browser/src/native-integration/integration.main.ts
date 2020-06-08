@@ -22,7 +22,7 @@ function init(): void {
 
     const assetsURL = getAssetsURL(sourcegraphURL)
 
-    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
+    if (document.querySelector(`#${EXTENSION_MARKER_ID}`) !== null) {
         // If the extension marker already exists, it means the browser extension is currently executing.
         // Dispatch a custom event to signal that browser extension resources should be cleaned up.
         document.dispatchEvent(new CustomEvent<{}>(NATIVE_INTEGRATION_ACTIVATED))
@@ -34,7 +34,7 @@ function init(): void {
     link.setAttribute('type', 'text/css')
     link.setAttribute('href', new URL('css/style.bundle.css', assetsURL).href)
     link.id = 'sourcegraph-styles'
-    document.getElementsByTagName('head')[0].appendChild(link)
+    document.head.append(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription

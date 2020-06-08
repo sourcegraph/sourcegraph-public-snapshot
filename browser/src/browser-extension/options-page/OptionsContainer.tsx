@@ -6,7 +6,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, concat
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
-import { ConnectionErrors } from './ServerURLForm'
+import { ConnectionErrors } from './ServerUrlForm'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface OptionsContainerProps {
@@ -62,7 +62,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 let validURL = false
                 try {
                     validURL = !!new URL(maybeURL)
-                } catch (e) {
+                } catch {
                     validURL = false
                 }
 
@@ -72,28 +72,28 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 this.setState({ status: 'connecting', connectionError: undefined })
                 return this.props.ensureValidSite(url).pipe(
                     map(() => url),
-                    catchError(err => of(asError(err)))
+                    catchError(error => of(asError(error)))
                 )
             }),
-            catchError(err => of(asError(err))),
+            catchError(error => of(asError(error))),
             share()
         )
 
         this.subscriptions.add(
-            fetchingSite.subscribe(async res => {
+            fetchingSite.subscribe(async result => {
                 let url = ''
 
-                if (isErrorLike(res)) {
+                if (isErrorLike(result)) {
                     this.setState({
                         status: 'error',
-                        connectionError: isHTTPAuthError(res)
+                        connectionError: isHTTPAuthError(result)
                             ? ConnectionErrors.AuthError
                             : ConnectionErrors.UnableToConnect,
                     })
                     url = this.state.sourcegraphURL
                 } else {
                     this.setState({ status: 'connected' })
-                    url = res
+                    url = result
                 }
 
                 const urlHasPermissions = await props.hasPermissions(url)
@@ -106,8 +106,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         props
             .fetchCurrentTabStatus()
             .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
-            .catch(err => {
-                console.error('Error fetching current tab status', err)
+            .catch(error => {
+                console.error('Error fetching current tab status', error)
             })
     }
 

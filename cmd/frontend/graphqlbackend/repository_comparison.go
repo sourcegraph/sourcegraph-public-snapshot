@@ -106,7 +106,17 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		base, baseErr = getCommit(ctx, *grepo, baseRevspec)
+		// Find the common merge-base for the diff. That's the revision the diff applies to,
+		// not the baseRevspec.
+		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+		if err != nil {
+			baseErr = err
+			return
+		}
+		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+		// applicable to the file from that revision.
+		commitString := strings.TrimSpace(string(mergeBaseCommit))
+		base, baseErr = getCommit(ctx, *grepo, commitString)
 	}()
 	go func() {
 		defer wg.Done()
@@ -232,7 +242,10 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			rdr, err = git.ExecReader(ctx, *cachedRepo, []string{
 				"diff",
 				"--find-renames",
-				"--find-copies",
+				// TODO(eseliger): Enable once we have support for copy detection in go-diff
+				// and actually expose a `isCopy` field in the api, otherwise this
+				// information is thrown away anyways.
+				// "--find-copies",
 				"--full-index",
 				"--inter-hunk-context=3",
 				"--no-prefix",
@@ -357,7 +370,7 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	if !hasNextPage {
 		return graphqlutil.HasNextPage(hasNextPage), nil
 	}
-	next := int32(afterIdx)
+	next := afterIdx
 	if r.first != nil {
 		next += *r.first
 	}
@@ -542,7 +555,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
-		if len(hunkLine) == 0 || hunkLine[0] == ' ' {
+		if hunkLine[0] == ' ' {
 			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
 			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
 			baseLine++

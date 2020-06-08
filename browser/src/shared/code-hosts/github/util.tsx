@@ -10,8 +10,8 @@ import { DiffResolvedRevSpec } from '../../repo'
  * 3. PR conversation view: snippets with inline comments
  * 4. PR unified/split view: one or more file diffs
  */
-export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
-    return document.getElementsByClassName('file') as HTMLCollectionOf<HTMLElement>
+export function getFileContainers(): NodeListOf<HTMLElement> {
+    return document.querySelectorAll<HTMLElement>('.file')
 }
 
 /**
@@ -54,7 +54,7 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
 /**
  * getDiffResolvedRev returns the base and head revision SHA, or null for non-diff views.
  */
-export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec | null {
+export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevSpec | null {
     const { pageType } = parseURL()
     if (!isDiffPageType(pageType)) {
         return null
@@ -62,15 +62,13 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
 
     let baseCommitID = ''
     let headCommitID = ''
-    const fetchContainers = document.getElementsByClassName(
-        'js-socket-channel js-updatable-content js-pull-refresh-on-pjax'
-    )
+    const fetchContainers = document.querySelectorAll('.js-socket-channel.js-updatable-content.js-pull-refresh-on-pjax')
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (pageType === 'pull') {
         if (fetchContainers && fetchContainers.length === 1) {
-            for (const el of fetchContainers) {
+            for (const element of fetchContainers) {
                 // for conversation view of pull request
-                const url = el.getAttribute('data-url')
+                const url = element.getAttribute('data-url')
                 if (!url) {
                     continue
                 }
@@ -98,14 +96,14 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
         // Refined GitHub adds a `.patch-diff-links` element
         const shaContainers = document.querySelectorAll('.sha-block:not(.patch-diff-links)')
         if (shaContainers && shaContainers.length === 2) {
-            const baseShaEl = shaContainers[0].querySelector('a')
-            if (baseShaEl) {
+            const baseShaElement = shaContainers[0].querySelector('a')
+            if (baseShaElement) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
-                baseCommitID = baseShaEl.href.split('/').slice(-1)[0]
+                baseCommitID = baseShaElement.href.split('/').slice(-1)[0]
             }
-            const headShaEl = shaContainers[1].querySelector('span.sha') as HTMLElement
-            if (headShaEl) {
-                headCommitID = headShaEl.innerHTML
+            const headShaElement = shaContainers[1].querySelector('span.sha') as HTMLElement
+            if (headShaElement) {
+                headCommitID = headShaElement.innerHTML
             }
         }
     } else if (pageType === 'compare') {
@@ -116,7 +114,7 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
     }
 
     if (baseCommitID === '' || headCommitID === '') {
-        return getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, pageType === 'pull')
+        return getDiffResolvedRevisionFromPageSource(document.documentElement.innerHTML, pageType === 'pull')
     }
     return { baseCommitID, headCommitID }
 }
@@ -139,24 +137,30 @@ function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolve
     }
     const headCommitID = match[3]
     // The file header may not contain the base commit ID, so we get it from the page source.
-    const resolvedRevFromPageSource = getDiffResolvedRevFromPageSource(document.documentElement.innerHTML, true)
-    return headCommitID && resolvedRevFromPageSource
+    const resolvedRevisionFromPageSource = getDiffResolvedRevisionFromPageSource(
+        document.documentElement.innerHTML,
+        true
+    )
+    return headCommitID && resolvedRevisionFromPageSource
         ? {
-              ...resolvedRevFromPageSource,
+              ...resolvedRevisionFromPageSource,
               headCommitID,
           }
         : null
 }
 
 function getResolvedDiffForCompare(): DiffResolvedRevSpec | undefined {
-    const branchElements = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
-    if (branchElements && branchElements.length === 2) {
-        return { baseCommitID: branchElements[0].innerText, headCommitID: branchElements[1].innerText }
+    const [base, head] = document.querySelectorAll<HTMLElement>('.commitish-suggester .select-menu-button span')
+    if (base && head && base.textContent && head.textContent) {
+        return {
+            baseCommitID: base.textContent,
+            headCommitID: head.textContent,
+        }
     }
     return undefined
 }
 
-function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boolean): DiffResolvedRevSpec | null {
+function getDiffResolvedRevisionFromPageSource(pageSource: string, isPullRequest: boolean): DiffResolvedRevSpec | null {
     if (!isPullRequest) {
         return null
     }
@@ -173,8 +177,8 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
         return null
     }
 
-    const baseCommitID = pageSource.substr(baseIndex + baseShaComment.length, 40)
-    const headCommitID = pageSource.substr(headIndex + headShaComment.length, 40)
+    const baseCommitID = pageSource.slice(baseIndex + baseShaComment.length, 40)
+    const headCommitID = pageSource.slice(headIndex + headShaComment.length, 40)
     return {
         baseCommitID,
         headCommitID,
@@ -204,6 +208,7 @@ export function getFilePath(): string {
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
+    // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(
@@ -218,8 +223,8 @@ type GitHubURL = RawRepoSpec &
         | { pageType: 'commit' | 'pull' | 'compare' | 'other' }
         | {
               pageType: 'blob' | 'tree'
-              /** rev and file path separated by a slash, URL-decoded. */
-              revAndFilePath: string
+              /** revision and file path separated by a slash, URL-decoded. */
+              revisionAndFilePath: string
           }
     )
 
@@ -234,11 +239,11 @@ export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     }
 }
 
-export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.location): GitHubURL {
-    const { host, pathname } = loc
+export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> = window.location): GitHubURL {
+    const { host, pathname } = location
     const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
     if (!user || !ghRepoName) {
-        throw new Error(`Could not parse repoName from GitHub url: ${window.location.href}`)
+        throw new Error(`Could not parse repoName from GitHub url: ${location.href}`)
     }
     const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {
@@ -247,7 +252,7 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
             return {
                 pageType,
                 rawRepoName,
-                revAndFilePath: decodeURIComponent(rest.join('/')),
+                revisionAndFilePath: decodeURIComponent(rest.join('/')),
             }
         case 'pull':
         case 'commit':

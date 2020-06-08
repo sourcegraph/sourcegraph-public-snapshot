@@ -30,11 +30,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -871,12 +871,12 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 			return r.evaluateOperator(ctx, scopeParameters, term)
 		} else if term.Kind == query.Concat {
 			q := append(scopeParameters, term)
-			r.query = query.AndOrQuery{Query: q}
+			r.query.(*query.AndOrQuery).Query = q
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
 		q := append(scopeParameters, term)
-		r.query = query.AndOrQuery{Query: q}
+		r.query.(*query.AndOrQuery).Query = q
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
@@ -893,7 +893,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
 	}
 	if pattern == nil {
-		r.query = query.AndOrQuery{Query: scopeParameters}
+		r.query.(*query.AndOrQuery).Query = scopeParameters
 		return r.evaluateLeaf(ctx)
 	}
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)

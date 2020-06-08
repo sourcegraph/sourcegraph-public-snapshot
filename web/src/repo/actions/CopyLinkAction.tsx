@@ -19,8 +19,8 @@ interface State {
 export class CopyLinkAction extends React.PureComponent<Props, State> {
     public state = { copied: false }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
-        if (prevState.copied !== this.state.copied) {
+    public componentDidUpdate(previousProps: Props, previousState: State): void {
+        if (previousState.copied !== this.state.copied) {
             Tooltip.forceUpdate()
         }
     }
@@ -41,8 +41,8 @@ export class CopyLinkAction extends React.PureComponent<Props, State> {
     private onClick: React.MouseEventHandler<HTMLElement> = event => {
         event.preventDefault()
         eventLogger.log('ShareButtonClicked')
-        const loc = this.props.location
-        const shareLink = new URL(loc.pathname + loc.search + loc.hash, window.location.href)
+        const location = this.props.location
+        const shareLink = new URL(location.pathname + location.search + location.hash, window.location.href)
         shareLink.searchParams.set('utm_source', 'share')
         copy(shareLink.href)
         this.setState({ copied: true })

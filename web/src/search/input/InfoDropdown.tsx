@@ -46,11 +46,11 @@ export const InfoDropdown: React.FunctionComponent<Props> = props => (
                                     <strong>{pluralize('Example', props.examples.length)}</strong>
                                 </div>
                                 <ul className="list-unstyled mb-2">
-                                    {props.examples.map((ex: QueryFieldExamples) => (
-                                        <div key={ex.value}>
+                                    {props.examples.map((example: QueryFieldExamples) => (
+                                        <div key={example.value}>
                                             <div className="p-2">
-                                                <span className="text-muted small">{ex.description}: </span>
-                                                <code>{ex.value}</code>
+                                                <span className="text-muted small">{example.description}: </span>
+                                                <code>{example.value}</code>
                                             </div>
                                         </div>
                                     ))}

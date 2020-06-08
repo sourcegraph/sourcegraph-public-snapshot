@@ -111,15 +111,15 @@ function confirmAddExtension(extensionID: string): boolean {
 }
 
 /** Converts a SettingsCascadeOrError to a SettingsCascade, returning the first error it finds. */
-function extractErrors(c: SettingsCascadeOrError): SettingsCascade | ErrorLike {
-    if (c.subjects === null) {
-        return new Error('Subjects was ' + c.subjects)
+function extractErrors(settingsCascade: SettingsCascadeOrError): SettingsCascade | ErrorLike {
+    if (settingsCascade.subjects === null) {
+        return new Error('Subjects was ' + settingsCascade.subjects)
     }
-    if (c.final === null || isErrorLike(c.final)) {
-        return new Error('Merged was ' + c.final)
+    if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+        return new Error('Merged was ' + settingsCascade.final)
     }
-    if (c.subjects.find(isErrorLike)) {
-        return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
+    if (settingsCascade.subjects.find(isErrorLike)) {
+        return new Error('One of the subjects was ' + settingsCascade.subjects.find(isErrorLike))
     }
-    return c as SettingsCascade
+    return settingsCascade as SettingsCascade
 }

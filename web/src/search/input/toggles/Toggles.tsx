@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useCallback } from 'react'
 import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
@@ -33,80 +33,97 @@ export interface TogglesProps
  * The toggles displayed in the query input.
  */
 export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesProps) => {
+    const {
+        history,
+        navbarSearchQuery,
+        filtersInQuery,
+        versionContext,
+        hasGlobalQueryBehavior,
+        patternType,
+        setPatternType,
+        caseSensitive,
+        setCaseSensitivity,
+        settingsCascade,
+        className,
+        copyQueryButton,
+    } = props
+
     const structuralSearchDisabled =
         window.context &&
         window.context.experimentalFeatures &&
         window.context.experimentalFeatures.structuralSearch === 'disabled'
 
-    const submitOnToggle = (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
-        const { history, navbarSearchQuery, filtersInQuery, versionContext } = props
-        const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
-        const shouldSubmitSearch = props.hasGlobalQueryBehavior && searchQueryNotEmpty
-        const activation = undefined
-        const source = 'filter'
-        const patternType = 'newPatternType' in args ? args.newPatternType : props.patternType
-        const caseSensitive = 'newCaseSensitivity' in args ? args.newCaseSensitivity : props.caseSensitive
-        if (shouldSubmitSearch) {
+    const submitOnToggle = useCallback(
+        (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
             // Only submit search on toggle when the query input has global behavior (i.e. it's on the main search page
             // or global navbar). Non-global inputs don't have the canonical query and need more context, making
             // submit on-toggle undesirable. Also, only submit on toggle only when the query is non-empty.
-            submitSearch({
-                history,
-                query: navbarSearchQuery,
-                source,
-                patternType,
-                caseSensitive,
-                versionContext,
-                activation,
-                filtersInQuery,
-            })
-        }
-    }
+            const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
+            const shouldSubmitSearch = hasGlobalQueryBehavior && searchQueryNotEmpty
+            if (shouldSubmitSearch) {
+                const activation = undefined
+                const source = 'filter'
+                const newPatternType = 'newPatternType' in args ? args.newPatternType : patternType
+                const newCaseSensitive = 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive
+                submitSearch({
+                    history,
+                    query: navbarSearchQuery,
+                    source,
+                    patternType: newPatternType,
+                    caseSensitive: newCaseSensitive,
+                    versionContext,
+                    activation,
+                    filtersInQuery,
+                })
+            }
+        },
+        [caseSensitive, filtersInQuery, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
+    )
 
-    const toggleCaseSensitivity = (): void => {
-        if (props.patternType === SearchPatternType.structural) {
+    const toggleCaseSensitivity = useCallback((): void => {
+        if (patternType === SearchPatternType.structural) {
             return
         }
-        const newCaseSensitivity = !props.caseSensitive
-        props.setCaseSensitivity(newCaseSensitivity)
+        const newCaseSensitivity = !caseSensitive
+        setCaseSensitivity(newCaseSensitivity)
         submitOnToggle({ newCaseSensitivity })
-    }
+    }, [caseSensitive, patternType, setCaseSensitivity, submitOnToggle])
 
-    const toggleRegexp = (): void => {
+    const toggleRegexp = useCallback((): void => {
         const newPatternType =
-            props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
+            patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
 
-        props.setPatternType(newPatternType)
+        setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
-    }
+    }, [patternType, setPatternType, submitOnToggle])
 
-    const toggleStructuralSearch = (): void => {
+    const toggleStructuralSearch = useCallback((): void => {
         const cascadePatternTypeValue =
-            props.settingsCascade.final &&
-            !isErrorLike(props.settingsCascade.final) &&
-            props.settingsCascade.final['search.defaultPatternType']
+            settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            settingsCascade.final['search.defaultPatternType']
 
         const defaultPatternType = cascadePatternTypeValue || 'literal'
 
         const newPatternType =
-            props.patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
+            patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
 
-        props.setPatternType(newPatternType)
+        setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
-    }
+    }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
     const fullQuery = [
-        props.navbarSearchQuery,
-        props.filtersInQuery && generateFiltersQuery(props.filtersInQuery),
-        `patternType:${props.patternType}`,
-        props.caseSensitive ? 'case:yes' : '',
+        navbarSearchQuery,
+        filtersInQuery && generateFiltersQuery(filtersInQuery),
+        `patternType:${patternType}`,
+        caseSensitive ? 'case:yes' : '',
     ]
         .filter(queryPart => !!queryPart)
         .join(' ')
 
     return (
-        <div className={classNames('toggle-container', props.className)}>
-            {props.copyQueryButton && (
+        <div className={classNames('toggle-container', className)}>
+            {copyQueryButton && (
                 <CopyQueryButton
                     fullQuery={fullQuery}
                     className="toggle-container__toggle toggle-container__copy-query-button"
@@ -115,18 +132,18 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
-                isActive={props.caseSensitive}
+                isActive={caseSensitive}
                 onToggle={toggleCaseSensitivity}
                 icon={FormatLetterCaseIcon}
                 className="e2e-case-sensitivity-toggle"
                 activeClassName="e2e-case-sensitivity-toggle--active"
-                disabledCondition={props.patternType === SearchPatternType.structural}
+                disabledCondition={patternType === SearchPatternType.structural}
                 disabledMessage="Structural search is always case sensitive"
             />
             <QueryInputToggle
                 {...props}
                 title="Regular expression"
-                isActive={props.patternType === SearchPatternType.regexp}
+                isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
                 icon={RegexIcon}
                 className="e2e-regexp-toggle"
@@ -138,7 +155,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     title="Structural search"
                     className="e2e-structural-search-toggle"
                     activeClassName="e2e-structural-search-toggle--active"
-                    isActive={props.patternType === SearchPatternType.structural}
+                    isActive={patternType === SearchPatternType.structural}
                     onToggle={toggleStructuralSearch}
                     icon={CodeBracketsIcon}
                 />

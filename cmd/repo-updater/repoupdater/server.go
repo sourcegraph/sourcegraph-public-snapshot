@@ -544,7 +544,20 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
+	messagesSummary := func() string {
+		cappedMsg := resp.Messages
+		if len(cappedMsg) > 10 {
+			cappedMsg = cappedMsg[:10]
+		}
+
+		jMsg, err := json.MarshalIndent(cappedMsg, "", " ")
+		if err != nil {
+			return "error summarizing messages for logging"
+		}
+		return string(jMsg)
+	}
+
+	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
 
 	respond(w, http.StatusOK, resp)
 }
@@ -699,9 +712,9 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			break
 		}
 		region := splittedARN[0]
-		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", region, repo.Name)
+		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s", region, repo.Name)
 		info.Links = &protocol.RepoLinks{
-			Root:   webURL,
+			Root:   webURL + "/browse",
 			Tree:   webURL + "/browse/{rev}/--/{path}",
 			Blob:   webURL + "/browse/{rev}/--/{path}",
 			Commit: webURL + "/commit/{commit}",

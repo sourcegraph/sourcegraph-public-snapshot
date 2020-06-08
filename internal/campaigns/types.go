@@ -316,9 +316,20 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// Completed returns true for jobs that have completed, regardless of whether
+// that was successful or not.
+func (c *ChangesetJob) Completed() bool {
+	return !c.FinishedAt.IsZero()
+}
+
 // SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+	return c.Error == "" && c.ChangesetID != 0 && c.Completed()
+}
+
+// UnsuccessfullyCompleted returns true for jobs that have run, but failed.
+func (c *ChangesetJob) UnsuccessfullyCompleted() bool {
+	return c.Error != "" && c.ChangesetID == 0 && c.Completed()
 }
 
 // Reset sets the Error, StartedAt and FinishedAt fields to their respective

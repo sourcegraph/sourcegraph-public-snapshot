@@ -90,7 +90,7 @@ type Collaborator struct {
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
 func (c *Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
-	path := fmt.Sprintf("/repos/%s/%s/collaborators?&page=%d&per_page=100", owner, repo, page)
+	path := fmt.Sprintf("/repos/%s/%s/collaborators?page=%d&per_page=100", owner, repo, page)
 	err := c.requestGet(ctx, path, &users)
 	if err != nil {
 		return nil, false, err

@@ -27,7 +27,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
     const deleteUpload = async (): Promise<void> => {
-        let description = `commit ${node.inputCommit.substring(0, 7)}`
+        let description = `commit ${node.inputCommit.slice(0, 7)}`
         if (node.inputRoot) {
             description += ` rooted at ${node.inputRoot}`
         }
@@ -41,8 +41,8 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
         try {
             await deleteLsifUpload({ id: node.id }).toPromise()
             onDelete()
-        } catch (err) {
-            setDeletionOrError(err)
+        } catch (error) {
+            setDeletionOrError(error)
         }
     }
 
@@ -59,7 +59,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
                                 <code>{node.projectRoot.commit.abbreviatedOID}</code>
                             </Link>
                         ) : (
-                            node.inputCommit.substring(0, 7)
+                            node.inputCommit.slice(0, 7)
                         )}
                     </code>
                     indexed by

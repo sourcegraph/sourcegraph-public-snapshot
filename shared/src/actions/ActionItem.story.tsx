@@ -7,7 +7,7 @@ import { ActionItem, ActionItemComponentProps } from './ActionItem'
 import { NEVER } from 'rxjs'
 import webStyles from '../../../web/src/SourcegraphWebApp.scss'
 
-const { add } = storiesOf('ActionItem', module).addDecorator(story => (
+const { add } = storiesOf('shared/ActionItem', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="p-4">{story()}</div>

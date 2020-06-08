@@ -56,8 +56,8 @@ export const UsernameInput: React.FunctionComponent<React.InputHTMLAttributes<HT
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
  */
 export function getReturnTo(location: H.Location): string {
-    const searchParams = new URLSearchParams(location.search)
-    const returnTo = searchParams.get('returnTo') || '/search'
+    const searchParameters = new URLSearchParams(location.search)
+    const returnTo = searchParameters.get('returnTo') || '/search'
     const newURL = new URL(returnTo, window.location.href)
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash

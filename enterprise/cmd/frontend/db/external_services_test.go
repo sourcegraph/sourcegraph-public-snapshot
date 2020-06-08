@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -72,7 +73,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		assert func(testing.TB, []string)
 	}{
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
 			config: `{}`,
 			assert: includes(
@@ -83,7 +84,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid region",
 			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: includes(
@@ -91,7 +92,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid gitCredentials",
 			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "", "password": ""}}`,
 			assert: includes(
@@ -100,13 +101,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "valid",
 			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
 			assert: equals("<nil>"),
 		},
 		{
-			kind: "AWSCODECOMMIT",
+			kind: extsvc.KindAWSCodeCommit,
 			desc: "valid exclude",
 			config: `
 			{
@@ -122,37 +123,37 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "f o o b a r"}]}`,
 			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+$'`),
 		},
 		{
-			kind:   "AWSCODECOMMIT",
+			kind:   extsvc.KindAWSCodeCommit,
 			desc:   "invalid exclude item id",
 			config: `{"exclude": [{"id": "b$a$r"}]}`,
 			assert: includes(`exclude.0.id: Does not match pattern '^[\w-]+$'`),
 		},
 		{
-			kind: "AWSCODECOMMIT",
+			kind: extsvc.KindAWSCodeCommit,
 			desc: "invalid additional exclude item properties",
 			config: `{"exclude": [{
 				"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb",
@@ -161,7 +162,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "AWSCODECOMMIT",
+			kind: extsvc.KindAWSCodeCommit,
 			desc: "both name and id can be specified in exclude",
 			config: `
 			{
@@ -183,7 +184,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
@@ -192,7 +193,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "with example.com defaults",
 			config: `{"prefix": "gitolite.example.com/", "host": "git@gitolite.example.com"}`,
 			assert: includes(
@@ -201,7 +202,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
@@ -210,13 +211,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "bad blacklist regex",
 			config: `{"blacklist": "]["}`,
 			assert: includes("blacklist: Does not match format 'regex'"),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "phabricator without url nor callsignCommand",
 			config: `{"phabricator": {}}`,
 			assert: includes(
@@ -225,43 +226,43 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "phabricator with invalid url",
 			config: `{"phabricator": {"url": "not-a-url"}}`,
 			assert: includes("phabricator.url: Does not match format 'uri'"),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": ""}]}`,
 			assert: includes(`exclude.0.name: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITOLITE",
+			kind:   extsvc.KindGitolite,
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"name": "foo", "bar": "baz"}]}`,
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "GITOLITE",
+			kind: extsvc.KindGitolite,
 			desc: "name can be specified in exclude",
 			config: `
 			{
@@ -274,7 +275,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind: "BITBUCKETCLOUD",
+			kind: extsvc.KindBitbucketCloud,
 			desc: "valid with url, username, appPassword",
 			config: `
 			{
@@ -285,7 +286,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind: "BITBUCKETCLOUD",
+			kind: extsvc.KindBitbucketCloud,
 			desc: "valid with url, username, appPassword, teams",
 			config: `
 			{
@@ -297,7 +298,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "without url, username nor appPassword",
 			config: `{}`,
 			assert: includes(
@@ -307,25 +308,25 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "bad url scheme",
 			config: `{"url": "badscheme://bitbucket.org"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "bad apiURL scheme",
 			config: `{"apiURL": "badscheme://api.bitbucket.org"}`,
 			assert: includes("apiURL: Does not match pattern '^https?://'"),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid gitURLType",
 			config: `{"gitURLType": "bad"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid team name",
 			config: `{"teams": ["sg local"]}`,
 			assert: includes(
@@ -333,7 +334,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind: "BITBUCKETCLOUD",
+			kind: extsvc.KindBitbucketCloud,
 			desc: "empty exclude",
 			config: `
 			{
@@ -345,31 +346,31 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
 			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "BITBUCKETCLOUD",
+			kind: extsvc.KindBitbucketCloud,
 			desc: "both name and uuid can be specified in exclude",
 			config: `
 			{
@@ -383,13 +384,13 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "BITBUCKETCLOUD",
+			kind:   extsvc.KindBitbucketCloud,
 			desc:   "invalid exclude pattern",
 			config: `{"exclude": [{"pattern": "["}]}`,
 			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "valid with url, username, token, repositoryQuery",
 			config: `
 			{
@@ -401,7 +402,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "valid with url, username, token, repos",
 			config: `
 			{
@@ -413,7 +414,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "without url, username, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
@@ -423,25 +424,25 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "without username",
 			config: `{}`,
 			assert: includes("username is required"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "example url",
 			config: `{"url": "https://bitbucket.example.com"}`,
 			assert: includes("url: Must not validate the schema (not)"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "bad url scheme",
 			config: `{"url": "badscheme://bitbucket.com"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "with token AND password",
 			config: `{"token": "foo", "password": "bar"}`,
 			assert: includes(
@@ -450,67 +451,67 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid token",
 			config: `{"token": ""}`,
 			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid git url type",
 			config: `{"gitURLType": "bad"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "empty repositoryQuery",
 			config: `{"repositoryQuery": []}`,
 			assert: includes(`repositoryQuery: Array must have at least 1 items`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "empty repositoryQuery item",
 			config: `{"repositoryQuery": [""]}`,
 			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
 			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "both name and id can be specified in exclude",
 			config: `
 			{
@@ -526,19 +527,19 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty repos",
 			config: `{"repos": []}`,
 			assert: includes(`repos: Array must have at least 1 items`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid empty repos item",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "invalid exclude pattern",
 			config: `
 			{
@@ -553,7 +554,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "valid repos",
 			config: `
 			{
@@ -569,25 +570,25 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid authorization ttl",
 			config: `{"authorization": {"ttl": "foo"}}`,
 			assert: includes(`authorization.ttl: time: invalid duration foo`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "invalid authorization hardTTL",
 			config: `{"authorization": {"ttl": "3h", "hardTTL": "1h"}}`,
 			assert: includes(`authorization.hardTTL: must be larger than ttl`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
+			kind:   extsvc.KindBitbucketServer,
 			desc:   "valid authorization ttl 0",
 			config: `{"authorization": {"ttl": "0"}}`,
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "missing oauth in authorization",
 			config: `
 			{
@@ -597,7 +598,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("authorization: oauth is required"),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "missing oauth fields",
 			config: `
 			{
@@ -612,7 +613,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "invalid oauth fields",
 			config: `
 			{
@@ -630,7 +631,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "invalid oauth signingKey",
 			config: `
 			{
@@ -645,7 +646,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("authorization.oauth.signingKey: illegal base64 data at input byte 3"),
 		},
 		{
-			kind: "BITBUCKETSERVER",
+			kind: extsvc.KindBitbucketServer,
 			desc: "username identity provider",
 			config: fmt.Sprintf(`
 			{
@@ -665,7 +666,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "without url, token, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
@@ -675,7 +676,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind: "GITHUB",
+			kind: extsvc.KindGitHub,
 			desc: "with url, token, repositoryQuery",
 			config: `
 			{
@@ -686,7 +687,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind: "GITHUB",
+			kind: extsvc.KindGitHub,
 			desc: "with url, token, repos",
 			config: `
 			{
@@ -697,7 +698,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind: "GITHUB",
+			kind: extsvc.KindGitHub,
 			desc: "with url, token, orgs",
 			config: `
 			{
@@ -708,7 +709,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "with example.com url and badscheme",
 			config: `{"url": "badscheme://github-enterprise.example.com"}`,
 			assert: includes(
@@ -717,91 +718,91 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "with invalid gitURLType",
 			config: `{"gitURLType": "git"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid token",
 			config: `{"token": ""}`,
 			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "empty repositoryQuery",
 			config: `{"repositoryQuery": []}`,
 			assert: includes(`repositoryQuery: Array must have at least 1 items`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "empty repositoryQuery item",
 			config: `{"repositoryQuery": [""]}`,
 			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid repos",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid authorization ttl",
 			config: `{"authorization": {"ttl": "foo"}}`,
 			assert: includes(`authorization.ttl: time: invalid duration foo`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "valid authorization ttl 0",
 			config: `{"authorization": {"ttl": "0"}}`,
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
 			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid empty exclude item id",
 			config: `{"exclude": [{"id": ""}]}`,
 			assert: includes(`exclude.0.id: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITHUB",
+			kind:   extsvc.KindGitHub,
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": "foo", "bar": "baz"}]}`,
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "GITHUB",
+			kind: extsvc.KindGitHub,
 			desc: "both name and id can be specified in exclude",
 			config: `
 			{
@@ -815,43 +816,43 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "empty projectQuery",
 			config: `{"projectQuery": []}`,
 			assert: includes(`projectQuery: Array must have at least 1 items`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "empty projectQuery item",
 			config: `{"projectQuery": [""]}`,
 			assert: includes(`projectQuery.0: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid exclude item",
 			config: `{"exclude": [{"foo": "bar"}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid exclude item name",
 			config: `{"exclude": [{"name": "bar"}]}`,
 			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "both name and id can be specified in exclude",
 			config: `
 			{
@@ -865,7 +866,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "subgroup paths are valid for exclude",
 			config: `
 			{
@@ -879,7 +880,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "paths containing . in the first part of the path are valid for exclude",
 			config: `
 			{
@@ -893,37 +894,37 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid empty projects",
 			config: `{"projects": []}`,
 			assert: includes(`projects: Array must have at least 1 items`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid empty projects item",
 			config: `{"projects": [{}]}`,
 			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid projects item",
 			config: `{"projects": [{"foo": "bar"}]}`,
 			assert: includes(`projects.0: Must validate at least one schema (anyOf)`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid projects item name",
 			config: `{"projects": [{"name": "bar"}]}`,
 			assert: includes(`projects.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid additional projects item properties",
 			config: `{"projects": [{"id": 1234, "bar": "baz"}]}`,
 			assert: includes(`projects.0: Additional property bar is not allowed`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "both name and id can be specified in projects",
 			config: `
 			{
@@ -937,7 +938,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "without url, token nor projectQuery",
 			config: `{}`,
 			assert: includes(
@@ -947,7 +948,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "with example.com url and badscheme",
 			config: `{"url": "badscheme://github-enterprise.example.com"}`,
 			assert: includes(
@@ -956,37 +957,37 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "with invalid gitURLType",
 			config: `{"gitURLType": "git"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid token",
 			config: `{"token": ""}`,
 			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "invalid authorization ttl",
 			config: `{"authorization": {"ttl": "foo"}}`,
 			assert: includes(`authorization.ttl: time: invalid duration foo`),
 		},
 		{
-			kind:   "GITLAB",
+			kind:   extsvc.KindGitLab,
 			desc:   "valid authorization ttl 0",
 			config: `{"authorization": {"ttl": "0"}}`,
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "missing oauth provider",
 			config: `
 			{
@@ -997,7 +998,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "valid oauth provider",
 			config: `
 			{
@@ -1011,7 +1012,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "missing external provider",
 			config: `
 			{
@@ -1029,7 +1030,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "valid external provider with SAML",
 			config: `
 			{
@@ -1055,7 +1056,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "valid external provider with OIDC",
 			config: `
 			{
@@ -1081,7 +1082,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "username identity provider",
 			config: `
 			{
@@ -1098,7 +1099,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "missing properties in name transformations",
 			config: `
 			{
@@ -1116,7 +1117,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "invalid properties in name transformations",
 			config: `
 			{
@@ -1131,7 +1132,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: includes(`nameTransformations.0.regex: Does not match format 'regex'`),
 		},
 		{
-			kind: "GITLAB",
+			kind: extsvc.KindGitLab,
 			desc: "valid name transformations",
 			config: `
 			{
@@ -1153,7 +1154,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "PHABRICATOR",
+			kind:   extsvc.KindPhabricator,
 			desc:   "without repos nor token",
 			config: `{}`,
 			assert: includes(
@@ -1162,103 +1163,103 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
-			kind:   "PHABRICATOR",
+			kind:   extsvc.KindPhabricator,
 			desc:   "with empty repos",
 			config: `{"repos": []}`,
 			assert: includes(`repos: Array must have at least 1 items`),
 		},
 		{
-			kind:   "PHABRICATOR",
+			kind:   extsvc.KindPhabricator,
 			desc:   "with repos",
 			config: `{"repos": [{"path": "gitolite/my/repo", "callsign": "MUX"}]}`,
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "PHABRICATOR",
+			kind:   extsvc.KindPhabricator,
 			desc:   "invalid token",
 			config: `{"token": ""}`,
 			assert: includes(`token: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "PHABRICATOR",
+			kind:   extsvc.KindPhabricator,
 			desc:   "with token",
 			config: `{"token": "a given token"}`,
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without url nor repos array",
 			config: `{}`,
 			assert: includes(`repos is required`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL but with null repos array",
 			config: `{"repos": null}`,
 			assert: includes(`repos: Invalid type. Expected: array, given: null`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL but with empty repos array",
 			config: `{"repos": []}`,
 			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL and empty repo array item",
 			config: `{"repos": [""]}`,
 			assert: includes(`repos.0: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL and invalid repo array item",
 			config: `{"repos": ["https://github.com/%%%%malformed"]}`,
 			assert: includes(`repos.0: Does not match format 'uri-reference'`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL and invalid scheme in repo array item",
 			config: `{"repos": ["badscheme://github.com/my/repo"]}`,
 			assert: includes(`repos.0: scheme "badscheme" not one of git, http, https or ssh`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "without URL and valid repos",
 			config: `{"repos": ["http://git.hub/repo", "https://git.hub/repo", "git://user@hub.com:3233/repo.git/", "ssh://user@hub.com/repo.git/"]}`,
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with URL but null repos array",
 			config: `{"url": "http://github.com/", "repos": null}`,
 			assert: includes(`repos: Invalid type. Expected: array, given: null`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with URL but empty repos array",
 			config: `{"url": "http://github.com/", "repos": []}`,
 			assert: excludes(`repos: Array must have at least 1 items`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with URL and empty repo array item",
 			config: `{"url": "http://github.com/", "repos": [""]}`,
 			assert: includes(`repos.0: String length must be greater than or equal to 1`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with URL and invalid repo array item",
 			config: `{"url": "https://github.com/", "repos": ["foo/%%%%malformed"]}`,
 			assert: includes(`repos.0: Does not match format 'uri-reference'`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with invalid scheme URL",
 			config: `{"url": "badscheme://github.com/", "repos": ["my/repo"]}`,
 			assert: includes(`url: Does not match pattern '^(git|ssh|https?)://'`),
 		},
 		{
-			kind:   "OTHER",
+			kind:   extsvc.KindOther,
 			desc:   "with URL and valid repos",
 			config: `{"url": "https://github.com/", "repos": ["foo/", "bar", "/baz", "bam.git"]}`,
 			assert: equals("<nil>"),

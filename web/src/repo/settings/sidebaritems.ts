@@ -16,10 +16,4 @@ export const repoSettingsSidebarItems: RepoSettingsSideBarItems = [
         exact: true,
         label: 'Mirroring',
     },
-    {
-        to: '/permissions',
-        exact: true,
-        label: 'Permissions',
-        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
-    },
 ]

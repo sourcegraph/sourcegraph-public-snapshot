@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -20,6 +21,51 @@ type Index struct {
 	FinishedAt        *time.Time `json:"finishedAt"`
 	RepositoryID      int        `json:"repositoryId"`
 	Rank              *int       `json:"placeInQueue"`
+}
+
+// scanIndexes scans a slice of indexes from the return value of `*dbImpl.query`.
+func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var indexes []Index
+	for rows.Next() {
+		var index Index
+		if err := rows.Scan(
+			&index.ID,
+			&index.Commit,
+			&index.QueuedAt,
+			&index.State,
+			&index.FailureSummary,
+			&index.FailureStacktrace,
+			&index.StartedAt,
+			&index.FinishedAt,
+			&index.RepositoryID,
+			&index.Rank,
+		); err != nil {
+			return nil, err
+		}
+
+		indexes = append(indexes, index)
+	}
+
+	return indexes, nil
+}
+
+// scanFirstIndex scans a slice of indexes from the return value of `*dbImpl.query` and returns the first.
+func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
+	indexes, err := scanIndexes(rows, err)
+	if err != nil || len(indexes) == 0 {
+		return Index{}, false, err
+	}
+	return indexes[0], true, nil
+}
+
+// scanFirstIndexInterface scans a slice of indexes from the return value of `*dbImpl.query` and returns the first.
+func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
+	return scanFirstIndex(rows, err)
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
@@ -89,7 +135,7 @@ func (db *dbImpl) InsertIndex(ctx context.Context, index Index) (int, error) {
 
 // MarkIndexComplete updates the state of the index to complete.
 func (db *dbImpl) MarkIndexComplete(ctx context.Context, id int) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'completed', finished_at = clock_timestamp()
 		WHERE id = %s
@@ -98,7 +144,7 @@ func (db *dbImpl) MarkIndexComplete(ctx context.Context, id int) (err error) {
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
 func (db *dbImpl) MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
 		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
 		WHERE id = %s
@@ -123,10 +169,37 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 // If there is no such unlocked index, a zero-value index and nil DB will be returned along with a false
 // valued flag. This method must not be called from within a transaction.
 func (db *dbImpl) DequeueIndex(ctx context.Context) (Index, DB, bool, error) {
-	index, tx, ok, err := db.dequeueRecord(ctx, "lsif_indexes", indexColumnsWithNullRank, sqlf.Sprintf("queued_at"), scanFirstIndexDequeue)
+	index, tx, ok, err := db.dequeueRecord(ctx, "lsif_indexes", indexColumnsWithNullRank, sqlf.Sprintf("queued_at"), scanFirstIndexInterface)
 	if err != nil || !ok {
 		return Index{}, tx, ok, err
 	}
 
 	return index.(Index), tx, true, nil
+}
+
+// StalledIndexMaxAge is the maximum allowable duration between updating the state of an
+// index as "processing" and locking the index row during processing. An unlocked row that
+// is marked as processing likely indicates that the indexer that dequeued the index has
+// died. There should be a nearly-zero delay between these states during normal operation.
+const StalledIndexMaxAge = time.Second * 5
+
+// ResetStalledIndexes moves all unlocked index processing for more than `StalledIndexMaxAge` back to the
+// queued state. This method returns a list of updated index identifiers.
+func (db *dbImpl) ResetStalledIndexes(ctx context.Context, now time.Time) ([]int, error) {
+	ids, err := scanInts(db.query(
+		ctx,
+		sqlf.Sprintf(`
+			UPDATE lsif_indexes u SET state = 'queued', started_at = null WHERE id = ANY(
+				SELECT id FROM lsif_indexes
+				WHERE state = 'processing' AND %s - started_at > (%s * interval '1 second')
+				FOR UPDATE SKIP LOCKED
+			)
+			RETURNING u.id
+		`, now.UTC(), StalledIndexMaxAge/time.Second),
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }

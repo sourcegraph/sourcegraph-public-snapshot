@@ -7,11 +7,15 @@ const (
 
 	// oldEnterprise is the old "Enterprise" plan.
 	oldEnterprise Plan = "old-enterprise-0"
+
+	// team is the "Team" plan.
+	team Plan = "team-0"
 )
 
 var allPlans = []Plan{
 	oldEnterpriseStarter,
 	oldEnterprise,
+	team,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -40,4 +44,5 @@ var planFeatures = map[Plan][]Feature{
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
 	},
+	team: {},
 }

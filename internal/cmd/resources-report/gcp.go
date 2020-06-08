@@ -140,7 +140,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 	},
 }
 
-func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]Resource, error) {
+func collectGCPResources(ctx context.Context, since time.Time, verbose bool, labelsWhitelist map[string]string) ([]Resource, error) {
 	logger := log.New(os.Stdout, "gcp: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources since %s", since)
@@ -165,7 +165,7 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 				wait.Add(1)
 				go func(resourceID string, fetchResource GCPResourceFetchFunc, project string) {
 					if err := fetchResource(ctx, results, project, since); err != nil {
-						errs <- fmt.Errorf("project %s, resource %s: %w", project, resourceID)
+						errs <- fmt.Errorf("project %s, resource %s: %w", project, resourceID, err)
 					}
 					wait.Done()
 				}(resourceID, fetchResource, project.ProjectId)
@@ -187,6 +187,14 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool) ([]
 		case r, ok := <-results:
 			if ok {
 				resource := r
+				// whitelist resource if configured - all GCP labels are maps
+				if labelsWhitelist != nil {
+					if labels, ok := resource.Meta["labels"].(map[string]string); ok {
+						if hasKeyValue(labels, labelsWhitelist) {
+							resource.Whitelisted = true
+						}
+					}
+				}
 				resources = append(resources, resource)
 			} else {
 				return resources, nil

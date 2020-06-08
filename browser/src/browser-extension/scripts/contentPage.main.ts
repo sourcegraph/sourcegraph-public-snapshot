@@ -16,12 +16,12 @@ import {
 } from '../../shared/code-hosts/sourcegraph/inject'
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
-import { assertEnv } from '../envAssertion'
+import { assertEnvironment } from '../environmentAssertion'
 
 const subscriptions = new Subscription()
 window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: true })
 
-assertEnv('CONTENT')
+assertEnvironment('CONTENT')
 
 const codeHost = determineCodeHost()
 initSentry('content', codeHost?.type)
@@ -48,7 +48,7 @@ async function main(): Promise<void> {
     // and abort execution if it's the case.
     // If the native integration was activated before the content script, we can
     // synchronously check for the presence of the extension marker.
-    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
+    if (document.querySelector(`#${EXTENSION_MARKER_ID}`) !== null) {
         console.log('Sourcegraph native integration is already running')
         return
     }
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
     // annoying flash/jitter when the stylesheet loads shortly thereafter).
     const styleSheet = (() => {
-        let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+        let styleSheet = document.querySelector<HTMLLinkElement>('#ext-style-sheet')
         // If does not exist, create
         if (!styleSheet) {
             styleSheet = document.createElement('link')
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
             styleSheet.addEventListener('load', resolve, { once: true })
             // If not appended yet, append to <head>
             if (!styleSheet.parentNode) {
-                document.head.appendChild(styleSheet)
+                document.head.append(styleSheet)
             }
         })
     }

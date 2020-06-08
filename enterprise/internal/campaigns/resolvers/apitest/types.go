@@ -21,7 +21,7 @@ type GitRef struct {
 
 type DiffRange struct{ StartLine, Lines int }
 
-type DiffStat struct{ Added, Deleted, Changed int }
+type DiffStat struct{ Added, Deleted, Changed int32 }
 
 type FileDiffHunk struct {
 	Body, Section      string
@@ -60,6 +60,8 @@ type PatchConnection struct {
 }
 
 type Patch struct {
+	Typename            string `json:"__typename"`
+	ID                  string
 	PublicationEnqueued bool
 	Repository          struct{ Name, URL string }
 	Diff                struct {
@@ -102,16 +104,17 @@ type Campaign struct {
 	Namespace           UserOrg
 	CreatedAt           string
 	UpdatedAt           string
-	PublishedAt         string
 	Status              struct {
 		State  string
 		Errors []string
 	}
 	Patches                 PatchConnection
+	HasUnpublishedPatches   bool
 	Changesets              ChangesetConnection
 	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
+	PatchSet                PatchSet
 }
 
 type CampaignConnection struct {
@@ -126,12 +129,19 @@ type ChangesetEventConnection struct {
 	TotalCount int
 }
 
+type Repository struct {
+	ID   string
+	Name string
+}
+
 type Changeset struct {
+	Typename    string `json:"__typename"`
 	ID          string
-	Repository  struct{ ID string }
+	Repository  Repository
 	Campaigns   CampaignConnection
 	CreatedAt   string
 	UpdatedAt   string
+	NextSyncAt  string
 	Title       string
 	Body        string
 	State       string

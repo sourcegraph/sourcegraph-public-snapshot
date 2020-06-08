@@ -276,7 +276,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -287,7 +287,7 @@ func TestDequeueIndexProcessSuccess(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -319,7 +319,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", index.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
@@ -330,19 +330,19 @@ func TestDequeueIndexProcessError(t *testing.T) {
 	}
 	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, err := scanString(dbconn.Global.QueryRow("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
+	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_summary: %s", err)
 	} else if summary != "test summary" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
 	}
 
-	if stacktrace, err := scanString(dbconn.Global.QueryRow("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
+	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
 	} else if stacktrace != "test stacktrace" {
 		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
@@ -409,5 +409,47 @@ func TestDequeueIndexEmpty(t *testing.T) {
 	if ok {
 		_ = tx.Done(nil)
 		t.Fatalf("unexpected dequeue")
+	}
+}
+
+func TestResetStalledIndexes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	now := time.Unix(1587396557, 0).UTC()
+	t1 := now.Add(-time.Second * 6) // old
+	t2 := now.Add(-time.Second * 2) // new enough
+	t3 := now.Add(-time.Second * 3) // new enough
+	t4 := now.Add(-time.Second * 8) // old
+	t5 := now.Add(-time.Second * 8) // old
+
+	insertIndexes(t, dbconn.Global,
+		Index{ID: 1, State: "processing", StartedAt: &t1},
+		Index{ID: 2, State: "processing", StartedAt: &t2},
+		Index{ID: 3, State: "processing", StartedAt: &t3},
+		Index{ID: 4, State: "processing", StartedAt: &t4},
+		Index{ID: 5, State: "processing", StartedAt: &t5},
+	)
+
+	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// Row lock index 5 in a transaction which should be skipped by ResetStalled
+	if _, err := tx.Query(`SELECT * FROM lsif_indexes WHERE id = 5 FOR UPDATE`); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []int{1, 4}
+
+	if ids, err := db.ResetStalledIndexes(context.Background(), now); err != nil {
+		t.Fatalf("unexpected error resetting stalled indexes: %s", err)
+	} else if diff := cmp.Diff(expected, ids); diff != "" {
+		t.Errorf("unexpected ids (-want +got):\n%s", diff)
 	}
 }
