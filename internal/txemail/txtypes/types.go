@@ -1,12 +1,8 @@
 package txtypes
 
 import (
-	"bytes"
 	htmltemplate "html/template"
-	"io"
 	texttemplate "text/template"
-
-	gophermail "gopkg.in/jpoehls/gophermail.v0"
 )
 
 // Message describes an email message to be sent.
@@ -33,31 +29,4 @@ type ParsedTemplates struct {
 	Subj *texttemplate.Template
 	Text *texttemplate.Template
 	Html *htmltemplate.Template
-}
-
-func (t ParsedTemplates) Render(data interface{}, m *gophermail.Message) error {
-	render := func(tmpl interface {
-		Execute(io.Writer, interface{}) error
-	}) (string, error) {
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, data); err != nil {
-			return "", err
-		}
-		return buf.String(), nil
-	}
-
-	var err error
-	m.Subject, err = render(t.Subj)
-	if err != nil {
-		return err
-	}
-	m.Body, err = render(t.Text)
-	if err != nil {
-		return err
-	}
-	m.HTMLBody, err = render(t.Html)
-	if err != nil {
-		return err
-	}
-	return nil
 }

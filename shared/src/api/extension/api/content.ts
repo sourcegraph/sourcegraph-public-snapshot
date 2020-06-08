@@ -6,7 +6,7 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 
 /** @internal */
-export class ExtContent {
+export class ExtensionContent {
     constructor(private proxy: comlink.Remote<ClientContentAPI>) {}
 
     public registerLinkPreviewProvider(urlMatchPattern: string, provider: LinkPreviewProvider): Unsubscribable {

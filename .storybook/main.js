@@ -35,6 +35,8 @@ const config = {
 
     config.resolve.extensions.push('.ts', '.tsx')
 
+    const storybookDirectory = path.resolve(__dirname, '../node_modules/@storybook')
+
     // Put our style rules at the beginning so they're processed by the time it
     // gets to storybook's style rules.
     config.module.rules.unshift({
@@ -52,8 +54,11 @@ const config = {
         },
       ],
       // Make sure Storybook styles get handled by the Storybook config
-      exclude: /node_modules\/@storybook\//,
+      exclude: storybookDirectory,
     })
+
+    // Make sure Storybook style loaders are only evaluated for Storybook styles.
+    config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString()).include = storybookDirectory
 
     return config
   },

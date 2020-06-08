@@ -1,16 +1,16 @@
 import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient } from './util/GraphQLClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { GraphQLClient } from './util/GraphQlClient'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { editUserSettings } from './util/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { retry } from '../../../shared/src/testing/utils'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 /**
  * Activates the extension with the given ID in user settings.
@@ -80,7 +80,7 @@ describe('Sourcegraph extensions regression test suite', () => {
                     repos,
                     repositoryQuery: ['none'],
                 },
-                waitForRepos: repos.map(s => `github.com/${s}`),
+                waitForRepos: repos.map(slug => `github.com/${slug}`),
             })
         )
     })

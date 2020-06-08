@@ -36,13 +36,13 @@ const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts 
                     breakpointName,
                     views.map(
                         ({ id }, index): ReactGridLayout => {
-                            const w = columns[breakpointName] / defaultItemsPerRow[breakpointName]
+                            const width = columns[breakpointName] / defaultItemsPerRow[breakpointName]
                             return {
                                 i: id,
                                 h: defaultHeight,
-                                w,
-                                x: (index * w) % columns[breakpointName],
-                                y: Math.floor((index * w) / columns[breakpointName]),
+                                w: width,
+                                x: (index * width) % columns[breakpointName],
+                                y: Math.floor((index * width) / columns[breakpointName]),
                                 minW: minWidths[breakpointName],
                                 minH: 2,
                             }

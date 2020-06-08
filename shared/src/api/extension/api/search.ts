@@ -4,7 +4,7 @@ import { QueryTransformer } from 'sourcegraph'
 import { ClientSearchAPI } from '../../client/api/search'
 import { syncSubscription } from '../../util'
 
-export class ExtSearch {
+export class ExtensionSearch {
     constructor(private proxy: comlink.Remote<ClientSearchAPI>) {}
 
     public registerQueryTransformer(provider: QueryTransformer): Unsubscribable {

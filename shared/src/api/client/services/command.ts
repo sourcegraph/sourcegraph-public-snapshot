@@ -25,24 +25,24 @@ export interface ExecuteCommandParams {
 export class CommandRegistry {
     private entries = new BehaviorSubject<CommandEntry[]>([])
 
-    public registerCommand(entry: CommandEntry): Unsubscribable {
+    public registerCommand(entryToRegister: CommandEntry): Unsubscribable {
         // Enforce uniqueness of command IDs.
-        for (const e of this.entries.value) {
-            if (e.command === entry.command) {
+        for (const entry of this.entries.value) {
+            if (entry.command === entryToRegister.command) {
                 throw new Error(`command is already registered: ${JSON.stringify(entry.command)}`)
             }
         }
 
-        this.entries.next([...this.entries.value, entry])
+        this.entries.next([...this.entries.value, entryToRegister])
         return {
             unsubscribe: () => {
-                this.entries.next(this.entries.value.filter(e => e !== entry))
+                this.entries.next(this.entries.value.filter(entry => entry !== entryToRegister))
             },
         }
     }
 
-    public executeCommand(params: ExecuteCommandParams): Promise<any> {
-        return executeCommand(this.commandsSnapshot, params)
+    public executeCommand(parameters: ExecuteCommandParams): Promise<any> {
+        return executeCommand(this.commandsSnapshot, parameters)
     }
 
     /** All commands, emitted whenever the set of registered commands changed. */
@@ -62,10 +62,10 @@ export class CommandRegistry {
  *
  * Most callers should use CommandRegistry's executeCommand method, which uses the registered commands.
  */
-export function executeCommand(commands: CommandEntry[], params: ExecuteCommandParams): Promise<any> {
-    const command = commands.find(c => c.command === params.command)
+export function executeCommand(commands: CommandEntry[], parameters: ExecuteCommandParams): Promise<any> {
+    const command = commands.find(entry => entry.command === parameters.command)
     if (!command) {
-        throw new Error(`command not found: ${JSON.stringify(params.command)}`)
+        throw new Error(`command not found: ${JSON.stringify(parameters.command)}`)
     }
-    return Promise.resolve(command.run(...(params.arguments || [])))
+    return Promise.resolve(command.run(...(parameters.arguments || [])))
 }

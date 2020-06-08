@@ -18,8 +18,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -56,13 +56,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -99,9 +99,127 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
         </ul>
+        <p
+          className="mb-0"
+        >
+          You don't have permission to view error details.
+        </p>
+      </div>
+    </React.Fragment>
+  </div>
+</React.Fragment>
+`;
+
+exports[`CampaignStatus viewerCanAdminister: false campaign errored 2`] = `
+<React.Fragment>
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-danger my-4"
+      >
+        <h3
+          className="alert-heading mb-0"
+        >
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="a"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="b"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
+          </li>
+        </ul>
+        <p
+          className="mb-0"
+        >
+          You don't have permission to view error details.
+        </p>
       </div>
     </React.Fragment>
   </div>
@@ -115,16 +233,14 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -150,8 +266,8 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -188,13 +304,13 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -231,7 +347,137 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </React.Fragment>
+  </div>
+</React.Fragment>
+`;
+
+exports[`CampaignStatus viewerCanAdminister: false campaign processing 2`] = `
+<React.Fragment>
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-info mt-4"
+      >
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
+        <h4
+          className="mt-1"
+        >
+          Creating changesets failed
+        </h4>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="a"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="b"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
           </li>
         </ul>
       </div>
@@ -252,45 +498,25 @@ exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
 </React.Fragment>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
+exports[`CampaignStatus viewerCanAdminister: false closed campaign 2`] = `
 <React.Fragment>
-  <React.Fragment>
+  <div>
     <div
-      className="d-flex align-items-center alert alert-warning my-4"
+      className="alert alert-secondary mt-2"
     >
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        No changesets have
-         
-        been created on code hosts yet.
-      </p>
+      Campaign is closed. No changes can be made to this campaign anymore.
     </div>
-  </React.Fragment>
+  </div>
 </React.Fragment>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some published 1`] = `
-<React.Fragment>
-  <React.Fragment>
-    <div
-      className="d-flex align-items-center alert alert-warning my-4"
-    >
-      <p
-        className="mb-0 ml-2"
-      >
-        Campaign is a draft.
-         
-        Only a subset of changesets has
-         
-        been created on code hosts yet.
-      </p>
-    </div>
-  </React.Fragment>
-</React.Fragment>
-`;
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `<React.Fragment />`;
+
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign 2`] = `<React.Fragment />`;
+
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some published 1`] = `<React.Fragment />`;
+
+exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some published 2`] = `<React.Fragment />`;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
@@ -310,8 +536,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -348,13 +574,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -391,7 +617,142 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
+          </li>
+        </ul>
+        <button
+          className="btn btn-primary mb-0"
+          disabled={false}
+          onClick={[Function]}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    </React.Fragment>
+  </div>
+  <React.Fragment>
+    <div
+      className="d-flex align-items-center alert alert-info my-4"
+    >
+      <button
+        className="btn btn-primary mb-0"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        Publish all
+      </button>
+      <p
+        className="mb-0 ml-2"
+      >
+        Not all changesets in this campaign have been published yet.
+      </p>
+    </div>
+  </React.Fragment>
+</React.Fragment>
+`;
+
+exports[`CampaignStatus viewerCanAdminister: true campaign errored 2`] = `
+<React.Fragment>
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-danger my-4"
+      >
+        <h3
+          className="alert-heading mb-0"
+        >
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="a"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="b"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
           </li>
         </ul>
         <button
@@ -415,16 +776,14 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
       <div
         className="alert alert-info mt-4"
       >
-        <p>
-          <Memo(SyncIcon)
-            className="icon-inline"
-          />
-           Creating 
-          3
-           
-          changesets
-           on code hosts...
-        </p>
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
         <div
           className="progress mt-2 mb-1"
         >
@@ -450,8 +809,8 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="a"
@@ -488,13 +847,13 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
           </li>
           <li
             className="mb-2"
           >
-            <p
-              className="mb-0"
+            <div
+              className="campaign-status__error"
             >
               <ErrorMessage
                 error="b"
@@ -531,7 +890,156 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
                   }
                 }
               />
-            </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </React.Fragment>
+  </div>
+  <React.Fragment>
+    <div
+      className="d-flex align-items-center alert alert-info my-4"
+    >
+      <button
+        className="btn btn-primary mb-0"
+        disabled={false}
+        onClick={[Function]}
+        type="button"
+      >
+        Publish all
+      </button>
+      <p
+        className="mb-0 ml-2"
+      >
+        Not all changesets in this campaign have been published yet.
+      </p>
+    </div>
+  </React.Fragment>
+</React.Fragment>
+`;
+
+exports[`CampaignStatus viewerCanAdminister: true campaign processing 2`] = `
+<React.Fragment>
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-info mt-4"
+      >
+        <LoadingSpinner
+          className="icon-inline"
+        />
+         Creating 
+        3
+         
+        changesets
+         on code hosts...
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
+        <h4
+          className="mt-1"
+        >
+          Creating changesets failed
+        </h4>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="a"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <div
+              className="campaign-status__error"
+            >
+              <ErrorMessage
+                error="b"
+                history={
+                  Object {
+                    "action": "POP",
+                    "block": [Function],
+                    "canGo": [Function],
+                    "createHref": [Function],
+                    "entries": Array [
+                      Object {
+                        "hash": "",
+                        "key": undefined,
+                        "pathname": "/",
+                        "search": "",
+                        "state": undefined,
+                      },
+                    ],
+                    "go": [Function],
+                    "goBack": [Function],
+                    "goForward": [Function],
+                    "index": 0,
+                    "length": 1,
+                    "listen": [Function],
+                    "location": Object {
+                      "hash": "",
+                      "key": undefined,
+                      "pathname": "/",
+                      "search": "",
+                      "state": undefined,
+                    },
+                    "push": [Function],
+                    "replace": [Function],
+                  }
+                }
+              />
+            </div>
           </li>
         </ul>
       </div>
@@ -552,56 +1060,66 @@ exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
 </React.Fragment>
 `;
 
+exports[`CampaignStatus viewerCanAdminister: true closed campaign 2`] = `
+<React.Fragment>
+  <div>
+    <div
+      className="alert alert-secondary mt-2"
+    >
+      Campaign is closed. No changes can be made to this campaign anymore.
+    </div>
+  </div>
+</React.Fragment>
+`;
+
 exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-warning my-4"
+      className="d-flex align-items-center alert alert-info my-4"
     >
       <button
         className="btn btn-primary mb-0"
+        disabled={false}
         onClick={[Function]}
         type="button"
       >
-        Publish campaign
+        Publish all
       </button>
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
-        No changesets have
-         
-        been created on code hosts yet.
+        Not all changesets in this campaign have been published yet.
       </p>
     </div>
   </React.Fragment>
 </React.Fragment>
 `;
 
+exports[`CampaignStatus viewerCanAdminister: true drafted campaign 2`] = `<React.Fragment />`;
+
 exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some published 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-warning my-4"
+      className="d-flex align-items-center alert alert-info my-4"
     >
       <button
         className="btn btn-primary mb-0"
+        disabled={false}
         onClick={[Function]}
         type="button"
       >
-        Publish campaign
+        Publish all
       </button>
       <p
         className="mb-0 ml-2"
       >
-        Campaign is a draft.
-         
-        Only a subset of changesets has
-         
-        been created on code hosts yet.
+        Not all changesets in this campaign have been published yet.
       </p>
     </div>
   </React.Fragment>
 </React.Fragment>
 `;
+
+exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some published 2`] = `<React.Fragment />`;

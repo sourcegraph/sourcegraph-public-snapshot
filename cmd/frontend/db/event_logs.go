@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -251,6 +252,13 @@ type EventArgumentMatch struct {
 	ArgumentValue string
 }
 
+// PercentileValue is a slice of Nth percentile values calculated from a field of events
+// in a time period starting on a given date.
+type PercentileValue struct {
+	Start  time.Time
+	Values []float64
+}
+
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
 // a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
 // entry for each period in the time span.
@@ -296,107 +304,8 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-// CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-// The value of `now` should be the current time in UTC.
-func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *EventFilterOptions) ([]UsageValue, error) {
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt != nil {
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if opt.ByEventNameWithCondition != nil {
-			if opt.ByEventName == "" {
-				return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
-			}
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-			conds = append(conds, opt.ByEventNameWithCondition)
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-		}
-	}
-
-	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
-}
-
-// PercentileValue is a slice of Nth percentile values calculated from a field of events
-// in a time period starting on a given date.
-type PercentileValue struct {
-	Start  time.Time
-	Values []float64
-}
-
-// PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
-// broken up into periods of a given type. The value of `now` should be the current time in UTC. Percentiles should
-// be supplied as floats in the range `[0, 1)`, such that `[.5, .9, .99]` will return the 50th, 90th, and 99th
-// percentile values. Returns an array of length `periods`, with one entry for each period in the time span. Each
-// `PercentileValue` object in the result will contain exactly `len(percentiles)` values.
-func (l *eventLogs) PercentilesPerPeriod(
-	ctx context.Context,
-	periodType PeriodType,
-	now time.Time,
-	periods int,
-	field string,
-	percentiles []float64,
-	opt *EventFilterOptions,
-) ([]PercentileValue, error) {
-	if len(percentiles) == 0 {
-		return nil, fmt.Errorf("expected at least one percentile value in query")
-	}
-
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt != nil {
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-		}
-	}
-
-	return l.calculatePercentilesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, field, percentiles, conds)
-}
-
 func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END"), interval, period, startDate, endDate, conds)
-}
-
-func (l *eventLogs) countEventsPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("*"), interval, period, startDate, endDate, conds)
 }
 
 func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
@@ -430,69 +339,6 @@ func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval
 		return nil, err
 	}
 	return counts, nil
-}
-
-func (l *eventLogs) calculatePercentilesPerPeriodBySQL(
-	ctx context.Context,
-	interval *sqlf.Query,
-	period *sqlf.Query,
-	startDate time.Time,
-	endDate time.Time,
-	field string,
-	percentiles []float64,
-	conds []*sqlf.Query,
-) ([]PercentileValue, error) {
-	countByPeriodExprs := []*sqlf.Query{}
-	qExprs := []*sqlf.Query{}
-	for i, p := range percentiles {
-		name := fmt.Sprintf("p%d\n", i)
-		// Note: we can't go directly from jsonb -> integer in postgres 9.6, so we
-		// have to first cast it to a text type, and then to an integer to support
-		// queries on older instances.
-		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf(
-			"percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->%s)::text::integer) AS "+name,
-			p,
-			field,
-		))
-
-		qExprs = append(qExprs, sqlf.Sprintf("COALESCE("+name+", 0)"))
-	}
-
-	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
-	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, %s
-		FROM event_logs
-		WHERE (%s)
-		GROUP BY period`, period, sqlf.Join(countByPeriodExprs, ", "), sqlf.Join(conds, ") AND ("))
-	q := sqlf.Sprintf(`WITH all_periods AS (%s), values_by_period AS (%s)
-		SELECT all_periods.period, %s
-		FROM all_periods
-		LEFT OUTER JOIN values_by_period ON all_periods.period = (values_by_period.period)::timestamp
-		ORDER BY period DESC`, allPeriods, countByPeriod, sqlf.Join(qExprs, ", "))
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	values := []PercentileValue{}
-	for rows.Next() {
-		var v PercentileValue
-		v.Values = make([]float64, len(percentiles))
-		dest := []interface{}{&v.Start}
-		for i := range v.Values {
-			dest = append(dest, &v.Values[i])
-		}
-		err := rows.Scan(dest...)
-		if err != nil {
-			return nil, err
-		}
-		v.Start = v.Start.UTC()
-		values = append(values, v)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return values, nil
 }
 
 // CountUniqueUsersAll provides a count of unique active users in a given time span.
@@ -599,4 +445,247 @@ SELECT
 FROM event_logs
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
+`
+
+func (l *eventLogs) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
+	return l.siteUsage(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
+	query := sqlf.Sprintf(siteUsageQuery, now, now, now, now)
+
+	err = dbconn.Global.QueryRowContext(
+		ctx,
+		query.Query(sqlf.PostgresBindVar),
+		query.Args()...,
+	).Scan(
+		&summary.Month,
+		&summary.Week,
+		&summary.Day,
+		&summary.UniquesMonth,
+		&summary.UniquesWeek,
+		&summary.UniquesDay,
+		&summary.RegisteredUniquesMonth,
+		&summary.RegisteredUniquesWeek,
+		&summary.RegisteredUniquesDay,
+		&summary.IntegrationUniquesMonth,
+		&summary.IntegrationUniquesWeek,
+		&summary.IntegrationUniquesDay,
+		&summary.ManageUniquesMonth,
+		&summary.CodeUniquesMonth,
+		&summary.VerifyUniquesMonth,
+		&summary.MonitorUniquesMonth,
+		&summary.ManageUniquesWeek,
+		&summary.CodeUniquesWeek,
+		&summary.VerifyUniquesWeek,
+		&summary.MonitorUniquesWeek,
+	)
+
+	return summary, err
+}
+
+const siteUsageQuery = `
+SELECT
+  current_month,
+  current_week,
+  current_day,
+
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND registered) AS registered_uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND registered) AS registered_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND registered) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
+  	AS integration_uniques_day,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name LIKE 'ViewSiteAdmin%%%%'
+  ) AS manage_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'ViewRepository',
+      'ViewBlob',
+      'ViewTree',
+      'SearchResultsQueried'
+    )
+  ) AS code_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'SavedSearchEmailClicked',
+      'SavedSearchSlackClicked',
+      'SavedSearchEmailNotificationSent'
+    )
+  ) AS verify_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE month = current_month AND name IN (
+      'DiffSearchResultsQueried'
+    )
+  ) AS monitor_uniques_month,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name LIKE 'ViewSiteAdmin%%%%'
+  ) AS manage_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'ViewRepository',
+      'ViewBlob',
+      'ViewTree',
+      'SearchResultsQueried'
+    )
+  ) AS code_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'SavedSearchEmailClicked',
+      'SavedSearchSlackClicked',
+      'SavedSearchEmailNotificationSent'
+    )
+  ) AS verify_uniques_week,
+
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE week = current_week AND name IN (
+      'DiffSearchResultsQueried'
+    )
+  ) AS monitor_uniques_week
+
+FROM (
+  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  SELECT
+    name,
+    user_id != 0 as registered,
+    CASE WHEN user_id = 0
+      -- It's faster to group by an int rather than text, so we convert
+      -- the anonymous_user_id to an int, rather than the user_id to text.
+      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+      ELSE user_id
+    END AS user_id,
+    source,
+    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
+    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+    DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) as current_month,
+    DATE_TRUNC('week', TIMEZONE('UTC', %s::timestamp) + '1 day'::interval) - '1 day'::interval as current_week,
+    DATE_TRUNC('day', TIMEZONE('UTC', %s::timestamp)) as current_day
+  FROM event_logs
+  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp))
+) events
+
+GROUP BY current_month, current_week, current_day
+`
+
+// AggregatedEvents calculates AggregatedEvent for each every unique event type.
+func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+	return l.aggregatedEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedEventsQuery, now, now, now, now)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.AggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			pq.Array(&event.LatenciesMonth),
+			pq.Array(&event.LatenciesWeek),
+			pq.Array(&event.LatenciesDay),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+const aggregatedEventsQuery = `
+-- This query does multiple aggregations over the current day, week and month in one
+-- pass over the event_logs table. These are: unique number of users, total
+-- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
+SELECT
+  name,
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month)
+  AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week)
+  AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
+    WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day)
+  AS latencies_day
+FROM (
+  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  SELECT
+    name,
+    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
+    (argument->'durationMs')::text::integer as latency,
+    CASE WHEN user_id = 0
+      -- It's faster to group by an int rather than text, so we convert
+      -- the anonymous_user_id to an int, rather than the user_id to text.
+      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+      ELSE user_id
+    END AS user_id,
+    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
+    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+    DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) as current_month,
+    DATE_TRUNC('week', TIMEZONE('UTC', %s::timestamp) + '1 day'::interval) - '1 day'::interval as current_week,
+    DATE_TRUNC('day', TIMEZONE('UTC', %s::timestamp)) as current_day
+  FROM event_logs
+  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) AND name IN (
+    'codeintel.lsifHover',
+    'codeintel.searchHover',
+    'codeintel.lsifDefinitions',
+    'codeintel.searchDefinitions',
+    'codeintel.lsifReferences',
+    'codeintel.searchReferences',
+    'search.latencies.literal',
+    'search.latencies.regexp',
+    'search.latencies.structural',
+    'search.latencies.file',
+    'search.latencies.repo',
+    'search.latencies.diff',
+    'search.latencies.commit',
+    'search.latencies.symbol'
+  )
+) events
+GROUP BY name, current_month, current_week, current_day
 `

@@ -32,9 +32,9 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
-		pollInterval     = mustParseInterval(rawPollInterval, "PRECISE_CODE_INTEL_POLL_INTERVAL")
-		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
+		bundleManagerURL   = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		workerPollInterval = mustParseInterval(rawWorkerPollInterval, "PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL")
+		resetInterval      = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
 	observationContext := &observation.Context{
@@ -59,7 +59,7 @@ func main() {
 		db,
 		bundles.New(bundleManagerURL),
 		gitserver.DefaultClient,
-		pollInterval,
+		workerPollInterval,
 		workerMetrics,
 	)
 

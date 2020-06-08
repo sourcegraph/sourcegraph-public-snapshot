@@ -1,9 +1,9 @@
 import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
-import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
+import { Driver } from '../../../shared/src/testing/driver'
+import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { setUserEmailVerified } from './util/api'
@@ -14,7 +14,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
-import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { saveScreenshotsUponFailures } from '../../../shared/src/testing/screenshotReporter'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -76,7 +76,7 @@ describe('Core functionality regression test suite', () => {
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
-                return editor ? editor.innerText : null
+                return editor ? editor.textContent : null
             })
         }
 
@@ -85,7 +85,7 @@ describe('Core functionality regression test suite', () => {
         if (!previousSettings) {
             throw new Error('Previous settings were null')
         }
-        const newSettings = '{\xa0/*\xa0These\xa0are\xa0new\xa0settings\xa0*/}'
+        const newSettings = '{\u00A0/*\u00A0These\u00A0are\u00A0new\u00A0settings\u00A0*/}'
         await driver.replaceText({
             selector: '.e2e-settings-file .monaco-editor',
             newText: newSettings,
@@ -126,7 +126,7 @@ describe('Core functionality regression test suite', () => {
 
         // When you type (or paste) "{" into the empty user settings editor it adds a "}". That's why
         // we cannot type all the previous text, because then we would have two "}" at the end.
-        const textToTypeFromPrevious = previousSettings.replace(/\}$/, '')
+        const textToTypeFromPrevious = previousSettings.replace(/}$/, '')
         // Restore old settings
         await driver.replaceText({
             selector: '.e2e-settings-file .monaco-editor',
@@ -170,8 +170,8 @@ describe('Core functionality regression test suite', () => {
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
-                const el = document.querySelector('.e2e-user-area-header__display-name')
-                return el?.textContent && el.textContent.trim() === displayName
+                const element = document.querySelector('.e2e-user-area-header__display-name')
+                return element?.textContent && element.textContent.trim() === displayName
             },
             undefined,
             displayName
@@ -192,7 +192,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText(testEmail, { wait: true })
         try {
             await driver.findElementWithText('Verification pending')
-        } catch (err) {
+        } catch {
             await driver.findElementWithText('Not verified')
         }
         await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
@@ -214,15 +214,15 @@ describe('Core functionality regression test suite', () => {
         })
         await driver.findElementWithText('Copy', { action: 'click' })
         const token = await driver.page.evaluate(() => {
-            const tokenEl = document.querySelector('.e2e-access-token')
-            if (!tokenEl) {
+            const tokenElement = document.querySelector('.e2e-access-token')
+            if (!tokenElement) {
                 return null
             }
-            const inputEl = tokenEl.querySelector('input')
-            if (!inputEl) {
+            const inputElement = tokenElement.querySelector('input')
+            if (!inputElement) {
                 return null
             }
-            return inputEl.value
+            return inputElement.value
         })
         if (!token) {
             throw new Error('Could not obtain access token')

@@ -49,11 +49,17 @@ var sharedFrontendInternalAPIErrorResponses sharedObservable = func(containerNam
 	}
 }
 
+// promCadvisorContainerMatchers generates Prometheus matchers that capture metrics that match the given container name
+// while excluding some irrelevant metrics (namely pods and jaeger sidecars)
+func promCadvisorContainerMatchers(containerName string) string {
+	return fmt.Sprintf(`name=~".*%s.*",name!~".*(_POD_|_jaeger-agent_).*"`, containerName)
+}
+
 var sharedContainerRestarts sharedObservable = func(containerName string) Observable {
 	return Observable{
 		Name:            "container_restarts",
 		Description:     "container restarts every 5m by instance (not available on k8s or server)",
-		Query:           fmt.Sprintf(`increase(cadvisor_container_restart_count{name=~".*%s.*"}[5m])`, containerName),
+		Query:           fmt.Sprintf(`increase(cadvisor_container_restart_count{%s}[5m])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 1},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
@@ -72,7 +78,7 @@ var sharedContainerMemoryUsage sharedObservable = func(containerName string) Obs
 	return Observable{
 		Name:            "container_memory_usage",
 		Description:     "container memory usage by instance (not available on k8s or server)",
-		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{name=~".*%s.*"}`, containerName),
+		Query:           fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
@@ -87,7 +93,7 @@ var sharedContainerCPUUsage sharedObservable = func(containerName string) Observ
 	return Observable{
 		Name:            "container_cpu_usage",
 		Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
-		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{name=~".*%s.*"}`, containerName),
+		Query:           fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
 		Warning:         Alert{GreaterOrEqual: 90},
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),

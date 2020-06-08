@@ -265,6 +265,8 @@ type BitbucketServerPlugin struct {
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
+	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
 }
@@ -329,6 +331,12 @@ type CustomGitFetchMapping struct {
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
+}
+
+// Dotcom description: Configuration options for Sourcegraph.com only.
+type Dotcom struct {
+	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
+	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -965,6 +973,8 @@ type SiteConfiguration struct {
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
+	// Dotcom description: Configuration options for Sourcegraph.com only.
+	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
@@ -1053,10 +1063,10 @@ type VersionContext struct {
 
 // VersionContextRevision description: Description of the chosen repository and revision
 type VersionContextRevision struct {
-	// Ref description: Branch, tag, or commit hash
-	Ref string `json:"ref"`
 	// Repo description: Repository name
 	Repo string `json:"repo"`
+	// Rev description: Branch, tag, or commit hash
+	Rev string `json:"rev"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"

@@ -98,7 +98,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				mutation {
 					setRepositoryPermissionsForUsers(
 						repository: "UmVwb3NpdG9yeTox",
-						bindIDs: ["alice@example.com", "bob"]) {
+						userPermissions: [
+							{ bindID: "alice@example.com"},
+							{ bindID: "bob"}
+						]) {
 						alwaysNil
 					}
 				}
@@ -137,7 +140,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				mutation {
 					setRepositoryPermissionsForUsers(
 						repository: "UmVwb3NpdG9yeTox",
-						bindIDs: ["alice", "bob"]) {
+						userPermissions: [
+							{ bindID: "alice"},
+							{ bindID: "bob"}
+						]) {
 						alwaysNil
 					}
 				}
@@ -146,7 +152,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				{
 					"setRepositoryPermissionsForUsers": {
 						"alwaysNil": null
-    				}
+					}
 				}
 			`,
 				},

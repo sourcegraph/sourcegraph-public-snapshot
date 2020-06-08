@@ -26,7 +26,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
-        const updatesDisabled = window.context.site['update.channel'] === 'release'
+        const updatesDisabled = window.context.site['update.channel'] !== 'release'
 
         return (
             <div className="site-admin-pings-page">

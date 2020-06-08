@@ -19,11 +19,12 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel-api-server",
 	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
+	"precise-code-intel-indexer",
 
 	// Images under docker-images/
+	"cadvisor",
 	"grafana",
 	"indexed-searcher",
 	"postgres-11.4",
@@ -159,7 +160,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts ./src/e2e/gitlab.test.ts"),
+			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}

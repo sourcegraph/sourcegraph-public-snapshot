@@ -6,7 +6,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
 
-jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
+jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 
 describe('RegistryExtensionOverviewPage', () => {
     afterEach(() => {
@@ -46,7 +46,7 @@ describe('RegistryExtensionOverviewPage', () => {
     describe('categories', () => {
         test('filters out unrecognized categories', () => {
             const history = createMemoryHistory()
-            const x = renderer.create(
+            const output = renderer.create(
                 <Router history={history}>
                     <RegistryExtensionOverviewPage
                         eventLogger={{ logViewEvent: noop }}
@@ -65,7 +65,7 @@ describe('RegistryExtensionOverviewPage', () => {
             ).root
             expect(
                 toText(
-                    x.findAll(({ props: { className } }) =>
+                    output.findAll(({ props: { className } }) =>
                         className?.includes('registry-extension-overview-page__categories')
                     )
                 )
@@ -76,11 +76,11 @@ describe('RegistryExtensionOverviewPage', () => {
 
 function toText(values: (string | renderer.ReactTestInstance)[]): string[] {
     const textNodes: string[] = []
-    for (const v of values) {
-        if (typeof v === 'string') {
-            textNodes.push(v)
+    for (const value of values) {
+        if (typeof value === 'string') {
+            textNodes.push(value)
         } else {
-            textNodes.push(...toText(v.children))
+            textNodes.push(...toText(value.children))
         }
     }
     return textNodes

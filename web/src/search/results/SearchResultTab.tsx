@@ -37,8 +37,8 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     versionContext,
 }) => {
     const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
-    const q = toggleSearchType(fullQuery, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType, caseSensitive, versionContext)
+    const caseToggledQuery = toggleSearchType(fullQuery, type)
+    const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
     const currentQuery = parseSearchURLQuery(location.search) || ''
     const parsedQuery = parseSearchQuery(currentQuery)

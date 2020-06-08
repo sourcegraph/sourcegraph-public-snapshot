@@ -220,7 +220,7 @@ func (wl *Workload) Markdown(labelWhitelist []string) string {
 	return b.String()
 }
 
-var issueURLMatcher = regexp.MustCompile(`https://github.com/.+/.+/issues/\d+`)
+var issueURLMatcher = regexp.MustCompile(`https://github\.com/.+/.+/issues/\d+`)
 
 func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) {
 	beginAssigneeMarker := fmt.Sprintf(beginAssigneeMarkerFmt, wl.Assignee)
@@ -244,7 +244,7 @@ func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) 
 		}
 
 		for _, issue := range tracking.Issues {
-			if parsedIssueURL == issue.URL {
+			if parsedIssueURL == issue.URL && Assignee(issue.Assignees) == wl.Assignee {
 				wl.AddIssue(issue)
 			}
 		}

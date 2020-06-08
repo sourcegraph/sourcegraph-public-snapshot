@@ -53,7 +53,7 @@ describe('DiffHunk', () => {
                     __typename: 'HighlightedDiffHunkLine',
                     kind: GQL.DiffHunkLineType.UNCHANGED,
                     html:
-                        '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003e {',
+                        '                connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =\u003E {',
                 },
                 {
                     __typename: 'HighlightedDiffHunkLine',

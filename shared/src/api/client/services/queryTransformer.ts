@@ -25,7 +25,7 @@ export function transformQuery(providers: Observable<TransformQuerySignature[]>,
                 return [query]
             }
             return providers.reduce<Observable<string>>(
-                (currentQuery, transformQuery) => currentQuery.pipe(mergeMap(q => transformQuery(q))),
+                (currentQuery, transformQuery) => currentQuery.pipe(mergeMap(query => transformQuery(query))),
                 of(query)
             )
         })

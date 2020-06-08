@@ -47,11 +47,11 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
         }
         if (
             value.categories &&
-            (!Array.isArray(value.categories) || !value.categories.every(c => typeof c === 'string'))
+            (!Array.isArray(value.categories) || !value.categories.every(category => typeof category === 'string'))
         ) {
             problems.push('"categories" property must be an array of strings')
         }
-        if (value.tags && (!Array.isArray(value.tags) || !value.tags.every(c => typeof c === 'string'))) {
+        if (value.tags && (!Array.isArray(value.tags) || !value.tags.every(tag => typeof tag === 'string'))) {
             problems.push('"tags" property must be an array of strings')
         }
         if (value.description && typeof value.description !== 'string') {
@@ -69,7 +69,7 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
             problems.push('"activationEvents" property must be set')
         } else if (!Array.isArray(value.activationEvents)) {
             problems.push('"activationEvents" property must be an array')
-        } else if (!value.activationEvents.every(v => typeof v === 'string')) {
+        } else if (!value.activationEvents.every(event => typeof event === 'string')) {
             problems.push('"activationEvents" property must be an array of strings')
         }
         if (value.contributes) {

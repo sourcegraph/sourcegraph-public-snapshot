@@ -100,6 +100,7 @@ describe('CampaignDetails', () => {
                     patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
+                    hasUnpublishedPatches: false,
                     branch: 'awesome-branch',
                     status: {
                         completedCount: 3,
@@ -109,7 +110,6 @@ describe('CampaignDetails', () => {
                     },
                     createdAt: '2020-01-01',
                     updatedAt: '2020-01-01',
-                    publishedAt: '2020-01-01',
                     closedAt: null,
                     diffStat: {
                         __typename: 'IDiffStat' as const,

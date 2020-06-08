@@ -41,9 +41,9 @@ enum ViewMode {
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
     private static STORAGE_KEY = 'RegistryExtensionManifestPage.viewMode'
     private static getViewMode(): ViewMode {
-        const v = localStorage.getItem(RegistryExtensionManifestPage.STORAGE_KEY)
-        if (v === ViewMode.Rich || v === ViewMode.Plain) {
-            return v
+        const storedViewMode = localStorage.getItem(RegistryExtensionManifestPage.STORAGE_KEY)
+        if (storedViewMode === ViewMode.Rich || storedViewMode === ViewMode.Plain) {
+            return storedViewMode
         }
         return ViewMode.Rich
     }
@@ -112,7 +112,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
 
     private onViewModeButtonClick = (): void => {
         this.setState(
-            prevState => ({ viewMode: prevState.viewMode === ViewMode.Rich ? ViewMode.Plain : ViewMode.Rich }),
+            previousState => ({ viewMode: previousState.viewMode === ViewMode.Rich ? ViewMode.Plain : ViewMode.Rich }),
             () => RegistryExtensionManifestPage.setViewMode(this.state.viewMode)
         )
     }

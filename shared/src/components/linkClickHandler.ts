@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { anyOf, isInstanceOf } from '../util/types'
 import * as H from 'history'
+import { isExternalLink } from '../util/url'
 
 /**
  * Returns a click handler that will make sure clicks on in-app links are handled on the client
@@ -23,7 +24,7 @@ export const createLinkClickHandler = (history: H.History): React.MouseEventHand
     const href = typeof anchor.href === 'string' ? anchor.href : anchor.href.baseVal
 
     // Check if URL is outside the app
-    if (!href.startsWith(window.location.origin)) {
+    if (isExternalLink(href)) {
         return
     }
 

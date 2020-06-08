@@ -124,7 +124,7 @@ window.sgdocs = (() => {
       return
     }
 
-    let branchPrefix = urlPath.match(/(@[\d\w\.]+)/)[0]
+    let branchPrefix = urlPath.match(/(@[\d\w\.-]+)/)[0]
     document.querySelectorAll('#content-nav a').forEach(e => e.setAttribute('href', `/${branchPrefix}${e.getAttribute('href')}`))
   }
 

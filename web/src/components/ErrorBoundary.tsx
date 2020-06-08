@@ -41,8 +41,8 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
         })
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        if (prevProps.location !== this.props.location) {
+    public componentDidUpdate(previousProps: Props): void {
+        if (previousProps.location !== this.props.location) {
             // Reset error state when location changes, so that the user can try navigating to a different page to
             // clear the error.
             /* eslint react/no-did-update-set-state: warn */

@@ -99,7 +99,7 @@ Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, patch_id)
     "changeset_jobs_campaign_job_id" btree (patch_id)
-    "changeset_jobs_error" btree (error)
+    "changeset_jobs_error_not_null" btree ((error IS NOT NULL))
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
@@ -342,6 +342,41 @@ Indexes:
 Check constraints:
     "lsif_commits_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
     "lsif_commits_parent_commit_valid_chars" CHECK (parent_commit ~ '^[a-z0-9]{40}$'::text)
+
+```
+
+# Table "public.lsif_indexable_repositories"
+```
+         Column         |           Type           |                                Modifiers                                 
+------------------------+--------------------------+--------------------------------------------------------------------------
+ id                     | integer                  | not null default nextval('lsif_indexable_repositories_id_seq'::regclass)
+ repository_id          | integer                  | not null
+ search_count           | integer                  | not null default 0
+ precise_count          | integer                  | not null default 0
+ last_index_enqueued_at | timestamp with time zone | 
+Indexes:
+    "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
+    "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+
+```
+
+# Table "public.lsif_indexes"
+```
+       Column       |           Type           |                         Modifiers                         
+--------------------+--------------------------+-----------------------------------------------------------
+ id                 | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
+ commit             | text                     | not null
+ queued_at          | timestamp with time zone | not null default now()
+ state              | lsif_index_state         | not null default 'queued'::lsif_index_state
+ failure_summary    | text                     | 
+ failure_stacktrace | text                     | 
+ started_at         | timestamp with time zone | 
+ finished_at        | timestamp with time zone | 
+ repository_id      | integer                  | not null
+Indexes:
+    "lsif_indexes_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 
 ```
 
@@ -884,6 +919,7 @@ Foreign-key constraints:
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
+    "user_external_accounts_user_id" btree (user_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 

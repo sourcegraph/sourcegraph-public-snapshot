@@ -19,6 +19,8 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -31,15 +33,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -130,7 +134,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -156,7 +160,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -209,7 +213,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt, publishedAt
+			id, name, description, createdAt, updatedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -228,7 +232,7 @@ func TestCampaigns(t *testing.T) {
 
 	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -245,7 +249,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	bbsExtSvc := &repos.ExternalService{
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   bbsURL,
@@ -355,7 +359,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []apitest.Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
+				Repository: apitest.Repository{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
@@ -380,8 +384,8 @@ func TestCampaigns(t *testing.T) {
 					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
 
 					Target: apitest.GitTarget{
-						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
-						AbbreviatedOID: "7db302f",
+						OID:            "23a5556c7e25aaab1f1529cee4efb90fe6fe3a30",
+						AbbreviatedOID: "23a5556",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
@@ -401,7 +405,7 @@ func TestCampaigns(t *testing.T) {
 				},
 			},
 			{
-				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
+				Repository: apitest.Repository{ID: graphqlBBSRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "Release testing pr",
@@ -425,8 +429,8 @@ func TestCampaigns(t *testing.T) {
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
 					Target: apitest.GitTarget{
-						OID:            "mockcommitid",
-						AbbreviatedOID: "mockcom",
+						OID:            "be4d84e9c4b0a15e59c5f52900e6d55c7525b8d3",
+						AbbreviatedOID: "be4d84e",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
@@ -501,7 +505,11 @@ func TestCampaigns(t *testing.T) {
 				... on Org  { ...o }
 			}
 			changesets {
-				nodes { ...cs }
+				nodes {
+				  ... on ExternalChangeset {
+				    ...cs
+				  }
+				}
 				totalCount
 				pageInfo { hasNextPage }
 			}
@@ -639,7 +647,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -752,6 +760,59 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
+	}
+}
+
+func TestNullIDResilience(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	sr := &Resolver{store: ee.NewStoreWithClock(dbconn.Global, clock)}
+
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	ids := []graphql.ID{
+		marshalPatchSetID(0),
+		marshalPatchID(0),
+		campaigns.MarshalCampaignID(0),
+		marshalExternalChangesetID(0),
+	}
+
+	for _, id := range ids {
+		var response struct{ Node struct{ ID string } }
+
+		query := fmt.Sprintf(`query { node(id: %q) { id } }`, id)
+		apitest.MustExec(ctx, t, s, nil, &response, query)
+
+		if have, want := response.Node.ID, ""; have != want {
+			t.Fatalf("node has wrong ID. have=%q, want=%q", have, want)
+		}
+	}
+
+	mutations := []string{
+		fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, campaigns.MarshalCampaignID(0)),
+		fmt.Sprintf(`mutation { publishChangeset(patch: %q) { alwaysNil } }`, marshalPatchID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalExternalChangesetID(0)),
+	}
+
+	for _, m := range mutations {
+		var response struct{}
+		errs := apitest.Exec(ctx, t, s, nil, &response, m)
+		if len(errs) == 0 {
+			t.Fatalf("expected errors but none returned (mutation: %q)", m)
+		}
+		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero.Error()); have != want {
+			t.Fatalf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
+		}
 	}
 }
 
@@ -890,42 +951,44 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
             id
             patches(first: %d) {
               nodes {
-                repository {
-                  name
-                }
-				diff {
-                  fileDiffs {
-                    rawDiff
-                    diffStat {
-                      added
-                      deleted
-                      changed
-                    }
-                    nodes {
-                      oldPath
-                      newPath
-                      hunks {
-                        body
-                        section
-                        newRange { startLine, lines }
-                        oldRange { startLine, lines }
-                        oldNoNewlineAt
-                      }
-                      stat {
+			    ... on Patch {
+                  repository {
+                    name
+                  }
+				  diff {
+                    fileDiffs {
+                      rawDiff
+                      diffStat {
                         added
                         deleted
                         changed
                       }
-                      oldFile {
-                        name
-                        externalURLs {
-                          serviceType
-                          url
+                      nodes {
+                        oldPath
+                        newPath
+                        hunks {
+                          body
+                          section
+                          newRange { startLine, lines }
+                          oldRange { startLine, lines }
+                          oldNoNewlineAt
+                        }
+                        stat {
+                          added
+                          deleted
+                          changed
+                        }
+                        oldFile {
+                          name
+                          externalURLs {
+                            serviceType
+                            url
+                          }
                         }
                       }
                     }
                   }
-                }
+				}
 			  }
             }
             previewURL
@@ -1048,10 +1111,8 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queryPatchSet := func(first int, after string, response *struct{ Node apitest.PatchSet }) {
-		t.Helper()
-
-		apitest.MustExec(ctx, t, s, nil, response, fmt.Sprintf(`
+	var response struct{ Node apitest.PatchSet }
+	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
         query {
           node(id: %q) {
             ... on PatchSet {
@@ -1063,88 +1124,64 @@ func TestPatchSetResolver(t *testing.T) {
               }
               patches(first: %d) {
                 nodes {
-                  repository {
-                    name
-                  }
-                  diff {
-                    fileDiffs(first: %d, after: %s) {
-                      rawDiff
-                      diffStat {
-                        added
-                        deleted
-                        changed
-                      }
-                      pageInfo {
-                        endCursor
-                        hasNextPage
-                      }
-                      nodes {
-                        oldPath
-                        newPath
-                        hunks {
-                          body
-                          section
-                          newRange { startLine, lines }
-                          oldRange { startLine, lines }
-                          oldNoNewlineAt
-                        }
-                        stat {
+				  ... on HiddenPatch {
+				    id
+				  }
+				  ... on Patch {
+                    repository {
+                      name
+                    }
+                    diff {
+                      fileDiffs(first: %d, after: %s) {
+                        rawDiff
+                        diffStat {
                           added
                           deleted
                           changed
                         }
-                        oldFile {
-                          name
-                          externalURLs {
-                            serviceType
-                            url
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
+                        nodes {
+                          oldPath
+                          newPath
+                          hunks {
+                            body
+                            section
+                            newRange { startLine, lines }
+                            oldRange { startLine, lines }
+                            oldNoNewlineAt
+                          }
+                          stat {
+                            added
+                            deleted
+                            changed
+                          }
+                          oldFile {
+                            name
+                            externalURLs {
+                              serviceType
+                              url
+                            }
                           }
                         }
                       }
                     }
-                  }
+				  }
                 }
               }
             }
           }
         }
-		`, marshalPatchSetID(patchSet.ID), len(patches), first, after))
-	}
-
-	for page := 0; page < 3; page++ {
-		var response struct{ Node apitest.PatchSet }
-		queryPatchSet(1, fmt.Sprintf(`"%d"`, page), &response)
-
-		expectedLength := 1
-		if page >= 2 {
-			expectedLength = 0
-		}
-		if have, want := len(response.Node.Patches.Nodes[0].Diff.FileDiffs.Nodes), expectedLength; have != want {
-			t.Fatalf("have %d file diffs, want %d", have, want)
-		}
-
-		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.HasNextPage, page == 0; have != want {
-			t.Fatalf("have %t hasNextPage, want %t", have, want)
-		}
-
-		expectedCursor := "1"
-		if page != 0 {
-			expectedCursor = ""
-		}
-		if have, want := response.Node.Patches.Nodes[0].Diff.FileDiffs.PageInfo.EndCursor, expectedCursor; have != want {
-			t.Fatalf("have %q endCursor, want %q", have, want)
-		}
-	}
-
-	var response struct{ Node apitest.PatchSet }
-	queryPatchSet(10000, "null", &response)
+		`, marshalPatchSetID(patchSet.ID), len(patches), 10000, "null"))
 
 	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
 	}
 
 	// Each patch has testDiff as diff, each with 2 lines changed
-	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
+	if have, want := response.Node.DiffStat.Changed, int32(len(patches)*2); have != want {
 		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
@@ -1157,7 +1194,7 @@ func TestPatchSetResolver(t *testing.T) {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, int32(2); have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
@@ -1188,17 +1225,26 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	testBaseRevision := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
 	testBaseRef := "refs/heads/master"
+	testHeadRef := "refs/heads/my-cool-branch"
 
 	// gitserver Mocks
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
 		return testBaseRevision, nil
 	}
-	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
 	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
 		return &git.Commit{ID: testBaseRevision}, nil
 	}
-	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
+
+	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+		if string(a) != testBaseRef || string(b) != testHeadRef {
+			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
+		}
+		return api.CommitID(testBaseRevision), nil
+	}
+	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	// repo & external service setup
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -1252,7 +1298,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
 			"name":        "Campaign with PatchSet",
 			"description": "This campaign has a patchset",
-			"draft":       true,
 			"patchSet":    patchSetID,
 			"branch":      "my-cool-branch",
 		},
@@ -1263,45 +1308,52 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
       id
       branch
       status { state }
+      hasUnpublishedPatches
       patches {
         nodes {
-          publicationEnqueued
-          repository {
-            name
+          ... on HiddenPatch {
+            id
           }
-          diff {
-            fileDiffs {
-              rawDiff
-              diffStat {
-                added
-                deleted
-                changed
-              }
-              nodes {
-                oldPath
-                newPath
-                hunks {
-                  body
-                  section
-                  newRange { startLine, lines }
-                  oldRange { startLine, lines }
-                  oldNoNewlineAt
-                }
-                stat {
+          ... on Patch {
+            id
+            publicationEnqueued
+            repository {
+              name
+            }
+            diff {
+              fileDiffs {
+                rawDiff
+                diffStat {
                   added
                   deleted
                   changed
                 }
-                oldFile {
-                  name
-                  externalURLs {
-                    serviceType
-                    url
+                nodes {
+                  oldPath
+                  newPath
+                  hunks {
+                    body
+                    section
+                    newRange { startLine, lines }
+                    oldRange { startLine, lines }
+                    oldNoNewlineAt
+                  }
+                  stat {
+                    added
+                    deleted
+                    changed
+                  }
+                  oldFile {
+                    name
+                    externalURLs {
+                      serviceType
+                      url
+                    }
                   }
                 }
               }
             }
-          }
+		  }
         }
       }
       diffStat {
@@ -1329,6 +1381,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
 	}
 
+	if !campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is false, want true")
+	}
+
 	patch := campaign.Patches.Nodes[0]
 	if have, want := campaign.DiffStat, patch.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
@@ -1338,29 +1394,12 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
-	var publishCampaignResponse struct{ PublishCampaign apitest.Campaign }
-	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
-      mutation {
-        publishCampaign(campaign: %q) {
-          id
-          status { state }
-          branch
-          patches {
-            nodes {
-              publicationEnqueued
-            }
-          }
-        }
-      }
-	`, campaign.ID))
-
-	publishedCampaign := publishCampaignResponse.PublishCampaign
-	if publishedCampaign.Status.State != "PROCESSING" {
-		t.Fatalf("campaign is not in state 'PROCESSING': %q", publishedCampaign.Status.State)
-	}
-	enqueuedPatch := publishedCampaign.Patches.Nodes[0]
-	if !enqueuedPatch.PublicationEnqueued {
-		t.Fatalf("patch is not enqueued for publication")
+	// Publish the changesets in the campaign
+	for _, p := range campaign.Patches.Nodes {
+		var res struct{}
+		input := map[string]interface{}{"patch": p.ID}
+		q := `mutation($patch: ID!) { publishChangeset(patch: $patch) { alwaysNil } }`
+		apitest.MustExec(ctx, t, s, input, &res, q)
 	}
 
 	// Now we need to run the created ChangsetJob
@@ -1370,7 +1409,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 
 	if len(changesetJobs) != 1 {
-		t.Fatalf("more than 1 changeset jobs created: %d", len(changesetJobs))
+		t.Fatalf("wrong number of changeset jobs created: %d", len(changesetJobs))
 	}
 
 	headRef := "refs/heads/" + campaign.Branch
@@ -1379,6 +1418,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		ID:          "FOOBARID",
 		Title:       campaign.Name,
 		Body:        campaign.Description,
+		BaseRefName: git.AbbreviateRef(testBaseRef),
 		HeadRefName: git.AbbreviateRef(headRef),
 		Number:      12345,
 		State:       "OPEN",
@@ -1411,7 +1451,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job)
+	err = ee.ExecChangesetJob(ctx, c, job, ee.ExecChangesetJobOpts{
+		Clock: clock, Store: store, GitClient: gitClient, Sourcer: sourcer, ExternalURL: "http://localhost",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1445,22 +1487,25 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	    fragment c on Campaign {
 	      id
 	      status { state }
+	      hasUnpublishedPatches
 	      branch
 	      patches {
 	        totalCount
 	      }
 	      changesets {
 	        nodes {
-	          state
-	          diff {
-	            fileDiffs {
-	              diffStat {
-	                added
-	                deleted
-	                changed
+			  ... on ExternalChangeset {
+	            state
+	            diff {
+	              fileDiffs {
+	                diffStat {
+	                  added
+	                  deleted
+	                  changed
+	                }
 	              }
 	            }
-	          }
+			  }
 	        }
 	        totalCount
 	      }
@@ -1484,6 +1529,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("campaign is not in state 'COMPLETED': %q", campaign.Status.State)
 	}
 
+	if campaign.HasUnpublishedPatches {
+		t.Errorf("campaign HasUnpublishedPatches is true, want false")
+	}
+
 	if campaign.Patches.TotalCount != 0 {
 		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
 	}
@@ -1505,69 +1554,406 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 }
 
-func TestApplyPatch(t *testing.T) {
-	tests := []struct {
-		file          string
-		patch         string
-		origStartLine int32
-		wantFile      string
-	}{
-		{
-			file: `1 some
-2
-3
-4
-5
-6
-7 super awesome
-8
-9
-10
-11
-12
-13
-14 file
-15
-16
-17
-18 oh yes`,
-			patch: ` 4
- 5
- 6
--7 super awesome
-+7 super mega awesome
- 8
- 9
- 10
-`,
-			origStartLine: 4,
-			wantFile: `1 some
-2
-3
-4
-5
-6
-7 super mega awesome
-8
-9
-10
-11
-12
-13
-14 file
-15
-16
-17
-18 oh yes`,
-		},
+func TestPermissionLevels(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
 
-	for _, tc := range tests {
-		have := applyPatch(tc.file, &diff.FileDiff{Hunks: []*diff.Hunk{{OrigStartLine: tc.origStartLine, Body: []byte(tc.patch)}}})
-		if have != tc.wantFile {
-			t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := ee.NewStore(dbconn.Global)
+	sr := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	// Global test data that we reuse in every test
+	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
+	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	changeset := &campaigns.Changeset{
+		RepoID:              repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "1234",
+	}
+	if err := store.CreateChangesets(ctx, changeset); err != nil {
+		t.Fatal(err)
+	}
+
+	createTestData := func(t *testing.T, s *ee.Store, name string, userID int32) (campaignID int64, patchID int64) {
+		t.Helper()
+
+		patchSet := &campaigns.PatchSet{UserID: userID}
+		if err := s.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := &campaigns.Patch{
+			PatchSetID: patchSet.ID,
+			RepoID:     repo.ID,
+			BaseRef:    "refs/heads/master",
+		}
+		if err := s.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		c := &campaigns.Campaign{
+			PatchSetID:      patchSet.ID,
+			Name:            name,
+			AuthorID:        userID,
+			NamespaceUserID: userID,
+			// We attach the changeset to the campaign so we can test syncChangeset
+			ChangesetIDs: []int64{changeset.ID},
+		}
+		if err := s.CreateCampaign(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		job := &campaigns.ChangesetJob{CampaignID: c.ID, PatchID: patch.ID, Error: "This is an error"}
+		if err := s.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		return c.ID, patch.ID
+	}
+
+	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
+		t.Helper()
+
+		campaigns, next, err := store.ListCampaigns(ctx, ee.ListCampaignsOpts{Limit: 1000})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if next != 0 {
+			t.Fatalf("more campaigns in store")
+		}
+
+		for _, c := range campaigns {
+			if err := store.DeleteCampaign(ctx, c.ID); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
+
+	t.Run("queries", func(t *testing.T) {
+		// We need to enable read access so that non-site-admin users can access
+		// the API and we can check for their admin rights.
+		// This can be removed once we enable campaigns for all users and only
+		// check for permissions.
+		readAccessEnabled := true
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+			CampaignsReadAccessEnabled: &readAccessEnabled,
+		}})
+		defer conf.Mock(nil)
+
+		cleanUpCampaigns(t, store)
+
+		adminCampaign, _ := createTestData(t, store, "admin", adminID)
+		userCampaign, _ := createTestData(t, store, "user", userID)
+
+		tests := []struct {
+			name                    string
+			currentUser             int32
+			campaign                int64
+			wantViewerCanAdminister bool
+			wantErrors              []string
+		}{
+			{
+				name:                    "site-admin viewing own campaign",
+				currentUser:             adminID,
+				campaign:                adminCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+			{
+				name:                    "non-site-admin viewing other's campaign",
+				currentUser:             userID,
+				campaign:                adminCampaign,
+				wantViewerCanAdminister: false,
+				wantErrors:              []string{},
+			},
+			{
+				name:                    "site-admin viewing other's campaign",
+				currentUser:             adminID,
+				campaign:                userCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+			{
+				name:                    "non-site-admin viewing own campaign",
+				currentUser:             userID,
+				campaign:                userCampaign,
+				wantViewerCanAdminister: true,
+				wantErrors:              []string{"This is an error"},
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				graphqlID := string(campaigns.MarshalCampaignID(tc.campaign))
+
+				var res struct{ Node apitest.Campaign }
+
+				input := map[string]interface{}{"campaign": graphqlID}
+				queryCampaign := `
+				  query($campaign: ID!) {
+				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister, status { errors } } }
+				  }
+                `
+
+				actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+				apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
+
+				if have, want := res.Node.ID, graphqlID; have != want {
+					t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
+				}
+				if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+					t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
+				}
+				if diff := cmp.Diff(res.Node.Status.Errors, tc.wantErrors); diff != "" {
+					t.Fatalf("queried campaign's Errors is wrong: %s", diff)
+				}
+			})
+		}
+
+		t.Run("Campaigns", func(t *testing.T) {
+			tests := []struct {
+				name                string
+				currentUser         int32
+				viewerCanAdminister bool
+				wantCampaigns       []int64
+			}{
+				{
+					name:                "admin listing viewerCanAdminister: true",
+					currentUser:         adminID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: true",
+					currentUser:         userID,
+					viewerCanAdminister: true,
+					wantCampaigns:       []int64{userCampaign},
+				},
+				{
+					name:                "admin listing viewerCanAdminister: false",
+					currentUser:         adminID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+				{
+					name:                "user listing viewerCanAdminister: false",
+					currentUser:         userID,
+					viewerCanAdminister: false,
+					wantCampaigns:       []int64{adminCampaign, userCampaign},
+				},
+			}
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
+					for _, c := range tc.wantCampaigns {
+						graphqlID := string(campaigns.MarshalCampaignID(c))
+						expectedIDs[graphqlID] = true
+					}
+
+					query := fmt.Sprintf(`
+				query {
+					campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					node(id: %q) {
+						id
+						... on ExternalChangeset {
+							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+						}
+					}
+					}`, tc.viewerCanAdminister, marshalExternalChangesetID(changeset.ID), tc.viewerCanAdminister)
+					var res struct {
+						Campaigns apitest.CampaignConnection
+						Node      apitest.Changeset
+					}
+					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					for _, conn := range []apitest.CampaignConnection{res.Campaigns, res.Node.Campaigns} {
+						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
+							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
+						}
+						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
+							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+						}
+						for _, node := range conn.Nodes {
+							if _, ok := expectedIDs[node.ID]; !ok {
+								t.Fatalf("received wrong campaign with id %q", node.ID)
+							}
+						}
+					}
+				})
+			}
+		})
+	})
+
+	t.Run("mutations", func(t *testing.T) {
+		mutations := []struct {
+			name         string
+			mutationFunc func(campaignID string, changesetID string, patchID string) string
+		}{
+			{
+				name: "closeCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "deleteCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q, closeChangesets: false) { alwaysNil } } `, campaignID)
+				},
+			},
+			{
+				name: "retryCampaignChangesets",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { retryCampaignChangesets(campaign: %q) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "updateCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(`mutation { updateCampaign(input: {id: %q, name: "new name"}) { id } }`, campaignID)
+				},
+			},
+			{
+				name: "addChangesetsToCampaign",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { addChangesetsToCampaign(campaign: %q, changesets: [%q]) { id } }`,
+						campaignID,
+						changesetID,
+					)
+				},
+			},
+			{
+				name: "publishCampaignChangesets",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { publishCampaignChangesets(campaign: %q) { id } }`,
+						campaignID,
+					)
+				},
+			},
+			{
+				name: "publishChangeset",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { publishChangeset(patch: %q) { alwaysNil } }`,
+						patchID,
+					)
+				},
+			},
+			{
+				name: "syncChangeset",
+				mutationFunc: func(campaignID string, changesetID string, patchID string) string {
+					return fmt.Sprintf(
+						`mutation { syncChangeset(changeset: %q) { alwaysNil } }`,
+						changesetID,
+					)
+				},
+			},
+		}
+
+		for _, m := range mutations {
+			t.Run(m.name, func(t *testing.T) {
+				tests := []struct {
+					name           string
+					currentUser    int32
+					campaignAuthor int32
+					wantAuthErr    bool
+				}{
+					{
+						name:           "unauthorized",
+						currentUser:    userID,
+						campaignAuthor: adminID,
+						wantAuthErr:    true,
+					},
+					{
+						name:           "authorized campaign owner",
+						currentUser:    userID,
+						campaignAuthor: userID,
+						wantAuthErr:    false,
+					},
+					{
+						name:           "authorized site-admin",
+						currentUser:    adminID,
+						campaignAuthor: userID,
+						wantAuthErr:    false,
+					},
+				}
+
+				for _, tc := range tests {
+					t.Run(tc.name, func(t *testing.T) {
+						cleanUpCampaigns(t, store)
+
+						campaignID, patchID := createTestData(t, store, "test-campaign", tc.campaignAuthor)
+
+						// We add the changeset to the campaign. It doesn't matter
+						// for the addChangesetsToCampaign mutation, since that is
+						// idempotent and we want to solely check for auth errors.
+						changeset.CampaignIDs = []int64{campaignID}
+						if err := store.UpdateChangesets(ctx, changeset); err != nil {
+							t.Fatal(err)
+						}
+
+						mutation := m.mutationFunc(
+							string(campaigns.MarshalCampaignID(campaignID)),
+							string(marshalExternalChangesetID(changeset.ID)),
+							string(marshalPatchID(patchID)),
+						)
+
+						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+						var response struct{}
+						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+						if tc.wantAuthErr {
+							if len(errs) != 1 {
+								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+							}
+							if !strings.Contains(errs[0].Error(), "must be authenticated") {
+								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+							}
+						} else {
+							// We don't care about other errors, we only want to
+							// check that we didn't get an auth error.
+							for _, e := range errs {
+								if strings.Contains(e.Error(), "must be authenticated") {
+									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+								}
+							}
+						}
+					})
+				}
+			})
+		}
+	})
+}
+
+func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
+	t.Helper()
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+
+	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return userID
 }
 
 func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {

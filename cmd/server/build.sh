@@ -64,7 +64,6 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/replacer
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/sourcegraph/cmd/symbols
-  github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager
   github.com/google/zoekt/cmd/zoekt-archive-index
