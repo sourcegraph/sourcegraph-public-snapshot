@@ -12,25 +12,16 @@ import (
 )
 
 func TestReaderCache(t *testing.T) {
-	sync := make(chan struct{})
-	defer close(sync)
-
 	openerCalls := uint32(0)
 	opener := func(filename string) (persistence.Reader, error) {
-		reader := persistencemocks.NewMockReader()
-		reader.CloseFunc.SetDefaultHook(func() error {
-			sync <- struct{}{}
-			return nil
-		})
-
 		atomic.AddUint32(&openerCalls, 1)
-		return reader, nil
+		return persistencemocks.NewMockReader(), nil
 	}
 
 	ch := make(chan time.Time)
 	defer close(ch)
 
-	cache := newReaderCache(ch, opener)
+	cache := newReaderCache(time.Minute, ch, opener)
 
 	keys := []string{
 		"foo",
@@ -60,13 +51,17 @@ func TestReaderCache(t *testing.T) {
 		t.Errorf("unexpected number of opener calls. want=%d have=%d", 3, openerCalls)
 	}
 
-	// Clear entries
-	ch <- time.Now() // Evict once to clear use flags
-	ch <- time.Now() // Evict again once all entries are idle
+	var chs []chan struct{}
+	for _, key := range keys {
+		chs = append(chs, cache.entries[key].drained)
+	}
 
-	// Wait for all entries to clear
-	for i := 0; i < 3; i++ {
-		<-sync
+	// Clear all entries
+	ch <- time.Now().UTC().Add(time.Minute * 2)
+
+	// Wait for entries to drain
+	for _, drained := range chs {
+		<-drained
 	}
 
 	// Re-create entries
@@ -92,7 +87,7 @@ func TestReaderCacheInitError(t *testing.T) {
 	ch := make(chan time.Time)
 	defer close(ch)
 
-	cache := newReaderCache(ch, opener)
+	cache := newReaderCache(time.Minute, ch, opener)
 
 	if err := cache.WithReader(context.Background(), "test", noopHandler); err == nil {
 		t.Errorf("unexpected nil error")
@@ -107,8 +102,8 @@ func TestReaderCacheInitError(t *testing.T) {
 }
 
 func TestReaderCacheDraining(t *testing.T) {
-	wait := make(chan struct{}) // Blocks close
-	sync := make(chan struct{}) // Signals close was called
+	wait := make(chan struct{})
+	sync := make(chan struct{})
 
 	opener := func(filename string) (persistence.Reader, error) {
 		reader := persistencemocks.NewMockReader()
@@ -123,15 +118,15 @@ func TestReaderCacheDraining(t *testing.T) {
 	ch := make(chan time.Time)
 	defer close(ch)
 
-	cache := newReaderCache(ch, opener)
+	cache := newReaderCache(time.Minute, ch, opener)
 
 	if err := cache.WithReader(context.Background(), "test", noopHandler); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	ch <- time.Now() // Evict once to clear use flags
-	ch <- time.Now() // Evict again once all entries are idle
-	<-sync           // Wait until reader is closing
+	// Clear all entries, wait until reader begins to close
+	ch <- time.Now().UTC().Add(time.Minute * 2)
+	<-sync
 
 	// Closed after we re-create a value
 	opened := make(chan struct{})
@@ -151,10 +146,9 @@ func TestReaderCacheDraining(t *testing.T) {
 	case <-time.After(time.Millisecond * 50):
 	}
 
-	// Stop draining the old value
+	// Release old value
 	close(wait)
 
-	// Ensure we can create a new value
 	select {
 	case <-opened:
 	case <-time.After(time.Millisecond * 50):
@@ -172,7 +166,7 @@ func TestReaderCacheContextCanceled(t *testing.T) {
 	ch := make(chan time.Time)
 	defer close(ch)
 
-	cache := newReaderCache(ch, opener)
+	cache := newReaderCache(time.Minute, ch, opener)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

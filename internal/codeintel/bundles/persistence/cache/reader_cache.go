@@ -15,6 +15,7 @@ import (
 // is only attempted once at a time. Readers which are idle for longer than a configured duration are
 // closed in the background.
 type Cache struct {
+	ttl    time.Duration
 	opener ReaderOpener
 
 	m       sync.Mutex
@@ -23,14 +24,19 @@ type Cache struct {
 
 // cacheEntry wraps a reader which may still be initializing.
 type cacheEntry struct {
-	reader         persistence.Reader
-	err            error
-	init           chan struct{}  // marks init completion
-	draining       chan struct{}  // marks intent to close
-	drained        chan struct{}  // marks removal from cache
-	accessedInTick bool           // marks used since last eviction
-	refCount       sync.WaitGroup // acts as concurrent use gauge
-	closeOnce      sync.Once      // guards closing the entry
+	reader     persistence.Reader
+	err        error
+	init       chan struct{}  // signals init completion
+	drained    chan struct{}  // signals complete removal from cache
+	refCount   sync.WaitGroup // acts as concurrent use gauge
+	removeOnce sync.Once      // guards entry remove procedure
+	expiry     time.Time      // when the entry can be removed from the cache
+
+	// draining marks the intent to close this entry. No additional readers
+	// of this entry should be allowed after this value is set to true.
+	//
+	// 🔐 - the cache mutex must be held when reading or modifying this value.
+	draining bool
 }
 
 // ReaderOpener initializes a new reader for the given key.
@@ -45,19 +51,20 @@ var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization 
 
 // NewReaderCache initializes a new reader cache with the given TTL and reader opener.
 func NewReaderCache(ttl time.Duration, opener ReaderOpener) *Cache {
-	return newReaderCache(time.NewTicker(ttl).C, opener)
+	return newReaderCache(ttl, time.NewTicker(ttl).C, opener)
 }
 
 // newReaderCache initializes a new reader cache with the given ticker and reader opener.
-func newReaderCache(ch <-chan time.Time, opener ReaderOpener) *Cache {
+func newReaderCache(ttl time.Duration, ch <-chan time.Time, opener ReaderOpener) *Cache {
 	cache := &Cache{
+		ttl:     ttl,
 		opener:  opener,
 		entries: map[string]*cacheEntry{},
 	}
 
 	go func() {
-		for range ch {
-			cache.evict()
+		for now := range ch {
+			cache.evict(now.UTC())
 		}
 	}()
 
@@ -69,7 +76,12 @@ func newReaderCache(ch <-chan time.Time, opener ReaderOpener) *Cache {
 // due to a context deadline here and will continue to run in the background until completion.
 func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 	if entry, ok := c.getOrCreateActiveEntry(ctx, key); ok {
-		defer entry.refCount.Done()
+		defer func() {
+			// No longer in-use
+			entry.refCount.Done()
+			// Update expiry
+			entry.expiry = time.Now().UTC().Add(c.ttl)
+		}()
 
 		select {
 		case <-entry.init:
@@ -119,24 +131,22 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 		c.entries[key] = entry
 	}
 
-	select {
-	case <-entry.draining:
-		return entry, false
-	default:
+	if !entry.draining {
+		// Mark as in-use
+		entry.refCount.Add(1)
+
+		// Disable expiry while held
+		entry.expiry = time.Time{}
 	}
 
-	// Mark as in-use
-	entry.refCount.Add(1)
-	entry.accessedInTick = true
-	return entry, true
+	return entry, !entry.draining
 }
 
 // makeEntry creates a new empty cache entry. This will be
 func (c *Cache) makeEntry(key string) *cacheEntry {
 	entry := &cacheEntry{
-		init:     make(chan struct{}),
-		draining: make(chan struct{}),
-		drained:  make(chan struct{}),
+		init:    make(chan struct{}),
+		drained: make(chan struct{}),
 	}
 
 	go func() {
@@ -156,20 +166,17 @@ func (c *Cache) makeEntry(key string) *cacheEntry {
 	return entry
 }
 
-// evict iterates through all entries and determines those which have not been accessed since the
-// last eviction pass. These entries are marked for removal which will occur once initialization
-// finishes and any active readers have detached. After this pass, the accessed flag is false for
-// all entries.
-func (c *Cache) evict() {
+// evict iterates through all entries and determines those which have expired. These entries are marked
+// for removal which will occur once initialization finishes and any active readers have detached. Generally,
+// no readers should be active, but may occur when a request around the expiry races.
+func (c *Cache) evict(now time.Time) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
 	for key, entry := range c.entries {
-		if !entry.accessedInTick {
+		if !entry.expiry.IsZero() && entry.expiry.Before(now) {
 			c.remove(key, entry)
 		}
-
-		entry.accessedInTick = false
 	}
 }
 
@@ -177,13 +184,23 @@ func (c *Cache) evict() {
 // has initialized and all active readers have detached, the underlying reader is closed and the
 // entry is removed from the cache map.
 func (c *Cache) remove(key string, entry *cacheEntry) {
-	entry.closeOnce.Do(func() {
+	entry.removeOnce.Do(func() {
 		go func() {
+			// Release any readers waiting on this entry to drain before creating a new one
 			defer close(entry.drained)
 
-			close(entry.draining) // Reject future readers
-			<-entry.init          // Wait until initialized
-			entry.refCount.Wait() // Wait until there are no more readers
+			// Reject future readers. We need to do this while holding the cache lock so that we don't
+			// introduce a race between refCount.Add(1) in an invocation of getOrCreateRawEntry and the
+			// wait call below.
+			c.m.Lock()
+			entry.draining = true
+			c.m.Unlock()
+
+			// Wait until initialized
+			<-entry.init
+
+			// Wait until there are no more readers
+			entry.refCount.Wait()
 
 			if entry.reader != nil {
 				// Release resources
