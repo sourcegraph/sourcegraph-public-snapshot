@@ -91,8 +91,8 @@ type DB interface {
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)
 
-	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, and file.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]Dump, error)
+	// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]Dump, error)
 
 	// DeleteOldestDump deletes the oldest dump that is not currently visible at the tip of its repository's default branch.
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
