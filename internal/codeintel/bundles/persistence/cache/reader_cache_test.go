@@ -148,7 +148,7 @@ func TestReaderCacheDraining(t *testing.T) {
 	case <-opened:
 		// Created a new value while old value drains
 		t.Errorf("unexpected value on channel")
-	case <-time.After(maxBackoff):
+	case <-time.After(time.Millisecond * 50):
 	}
 
 	// Stop draining the old value
@@ -157,7 +157,7 @@ func TestReaderCacheDraining(t *testing.T) {
 	// Ensure we can create a new value
 	select {
 	case <-opened:
-	case <-time.After(maxBackoff * 2):
+	case <-time.After(time.Millisecond * 50):
 		t.Errorf("expected value on channel")
 	}
 }

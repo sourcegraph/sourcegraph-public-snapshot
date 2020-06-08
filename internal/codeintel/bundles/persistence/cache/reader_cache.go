@@ -27,6 +27,7 @@ type cacheEntry struct {
 	err            error
 	init           chan struct{}  // marks init completion
 	draining       chan struct{}  // marks intent to close
+	drained        chan struct{}  // marks removal from cache
 	accessedInTick bool           // marks used since last eviction
 	refCount       sync.WaitGroup // acts as concurrent use gauge
 	closeOnce      sync.Once      // guards closing the entry
@@ -84,36 +85,24 @@ func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 	return ErrReaderInitializationDeadlineExceeded
 }
 
-const (
-	minBackoff           = time.Millisecond * 1
-	maxBackoff           = time.Millisecond * 250
-	backoffIncreaseRatio = 1.5
-	maxAttempts          = 100
-)
-
 // getOrCreateActiveEntry gets or creates a cache entry for the given key. If there exists an entry for
-// the key, but that entry is marked as draining, we retry following an exponential backoff algorithm.
+// the key, but that entry is marked as draining, we wait until that entry has completely drained and then
+// try again.
 func (c *Cache) getOrCreateActiveEntry(ctx context.Context, key string) (*cacheEntry, bool) {
-	backoff := minBackoff
-
-	for attempts := maxAttempts; attempts > 0; attempts-- {
-		if entry, ok := c.getOrCreateRawEntry(key); ok {
+loop:
+	for {
+		entry, ok := c.getOrCreateRawEntry(key)
+		if ok {
 			return entry, true
 		}
 
 		select {
-		case <-time.After(backoff):
-			if backoff = time.Duration(float64(backoff) * backoffIncreaseRatio); backoff > maxBackoff {
-				backoff = maxBackoff
-			}
-			continue
-
+		case <-entry.drained:
+			continue loop
 		case <-ctx.Done():
-			break
+			return nil, false
 		}
 	}
-
-	return nil, false
 }
 
 // getOrCreateRawEntry gets or creates a cache entry for the given key and a boolean flag indicating
@@ -130,18 +119,15 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 		c.entries[key] = entry
 	}
 
-	// Mark as in-use
-	entry.refCount.Add(1)
-	entry.accessedInTick = true
-
 	select {
 	case <-entry.draining:
-		// Caller won't invoke handler, so we decrease our use count immediately
-		entry.refCount.Done()
-		return nil, false
+		return entry, false
 	default:
 	}
 
+	// Mark as in-use
+	entry.refCount.Add(1)
+	entry.accessedInTick = true
 	return entry, true
 }
 
@@ -150,6 +136,7 @@ func (c *Cache) makeEntry(key string) *cacheEntry {
 	entry := &cacheEntry{
 		init:     make(chan struct{}),
 		draining: make(chan struct{}),
+		drained:  make(chan struct{}),
 	}
 
 	go func() {
@@ -192,6 +179,8 @@ func (c *Cache) evict() {
 func (c *Cache) remove(key string, entry *cacheEntry) {
 	entry.closeOnce.Do(func() {
 		go func() {
+			defer close(entry.drained)
+
 			close(entry.draining) // Reject future readers
 			<-entry.init          // Wait until initialized
 			entry.refCount.Wait() // Wait until there are no more readers
