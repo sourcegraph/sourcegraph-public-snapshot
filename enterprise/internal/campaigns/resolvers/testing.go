@@ -7,13 +7,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -22,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -82,39 +77,6 @@ var testDiffGraphQL = apitest.FileDiffs{
 			Stat: apitest.DiffStat{Changed: 1},
 		},
 	},
-}
-
-func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
-
-	return hc, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
 }
 
 func marshalJSON(t testing.TB, v interface{}) string {
