@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/tar"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -253,7 +252,7 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 		packageInformationData, exists, err := db.PackageInformation(
 			ctx,
 			getQuery(r, "path"),
-			types.ID(getQuery(r, "packageInformationId")),
+			getQuery(r, "packageInformationId"),
 		)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "db.PackageInformation")
