@@ -10,7 +10,6 @@ describe('CloseDeleteCampaignPrompt', () => {
                     disabled={false}
                     disabledTooltip="Cannot delete while campaign is processing..."
                     message={<p>message</p>}
-                    changesetsCount={2}
                     buttonText="Delete"
                     onButtonClick={() => undefined}
                     buttonClassName="btn-danger"
@@ -24,7 +23,6 @@ describe('CloseDeleteCampaignPrompt', () => {
                     disabled={false}
                     disabledTooltip="Cannot delete while campaign is processing..."
                     message={<p>message</p>}
-                    changesetsCount={0}
                     buttonText="Delete"
                     onButtonClick={() => undefined}
                     buttonClassName="btn-danger"
