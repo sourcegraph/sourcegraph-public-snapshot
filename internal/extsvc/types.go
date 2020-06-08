@@ -68,6 +68,17 @@ func (s *Accounts) TracingFields() []otlog.Field {
 	}
 }
 
+const (
+	KindAWSCodeCommit   = "AWSCODECOMMIT"
+	KindBitbucketServer = "BITBUCKETSERVER"
+	KindBitbucketCloud  = "BITBUCKETCLOUD"
+	KindGitHub          = "GITHUB"
+	KindGitLab          = "GITLAB"
+	KindGitolite        = "GITOLITE"
+	KindPhabricator     = "PHABRICATOR"
+	KindOther           = "OTHER"
+)
+
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
 // (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.
@@ -80,22 +91,22 @@ type RepoID string
 
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
-	switch strings.ToLower(kind) {
-	case "awscodecommit":
+	switch strings.ToUpper(kind) {
+	case KindAWSCodeCommit:
 		cfg = &schema.AWSCodeCommitConnection{}
-	case "bitbucketserver":
+	case KindBitbucketServer:
 		cfg = &schema.BitbucketServerConnection{}
-	case "bitbucketcloud":
+	case KindBitbucketCloud:
 		cfg = &schema.BitbucketCloudConnection{}
-	case "github":
+	case KindGitHub:
 		cfg = &schema.GitHubConnection{}
-	case "gitlab":
+	case KindGitLab:
 		cfg = &schema.GitLabConnection{}
-	case "gitolite":
+	case KindGitolite:
 		cfg = &schema.GitoliteConnection{}
-	case "phabricator":
+	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
-	case "other":
+	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
 		return nil, fmt.Errorf("unknown external service kind %q", kind)
@@ -107,10 +118,10 @@ const IDParam = "externalServiceID"
 
 func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
 	var path string
-	switch strings.ToLower(kind) {
-	case "github":
+	switch strings.ToUpper(kind) {
+	case KindGitHub:
 		path = "github-webhooks"
-	case "bitbucketserver":
+	case KindBitbucketServer:
 		path = "bitbucket-server-webhooks"
 	default:
 		return ""

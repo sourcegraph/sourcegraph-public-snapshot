@@ -6,13 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-
-	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestNextSync(t *testing.T) {
@@ -360,7 +358,7 @@ func TestSyncRegistry(t *testing.T) {
 			return []*repos.ExternalService{
 				{
 					ID:          1,
-					Kind:        "GITHUB",
+					Kind:        extsvc.KindGitHub,
 					DisplayName: "",
 					Config:      "",
 					CreatedAt:   time.Time{},
@@ -401,7 +399,7 @@ func TestSyncRegistry(t *testing.T) {
 	// Simulate a service being removed
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
-		Kind:      "GITHUB",
+		Kind:      extsvc.KindGitHub,
 		DeletedAt: &now,
 	})
 	assertSyncerCount(0)
@@ -409,7 +407,7 @@ func TestSyncRegistry(t *testing.T) {
 	// And added again
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
-		Kind:      "GITHUB",
+		Kind:      extsvc.KindGitHub,
 		DeletedAt: nil,
 	})
 	assertSyncerCount(1)

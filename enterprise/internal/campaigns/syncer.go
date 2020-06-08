@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/time/rate"
 )
@@ -83,7 +84,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	service := services[0]
 
 	switch service.Kind {
-	case "GITHUB", "BITBUCKETSERVER":
+	case extsvc.KindGitHub, extsvc.KindBitbucketServer:
 	// Supported by campaigns
 	default:
 		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)

@@ -100,6 +100,7 @@ describe('CampaignDetails', () => {
                     patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
+                    hasUnpublishedPatches: false,
                     branch: 'awesome-branch',
                     status: {
                         completedCount: 3,
