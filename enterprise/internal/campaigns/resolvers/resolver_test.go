@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -37,12 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "campaignsresolversdb"
-}
-
-var update = flag.Bool("update", false, "update testdata")
 
 func TestCampaigns(t *testing.T) {
 	if testing.Short() {
