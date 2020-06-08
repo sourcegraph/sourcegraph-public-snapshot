@@ -43,7 +43,7 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 func NewProvider(cli *bitbucketserver.Client, db dbutil.DB, ttl, hardTTL time.Duration, pluginPerm bool) *Provider {
 	return &Provider{
 		client:     cli,
-		codeHost:   extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
+		codeHost:   extsvc.NewCodeHost(cli.URL, extsvc.TypeBitbucketServer),
 		pageSize:   1000,
 		store:      newStore(db, ttl, hardTTL, clock),
 		pluginPerm: pluginPerm,

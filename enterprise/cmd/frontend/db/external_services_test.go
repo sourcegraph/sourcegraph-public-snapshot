@@ -185,7 +185,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "witout prefix nor host",
+			desc:   "without prefix nor host",
 			config: `{}`,
 			assert: includes(
 				"prefix is required",

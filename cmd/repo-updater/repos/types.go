@@ -158,7 +158,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("other", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindOther, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.OtherExternalServiceConnection)
 
 		var base *url.URL
@@ -186,7 +186,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.ExternalRepo.ServiceType != "other" {
+			if r.ExternalRepo.ServiceType != extsvc.TypeOther {
 				continue
 			}
 
@@ -221,7 +221,7 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitlab", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitLab, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitLabConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -270,7 +270,7 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("bitbucketserver", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindBitbucketServer, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.BitbucketServerConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -325,7 +325,7 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("gitolite", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitolite, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitoliteConnection)
 		set := make(map[string]bool, len(c.Exclude))
 		for _, ex := range c.Exclude {
@@ -353,7 +353,7 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("github", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindGitHub, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.GitHubConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -402,7 +402,7 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 		return nil
 	}
 
-	return e.config("awscodecommit", func(v interface{}) (string, interface{}, error) {
+	return e.config(extsvc.KindAWSCodeCommit, func(v interface{}) (string, interface{}, error) {
 		c := v.(*schema.AWSCodeCommitConnection)
 		set := make(map[string]bool, len(c.Exclude)*2)
 		for _, ex := range c.Exclude {
@@ -453,7 +453,7 @@ func nameWithOwner(name string) string {
 }
 
 func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
-	if strings.ToLower(e.Kind) != kind {
+	if !strings.EqualFold(kind, e.Kind) {
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
 

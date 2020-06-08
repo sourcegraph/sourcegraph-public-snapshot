@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -60,7 +61,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -236,7 +237,7 @@ func TestService(t *testing.T) {
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	ext := &repos.ExternalService{
-		Kind:        github.ServiceType,
+		Kind:        extsvc.TypeGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -249,7 +250,7 @@ func TestService(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		r := testRepo(i, github.ServiceType)
+		r := testRepo(i, extsvc.TypeGitHub)
 		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
 
 		rs = append(rs, r)
@@ -1268,7 +1269,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+		rs = append(rs, testRepo(i, extsvc.TypeGitHub))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -1896,7 +1897,7 @@ func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
 	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
 		Metadata:            &github.PullRequest{State: string(state)},
 		ExternalState:       state,

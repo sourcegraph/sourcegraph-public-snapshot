@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
@@ -152,7 +153,7 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 		k := strings.ToLower(svc.Kind)
 
 		if !set[svc] &&
-			((len(kinds) == 0 && k != "phabricator") || kinds[k]) &&
+			((len(kinds) == 0 && k != extsvc.TypePhabricator) || kinds[k]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
 			!svc.IsDeleted() {
 

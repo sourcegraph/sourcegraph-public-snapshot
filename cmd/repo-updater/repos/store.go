@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -841,17 +842,17 @@ func scanRepo(r *Repo, s scanner) error {
 
 	typ := strings.ToLower(r.ExternalRepo.ServiceType)
 	switch typ {
-	case "github":
+	case extsvc.TypeGitHub:
 		r.Metadata = new(github.Repository)
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)
 	case "bitbucketcloud":
 		r.Metadata = new(bitbucketcloud.Repo)
-	case "awscodecommit":
+	case extsvc.TypeAWSCodeCommit:
 		r.Metadata = new(awscodecommit.Repository)
-	case "gitolite":
+	case extsvc.TypeGitolite:
 		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil

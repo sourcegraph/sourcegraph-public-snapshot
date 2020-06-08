@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -2847,9 +2848,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
-	case github.ServiceType:
+	case extsvc.TypeGitHub:
 		t.Metadata = new(github.PullRequest)
-	case bitbucketserver.ServiceType:
+	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)
 	default:
 		return errors.New("unknown external service type")

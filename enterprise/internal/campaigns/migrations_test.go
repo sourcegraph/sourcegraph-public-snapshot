@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testMigratePatchesWithoutDiffStats(db *sql.DB, userID int32) func(*testing.T) {
@@ -17,9 +18,9 @@ index b9f9438..cb1ab9f 100644
 --- INSTALL.md
 +++ INSTALL.md
 @@ -2,4 +2,4 @@
- 
+
  Foobar
- 
+
 -barfoo
 +Pfannkuchen
 diff --git README.md README.md
@@ -28,7 +29,7 @@ index 437e1a8..540f2f3 100644
 +++ README.md
 @@ -1,5 +1,5 @@
  # README
- 
+
  Line 1
 -Line 2
 +Line Foobar
@@ -48,7 +49,7 @@ index 0000000..44e82e2
 		ctx := context.Background()
 
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
-		repo := testRepo(1, "github")
+		repo := testRepo(1, extsvc.TypeGitHub)
 		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
 			t.Fatal(err)
 		}

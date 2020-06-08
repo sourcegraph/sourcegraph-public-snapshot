@@ -50,7 +50,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{
@@ -64,7 +64,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "bar/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "bar/baz",
 			},
 			Sources: map[string]*SourceInfo{
@@ -83,7 +83,7 @@ func TestSrcExpose(t *testing.T) {
 			Description: "hi",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
 			Sources: map[string]*SourceInfo{
@@ -101,7 +101,7 @@ func TestSrcExpose(t *testing.T) {
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{

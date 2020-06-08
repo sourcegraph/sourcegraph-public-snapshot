@@ -16,7 +16,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
@@ -113,7 +112,7 @@ func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, erro
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
-		serviceType: gitlab.ServiceType,
+		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})
@@ -236,7 +235,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	})
 
 	p := &mockProvider{
-		serviceType: gitlab.ServiceType,
+		serviceType: extsvc.TypeGitLab,
 		serviceID:   "https://gitlab.com/",
 	}
 	authz.SetProviders(false, []authz.Provider{p})

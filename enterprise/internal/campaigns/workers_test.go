@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -195,7 +196,7 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
 
 	ext := &repos.ExternalService{
-		Kind:        github.ServiceType,
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
@@ -207,7 +208,7 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 		t.Fatal(err)
 	}
 
-	repo := testRepo(0, github.ServiceType)
+	repo := testRepo(0, extsvc.TypeGitHub)
 	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {
 		ID: ext.URN(),
 	}}
@@ -224,7 +225,7 @@ func createBitbucketServerRepo(t *testing.T, ctx context.Context, now time.Time,
 	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
 
 	ext := &repos.ExternalService{
-		Kind:        bitbucketserver.ServiceType,
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bbs.example.com",
@@ -236,7 +237,7 @@ func createBitbucketServerRepo(t *testing.T, ctx context.Context, now time.Time,
 		t.Fatal(err)
 	}
 
-	repo := testRepo(0, bitbucketserver.ServiceType)
+	repo := testRepo(0, extsvc.TypeBitbucketServer)
 	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {
 		ID: ext.URN(),
 	}}
