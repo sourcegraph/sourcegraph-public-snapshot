@@ -8,6 +8,10 @@ import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 import { queryGraphQL, mutateGraphQL } from '../../backend/graphql'
 
+/**
+ * Return LSIF uploads. If a repository is given, only uploads for that repository will be returned. Otherwise,
+ * uploads across all repositories are returned.
+ */
 export function fetchLsifUploads({
     repository,
     query,
@@ -207,6 +211,10 @@ export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
     )
 }
 
+/**
+ * Return LSIF indexes. If a repository is given, only indexes for that repository will be returned. Otherwise,
+ * indexes across all repositories are returned.
+ */
 export function fetchLsifIndexes({
     repository,
     query,
