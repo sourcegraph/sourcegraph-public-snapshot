@@ -20,6 +20,22 @@ func TestReadMetaV4(t *testing.T) {
 	}
 }
 
+func TestPathsWithPrefixV4(t *testing.T) {
+	paths, err := testReader(t, v4TestFile).PathsWithPrefix(context.Background(), "internal/")
+	if err != nil {
+		t.Fatalf("unexpected error fetching paths with prefix: %s", err)
+	}
+
+	expectedPaths := []string{
+		"internal/gomod/module.go",
+		"internal/index/helper.go",
+		"internal/index/indexer.go",
+		"internal/index/types.go",
+	}
+	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
+		t.Errorf("unexpected paths (-want +got):\n%s", diff)
+	}
+}
 func TestReadDocumentV4(t *testing.T) {
 	data, exists, err := testReader(t, v4TestFile).ReadDocument(context.Background(), "protocol/writer.go")
 	if err != nil {

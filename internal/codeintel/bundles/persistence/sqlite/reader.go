@@ -74,6 +74,10 @@ func (r *sqliteReader) ReadMeta(ctx context.Context) (types.MetaData, error) {
 	}, nil
 }
 
+func (r *sqliteReader) PathsWithPrefix(ctx context.Context, prefix string) ([]string, error) {
+	return store.ScanStrings(r.store.Query(ctx, sqlf.Sprintf(`SELECT path FROM documents WHERE path LIKE %s`, prefix+"%")))
+}
+
 func (r *sqliteReader) ReadDocument(ctx context.Context, path string) (types.DocumentData, bool, error) {
 	key := r.makeCacheKey("document", path)
 	if documentData, ok := r.getFromCache(key).(types.DocumentData); ok {
