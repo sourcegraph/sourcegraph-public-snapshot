@@ -321,6 +321,7 @@ func TestCampaigns(t *testing.T) {
 			title
 			body
 			state
+			nextSyncAt
 			externalURL {
 				url
 				serviceType
@@ -358,6 +359,8 @@ func TestCampaigns(t *testing.T) {
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 57,
 				},
+				// Not scheduled, not added to a campaign yet.
+				NextSyncAt: "",
 				Head: apitest.GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
 					AbbrevName:  "vo/add-type-issue-filter",
@@ -404,6 +407,8 @@ func TestCampaigns(t *testing.T) {
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 10,
 				},
+				// Not scheduled, not added to a campaign yet.
+				NextSyncAt: "",
 				Head: apitest.GitRef{
 					Name:        "refs/heads/release-testing-pr",
 					AbbrevName:  "release-testing-pr",
@@ -447,6 +452,23 @@ func TestCampaigns(t *testing.T) {
 		if diff := cmp.Diff(have, want); diff != "" {
 			t.Fatal(diff)
 		}
+
+		// Test node resolver has nextSyncAt correctly set.
+		for _, c := range result.Changesets {
+			var changesetResult struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
+				query {
+					node(id: %q) {
+						... on ExternalChangeset {
+							nextSyncAt
+						}
+					}
+				}
+			`, c.ID))
+			if have, want := changesetResult.Node.NextSyncAt, ""; have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
+		}
 	}
 
 	var addChangesetsResult struct{ Campaign apitest.Campaign }
@@ -470,6 +492,7 @@ func TestCampaigns(t *testing.T) {
 			repository { id }
 			createdAt
 			updatedAt
+			nextSyncAt
 			campaigns { nodes { id } }
 			title
 			body
@@ -583,6 +606,27 @@ func TestCampaigns(t *testing.T) {
 		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
+		}
+	}
+
+	{
+		for _, c := range addChangesetsResult.Campaign.Changesets.Nodes {
+			if have, want := c.NextSyncAt, now.Add(8*time.Hour).Format(time.RFC3339); have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
+			var changesetResult struct{ Node apitest.Changeset }
+			apitest.MustExec(ctx, t, s, nil, &changesetResult, fmt.Sprintf(`
+				query {
+					node(id: %q) {
+						... on ExternalChangeset {
+							nextSyncAt
+						}
+					}
+				}
+			`, c.ID))
+			if have, want := changesetResult.Node.NextSyncAt, now.Add(8*time.Hour).Format(time.RFC3339); have != want {
+				t.Fatalf("incorrect nextSyncAt value, want=%q have=%q", want, have)
+			}
 		}
 	}
 
@@ -1214,7 +1258,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	      changesets {
 	        nodes {
 			  ... on ExternalChangeset {
-	            state
+				state
 	            diff {
 	              fileDiffs {
 	                diffStat {

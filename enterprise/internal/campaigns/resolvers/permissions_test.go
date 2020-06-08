@@ -837,10 +837,9 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset updatedAt is zero")
 	}
 
-	// TODO: See https://github.com/sourcegraph/sourcegraph/issues/11227
-	// if parseJSONTime(t, res.Node.NextSyncAt).IsZero() {
-	// 	t.Fatalf("changeset next sync at is zero")
-	// }
+	if parseJSONTime(t, res.Node.NextSyncAt).IsZero() {
+		t.Fatalf("changeset next sync at is zero")
+	}
 }
 
 const queryChangesetPermLevels = `
