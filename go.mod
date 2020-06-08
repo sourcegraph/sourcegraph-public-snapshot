@@ -112,7 +112,7 @@ require (
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
-	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0 // indirect
+	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sirupsen/logrus v1.5.0 // indirect
@@ -128,7 +128,6 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.11.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
