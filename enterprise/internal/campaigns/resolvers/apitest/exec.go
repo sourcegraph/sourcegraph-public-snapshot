@@ -27,6 +27,32 @@ func MustExec(
 	}
 }
 
+// MustExecFragments uses MustExec to execute the given query and prepends the
+// named fragments from Fragments to the query.
+func MustExecFragments(
+	ctx context.Context,
+	t testing.TB,
+	s *graphql.Schema,
+	in map[string]interface{},
+	out interface{},
+	query string,
+	fragments ...string,
+) {
+	t.Helper()
+
+	if len(fragments) == 0 {
+		t.Errorf("MustExecFragments called without any fragments")
+	}
+
+	for _, f := range fragments {
+		query = f + "\n" + query
+	}
+
+	if errs := Exec(ctx, t, s, in, out, query); len(errs) > 0 {
+		t.Fatalf("unexpected graphql query errors: %v", errs)
+	}
+}
+
 // Exec executes the given query with the given input in the given
 // graphql.Schema. The response will be rendered into out.
 func Exec(
