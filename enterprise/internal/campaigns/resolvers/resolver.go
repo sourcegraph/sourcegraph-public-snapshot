@@ -506,36 +506,47 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, bool, error) {
 	var opts ee.ListChangesetsOpts
 	if args == nil {
-		return opts, nil
+		return opts, true, nil
 	}
+
+	safe := true
+
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+
 	if args.State != nil {
 		state := campaigns.ChangesetState(*args.State)
 		if !state.Valid() {
-			return opts, errors.New("changeset state not valid")
+			return opts, false, errors.New("changeset state not valid")
 		}
 		opts.ExternalState = &state
 	}
 	if args.ReviewState != nil {
 		state := campaigns.ChangesetReviewState(*args.ReviewState)
 		if !state.Valid() {
-			return opts, errors.New("changeset review state not valid")
+			return opts, false, errors.New("changeset review state not valid")
 		}
 		opts.ExternalReviewState = &state
+		// If the user filters by ReviewState we cannot include hidden
+		// changesets, since that would leak information.
+		safe = false
 	}
 	if args.CheckState != nil {
 		state := campaigns.ChangesetCheckState(*args.CheckState)
 		if !state.Valid() {
-			return opts, errors.New("changeset check state not valid")
+			return opts, false, errors.New("changeset check state not valid")
 		}
 		opts.ExternalCheckState = &state
+		// If the user filters by CheckState we cannot include hidden
+		// changesets, since that would leak information.
+		safe = false
 	}
-	return opts, nil
+
+	return opts, safe, nil
 }
 
 func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlbackend.CreatePatchSetFromPatchesArgs) (graphqlbackend.PatchSetResolver, error) {

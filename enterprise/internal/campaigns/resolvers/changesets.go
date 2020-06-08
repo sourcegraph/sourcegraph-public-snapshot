@@ -29,7 +29,12 @@ import (
 type changesetsConnectionResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
-	opts        ee.ListChangesetsOpts
+
+	opts ee.ListChangesetsOpts
+	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
+	// changeset by including the changeset in the result set, this should be
+	// set to true.
+	optsSafe bool
 
 	// cache results because they are used by multiple fields
 	once           sync.Once
@@ -53,6 +58,12 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			// If it's not in reposByID the repository was either deleted or
 			// filtered out by the authz-filter.
 			// In both cases: use hiddenChangesetResolver.
+
+			// But if the filter opts would leak information about the hidden
+			// changesets, we skip the hidden changeset
+			if !r.optsSafe {
+				continue
+			}
 			resolvers = append(resolvers, &hiddenChangesetResolver{
 				store:       r.store,
 				httpFactory: r.httpFactory,
@@ -75,14 +86,34 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetsOpts{
-		CampaignID:          r.opts.CampaignID,
-		ExternalState:       r.opts.ExternalState,
-		ExternalCheckState:  r.opts.ExternalCheckState,
-		ExternalReviewState: r.opts.ExternalReviewState,
+	opts := r.opts
+	opts.Limit = -1
+
+	cs, _, err := r.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return 0, err
 	}
-	count, err := r.store.CountChangesets(ctx, opts)
-	return int32(count), err
+
+	// 🚨 SECURITY: If the opts do not leak information, we can return the
+	// number of changesets. Otherwise we have to filter the changesets by
+	// accessible repos.
+	if r.optsSafe {
+		return int32(len(cs)), nil
+	}
+
+	repoIDs := make([]api.RepoID, len(cs))
+	for i, c := range cs {
+		repoIDs[i] = c.RepoID
+	}
+
+	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	rs, err := db.Repos.GetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(len(rs)), err
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
