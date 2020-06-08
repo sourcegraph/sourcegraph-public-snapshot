@@ -60,7 +60,7 @@ func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool)
 }
 
 func (r *codemodResultResolver) searchResultURIs() (string, string) {
-	return string(r.commit.repo.repo.Name), r.path
+	return string(r.commit.repoResolver.repo.Name), r.path
 }
 
 func (r *codemodResultResolver) resultCount() int32 {
@@ -76,7 +76,7 @@ func (r *codemodResultResolver) Label() (*markdownResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	text := fmt.Sprintf("[%s](%s) › [%s](%s)", r.commit.repo.Name(), commitURL, r.path, r.fileURL)
+	text := fmt.Sprintf("[%s](%s) › [%s](%s)", r.commit.repoResolver.Name(), commitURL, r.path, r.fileURL)
 	return &markdownResolver{text: text}, nil
 }
 
@@ -313,9 +313,9 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 		}
 		results = append(results, codemodResultResolver{
 			commit: &GitCommitResolver{
-				repo:     &RepositoryResolver{repo: repoRevs.Repo},
-				inputRev: &repoRevs.Revs[0].RevSpec,
-				oid:      GitObjectID(commit),
+				repoResolver: &RepositoryResolver{repo: repoRevs.Repo},
+				inputRev:     &repoRevs.Revs[0].RevSpec,
+				oid:          GitObjectID(commit),
 			},
 			path:    raw.URI,
 			fileURL: fileURL,

@@ -92,9 +92,9 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// values for all other fields.
 	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repo:     fm.Repo,
-			oid:      GitObjectID(fm.CommitID),
-			inputRev: fm.InputRev,
+			repoResolver: fm.Repo,
+			oid:          GitObjectID(fm.CommitID),
+			inputRev:     fm.InputRev,
 		},
 		stat: CreateFileInfo(fm.JPath, false),
 	}

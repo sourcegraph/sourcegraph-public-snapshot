@@ -218,9 +218,9 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &GitCommitResolver{
-							repo:     &RepositoryResolver{repo: repoRev.Repo},
-							oid:      GitObjectID(file.Version),
-							inputRev: &inputRev,
+							repoResolver: &RepositoryResolver{repo: repoRev.Repo},
+							oid:          GitObjectID(file.Version),
+							inputRev:     &inputRev,
 						}
 
 						symbols = append(symbols, &searchSymbolResult{
