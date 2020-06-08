@@ -115,7 +115,7 @@ func TestExecChangesetJob(t *testing.T) {
 
 			gitClient := &FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-			sourcer := repos.NewFakeSourcer(nil, FakeChangesetSource{
+			sourcer := repos.NewFakeSourcer(nil, &FakeChangesetSource{
 				Svc:             extSvc,
 				Err:             nil,
 				ChangesetExists: tc.existsOnCodehost,

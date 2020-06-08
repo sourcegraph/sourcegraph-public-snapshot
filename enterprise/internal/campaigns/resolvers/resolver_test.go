@@ -1437,7 +1437,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	gitClient := &ee.FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
-	sourcer := repos.NewFakeSourcer(nil, ee.FakeChangesetSource{
+	sourcer := repos.NewFakeSourcer(nil, &ee.FakeChangesetSource{
 		Svc:          ext,
 		WantHeadRef:  headRef,
 		WantBaseRef:  testBaseRef,

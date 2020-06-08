@@ -2946,112 +2946,90 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 	})
 
-	t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
-		campaignID := 9999
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
-			// completed, another error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
-		}
-
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
-
-			err := s.CreateChangesetJob(ctx, j)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-		}
-
-		mustReset := map[int64]bool{
-			jobs[1].ID: true,
-			jobs[2].ID: true,
-		}
-
-		err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if _, ok := mustReset[job.ID]; ok {
-				if job.Error != "" {
-					t.Errorf("job should be reset but has error: %+v", job.Error)
-				}
-				if !job.FinishedAt.IsZero() {
-					t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
-				}
-				if !job.StartedAt.IsZero() {
-					t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
-				}
-			} else {
-				if job.StartedAt.IsZero() {
-					t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
-				}
-				if job.FinishedAt.IsZero() {
-					t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
-				}
-			}
-		}
-	})
-
 	t.Run("ResetChangesetJobs", func(t *testing.T) {
-		campaignID := 12345
-		jobs := []*cmpgn.ChangesetJob{
-			// completed, no errors
-			{StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 12345},
-			// completed, error
-			{StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+		tests := []struct {
+			jobs              []*cmpgn.ChangesetJob
+			opts              ResetChangesetJobsOpts
+			wantResetPatchIDs []int64
+		}{
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+					// completed, another error
+					{PatchID: 3, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error2"},
+				},
+				opts:              ResetChangesetJobsOpts{OnlyFailed: true},
+				wantResetPatchIDs: []int64{2, 3},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{},
+				wantResetPatchIDs: []int64{1, 2},
+			},
+			{
+				jobs: []*cmpgn.ChangesetJob{
+					// completed, no errors
+					{PatchID: 1, StartedAt: clock.now(), FinishedAt: clock.now(), ChangesetID: 23},
+					// completed, error
+					{PatchID: 2, StartedAt: clock.now(), FinishedAt: clock.now(), Error: "error1"},
+				},
+				opts:              ResetChangesetJobsOpts{PatchIDs: []int64{2}},
+				wantResetPatchIDs: []int64{2},
+			},
 		}
 
-		for i, j := range jobs {
-			j.CampaignID = int64(campaignID)
-			j.PatchID = int64(i)
+		for i, tc := range tests {
+			var campaignID int64 = int64(9999 + i)
 
-			err := s.CreateChangesetJob(ctx, j)
+			for _, j := range tc.jobs {
+				j.CampaignID = campaignID
+
+				if err := s.CreateChangesetJob(ctx, j); err != nil {
+					t.Fatal(err)
+				}
+
+			}
+
+			tc.opts.CampaignID = campaignID
+			if err := s.ResetChangesetJobs(ctx, tc.opts); err != nil {
+				t.Fatal(err)
+			}
+
+			have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: campaignID})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-		}
-
-		err := s.ResetChangesetJobs(ctx, int64(campaignID))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != len(jobs) {
-			t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
-		}
-
-		for _, job := range have {
-			if job.Error != "" {
-				t.Errorf("job should be reset but has error: %+v", job.Error)
+			if len(have) != len(tc.jobs) {
+				t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(tc.jobs))
 			}
-			if !job.FinishedAt.IsZero() {
-				t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+
+			mustReset := map[int64]bool{}
+			for _, patchID := range tc.wantResetPatchIDs {
+				mustReset[patchID] = true
 			}
-			if !job.StartedAt.IsZero() {
-				t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+
+			for _, job := range have {
+				if _, ok := mustReset[job.PatchID]; ok {
+					if job.UnsuccessfullyCompleted() {
+						t.Errorf("job should be reset but is not: %+v", job)
+					}
+				} else {
+					if job.StartedAt.IsZero() {
+						t.Errorf("job should not be reset but StartedAt is zero: %+v", job.StartedAt)
+					}
+					if job.FinishedAt.IsZero() {
+						t.Errorf("job should not be reset but FinishedAt is zero: %+v", job.FinishedAt)
+					}
+				}
 			}
 		}
 	})

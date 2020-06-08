@@ -2632,34 +2632,49 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
 
+type ResetChangesetJobsOpts struct {
+	// The CampaignID of the ChangesetJobs to be reset.
+	CampaignID int64
+
+	// When PatchIDs is set, only the ChangesetJobs with the given
+	// PatchIDs are reset.
+	PatchIDs []int64
+
+	// If OnlyFailed is set, only ChangesetJobs were Error != '' are reset.
+	OnlyFailed bool
+}
+
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of the ChangesetJobs belonging to the Campaign with the given ID that
-// resulted in an error.
-func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, true)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-// ResetChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of all ChangesetJobs belonging to the Campaign with the given ID.
-func (s *Store) ResetChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, false)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("campaign_id = %s", campaignID),
+// of the ChangesetJobs matching the conditions in ResetChangesetJobsOpts.
+func (s *Store) ResetChangesetJobs(ctx context.Context, opts ResetChangesetJobsOpts) (err error) {
+	if opts.CampaignID == 0 {
+		return errors.New("CampaignID cannot be zero")
 	}
 
-	if onlyErrored {
+	q := resetChangesetJobsQuery(opts)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+func resetChangesetJobsQuery(opts ResetChangesetJobsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaign_id = %s", opts.CampaignID),
+	}
+
+	if opts.OnlyFailed {
 		preds = append(preds, sqlf.Sprintf("error != ''"))
+	}
+
+	if len(opts.PatchIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.PatchIDs))
+		for _, id := range opts.PatchIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("patch_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(

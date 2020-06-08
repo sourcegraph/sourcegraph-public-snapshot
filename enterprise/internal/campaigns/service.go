@@ -37,6 +37,8 @@ type Service struct {
 	store *Store
 	cf    *httpcli.Factory
 
+	sourcer repos.Sourcer
+
 	clock func() time.Time
 }
 
@@ -328,16 +330,30 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 		return nil
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(cs))
+	for _, c := range cs {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	accessibleReposByID, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return err
+	}
+
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, nil, cs...)
+	bySource, err := groupChangesetsBySource(ctx, reposStore, s.cf, s.sourcer, nil, cs...)
 	if err != nil {
 		return err
 	}
 
 	errs := &multierror.Error{}
-	for _, s := range bySource {
-		for _, c := range s.Changesets {
-			if err := s.CloseChangeset(ctx, c); err != nil {
+	for _, group := range bySource {
+		for _, c := range group.Changesets {
+			if _, ok := accessibleReposByID[c.RepoID]; !ok {
+				continue
+			}
+
+			if err := group.CloseChangeset(ctx, c); err != nil {
 				errs = multierror.Append(errs, err)
 			}
 		}
@@ -351,9 +367,9 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// CloseChangesets updates the given Changesets too), because closing a
 	// Changeset often produces a ChangesetEvent on the codehost and if we were
 	// to close the Changesets and not update the events (which is what
-	// SyncChangesetsWithSources does) our burndown chart will be outdated
+	// syncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	return SyncChangesetsWithSources(ctx, s.store, bySource)
+	return syncChangesetsWithSources(ctx, s.store, bySource)
 }
 
 // AddChangesetsToCampaign adds the given changeset IDs to the given campaign's
@@ -397,7 +413,21 @@ func (s *Service) AddChangesetsToCampaign(ctx context.Context, campaignID int64,
 		return nil, err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(changesets))
 	for _, c := range changesets {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range changesets {
+		if _, ok := accessibleRepoIDs[c.RepoID]; !ok {
+			return nil, &db.RepoNotFoundErr{ID: c.RepoID}
+		}
+
 		delete(set, c.ID)
 		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
 		c.AddedToCampaign = true
@@ -431,7 +461,14 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	}()
 
 	// Check for existence of changeset so we don't swallow that error.
-	if _, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id}); err != nil {
+	changeset, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id})
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, changeset.RepoID); err != nil {
 		return err
 	}
 
@@ -486,7 +523,38 @@ func (s *Service) RetryPublishCampaign(ctx context.Context, id int64) (campaign 
 		return nil, err
 	}
 
-	err = s.store.ResetFailedChangesetJobs(ctx, campaign.ID)
+	patches, _, err := s.store.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID: campaign.PatchSetID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repoIDs, err := s.store.GetRepoIDsForFailedChangesetJobs(ctx, campaign.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	var resetPatchIDs []int64
+	for _, p := range patches {
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
+		resetPatchIDs = append(resetPatchIDs, p.ID)
+	}
+
+	err = s.store.ResetChangesetJobs(ctx, ResetChangesetJobsOpts{
+		CampaignID: id,
+		OnlyFailed: true,
+		PatchIDs:   resetPatchIDs,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "resetting failed changeset jobs")
 	}
@@ -535,6 +603,16 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 		return nil, err
 	}
 
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return err
+	}
+
 	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		Limit:      -1,
 		CampaignID: campaign.ID,
@@ -550,6 +628,10 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 
 	for _, p := range patches {
 		if _, ok := jobsByPatchID[p.ID]; ok {
+			continue
+		}
+
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
 			continue
 		}
 
@@ -585,6 +667,12 @@ func (s *Service) EnqueueChangesetJobForPatch(ctx context.Context, patchID int64
 
 	err = backend.CheckSiteAdminOrSameUser(ctx, campaign.AuthorID)
 	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: We use db.Repos.Get to check whether the user has access to
+	// the repository or not.
+	if _, err = db.Repos.Get(ctx, job.RepoID); err != nil {
 		return err
 	}
 
@@ -843,7 +931,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		if err != nil {
 			return campaign, nil, err
 		}
-		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
+
+		opts := ResetChangesetJobsOpts{CampaignID: campaign.ID, OnlyFailed: false}
+		return campaign, nil, tx.ResetChangesetJobs(ctx, opts)
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPatchSetID, updateAttributes)
@@ -1143,4 +1233,23 @@ func hasCampaignAdminPermissions(ctx context.Context, c *campaigns.Campaign) (bo
 		return false, err
 	}
 	return true, nil
+}
+
+// accessibleRepos collects the RepoIDs of the changesets and returns a set of
+// the api.RepoID for which the subset of repositories for which the actor in
+// ctx has read permissions.
+func accessibleRepos(ctx context.Context, ids []api.RepoID) (map[api.RepoID]struct{}, error) {
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to filter out repositories the
+	// user doesn't have access to.
+	accessibleRepos, err := db.Repos.GetByIDs(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
+	accessibleRepoIDs := make(map[api.RepoID]struct{}, len(accessibleRepos))
+	for _, r := range accessibleRepos {
+		accessibleRepoIDs[r.ID] = struct{}{}
+	}
+
+	return accessibleRepoIDs, nil
 }

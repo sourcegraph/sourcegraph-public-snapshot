@@ -19,8 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -224,19 +227,34 @@ func TestService(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
-
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		rs = append(rs, testRepo(i, github.ServiceType))
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	ext := &repos.ExternalService{
+		Kind:        github.ServiceType,
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	var rs []*repos.Repo
+	for i := 0; i < 4; i++ {
+		r := testRepo(i, github.ServiceType)
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+
+		rs = append(rs, r)
+	}
+
 	err := reposStore.UpsertRepos(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
@@ -503,11 +521,22 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
-		if err != nil {
-			t.Fatal(err)
+
+		// Filter out the repository in the authz filter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		// should result in a not found error
+		if err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("want not found error, got: %s", err)
 		}
 
+		// Now reset the filter
+		db.MockAuthzFilter = nil
+
+		if err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID); err != nil {
+			t.Fatal(err)
+		}
 		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
 			CampaignID: campaign.ID,
 			PatchID:    patch.ID,
@@ -595,6 +624,20 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// Filter out one repository to make sure it's skipped
+		filteredOutPatch := patches[len(patches)-1]
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			var filtered []*types.Repo
+			for _, r := range repos {
+				if r.ID == filteredOutPatch.RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		defer func() { db.MockAuthzFilter = nil }()
+
 		svc := NewServiceWithClock(store, cf, clock)
 		if _, err = svc.EnqueueChangesetJobs(ctx, campaign.ID); err != nil {
 			t.Fatal(err)
@@ -607,11 +650,15 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if have, want := len(haveJobs), len(patches); have != want {
+		wantJobsCount := len(patches) - 1 // We filtered out one repository
+		if have, want := len(haveJobs), wantJobsCount; have != want {
 			t.Fatal("wrong number of changeset jobs created")
 		}
 
 		for _, job := range haveJobs {
+			if job.PatchID == filteredOutPatch.ID {
+				continue
+			}
 			if _, ok := patchesByID[job.PatchID]; !ok {
 				t.Fatalf("job %d has wrong patch id %d", job.ID, job.PatchID)
 			}
@@ -978,6 +1025,221 @@ func TestService(t *testing.T) {
 		_, _, err := svc.UpdateCampaign(ctx, args)
 		if err != ErrPatchSetDuplicate {
 			t.Fatal("no error even though another campaign has same patch set")
+		}
+	})
+
+	t.Run("EnqueueChangesetSync", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		campaign := testCampaign(user.ID, 0)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, campaign.ID, 0, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = []int64{changeset.ID}
+		if err = store.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		called := false
+		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+			if len(ids) != 1 && ids[0] != changeset.ID {
+				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
+			}
+			called = true
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		if !called {
+			t.Fatal("MockEnqueueChangesetSync not called")
+		}
+
+		// Repo filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		// should result in a not found error
+		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %s", err)
+		}
+	})
+
+	t.Run("AddChangesetsToCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, cf, clock)
+
+		campaign := testCampaign(user.ID, 0)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, 0, 98765, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset2 := testChangeset(rs[1].ID, 0, 12345, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset2); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign, err = svc.AddChangesetsToCampaign(ctx, campaign.ID, []int64{changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]int64{changeset.ID}, campaign.ChangesetIDs); diff != "" {
+			t.Fatalf("campaign.ChangesetIDs is wrong: %s", diff)
+		}
+
+		changeset, err = store.GetChangeset(ctx, GetChangesetOpts{ID: changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff([]int64{campaign.ID}, changeset.CampaignIDs); diff != "" {
+			t.Fatalf("changeset.CampaignIDs is wrong: %s", diff)
+		}
+
+		// Repo filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return []*types.Repo{}, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		_, err = svc.AddChangesetsToCampaign(ctx, campaign.ID, []int64{changeset2.ID})
+		if !errcode.IsNotFound(err) {
+			t.Fatalf("expected not-found error but got %s", err)
+		}
+	})
+
+	t.Run("CloseOpenChangesets", func(t *testing.T) {
+		changeset1 := testChangeset(rs[0].ID, 0, 121314, campaigns.ChangesetStateOpen)
+		changeset2 := testChangeset(rs[1].ID, 0, 141516, campaigns.ChangesetStateOpen)
+		if err = store.CreateChangesets(ctx, changeset1, changeset2); err != nil {
+			t.Fatal(err)
+		}
+
+		// Repo of changeset2 filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
+			for _, r := range repos {
+				if r.ID == changeset2.RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		fakeSource := &FakeChangesetSource{Err: nil}
+		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		svc.sourcer = sourcer
+
+		// Try to close open changesets
+		err := svc.CloseOpenChangesets(ctx, []*campaigns.Changeset{changeset1, changeset2})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Only changeset1 should be closed
+		if have, want := len(fakeSource.ClosedChangesets), 1; have != want {
+			t.Fatalf("ClosedChangesets has wrong length. want=%d, have=%d", want, have)
+		}
+
+		if have, want := fakeSource.ClosedChangesets[0].RepoID, changeset1.RepoID; have != want {
+			t.Fatalf("wrong changesets closed. want=%d, have=%d", want, have)
+		}
+	})
+
+	t.Run("RetryPublishCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patches := make([]*campaigns.Patch, 0, len(rs))
+		for _, repo := range rs {
+			patch := testPatch(patchSet.ID, repo.ID, now)
+			if err := store.CreatePatch(ctx, patch); err != nil {
+				t.Fatal(err)
+			}
+			patches = append(patches, patch)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+		if err = store.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
+		for _, p := range patches {
+			job := &campaigns.ChangesetJob{
+				CampaignID: campaign.ID,
+				PatchID:    p.ID,
+				StartedAt:  clock(),
+				FinishedAt: clock(),
+				Error:      "error",
+			}
+			if err = store.CreateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+			changesetJobs = append(changesetJobs, job)
+		}
+
+		// Repo of patches[0]/changesetJobs[0] filtered out by authzFilter
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
+			for _, r := range repos {
+				if r.ID == patches[0].RepoID {
+					continue
+				}
+				filtered = append(filtered, r)
+			}
+			return filtered, nil
+		}
+		t.Cleanup(func() { db.MockAuthzFilter = nil })
+
+		svc := NewServiceWithClock(store, cf, clock)
+		_, err := svc.RetryPublishCampaign(ctx, campaign.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reloadedJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(reloadedJobs), len(changesetJobs); have != want {
+			t.Fatalf("wrong number of failed changeset jobs. want=%d, have=%d", want, have)
+		}
+
+		for _, j := range reloadedJobs {
+			if j.PatchID == patches[0].ID {
+				if !j.UnsuccessfullyCompleted() {
+					t.Fatalf("ChangesetJob %d reset, but should have been filtered out", j.ID)
+				}
+				continue
+			}
+
+			if j.UnsuccessfullyCompleted() {
+				t.Fatalf("ChangesetJob %d not reset", j.ID)
+			}
 		}
 	})
 }
@@ -1632,13 +1894,17 @@ func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 }
 
 func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
-	pr := &github.PullRequest{State: string(state)}
-	return &campaigns.Changeset{
+	changeset := &campaigns.Changeset{
 		RepoID:              repoID,
-		CampaignIDs:         []int64{campaign},
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
-		Metadata:            pr,
+		Metadata:            &github.PullRequest{State: string(state)},
 		ExternalState:       state,
 	}
+
+	if campaign != 0 {
+		changeset.CampaignIDs = []int64{campaign}
+	}
+
+	return changeset
 }
