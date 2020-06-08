@@ -154,7 +154,7 @@ func TestRegexpCompile(t *testing.T) {
 	})
 }
 
-func Test_autoFix(t *testing.T) {
+func TestAutoFix(t *testing.T) {
 	t.Run("handcrafted cases", func(t *testing.T) {
 		tests := []struct {
 			pat  string

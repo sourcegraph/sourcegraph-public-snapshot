@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,7 +39,7 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	return "gitlab"
+	return extsvc.TypeGitLab
 }
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
@@ -53,7 +52,7 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
-func Test_authzProvidersFromConfig(t *testing.T) {
+func TestAuthzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
@@ -91,7 +90,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -129,7 +128,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.com",
 						},
 					}},
@@ -180,7 +179,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.com",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.com",
 							},
 						}, {
@@ -188,7 +187,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
 								DisplayName:  "GitLab.mine",
-								Type:         "gitlab",
+								Type:         extsvc.TypeGitLab,
 								Url:          "https://gitlab.mine",
 							},
 						},
@@ -242,7 +241,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -267,7 +266,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},
@@ -448,7 +447,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 					t.Fatalf("no providers")
 				}
 
-				if have[0].ServiceType() != bitbucketserver.ServiceType {
+				if have[0].ServiceType() != extsvc.TypeBitbucketServer {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
@@ -468,7 +467,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
 							DisplayName:  "GitLab",
-							Type:         "gitlab",
+							Type:         extsvc.TypeGitLab,
 							Url:          "https://gitlab.mine",
 						},
 					}},

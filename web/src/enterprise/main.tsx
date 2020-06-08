@@ -19,7 +19,7 @@ import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoContainerRoutes, enterpriseRepoRevContainerRoutes } from './repo/routes'
+import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
@@ -50,7 +50,7 @@ window.addEventListener('DOMContentLoaded', () => {
             orgAreaRoutes={enterpriseOrganizationAreaRoutes}
             orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
             repoContainerRoutes={enterpriseRepoContainerRoutes}
-            repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
+            repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
             repoSettingsSidebarItems={enterpriseRepoSettingsSidebarItems}

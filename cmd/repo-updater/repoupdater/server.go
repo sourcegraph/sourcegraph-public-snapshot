@@ -544,7 +544,20 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
+	messagesSummary := func() string {
+		cappedMsg := resp.Messages
+		if len(cappedMsg) > 10 {
+			cappedMsg = cappedMsg[:10]
+		}
+
+		jMsg, err := json.MarshalIndent(cappedMsg, "", " ")
+		if err != nil {
+			return "error summarizing messages for logging"
+		}
+		return string(jMsg)
+	}
+
+	log15.Debug("TRACE handleStatusMessages", "messages", log15.Lazy{Fn: messagesSummary})
 
 	respond(w, http.StatusOK, resp)
 }
@@ -657,8 +670,9 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		ExternalRepo: r.ExternalRepo,
 	}
 
-	switch strings.ToLower(r.ExternalRepo.ServiceType) {
-	case "github":
+	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	switch typ {
+	case extsvc.TypeGitHub:
 		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
 			Root:   ghrepo.URL,
@@ -666,7 +680,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
 		}
-	case "gitlab":
+	case extsvc.TypeGitLab:
 		proj := r.Metadata.(*gitlab.Project)
 		info.Links = &protocol.RepoLinks{
 			Root:   proj.WebURL,
@@ -674,7 +688,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
 		}
-	case "bitbucketserver":
+	case extsvc.TypeBitbucketServer:
 		repo := r.Metadata.(*bitbucketserver.Repo)
 		if len(repo.Links.Self) == 0 {
 			break
@@ -688,7 +702,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
 		}
-	case "awscodecommit":
+	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
 		if repo.ARN == "" {
 			break
@@ -699,9 +713,9 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			break
 		}
 		region := splittedARN[0]
-		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", region, repo.Name)
+		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s", region, repo.Name)
 		info.Links = &protocol.RepoLinks{
-			Root:   webURL,
+			Root:   webURL + "/browse",
 			Tree:   webURL + "/browse/{rev}/--/{path}",
 			Blob:   webURL + "/browse/{rev}/--/{path}",
 			Commit: webURL + "/commit/{commit}",

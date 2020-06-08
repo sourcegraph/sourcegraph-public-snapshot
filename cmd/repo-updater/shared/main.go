@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -78,7 +79,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
 			log15.Root(),
 			m,
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -127,7 +128,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			Kinds: []string{"GITHUB", "GITLAB"},
+			Kinds: []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {

@@ -181,13 +181,13 @@ const SiteSchemaJSON = `{
                   "description": "Description of the chosen repository and revision",
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["repo", "ref"],
+                  "required": ["repo", "rev"],
                   "properties": {
                     "repo": {
                       "description": "Repository name",
                       "type": "string"
                     },
-                    "ref": {
+                    "rev": {
                       "description": "Branch, tag, or commit hash",
                       "type": "string"
                     }
@@ -206,15 +206,15 @@ const SiteSchemaJSON = `{
               "revisions": [
                 {
                   "repo": "github.com/sourcegraph/sourcegraph",
-                  "ref": "3.15"
+                  "rev": "3.15"
                 },
                 {
                   "repo": "github.com/sourcegraph/lib1",
-                  "ref": "23edr233r"
+                  "rev": "23edr233r"
                 },
                 {
                   "repo": "github.com/sourcegraph/lib2",
-                  "ref": "2.4"
+                  "rev": "2.4"
                 }
               ]
             }
@@ -398,7 +398,7 @@ const SiteSchemaJSON = `{
         "enabled": {
           "description": "Whether syncing permissions in the background is enabled.",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "default": {
@@ -644,6 +644,18 @@ const SiteSchemaJSON = `{
       "description": "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
       "type": "string",
       "group": "Sourcegraph Enterprise license"
+    },
+    "dotcom": {
+      "description": "Configuration options for Sourcegraph.com only.",
+      "type": "object",
+      "properties": {
+        "slackLicenseExpirationWebhook": {
+          "description": "Slack webhook for upcoming license expiration notifications.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      },
+      "group": "Sourcegraph.com"
     },
     "auth.providers": {
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",

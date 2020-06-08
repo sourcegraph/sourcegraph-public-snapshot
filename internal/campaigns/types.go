@@ -1,16 +1,20 @@
 package campaigns
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -21,8 +25,8 @@ import (
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
-	github.ServiceType:          {},
-	bitbucketserver.ServiceType: {},
+	extsvc.TypeGitHub:          {},
+	extsvc.TypeBitbucketServer: {},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -32,7 +36,7 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// A PatchSet is a collection of multiple Patchs.
+// A PatchSet is a collection of multiple Patches.
 type PatchSet struct {
 	ID int64
 
@@ -69,8 +73,8 @@ type Patch struct {
 }
 
 // Clone returns a clone of a Patch.
-func (c *Patch) Clone() *Patch {
-	cc := *c
+func (p *Patch) Clone() *Patch {
+	cc := *p
 	return &cc
 }
 
@@ -153,6 +157,15 @@ func (c *Campaign) RemoveChangesetID(id int64) {
 	}
 }
 
+// GenChangesetBody creates the markdown to be used as the body of a changeset.
+// It includes a URL back to the campaign on the Sourcegraph instance.
+func (c *Campaign) GenChangesetBody(externalURL string) string {
+	campaignID := MarshalCampaignID(c.ID)
+	campaignURL := fmt.Sprintf("%s/campaigns/%s", externalURL, string(campaignID))
+	description := fmt.Sprintf("%s\n\n---\n\nThis pull request was created by a Sourcegraph campaign. [Click here to see the campaign](%s).", c.Description, campaignURL)
+	return description
+}
+
 // ChangesetState defines the possible states of a Changeset.
 type ChangesetState string
 
@@ -199,6 +212,7 @@ type BackgroundProcessStatus struct {
 	Total         int32
 	Completed     int32
 	Pending       int32
+	Failed        int32
 	ProcessState  BackgroundProcessState
 	ProcessErrors []string
 }
@@ -303,9 +317,20 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// Completed returns true for jobs that have completed, regardless of whether
+// that was successful or not.
+func (c *ChangesetJob) Completed() bool {
+	return !c.FinishedAt.IsZero()
+}
+
 // SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+	return c.Error == "" && c.ChangesetID != 0 && c.Completed()
+}
+
+// UnsuccessfullyCompleted returns true for jobs that have run, but failed.
+func (c *ChangesetJob) UnsuccessfullyCompleted() bool {
+	return c.Error != "" && c.ChangesetID == 0 && c.Completed()
 }
 
 // Reset sets the Error, StartedAt and FinishedAt fields to their respective
@@ -349,13 +374,13 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = github.ServiceType
+		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 	default:
@@ -1365,6 +1390,15 @@ type ChangesetSyncData struct {
 	ExternalUpdatedAt time.Time
 	// ExternalServiceID is the ID of the external service to which the changeset belongs
 	ExternalServiceIDs []int64
+}
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID("Campaign", id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func unixMilliToTime(ms int64) time.Time {

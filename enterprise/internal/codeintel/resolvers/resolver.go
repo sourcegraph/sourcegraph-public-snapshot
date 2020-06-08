@@ -5,18 +5,29 @@ import (
 	"encoding/base64"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
+	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	db                  db.DB
+	bundleManagerClient bundles.BundleManagerClient
+	codeIntelAPI        codeintelapi.CodeIntelAPI
+}
 
 var _ graphqlbackend.CodeIntelResolver = &Resolver{}
 
-func NewResolver() graphqlbackend.CodeIntelResolver {
-	return &Resolver{}
+func NewResolver(db db.DB, bundleManagerClient bundles.BundleManagerClient, codeIntelAPI codeintelapi.CodeIntelAPI) graphqlbackend.CodeIntelResolver {
+	return &Resolver{
+		db:                  db,
+		bundleManagerClient: bundleManagerClient,
+		codeIntelAPI:        codeIntelAPI,
+	}
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFUploadResolver, error) {
@@ -25,16 +36,12 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 		return nil, err
 	}
 
-	lsifUpload, err := client.DefaultClient.GetUpload(ctx, &struct {
-		UploadID int64
-	}{
-		UploadID: uploadID,
-	})
-	if err != nil {
+	upload, exists, err := r.db.GetUploadByID(ctx, int(uploadID))
+	if err != nil || !exists {
 		return nil, err
 	}
 
-	return &lsifUploadResolver{lsifUpload: lsifUpload}, nil
+	return &lsifUploadResolver{lsifUpload: upload}, nil
 }
 
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
@@ -48,10 +55,12 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 		return nil, err
 	}
 
-	err = client.DefaultClient.DeleteUpload(ctx, &struct {
-		UploadID int64
-	}{
-		UploadID: uploadID,
+	_, err = r.db.DeleteUploadByID(ctx, int(uploadID), func(repositoryID int) (string, error) {
+		tipCommit, err := gitserver.Head(ctx, r.db, repositoryID)
+		if err != nil {
+			return "", errors.Wrap(err, "gitserver.Head")
+		}
+		return tipCommit, nil
 	})
 	if err != nil {
 		return nil, err
@@ -87,32 +96,25 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 		opt.NextURL = &nextURL
 	}
 
-	return &lsifUploadConnectionResolver{opt: opt}, nil
+	return &lsifUploadConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	uploads, err := client.DefaultClient.Exists(ctx, &struct {
-		RepoID api.RepoID
-		Commit api.CommitID
-		Path   string
-	}{
-		RepoID: args.Repository.Type().ID,
-		Commit: args.Commit,
-		Path:   args.Path,
-	})
-
+	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(uploads) == 0 {
+	if len(dumps) == 0 {
 		return nil, nil
 	}
 
 	return &lsifQueryResolver{
-		repositoryResolver: args.Repository,
-		commit:             args.Commit,
-		path:               args.Path,
-		uploads:            uploads,
+		db:                  r.db,
+		bundleManagerClient: r.bundleManagerClient,
+		codeIntelAPI:        r.codeIntelAPI,
+		repositoryResolver:  args.Repository,
+		commit:              args.Commit,
+		path:                args.Path,
+		uploads:             dumps,
 	}, nil
 }

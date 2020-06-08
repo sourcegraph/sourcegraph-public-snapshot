@@ -83,7 +83,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					description: "1 account, matches",
 					user:        &types.User{ID: 123},
 					current:     []*extsvc.Account{acct(t, 1, "saml", "https://okta.mine/", "bl", "")},
-					expMine:     acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "many accounts, none match",
@@ -103,7 +103,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 						acct(t, 1, "nomatch", "https://okta.mine/", "bl", ""),
 						acct(t, 1, "saml", "https://okta.mine/", "bl", ""),
 					},
-					expMine: acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
+					expMine: acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "no user",
@@ -124,7 +124,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "username match",
 					user:        &types.User{ID: 123, Username: "b.l"},
-					expMine:     acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "no username match",
@@ -173,7 +173,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					description: "1 authn provider matches",
 					user:        &types.User{ID: 123},
 					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl", "")},
-					expMine:     acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
+					expMine:     acct(t, 123, extsvc.TypeGitLab, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "0 authn providers match",
@@ -272,11 +272,11 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 	gitlab.MockListTree = gitlabMock.ListTree
 
 	repos := map[string]*types.Repo{
-		"u1/repo1":       repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"),
-		"u2/repo1":       repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"),
-		"u3/repo1":       repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"),
-		"internal/repo1": repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"),
-		"public/repo1":   repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"),
+		"u1/repo1":       repo("u1/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "10"),
+		"u2/repo1":       repo("u2/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "20"),
+		"u3/repo1":       repo("u3/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "30"),
+		"internal/repo1": repo("internal/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "981"),
+		"public/repo1":   repo("public/repo1", extsvc.TypeGitLab, "https://gitlab.mine/", "991"),
 	}
 
 	tests := []test{

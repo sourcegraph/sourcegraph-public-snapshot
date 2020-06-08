@@ -9,12 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
-func Test_parseConfig(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
@@ -42,7 +42,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://gitlab.com",
 					},
 				}},
@@ -52,7 +52,7 @@ func Test_parseConfig(t *testing.T) {
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://gitlab.com",
 				}: provider("https://gitlab.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
@@ -75,7 +75,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://gitlab.com",
 					},
 				}, {
@@ -83,7 +83,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
 						DisplayName:  "GitLab Enterprise",
-						Type:         "gitlab",
+						Type:         extsvc.TypeGitLab,
 						Url:          "https://mycompany.com",
 					},
 				}},
@@ -93,7 +93,7 @@ func Test_parseConfig(t *testing.T) {
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
 					DisplayName:  "GitLab",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://gitlab.com",
 				}: provider("https://gitlab.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
@@ -109,7 +109,7 @@ func Test_parseConfig(t *testing.T) {
 					ClientID:     "my-client-id-2",
 					ClientSecret: "my-client-secret-2",
 					DisplayName:  "GitLab Enterprise",
-					Type:         "gitlab",
+					Type:         extsvc.TypeGitLab,
 					Url:          "https://mycompany.com",
 				}: provider("https://mycompany.com/", oauth2.Config{
 					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
@@ -159,7 +159,7 @@ func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 		OAuth2Config: oauth2Config,
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
-		ServiceType:  gitlab.ServiceType,
+		ServiceType:  extsvc.TypeGitLab,
 	}
 	return &oauth.Provider{ProviderOp: op}
 }

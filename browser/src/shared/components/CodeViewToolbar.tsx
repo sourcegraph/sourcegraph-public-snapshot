@@ -7,12 +7,12 @@ import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { FileInfoWithContents } from '../../libs/code_intelligence/code_views'
+import { FileInfoWithContents } from '../code-hosts/shared/codeViews'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
-import { SignInButton } from '../../libs/code_intelligence/SignInButton'
+import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 
 export interface ButtonProps {
     className?: string
@@ -59,7 +59,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             scope={props.scope}
         />{' '}
         {isErrorLike(props.fileInfoOrError) ? (
-            failedWithHTTPStatus(props.fileInfoOrError, 401) ? (
+            isHTTPAuthError(props.fileInfoOrError) ? (
                 <SignInButton
                     sourcegraphURL={props.sourcegraphURL}
                     onSignInClose={props.onSignInClose}
@@ -80,15 +80,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                 sourcegraphURL: props.sourcegraphURL,
                                 repoName: props.fileInfoOrError.baseRepoName || props.fileInfoOrError.repoName,
                                 filePath: props.fileInfoOrError.baseFilePath || props.fileInfoOrError.filePath,
-                                rev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
+                                revision: props.fileInfoOrError.baseRevision || props.fileInfoOrError.baseCommitID,
                                 query: {
                                     diff: {
-                                        rev: props.fileInfoOrError.baseCommitID,
+                                        revision: props.fileInfoOrError.baseCommitID,
                                     },
                                 },
                                 commit: {
-                                    baseRev: props.fileInfoOrError.baseRev || props.fileInfoOrError.baseCommitID,
-                                    headRev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                    baseRev: props.fileInfoOrError.baseRevision || props.fileInfoOrError.baseCommitID,
+                                    headRev: props.fileInfoOrError.revision || props.fileInfoOrError.commitID,
                                 },
                             }}
                         />
@@ -109,7 +109,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                                         sourcegraphURL: props.sourcegraphURL,
                                         repoName: props.fileInfoOrError.repoName,
                                         filePath: props.fileInfoOrError.filePath,
-                                        rev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                        revision: props.fileInfoOrError.revision || props.fileInfoOrError.commitID,
                                     }}
                                 />
                             </li>

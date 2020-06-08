@@ -2,18 +2,15 @@ import * as comlink from 'comlink'
 import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
-import { EndpointPair } from '../../platform/context'
+import { EndpointPair, PlatformContext } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
-import { ClientCommands } from './api/commands'
-import { ClientConfiguration } from './api/configuration'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
-import { ClientWorkspace } from './api/workspace'
 import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
@@ -27,6 +24,7 @@ import {
 import { TextModelUpdate } from './services/modelService'
 import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
+import { initMainThreadAPI } from './mainthread-api'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -56,7 +54,8 @@ export interface ActivatedExtension {
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
     services: Services,
-    initData: InitData
+    initData: InitData,
+    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
 ): Promise<Unsubscribable> {
     const subscription = new Subscription()
 
@@ -67,9 +66,6 @@ export async function createExtensionHostClientConnection(
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
     const proxy = await initializeExtensionHost(initData)
-
-    const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
-    subscription.add(clientConfiguration)
 
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
@@ -101,14 +97,14 @@ export async function createExtensionHostClientConnection(
     )
 
     const clientWindows = new ClientWindows(
-        (params: ShowNotificationParams) => services.notifications.showMessages.next({ ...params }),
-        (params: ShowMessageRequestParams) =>
+        (parameters: ShowNotificationParams) => services.notifications.showMessages.next({ ...parameters }),
+        (parameters: ShowMessageRequestParams) =>
             new Promise<MessageActionItem | null>(resolve => {
-                services.notifications.showMessageRequests.next({ ...params, resolve })
+                services.notifications.showMessageRequests.next({ ...parameters, resolve })
             }),
-        (params: ShowInputParams) =>
+        (parameters: ShowInputParams) =>
             new Promise<string | null>(resolve => {
-                services.notifications.showInputs.next({ ...params, resolve })
+                services.notifications.showInputs.next({ ...parameters, resolve })
             }),
         ({ title }: ProgressOptions) => {
             const reporter = new Subject<Progress>()
@@ -135,23 +131,24 @@ export async function createExtensionHostClientConnection(
         services.completionItems
     )
     const clientSearch = new ClientSearch(services.queryTransformer)
-    const clientCommands = new ClientCommands(services.commands)
-    subscription.add(new ClientWorkspace(proxy.workspace, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
+
+    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext, services)
+
+    subscription.add(apiSubscriptions)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
         context: clientContext,
         search: clientSearch,
-        configuration: clientConfiguration,
         languageFeatures: clientLanguageFeatures,
-        commands: clientCommands,
         windows: clientWindows,
         codeEditor: clientCodeEditor,
         views: clientViews,
         content: clientContent,
+        ...newAPI,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

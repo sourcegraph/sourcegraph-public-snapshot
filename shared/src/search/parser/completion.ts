@@ -47,9 +47,9 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
     })
     // Set a sortText so that filter type suggestions
     // are shown before dynamic suggestions.
-    .map((completionItem, idx) => ({
+    .map((completionItem, index) => ({
         ...completionItem,
-        sortText: `0${idx}`,
+        sortText: `0${index}`,
     }))
 
 const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
@@ -239,7 +239,7 @@ export async function getCompletionItems(
             return null
         }
         if (resolvedFilter.definition.suggestions) {
-            if (resolvedFilter.definition.suggestions instanceof Array) {
+            if (Array.isArray(resolvedFilter.definition.suggestions)) {
                 return {
                     suggestions: resolvedFilter.definition.suggestions.map(label => ({
                         label,
@@ -259,6 +259,14 @@ export async function getCompletionItems(
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,
+                        // Set the current value as filterText, so that all dynamic suggestions
+                        // returned by the server are displayed. otherwise, if the current filter value
+                        // is a regex pattern, Monaco's filtering might hide some suggestions.
+                        filterText:
+                            filterValue &&
+                            (filterValue?.token.type === 'literal'
+                                ? filterValue.token.value
+                                : filterValue.token.quotedValue),
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                     })),
             }

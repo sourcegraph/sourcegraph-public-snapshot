@@ -39,9 +39,9 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
                 {publishersOrError === 'loading' ? (
                     <option disabled={true}>Loading...</option>
                 ) : (
-                    publishersOrError.map(p => (
-                        <option key={p.id} value={p.id}>
-                            {publisherName(p)}
+                    publishersOrError.map(publisher => (
+                        <option key={publisher.id} value={publisher.id}>
+                            {publisherName(publisher)}
                         </option>
                     ))
                 )}

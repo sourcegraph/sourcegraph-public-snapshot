@@ -11,11 +11,11 @@ import (
 	libhoney "github.com/honeycombio/libhoney-go"
 )
 
-var writeKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
+var apiKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
 
 // Enabled returns true if honeycomb has been configured to run.
 func Enabled() bool {
-	return writeKey != ""
+	return apiKey != ""
 }
 
 // Event creates an event for logging to dataset. Event.Send will only work if
@@ -34,15 +34,22 @@ func Builder(dataset string) *libhoney.Builder {
 }
 
 func init() {
-	if writeKey == "" {
+	if apiKey == "" {
 		return
 	}
 	err := libhoney.Init(libhoney.Config{
-		WriteKey: writeKey,
+		APIKey: apiKey,
+		// Send 1 in 4 events. This is hardcoded since we only use this for
+		// Sourcegraph.com. 2020-05-29 We are currently at the top tier for
+		// honeycomb (before enterprise) and using double our quota. This
+		// gives us room to grow. If you find we keep bumping this / missing
+		// data we care about we can look into more dynamic ways to sample in
+		// our application code.
+		SampleRate: 4,
 	})
 	if err != nil {
 		log.Println("Failed to init libhoney:", err)
-		writeKey = ""
+		apiKey = ""
 		return
 	}
 	// HOSTNAME is the name of the pod on kubernetes.

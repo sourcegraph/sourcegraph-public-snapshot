@@ -7,4 +7,10 @@ export const enterpriseRepoSettingsSidebarItems: RepoSettingsSideBarItems = [
         to: '/code-intelligence',
         label: 'Code intelligence',
     },
+    {
+        to: '/permissions',
+        exact: true,
+        label: 'Permissions',
+        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
+    },
 ]

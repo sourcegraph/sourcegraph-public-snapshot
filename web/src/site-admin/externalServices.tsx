@@ -2,7 +2,7 @@ import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import AmazonIcon from 'mdi-react/AmazonIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
@@ -489,7 +489,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITHUB,
     title: 'GitHub.com',
-    icon: GithubCircleIcon,
+    icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     instructions: githubInstructions(false),

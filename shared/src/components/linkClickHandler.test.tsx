@@ -12,7 +12,8 @@ describe('createLinkClickHandler', () => {
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
 
-        const root = document.body.appendChild(document.createElement('div'))
+        const root = document.createElement('div')
+        document.body.append(root)
         ReactDOM.render(
             <div onClick={createLinkClickHandler(history)}>
                 <a href="https://sourcegraph.test/else/where">Test</a>
@@ -40,7 +41,8 @@ describe('createLinkClickHandler', () => {
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
 
-        const root = document.body.appendChild(document.createElement('div'))
+        const root = document.createElement('div')
+        document.body.append(root)
         ReactDOM.render(
             <div onClick={createLinkClickHandler(history)}>
                 <a href="https://github.com/some/where">Test</a>

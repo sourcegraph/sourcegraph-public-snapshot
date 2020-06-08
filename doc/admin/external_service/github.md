@@ -20,7 +20,7 @@ There are four fields for configuring which repositories are mirrored/synchroniz
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
 - [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ## GitHub API token and access
@@ -34,7 +34,7 @@ No token scopes are required if you only want to sync public repositories and do
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
 - `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
-- `repo`, `read:org`, and `read:discussion` to use [Campaigns](../../user/campaigns/index.md) with GitHub repositories.
+- `repo`, `read:org`, and `read:discussion` to use [campaigns](../../user/campaigns/index.md) with GitHub repositories.
 
 >NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
 
@@ -48,7 +48,7 @@ Internal rate limiting can be configured to limit the rate at which requests are
 
 If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising [Campaign](../../user/campaigns/index.md) changesets.
+**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../user/campaigns/index.md) changesets.
 
 ## Repository permissions
 
@@ -102,7 +102,7 @@ GitHub connections support the following configuration options, which are specif
 
 ### RepositoryQuery returns first 1000 results only
 
-GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
+GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three pre-defined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
 
 ```jsonx
 {

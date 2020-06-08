@@ -6,7 +6,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from './Button'
+import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
 import classNames from 'classnames'
 
 interface Props extends SourcegraphIconButtonProps, PlatformContextProps<'requestGraphQL'> {
@@ -47,8 +47,8 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                                 // Only include the relevant file diff.
                                 nodes: fileDiff.nodes.filter(node => node.oldPath === this.props.openProps.filePath),
                             })),
-                            catchError(err => {
-                                console.error(err)
+                            catchError(error => {
+                                console.error(error)
                                 return [undefined]
                             })
                         )

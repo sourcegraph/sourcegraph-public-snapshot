@@ -3,9 +3,16 @@ import { RepoSettingsCodeIntelligencePage } from './RepoSettingsCodeIntelligence
 import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
 import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 import { RepoSettingsLsifUploadPage } from './RepoSettingsLsifUploadPage'
+import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
 
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
+    {
+        path: '/permissions',
+        exact: true,
+        render: props => <RepoSettingsPermissionsPage {...props} />,
+        condition: () => !!window.context.site['permissions.backgroundSync']?.enabled,
+    },
     {
         path: '/code-intelligence',
         exact: true,

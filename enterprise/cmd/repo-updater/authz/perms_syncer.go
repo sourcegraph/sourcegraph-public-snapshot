@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,12 +14,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -35,6 +38,8 @@ type PermsSyncer struct {
 	permsStore *edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
+	// The rate limit registry for code hosts.
+	rateLimiterRegistry *repos.RateLimiterRegistry
 	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
@@ -53,13 +58,15 @@ func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
+	rateLimiterRegistry *repos.RateLimiterRegistry,
 ) *PermsSyncer {
 	s := &PermsSyncer{
-		queue:            newRequestQueue(),
-		reposStore:       reposStore,
-		permsStore:       permsStore,
-		clock:            clock,
-		scheduleInterval: time.Minute,
+		queue:               newRequestQueue(),
+		reposStore:          reposStore,
+		permsStore:          permsStore,
+		clock:               clock,
+		rateLimiterRegistry: rateLimiterRegistry,
+		scheduleInterval:    time.Minute,
 	}
 	return s
 }
@@ -170,6 +177,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
+		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+			return errors.Wrap(err, "wait for rate limiter")
+		}
+
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// Process partial results if this is an initial fetch.
@@ -244,14 +255,33 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	provider := s.providers()[repo.ExternalRepo.ServiceID]
 	if provider == nil {
-		// We have no authz provider configured for this repository.
-		return nil
+		// We have no authz provider configured for this private repository.
+		// However, we need to upsert the dummy record in order to prevent
+		// scheduler keep scheduling this repository.
+		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  int32(repoID),
+			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+			UserIDs: roaring.NewBitmap(),
+		}), "set repository permissions")
+	}
+
+	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+		return errors.Wrap(err, "wait for rate limiter")
 	}
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	})
+
+	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
+	// when the owner of the token only has READ access. However, we don't want to fail entirely
+	// so the scheduler won't keep trying to fetch permissions of this same repository.
+	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+		log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
+		err = nil
+	}
+
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
@@ -323,7 +353,23 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
-	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name)
+	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
+	return nil
+}
+
+// waitForRateLimit blocks until rate limit permits n events to happen. It returns
+// an error if n exceeds the limiter's burst size, the context is canceled, or the
+// expected wait time exceeds the context's deadline. The burst limit is ignored if
+// the rate limit is Inf.
+func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int) error {
+	if s.rateLimiterRegistry == nil {
+		return nil
+	}
+
+	rl := s.rateLimiterRegistry.GetRateLimiter(serviceID)
+	if err := rl.WaitN(ctx, n); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -557,7 +603,9 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		if !globals.PermissionsBackgroundSync().Enabled {
+		// Skip if not enabled or no authz provider is configured
+		if !globals.PermissionsBackgroundSync().Enabled ||
+			len(s.providers()) == 0 {
 			continue
 		}
 

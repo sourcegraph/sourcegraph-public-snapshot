@@ -19,17 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -49,13 +43,13 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
 
-		cf, save := newGithubClientFactory(t, "github-webhooks")
+		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
 		extSvc := &repos.ExternalService{
-			Kind:        "GITHUB",
+			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
@@ -137,7 +131,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := extsvc.WebhookURL(github.ServiceType, extSvc.ID, "https://example.com/")
+						u := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/")
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
@@ -199,13 +193,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
 
-		cf, save := newGithubClientFactory(t, "bitbucket-webhooks")
+		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
 		extSvc := &repos.ExternalService{
-			Kind:        "BITBUCKETSERVER",
+			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: marshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
@@ -298,7 +292,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := extsvc.WebhookURL(bitbucketserver.ServiceType, extSvc.ID, "https://example.com/")
+						u := extsvc.WebhookURL(extsvc.TypeBitbucketServer, extSvc.ID, "https://example.com/")
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
@@ -410,136 +404,6 @@ func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	return tc
 }
 
-func TestBitbucketWebhookUpsert(t *testing.T) {
-	testCases := []struct {
-		name    string
-		con     *schema.BitbucketServerConnection
-		secrets map[int64]string
-		expect  []string
-	}{
-		{
-			name: "No existing secret",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
-					},
-				},
-			},
-			secrets: map[int64]string{},
-			expect:  []string{"POST"},
-		},
-		{
-			name: "existing secret matches",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
-					},
-				},
-			},
-			secrets: map[int64]string{
-				1: "secret",
-			},
-			expect: []string{},
-		},
-		{
-			name: "existing secret does not match matches",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "secret",
-					},
-				},
-			},
-			secrets: map[int64]string{
-				1: "old",
-			},
-			expect: []string{"POST"},
-		},
-		{
-			name: "secret removed",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
-					},
-				},
-			},
-			secrets: map[int64]string{
-				1: "old",
-			},
-			expect: []string{"DELETE"},
-		},
-		{
-			name: "secret removed, no history",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
-					},
-				},
-			},
-			secrets: map[int64]string{},
-			expect:  []string{"DELETE"},
-		},
-		{
-			name: "secret removed, with history",
-			con: &schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Permissions: "",
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
-						Secret: "",
-					},
-				},
-			},
-			secrets: map[int64]string{
-				1: "",
-			},
-			expect: []string{},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			rec := new(requestRecorder)
-			h := NewBitbucketServerWebhook(nil, nil, time.Now, "testhook")
-			h.secrets = tc.secrets
-			h.httpClient = rec
-
-			err := h.syncWebhook(1, tc.con, "http://example.com/")
-			if err != nil {
-				t.Fatal(err)
-			}
-			methods := make([]string, len(rec.requests))
-			for i := range rec.requests {
-				methods[i] = rec.requests[i].Method
-			}
-			if diff := cmp.Diff(tc.expect, methods); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-type requestRecorder struct {
-	requests []*http.Request
-}
-
-func (r *requestRecorder) Do(req *http.Request) (*http.Response, error) {
-	r.requests = append(r.requests, req)
-	return &http.Response{
-		Status:     http.StatusText(http.StatusOK),
-		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(strings.NewReader("")),
-	}, nil
-}
-
 func sign(t *testing.T, message, secret []byte) string {
 	t.Helper()
 
@@ -562,37 +426,4 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
-}
-
-func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
-
-	return hc, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
 }

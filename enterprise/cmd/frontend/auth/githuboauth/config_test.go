@@ -7,12 +7,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	githubcodehost "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
-func Test_parseConfig(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
@@ -39,7 +39,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitHub",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://github.com",
 						AllowOrgs:    []string{"myorg"},
 					},
@@ -51,7 +51,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitHub",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://github.com",
 						AllowOrgs:    []string{"myorg"},
 					},
@@ -75,7 +75,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitHub",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://github.com",
 						AllowOrgs:    []string{"myorg"},
 					},
@@ -84,7 +84,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
 						DisplayName:  "GitHub Enterprise",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://mycompany.com",
 					},
 				}},
@@ -95,7 +95,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitHub",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://github.com",
 						AllowOrgs:    []string{"myorg"},
 					},
@@ -114,7 +114,7 @@ func Test_parseConfig(t *testing.T) {
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
 						DisplayName:  "GitHub Enterprise",
-						Type:         "github",
+						Type:         extsvc.TypeGitHub,
 						Url:          "https://mycompany.com",
 					},
 					Provider: provider("https://mycompany.com/", oauth2.Config{
@@ -160,7 +160,7 @@ func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 		OAuth2Config: oauth2Config,
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
-		ServiceType:  githubcodehost.ServiceType,
+		ServiceType:  extsvc.TypeGitHub,
 	}
 	return &oauth.Provider{ProviderOp: op}
 }

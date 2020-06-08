@@ -19,8 +19,8 @@ export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegis
      * provider result is omitted from the emission of the observable (the observable does not emit
      * the error).
      */
-    public getCompletionItems(params: TextDocumentPositionParams): Observable<CompletionList | null> {
-        return getCompletionItems(this.providersForDocument(params.textDocument), params)
+    public getCompletionItems(parameters: TextDocumentPositionParams): Observable<CompletionList | null> {
+        return getCompletionItems(this.providersForDocument(parameters.textDocument), parameters)
     }
 }
 
@@ -35,7 +35,7 @@ export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegis
  */
 export function getCompletionItems(
     providers: Observable<ProvideCompletionItemSignature[]>,
-    params: TextDocumentPositionParams,
+    parameters: TextDocumentPositionParams,
     logErrors = true
 ): Observable<CompletionList | null> {
     return providers.pipe(
@@ -43,10 +43,10 @@ export function getCompletionItems(
             combineLatestOrDefault(
                 providers.map(provider =>
                     from(
-                        provider(params).pipe(
-                            catchError(err => {
+                        provider(parameters).pipe(
+                            catchError(error => {
                                 if (logErrors) {
-                                    console.error(err)
+                                    console.error(error)
                                 }
                                 return [null]
                             })
@@ -63,9 +63,7 @@ export function getCompletionItems(
 }
 
 function mergeCompletionLists(values: (CompletionList | null | undefined)[]): CompletionList | null {
-    const items = values
-        .filter(isDefined)
-        .map(({ items }) => items)
-        .flat()
+    const items = values.filter(isDefined).flatMap(({ items }) => items)
+
     return items.length > 0 ? { items } : null
 }

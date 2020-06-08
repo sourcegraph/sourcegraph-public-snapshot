@@ -313,7 +313,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		)),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          strconv.Itoa(repo.ID),
-			ServiceType: bitbucketserver.ServiceType,
+			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
 		Description: repo.Name,

@@ -388,13 +388,35 @@ func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
-	n, ok := r.Node.(ExternalChangesetResolver)
-	return n, ok
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToExternalChangeset()
+}
+
+func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
+	n, ok := r.Node.(ChangesetResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToHiddenExternalChangeset()
 }
 
 func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
-	n, ok := r.Node.(PatchResolver)
-	return n, ok
+	n, ok := r.Node.(PatchInterfaceResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToPatch()
+}
+
+func (r *NodeResolver) ToHiddenPatch() (HiddenPatchResolver, bool) {
+	n, ok := r.Node.(PatchInterfaceResolver)
+	if !ok {
+		return nil, false
+	}
+	return n.ToHiddenPatch()
 }
 
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
@@ -524,7 +546,11 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.PatchSetByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
+	case "HiddenExternalChangeset":
+		return r.ChangesetByID(ctx, id)
 	case "Patch":
+		return r.PatchByID(ctx, id)
+	case "HiddenPatch":
 		return r.PatchByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {

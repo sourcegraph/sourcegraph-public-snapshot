@@ -64,11 +64,11 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         this.updateHighlights()
     }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(previousProps: Props): void {
         if (
-            this.props.value !== prevProps.value ||
-            this.props.highlights !== prevProps.highlights ||
-            this.props.lineClasses !== prevProps.lineClasses
+            this.props.value !== previousProps.value ||
+            this.props.highlights !== previousProps.highlights ||
+            this.props.lineClasses !== previousProps.lineClasses
         ) {
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState(this.getStateForProps(this.props))
@@ -79,13 +79,13 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
     private updateHighlights(): void {
         if (this.state.visible && this.tableContainerElement) {
             const rows = this.tableContainerElement.querySelectorAll('table tr')
-            for (const [i, row] of rows.entries()) {
-                const elem = row.firstChild as HTMLTableDataCellElement
-                const data = this.state.lines[i]
-                if (data.highlights && data.highlights.length) {
+            for (const [index, row] of rows.entries()) {
+                const element = row.firstChild as HTMLTableDataCellElement
+                const data = this.state.lines[index]
+                if (data.highlights && data.highlights.length > 0) {
                     // TODO(sqs): only supports 1 highlight per line
                     const highlight = data.highlights[0]
-                    highlightNode(elem, highlight.character, highlight.length)
+                    highlightNode(element, highlight.character, highlight.length)
                 }
             }
         }
@@ -127,8 +127,8 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
                 <code className={`decorated-text-lines code-excerpt ${this.props.className || ''}`}>
                     <table ref={this.setTableContainerElement}>
                         <tbody>
-                            {this.state.lines.map((line, i) => (
-                                <tr key={i} className={line.classNames ? line.classNames.join(' ') : undefined}>
+                            {this.state.lines.map((line, index) => (
+                                <tr key={index} className={line.classNames ? line.classNames.join(' ') : undefined}>
                                     <td className="code" onMouseDown={this.props.onMouseDown}>
                                         <LinkOrSpan to={line.url}>{line.value}</LinkOrSpan>
                                     </td>
@@ -145,7 +145,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         this.setState({ visible: true })
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null): void => {
-        this.tableContainerElement = ref
+    private setTableContainerElement = (reference: HTMLElement | null): void => {
+        this.tableContainerElement = reference
     }
 }

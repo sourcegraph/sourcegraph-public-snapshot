@@ -29,6 +29,9 @@ type MockDB struct {
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *DBDequeueFunc
+	// DequeueIndexFunc is an instance of a mock function object controlling
+	// the behavior of the method DequeueIndex.
+	DequeueIndexFunc *DBDequeueIndexFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *DBDoneFunc
@@ -41,6 +44,9 @@ type MockDB struct {
 	// GetDumpIDsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetDumpIDs.
 	GetDumpIDsFunc *DBGetDumpIDsFunc
+	// GetIndexByIDFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexByID.
+	GetIndexByIDFunc *DBGetIndexByIDFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *DBGetPackageFunc
@@ -56,15 +62,33 @@ type MockDB struct {
 	// HasCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method HasCommit.
 	HasCommitFunc *DBHasCommitFunc
+	// IndexQueueSizeFunc is an instance of a mock function object
+	// controlling the behavior of the method IndexQueueSize.
+	IndexQueueSizeFunc *DBIndexQueueSizeFunc
+	// IndexableRepositoriesFunc is an instance of a mock function object
+	// controlling the behavior of the method IndexableRepositories.
+	IndexableRepositoriesFunc *DBIndexableRepositoriesFunc
+	// InsertIndexFunc is an instance of a mock function object controlling
+	// the behavior of the method InsertIndex.
+	InsertIndexFunc *DBInsertIndexFunc
 	// InsertUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method InsertUpload.
 	InsertUploadFunc *DBInsertUploadFunc
+	// IsQueuedFunc is an instance of a mock function object controlling the
+	// behavior of the method IsQueued.
+	IsQueuedFunc *DBIsQueuedFunc
 	// MarkCompleteFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkComplete.
 	MarkCompleteFunc *DBMarkCompleteFunc
 	// MarkErroredFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkErrored.
 	MarkErroredFunc *DBMarkErroredFunc
+	// MarkIndexCompleteFunc is an instance of a mock function object
+	// controlling the behavior of the method MarkIndexComplete.
+	MarkIndexCompleteFunc *DBMarkIndexCompleteFunc
+	// MarkIndexErroredFunc is an instance of a mock function object
+	// controlling the behavior of the method MarkIndexErrored.
+	MarkIndexErroredFunc *DBMarkIndexErroredFunc
 	// MarkQueuedFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkQueued.
 	MarkQueuedFunc *DBMarkQueuedFunc
@@ -77,9 +101,15 @@ type MockDB struct {
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBRepoNameFunc
+	// RepoUsageStatisticsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoUsageStatistics.
+	RepoUsageStatisticsFunc *DBRepoUsageStatisticsFunc
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *DBResetStalledFunc
+	// ResetStalledIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method ResetStalledIndexes.
+	ResetStalledIndexesFunc *DBResetStalledIndexesFunc
 	// RollbackToSavepointFunc is an instance of a mock function object
 	// controlling the behavior of the method RollbackToSavepoint.
 	RollbackToSavepointFunc *DBRollbackToSavepointFunc
@@ -99,6 +129,10 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// UpdateDumpsVisibleFromTip.
 	UpdateDumpsVisibleFromTipFunc *DBUpdateDumpsVisibleFromTipFunc
+	// UpdateIndexableRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateIndexableRepository.
+	UpdateIndexableRepositoryFunc *DBUpdateIndexableRepositoryFunc
 	// UpdatePackageReferencesFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdatePackageReferences.
 	UpdatePackageReferencesFunc *DBUpdatePackageReferencesFunc
@@ -132,8 +166,13 @@ func NewMockDB() *MockDB {
 			},
 		},
 		DequeueFunc: &DBDequeueFunc{
-			defaultHook: func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+			defaultHook: func(context.Context) (db.Upload, db.DB, bool, error) {
 				return db.Upload{}, nil, false, nil
+			},
+		},
+		DequeueIndexFunc: &DBDequeueIndexFunc{
+			defaultHook: func(context.Context) (db.Index, db.DB, bool, error) {
+				return db.Index{}, nil, false, nil
 			},
 		},
 		DoneFunc: &DBDoneFunc{
@@ -154,6 +193,11 @@ func NewMockDB() *MockDB {
 		GetDumpIDsFunc: &DBGetDumpIDsFunc{
 			defaultHook: func(context.Context) ([]int, error) {
 				return nil, nil
+			},
+		},
+		GetIndexByIDFunc: &DBGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (db.Index, bool, error) {
+				return db.Index{}, false, nil
 			},
 		},
 		GetPackageFunc: &DBGetPackageFunc{
@@ -181,9 +225,29 @@ func NewMockDB() *MockDB {
 				return false, nil
 			},
 		},
-		InsertUploadFunc: &DBInsertUploadFunc{
-			defaultHook: func(context.Context, *db.Upload) (int, error) {
+		IndexQueueSizeFunc: &DBIndexQueueSizeFunc{
+			defaultHook: func(context.Context) (int, error) {
 				return 0, nil
+			},
+		},
+		IndexableRepositoriesFunc: &DBIndexableRepositoriesFunc{
+			defaultHook: func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error) {
+				return nil, nil
+			},
+		},
+		InsertIndexFunc: &DBInsertIndexFunc{
+			defaultHook: func(context.Context, db.Index) (int, error) {
+				return 0, nil
+			},
+		},
+		InsertUploadFunc: &DBInsertUploadFunc{
+			defaultHook: func(context.Context, db.Upload) (int, error) {
+				return 0, nil
+			},
+		},
+		IsQueuedFunc: &DBIsQueuedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
 			},
 		},
 		MarkCompleteFunc: &DBMarkCompleteFunc{
@@ -192,6 +256,16 @@ func NewMockDB() *MockDB {
 			},
 		},
 		MarkErroredFunc: &DBMarkErroredFunc{
+			defaultHook: func(context.Context, int, string, string) error {
+				return nil
+			},
+		},
+		MarkIndexCompleteFunc: &DBMarkIndexCompleteFunc{
+			defaultHook: func(context.Context, int) error {
+				return nil
+			},
+		},
+		MarkIndexErroredFunc: &DBMarkIndexErroredFunc{
 			defaultHook: func(context.Context, int, string, string) error {
 				return nil
 			},
@@ -216,7 +290,17 @@ func NewMockDB() *MockDB {
 				return "", nil
 			},
 		},
+		RepoUsageStatisticsFunc: &DBRepoUsageStatisticsFunc{
+			defaultHook: func(context.Context) ([]db.RepoUsageStatistics, error) {
+				return nil, nil
+			},
+		},
 		ResetStalledFunc: &DBResetStalledFunc{
+			defaultHook: func(context.Context, time.Time) ([]int, error) {
+				return nil, nil
+			},
+		},
+		ResetStalledIndexesFunc: &DBResetStalledIndexesFunc{
 			defaultHook: func(context.Context, time.Time) ([]int, error) {
 				return nil, nil
 			},
@@ -232,8 +316,8 @@ func NewMockDB() *MockDB {
 			},
 		},
 		SavepointFunc: &DBSavepointFunc{
-			defaultHook: func(context.Context, string) error {
-				return nil
+			defaultHook: func(context.Context) (string, error) {
+				return "", nil
 			},
 		},
 		TransactFunc: &DBTransactFunc{
@@ -248,6 +332,11 @@ func NewMockDB() *MockDB {
 		},
 		UpdateDumpsVisibleFromTipFunc: &DBUpdateDumpsVisibleFromTipFunc{
 			defaultHook: func(context.Context, int, string) error {
+				return nil
+			},
+		},
+		UpdateIndexableRepositoryFunc: &DBUpdateIndexableRepositoryFunc{
+			defaultHook: func(context.Context, db.UpdateableIndexableRepository) error {
 				return nil
 			},
 		},
@@ -283,6 +372,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		DequeueFunc: &DBDequeueFunc{
 			defaultHook: i.Dequeue,
 		},
+		DequeueIndexFunc: &DBDequeueIndexFunc{
+			defaultHook: i.DequeueIndex,
+		},
 		DoneFunc: &DBDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -294,6 +386,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		GetDumpIDsFunc: &DBGetDumpIDsFunc{
 			defaultHook: i.GetDumpIDs,
+		},
+		GetIndexByIDFunc: &DBGetIndexByIDFunc{
+			defaultHook: i.GetIndexByID,
 		},
 		GetPackageFunc: &DBGetPackageFunc{
 			defaultHook: i.GetPackage,
@@ -310,14 +405,32 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		HasCommitFunc: &DBHasCommitFunc{
 			defaultHook: i.HasCommit,
 		},
+		IndexQueueSizeFunc: &DBIndexQueueSizeFunc{
+			defaultHook: i.IndexQueueSize,
+		},
+		IndexableRepositoriesFunc: &DBIndexableRepositoriesFunc{
+			defaultHook: i.IndexableRepositories,
+		},
+		InsertIndexFunc: &DBInsertIndexFunc{
+			defaultHook: i.InsertIndex,
+		},
 		InsertUploadFunc: &DBInsertUploadFunc{
 			defaultHook: i.InsertUpload,
+		},
+		IsQueuedFunc: &DBIsQueuedFunc{
+			defaultHook: i.IsQueued,
 		},
 		MarkCompleteFunc: &DBMarkCompleteFunc{
 			defaultHook: i.MarkComplete,
 		},
 		MarkErroredFunc: &DBMarkErroredFunc{
 			defaultHook: i.MarkErrored,
+		},
+		MarkIndexCompleteFunc: &DBMarkIndexCompleteFunc{
+			defaultHook: i.MarkIndexComplete,
+		},
+		MarkIndexErroredFunc: &DBMarkIndexErroredFunc{
+			defaultHook: i.MarkIndexErrored,
 		},
 		MarkQueuedFunc: &DBMarkQueuedFunc{
 			defaultHook: i.MarkQueued,
@@ -331,8 +444,14 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		RepoNameFunc: &DBRepoNameFunc{
 			defaultHook: i.RepoName,
 		},
+		RepoUsageStatisticsFunc: &DBRepoUsageStatisticsFunc{
+			defaultHook: i.RepoUsageStatistics,
+		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: i.ResetStalled,
+		},
+		ResetStalledIndexesFunc: &DBResetStalledIndexesFunc{
+			defaultHook: i.ResetStalledIndexes,
 		},
 		RollbackToSavepointFunc: &DBRollbackToSavepointFunc{
 			defaultHook: i.RollbackToSavepoint,
@@ -351,6 +470,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		UpdateDumpsVisibleFromTipFunc: &DBUpdateDumpsVisibleFromTipFunc{
 			defaultHook: i.UpdateDumpsVisibleFromTip,
+		},
+		UpdateIndexableRepositoryFunc: &DBUpdateIndexableRepositoryFunc{
+			defaultHook: i.UpdateIndexableRepository,
 		},
 		UpdatePackageReferencesFunc: &DBUpdatePackageReferencesFunc{
 			defaultHook: i.UpdatePackageReferences,
@@ -808,15 +930,15 @@ func (c DBDeleteUploadByIDFuncCall) Results() []interface{} {
 // DBDequeueFunc describes the behavior when the Dequeue method of the
 // parent MockDB instance is invoked.
 type DBDequeueFunc struct {
-	defaultHook func(context.Context) (db.Upload, db.JobHandle, bool, error)
-	hooks       []func(context.Context) (db.Upload, db.JobHandle, bool, error)
+	defaultHook func(context.Context) (db.Upload, db.DB, bool, error)
+	hooks       []func(context.Context) (db.Upload, db.DB, bool, error)
 	history     []DBDequeueFuncCall
 	mutex       sync.Mutex
 }
 
 // Dequeue delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.DB, bool, error) {
 	r0, r1, r2, r3 := m.DequeueFunc.nextHook()(v0)
 	m.DequeueFunc.appendCall(DBDequeueFuncCall{v0, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -824,7 +946,7 @@ func (m *MockDB) Dequeue(v0 context.Context) (db.Upload, db.JobHandle, bool, err
 
 // SetDefaultHook sets function that is called when the Dequeue method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db.JobHandle, bool, error)) {
+func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db.DB, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -832,7 +954,7 @@ func (f *DBDequeueFunc) SetDefaultHook(hook func(context.Context) (db.Upload, db
 // Dequeue method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.JobHandle, bool, error)) {
+func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.DB, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -840,21 +962,21 @@ func (f *DBDequeueFunc) PushHook(hook func(context.Context) (db.Upload, db.JobHa
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBDequeueFunc) SetDefaultReturn(r0 db.Upload, r1 db.JobHandle, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) SetDefaultReturn(r0 db.Upload, r1 db.DB, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context) (db.Upload, db.DB, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBDequeueFunc) PushReturn(r0 db.Upload, r1 db.JobHandle, r2 bool, r3 error) {
-	f.PushHook(func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) PushReturn(r0 db.Upload, r1 db.DB, r2 bool, r3 error) {
+	f.PushHook(func(context.Context) (db.Upload, db.DB, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *DBDequeueFunc) nextHook() func(context.Context) (db.Upload, db.JobHandle, bool, error) {
+func (f *DBDequeueFunc) nextHook() func(context.Context) (db.Upload, db.DB, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -895,7 +1017,7 @@ type DBDequeueFuncCall struct {
 	Result0 db.Upload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 db.JobHandle
+	Result1 db.DB
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -913,6 +1035,117 @@ func (c DBDequeueFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBDequeueFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// DBDequeueIndexFunc describes the behavior when the DequeueIndex method of
+// the parent MockDB instance is invoked.
+type DBDequeueIndexFunc struct {
+	defaultHook func(context.Context) (db.Index, db.DB, bool, error)
+	hooks       []func(context.Context) (db.Index, db.DB, bool, error)
+	history     []DBDequeueIndexFuncCall
+	mutex       sync.Mutex
+}
+
+// DequeueIndex delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) DequeueIndex(v0 context.Context) (db.Index, db.DB, bool, error) {
+	r0, r1, r2, r3 := m.DequeueIndexFunc.nextHook()(v0)
+	m.DequeueIndexFunc.appendCall(DBDequeueIndexFuncCall{v0, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the DequeueIndex method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBDequeueIndexFunc) SetDefaultHook(hook func(context.Context) (db.Index, db.DB, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DequeueIndex method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBDequeueIndexFunc) PushHook(hook func(context.Context) (db.Index, db.DB, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBDequeueIndexFunc) SetDefaultReturn(r0 db.Index, r1 db.DB, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context) (db.Index, db.DB, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBDequeueIndexFunc) PushReturn(r0 db.Index, r1 db.DB, r2 bool, r3 error) {
+	f.PushHook(func(context.Context) (db.Index, db.DB, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *DBDequeueIndexFunc) nextHook() func(context.Context) (db.Index, db.DB, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBDequeueIndexFunc) appendCall(r0 DBDequeueIndexFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBDequeueIndexFuncCall objects describing
+// the invocations of this function.
+func (f *DBDequeueIndexFunc) History() []DBDequeueIndexFuncCall {
+	f.mutex.Lock()
+	history := make([]DBDequeueIndexFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBDequeueIndexFuncCall is an object that describes an invocation of
+// method DequeueIndex on an instance of MockDB.
+type DBDequeueIndexFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 db.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 db.DB
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBDequeueIndexFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBDequeueIndexFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
@@ -1347,6 +1580,117 @@ func (c DBGetDumpIDsFuncCall) Args() []interface{} {
 // invocation.
 func (c DBGetDumpIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBGetIndexByIDFunc describes the behavior when the GetIndexByID method of
+// the parent MockDB instance is invoked.
+type DBGetIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (db.Index, bool, error)
+	hooks       []func(context.Context, int) (db.Index, bool, error)
+	history     []DBGetIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexByID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GetIndexByID(v0 context.Context, v1 int) (db.Index, bool, error) {
+	r0, r1, r2 := m.GetIndexByIDFunc.nextHook()(v0, v1)
+	m.GetIndexByIDFunc.appendCall(DBGetIndexByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetIndexByID method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGetIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (db.Index, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexByID method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGetIndexByIDFunc) PushHook(hook func(context.Context, int) (db.Index, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGetIndexByIDFunc) SetDefaultReturn(r0 db.Index, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (db.Index, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGetIndexByIDFunc) PushReturn(r0 db.Index, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (db.Index, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBGetIndexByIDFunc) nextHook() func(context.Context, int) (db.Index, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGetIndexByIDFunc) appendCall(r0 DBGetIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGetIndexByIDFuncCall objects describing
+// the invocations of this function.
+func (f *DBGetIndexByIDFunc) History() []DBGetIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGetIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGetIndexByIDFuncCall is an object that describes an invocation of
+// method GetIndexByID on an instance of MockDB.
+type DBGetIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 db.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGetIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGetIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBGetPackageFunc describes the behavior when the GetPackage method of the
@@ -1923,18 +2267,341 @@ func (c DBHasCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// DBIndexQueueSizeFunc describes the behavior when the IndexQueueSize
+// method of the parent MockDB instance is invoked.
+type DBIndexQueueSizeFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []DBIndexQueueSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// IndexQueueSize delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) IndexQueueSize(v0 context.Context) (int, error) {
+	r0, r1 := m.IndexQueueSizeFunc.nextHook()(v0)
+	m.IndexQueueSizeFunc.appendCall(DBIndexQueueSizeFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IndexQueueSize
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBIndexQueueSizeFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IndexQueueSize method of the parent MockDB instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBIndexQueueSizeFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBIndexQueueSizeFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBIndexQueueSizeFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBIndexQueueSizeFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBIndexQueueSizeFunc) appendCall(r0 DBIndexQueueSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBIndexQueueSizeFuncCall objects describing
+// the invocations of this function.
+func (f *DBIndexQueueSizeFunc) History() []DBIndexQueueSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]DBIndexQueueSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBIndexQueueSizeFuncCall is an object that describes an invocation of
+// method IndexQueueSize on an instance of MockDB.
+type DBIndexQueueSizeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBIndexQueueSizeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBIndexQueueSizeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBIndexableRepositoriesFunc describes the behavior when the
+// IndexableRepositories method of the parent MockDB instance is invoked.
+type DBIndexableRepositoriesFunc struct {
+	defaultHook func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error)
+	hooks       []func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error)
+	history     []DBIndexableRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// IndexableRepositories delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDB) IndexableRepositories(v0 context.Context, v1 db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error) {
+	r0, r1 := m.IndexableRepositoriesFunc.nextHook()(v0, v1)
+	m.IndexableRepositoriesFunc.appendCall(DBIndexableRepositoriesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// IndexableRepositories method of the parent MockDB instance is invoked and
+// the hook queue is empty.
+func (f *DBIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IndexableRepositories method of the parent MockDB instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBIndexableRepositoriesFunc) PushHook(hook func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBIndexableRepositoriesFunc) SetDefaultReturn(r0 []db.IndexableRepository, r1 error) {
+	f.SetDefaultHook(func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBIndexableRepositoriesFunc) PushReturn(r0 []db.IndexableRepository, r1 error) {
+	f.PushHook(func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBIndexableRepositoriesFunc) nextHook() func(context.Context, db.IndexableRepositoryQueryOptions) ([]db.IndexableRepository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBIndexableRepositoriesFunc) appendCall(r0 DBIndexableRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBIndexableRepositoriesFuncCall objects
+// describing the invocations of this function.
+func (f *DBIndexableRepositoriesFunc) History() []DBIndexableRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBIndexableRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBIndexableRepositoriesFuncCall is an object that describes an invocation
+// of method IndexableRepositories on an instance of MockDB.
+type DBIndexableRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 db.IndexableRepositoryQueryOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []db.IndexableRepository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBIndexableRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBIndexableRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBInsertIndexFunc describes the behavior when the InsertIndex method of
+// the parent MockDB instance is invoked.
+type DBInsertIndexFunc struct {
+	defaultHook func(context.Context, db.Index) (int, error)
+	hooks       []func(context.Context, db.Index) (int, error)
+	history     []DBInsertIndexFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertIndex delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) InsertIndex(v0 context.Context, v1 db.Index) (int, error) {
+	r0, r1 := m.InsertIndexFunc.nextHook()(v0, v1)
+	m.InsertIndexFunc.appendCall(DBInsertIndexFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InsertIndex method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBInsertIndexFunc) SetDefaultHook(hook func(context.Context, db.Index) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertIndex method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBInsertIndexFunc) PushHook(hook func(context.Context, db.Index) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBInsertIndexFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, db.Index) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBInsertIndexFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, db.Index) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBInsertIndexFunc) nextHook() func(context.Context, db.Index) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBInsertIndexFunc) appendCall(r0 DBInsertIndexFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBInsertIndexFuncCall objects describing
+// the invocations of this function.
+func (f *DBInsertIndexFunc) History() []DBInsertIndexFuncCall {
+	f.mutex.Lock()
+	history := make([]DBInsertIndexFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBInsertIndexFuncCall is an object that describes an invocation of method
+// InsertIndex on an instance of MockDB.
+type DBInsertIndexFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 db.Index
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBInsertIndexFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBInsertIndexFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBInsertUploadFunc describes the behavior when the InsertUpload method of
 // the parent MockDB instance is invoked.
 type DBInsertUploadFunc struct {
-	defaultHook func(context.Context, *db.Upload) (int, error)
-	hooks       []func(context.Context, *db.Upload) (int, error)
+	defaultHook func(context.Context, db.Upload) (int, error)
+	hooks       []func(context.Context, db.Upload) (int, error)
 	history     []DBInsertUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertUpload delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
+func (m *MockDB) InsertUpload(v0 context.Context, v1 db.Upload) (int, error) {
 	r0, r1 := m.InsertUploadFunc.nextHook()(v0, v1)
 	m.InsertUploadFunc.appendCall(DBInsertUploadFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1942,7 +2609,7 @@ func (m *MockDB) InsertUpload(v0 context.Context, v1 *db.Upload) (int, error) {
 
 // SetDefaultHook sets function that is called when the InsertUpload method
 // of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1950,7 +2617,7 @@ func (f *DBInsertUploadFunc) SetDefaultHook(hook func(context.Context, *db.Uploa
 // InsertUpload method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (int, error)) {
+func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, db.Upload) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1959,7 +2626,7 @@ func (f *DBInsertUploadFunc) PushHook(hook func(context.Context, *db.Upload) (in
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, *db.Upload) (int, error) {
+	f.SetDefaultHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
@@ -1967,12 +2634,12 @@ func (f *DBInsertUploadFunc) SetDefaultReturn(r0 int, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBInsertUploadFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, *db.Upload) (int, error) {
+	f.PushHook(func(context.Context, db.Upload) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBInsertUploadFunc) nextHook() func(context.Context, *db.Upload) (int, error) {
+func (f *DBInsertUploadFunc) nextHook() func(context.Context, db.Upload) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2010,7 +2677,7 @@ type DBInsertUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *db.Upload
+	Arg1 db.Upload
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -2028,6 +2695,117 @@ func (c DBInsertUploadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBInsertUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBIsQueuedFunc describes the behavior when the IsQueued method of the
+// parent MockDB instance is invoked.
+type DBIsQueuedFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []DBIsQueuedFuncCall
+	mutex       sync.Mutex
+}
+
+// IsQueued delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) IsQueued(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.IsQueuedFunc.nextHook()(v0, v1, v2)
+	m.IsQueuedFunc.appendCall(DBIsQueuedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsQueued method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBIsQueuedFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsQueued method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBIsQueuedFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBIsQueuedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBIsQueuedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBIsQueuedFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBIsQueuedFunc) appendCall(r0 DBIsQueuedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBIsQueuedFuncCall objects describing the
+// invocations of this function.
+func (f *DBIsQueuedFunc) History() []DBIsQueuedFuncCall {
+	f.mutex.Lock()
+	history := make([]DBIsQueuedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBIsQueuedFuncCall is an object that describes an invocation of method
+// IsQueued on an instance of MockDB.
+type DBIsQueuedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBIsQueuedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBIsQueuedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2244,6 +3022,224 @@ func (c DBMarkErroredFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBMarkErroredFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBMarkIndexCompleteFunc describes the behavior when the MarkIndexComplete
+// method of the parent MockDB instance is invoked.
+type DBMarkIndexCompleteFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []DBMarkIndexCompleteFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkIndexComplete delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) MarkIndexComplete(v0 context.Context, v1 int) error {
+	r0 := m.MarkIndexCompleteFunc.nextHook()(v0, v1)
+	m.MarkIndexCompleteFunc.appendCall(DBMarkIndexCompleteFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MarkIndexComplete
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBMarkIndexCompleteFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkIndexComplete method of the parent MockDB instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBMarkIndexCompleteFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBMarkIndexCompleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBMarkIndexCompleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *DBMarkIndexCompleteFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBMarkIndexCompleteFunc) appendCall(r0 DBMarkIndexCompleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBMarkIndexCompleteFuncCall objects
+// describing the invocations of this function.
+func (f *DBMarkIndexCompleteFunc) History() []DBMarkIndexCompleteFuncCall {
+	f.mutex.Lock()
+	history := make([]DBMarkIndexCompleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBMarkIndexCompleteFuncCall is an object that describes an invocation of
+// method MarkIndexComplete on an instance of MockDB.
+type DBMarkIndexCompleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBMarkIndexCompleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBMarkIndexCompleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBMarkIndexErroredFunc describes the behavior when the MarkIndexErrored
+// method of the parent MockDB instance is invoked.
+type DBMarkIndexErroredFunc struct {
+	defaultHook func(context.Context, int, string, string) error
+	hooks       []func(context.Context, int, string, string) error
+	history     []DBMarkIndexErroredFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkIndexErrored delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) MarkIndexErrored(v0 context.Context, v1 int, v2 string, v3 string) error {
+	r0 := m.MarkIndexErroredFunc.nextHook()(v0, v1, v2, v3)
+	m.MarkIndexErroredFunc.appendCall(DBMarkIndexErroredFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MarkIndexErrored
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBMarkIndexErroredFunc) SetDefaultHook(hook func(context.Context, int, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkIndexErrored method of the parent MockDB instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBMarkIndexErroredFunc) PushHook(hook func(context.Context, int, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBMarkIndexErroredFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBMarkIndexErroredFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, string, string) error {
+		return r0
+	})
+}
+
+func (f *DBMarkIndexErroredFunc) nextHook() func(context.Context, int, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBMarkIndexErroredFunc) appendCall(r0 DBMarkIndexErroredFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBMarkIndexErroredFuncCall objects
+// describing the invocations of this function.
+func (f *DBMarkIndexErroredFunc) History() []DBMarkIndexErroredFuncCall {
+	f.mutex.Lock()
+	history := make([]DBMarkIndexErroredFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBMarkIndexErroredFuncCall is an object that describes an invocation of
+// method MarkIndexErrored on an instance of MockDB.
+type DBMarkIndexErroredFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBMarkIndexErroredFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBMarkIndexErroredFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -2689,6 +3685,112 @@ func (c DBRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// DBRepoUsageStatisticsFunc describes the behavior when the
+// RepoUsageStatistics method of the parent MockDB instance is invoked.
+type DBRepoUsageStatisticsFunc struct {
+	defaultHook func(context.Context) ([]db.RepoUsageStatistics, error)
+	hooks       []func(context.Context) ([]db.RepoUsageStatistics, error)
+	history     []DBRepoUsageStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoUsageStatistics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RepoUsageStatistics(v0 context.Context) ([]db.RepoUsageStatistics, error) {
+	r0, r1 := m.RepoUsageStatisticsFunc.nextHook()(v0)
+	m.RepoUsageStatisticsFunc.appendCall(DBRepoUsageStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoUsageStatistics
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Context) ([]db.RepoUsageStatistics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoUsageStatistics method of the parent MockDB instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]db.RepoUsageStatistics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBRepoUsageStatisticsFunc) SetDefaultReturn(r0 []db.RepoUsageStatistics, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]db.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBRepoUsageStatisticsFunc) PushReturn(r0 []db.RepoUsageStatistics, r1 error) {
+	f.PushHook(func(context.Context) ([]db.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBRepoUsageStatisticsFunc) nextHook() func(context.Context) ([]db.RepoUsageStatistics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoUsageStatisticsFunc) appendCall(r0 DBRepoUsageStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoUsageStatisticsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRepoUsageStatisticsFunc) History() []DBRepoUsageStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoUsageStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoUsageStatisticsFuncCall is an object that describes an invocation
+// of method RepoUsageStatistics on an instance of MockDB.
+type DBRepoUsageStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []db.RepoUsageStatistics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoUsageStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoUsageStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBResetStalledFunc describes the behavior when the ResetStalled method of
 // the parent MockDB instance is invoked.
 type DBResetStalledFunc struct {
@@ -2794,6 +3896,115 @@ func (c DBResetStalledFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBResetStalledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBResetStalledIndexesFunc describes the behavior when the
+// ResetStalledIndexes method of the parent MockDB instance is invoked.
+type DBResetStalledIndexesFunc struct {
+	defaultHook func(context.Context, time.Time) ([]int, error)
+	hooks       []func(context.Context, time.Time) ([]int, error)
+	history     []DBResetStalledIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// ResetStalledIndexes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) ResetStalledIndexes(v0 context.Context, v1 time.Time) ([]int, error) {
+	r0, r1 := m.ResetStalledIndexesFunc.nextHook()(v0, v1)
+	m.ResetStalledIndexesFunc.appendCall(DBResetStalledIndexesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResetStalledIndexes
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBResetStalledIndexesFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResetStalledIndexes method of the parent MockDB instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBResetStalledIndexesFunc) PushHook(hook func(context.Context, time.Time) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBResetStalledIndexesFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBResetStalledIndexesFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, time.Time) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBResetStalledIndexesFunc) nextHook() func(context.Context, time.Time) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBResetStalledIndexesFunc) appendCall(r0 DBResetStalledIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBResetStalledIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *DBResetStalledIndexesFunc) History() []DBResetStalledIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBResetStalledIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBResetStalledIndexesFuncCall is an object that describes an invocation
+// of method ResetStalledIndexes on an instance of MockDB.
+type DBResetStalledIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBResetStalledIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBResetStalledIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3032,23 +4243,23 @@ func (c DBSameRepoPagerFuncCall) Results() []interface{} {
 // DBSavepointFunc describes the behavior when the Savepoint method of the
 // parent MockDB instance is invoked.
 type DBSavepointFunc struct {
-	defaultHook func(context.Context, string) error
-	hooks       []func(context.Context, string) error
+	defaultHook func(context.Context) (string, error)
+	hooks       []func(context.Context) (string, error)
 	history     []DBSavepointFuncCall
 	mutex       sync.Mutex
 }
 
 // Savepoint delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Savepoint(v0 context.Context, v1 string) error {
-	r0 := m.SavepointFunc.nextHook()(v0, v1)
-	m.SavepointFunc.appendCall(DBSavepointFuncCall{v0, v1, r0})
-	return r0
+func (m *MockDB) Savepoint(v0 context.Context) (string, error) {
+	r0, r1 := m.SavepointFunc.nextHook()(v0)
+	m.SavepointFunc.appendCall(DBSavepointFuncCall{v0, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Savepoint method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context, string) error) {
+func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -3056,7 +4267,7 @@ func (f *DBSavepointFunc) SetDefaultHook(hook func(context.Context, string) erro
 // Savepoint method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBSavepointFunc) PushHook(hook func(context.Context, string) error) {
+func (f *DBSavepointFunc) PushHook(hook func(context.Context) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3064,21 +4275,21 @@ func (f *DBSavepointFunc) PushHook(hook func(context.Context, string) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBSavepointFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string) error {
-		return r0
+func (f *DBSavepointFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context) (string, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBSavepointFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string) error {
-		return r0
+func (f *DBSavepointFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context) (string, error) {
+		return r0, r1
 	})
 }
 
-func (f *DBSavepointFunc) nextHook() func(context.Context, string) error {
+func (f *DBSavepointFunc) nextHook() func(context.Context) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3114,24 +4325,24 @@ type DBSavepointFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBSavepointFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSavepointFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBTransactFunc describes the behavior when the Transact method of the
@@ -3454,6 +4665,113 @@ func (c DBUpdateDumpsVisibleFromTipFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUpdateDumpsVisibleFromTipFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUpdateIndexableRepositoryFunc describes the behavior when the
+// UpdateIndexableRepository method of the parent MockDB instance is
+// invoked.
+type DBUpdateIndexableRepositoryFunc struct {
+	defaultHook func(context.Context, db.UpdateableIndexableRepository) error
+	hooks       []func(context.Context, db.UpdateableIndexableRepository) error
+	history     []DBUpdateIndexableRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateIndexableRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) UpdateIndexableRepository(v0 context.Context, v1 db.UpdateableIndexableRepository) error {
+	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1)
+	m.UpdateIndexableRepositoryFunc.appendCall(DBUpdateIndexableRepositoryFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateIndexableRepository method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, db.UpdateableIndexableRepository) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateIndexableRepository method of the parent MockDB instance inovkes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, db.UpdateableIndexableRepository) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, db.UpdateableIndexableRepository) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBUpdateIndexableRepositoryFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, db.UpdateableIndexableRepository) error {
+		return r0
+	})
+}
+
+func (f *DBUpdateIndexableRepositoryFunc) nextHook() func(context.Context, db.UpdateableIndexableRepository) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUpdateIndexableRepositoryFunc) appendCall(r0 DBUpdateIndexableRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUpdateIndexableRepositoryFuncCall objects
+// describing the invocations of this function.
+func (f *DBUpdateIndexableRepositoryFunc) History() []DBUpdateIndexableRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUpdateIndexableRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUpdateIndexableRepositoryFuncCall is an object that describes an
+// invocation of method UpdateIndexableRepository on an instance of MockDB.
+type DBUpdateIndexableRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 db.UpdateableIndexableRepository
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUpdateIndexableRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

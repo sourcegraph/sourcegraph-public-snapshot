@@ -2,10 +2,38 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"sort"
 
 	"github.com/keegancsmith/sqlf"
 )
+
+// scanCommits scans pairs of commits/parentCommits from the return value of `*dbImpl.query`.
+func scanCommits(rows *sql.Rows, queryErr error) (_ map[string][]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	commits := map[string][]string{}
+	for rows.Next() {
+		var commit string
+		var parentCommit *string
+		if err := rows.Scan(&commit, &parentCommit); err != nil {
+			return nil, err
+		}
+
+		if _, ok := commits[commit]; !ok {
+			commits[commit] = nil
+		}
+
+		if parentCommit != nil {
+			commits[commit] = append(commits[commit], *parentCommit)
+		}
+	}
+
+	return commits, nil
+}
 
 // HasCommit determines if the given commit is known for the given repository.
 func (db *dbImpl) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
@@ -86,9 +114,26 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, repositoryID int, commits m
 		}
 	}
 
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		INSERT INTO lsif_commits (repository_id, "commit", parent_commit)
 		VALUES %s
 		ON CONFLICT DO NOTHING
 	`, sqlf.Join(rows, ",")))
+}
+
+// diff returns a slice containing the elements of left not present in right.
+func diff(left, right []string) []string {
+	rightSet := map[string]struct{}{}
+	for _, v := range right {
+		rightSet[v] = struct{}{}
+	}
+
+	var diff []string
+	for _, v := range left {
+		if _, ok := rightSet[v]; !ok {
+			diff = append(diff, v)
+		}
+	}
+
+	return diff
 }

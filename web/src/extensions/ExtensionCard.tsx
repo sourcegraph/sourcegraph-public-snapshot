@@ -27,8 +27,8 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 }
 
-const stopPropagation: React.MouseEventHandler<HTMLElement> = e => {
-    e.stopPropagation()
+const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
+    event.stopPropagation()
 }
 
 /** Displays an extension as a card. */
@@ -42,7 +42,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
             if (manifest?.icon) {
                 iconURL = new URL(manifest.icon)
             }
-        } catch (e) {
+        } catch {
             // noop
         }
 

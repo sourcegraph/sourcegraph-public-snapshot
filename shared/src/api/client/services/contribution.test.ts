@@ -99,7 +99,7 @@ describe('ContributionRegistry', () => {
             new ContributionRegistry(
                 createTestViewerService({}),
                 TEST_MODEL_SERVICE,
-                { data: of(EMPTY_SETTINGS_CASCADE) },
+                of(EMPTY_SETTINGS_CASCADE),
                 of({})
             ).entries.value
         ).toEqual([])
@@ -110,7 +110,7 @@ describe('ContributionRegistry', () => {
         const registry = new ContributionRegistry(
             createTestViewerService({}),
             TEST_MODEL_SERVICE,
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
@@ -133,7 +133,7 @@ describe('ContributionRegistry', () => {
         const registry = new ContributionRegistry(
             createTestViewerService({}),
             TEST_MODEL_SERVICE,
-            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of(EMPTY_SETTINGS_CASCADE),
             of({})
         )
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
@@ -166,7 +166,7 @@ describe('ContributionRegistry', () => {
                         activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
-                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of(EMPTY_SETTINGS_CASCADE),
                     of({})
                 )
                 type Marble = 'a' | 'b' | 'c'
@@ -199,7 +199,7 @@ describe('ContributionRegistry', () => {
                         activeViewerUpdates: of(undefined),
                     },
                     TEST_MODEL_SERVICE,
-                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of(EMPTY_SETTINGS_CASCADE),
                     of({})
                 )
                 type Marble = 'b' | 'c'
@@ -231,12 +231,12 @@ describe('ContributionRegistry', () => {
                                 activeViewerUpdates: of(undefined),
                             },
                             TEST_MODEL_SERVICE,
-                            {
-                                data: cold<SettingsCascadeOrError>('-a-b-|', {
-                                    a: EMPTY_SETTINGS_CASCADE,
-                                    b: EMPTY_SETTINGS_CASCADE,
-                                }),
-                            },
+
+                            cold<SettingsCascadeOrError>('-a-b-|', {
+                                a: EMPTY_SETTINGS_CASCADE,
+                                b: EMPTY_SETTINGS_CASCADE,
+                            }),
+
                             cold<Context>('-a-b-|', { a: { x: 1, y: 2 }, b: { x: 1, y: 1 } })
                         )
                     }
@@ -272,7 +272,7 @@ describe('ContributionRegistry', () => {
                         super(
                             createTestViewerService({}),
                             TEST_MODEL_SERVICE,
-                            { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
+                            cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }),
                             cold<Context>('a', {})
                         )
                     }

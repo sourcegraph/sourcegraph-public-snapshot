@@ -65,11 +65,11 @@ describe('SearchResultsList', () => {
         limitHit,
         resultCount,
         approximateResultCount: `${resultCount}`,
-        results: range(resultCount).map(i => ({
+        results: range(resultCount).map(index => ({
             ...RESULT,
             file: {
                 ...RESULT.file,
-                url: `${i}`,
+                url: `${index}`,
             },
         })),
     })

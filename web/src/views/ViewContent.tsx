@@ -31,9 +31,9 @@ export interface ViewContentProps
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewContent, ...props }) => (
     <div className="view-content">
-        {viewContent.map((content, i) =>
+        {viewContent.map((content, index) =>
             isMarkupContent(content) ? (
-                <React.Fragment key={i}>
+                <React.Fragment key={index}>
                     {content.kind === MarkupKind.Markdown || !content.kind ? (
                         <Markdown
                             className="view-content__markdown mb-1"
@@ -45,11 +45,11 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewCon
                     )}
                 </React.Fragment>
             ) : 'chart' in content ? (
-                <ChartViewContent key={i} content={content} history={props.history} />
+                <ChartViewContent key={index} content={content} history={props.history} />
             ) : content.component === 'QueryInput' ? (
                 <QueryInputInViewContent
                     {...props}
-                    key={i}
+                    key={index}
                     implicitQueryPrefix={
                         typeof content.props.implicitQueryPrefix === 'string' ? content.props.implicitQueryPrefix : ''
                     }

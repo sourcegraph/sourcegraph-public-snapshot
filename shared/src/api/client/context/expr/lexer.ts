@@ -96,21 +96,21 @@ export const OPERATOR_CHARS: { [ch: string]: OperatorTree } = {
     '&': { '&': true },
     '|': { '|': true },
     '=': {
-        '\x00': true,
+        '\u0000': true,
         '=': {
-            '\x00': true,
+            '\u0000': true,
             '=': true,
         },
     },
     '!': {
-        '\x00': true,
+        '\u0000': true,
         '=': {
-            '\x00': true,
+            '\u0000': true,
             '=': true,
         },
     },
-    '<': { '\x00': true, '=': true },
-    '>': { '\x00': true, '=': true },
+    '<': { '\u0000': true, '=': true },
+    '>': { '\u0000': true, '=': true },
     '^': true,
     '}': true,
     '(': true,
@@ -123,24 +123,24 @@ export const OPERATOR_CHARS: { [ch: string]: OperatorTree } = {
     '%': true,
 }
 
-function isWhiteSpace(ch: string): boolean {
-    return ch === '\u0009' || ch === ' ' || ch === '\u00A0'
+function isWhiteSpace(character: string): boolean {
+    return character === '\u0009' || character === ' ' || character === '\u00A0'
 }
 
-function isLetter(ch: string): boolean {
-    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+function isLetter(character: string): boolean {
+    return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z')
 }
 
-function isDecimalDigit(ch: string): boolean {
-    return ch >= '0' && ch <= '9'
+function isDecimalDigit(character: string): boolean {
+    return character >= '0' && character <= '9'
 }
 
-function isIdentifierStart(ch: string): boolean {
-    return ch === '_' || isLetter(ch)
+function isIdentifierStart(character: string): boolean {
+    return character === '_' || isLetter(character)
 }
 
-function isIdentifierPart(ch: string): boolean {
-    return isIdentifierStart(ch) || isDecimalDigit(ch) || ch === '.'
+function isIdentifierPart(character: string): boolean {
+    return isIdentifierStart(character) || isDecimalDigit(character) || character === '.'
 }
 
 /** Scans an expression. */
@@ -156,9 +156,9 @@ export class Lexer {
         return this._index
     }
 
-    public reset(str: string): void {
-        this.expression = str
-        this.length = str.length
+    public reset(string: string): void {
+        this.expression = string
+        this.length = string.length
         this._index = 0
         this.curlyStack = 0
     }
@@ -189,7 +189,7 @@ export class Lexer {
                 delete token.start
                 delete token.end
             }
-        } catch (e) {
+        } catch {
             token = undefined
         }
         this._index = savedIndex
@@ -228,18 +228,18 @@ export class Lexer {
     }
 
     private peekNextChar(advance = 0): string {
-        const idx = this._index + advance
-        return idx < this.length ? this.expression.charAt(idx) : '\x00'
+        const index = this._index + advance
+        return index < this.length ? this.expression.charAt(index) : '\u0000'
     }
 
     private getNextChar(): string {
-        let ch = '\x00'
-        const idx = this._index
-        if (idx < this.length) {
-            ch = this.expression.charAt(idx)
+        let character = '\u0000'
+        const index = this._index
+        if (index < this.length) {
+            character = this.expression.charAt(index)
             this._index += 1
         }
-        return ch
+        return character
     }
 
     private createToken(type: TokenType, value: any): Token {
@@ -253,8 +253,8 @@ export class Lexer {
 
     private skipSpaces(): void {
         while (this._index < this.length) {
-            const ch = this.peekNextChar()
-            if (!isWhiteSpace(ch)) {
+            const character = this.peekNextChar()
+            if (!isWhiteSpace(character)) {
                 break
             }
             this.getNextChar()
@@ -265,10 +265,10 @@ export class Lexer {
         let searchTree: OperatorTree | boolean = OPERATOR_CHARS
         let value = ''
         while (searchTree && searchTree !== true) {
-            const ch = this.peekNextChar()
-            searchTree = searchTree[ch]
+            const character = this.peekNextChar()
+            searchTree = searchTree[character]
             if (searchTree) {
-                value += ch
+                value += character
                 this.getNextChar()
             }
         }
@@ -282,15 +282,15 @@ export class Lexer {
     }
 
     private scanIdentifier(): Token | undefined {
-        let ch = this.peekNextChar()
-        if (!isIdentifierStart(ch)) {
+        let character = this.peekNextChar()
+        if (!isIdentifierStart(character)) {
             return undefined
         }
 
         let id = this.getNextChar()
         while (true) {
-            ch = this.peekNextChar()
-            if (!isIdentifierPart(ch)) {
+            character = this.peekNextChar()
+            if (!isIdentifierPart(character)) {
                 break
             }
             id += this.getNextChar()
@@ -307,33 +307,33 @@ export class Lexer {
         this.getNextChar()
 
         let terminated = false
-        let str = ''
+        let string = ''
         while (this._index < this.length) {
-            const ch = this.getNextChar()
-            if (ch === quote) {
+            const character = this.getNextChar()
+            if (character === quote) {
                 terminated = true
                 break
             }
-            if (ch === '\\') {
-                str += backslashEscapeCodeString(this.getNextChar())
+            if (character === '\\') {
+                string += backslashEscapeCodeString(this.getNextChar())
             } else {
-                str += ch
+                string += character
             }
         }
         if (!terminated) {
             throw new Error(`Unterminated string literal (at ${this.index})`)
         }
-        return this.createToken(TokenType.String, str)
+        return this.createToken(TokenType.String, string)
     }
 
     private scanTemplate(): Token | undefined {
-        const ch = this.peekNextChar()
-        if (!(ch === '`' || (ch === '}' && this.curlyStack > 0))) {
+        const character = this.peekNextChar()
+        if (!(character === '`' || (character === '}' && this.curlyStack > 0))) {
             return undefined
         }
         this.getNextChar()
 
-        const head = ch === '`'
+        const head = character === '`'
         return this.doScanTemplate(head)
     }
 
@@ -346,20 +346,20 @@ export class Lexer {
 
         let terminated = false
         let hasSubstitution = false
-        let str = ''
+        let string = ''
         while (this._index < this.length) {
-            const ch = this.getNextChar()
-            if (ch === '`' && this.backtick()) {
+            const character = this.getNextChar()
+            if (character === '`' && this.backtick()) {
                 tail = true
                 terminated = true
                 break
             }
-            if (ch === '\\') {
-                str += backslashEscapeCodeString(this.getNextChar())
+            if (character === '\\') {
+                string += backslashEscapeCodeString(this.getNextChar())
             } else {
-                if (ch === '$') {
-                    const ch2 = this.peekNextChar()
-                    if (ch2 === '{') {
+                if (character === '$') {
+                    const character2 = this.peekNextChar()
+                    if (character2 === '{') {
                         this.curlyStack++
                         this.getNextChar()
                         terminated = true
@@ -367,7 +367,7 @@ export class Lexer {
                         break
                     }
                 }
-                str += ch
+                string += character
             }
         }
         if (!head) {
@@ -391,64 +391,64 @@ export class Lexer {
         } else {
             type = TokenType.TemplateMiddle
         }
-        return this.createToken(type, str)
+        return this.createToken(type, string)
     }
 
     private scanNumber(): Token | undefined {
-        let ch = this.peekNextChar()
-        if (!isDecimalDigit(ch) && ch !== '.') {
+        let character = this.peekNextChar()
+        if (!isDecimalDigit(character) && character !== '.') {
             return undefined
         }
 
-        let num = ''
-        if (ch !== '.') {
-            num = this.getNextChar()
+        let number = ''
+        if (character !== '.') {
+            number = this.getNextChar()
             while (true) {
-                ch = this.peekNextChar()
-                if (!isDecimalDigit(ch)) {
+                character = this.peekNextChar()
+                if (!isDecimalDigit(character)) {
                     break
                 }
-                num += this.getNextChar()
+                number += this.getNextChar()
             }
         }
 
-        if (ch === '.') {
-            num += this.getNextChar()
+        if (character === '.') {
+            number += this.getNextChar()
             while (true) {
-                ch = this.peekNextChar()
-                if (!isDecimalDigit(ch)) {
+                character = this.peekNextChar()
+                if (!isDecimalDigit(character)) {
                     break
                 }
-                num += this.getNextChar()
+                number += this.getNextChar()
             }
         }
 
-        if (ch === 'e' || ch === 'E') {
-            num += this.getNextChar()
-            ch = this.peekNextChar()
-            if (ch === '+' || ch === '-' || isDecimalDigit(ch)) {
-                num += this.getNextChar()
+        if (character === 'e' || character === 'E') {
+            number += this.getNextChar()
+            character = this.peekNextChar()
+            if (character === '+' || character === '-' || isDecimalDigit(character)) {
+                number += this.getNextChar()
                 while (true) {
-                    ch = this.peekNextChar()
-                    if (!isDecimalDigit(ch)) {
+                    character = this.peekNextChar()
+                    if (!isDecimalDigit(character)) {
                         break
                     }
-                    num += this.getNextChar()
+                    number += this.getNextChar()
                 }
             } else {
-                ch = `character ${JSON.stringify(ch)}`
+                character = `character ${JSON.stringify(character)}`
                 if (this._index >= this.length) {
-                    ch = '<end>'
+                    character = '<end>'
                 }
-                throw new SyntaxError(`Unexpected ${ch} after the exponent sign (at ${this.index})`)
+                throw new SyntaxError(`Unexpected ${character} after the exponent sign (at ${this.index})`)
             }
         }
 
-        if (num === '.') {
+        if (number === '.') {
             throw new SyntaxError(`Expected decimal digits after the dot sign (at ${this.index})`)
         }
 
-        return this.createToken(TokenType.Number, num)
+        return this.createToken(TokenType.Number, number)
     }
 }
 
@@ -467,8 +467,8 @@ export class TemplateLexer extends Lexer {
     }
 }
 
-function backslashEscapeCodeString(ch: string): string {
-    switch (ch) {
+function backslashEscapeCodeString(character: string): string {
+    switch (character) {
         case 'n':
             return '\n'
         case 'r':
@@ -476,6 +476,6 @@ function backslashEscapeCodeString(ch: string): string {
         case 't':
             return '\t'
         default:
-            return ch
+            return character
     }
 }

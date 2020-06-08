@@ -18,13 +18,20 @@ func TestGetDumpIDs(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(1 * time.Minute)
+	t3 := t1.Add(2 * time.Minute)
+	t4 := t1.Add(3 * time.Minute)
+	t5 := t1.Add(4 * time.Minute)
+	t6 := t1.Add(5 * time.Minute)
+
 	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, Commit: makeCommit(1), State: "completed", UploadedAt: time.Now().Add(1 * time.Minute)},
-		Upload{ID: 2, Commit: makeCommit(2), State: "completed", UploadedAt: time.Now().Add(5 * time.Minute)},
-		Upload{ID: 3, Commit: makeCommit(3), State: "completed", UploadedAt: time.Now().Add(2 * time.Minute)},
-		Upload{ID: 4, Commit: makeCommit(4), State: "completed", UploadedAt: time.Now().Add(3 * time.Minute)},
-		Upload{ID: 5, Commit: makeCommit(5), State: "completed", UploadedAt: time.Now().Add(4 * time.Minute)},
-		Upload{ID: 6, Commit: makeCommit(6), State: "errored", UploadedAt: time.Now().Add(1 * time.Minute)},
+		Upload{ID: 1, Commit: makeCommit(1), State: "completed", UploadedAt: t2},
+		Upload{ID: 2, Commit: makeCommit(2), State: "completed", UploadedAt: t6},
+		Upload{ID: 3, Commit: makeCommit(3), State: "completed", UploadedAt: t3},
+		Upload{ID: 4, Commit: makeCommit(4), State: "completed", UploadedAt: t4},
+		Upload{ID: 5, Commit: makeCommit(5), State: "completed", UploadedAt: t5},
+		Upload{ID: 6, Commit: makeCommit(6), State: "errored", UploadedAt: t2},
 	)
 
 	ids, err := db.GetDumpIDs(context.Background())

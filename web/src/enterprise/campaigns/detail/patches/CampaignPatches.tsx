@@ -6,7 +6,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../com
 import { Observable, Subject, Observer, merge, of } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromCampaign } from '../backend'
-import { PatchNode, PatchNodeProps } from './PatchNode'
+import { PatchInterfaceNode, PatchInterfaceNodeProps } from './PatchInterfaceNode'
 import { switchMap } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
@@ -42,9 +42,9 @@ export const CampaignPatches: React.FunctionComponent<Props> = ({
 
     return (
         <div className="list-group">
-            <FilteredConnection<GQL.IPatch, Omit<PatchNodeProps, 'node'>>
+            <FilteredConnection<GQL.PatchInterface, Omit<PatchInterfaceNodeProps, 'node'>>
                 className="mt-2"
-                nodeComponent={PatchNode}
+                nodeComponent={PatchInterfaceNode}
                 nodeComponentProps={{
                     isLightTheme,
                     history,

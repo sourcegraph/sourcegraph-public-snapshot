@@ -47,12 +47,13 @@ func enterpriseInit(
 	rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, repoStore)
 	if err != nil {
 		log15.Error("Creating rate limit registry", "err", err)
+	} else if server != nil {
+		server.RateLimiterRegistry = rateLimiterRegistry
 	}
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf, rateLimiterRegistry)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
-		server.RateLimiterRegistry = rateLimiterRegistry
 	}
 
 	clock := func() time.Time {
@@ -76,7 +77,7 @@ func enterpriseInit(
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := frontendDB.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, rateLimiterRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

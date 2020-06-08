@@ -32,8 +32,8 @@ export class Tooltip extends React.PureComponent<Props, State> {
     public static forceUpdate(): void {
         const instance = Tooltip.INSTANCE
         if (instance) {
-            instance.setState(prevState => {
-                const subject = prevState.lastEventTarget && instance.getSubject(prevState.lastEventTarget)
+            instance.setState(previousState => {
+                const subject = previousState.lastEventTarget && instance.getSubject(previousState.lastEventTarget)
                 return {
                     subject,
                     content: subject ? instance.getContent(subject) : undefined,
@@ -98,9 +98,9 @@ export class Tooltip extends React.PureComponent<Props, State> {
 
         const eventTarget = event.target as HTMLElement
         const subject = this.getSubject(eventTarget)
-        this.setState(prevState => ({
+        this.setState(previousState => ({
             subject,
-            subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
+            subjectSeq: previousState.subject === subject ? previousState.subjectSeq : previousState.subjectSeq + 1,
             content: subject ? this.getContent(subject) : undefined,
             placement: subject ? this.getPlacement(subject) : undefined,
         }))
@@ -109,19 +109,19 @@ export class Tooltip extends React.PureComponent<Props, State> {
     /**
      * Find the nearest ancestor element to e that contains a tooltip.
      */
-    private getSubject = (e: HTMLElement | null): HTMLElement | undefined => {
-        while (e) {
-            if (e === document.body) {
+    private getSubject = (element: HTMLElement | null): HTMLElement | undefined => {
+        while (element) {
+            if (element === document.body) {
                 break
             }
-            if (e.hasAttribute(Tooltip.SUBJECT_ATTRIBUTE)) {
+            if (element.hasAttribute(Tooltip.SUBJECT_ATTRIBUTE)) {
                 // If e is not actually attached to the DOM, then abort.
-                if (!document.body.contains(e)) {
+                if (!document.body.contains(element)) {
                     return undefined
                 }
-                return e
+                return element
             }
-            e = e.parentElement
+            element = element.parentElement
         }
         return undefined
     }
@@ -151,7 +151,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
  */
 export function setElementTooltip(element: HTMLElement, tooltip: string | null): void {
     if (tooltip) {
-        element.setAttribute('data-tooltip', tooltip)
+        element.dataset.tooltip = tooltip
     } else {
         element.removeAttribute('data-tooltip')
     }

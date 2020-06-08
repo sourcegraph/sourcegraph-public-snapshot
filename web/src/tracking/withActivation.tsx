@@ -69,7 +69,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                 completed.ConnectedCodeHost = data.externalServices && data.externalServices.totalCount > 0
                 if (authProviders) {
                     completed.EnabledSharing =
-                        data.users.totalCount > 1 || authProviders.filter(p => !p.isBuiltin).length > 0
+                        data.users.totalCount > 1 || authProviders.filter(provider => !provider.isBuiltin).length > 0
                 }
             }
             return completed
@@ -100,9 +100,9 @@ const fetchReferencesLink = (): Observable<string | null> =>
                 return null
             }
             const repositoryURLs = data.repositories.nodes
-                .filter(r => r.gitRefs && r.gitRefs.totalCount > 0)
-                .sort((r1, r2) => r2.gitRefs.totalCount - r1.gitRefs.totalCount)
-                .map(r => r.url)
+                .filter(repository => repository.gitRefs && repository.gitRefs.totalCount > 0)
+                .sort((repository1, repository2) => repository2.gitRefs.totalCount - repository1.gitRefs.totalCount)
+                .map(repository => repository.url)
             if (repositoryURLs.length === 0) {
                 return null
             }
@@ -139,9 +139,9 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             onClick: (event: React.MouseEvent<HTMLElement>, history: H.History) =>
                 fetchReferencesLink()
                     .pipe(first())
-                    .subscribe(r => {
-                        if (r) {
-                            history.push(r)
+                    .subscribe(link => {
+                        if (link) {
+                            history.push(link)
                         } else {
                             alert('Must add repositories before finding references')
                         }
@@ -159,7 +159,7 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
         },
     ]
     return sources
-        .filter(e => authenticatedUser.siteAdmin || !e.siteAdminOnly)
+        .filter(source => authenticatedUser.siteAdmin || !source.siteAdminOnly)
         .map(({ siteAdminOnly, ...step }) => step)
 }
 
@@ -225,7 +225,7 @@ export const withActivation = <P extends ActivationProps>(
             ).pipe(
                 tap(update => update && recordUpdate(update)),
                 scan<Partial<ActivationCompletionStatus> | null, Partial<ActivationCompletionStatus>>(
-                    (prev, next) => (next ? { ...prev, ...next } : {}),
+                    (previous, next) => (next ? { ...previous, ...next } : {}),
                     {}
                 )
             )

@@ -13,15 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-type printableRank struct{ value *int }
-
-func (r printableRank) String() string {
-	if r.value == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%d", r.value)
-}
-
 func TestGetUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -226,7 +217,7 @@ func TestInsertUploadUploading(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	id, err := db.InsertUpload(context.Background(), &Upload{
+	id, err := db.InsertUpload(context.Background(), Upload{
 		Commit:       makeCommit(1),
 		Root:         "sub/",
 		State:        "uploading",
@@ -276,7 +267,7 @@ func TestInsertUploadQueued(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	id, err := db.InsertUpload(context.Background(), &Upload{
+	id, err := db.InsertUpload(context.Background(), Upload{
 		Commit:        makeCommit(1),
 		Root:          "sub/",
 		State:         "queued",
@@ -424,7 +415,7 @@ func TestDequeueConversionSuccess(t *testing.T) {
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	upload, jobHandle, ok, err := db.Dequeue(context.Background())
+	upload, tx, ok, err := db.Dequeue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -439,18 +430,18 @@ func TestDequeueConversionSuccess(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
 	}
 
-	if err := jobHandle.MarkComplete(context.Background()); err != nil {
+	if err := tx.MarkComplete(context.Background(), upload.ID); err != nil {
 		t.Fatalf("unexpected error marking upload complete: %s", err)
 	}
-	_ = jobHandle.Done(nil)
+	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "completed" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
@@ -467,7 +458,7 @@ func TestDequeueConversionError(t *testing.T) {
 	// Add dequeueable upload
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	upload, jobHandle, ok, err := db.Dequeue(context.Background())
+	upload, tx, ok, err := db.Dequeue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -482,30 +473,30 @@ func TestDequeueConversionError(t *testing.T) {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
 	}
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "processing" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
 	}
 
-	if err := jobHandle.MarkErrored(context.Background(), "test summary", "test stacktrace"); err != nil {
+	if err := tx.MarkErrored(context.Background(), upload.ID, "test summary", "test stacktrace"); err != nil {
 		t.Fatalf("unexpected error marking upload complete: %s", err)
 	}
-	_ = jobHandle.Done(nil)
+	_ = tx.Done(nil)
 
-	if state, err := scanString(dbconn.Global.QueryRow("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
+	if state, _, err := scanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting state: %s", err)
 	} else if state != "errored" {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, err := scanString(dbconn.Global.QueryRow("SELECT failure_summary FROM lsif_uploads WHERE id = 1")); err != nil {
+	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_summary: %s", err)
 	} else if summary != "test summary" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
 	}
 
-	if stacktrace, err := scanString(dbconn.Global.QueryRow("SELECT failure_stacktrace FROM lsif_uploads WHERE id = 1")); err != nil {
+	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
 	} else if stacktrace != "test stacktrace" {
 		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
@@ -523,7 +514,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued", Indexer: "lsif-go"})
 
 	ctx := context.Background()
-	_, jobHandle, ok, err := db.Dequeue(ctx)
+	upload, tx, ok, err := db.Dequeue(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
@@ -531,30 +522,29 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 		t.Fatalf("expected something to be dequeueable")
 	}
 
-	if err := jobHandle.Savepoint(ctx); err != nil {
+	savepointID, err := tx.Savepoint(ctx)
+	if err != nil {
 		t.Fatalf("unexpected error creating savepoint: %s", err)
 	}
 
 	// alter record in the underlying transacted db
-	// TODO(efritz) - find a way to do this without casting
-	underlyingDB := jobHandle.DB().(*ObservedDB).db.(*dbImpl)
-	if err := underlyingDB.exec(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
+	if err := unwrapDB(tx).queryForEffect(ctx, sqlf.Sprintf(`UPDATE lsif_uploads SET indexer = 'lsif-tsc' WHERE id = 1`)); err != nil {
 		t.Fatalf("unexpected error altering record: %s", err)
 	}
 
 	// undo alteration
-	if err := jobHandle.RollbackToLastSavepoint(ctx); err != nil {
+	if err := tx.RollbackToSavepoint(ctx, savepointID); err != nil {
 		t.Fatalf("unexpected error rolling back to savepoint: %s", err)
 	}
 
-	if err := jobHandle.MarkComplete(ctx); err != nil {
+	if err := tx.MarkComplete(ctx, upload.ID); err != nil {
 		t.Fatalf("unexpected error marking upload complete: %s", err)
 	}
-	if err := jobHandle.Done(nil); err != nil {
+	if err := tx.Done(nil); err != nil {
 		t.Fatalf("unexpected error closing transaction: %s", err)
 	}
 
-	if indexerName, err := scanString(dbconn.Global.QueryRow("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
+	if indexerName, _, err := scanFirstString(dbconn.Global.Query("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting indexer: %s", err)
 	} else if indexerName != "lsif-go" {
 		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "lsif-go", indexerName)
@@ -568,7 +558,7 @@ func TestDequeueSkipsLocked(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	t1 := time.Now().UTC()
+	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
 	t3 := t2.Add(time.Minute)
 	insertUploads(
@@ -579,25 +569,25 @@ func TestDequeueSkipsLocked(t *testing.T) {
 		Upload{ID: 3, State: "queued", UploadedAt: t3},
 	)
 
-	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
+	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { _ = tx1.Rollback() }()
 
 	// Row lock upload 1 in a transaction which should be skipped by ResetStalled
-	if _, err := tx.Query(`SELECT * FROM lsif_uploads WHERE id = 1 FOR UPDATE`); err != nil {
+	if _, err := tx1.Query(`SELECT * FROM lsif_uploads WHERE id = 1 FOR UPDATE`); err != nil {
 		t.Fatal(err)
 	}
 
-	upload, jobHandle, ok, err := db.Dequeue(context.Background())
+	upload, tx2, ok, err := db.Dequeue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
 	if !ok {
 		t.Fatalf("expected something to be dequeueable")
 	}
-	defer func() { _ = jobHandle.Done(nil) }()
+	defer func() { _ = tx2.Done(nil) }()
 
 	if upload.ID != 3 {
 		t.Errorf("unexpected upload id. want=%d have=%d", 3, upload.ID)
@@ -614,38 +604,13 @@ func TestDequeueEmpty(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := testDB()
 
-	_, jobHandle, ok, err := db.Dequeue(context.Background())
+	_, tx, ok, err := db.Dequeue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing upload: %s", err)
 	}
 	if ok {
-		_ = jobHandle.Done(nil)
+		_ = tx.Done(nil)
 		t.Fatalf("unexpected dequeue")
-	}
-}
-
-func TestDequeueConcurrency(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	db := rawTestDB()
-
-	// Add dequeueable upload
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
-
-	_, jobHandle1, ok1, err1 := db.dequeue(context.Background(), 1)
-	if ok1 {
-		defer func() { _ = jobHandle1.Done(nil) }()
-	}
-
-	_, jobHandle2, ok2, err2 := db.dequeue(context.Background(), 1)
-	if ok2 {
-		defer func() { _ = jobHandle2.Done(nil) }()
-	}
-
-	if err1 != ErrDequeueRace && err2 != ErrDequeueRace {
-		t.Errorf("expected error. want=%q have=%q and %q", ErrDequeueRace, err1, err2)
 	}
 }
 

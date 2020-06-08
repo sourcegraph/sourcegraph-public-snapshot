@@ -36,7 +36,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
     private propsChanges = new Subject<SearchResultMatchProps>()
 
     private getLanguage(): string | undefined {
-        const matches = /(?:```)([^\s]+)\s/.exec(this.props.item.body.text)
+        const matches = /```(\S+)\s/.exec(this.props.item.body.text)
         if (!matches) {
             return undefined
         }
@@ -65,7 +65,8 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
                             // Extract the text content of the result.
-                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
+                            const codeContent =
+                                parser.parseFromString(markdownHTML, 'text/html').body.textContent?.trim() || ''
                             // Match the code content and any trailing newlines if any.
                             const codeContentAndAnyNewLines = new RegExp(escapeRegExp(codeContent) + '\\n*')
                             if (codeContent) {
@@ -75,10 +76,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     disableTimeout: false,
                                     isLightTheme: props.isLightTheme,
                                 }).pipe(
-                                    switchMap(highlightedStr => {
+                                    switchMap(highlightedString => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(
                                             codeContentAndAnyNewLines,
-                                            highlightedStr
+                                            highlightedString
                                         )
                                         return of(highlightedMarkdown)
                                     }),
@@ -93,7 +94,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     catchError(() => of('<pre>' + sanitizeHtml(props.item.body.text) + '</pre>'))
                 )
                 .subscribe(
-                    str => this.setState({ HTML: str }),
+                    string => this.setState({ HTML: string }),
                     error => console.error(error)
                 )
         )
@@ -117,10 +118,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
-                for (const h of this.props.highlightRanges) {
-                    const code = visibleRows[h.line - 1]
+                for (const range of this.props.highlightRanges) {
+                    const code = visibleRows[range.line - 1]
                     if (code) {
-                        highlightNode(code as HTMLElement, h.character, h.length)
+                        highlightNode(code as HTMLElement, range.character, range.length)
                     }
                 }
             }
@@ -136,7 +137,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             // If there are no highlights, the calculation below results in -Infinity.
             return 0
         }
-        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - 1)
+        return Math.max(0, Math.min(...this.props.highlightRanges.map(range => range.line)) - 1)
     }
 
     private getLastLine(): number {
@@ -145,7 +146,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
             // so we set lastLine to 5, which is a just a heuristic for a medium-sized result.
             return 5
         }
-        const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + 1
+        const lastLine = Math.max(...this.props.highlightRanges.map(range => range.line)) + 1
         return this.props.highlightRanges ? Math.min(lastLine, this.props.highlightRanges.length) : lastLine
     }
 
@@ -190,11 +191,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>
                                 <tbody>
-                                    {range(firstLine, lastLine).map(i => (
-                                        <tr key={`${this.props.item.url}#${i}`}>
+                                    {range(firstLine, lastLine).map(index => (
+                                        <tr key={`${this.props.item.url}#${index}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                             <td className="line search-result-match__line--hidden">
-                                                <code>{i}</code>
+                                                <code>{index}</code>
                                             </td>
                                             <td className="code"> </td>
                                         </tr>
@@ -208,7 +209,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         )
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null): void => {
-        this.tableContainerElement = ref
+    private setTableContainerElement = (reference: HTMLElement | null): void => {
+        this.tableContainerElement = reference
     }
 }

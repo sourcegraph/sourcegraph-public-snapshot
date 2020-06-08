@@ -65,8 +65,8 @@ The `doc` directory has additional documentation for developing and understandin
 - [Architecture](./doc/dev/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/postgresql.md): database setup and best practices
 - [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
-- [Go style guide](https://about.sourcegraph.com/handbook/engineering/go_style_guide)
-- [Documentation style guide](https://about.sourcegraph.com/handbook/documentation)
+- [Go style guide](https://about.sourcegraph.com/handbook/engineering/languages/go)
+- [Documentation style guide](https://about.sourcegraph.com/handbook/engineering/product_documentation)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 
