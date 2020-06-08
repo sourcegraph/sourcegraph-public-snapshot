@@ -10,7 +10,8 @@ type AddExternalServiceInput struct {
 	Config      string `json:"config"`
 }
 
-// TODO
+// AddExternalService adds a new external service with given input.
+// This method requires the authenticated user to be a site admin.
 func (c *Client) AddExternalService(input AddExternalServiceInput) error {
 	const query = `
 	mutation addExternalService($input: AddExternalServiceInput!) {
