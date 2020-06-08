@@ -172,6 +172,66 @@ func TestHoverNull(t *testing.T) {
 	}
 }
 
+func TestDiagnostics(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assertRequest(t, r, "GET", "/dbs/42/diagnostics", map[string]string{
+			"path": "internal/",
+		})
+
+		_, _ = w.Write([]byte(`[
+			{"path": "internal/foo.go", "severity": 1, "code": "c1", "message": "m1", "source": "s1", "startLine": 11, "startCharacter": 12, "endLine": 13, "endCharacter": 14},
+			{"path": "internal/bar.go", "severity": 2, "code": "c2", "message": "m2", "source": "s2", "startLine": 21, "startCharacter": 22, "endLine": 23, "endCharacter": 24},
+			{"path": "internal/baz.go", "severity": 3, "code": "c3", "message": "m3", "source": "s3", "startLine": 31, "startCharacter": 32, "endLine": 33, "endCharacter": 34}
+		]`))
+	}))
+	defer ts.Close()
+
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	diagnostics, err := client.Diagnostics(context.Background(), "internal/")
+	if err != nil {
+		t.Fatalf("unexpected error querying diagnostics: %s", err)
+	}
+
+	expectedDiagnostics := []Diagnostic{
+		{
+			Path:           "internal/foo.go",
+			Severity:       1,
+			Code:           "c1",
+			Message:        "m1",
+			Source:         "s1",
+			StartLine:      11,
+			StartCharacter: 12,
+			EndLine:        13,
+			EndCharacter:   14,
+		},
+		{
+			Path:           "internal/bar.go",
+			Severity:       2,
+			Code:           "c2",
+			Message:        "m2",
+			Source:         "s2",
+			StartLine:      21,
+			StartCharacter: 22,
+			EndLine:        23,
+			EndCharacter:   24,
+		},
+		{
+			Path:           "internal/baz.go",
+			Severity:       3,
+			Code:           "c3",
+			Message:        "m3",
+			Source:         "s3",
+			StartLine:      31,
+			StartCharacter: 32,
+			EndLine:        33,
+			EndCharacter:   34,
+		},
+	}
+	if diff := cmp.Diff(expectedDiagnostics, diagnostics); diff != "" {
+		t.Errorf("unexpected moniker data (-want +got):\n%s", diff)
+	}
+}
+
 func TestMonikersByPosition(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/monikersByPosition", map[string]string{
