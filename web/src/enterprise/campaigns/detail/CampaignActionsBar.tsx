@@ -11,7 +11,6 @@ interface Props {
     previewingPatchSet: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
-        openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -37,8 +36,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const campaignClosed = campaign?.closedAt
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
     const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
-
-    const openChangesetsCount = campaign?.openChangesets.totalCount ?? 0
 
     let stateBadge: JSX.Element
 
@@ -112,7 +109,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                                 Close campaign <strong>{campaign.name}</strong>?
                                             </p>
                                         }
-                                        changesetsCount={openChangesetsCount}
                                         buttonText="Close"
                                         onButtonClick={onClose}
                                         buttonClassName="btn-secondary mr-1"
@@ -127,7 +123,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                         Delete campaign <strong>{campaign.name}</strong>?
                                     </p>
                                 }
-                                changesetsCount={openChangesetsCount}
                                 buttonText="Delete"
                                 onButtonClick={onDelete}
                                 buttonClassName="btn-danger"

@@ -44,9 +44,6 @@ const campaignFragment = gql`
         changesets {
             totalCount
         }
-        openChangesets {
-            totalCount
-        }
         patches {
             totalCount
         }

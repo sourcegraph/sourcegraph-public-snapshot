@@ -35,7 +35,6 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -54,7 +53,6 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -73,7 +71,6 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: new Date().toISOString(),
                         name: 'Super campaign',
                         status: {
@@ -92,7 +89,6 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -111,7 +107,6 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -130,7 +125,6 @@ describe('CampaignActionsBar', () => {
                     mode="saving"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -149,7 +143,6 @@ describe('CampaignActionsBar', () => {
                     mode="deleting"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -168,7 +161,6 @@ describe('CampaignActionsBar', () => {
                     mode="closing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 0 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -187,7 +179,6 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: { totalCount: 1 },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -206,9 +197,6 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingPatchSet={false}
                     campaign={{
-                        openChangesets: {
-                            totalCount: 0,
-                        },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
