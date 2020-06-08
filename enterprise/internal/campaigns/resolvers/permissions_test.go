@@ -4,17 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -29,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -451,8 +445,8 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	ctx := context.Background()
 
-	testRev := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
-	mockBackendCommit(t, testRev)
+	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
+	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
 	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
@@ -508,7 +502,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		p := &campaigns.Patch{
 			PatchSetID:      patchSet.ID,
 			RepoID:          r.ID,
-			Rev:             api.CommitID(testRev),
+			Rev:             testRev,
 			BaseRef:         "refs/heads/master",
 			Diff:            "+ foo - bar",
 			DiffStatAdded:   &patchesDiffStat.Added,
@@ -914,70 +908,3 @@ query {
   }
 }
 `
-
-func mockBackendCommit(t *testing.T, testRev string) {
-	t.Helper()
-
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if rev != testRev {
-			t.Fatalf("ResolveRev received wrong rev: %q", rev)
-		}
-		return api.CommitID(rev), nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
-		if string(id) != testRev {
-			t.Fatalf("GetCommit received wrong ID: %s", id)
-		}
-		return &git.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
-}
-
-func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
-	t.Helper()
-
-	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-
-	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
-		if string(id) != baseRev && string(id) != headRev {
-			t.Fatalf("git.Mocks.GetCommit received unknown commit id: %s", id)
-		}
-		return &git.Commit{ID: api.CommitID(id)}, nil
-	}
-	t.Cleanup(func() { git.Mocks.GetCommit = nil })
-
-	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
-		if len(args) < 1 && args[0] != "diff" {
-			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
-		}
-
-		if have, want := args[len(args)-2], spec; have != want {
-			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
-		}
-		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
-	}
-	t.Cleanup(func() { git.Mocks.ExecReader = nil })
-
-	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
-		if string(a) != baseRev && string(b) != headRev {
-			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
-		}
-		return a, nil
-	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
-}
-
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
-	t.Helper()
-
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return userID
-}
