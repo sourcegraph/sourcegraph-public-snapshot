@@ -8,7 +8,7 @@ import classNames from 'classnames'
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
  */
-export const SearchHelpDropdownButton: React.FunctionComponent<{ alwaysShow: boolean }> = ({ alwaysShow }) => {
+export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const docsURLPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
@@ -24,14 +24,14 @@ export const SearchHelpDropdownButton: React.FunctionComponent<{ alwaysShow: boo
                     </MenuButton>
                     <MenuPopover
                         className={classNames('dropdown', {
-                            'd-flex': isExpanded || alwaysShow,
-                            show: isExpanded || alwaysShow,
+                            'd-flex': isExpanded,
+                            show: isExpanded,
                         })}
                         portal={false}
                     >
                         <div
                             className={classNames('pb-0 dropdown-menu dropdown-menu-right', {
-                                show: isExpanded || alwaysShow,
+                                show: isExpanded,
                             })}
                         >
                             <div className="dropdown-header">
