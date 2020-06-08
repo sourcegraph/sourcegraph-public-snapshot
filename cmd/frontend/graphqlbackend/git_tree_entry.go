@@ -62,6 +62,14 @@ func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { retur
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 
+func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len([]byte(content))), nil
+}
+
 func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -283,12 +291,19 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, error) {
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ Indexer *string }) (LSIFQueryResolver, error) {
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
+
+	var indexer string
+	if args.Indexer != nil {
+		indexer = *args.Indexer
+	}
+
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
 		Repository: r.Repository(),
 		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
+		Indexer:    indexer,
 	})
 }
 

@@ -21,7 +21,6 @@ describe('CampaignNode', () => {
         patches: { totalCount: 2 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
-        publishedAt: '2019-12-04T23:17:01Z',
     }
 
     test('open campaign', () => {
@@ -39,32 +38,6 @@ describe('CampaignNode', () => {
                 .create(
                     <CampaignNode
                         node={{ ...node, closedAt: '2019-12-04T23:19:01Z' }}
-                        now={parseISO('2019-01-01T23:15:01Z')}
-                        history={createMemoryHistory()}
-                    />
-                )
-                .toJSON()
-        ).toMatchSnapshot()
-    })
-    test('open draft campaign', () => {
-        expect(
-            renderer
-                .create(
-                    <CampaignNode
-                        node={{ ...node, publishedAt: null }}
-                        now={parseISO('2019-01-01T23:15:01Z')}
-                        history={createMemoryHistory()}
-                    />
-                )
-                .toJSON()
-        ).toMatchSnapshot()
-    })
-    test('closed draft campaign', () => {
-        expect(
-            renderer
-                .create(
-                    <CampaignNode
-                        node={{ ...node, publishedAt: null, closedAt: '2019-12-04T23:19:01Z' }}
                         now={parseISO('2019-01-01T23:15:01Z')}
                         history={createMemoryHistory()}
                     />

@@ -52,7 +52,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
             useMemo(
                 () =>
                     _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductSubscription, subscriptionUUID]

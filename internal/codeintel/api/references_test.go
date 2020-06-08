@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"

@@ -82,7 +82,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             this.subscriptions.add(
                 this.submits
                     .pipe(
-                        tap(e => e.preventDefault()),
+                        tap(event => event.preventDefault()),
                         concatMap(() =>
                             concat(
                                 [{ updateOrError: 'loading' }],
@@ -105,7 +105,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        err => console.error(err)
+                        error => console.error(error)
                     )
             )
 
@@ -206,10 +206,10 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             )
         }
 
-        private onNameChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-            this.setState({ name: e.currentTarget.value })
+        private onNameChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+            this.setState({ name: event.currentTarget.value })
 
-        private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
+        private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
 
         private onDidDelete = (): void => {
             this.props.history.push('/extensions')

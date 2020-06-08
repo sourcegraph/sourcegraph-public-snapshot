@@ -163,3 +163,140 @@ export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
         })
     )
 }
+
+/**
+ * Fetch LSIF indexes for a repository.
+ */
+export function fetchLsifIndexes({
+    repository,
+    query,
+    state,
+    first,
+    after,
+}: { repository: string } & GQL.ILsifIndexesOnRepositoryArguments): Observable<GQL.ILSIFIndexConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifIndexes($repository: ID!, $state: LSIFIndexState, $first: Int, $after: String, $query: String) {
+                node(id: $repository) {
+                    __typename
+                    ... on Repository {
+                        lsifIndexes(query: $query, state: $state, first: $first, after: $after) {
+                            nodes {
+                                id
+                                state
+                                projectRoot {
+                                    commit {
+                                        abbreviatedOID
+                                        url
+                                    }
+                                    path
+                                    url
+                                }
+                                inputCommit
+                                queuedAt
+                                startedAt
+                                finishedAt
+                                placeInQueue
+                            }
+
+                            totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { repository, query, state, first, after }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('Invalid repository')
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
+            }
+
+            return node.lsifIndexes
+        })
+    )
+}
+
+/**
+ * Fetch a single LSIF index by id.
+ */
+export function fetchLsifIndex({ id }: { id: string }): Observable<GQL.ILSIFIndex | null> {
+    return queryGraphQL(
+        gql`
+            query LsifIndex($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ... on LSIFIndex {
+                        id
+                        projectRoot {
+                            commit {
+                                oid
+                                abbreviatedOID
+                                url
+                                repository {
+                                    name
+                                    url
+                                }
+                            }
+                            path
+                            url
+                        }
+                        inputCommit
+                        state
+                        failure {
+                            summary
+                        }
+                        queuedAt
+                        startedAt
+                        finishedAt
+                        placeInQueue
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'LSIFIndex') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFIndex`)
+            }
+
+            return node
+        })
+    )
+}
+
+/**
+ * Delete an LSIF index by id.
+ */
+export function deleteLsifIndex({ id }: { id: string }): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation DeleteLsifIndex($id: ID!) {
+                deleteLSIFIndex(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteLSIFIndex) {
+                throw createInvalidGraphQLMutationResponseError('DeleteLsifIndex')
+            }
+        })
+    )
+}

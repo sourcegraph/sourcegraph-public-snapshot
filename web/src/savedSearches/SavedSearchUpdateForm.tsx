@@ -42,7 +42,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                     switchMap(id =>
                         fetchSavedSearch(id).pipe(
                             startWith(LOADING),
-                            catchError(err => [asError(err)])
+                            catchError(error => [asError(error)])
                         )
                     ),
                     map(result => ({ savedSearchOrError: result }))

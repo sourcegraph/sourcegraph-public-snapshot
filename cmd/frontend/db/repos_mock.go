@@ -23,7 +23,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, &repoNotFoundErr{ID: repo}
+			return nil, &RepoNotFoundErr{ID: repo}
 		}
 		return &types.Repo{ID: repo}, nil
 	}
@@ -36,7 +36,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
-			return nil, &repoNotFoundErr{ID: repo}
+			return nil, &RepoNotFoundErr{ID: repo}
 		}
 		return returns, nil
 	}
@@ -49,7 +49,7 @@ func (s *MockRepos) MockGetByName(t testing.TB, want api.RepoName, repo api.Repo
 		*called = true
 		if name != want {
 			t.Errorf("got repo name %q, want %q", name, want)
-			return nil, &repoNotFoundErr{Name: name}
+			return nil, &RepoNotFoundErr{Name: name}
 		}
 		return &types.Repo{ID: repo, Name: name}, nil
 	}

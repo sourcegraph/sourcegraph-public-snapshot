@@ -97,8 +97,9 @@ func TestUnmarshalDocument(t *testing.T) {
 	}
 
 	expectedDocument := lsif.Document{
-		URI:      "file:///test/root/foo.go",
-		Contains: datastructures.IDSet{},
+		URI:         "file:///test/root/foo.go",
+		Contains:    datastructures.IDSet{},
+		Diagnostics: datastructures.IDSet{},
 	}
 	if diff := cmp.Diff(expectedDocument, document); diff != "" {
 		t.Errorf("unexpected document (-want +got):\n%s", diff)
@@ -193,5 +194,30 @@ func TestUnmarshalPackageInformation(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedPackageInformation, packageInformation); diff != "" {
 		t.Errorf("unexpected package information (-want +got):\n%s", diff)
+	}
+}
+
+func TestUnmarshalDiagnosticResult(t *testing.T) {
+	diagnosticResult, err := unmarshalDiagnosticResult([]byte(`{"id": 18, "type": "vertex", "label": "diagnosticResult", "result": [{"severity": 1, "code": 2322, "source": "eslint", "message": "Type '10' is not assignable to type 'string'.", "range": {"start": {"line": 1, "character": 5}, "end": {"line": 1, "character": 6}}}]}`))
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling diagnostic result data: %s", err)
+	}
+
+	expectedDiagnosticResult := lsif.DiagnosticResult{
+		Result: []lsif.Diagnostic{
+			{
+				Severity:       1,
+				Code:           "2322",
+				Message:        "Type '10' is not assignable to type 'string'.",
+				Source:         "eslint",
+				StartLine:      1,
+				StartCharacter: 5,
+				EndLine:        1,
+				EndCharacter:   6,
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedDiagnosticResult, diagnosticResult); diff != "" {
+		t.Errorf("unexpected diagnostic result (-want +got):\n%s", diff)
 	}
 }

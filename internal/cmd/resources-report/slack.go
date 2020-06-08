@@ -29,13 +29,28 @@ func newSlackButtonRun(runID string) slackBlock {
 		"type": "button",
 		"text": slackText{
 			Type: "plain_text",
-			Text: "Run logs",
+			Text: "View run",
 		},
 		"url": fmt.Sprintf("https://github.com/sourcegraph/sourcegraph/actions/runs/%s", runID),
 	}
 }
 
-func newSlackButtonSheet(sheetID string) slackBlock {
+func newSlackButtonDocs() slackBlock {
+	return slackBlock{
+		"type": "button",
+		"text": slackText{
+			Type: "plain_text",
+			Text: "Docs",
+		},
+		"url": "https://about.sourcegraph.com/handbook/engineering/distribution/tools/resources_report",
+	}
+}
+
+func newSlackButtonSheet(sheetID, sheetPage string) slackBlock {
+	url := fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID)
+	if sheetPage != "" {
+		url = fmt.Sprintf("%s#gid=%s", url, sheetPage)
+	}
 	return slackBlock{
 		"type": "button",
 		"text": slackText{
@@ -43,7 +58,7 @@ func newSlackButtonSheet(sheetID string) slackBlock {
 			Text: "Report",
 		},
 		"style": "primary",
-		"url":   fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s", sheetID),
+		"url":   url,
 	}
 }
 
@@ -59,7 +74,7 @@ func reportError(ctx context.Context, opts options, err error, scope string) {
 		if *opts.runID != "" {
 			blocks = append(blocks, slackBlock{
 				"type":     "actions",
-				"elements": []slackBlock{newSlackButtonRun(*opts.runID)},
+				"elements": []slackBlock{newSlackButtonRun(*opts.runID), newSlackButtonDocs()},
 			})
 		}
 		slackErr := sendSlackBlocks(ctx, *opts.slackWebhook, blocks)
@@ -90,9 +105,8 @@ func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) e
 		message, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("failed to post report to slack: %s", resp.Status)
-		} else {
-			return fmt.Errorf("failed to post report to slack: %s", string(message))
 		}
+		return fmt.Errorf("failed to post report to slack: %s", string(message))
 	}
 	return nil
 }

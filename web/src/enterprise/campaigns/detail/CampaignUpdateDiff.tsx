@@ -3,6 +3,7 @@ import * as React from 'react'
 import { forkJoin, Observable } from 'rxjs'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetNode } from './changesets/ChangesetNode'
+import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -13,9 +14,10 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import classNames from 'classnames'
 import { PatchNode } from './patches/PatchNode'
+import { HeroPage } from '../../../components/HeroPage'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt'> & {
+    campaign: Pick<GQL.ICampaign, 'id' | 'viewerCanAdminister'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     }
@@ -51,25 +53,44 @@ export interface CampaignDiff {
      * Changing the campaign description will technically update them,
      * but they will still show up as "unmodified" to reduce confusion
      */
-    unmodified: GQL.IExternalChangeset[]
+    unmodified: GQL.Changeset[]
     deleted: GQL.IExternalChangeset[]
+    containsHidden: boolean
 }
 
 export function calculateChangesetDiff(
-    changesets: GQL.IExternalChangeset[],
-    campaignPatches: GQL.IPatch[],
-    patches: GQL.IPatch[]
+    changesets: GQL.Changeset[],
+    campaignPatches: GQL.PatchInterface[],
+    patches: GQL.PatchInterface[]
 ): CampaignDiff {
     const added: GQL.IPatch[] = []
     const changed: GQL.IPatch[] = []
-    const unmodified: GQL.IExternalChangeset[] = []
+    const unmodified: GQL.Changeset[] = []
     const deleted: GQL.IExternalChangeset[] = []
 
+    const visibleCampaignPatches = campaignPatches.filter(
+        (campaignPatch): campaignPatch is GQL.IPatch => campaignPatch.__typename !== 'HiddenPatch'
+    )
+    const visiblePatches = patches.filter((patch): patch is GQL.IPatch => patch.__typename !== 'HiddenPatch')
+
+    let containsHidden =
+        visiblePatches.length !== patches.length || visibleCampaignPatches.length !== campaignPatches.length
+
+    const visibleChangesets: GQL.IExternalChangeset[] = []
+    for (const changeset of changesets) {
+        if (changeset.__typename === 'HiddenExternalChangeset') {
+            unmodified.push(changeset)
+            containsHidden = true
+        } else {
+            visibleChangesets.push(changeset)
+        }
+    }
+
     const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
-    for (const changeset of [...changesets, ...campaignPatches]) {
+    for (const changeset of [...visibleChangesets, ...visibleCampaignPatches]) {
         patchOrChangesetByRepoId.set(changeset.repository.id, changeset)
     }
-    for (const patch of patches) {
+    for (const patch of visiblePatches) {
         const key = patch.repository.id
         const existing = patchOrChangesetByRepoId.get(key)
         // if no matching changeset exists yet, it is a new changeset to the campaign
@@ -105,6 +126,7 @@ export function calculateChangesetDiff(
         changed,
         unmodified,
         deleted,
+        containsHidden,
     }
 }
 
@@ -133,6 +155,9 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             [_queryChangesets, campaign.id, _queryPatchesFromPatchSet, _queryPatchesFromCampaign, patchSet.id]
         )
     )
+    if (!campaign.viewerCanAdminister) {
+        return <HeroPage body="Updating a campaign is not permitted without campaign admin permissions." />
+    }
     if (!queriedChangesets) {
         return (
             <div>
@@ -141,28 +166,30 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
         )
     }
     const [changesets, campaignPatches, patches] = queriedChangesets
-    const { added, changed, unmodified, deleted } = calculateChangesetDiff(
+    const { added, changed, unmodified, deleted, containsHidden } = calculateChangesetDiff(
         changesets.nodes,
         campaignPatches.nodes,
         patches.nodes
     )
 
-    const newDraftCount = !campaign.publishedAt
-        ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
-        : 0
+    const newDraftCount = changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
     return (
         <div className={className}>
             <h3 className="mt-4 mb-2">Preview of changes</h3>
+            {containsHidden && (
+                <div className="alert-alert-warning">
+                    The update contains repositories that you don't have permission to. Those will <strong>not</strong>{' '}
+                    be updated.
+                </div>
+            )}
             <p>
                 Campaign currently has {campaign.changesets.totalCount + campaign.patches.totalCount}{' '}
                 {pluralize('changeset', campaign.changesets.totalCount + campaign.patches.totalCount)} (
                 {campaign.changesets.totalCount} published, {campaign.patches.totalCount}{' '}
                 {pluralize('draft', campaign.patches.totalCount)}), after update it will have{' '}
                 {patchSet.patches.totalCount} {pluralize('changeset', patchSet.patches.totalCount)} (
-                {campaign.publishedAt
-                    ? unmodified.length + changed.length - deleted.length + added.length
-                    : campaign.changesets.totalCount - deleted.length}{' '}
-                published, {newDraftCount} {pluralize('draft', newDraftCount)}):
+                {unmodified.length + changed.length - deleted.length + added.length} published, {newDraftCount}{' '}
+                {pluralize('draft', newDraftCount)}):
             </p>
             <TabsWithLocalStorageViewStatePersistence
                 storageKey="campaignUpdateDiffTabs"
@@ -236,6 +263,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}
@@ -245,12 +273,13 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 </div>
                 <div key="deleted" className="pt-3">
                     {deleted.map(changeset => (
-                        <ChangesetNode
+                        <ExternalChangesetNode
                             history={history}
                             location={location}
                             node={changeset}
                             isLightTheme={isLightTheme}
                             key={changeset.id}
+                            viewerCanAdminister={campaign.viewerCanAdminister}
                             // todo:
                             // campaignUpdates={campaignUpdates}
                             // extensionInfo={extensionInfo}

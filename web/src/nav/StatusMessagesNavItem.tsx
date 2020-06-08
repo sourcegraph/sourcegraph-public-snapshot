@@ -116,14 +116,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(
             this.props
                 .fetchMessages()
                 .pipe(
-                    catchError(err => [asError(err) as ErrorLike]),
+                    catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
                     repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
                     repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS)))
@@ -230,7 +230,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 history={this.props.history}
                             />
                         ) : this.state.messagesOrError.length > 0 ? (
-                            this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))
+                            this.state.messagesOrError.map((message, index) => this.renderMessage(message, index))
                         ) : (
                             <StatusMessagesNavItemEntry
                                 title="Repositories up to date"

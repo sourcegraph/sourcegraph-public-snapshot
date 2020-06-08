@@ -4,6 +4,7 @@ import {
     Area,
     ComposedChart,
     LabelFormatter,
+    Legend,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -38,15 +39,21 @@ const commonAreaProps = {
     type: 'stepBefore',
 } as const
 
-const tooltipItemOrder: Record<string, number> = {
-    'Open & awaiting review': 4,
-    'Open & changes requested': 3,
-    'Open & approved': 2,
-    Closed: 1,
-    Merged: 0,
+interface StateDefinition {
+    fill: string
+    label: string
+    sortOrder: number
 }
 
-const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[item.name]
+const states: Record<string, StateDefinition> = {
+    openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
+    openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
+    openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
+    closed: { fill: 'var(--secondary)', label: 'Closed', sortOrder: 1 },
+    merged: { fill: 'var(--merged)', label: 'Merged', sortOrder: 0 },
+}
+
+const tooltipItemSorter = ({ dataKey }: TooltipPayload): number => states[dataKey as string].sortOrder
 
 /**
  * A burndown chart showing progress of the campaigns changesets.
@@ -72,6 +79,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >
+                <Legend verticalAlign="bottom" iconType="square" />
                 <XAxis
                     dataKey="date"
                     domain={[
@@ -101,16 +109,20 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                     itemSorter={tooltipItemSorter}
                 />
 
-                <Area dataKey="openPending" name="Open & awaiting review" fill="var(--warning)" {...commonAreaProps} />
-                <Area
-                    dataKey="openChangesRequested"
-                    name="Open & changes requested"
-                    fill="var(--danger)"
-                    {...commonAreaProps}
-                />
-                <Area dataKey="openApproved" name="Open & approved" fill="var(--success)" {...commonAreaProps} />
-                <Area dataKey="closed" name="Closed" fill="var(--secondary)" {...commonAreaProps} />
-                <Area dataKey="merged" name="Merged" fill="var(--merged)" {...commonAreaProps} />
+                {Object.entries(states)
+                    .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                    .map(([dataKey, state]) => (
+                        <Area
+                            key={state.sortOrder}
+                            dataKey={dataKey}
+                            name={state.label}
+                            fill={state.fill}
+                            // The stroke is used to colour the legend, which we
+                            // want to match the fill colour for each area.
+                            stroke={state.fill}
+                            {...commonAreaProps}
+                        />
+                    ))}
             </ComposedChart>
         </ResponsiveContainer>
     )

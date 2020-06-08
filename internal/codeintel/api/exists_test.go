@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
-	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 	gitservermocks "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver/mocks"
@@ -22,7 +22,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	mockBundleClient4 := bundlemocks.NewMockBundleClient()
 	mockGitserverClient := gitservermocks.NewMockClient()
 
-	setMockDBFindClosestDumps(t, mockDB, 42, testCommit, "s1/main.go", []db.Dump{
+	setMockDBFindClosestDumps(t, mockDB, 42, testCommit, "s1/main.go", "idx", []db.Dump{
 		{ID: 50, Root: "s1/"},
 		{ID: 51, Root: "s1/"},
 		{ID: 52, Root: "s1/"},
@@ -58,7 +58,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	})
 
 	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
-	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go")
+	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest database: %s", err)
 	}
@@ -97,7 +97,7 @@ func TestFindClosestSkipsGitserverIfCommitIsKnown(t *testing.T) {
 	mockGitserverClient := gitservermocks.NewMockClient()
 
 	setMockDBHasCommit(t, mockDB, 42, testCommit, true)
-	setMockDBFindClosestDumps(t, mockDB, 42, testCommit, "main.go", []db.Dump{
+	setMockDBFindClosestDumps(t, mockDB, 42, testCommit, "main.go", "idx", []db.Dump{
 		{ID: 50, Root: ""},
 	})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{
@@ -106,7 +106,7 @@ func TestFindClosestSkipsGitserverIfCommitIsKnown(t *testing.T) {
 	setMockBundleClientExists(t, mockBundleClient, "main.go", true)
 
 	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
-	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go")
+	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go", "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest database: %s", err)
 	}

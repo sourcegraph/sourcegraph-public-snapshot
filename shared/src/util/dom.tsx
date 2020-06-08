@@ -17,10 +17,10 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
     // We want to treat text nodes as walkable so they can be highlighted. Wrap these in a span and
     // replace them in the DOM.
     if (node.nodeType === Node.TEXT_NODE && node.textContent !== null) {
-        const sp = document.createElement('span')
-        sp.innerHTML = node.textContent
-        node.parentNode!.replaceChild(sp, node)
-        node = sp
+        const span = document.createElement('span')
+        span.innerHTML = node.textContent
+        node.parentNode!.replaceChild(span, node)
+        node = span
     }
     node.classList.add('annotated-selection-match')
     highlightNodeHelper(node, 0, start, length)
@@ -41,8 +41,8 @@ interface HighlightResult {
  * @param length the number of characters to highlight.
  */
 function highlightNodeHelper(
-    currNode: HTMLElement,
-    currOffset: number,
+    currentNode: HTMLElement,
+    currentOffset: number,
     start: number,
     length: number
 ): HighlightResult {
@@ -50,55 +50,60 @@ function highlightNodeHelper(
         return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0 }
     }
 
-    const origOffset = currOffset
-    const numChildNodes = currNode.childNodes.length
+    const origOffset = currentOffset
+    const numberChildNodes = currentNode.childNodes.length
 
     let charsHighlighted = 0
 
-    for (let i = 0; i < numChildNodes; ++i) {
-        if (currOffset >= start + length) {
+    for (let index = 0; index < numberChildNodes; ++index) {
+        if (currentOffset >= start + length) {
             return { highlightingCompleted: true, charsConsumed: 0, charsHighlighted: 0 }
         }
-        const isLastNode = i === currNode.childNodes.length - 1
-        const child = currNode.childNodes[i]
+        const isLastNode = index === currentNode.childNodes.length - 1
+        const child = currentNode.childNodes[index]
 
         switch (child.nodeType) {
             case Node.TEXT_NODE: {
                 const nodeText = child.textContent!
 
-                if (currOffset <= start && currOffset + nodeText.length > start) {
+                if (currentOffset <= start && currentOffset + nodeText.length > start) {
                     // Current node overlaps start of highlighting.
-                    currNode.removeChild(child)
+                    child.remove()
 
                     // The characters beginning at the start of highlighting and extending to the end of the node.
-                    const rest = nodeText.substr(start - currOffset)
+                    const rest = nodeText.slice(start - currentOffset)
 
                     const containerNode = document.createElement('span')
-                    if (nodeText.substr(0, start - currOffset) !== '') {
+                    if (nodeText.slice(0, Math.max(0, start - currentOffset))) {
                         // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                        containerNode.appendChild(document.createTextNode(nodeText.substr(0, start - currOffset)))
+                        containerNode.append(
+                            document.createTextNode(nodeText.slice(0, Math.max(0, start - currentOffset)))
+                        )
                     }
 
                     if (rest.length >= length) {
                         // The highlighted range is fully contained within the node.
-                        if (currNode.classList.contains('selection-highlight')) {
+                        if (currentNode.classList.contains('selection-highlight')) {
                             // Nothing to do; it's already highlighted.
-                            currNode.appendChild(child)
+                            currentNode.append(child)
                         } else {
-                            const text = rest.substr(0, length)
+                            const text = rest.slice(0, Math.max(0, length))
                             const highlight = document.createElement('span')
                             highlight.className = 'selection-highlight'
-                            highlight.appendChild(document.createTextNode(text))
-                            containerNode.appendChild(highlight)
+                            highlight.append(document.createTextNode(text))
+                            containerNode.append(highlight)
                             if (rest.length > length) {
                                 // There is more in the span than the highlighted chars.
-                                containerNode.appendChild(document.createTextNode(rest.substr(length)))
+                                containerNode.append(document.createTextNode(rest.slice(length)))
                             }
 
-                            if (currNode.childNodes.length === 0 || isLastNode) {
-                                currNode.appendChild(containerNode)
+                            if (currentNode.childNodes.length === 0 || isLastNode) {
+                                currentNode.append(containerNode)
                             } else {
-                                currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
+                                currentNode.insertBefore(
+                                    containerNode,
+                                    currentNode.childNodes[index] || currentNode.firstChild
+                                )
                             }
                         }
 
@@ -110,42 +115,42 @@ function highlightNodeHelper(
 
                     const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.appendChild(document.createTextNode(rest))
-                    containerNode.appendChild(highlight)
+                    highlight.append(document.createTextNode(rest))
+                    containerNode.append(highlight)
 
-                    if (currNode.childNodes.length === 0 || isLastNode) {
-                        if (currNode.classList.contains('selection-highlight')) {
+                    if (currentNode.childNodes.length === 0 || isLastNode) {
+                        if (currentNode.classList.contains('selection-highlight')) {
                             // Nothing to do; it's already highlighted.
-                            currNode.appendChild(child)
+                            currentNode.append(child)
                         } else {
-                            currNode.appendChild(containerNode)
+                            currentNode.append(containerNode)
                         }
                     } else {
-                        currNode.insertBefore(containerNode, currNode.childNodes[i] || currNode.firstChild)
+                        currentNode.insertBefore(containerNode, currentNode.childNodes[index] || currentNode.firstChild)
                     }
                 }
 
-                currOffset += nodeText.length
+                currentOffset += nodeText.length
                 break
             }
 
             case Node.ELEMENT_NODE: {
                 const elementNode = child as HTMLElement
-                const res = highlightNodeHelper(
+                const result = highlightNodeHelper(
                     elementNode,
-                    currOffset,
+                    currentOffset,
                     start + charsHighlighted,
                     length - charsHighlighted
                 )
-                if (res.highlightingCompleted) {
-                    return res
+                if (result.highlightingCompleted) {
+                    return result
                 }
-                currOffset += res.charsConsumed
-                charsHighlighted += res.charsHighlighted
+                currentOffset += result.charsConsumed
+                charsHighlighted += result.charsHighlighted
                 break
             }
         }
     }
 
-    return { highlightingCompleted: false, charsConsumed: currOffset - origOffset, charsHighlighted }
+    return { highlightingCompleted: false, charsConsumed: currentOffset - origOffset, charsHighlighted }
 }

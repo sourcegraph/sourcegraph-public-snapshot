@@ -1,11 +1,10 @@
 package awscodecommit
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
-
-	"context"
 
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/prometheus/client_golang/prometheus"

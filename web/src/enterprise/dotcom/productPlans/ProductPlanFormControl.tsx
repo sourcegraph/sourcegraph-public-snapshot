@@ -55,7 +55,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                                 onChange(plans[0].billingPlanID)
                             }
                         }),
-                        catchError(err => [asError(err)]),
+                        catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
                 [_queryProductPlans, onChange, noPlanSelected]
@@ -63,8 +63,8 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
         ) || LOADING
 
     const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => {
-            onChange(e.currentTarget.value)
+        event => {
+            onChange(event.currentTarget.value)
         },
         [onChange]
     )
@@ -80,14 +80,14 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
             ) : (
                 <>
                     <div className="list-group">
-                        {plans.map((plan, i) => (
+                        {plans.map((plan, index) => (
                             <div key={plan.billingPlanID} className="list-group-item p-0">
-                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${i}`}>
+                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${index}`}>
                                     <input
                                         type="radio"
                                         name="product-plan-form-control__plan"
                                         className="mr-2"
-                                        id={`product-plan-form-control__plan${i}`}
+                                        id={`product-plan-form-control__plan${index}`}
                                         value={plan.billingPlanID}
                                         onChange={onPlanChange}
                                         required={true}

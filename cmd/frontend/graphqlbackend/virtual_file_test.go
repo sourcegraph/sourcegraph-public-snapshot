@@ -43,6 +43,15 @@ func TestVirtualFile(t *testing.T) {
 			t.Fatalf("wrong Content, want=%q have=%q", want, have)
 		}
 	})
+	t.Run("ByteSize", func(t *testing.T) {
+		have, err := vfr.ByteSize(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int32(len([]byte(fileContent))); have != want {
+			t.Fatalf("wrong ByteSize, want=%q have=%q", want, have)
+		}
+	})
 	t.Run("RichHTML", func(t *testing.T) {
 		have, err := vfr.RichHTML(context.Background())
 		if err != nil {

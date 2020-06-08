@@ -82,7 +82,7 @@ describe('activeExtensions', () => {
                             b: { final: { extensions: { x: true, y: true } }, subjects: [] },
                         }),
                         (enabledExtensions, activeLanguages) =>
-                            enabledExtensions.filter(x => activeLanguages.has(x.id)),
+                            enabledExtensions.filter(extension => activeLanguages.has(extension.id)),
                         cold('-a--|', { a: '' }),
                         () => of(null)
                     ).activeExtensions

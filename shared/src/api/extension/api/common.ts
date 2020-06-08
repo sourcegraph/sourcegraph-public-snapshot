@@ -25,15 +25,15 @@ const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<
             // Don't pass the proxy to Rx directly because it will try to
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({
-                next: val => {
+                next: value => {
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    observer.next(val as UnproxyOrClone<T>)
+                    observer.next(value as UnproxyOrClone<T>)
                 },
-                error: err => {
+                error: error => {
                     // Only pass a few well-known Error properties
                     // TODO should pass all properties serialized recursively, best handled on comlink level
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    observer.error(err && { message: err.message, name: err.name, stack: err.stack })
+                    observer.error(error && { message: error.message, name: error.name, stack: error.stack })
                 },
                 complete: () => {
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises

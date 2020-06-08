@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// MockReferencePager is a mock impelementation of the ReferencePager
+// MockReferencePager is a mock implementation of the ReferencePager
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/db) used for unit
 // testing.

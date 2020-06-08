@@ -36,7 +36,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    tap(e => e.preventDefault()),
+                    tap(event => event.preventDefault()),
                     switchMap(() =>
                         merge(
                             of<Pick<State, 'error'>>({ error: undefined }),
@@ -94,8 +94,9 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
         )
     }
 
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = e => this.setState({ email: e.currentTarget.value })
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
+    private onChange: React.ChangeEventHandler<HTMLInputElement> = event =>
+        this.setState({ email: event.currentTarget.value })
+    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
 
     private addUserEmail = (email: string): Observable<void> =>
         mutateGraphQL(

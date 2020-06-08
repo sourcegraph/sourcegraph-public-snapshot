@@ -104,8 +104,8 @@ func TestHoist(t *testing.T) {
 			// does not perform the heuristic.
 			parse := func(in string) []Node {
 				parser := &parser{
-					buf:       []byte(in),
-					heuristic: heuristic{parensAsPatterns: true},
+					buf:        []byte(in),
+					heuristics: parensAsPatterns,
 				}
 				nodes, _ := parser.parseOr()
 				return newOperator(nodes, And)
@@ -176,6 +176,47 @@ func TestSearchUppercase(t *testing.T) {
 		t.Run("searchUppercase", func(t *testing.T) {
 			query, _ := ParseAndOr(c.input)
 			got := prettyPrint(SearchUppercase(SubstituteAliases(query)))
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSubstituteOrForRegexp(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "foo or bar",
+			want:  `"foo|bar"`,
+		},
+		{
+			input: "(foo or (bar or baz))",
+			want:  `"foo|bar|baz"`,
+		},
+		{
+			input: "repo:foobar foo or (bar or baz)",
+			want:  `(or "bar|baz" (and "repo:foobar" "foo"))`,
+		},
+		{
+			input: "(foo or (bar or baz)) and foobar",
+			want:  `(and "foo|bar|baz" "foobar")`,
+		},
+		{
+			input: "(foo or (bar and baz))",
+			want:  `(or "foo" (and "bar" "baz"))`,
+		},
+		{
+			input: "foo or (bar and baz) or foobar",
+			want:  `(or "foo|foobar" (and "bar" "baz"))`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := prettyPrint(substituteOrForRegexp(query))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}

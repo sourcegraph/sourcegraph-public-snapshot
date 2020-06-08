@@ -41,12 +41,12 @@ export class TestResourceManager {
 
     public add<T>(type: Resource['type'], name: string, value: { result: T; destroy: () => Promise<void> }): T
     public add(type: Resource['type'], name: string, destroy: () => Promise<void>): void
-    public add(type: Resource['type'], name: string, v: any): any {
-        if (v.destroy) {
-            this.resources.push({ type, name, destroy: v.destroy })
-            return v.result
+    public add(type: Resource['type'], name: string, value: any): any {
+        if (value.destroy) {
+            this.resources.push({ type, name, destroy: value.destroy })
+            return value.result
         }
-        this.resources.push({ type, name, destroy: v })
+        this.resources.push({ type, name, destroy: value })
     }
 
     public async destroyAll(): Promise<void> {
@@ -62,10 +62,10 @@ export class TestResourceManager {
 
             try {
                 await resource.destroy()
-            } catch (err) {
+            } catch (error) {
                 console.error(
                     `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${
-                        asError(err).message
+                        asError(error).message
                     }`
                 )
                 continue

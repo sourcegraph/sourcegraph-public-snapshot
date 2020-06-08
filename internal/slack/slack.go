@@ -11,22 +11,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-
 	"github.com/pkg/errors"
 )
 
-var SourcegraphOrgWebhookURL = env.Get("SLACK_COMMENTS_BOT_HOOK", "", "Webhook for dogfooding notifications from an organization-level Slack bot.")
-
 // Client is capable of posting a message to a Slack webhook
 type Client struct {
-	WebhookURL            string
-	AlsoSendToSourcegraph bool
+	WebhookURL string
 }
 
 // New creates a new Slack client
-func New(webhookURL string, alsoSendToSourcegraph bool) *Client {
-	return &Client{WebhookURL: webhookURL, AlsoSendToSourcegraph: alsoSendToSourcegraph}
+func New(webhookURL string) *Client {
+	return &Client{WebhookURL: webhookURL}
 }
 
 // Payload is the wrapper for a Slack message, defined at:
@@ -66,11 +61,9 @@ type Field struct {
 	Value string `json:"value"`
 }
 
-// Post sends payload to a Slack channel defined by the provided webhookURL
-// This function should not be called directly — rather, it should be called
-// through a helper Notify* function on a slack.Client object.
-func Post(payload *Payload, webhookURL string) error {
-	if webhookURL == "" {
+// Post sends payload to a Slack channel.
+func (c *Client) Post(ctx context.Context, payload *Payload) error {
+	if c.WebhookURL == "" {
 		return nil
 	}
 
@@ -78,16 +71,16 @@ func Post(payload *Payload, webhookURL string) error {
 	if err != nil {
 		return errors.Wrap(err, "slack: marshal json")
 	}
-	req, err := http.NewRequest("POST", webhookURL, bytes.NewReader(payloadJSON))
+	req, err := http.NewRequest("POST", c.WebhookURL, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return errors.Wrap(err, "slack: create post request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := http.DefaultClient.Do(req.WithContext(timeoutCtx))
 	if err != nil {
 		return errors.Wrap(err, "slack: http request")
 	}

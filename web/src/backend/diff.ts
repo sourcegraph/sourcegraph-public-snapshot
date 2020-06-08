@@ -22,10 +22,12 @@ export const FileDiffFields = gql`
         oldFile {
             __typename
             binary
+            byteSize
         }
         newFile {
             __typename
             binary
+            byteSize
         }
         newPath
         mostRelevantFile {

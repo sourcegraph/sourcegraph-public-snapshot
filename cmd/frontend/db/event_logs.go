@@ -252,6 +252,13 @@ type EventArgumentMatch struct {
 	ArgumentValue string
 }
 
+// PercentileValue is a slice of Nth percentile values calculated from a field of events
+// in a time period starting on a given date.
+type PercentileValue struct {
+	Start  time.Time
+	Values []float64
+}
+
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
 // a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
 // entry for each period in the time span.
@@ -297,107 +304,8 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-// CountEventsPerPeriod provide a count of events in a given time span, broken up into periods of a given type.
-// The value of `now` should be the current time in UTC.
-func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *EventFilterOptions) ([]UsageValue, error) {
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt != nil {
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if opt.ByEventNameWithCondition != nil {
-			if opt.ByEventName == "" {
-				return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
-			}
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-			conds = append(conds, opt.ByEventNameWithCondition)
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-		}
-	}
-
-	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
-}
-
-// PercentileValue is a slice of Nth percentile values calculated from a field of events
-// in a time period starting on a given date.
-type PercentileValue struct {
-	Start  time.Time
-	Values []float64
-}
-
-// PercentilesPerPeriod calculates the given percentiles over a field of the event's arguments in a given time span,
-// broken up into periods of a given type. The value of `now` should be the current time in UTC. Percentiles should
-// be supplied as floats in the range `[0, 1)`, such that `[.5, .9, .99]` will return the 50th, 90th, and 99th
-// percentile values. Returns an array of length `periods`, with one entry for each period in the time span. Each
-// `PercentileValue` object in the result will contain exactly `len(percentiles)` values.
-func (l *eventLogs) PercentilesPerPeriod(
-	ctx context.Context,
-	periodType PeriodType,
-	now time.Time,
-	periods int,
-	field string,
-	percentiles []float64,
-	opt *EventFilterOptions,
-) ([]PercentileValue, error) {
-	if len(percentiles) == 0 {
-		return nil, fmt.Errorf("expected at least one percentile value in query")
-	}
-
-	startDate, ok := calcStartDate(now, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	endDate, ok := calcEndDate(startDate, periodType, periods)
-	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
-	}
-
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opt != nil {
-		if opt.ByEventNamePrefix != "" {
-			conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.ByEventNamePrefix+"%"))
-		}
-		if opt.ByEventName != "" {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if len(opt.ByEventNames) > 0 {
-			items := []*sqlf.Query{}
-			for _, v := range opt.ByEventNames {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
-		}
-	}
-
-	return l.calculatePercentilesPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, field, percentiles, conds)
-}
-
 func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END"), interval, period, startDate, endDate, conds)
-}
-
-func (l *eventLogs) countEventsPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("*"), interval, period, startDate, endDate, conds)
 }
 
 func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
@@ -431,69 +339,6 @@ func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval
 		return nil, err
 	}
 	return counts, nil
-}
-
-func (l *eventLogs) calculatePercentilesPerPeriodBySQL(
-	ctx context.Context,
-	interval *sqlf.Query,
-	period *sqlf.Query,
-	startDate time.Time,
-	endDate time.Time,
-	field string,
-	percentiles []float64,
-	conds []*sqlf.Query,
-) ([]PercentileValue, error) {
-	countByPeriodExprs := []*sqlf.Query{}
-	qExprs := []*sqlf.Query{}
-	for i, p := range percentiles {
-		name := fmt.Sprintf("p%d\n", i)
-		// Note: we can't go directly from jsonb -> integer in postgres 9.6, so we
-		// have to first cast it to a text type, and then to an integer to support
-		// queries on older instances.
-		countByPeriodExprs = append(countByPeriodExprs, sqlf.Sprintf(
-			"percentile_cont(%d) WITHIN GROUP (ORDER BY (argument->%s)::text::integer) AS "+name,
-			p,
-			field,
-		))
-
-		qExprs = append(qExprs, sqlf.Sprintf("COALESCE("+name+", 0)"))
-	}
-
-	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
-	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, %s
-		FROM event_logs
-		WHERE (%s)
-		GROUP BY period`, period, sqlf.Join(countByPeriodExprs, ", "), sqlf.Join(conds, ") AND ("))
-	q := sqlf.Sprintf(`WITH all_periods AS (%s), values_by_period AS (%s)
-		SELECT all_periods.period, %s
-		FROM all_periods
-		LEFT OUTER JOIN values_by_period ON all_periods.period = (values_by_period.period)::timestamp
-		ORDER BY period DESC`, allPeriods, countByPeriod, sqlf.Join(qExprs, ", "))
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	values := []PercentileValue{}
-	for rows.Next() {
-		var v PercentileValue
-		v.Values = make([]float64, len(percentiles))
-		dest := []interface{}{&v.Start}
-		for i := range v.Values {
-			dest = append(dest, &v.Values[i])
-		}
-		err := rows.Scan(dest...)
-		if err != nil {
-			return nil, err
-		}
-		v.Start = v.Start.UTC()
-		values = append(values, v)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return values, nil
 }
 
 // CountUniqueUsersAll provides a count of unique active users in a given time span.

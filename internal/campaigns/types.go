@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -24,8 +25,8 @@ import (
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]struct{}{
-	github.ServiceType:          {},
-	bitbucketserver.ServiceType: {},
+	extsvc.TypeGitHub:          {},
+	extsvc.TypeBitbucketServer: {},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
@@ -316,9 +317,20 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// Completed returns true for jobs that have completed, regardless of whether
+// that was successful or not.
+func (c *ChangesetJob) Completed() bool {
+	return !c.FinishedAt.IsZero()
+}
+
 // SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
-	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+	return c.Error == "" && c.ChangesetID != 0 && c.Completed()
+}
+
+// UnsuccessfullyCompleted returns true for jobs that have run, but failed.
+func (c *ChangesetJob) UnsuccessfullyCompleted() bool {
+	return c.Error != "" && c.ChangesetID == 0 && c.Completed()
 }
 
 // Reset sets the Error, StartedAt and FinishedAt fields to their respective
@@ -362,13 +374,13 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = github.ServiceType
+		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = pr.HeadRefName
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 	default:

@@ -46,3 +46,5 @@
 {"id": "46", "type": "edge", "label": "packageInformation", "outV": "19", "inV": "23"}
 {"id": "47", "type": "edge", "label": "contains", "outV": "02", "inVs": ["04", "05", "06"]}
 {"id": "48", "type": "edge", "label": "contains", "outV": "03", "inVs": ["07", "08", "09"]}
+{"id": "49", "type": "vertex", "label": "diagnosticResult", "result": [{"severity": 1, "code": 2322, "message": "Type '10' is not assignable to type 'string'.", "source": "eslint", "range": {"start": {"line": 1, "character": 5}, "end": {"line": 1, "character": 6}}}]}
+{"id": "50", "type": "edge", "label": "textDocument/diagnostic", "outV": "02", "inV": "49"}

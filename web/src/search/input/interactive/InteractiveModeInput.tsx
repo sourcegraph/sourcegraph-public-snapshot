@@ -74,10 +74,10 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
     constructor(props: InteractiveModeProps) {
         super(props)
 
-        const searchParams = new URLSearchParams(props.location.search)
+        const searchParameters = new URLSearchParams(props.location.search)
         let filtersInQuery: FiltersToTypeAndValue = {}
 
-        const query = searchParams.get('q')
+        const query = searchParameters.get('q')
         if (query !== null && query.length > 0) {
             const { filtersInQuery: newFiltersInQuery, navbarQuery } = convertPlainTextToInteractiveQuery(query)
             filtersInQuery = { ...filtersInQuery, ...newFiltersInQuery }
@@ -183,8 +183,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         })
     }
 
-    private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
+    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        event.preventDefault()
         submitSearch({
             ...this.props,
             source: 'nav',
@@ -196,24 +196,24 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         const isSearchHomepage =
             this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search)
 
-        let logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        let logoSource = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
 
         const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
                 if (branding.light && branding.light.symbol) {
-                    logoSrc = branding.light.symbol
+                    logoSource = branding.light.symbol
                 }
             } else if (branding.dark && branding.dark.symbol) {
-                logoSrc = branding.dark.symbol
+                logoSource = branding.dark.symbol
             }
             if (branding.disableSymbolSpin) {
                 logoLinkClassName = 'global-navbar__logo-link'
             }
         }
 
-        const logo = <img className="global-navbar__logo" src={logoSrc} />
+        const logo = <img className="global-navbar__logo" src={logoSource} />
 
         return (
             <div className="interactive-mode-input e2e-interactive-mode-input">

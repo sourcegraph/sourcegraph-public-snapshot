@@ -71,11 +71,11 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
         this.extraContextChanges.next(this.props.extraContext)
     }
 
-    public componentDidUpdate(prevProps: ActionsProps): void {
-        if (prevProps.scope !== this.props.scope) {
+    public componentDidUpdate(previousProps: ActionsProps): void {
+        if (previousProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
         }
-        if (prevProps.extraContext !== this.props.extraContext) {
+        if (previousProps.extraContext !== this.props.extraContext) {
             this.extraContextChanges.next(this.props.extraContext)
         }
     }

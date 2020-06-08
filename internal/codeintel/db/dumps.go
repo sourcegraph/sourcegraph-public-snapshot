@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -22,6 +23,48 @@ type Dump struct {
 	FinishedAt        *time.Time `json:"finishedAt"`
 	RepositoryID      int        `json:"repositoryId"`
 	Indexer           string     `json:"indexer"`
+}
+
+// scanDumps scans a slice of dumps from the return value of `*dbImpl.query`.
+func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = closeRows(rows, err) }()
+
+	var dumps []Dump
+	for rows.Next() {
+		var dump Dump
+		if err := rows.Scan(
+			&dump.ID,
+			&dump.Commit,
+			&dump.Root,
+			&dump.VisibleAtTip,
+			&dump.UploadedAt,
+			&dump.State,
+			&dump.FailureSummary,
+			&dump.FailureStacktrace,
+			&dump.StartedAt,
+			&dump.FinishedAt,
+			&dump.RepositoryID,
+			&dump.Indexer,
+		); err != nil {
+			return nil, err
+		}
+
+		dumps = append(dumps, dump)
+	}
+
+	return dumps, nil
+}
+
+// scanFirstDump scans a slice of dumps from the return value of `*dbImpl.query` and returns the first.
+func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
+	dumps, err := scanDumps(rows, err)
+	if err != nil || len(dumps) == 0 {
+		return Dump{}, false, err
+	}
+	return dumps[0], true, nil
 }
 
 // GetDumpIDs returns all dump ids in chronological order.
@@ -45,12 +88,12 @@ func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.finished_at,
 			d.repository_id,
 			d.indexer
-		FROM lsif_dumps d WHERE id = %d
+		FROM lsif_dumps d WHERE id = %s
 	`, id)))
 }
 
-// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, and file.
-func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (_ []Dump, err error) {
+// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, file, and optional indexer.
+func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (_ []Dump, err error) {
 	tx, started, err := db.transact(ctx)
 	if err != nil {
 		return nil, err
@@ -71,6 +114,12 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
+	var conds []*sqlf.Query
+	conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(intsToQueries(ids), ", ")))
+	if indexer != "" {
+		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
+	}
+
 	dumps, err := scanDumps(tx.query(
 		ctx,
 		sqlf.Sprintf(`
@@ -87,8 +136,8 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 				d.finished_at,
 				d.repository_id,
 				d.indexer
-			FROM lsif_dumps d WHERE id IN (%s)
-		`, sqlf.Join(intsToQueries(ids), ", ")),
+			FROM lsif_dumps d WHERE %s
+		`, sqlf.Join(conds, " AND ")),
 	))
 	if err != nil {
 		return nil, err
@@ -129,7 +178,7 @@ func (db *dbImpl) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 
 // UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
 func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
-	return db.exec(ctx, withAncestorLineage(`
+	return db.queryForEffect(ctx, withAncestorLineage(`
 		UPDATE lsif_dumps d
 		SET visible_at_tip = id IN (SELECT * from visible_ids)
 		WHERE d.repository_id = %s AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
@@ -140,8 +189,8 @@ func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID in
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	return db.exec(ctx, sqlf.Sprintf(`
+	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		DELETE from lsif_uploads
-		WHERE repository_id = %d AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+		WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
 	`, repositoryID, commit, root, indexer))
 }

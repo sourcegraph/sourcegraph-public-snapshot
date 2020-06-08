@@ -59,14 +59,9 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     <div>
-                        <Octicon icon={Diff} className="icon-inline mr-2" />
+                        <Octicon icon={Diff} className="icon-inline mr-2 text-success" />
                         <strong>
-                            <Link
-                                to={node.repository.url}
-                                className="text-muted"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
+                            <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                                 {node.repository.name}
                             </Link>
                         </strong>

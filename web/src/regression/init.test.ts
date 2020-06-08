@@ -1,9 +1,9 @@
 import { describe, before, test } from 'mocha'
-import { Driver } from '../../../shared/src/e2e/driver'
+import { Driver } from '../../../shared/src/testing/driver'
 import { createAndInitializeDriver } from './util/init'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/testing/config'
 import { Key } from 'ts-key-enum'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { retry } from '../../../shared/src/testing/utils'
 import delay from 'delay'
 
 describe('Initialize new instance', () => {

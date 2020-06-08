@@ -19,7 +19,7 @@ import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoContainerRoutes, enterpriseRepoRevContainerRoutes } from './repo/routes'
+import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRoutes } from './routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
@@ -30,7 +30,7 @@ import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
-import { enterpriseRepoSettingsSidebarItems } from './repo/settings/sidebaritems'
+import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
@@ -50,10 +50,10 @@ window.addEventListener('DOMContentLoaded', () => {
             orgAreaRoutes={enterpriseOrganizationAreaRoutes}
             orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
             repoContainerRoutes={enterpriseRepoContainerRoutes}
-            repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
+            repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
-            repoSettingsSidebarItems={enterpriseRepoSettingsSidebarItems}
+            repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
             routes={enterpriseRoutes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}
             showCampaigns={true}

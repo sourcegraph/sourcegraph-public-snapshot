@@ -33,8 +33,8 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
             return highlight(language, code, true).value
         }
         return highlightAuto(code).value
-    } catch (err) {
-        console.warn('Error syntax-highlighting hover markdown code block', err)
+    } catch (error) {
+        console.warn('Error syntax-highlighting hover markdown code block', error)
         return escapeHTML(code)
     }
 }
@@ -75,11 +75,17 @@ export const renderMarkdown = (
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
 
-    let opt: Overwrite<sanitize.IOptions, sanitize.IDefaults>
+    let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
     if (options.plainText) {
-        opt = { allowedAttributes: {}, allowedSchemes: [], allowedSchemesByTag: {}, allowedTags: [], selfClosing: [] }
+        sanitizeOptions = {
+            allowedAttributes: {},
+            allowedSchemes: [],
+            allowedSchemesByTag: {},
+            allowedTags: [],
+            selfClosing: [],
+        }
     } else {
-        opt = {
+        sanitizeOptions = {
             ...sanitize.defaults,
             // Ensure <object> must have type attribute set
             exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
@@ -145,13 +151,13 @@ export const renderMarkdown = (
             },
         }
         if (options.allowDataUriLinksAndDownloads) {
-            opt.allowedAttributes.a = [...opt.allowedAttributes.a, 'download']
-            opt.allowedSchemesByTag = {
-                ...opt.allowedSchemesByTag,
-                a: [...(opt.allowedSchemesByTag.a || opt.allowedSchemes), 'data'],
+            sanitizeOptions.allowedAttributes.a = [...sanitizeOptions.allowedAttributes.a, 'download']
+            sanitizeOptions.allowedSchemesByTag = {
+                ...sanitizeOptions.allowedSchemesByTag,
+                a: [...(sanitizeOptions.allowedSchemesByTag.a || sanitizeOptions.allowedSchemes), 'data'],
             }
         }
     }
 
-    return sanitize(rendered, opt)
+    return sanitize(rendered, sanitizeOptions)
 }

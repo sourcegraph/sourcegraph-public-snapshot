@@ -3,6 +3,7 @@ package janitor
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
@@ -63,9 +64,9 @@ func (j *Janitor) evictBundle() (uint64, bool, error) {
 		return 0, false, nil
 	}
 
-	path := paths.DBFilename(j.bundleDir, int64(id))
+	path := paths.DBDir(j.bundleDir, int64(id))
 
-	fileInfo, err := os.Stat(path)
+	size, err := sizeOf(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Bundle file already gone, continue
@@ -75,13 +76,38 @@ func (j *Janitor) evictBundle() (uint64, bool, error) {
 		return 0, false, err
 	}
 
-	if err := os.Remove(path); err != nil {
-		j.metrics.Errors.Inc()
-		log15.Error("Failed to remove file", "path", path, "err", err)
+	if !j.remove(path) {
 		return 0, true, nil
 	}
 
 	log15.Debug("Removed evicted bundle file", "id", id, "path", path)
-	j.metrics.EvictedBundleFilesRemoved.Add(1)
-	return uint64(fileInfo.Size()), true, nil
+	j.metrics.EvictedBundleFilesRemoved.Inc()
+	return size, true, nil
+}
+
+// sizeOf recursively find the size of the given path. Returns any stat errors
+// that occur when trying to find the size of a file or files within the given
+// directory.
+func sizeOf(path string) (uint64, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+
+	if !fileInfo.IsDir() {
+		return uint64(fileInfo.Size()), nil
+	}
+
+	size := uint64(0)
+	if err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			size += uint64(info.Size())
+		}
+
+		return err
+	}); err != nil {
+		return 0, err
+	}
+
+	return size, nil
 }

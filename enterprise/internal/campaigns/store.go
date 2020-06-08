@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -101,7 +102,7 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
 	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
-	ORDER BY j.id ASC
+	ORDER BY j.updated_at ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING j.id,
@@ -1335,6 +1336,8 @@ type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
 	HasPatchSet *bool
+	// Only return campaigns where author_id is the given.
+	OnlyForAuthor int32
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1372,6 +1375,10 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		} else {
 			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
+	}
+
+	if opts.OnlyForAuthor != 0 {
+		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
 	}
 
 	if len(preds) == 0 {
@@ -1451,6 +1458,8 @@ type ListCampaignsOpts struct {
 	Limit       int
 	State       campaigns.CampaignState
 	HasPatchSet *bool
+	// Only return campaigns where author_id is the given.
+	OnlyForAuthor int32
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1523,6 +1532,10 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		} else {
 			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
+	}
+
+	if opts.OnlyForAuthor != 0 {
+		preds = append(preds, sqlf.Sprintf("author_id = %d", opts.OnlyForAuthor))
 	}
 
 	return sqlf.Sprintf(
@@ -1744,6 +1757,13 @@ type GetCampaignStatusOpts struct {
 	// BackgroundProcessStatus returned by GetCampaignStatus won't be
 	// populated.
 	ExcludeErrors bool
+
+	// ExcludeErrorsInRepos filters out error messages from ChangesetJobs that
+	// are associated with Patches that have the given repository IDs set in
+	// `patches.repo_id`.
+	// This is used to filter out error messages from repositories the user
+	// doesn't have access to.
+	ExcludeErrorsInRepos []api.RepoID
 }
 
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
@@ -1765,6 +1785,19 @@ func getCampaignStatusQuery(opts *GetCampaignStatusOpts) *sqlf.Query {
 	var errorsPreds []*sqlf.Query
 	if opts.ExcludeErrors {
 		errorsPreds = append(errorsPreds, sqlf.Sprintf("FALSE"))
+	}
+
+	if len(opts.ExcludeErrorsInRepos) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ExcludeErrorsInRepos))
+
+		for _, repoID := range opts.ExcludeErrorsInRepos {
+			ids = append(ids, sqlf.Sprintf("%s", repoID))
+		}
+
+		joined := sqlf.Join(ids, ",")
+
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("patches.repo_id NOT IN (%s)", joined))
+		errorsPreds = append(errorsPreds, sqlf.Sprintf("error != ''"))
 	}
 
 	if len(errorsPreds) == 0 {
@@ -1813,6 +1846,7 @@ SELECT
   COUNT(*) FILTER (WHERE error != '') AS failed,
   array_agg(error) FILTER (WHERE %s) AS errors
 FROM changeset_jobs
+JOIN patches ON patches.id = changeset_jobs.patch_id
 WHERE %s
 LIMIT 1
 `
@@ -2025,6 +2059,12 @@ type CountPatchesOpts struct {
 	PatchSetID   int64
 	OnlyWithDiff bool
 
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
 	// If this is set to a Campaign ID only the Patches are returned that are
 	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
@@ -2059,6 +2099,10 @@ func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
+	}
+
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
 	}
 
 	if opts.OnlyUnpublishedInCampaign != 0 {
@@ -2131,9 +2175,16 @@ type ListPatchesOpts struct {
 	Limit        int
 	OnlyWithDiff bool
 
-	// If this is set to a Campaign ID only the Patches are returned that
-	// are _not_ associated with a successfully completed ChangesetJob (meaning
-	// that a Changeset on the codehost was created) for the given Campaign.
+	// When set to a Campaign ID, only patches that do not have ChangesetJobs
+	// associated with that Campaign are returned. The state of the
+	// ChangesetJobs is not checked. This is mutually exclusive with
+	// OnlyUnpublishedInCampaign.
+	OnlyWithoutChangesetJob int64
+
+	// If this is set to a Campaign ID only the Patches are returned that are
+	// _not_ associated with a successfully completed ChangesetJob (meaning that
+	// a Changeset on the codehost was created) for the given Campaign. This is
+	// mutually exclusive with OnlyWithoutChangesetJob.
 	OnlyUnpublishedInCampaign int64
 
 	// If this is set only the Patches where diff_stat_added OR
@@ -2203,6 +2254,10 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("patches.patch_set_id = %s", opts.PatchSetID))
 	}
 
+	if opts.OnlyWithoutChangesetJob != 0 {
+		preds = append(preds, notInCampaignQuery(opts.OnlyWithoutChangesetJob))
+	}
+
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("patches.diff != ''"))
 	}
@@ -2219,6 +2274,21 @@ func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 		listPatchesQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+const onlyNotInCampaignQueryFmtstr = `
+NOT EXISTS (
+	SELECT 1
+	FROM changeset_jobs
+	WHERE
+	  changeset_jobs.patch_id = patches.id
+	AND
+	  changeset_jobs.campaign_id = %s
+)
+`
+
+func notInCampaignQuery(campaignID int64) *sqlf.Query {
+	return sqlf.Sprintf(onlyNotInCampaignQueryFmtstr, campaignID)
 }
 
 var onlyUnpublishedInCampaignQueryFmtstr = `
@@ -2409,34 +2479,6 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
-// for a campaign. But only if they have all been created, one for each Patch belonging to the PatchSet attached to the Campaign. If not, it returns a zero time.Time.
-func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
-	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
-	var createdAt time.Time
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&dbutil.NullTime{Time: &createdAt})
-		if err != nil {
-			return 0, 0, err
-		}
-		return 0, 1, nil
-	})
-	if err != nil {
-		return createdAt, err
-	}
-	return createdAt, nil
-}
-
-var getLatestChangesetJobPublishedAtFmtstr = `
-SELECT
-  max(changeset_jobs.created_at)
-FROM patches
-INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
-LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
-WHERE campaigns.id = %s
-HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
-`
-
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
 	ID          int64
@@ -2591,34 +2633,49 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
 
+type ResetChangesetJobsOpts struct {
+	// The CampaignID of the ChangesetJobs to be reset.
+	CampaignID int64
+
+	// When PatchIDs is set, only the ChangesetJobs with the given
+	// PatchIDs are reset.
+	PatchIDs []int64
+
+	// If OnlyFailed is set, only ChangesetJobs were Error != '' are reset.
+	OnlyFailed bool
+}
+
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of the ChangesetJobs belonging to the Campaign with the given ID that
-// resulted in an error.
-func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, true)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-// ResetChangesetJobs resets the Error, StartedAt and FinishedAt fields
-// of all ChangesetJobs belonging to the Campaign with the given ID.
-func (s *Store) ResetChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := resetChangesetJobsQuery(campaignID, false)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
-}
-
-func resetChangesetJobsQuery(campaignID int64, onlyErrored bool) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("campaign_id = %s", campaignID),
+// of the ChangesetJobs matching the conditions in ResetChangesetJobsOpts.
+func (s *Store) ResetChangesetJobs(ctx context.Context, opts ResetChangesetJobsOpts) (err error) {
+	if opts.CampaignID == 0 {
+		return errors.New("CampaignID cannot be zero")
 	}
 
-	if onlyErrored {
+	q := resetChangesetJobsQuery(opts)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+func resetChangesetJobsQuery(opts ResetChangesetJobsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaign_id = %s", opts.CampaignID),
+	}
+
+	if opts.OnlyFailed {
 		preds = append(preds, sqlf.Sprintf("error != ''"))
+	}
+
+	if len(opts.PatchIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.PatchIDs))
+		for _, id := range opts.PatchIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("patch_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
@@ -2669,6 +2726,42 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 			return 0, 0, err
 		}
 		ids = append(ids, s)
+		return 0, 1, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+// GetRepoIDsForFailedChangesetJobs returns the repository IDs of patches that
+// are associated with failed changeset jobs belonging to the specified
+// campaign.
+// The repository IDs are used to get filtered by our authzFilter so we can
+// then only load the error messages of the changeset jobs belonging to
+// repositories that are NOT filtered out.
+func (s *Store) GetRepoIDsForFailedChangesetJobs(ctx context.Context, campaign int64) ([]api.RepoID, error) {
+	const queryFmtString = `
+	SELECT patches.repo_id
+	FROM changeset_jobs
+	JOIN patches ON patches.id = changeset_jobs.patch_id
+	WHERE
+	  changeset_jobs.campaign_id = %s
+	AND
+	  changeset_jobs.error != ''
+	AND
+	  changeset_jobs.finished_at IS NOT NULL;
+	`
+
+	q := sqlf.Sprintf(queryFmtString, campaign)
+	var ids []api.RepoID
+	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var id api.RepoID
+		err = sc.Scan(&id)
+		if err != nil {
+			return 0, 0, err
+		}
+		ids = append(ids, id)
 		return 0, 1, nil
 	})
 	if err != nil {
@@ -2755,9 +2848,9 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
-	case github.ServiceType:
+	case extsvc.TypeGitHub:
 		t.Metadata = new(github.PullRequest)
-	case bitbucketserver.ServiceType:
+	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)
 	default:
 		return errors.New("unknown external service type")

@@ -10,7 +10,7 @@ import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reac
 export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
-    const docsURLPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
+    const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="d-flex">
             <DropdownToggle
@@ -95,7 +95,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     // eslint-disable-next-line react/jsx-no-target-blank
                     target="_blank"
                     rel="noopener"
-                    href={`${docsURLPrefix}/user/search/queries`}
+                    href={`${documentationUrlPrefix}/user/search/queries`}
                     className="dropdown-item"
                     onClick={toggleIsOpen}
                 >

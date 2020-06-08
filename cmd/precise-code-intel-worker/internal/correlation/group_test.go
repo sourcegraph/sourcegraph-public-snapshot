@@ -14,11 +14,22 @@ import (
 
 func TestConvert(t *testing.T) {
 	state := &State{
-		LSIFVersion: "0.4.3",
 		DocumentData: map[string]lsif.Document{
-			"d01": {URI: "foo.go", Contains: datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}}},
-			"d02": {URI: "bar.go", Contains: datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}}},
-			"d03": {URI: "baz.go", Contains: datastructures.IDSet{"r07": {}, "r08": {}, "r09": {}}},
+			"d01": {
+				URI:         "foo.go",
+				Contains:    datastructures.IDSet{"r01": {}, "r02": {}, "r03": {}},
+				Diagnostics: datastructures.IDSet{"d01": {}, "d02": {}},
+			},
+			"d02": {
+				URI:         "bar.go",
+				Contains:    datastructures.IDSet{"r04": {}, "r05": {}, "r06": {}},
+				Diagnostics: datastructures.IDSet{"d03": {}},
+			},
+			"d03": {
+				URI:         "baz.go",
+				Contains:    datastructures.IDSet{"r07": {}, "r08": {}, "r09": {}},
+				Diagnostics: datastructures.IDSet{}, // TODO
+			},
 		},
 		RangeData: map[string]lsif.Range{
 			"r01": {StartLine: 1, StartCharacter: 2, EndLine: 3, EndCharacter: 4, DefinitionResultID: "x01", MonikerIDs: datastructures.IDSet{"m01": {}, "m02": {}}},
@@ -56,6 +67,60 @@ func TestConvert(t *testing.T) {
 			"p01": {Name: "pkg A", Version: "0.1.0"},
 			"p02": {Name: "pkg B", Version: "1.2.3"},
 		},
+		Diagnostics: map[string]lsif.DiagnosticResult{
+			"d01": {
+				Result: []lsif.Diagnostic{
+					{
+						Severity:       1,
+						Code:           "1234",
+						Message:        "M1",
+						Source:         "S1",
+						StartLine:      11,
+						StartCharacter: 12,
+						EndLine:        13,
+						EndCharacter:   14,
+					},
+				},
+			},
+			"d02": {
+				Result: []lsif.Diagnostic{
+					{
+						Severity:       2,
+						Code:           "2",
+						Message:        "M2",
+						Source:         "S2",
+						StartLine:      21,
+						StartCharacter: 22,
+						EndLine:        23,
+						EndCharacter:   24,
+					},
+				},
+			},
+			"d03": {
+				Result: []lsif.Diagnostic{
+					{
+						Severity:       3,
+						Code:           "3234",
+						Message:        "M3",
+						Source:         "S3",
+						StartLine:      31,
+						StartCharacter: 32,
+						EndLine:        33,
+						EndCharacter:   34,
+					},
+					{
+						Severity:       4,
+						Code:           "4234",
+						Message:        "M4",
+						Source:         "S4",
+						StartLine:      41,
+						StartCharacter: 42,
+						EndLine:        43,
+						EndCharacter:   44,
+					},
+				},
+			},
+		},
 		ImportedMonikers: datastructures.IDSet{"m01": {}},
 		ExportedMonikers: datastructures.IDSet{"m03": {}},
 	}
@@ -73,8 +138,9 @@ func TestConvert(t *testing.T) {
 	}
 
 	expectedBundleData := &GroupedBundleData{
-		LSIFVersion:     "0.4.3",
-		NumResultChunks: 1,
+		Meta: types.MetaData{
+			NumResultChunks: 1,
+		},
 		Documents: map[string]types.DocumentData{
 			"foo.go": {
 				Ranges: map[types.ID]types.RangeData{
@@ -93,6 +159,28 @@ func TestConvert(t *testing.T) {
 					"p01": {Name: "pkg A", Version: "0.1.0"},
 					"p02": {Name: "pkg B", Version: "1.2.3"},
 				},
+				Diagnostics: []types.DiagnosticData{
+					{
+						Severity:       1,
+						Code:           "1234",
+						Message:        "M1",
+						Source:         "S1",
+						StartLine:      11,
+						StartCharacter: 12,
+						EndLine:        13,
+						EndCharacter:   14,
+					},
+					{
+						Severity:       2,
+						Code:           "2",
+						Message:        "M2",
+						Source:         "S2",
+						StartLine:      21,
+						StartCharacter: 22,
+						EndLine:        23,
+						EndCharacter:   24,
+					},
+				},
 			},
 			"bar.go": {
 				Ranges: map[types.ID]types.RangeData{
@@ -103,6 +191,28 @@ func TestConvert(t *testing.T) {
 				HoverResults:       map[types.ID]string{"x08": "foo"},
 				Monikers:           map[types.ID]types.MonikerData{},
 				PackageInformation: map[types.ID]types.PackageInformationData{},
+				Diagnostics: []types.DiagnosticData{
+					{
+						Severity:       3,
+						Code:           "3234",
+						Message:        "M3",
+						Source:         "S3",
+						StartLine:      31,
+						StartCharacter: 32,
+						EndLine:        33,
+						EndCharacter:   34,
+					},
+					{
+						Severity:       4,
+						Code:           "4234",
+						Message:        "M4",
+						Source:         "S4",
+						StartLine:      41,
+						StartCharacter: 42,
+						EndLine:        43,
+						EndCharacter:   44,
+					},
+				},
 			},
 			"baz.go": {
 				Ranges: map[types.ID]types.RangeData{
@@ -113,6 +223,7 @@ func TestConvert(t *testing.T) {
 				HoverResults:       map[types.ID]string{"x09": "bar"},
 				Monikers:           map[types.ID]types.MonikerData{},
 				PackageInformation: map[types.ID]types.PackageInformationData{},
+				Diagnostics:        []types.DiagnosticData{},
 			},
 		},
 		ResultChunks: map[int]types.ResultChunkData{
@@ -161,21 +272,45 @@ func TestConvert(t *testing.T) {
 				},
 			},
 		},
-		Definitions: []types.DefinitionReferenceRow{
-			{Scheme: "scheme A", Identifier: "ident A", URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-			{Scheme: "scheme A", Identifier: "ident A", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme A", Identifier: "ident A", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
-			{Scheme: "scheme B", Identifier: "ident B", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+		Definitions: []types.MonikerLocations{
+			{
+				Scheme:     "scheme A",
+				Identifier: "ident A",
+				Locations: []types.Location{
+					{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
+			{
+				Scheme:     "scheme B",
+				Identifier: "ident B",
+				Locations: []types.Location{
+					{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
 		},
-		References: []types.DefinitionReferenceRow{
-			{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme C", Identifier: "ident C", URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-			{Scheme: "scheme C", Identifier: "ident C", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
-			{Scheme: "scheme D", Identifier: "ident D", URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+		References: []types.MonikerLocations{
+			{
+				Scheme:     "scheme C",
+				Identifier: "ident C",
+				Locations: []types.Location{
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
+			{
+				Scheme:     "scheme D",
+				Identifier: "ident D",
+				Locations: []types.Location{
+					{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+					{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
+					{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+				},
+			},
 		},
 		Packages: []types.Package{
 			{DumpID: 42, Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
@@ -195,6 +330,8 @@ func TestConvert(t *testing.T) {
 
 func normalizeGroupedBundleData(groupedBundleData *GroupedBundleData) {
 	for _, document := range groupedBundleData.Documents {
+		sortDiagnostics(document.Diagnostics)
+
 		for _, r := range document.Ranges {
 			sortMonikerIDs(r.MonikerIDs)
 		}
@@ -206,13 +343,19 @@ func normalizeGroupedBundleData(groupedBundleData *GroupedBundleData) {
 		}
 	}
 
-	sortDefinitionReferenceRows(groupedBundleData.Definitions)
-	sortDefinitionReferenceRows(groupedBundleData.References)
+	sortMonikerLocations(groupedBundleData.Definitions)
+	sortMonikerLocations(groupedBundleData.References)
 }
 
 func sortMonikerIDs(s []types.ID) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(string(s[i]), string(s[j])) < 0
+	})
+}
+
+func sortDiagnostics(s []types.DiagnosticData) {
+	sort.Slice(s, func(i, j int) bool {
+		return strings.Compare(s[i].Message, s[j].Message) < 0
 	})
 }
 
@@ -226,14 +369,27 @@ func sortDocumentIDRangeIDs(s []types.DocumentIDRangeID) {
 	})
 }
 
-func sortDefinitionReferenceRows(s []types.DefinitionReferenceRow) {
-	sort.Slice(s, func(i, j int) bool {
-		if cmp := strings.Compare(s[i].URI, s[j].URI); cmp != 0 {
+func sortMonikerLocations(monikerLocations []types.MonikerLocations) {
+	sort.Slice(monikerLocations, func(i, j int) bool {
+		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
 			return cmp < 0
-		} else if cmp := strings.Compare(s[i].Identifier, s[j].Identifier); cmp != 0 {
+		} else if cmp := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); cmp != 0 {
 			return cmp < 0
-		} else {
-			return s[i].StartLine < s[j].StartLine
 		}
+		return false
+	})
+
+	for _, ml := range monikerLocations {
+		sortLocations(ml.Locations)
+	}
+}
+
+func sortLocations(locations []types.Location) {
+	sort.Slice(locations, func(i, j int) bool {
+		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
+			return cmp < 0
+		}
+
+		return locations[i].StartLine < locations[j].StartLine
 	})
 }

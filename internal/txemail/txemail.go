@@ -27,8 +27,8 @@ type Message struct {
 	Data     interface{}       // template data
 }
 
-// Render returns the rendered message contents without sending email.
-func Render(message Message) (*gophermail.Message, error) {
+// render returns the rendered message contents without sending email.
+func render(message Message) (*gophermail.Message, error) {
 	m := gophermail.Message{
 		From: mail.Address{
 			Name: "Sourcegraph",
@@ -60,7 +60,7 @@ func Render(message Message) (*gophermail.Message, error) {
 		return nil, err
 	}
 
-	if err := parsed.Render(message.Data, &m); err != nil {
+	if err := renderTemplate(parsed, message.Data, &m); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func Send(ctx context.Context, message Message) error {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
 
-	m, err := Render(message)
+	m, err := render(message)
 	if err != nil {
 		return err
 	}

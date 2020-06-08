@@ -1,6 +1,8 @@
 import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { Remote, ProxyMarked } from 'comlink'
+import { Unsubscribable } from 'sourcegraph'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -27,4 +29,11 @@ export interface MainThreadAPI {
      * Applies a settings update from extensions.
      */
     applySettingsEdit: (edit: SettingsEdit) => Promise<void>
+
+    // Commands
+    executeCommand: (command: string, args: any[]) => Promise<any>
+    registerCommand: (
+        name: string,
+        command: Remote<((...args: any) => any) & ProxyMarked>
+    ) => Unsubscribable & ProxyMarked
 }

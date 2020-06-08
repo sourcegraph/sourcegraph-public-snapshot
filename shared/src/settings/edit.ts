@@ -13,7 +13,7 @@ import { isErrorLike } from '../util/errors'
  */
 export function updateSettings(
     { settings, requestGraphQL }: Pick<PlatformContext, 'settings' | 'requestGraphQL'>,
-    subject: GQL.ID,
+    subjectToUpdate: GQL.ID,
     args: SettingsEdit | string,
     applySettingsEdit: (
         { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
@@ -32,9 +32,9 @@ export function updateSettings(
                 if (isErrorLike(settingsCascade.subjects)) {
                     throw new Error(`settings not available due to error: ${settingsCascade.subjects.message}`)
                 }
-                const subjectSettings = settingsCascade.subjects.find(s => s.subject.id === subject)
+                const subjectSettings = settingsCascade.subjects.find(subject => subject.subject.id === subjectToUpdate)
                 if (!subjectSettings) {
-                    throw new Error(`no settings subject: ${subject}`)
+                    throw new Error(`no settings subject: ${subjectToUpdate}`)
                 }
                 if (isErrorLike(subjectSettings.settings)) {
                     throw new Error(`settings subject error: ${subjectSettings.settings.message}`)
@@ -43,7 +43,7 @@ export function updateSettings(
 
                 return applySettingsEdit(
                     { requestGraphQL },
-                    subject,
+                    subjectToUpdate,
                     lastID,
                     typeof args === 'string'
                         ? args
@@ -58,7 +58,7 @@ export function updateSettings(
 }
 
 function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
-    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
+    return keyPath.map(member => (typeof member === 'string' ? { property: member } : { index: member }))
 }
 
 /**
