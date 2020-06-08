@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// MockBundleClient is a mock impelementation of the BundleClient interface
+// MockBundleClient is a mock implementation of the BundleClient interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client)
 // used for unit testing.

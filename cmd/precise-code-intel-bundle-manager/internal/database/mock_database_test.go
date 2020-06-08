@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// MockDatabase is a mock impelementation of the Database interface (from
-// the package
+// MockDatabase is a mock implementation of the Database interface (from the
+// package
 // github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database)
 // used for unit testing.
 type MockDatabase struct {
