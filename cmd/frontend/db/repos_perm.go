@@ -143,17 +143,30 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		toVerify := repos[:0]
 		filtered := make([]*types.Repo, 0, len(repos))
 
+		hasAuthzProvider := make(map[string]bool, len(authzProviders))
+		for _, p := range authzProviders {
+			hasAuthzProvider[p.ServiceID()] = true
+		}
+
 		// Add public repositories to filtered, others to toVerify.
 		for _, r := range repos {
-			if r.Private {
-				toVerify = append(toVerify, r)
+			// Bypass non-private repositories
+			if !r.Private {
+				filtered = append(filtered, r)
 				continue
 			}
 
-			filtered = append(filtered, r)
+			// Bypass private repositories but no authz provider configured for the code host,
+			// but only when authzAllowByDefault is true.
+			if authzAllowByDefault && !hasAuthzProvider[r.ExternalRepo.ServiceID] {
+				filtered = append(filtered, r)
+				continue
+			}
+
+			toVerify = append(toVerify, r)
 		}
 
-		// At this point, only show public repositories when:
+		// At this point, only show filtered repositories when:
 		//   1. The user is unauthenticated.
 		//   2. Permissions are not enforced by authz providers but NOT everyone can see all repositories.
 		//      Wouldn't reach this far when "authzAllowByDefault" is true and no authz providers.

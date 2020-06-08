@@ -31,7 +31,12 @@ func testReader(t *testing.T, filename string) persistence.Reader {
 		t.Fatalf("unexpected error writing file: %s", err)
 	}
 
-	reader, err := NewReader(context.Background(), dest)
+	cache, err := NewCache(1)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
+	reader, err := NewReader(context.Background(), dest, cache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -505,17 +506,17 @@ func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStor
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, repoStore, cf, rlr, cs...)
+	bySource, err := groupChangesetsBySource(ctx, repoStore, cf, nil, rlr, cs...)
 	if err != nil {
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, syncStore, bySource)
+	return syncChangesetsWithSources(ctx, syncStore, bySource)
 }
 
-// SyncChangesetsWithSources refreshes the metadata of the given changesets
+// syncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
-func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
+func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
 		cs     []*campaigns.Changeset
@@ -577,11 +578,18 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// GroupChangesetsBySource returns a slice of SourceChangesets in which the
+// groupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
 // rlr is optional
-func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+func groupChangesetsBySource(
+	ctx context.Context,
+	reposStore RepoStore,
+	cf *httpcli.Factory,
+	sourcer repos.Sourcer,
+	rlr *repos.RateLimiterRegistry,
+	cs ...*campaigns.Changeset,
+) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -635,9 +643,24 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 			}
 			rl = rlr.GetRateLimiter(u.String())
 		}
-		css, err := repos.NewChangesetSource(e, cf, rl)
-		if err != nil {
-			return nil, err
+
+		var css repos.ChangesetSource
+		if sourcer != nil {
+			sources, err := sourcer(e)
+			if err != nil {
+				return nil, err
+			}
+
+			var ok bool
+			css, ok = sources[0].(repos.ChangesetSource)
+			if !ok {
+				return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", e.Kind)
+			}
+		} else {
+			css, err = repos.NewChangesetSource(e, cf, rl)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}

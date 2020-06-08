@@ -21,6 +21,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dnaeon/go-vcr v1.0.1
+	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/ericchiang/k8s v1.2.0
@@ -157,7 +158,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200511113954-b56036a3b745
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

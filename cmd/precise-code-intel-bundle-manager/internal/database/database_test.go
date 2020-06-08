@@ -246,23 +246,18 @@ func TestDatabasePackageInformation(t *testing.T) {
 func openTestDatabase(t *testing.T) Database {
 	filename := copyFile(t, "../../../../internal/codeintel/bundles/persistence/sqlite/testdata/lsif-go@ad3507cb.lsif.db")
 
+	cache, err := sqlitereader.NewCache(10)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
 	// TODO(efritz) - rewrite test not to require actual reader
-	reader, err := sqlitereader.NewReader(context.Background(), filename)
+	reader, err := sqlitereader.NewReader(context.Background(), filename, cache)
 	if err != nil {
 		t.Fatalf("unexpected error creating reader: %s", err)
 	}
 
-	documentCache, _, err := NewDocumentCache(1)
-	if err != nil {
-		t.Fatalf("unexpected error creating cache: %s", err)
-	}
-
-	resultChunkCache, _, err := NewResultChunkCache(1)
-	if err != nil {
-		t.Fatalf("unexpected error creating cache: %s", err)
-	}
-
-	db, err := OpenDatabase(context.Background(), filename, reader, documentCache, resultChunkCache)
+	db, err := OpenDatabase(context.Background(), filename, reader)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
