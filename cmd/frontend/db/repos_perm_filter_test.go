@@ -869,8 +869,12 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 }
 
 func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
-	publicRepo := makeRepo("gitlab.mine/user/public", 1, false)
-	privateRepo := makeRepo("gitlab.mine/user/private", 2, true)
+	publicGitLabRepo := makeRepo("gitlab.mine/user/public", 1, false)
+	privateGitLabRepo := makeRepo("gitlab.mine/user/private", 2, true)
+
+	// NOTE: This repository is private but no authz provider is configured for the code host,
+	// therefore the access to this repository is not restricted.
+	privateGitHubRepo := makeRepo("github.mine/user/private", 3, true)
 
 	t.Run("unauthenticated user should only see public repos", func(t *testing.T) {
 		authz.SetProviders(false,
@@ -883,21 +887,18 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		)
 		defer authz.SetProviders(true, nil)
 
-		repos, err := authzFilter(context.Background(), []*types.Repo{publicRepo, privateRepo}, authz.Read)
+		repos, err := authzFilter(context.Background(), []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo}, authz.Read)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expRepos := []*types.Repo{publicRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
+		wantRepos := []*types.Repo{publicGitLabRepo}
+		if diff := cmp.Diff(wantRepos, repos); diff != "" {
 			t.Fatal(diff)
 		}
 	})
 
-	t.Run("authenticated user but no authz providers should only see public repos", func(t *testing.T) {
-		authz.SetProviders(false, nil)
-		defer authz.SetProviders(true, nil)
-
+	t.Run("authenticated user but no authz providers", func(t *testing.T) {
 		user := &types.User{ID: 1}
 		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return user, nil
@@ -909,18 +910,43 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
-		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			name                string
+			authzAllowByDefault bool
+			repos               []*types.Repo
+			wantRepos           []*types.Repo
+		}{
+			{
+				name:                "authzAllowByDefault=false, only see public repos",
+				authzAllowByDefault: false,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo},
+			},
+			{
+				name:                "authzAllowByDefault=true, see all repos",
+				authzAllowByDefault: true,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+			},
 		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				authz.SetProviders(test.authzAllowByDefault, nil)
+				defer authz.SetProviders(true, nil)
 
-		expRepos := []*types.Repo{publicRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
+				repos, err := authzFilter(ctx, test.repos, authz.Read)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+					t.Fatal(diff)
+				}
+			})
 		}
 	})
 
-	t.Run("authenticated user with matching external account should see all repos", func(t *testing.T) {
+	t.Run("authenticated user with matching external account", func(t *testing.T) {
 		extAccount := extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: "gitlab",
@@ -928,21 +954,6 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 				AccountID:   "alice",
 			},
 		}
-		authz.SetProviders(false,
-			[]authz.Provider{
-				&MockAuthzProvider{
-					serviceID:   "https://gitlab.mine/",
-					serviceType: "gitlab",
-					okServiceIDs: map[string]struct{}{
-						"https://gitlab.mine/": {},
-					},
-					perms: map[extsvc.Account]map[api.RepoName]authz.Perms{
-						extAccount: nil,
-					},
-				},
-			},
-		)
-		defer authz.SetProviders(true, nil)
 
 		user := &types.User{ID: 1}
 		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -958,7 +969,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 			return errors.New("GrantPendingPermissions should not be called")
 		}
 		Mocks.Authz.AuthorizedRepos = func(context.Context, *AuthorizedReposArgs) ([]*types.Repo, error) {
-			return []*types.Repo{privateRepo}, nil
+			return []*types.Repo{privateGitLabRepo}, nil
 		}
 		defer func() {
 			Mocks.Users = MockUsers{}
@@ -969,40 +980,56 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
-		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			name                string
+			authzAllowByDefault bool
+			repos               []*types.Repo
+			wantRepos           []*types.Repo
+		}{
+			{
+				name:                "authzAllowByDefault=false, see explicitly authorized repos",
+				authzAllowByDefault: false,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo, privateGitLabRepo},
+			},
+			{
+				name:                "authzAllowByDefault=true, see all repos",
+				authzAllowByDefault: true,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo, privateGitHubRepo, privateGitLabRepo},
+			},
 		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				authz.SetProviders(test.authzAllowByDefault,
+					[]authz.Provider{
+						&MockAuthzProvider{
+							serviceID:   "https://gitlab.mine/",
+							serviceType: "gitlab",
+							okServiceIDs: map[string]struct{}{
+								"https://gitlab.mine/": {},
+							},
+							perms: map[extsvc.Account]map[api.RepoName]authz.Perms{
+								extAccount: nil,
+							},
+						},
+					},
+				)
+				defer authz.SetProviders(true, nil)
 
-		expRepos := []*types.Repo{publicRepo, privateRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
+				repos, err := authzFilter(ctx, test.repos, authz.Read)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+					t.Fatal(diff)
+				}
+			})
 		}
 	})
 
 	t.Run("authenticated user without an external account should fetch and grant", func(t *testing.T) {
-		authz.SetProviders(false,
-			[]authz.Provider{
-				&MockAuthzProvider{
-					serviceID:   "https://gitlab.mine/",
-					serviceType: "gitlab",
-					okServiceIDs: map[string]struct{}{
-						"https://gitlab.mirror/": {},
-					},
-					perms: map[extsvc.Account]map[api.RepoName]authz.Perms{
-						{
-							AccountSpec: extsvc.AccountSpec{
-								ServiceType: "gitlab",
-								ServiceID:   "https://gitlab.mine/",
-								AccountID:   "alice",
-							},
-						}: nil,
-					},
-				},
-			},
-		)
-		defer authz.SetProviders(true, nil)
-
 		user := &types.User{ID: 1}
 		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return user, nil
@@ -1030,7 +1057,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 			return nil
 		}
 		Mocks.Authz.AuthorizedRepos = func(context.Context, *AuthorizedReposArgs) ([]*types.Repo, error) {
-			return []*types.Repo{privateRepo}, nil
+			return []*types.Repo{privateGitLabRepo}, nil
 		}
 		defer func() {
 			Mocks.Users = MockUsers{}
@@ -1041,18 +1068,63 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
 
-		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
-		if err != nil {
-			t.Fatal(err)
+		tests := []struct {
+			name                string
+			authzAllowByDefault bool
+			repos               []*types.Repo
+			wantRepos           []*types.Repo
+		}{
+			{
+				name:                "authzAllowByDefault=false, see explicitly authorized repos",
+				authzAllowByDefault: false,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo, privateGitLabRepo},
+			},
+			{
+				name:                "authzAllowByDefault=true, see all repos",
+				authzAllowByDefault: true,
+				repos:               []*types.Repo{publicGitLabRepo, privateGitLabRepo, privateGitHubRepo},
+				wantRepos:           []*types.Repo{publicGitLabRepo, privateGitHubRepo, privateGitLabRepo},
+			},
 		}
 
-		expRepos := []*types.Repo{publicRepo, privateRepo}
-		if diff := cmp.Diff(expRepos, repos); diff != "" {
-			t.Fatal(diff)
-		} else if !calledAssociateUserAndSave {
-			t.Fatal("!calledAssociateUserAndSave")
-		} else if !callGrantPendingPermissions {
-			t.Fatal("!callGrantPendingPermissions")
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				authz.SetProviders(test.authzAllowByDefault,
+					[]authz.Provider{
+						&MockAuthzProvider{
+							serviceID:   "https://gitlab.mine/",
+							serviceType: "gitlab",
+							okServiceIDs: map[string]struct{}{
+								"https://gitlab.mirror/": {},
+							},
+							perms: map[extsvc.Account]map[api.RepoName]authz.Perms{
+								{
+									AccountSpec: extsvc.AccountSpec{
+										ServiceType: "gitlab",
+										ServiceID:   "https://gitlab.mine/",
+										AccountID:   "alice",
+									},
+								}: nil,
+							},
+						},
+					},
+				)
+				defer authz.SetProviders(true, nil)
+
+				repos, err := authzFilter(ctx, test.repos, authz.Read)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
+					t.Fatal(diff)
+				} else if !calledAssociateUserAndSave {
+					t.Fatal("!calledAssociateUserAndSave")
+				} else if !callGrantPendingPermissions {
+					t.Fatal("!callGrantPendingPermissions")
+				}
+			})
 		}
 	})
 }
