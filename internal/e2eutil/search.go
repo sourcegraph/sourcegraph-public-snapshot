@@ -10,7 +10,8 @@ type SearchRepositoryResult struct {
 
 // SearchRepositories search repositories with given query.
 func (c *Client) SearchRepositories(query string) ([]*SearchRepositoryResult, error) {
-	const gqlQuery = `query Search($query: String!) {
+	const gqlQuery = `
+query Search($query: String!) {
 	search(query: $query) {
 		results {
 			results {

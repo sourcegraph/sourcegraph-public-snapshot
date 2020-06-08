@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+
 	"github.com/sourcegraph/sourcegraph/internal/e2eutil"
 )
 
@@ -31,17 +31,21 @@ func TestMain(m *testing.M) {
 	githubToken := flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
 	flag.Parse()
 
+	if len(*githubToken) == 0 {
+		log.Fatal("Environment variable GITHUB_TOKEN is not set")
+	}
+
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 
 	needsSiteInit, err := e2eutil.NeedsSiteInit(*baseURL)
 	if err != nil {
-		log.Fatal("Failed to check if site needs init:", err)
+		log.Fatal("Failed to check if site needs init: ", err)
 	}
 
 	if needsSiteInit {
 		client, err = e2eutil.SiteAdminInit(*baseURL, *email, *username, *password)
 		if err != nil {
-			log.Fatal("Failed to create site admin:", err)
+			log.Fatal("Failed to create site admin: ", err)
 		}
 		log.Println("Site admin has been created:", *username)
 	} else {
@@ -77,9 +81,23 @@ func TestMain(m *testing.M) {
 		}),
 	})
 	if err != nil {
-		log.Fatal("Failed to add external service:", err)
+		log.Fatal("Failed to add external service: ", err)
 	}
-	time.Sleep(10 * time.Second) // TODO
+
+	err = client.WaitForReposToBeCloned(
+		"github.com/sourcegraph/java-langserver",
+		"github.com/gorilla/mux",
+		"github.com/gorilla/securecookie",
+		"github.com/sourcegraph/jsonrpc2",
+		"github.com/sourcegraph/go-diff",
+		"github.com/sourcegraph/appdash",
+		"github.com/sourcegraph/sourcegraph-typescript",
+		"github.com/sourcegraph-testing/automation-e2e-test",
+		"github.com/sourcegraph/e2e-test-private-repository",
+	)
+	if err != nil {
+		log.Fatal("Failed to wait for repos to be cloned: ", err)
+	}
 
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())

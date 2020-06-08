@@ -11,15 +11,16 @@ type AddExternalServiceInput struct {
 }
 
 // AddExternalService adds a new external service with given input.
+//
 // This method requires the authenticated user to be a site admin.
 func (c *Client) AddExternalService(input AddExternalServiceInput) error {
 	const query = `
-	mutation addExternalService($input: AddExternalServiceInput!) {
-		addExternalService(input: $input) {
-			id
-			warning
-		}
+mutation AddExternalService($input: AddExternalServiceInput!) {
+	addExternalService(input: $input) {
+		id
+		warning
 	}
+}
 `
 	variables := map[string]interface{}{
 		"input": input,
