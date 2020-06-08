@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -38,7 +39,7 @@ func TestChangesetMetadata(t *testing.T) {
 		Metadata:            githubPR,
 		CampaignIDs:         []int64{},
 		ExternalID:          "12345",
-		ExternalServiceType: "github",
+		ExternalServiceType: extsvc.TypeGitHub,
 	}
 
 	title, err := changeset.Title()

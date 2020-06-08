@@ -350,7 +350,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		sqliteReader, err := sqlitereader.NewReader(ctx, filename)
+		sqliteReader, err := sqlitereader.NewReader(ctx, filename, s.readerCache)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "sqlitereader.NewReader")
 		}
@@ -367,7 +367,7 @@ func (s *Server) dbQueryErr(w http.ResponseWriter, r *http.Request, handler dbQu
 			return nil, ErrUnknownDatabase
 		}
 
-		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentCache, s.resultChunkCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader))
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "database.OpenDatabase")
 		}

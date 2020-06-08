@@ -104,7 +104,7 @@ type CampaignsResolver interface {
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	RetryCampaignChangesets(ctx context.Context, args *RetryCampaignChangesetsArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
-	PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (*EmptyResponse, error)
+	PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
@@ -151,7 +151,7 @@ func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCa
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) PublishCampaignChangesets(ctx context.Context, args *PublishCampaignChangesetsArgs) (CampaignResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -247,7 +247,7 @@ type ChangesetResolver interface {
 
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	NextSyncAt() *DateTime
+	NextSyncAt(ctx context.Context) (*DateTime, error)
 	State() campaigns.ChangesetState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 

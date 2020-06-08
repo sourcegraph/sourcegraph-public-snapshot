@@ -81,7 +81,7 @@ type Mutation {
     # Callers can query the campaign's status to track the progress of this async operation.
     # If one of the patches has previously been published but the publication failed,
     # publication is NOT retried.
-    publishCampaignChangesets(campaign: ID!): EmptyResponse!
+    publishCampaignChangesets(campaign: ID!): Campaign!
     # Create an ExternalChangeset on the code host asynchronously. The patch
     # must belong to a patchset that has been attached to a campaign;
     # otherwise, an error is returned and no ExternalChangeset is created.
@@ -3444,18 +3444,6 @@ type Site implements SettingsSubject {
         # Months of history (based on current UTC time).
         months: Int
     ): SiteUsageStatistics!
-    # (experimental) The extended usage statistics API may change substantially in the near
-    # future as we continue to adjust it for our use cases. Changes will not be documented
-    # in the CHANGELOG during this time.
-    # Usage statistics of code intelligence features.
-    codeIntelUsageStatistics(
-        # Days of history (based on current UTC time).
-        days: Int
-        # Weeks of history (based on current UTC time).
-        weeks: Int
-        # Months of history (based on current UTC time).
-        months: Int
-    ): CodeIntelUsageStatistics!
     # Monitoring overview for this site.
     #
     # Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -3703,62 +3691,6 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
-}
-
-# A site's aggregate usage statistics of code intel features.
-#
-# This information is visible to all viewers.
-type CodeIntelUsageStatistics {
-    # Recent daily code intel usage statistics.
-    daily: [CodeIntelUsagePeriod!]!
-    # Recent weekly code intel usage statistics.
-    weekly: [CodeIntelUsagePeriod!]!
-    # Recent monthly code intel usage statistics.
-    monthly: [CodeIntelUsagePeriod!]!
-}
-
-# Usage statistics of code intel features in a given timespan.
-#
-# This information is visible to all viewers.
-type CodeIntelUsagePeriod {
-    # The time when this started.
-    startTime: DateTime!
-    # Recent hover statistics.
-    hover: CodeIntelEventCategoryStatistics!
-    # Recent definitions statistics.
-    definitions: CodeIntelEventCategoryStatistics!
-    # Recent references statistics.
-    references: CodeIntelEventCategoryStatistics!
-}
-
-# Statistics about aparticular family of code intel features in a given timestan.
-type CodeIntelEventCategoryStatistics {
-    # Recent LSIF-based code intel event statistics.
-    lsif: CodeIntelEventStatistics!
-    # Recent LSP-based code intel event statistics.
-    lsp: CodeIntelEventStatistics!
-    # Recent search-based code intel event statistics.
-    search: CodeIntelEventStatistics!
-}
-
-# Statistics about a particular code intel feature in a given timespan.
-type CodeIntelEventStatistics {
-    # The number of unique users that performed this event in this timespan.
-    usersCount: Int!
-    # The total number of events in this timespan.
-    eventsCount: Int!
-    # Latency percentiles of all events in this timespan.
-    eventLatencies: CodeIntelEventLatencies!
-}
-
-# A collection of event latencies for a particular event in a given timespan.
-type CodeIntelEventLatencies {
-    # The 50th percentile latency in this timespan.
-    p50: Float!
-    # The 90th percentile latency in this timespan.
-    p90: Float!
-    # The 99th percentile latency in this timespan.
-    p99: Float!
 }
 
 # A deployment configuration.

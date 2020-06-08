@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// MockReader is a mock impelementation of the Reader interface (from the
+// MockReader is a mock implementation of the Reader interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence)
 // used for unit testing.

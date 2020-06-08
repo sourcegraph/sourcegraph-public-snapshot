@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 
@@ -45,11 +44,9 @@ type Database interface {
 }
 
 type databaseImpl struct {
-	filename         string
-	reader           persistence.Reader // database file reader
-	documentCache    *DocumentCache     // shared cache
-	resultChunkCache *ResultChunkCache  // shared cache
-	numResultChunks  int                // numResultChunks value from meta row
+	filename        string
+	reader          persistence.Reader // database file reader
+	numResultChunks int                // numResultChunks value from meta row
 }
 
 var _ Database = &databaseImpl{}
@@ -88,9 +85,6 @@ type documentPathRangeID struct {
 	RangeID types.ID
 }
 
-var ErrUnknownDocument = errors.New("unknown document")
-var ErrUnknownResultChunk = errors.New("unknown result chunk")
-
 // ErrMalformedBundle is returned when a bundle is missing an expected map key.
 type ErrMalformedBundle struct {
 	Filename string // the filename of the malformed bundle
@@ -103,18 +97,16 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader, documentCache *DocumentCache, resultChunkCache *ResultChunkCache) (Database, error) {
+func OpenDatabase(ctx context.Context, filename string, reader persistence.Reader) (Database, error) {
 	meta, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "reader.ReadMeta")
 	}
 
 	return &databaseImpl{
-		filename:         filename,
-		documentCache:    documentCache,
-		resultChunkCache: resultChunkCache,
-		reader:           reader,
-		numResultChunks:  meta.NumResultChunks,
+		filename:        filename,
+		reader:          reader,
+		numResultChunks: meta.NumResultChunks,
 	}, nil
 }
 
@@ -249,11 +241,23 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
+	span.SetTag("filename", db.filename)
+	span.SetTag("tableName", tableName)
+	span.SetTag("scheme", scheme)
+	span.SetTag("identifier", identifier)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	// TODO(efritz) - gross
 	var rows []types.Location
 	var totalCount int
-	var err error
 	if tableName == "definitions" {
 		if rows, totalCount, err = db.reader.ReadDefinitions(ctx, scheme, identifier, skip, take); err != nil {
 			err = pkgerrors.Wrap(err, "reader.ReadDefinitions")
@@ -297,12 +301,10 @@ func (db *databaseImpl) PackageInformation(ctx context.Context, path string, pac
 // getDocumentData fetches and unmarshals the document data or the given path. This method caches
 // document data by a unique key prefixed by the database filename.
 func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
-	cached := true
 	span, ctx := ot.StartSpanFromContext(ctx, "getDocumentData")
 	span.SetTag("filename", db.filename)
 	span.SetTag("path", path)
 	defer func() {
-		span.SetTag("cached", cached)
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
@@ -310,28 +312,11 @@ func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (_ typ
 		span.Finish()
 	}()
 
-	documentData, err := db.documentCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
-		cached = false
-
-		data, ok, err := db.reader.ReadDocument(ctx, path)
-		if err != nil {
-			return types.DocumentData{}, pkgerrors.Wrap(err, "reader.ReadDocument")
-		}
-		if !ok {
-			return types.DocumentData{}, ErrUnknownDocument
-		}
-		return data, nil
-	})
-
+	documentData, ok, err := db.reader.ReadDocument(ctx, path)
 	if err != nil {
-		// TODO(efritz) - should change cache interface instead
-		if err == ErrUnknownDocument {
-			return types.DocumentData{}, false, nil
-		}
-		return types.DocumentData{}, false, err
+		return types.DocumentData{}, false, pkgerrors.Wrap(err, "reader.ReadDocument")
 	}
-
-	return documentData, true, nil
+	return documentData, ok, nil
 }
 
 // getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
@@ -399,12 +384,10 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]docum
 // getResultChunkByResultID fetches and unmarshals the result chunk data with the given identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
 func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.ID) (_ types.ResultChunkData, _ bool, err error) {
-	cached := true
 	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
 	span.SetTag("filename", db.filename)
 	span.SetTag("id", id)
 	defer func() {
-		span.SetTag("cached", cached)
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
@@ -412,28 +395,11 @@ func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.I
 		span.Finish()
 	}()
 
-	resultChunkData, err := db.resultChunkCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
-		cached = false
-
-		data, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))
-		if err != nil {
-			return types.ResultChunkData{}, pkgerrors.Wrap(err, "reader.ReadResultChunk")
-		}
-		if !ok {
-			return types.ResultChunkData{}, ErrUnknownResultChunk
-		}
-		return data, nil
-	})
-
+	resultChunkData, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))
 	if err != nil {
-		// TODO(efritz) - should change cache interface instead
-		if err == ErrUnknownResultChunk {
-			return types.ResultChunkData{}, false, nil
-		}
-		return types.ResultChunkData{}, false, err
+		return types.ResultChunkData{}, false, pkgerrors.Wrap(err, "reader.ReadResultChunk")
 	}
-
-	return resultChunkData, true, nil
+	return resultChunkData, ok, nil
 }
 
 // convertRangesToLocations converts pairs of document paths and range identifiers

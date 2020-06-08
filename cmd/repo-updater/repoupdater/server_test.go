@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -113,7 +114,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/c/d",
@@ -134,7 +135,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 func TestServer_SetRepoEnabled(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -149,7 +150,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -161,7 +162,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	gitlabService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITLAB",
+		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab.com - test",
 		Config: formatJSON(`
 		{
@@ -176,7 +177,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		Name: "gitlab.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "http://gitlab.com",
 		},
 		Sources: map[string]*repos.SourceInfo{},
@@ -190,7 +191,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	bitbucketServerService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "BITBUCKETSERVER",
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config: formatJSON(`
 		{
@@ -335,7 +336,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -452,7 +453,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 		Config: formatJSON(`
 		{
@@ -463,7 +464,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	}
 	service2 := &repos.ExternalService{
 		ID:          2,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test2",
 		Config: formatJSON(`
 		{
@@ -478,7 +479,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "gitolite.example.com/oldschool",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "nosources",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 			ServiceID:   "http://gitolite.my.corp",
 		},
 	}
@@ -487,7 +488,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		Name: "github.com/foo/sources",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "sources",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "http://github.com",
 		},
 		Metadata: new(github.Repository),
@@ -544,7 +545,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 func TestServer_StatusMessages(t *testing.T) {
 	githubService := &repos.ExternalService{
 		ID:          1,
-		Kind:        "GITHUB",
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - test",
 	}
 
@@ -671,7 +672,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			for i, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				}
 			}
@@ -766,7 +767,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -793,7 +794,7 @@ func TestRepoLookup(t *testing.T) {
 		CreatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: awscodecommit.ServiceType,
+			ServiceType: extsvc.TypeAWSCodeCommit,
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -821,7 +822,7 @@ func TestRepoLookup(t *testing.T) {
 		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "2009901",
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -871,7 +872,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -894,7 +895,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-					ServiceType: awscodecommit.ServiceType,
+					ServiceType: extsvc.TypeAWSCodeCommit,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 				},
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
@@ -920,7 +921,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",
@@ -947,7 +948,7 @@ func TestRepoLookup(t *testing.T) {
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-					ServiceType: github.ServiceType,
+					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 				Name:        "github.com/foo/bar",

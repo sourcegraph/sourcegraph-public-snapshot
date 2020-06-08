@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// MockDB is a mock impelementation of the DB interface (from the package
+// MockDB is a mock implementation of the DB interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/db) used for unit
 // testing.
 type MockDB struct {
