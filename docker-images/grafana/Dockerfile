@@ -27,6 +27,9 @@ COPY cmd/grafana-wrapper /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-
 WORKDIR /go/src/github.com/sourcegraph/sourcegraph/cmd/grafana-wrapper
 RUN CGO_ENABLED=0 go build -o /go/bin/grafana-wrapper
 
+# when upgrading grafana versions, verify that no changes were made to the Grafana alerts format by comparing
+# our site.schema.json GrafanaNotifier* format with Grafana's alert provisioning docs
+# at https://grafana.com/docs/grafana/latest/administration/provisioning/#alert-notification-channels
 FROM grafana/grafana:6.7.1@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
 
 ARG COMMIT_SHA="unknown"

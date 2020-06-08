@@ -607,23 +607,37 @@
       "description": "Configure notifications for Sourcegraph's built-in alerts.",
       "type": "array",
       "items": {
-        "required": ["type", "level"],
+        "type": "object",
+        "required": ["level", "id"],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": ["slack", "pagerduty", "email", "webook"]
-          },
           "level": {
+            "description": "Sourcegraph alert level to subscribe to notifications for.",
             "type": "string",
             "enum": ["warning", "critical"]
+          },
+          "id": {
+            "description": "Unique identifier for this alert.",
+            "type": "string"
+          },
+          "notifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["slack", "pagerduty", "email", "webook"]
+              }
+            },
+            "oneOf": [
+              { "$ref": "#/definitions/GrafanaNotifierSlack" },
+              { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
+              { "$ref": "#/definitions/GrafanaNotifierEmail" },
+              { "$ref": "#/definitions/GrafanaNotifierWebhook" }
+            ],
+            "!go": {
+              "taggedUnionType": true
+            }
           }
-        },
-        "oneOf": [
-          { "$ref": "#/definitions/GrafanaNotifierSlack" },
-          { "$ref": "#/definitions/GrafanaNotifierPagerduty" },
-          { "$ref": "#/definitions/GrafanaNotifierEmail" },
-          { "$ref": "#/definitions/GrafanaNotifierWebhook" }
-        ]
+        }
       }
     },
     "observability.logSlowSearches": {
@@ -970,8 +984,12 @@
     },
     "GrafanaNotifierSlack": {
       "type": "object",
+      "required": ["type"],
       "properties": {
-        "type": { "type": "string", "const": "slack" },
+        "type": {
+          "type": "string",
+          "const": "slack"
+        },
         "url": { "type": "string" },
         "recipient": { "type": "string" },
         "username": { "type": "string" },
@@ -986,24 +1004,36 @@
     },
     "GrafanaNotifierPagerduty": {
       "type": "object",
+      "required": ["type"],
       "properties": {
-        "type": { "type": "string", "const": "pagerduty" },
+        "type": {
+          "type": "string",
+          "const": "pagerduty"
+        },
         "integrationKey": { "type": "string" },
         "autoResolve": { "type": "string" }
       }
     },
     "GrafanaNotifierEmail": {
       "type": "object",
+      "required": ["type"],
       "properties": {
-        "type": { "type": "string", "const": "email" },
+        "type": {
+          "type": "string",
+          "const": "email"
+        },
         "singleEmail": { "type": "string" },
         "addresses": { "type": "string" }
       }
     },
     "GrafanaNotifierWebhook": {
       "type": "object",
+      "required": ["type"],
       "properties": {
-        "type": { "type": "string", "const": "webhook" },
+        "type": {
+          "type": "string",
+          "const": "webhook"
+        },
         "url": { "type": "string" },
         "username": { "type": "string" },
         "password": { "type": "string" }

@@ -6,12 +6,14 @@ set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
-
-# IMAGE=sourcegraph/grafana:rob ./docker-images/grafana/build.sh
-IMAGE=sourcegraph/grafana:rob # TODO(@bobheadxi): remove
+IMAGE=sourcegraph/grafana:dev
 CONTAINER=grafana
 
 mkdir -p "${GRAFANA_DISK}"/logs
+
+# quickly build image - should do this because the image has a Sourcegraph wrapper program
+# see /docker-images/grafana/cmd/grafana-wrapper for more details
+IMAGE=${IMAGE} CACHE=true ./docker-images/grafana/build.sh
 
 # docker containers must access things via docker host on non-linux platforms
 CONFIG_SUB_DIR="all"

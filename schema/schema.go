@@ -625,12 +625,12 @@ type GitoliteConnection struct {
 type GrafanaNotifierEmail struct {
 	Addresses   string `json:"addresses,omitempty"`
 	SingleEmail string `json:"singleEmail,omitempty"`
-	Type        string `json:"type,omitempty"`
+	Type        string `json:"type"`
 }
 type GrafanaNotifierPagerduty struct {
 	AutoResolve    string `json:"autoResolve,omitempty"`
 	IntegrationKey string `json:"integrationKey,omitempty"`
-	Type           string `json:"type,omitempty"`
+	Type           string `json:"type"`
 }
 type GrafanaNotifierSlack struct {
 	Icon_emoji     string `json:"icon_emoji,omitempty"`
@@ -640,14 +640,14 @@ type GrafanaNotifierSlack struct {
 	MentionUsers   string `json:"mentionUsers,omitempty"`
 	Recipient      string `json:"recipient,omitempty"`
 	Token          string `json:"token,omitempty"`
-	Type           string `json:"type,omitempty"`
+	Type           string `json:"type"`
 	UploadImage    string `json:"uploadImage,omitempty"`
 	Url            string `json:"url,omitempty"`
 	Username       string `json:"username,omitempty"`
 }
 type GrafanaNotifierWebhook struct {
 	Password string `json:"password,omitempty"`
-	Type     string `json:"type,omitempty"`
+	Type     string `json:"type"`
 	Url      string `json:"url,omitempty"`
 	Username string `json:"username,omitempty"`
 }
@@ -711,12 +711,61 @@ type Notice struct {
 	// Message description: The message to display. Markdown formatting is supported.
 	Message string `json:"message"`
 }
+type Notifier struct {
+	Slack     *GrafanaNotifierSlack
+	Pagerduty *GrafanaNotifierPagerduty
+	Email     *GrafanaNotifierEmail
+	Webhook   *GrafanaNotifierWebhook
+}
+
+func (v Notifier) MarshalJSON() ([]byte, error) {
+	if v.Slack != nil {
+		return json.Marshal(v.Slack)
+	}
+	if v.Pagerduty != nil {
+		return json.Marshal(v.Pagerduty)
+	}
+	if v.Email != nil {
+		return json.Marshal(v.Email)
+	}
+	if v.Webhook != nil {
+		return json.Marshal(v.Webhook)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *Notifier) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "email":
+		return json.Unmarshal(data, &v.Email)
+	case "pagerduty":
+		return json.Unmarshal(data, &v.Pagerduty)
+	case "slack":
+		return json.Unmarshal(data, &v.Slack)
+	case "webhook":
+		return json.Unmarshal(data, &v.Webhook)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"slack", "pagerduty", "email", "webhook"})
+}
+
 type OAuthIdentity struct {
 	// MaxBatchRequests description: The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MaxBatchRequests int `json:"maxBatchRequests,omitempty"`
 	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
 	Type                 string `json:"type"`
+}
+type ObservabilityAlerts struct {
+	// Id description: Unique identifier for this alert.
+	Id string `json:"id"`
+	// Level description: Sourcegraph alert level to subscribe to notifications for.
+	Level    string    `json:"level"`
+	Notifier *Notifier `json:"notifier,omitempty"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
@@ -1035,7 +1084,7 @@ type SiteConfiguration struct {
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
-	ObservabilityAlerts []interface{} `json:"observability.alerts,omitempty"`
+	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
