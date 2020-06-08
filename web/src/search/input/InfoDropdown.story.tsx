@@ -11,7 +11,7 @@ const cssVars = css`
     }
 `
 
-const { add } = storiesOf('InfoDropdown', module).addDecorator(story => (
+const { add } = storiesOf('web/InfoDropdown', module).addDecorator(story => (
     <>
         <style>{bootstrapStyles}</style>
         <style>{webStyles}</style>
