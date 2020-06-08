@@ -17,6 +17,9 @@ type MockReader struct {
 	// CloseFunc is an instance of a mock function object controlling the
 	// behavior of the method Close.
 	CloseFunc *ReaderCloseFunc
+	// PathsWithPrefixFunc is an instance of a mock function object
+	// controlling the behavior of the method PathsWithPrefix.
+	PathsWithPrefixFunc *ReaderPathsWithPrefixFunc
 	// ReadDefinitionsFunc is an instance of a mock function object
 	// controlling the behavior of the method ReadDefinitions.
 	ReadDefinitionsFunc *ReaderReadDefinitionsFunc
@@ -41,6 +44,11 @@ func NewMockReader() *MockReader {
 		CloseFunc: &ReaderCloseFunc{
 			defaultHook: func() error {
 				return nil
+			},
+		},
+		PathsWithPrefixFunc: &ReaderPathsWithPrefixFunc{
+			defaultHook: func(context.Context, string) ([]string, error) {
+				return nil, nil
 			},
 		},
 		ReadDefinitionsFunc: &ReaderReadDefinitionsFunc{
@@ -77,6 +85,9 @@ func NewMockReaderFrom(i persistence.Reader) *MockReader {
 	return &MockReader{
 		CloseFunc: &ReaderCloseFunc{
 			defaultHook: i.Close,
+		},
+		PathsWithPrefixFunc: &ReaderPathsWithPrefixFunc{
+			defaultHook: i.PathsWithPrefix,
 		},
 		ReadDefinitionsFunc: &ReaderReadDefinitionsFunc{
 			defaultHook: i.ReadDefinitions,
@@ -193,6 +204,115 @@ func (c ReaderCloseFuncCall) Args() []interface{} {
 // invocation.
 func (c ReaderCloseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ReaderPathsWithPrefixFunc describes the behavior when the PathsWithPrefix
+// method of the parent MockReader instance is invoked.
+type ReaderPathsWithPrefixFunc struct {
+	defaultHook func(context.Context, string) ([]string, error)
+	hooks       []func(context.Context, string) ([]string, error)
+	history     []ReaderPathsWithPrefixFuncCall
+	mutex       sync.Mutex
+}
+
+// PathsWithPrefix delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockReader) PathsWithPrefix(v0 context.Context, v1 string) ([]string, error) {
+	r0, r1 := m.PathsWithPrefixFunc.nextHook()(v0, v1)
+	m.PathsWithPrefixFunc.appendCall(ReaderPathsWithPrefixFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PathsWithPrefix
+// method of the parent MockReader instance is invoked and the hook queue is
+// empty.
+func (f *ReaderPathsWithPrefixFunc) SetDefaultHook(hook func(context.Context, string) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PathsWithPrefix method of the parent MockReader instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ReaderPathsWithPrefixFunc) PushHook(hook func(context.Context, string) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ReaderPathsWithPrefixFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ReaderPathsWithPrefixFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ReaderPathsWithPrefixFunc) nextHook() func(context.Context, string) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ReaderPathsWithPrefixFunc) appendCall(r0 ReaderPathsWithPrefixFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ReaderPathsWithPrefixFuncCall objects
+// describing the invocations of this function.
+func (f *ReaderPathsWithPrefixFunc) History() []ReaderPathsWithPrefixFuncCall {
+	f.mutex.Lock()
+	history := make([]ReaderPathsWithPrefixFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ReaderPathsWithPrefixFuncCall is an object that describes an invocation
+// of method PathsWithPrefix on an instance of MockReader.
+type ReaderPathsWithPrefixFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ReaderPathsWithPrefixFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ReaderPathsWithPrefixFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ReaderReadDefinitionsFunc describes the behavior when the ReadDefinitions
