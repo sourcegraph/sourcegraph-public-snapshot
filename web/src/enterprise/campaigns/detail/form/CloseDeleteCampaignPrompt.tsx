@@ -1,13 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { pluralize } from '../../../../../../shared/src/util/strings'
 import classNames from 'classnames'
 
 interface Props {
     disabled: boolean
     disabledTooltip: string
     message: React.ReactFragment
-
-    changesetsCount: number
 
     buttonText: string
     onButtonClick: (closeChangesets: boolean) => void
@@ -22,7 +19,6 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
     disabled,
     disabledTooltip,
     message,
-    changesetsCount,
     buttonText,
     onButtonClick,
     buttonClassName = '',
@@ -60,19 +56,16 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                     <div className="card mt-1">
                         <div className="card-body">
                             {message}
-                            {changesetsCount > 0 && (
-                                <div className="form-group">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={closeChangesets}
-                                            onChange={event => setCloseChangesets(event.target.checked)}
-                                        />{' '}
-                                        Close {changesetsCount} open {pluralize('changeset', changesetsCount)} on code
-                                        hosts
-                                    </label>
-                                </div>
-                            )}
+                            <div className="form-group">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={closeChangesets}
+                                        onChange={event => setCloseChangesets(event.target.checked)}
+                                    />{' '}
+                                    Close open changesets on code hosts
+                                </label>
+                            </div>
                             <button
                                 type="button"
                                 disabled={disabled}

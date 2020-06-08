@@ -64,7 +64,6 @@ interface Campaign
     > {
     patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-    openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
     patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
