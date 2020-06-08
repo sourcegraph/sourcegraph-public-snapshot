@@ -51,11 +51,6 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 			MetricLabels: []string{"hover"},
 			Metrics:      metrics,
 		}),
-		diagnosticsOperation: observationContext.Operation(observation.Op{
-			Name:         "CodeIntelAPI.Diagnostics",
-			MetricLabels: []string{"diagnostics"},
-			Metrics:      metrics,
-		}),
 	}
 }
 
