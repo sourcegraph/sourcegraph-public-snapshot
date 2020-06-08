@@ -50,7 +50,7 @@ COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 COPY --from=builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
-COPY --from=builder /go/bin/grafana-wrapper /bin/grafana-wrapper
+COPY --from=builder --chown=grafana:grafana /go/bin/grafana-wrapper /bin/grafana-wrapper
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /
