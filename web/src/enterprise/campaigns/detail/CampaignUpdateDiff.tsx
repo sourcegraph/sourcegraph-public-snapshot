@@ -55,6 +55,7 @@ export interface CampaignDiff {
      */
     unmodified: GQL.Changeset[]
     deleted: GQL.IExternalChangeset[]
+    hasNotUpdated: boolean
 }
 
 export function calculateChangesetDiff(
@@ -66,12 +67,14 @@ export function calculateChangesetDiff(
     const changed: GQL.IPatch[] = []
     const unmodified: GQL.Changeset[] = []
     const deleted: GQL.IExternalChangeset[] = []
+    let hasNotUpdated = false
 
     const visibleChangesets: GQL.IExternalChangeset[] = []
 
     for (const changeset of changesets) {
         if (changeset.__typename === 'HiddenExternalChangeset') {
             unmodified.push(changeset)
+            hasNotUpdated = true
         } else {
             visibleChangesets.push(changeset)
         }
@@ -80,6 +83,10 @@ export function calculateChangesetDiff(
         (campaignPatch): campaignPatch is GQL.IPatch => campaignPatch.__typename !== 'HiddenPatch'
     )
     const visiblePatches = patches.filter((patch): patch is GQL.IPatch => patch.__typename !== 'HiddenPatch')
+
+    if (visiblePatches.length + visibleCampaignPatches.length < patches.length + campaignPatches.length) {
+        hasNotUpdated = true
+    }
 
     const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
     for (const changeset of [...visibleChangesets, ...visibleCampaignPatches]) {
@@ -121,6 +128,7 @@ export function calculateChangesetDiff(
         changed,
         unmodified,
         deleted,
+        hasNotUpdated,
     }
 }
 
@@ -160,7 +168,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
         )
     }
     const [changesets, campaignPatches, patches] = queriedChangesets
-    const { added, changed, unmodified, deleted } = calculateChangesetDiff(
+    const { added, changed, unmodified, deleted, hasNotUpdated } = calculateChangesetDiff(
         changesets.nodes,
         campaignPatches.nodes,
         patches.nodes
@@ -170,6 +178,12 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     return (
         <div className={className}>
             <h3 className="mt-4 mb-2">Preview of changes</h3>
+            {hasNotUpdated && (
+                <div className="alert-alert-warning">
+                    The update contains repositories that you don't have permission to. Those will <strong>not</strong>{' '}
+                    be updated.
+                </div>
+            )}
             <p>
                 Campaign currently has {campaign.changesets.totalCount + campaign.patches.totalCount}{' '}
                 {pluralize('changeset', campaign.changesets.totalCount + campaign.patches.totalCount)} (
