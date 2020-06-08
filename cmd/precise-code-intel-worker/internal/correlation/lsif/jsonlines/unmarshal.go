@@ -14,33 +14,11 @@ import (
 
 var unmarshaller = jsoniter.ConfigFastest
 
-type ID string
-
-func (id *ID) UnmarshalJSON(raw []byte) error {
-	if raw[0] == '"' {
-		var v string
-		if err := unmarshaller.Unmarshal(raw, &v); err != nil {
-			return err
-		}
-
-		*id = ID(v)
-		return nil
-	}
-
-	var v int64
-	if err := unmarshaller.Unmarshal(raw, &v); err != nil {
-		return err
-	}
-
-	*id = ID(strconv.FormatInt(v, 10))
-	return nil
-}
-
 func unmarshalElement(line []byte) (_ lsif.Element, err error) {
 	var payload struct {
-		ID    ID     `json:"id"`
-		Type  string `json:"type"`
-		Label string `json:"label"`
+		ID    StringOrInt `json:"id"`
+		Type  string      `json:"type"`
+		Label string      `json:"label"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return lsif.Element{}, err
@@ -65,10 +43,10 @@ func unmarshalElement(line []byte) (_ lsif.Element, err error) {
 
 func unmarshalEdge(line []byte) (interface{}, error) {
 	var payload struct {
-		OutV     ID   `json:"outV"`
-		InV      ID   `json:"inV"`
-		InVs     []ID `json:"inVs"`
-		Document ID   `json:"document"`
+		OutV     StringOrInt   `json:"outV"`
+		InV      StringOrInt   `json:"inV"`
+		InVs     []StringOrInt `json:"inVs"`
+		Document StringOrInt   `json:"document"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return lsif.Edge{}, err
@@ -94,6 +72,7 @@ var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
 	"hoverResult":        unmarshalHover,
 	"moniker":            unmarshalMoniker,
 	"packageInformation": unmarshalPackageInformation,
+	"diagnosticResult":   unmarshalDiagnosticResult,
 }
 
 func unmarshalMetaData(line []byte) (interface{}, error) {
@@ -120,19 +99,20 @@ func unmarshalDocument(line []byte) (interface{}, error) {
 	}
 
 	return lsif.Document{
-		URI:      payload.URI,
-		Contains: datastructures.IDSet{},
+		URI:         payload.URI,
+		Contains:    datastructures.IDSet{},
+		Diagnostics: datastructures.IDSet{},
 	}, nil
 }
 
 func unmarshalRange(line []byte) (interface{}, error) {
-	type position struct {
+	type _position struct {
 		Line      int `json:"line"`
 		Character int `json:"character"`
 	}
 	var payload struct {
-		Start position `json:"start"`
-		End   position `json:"end"`
+		Start _position `json:"start"`
+		End   _position `json:"end"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -148,11 +128,11 @@ func unmarshalRange(line []byte) (interface{}, error) {
 }
 
 func unmarshalHover(line []byte) (interface{}, error) {
-	type hoverResult struct {
+	type _hoverResult struct {
 		Contents json.RawMessage `json:"contents"`
 	}
 	var payload struct {
-		Result hoverResult `json:"result"`
+		Result _hoverResult `json:"result"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
@@ -232,4 +212,66 @@ func unmarshalPackageInformation(line []byte) (interface{}, error) {
 		Name:    payload.Name,
 		Version: payload.Version,
 	}, nil
+}
+
+func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
+	type _position struct {
+		Line      int `json:"line"`
+		Character int `json:"character"`
+	}
+	type _range struct {
+		Start _position `json:"start"`
+		End   _position `json:"end"`
+	}
+	type _result struct {
+		Severity int         `json:"severity"`
+		Code     StringOrInt `json:"code"`
+		Message  string      `json:"message"`
+		Source   string      `json:"source"`
+		Range    _range      `json:"range"`
+	}
+	var payload struct {
+		Results []_result `json:"result"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return nil, err
+	}
+
+	var diagnostics []lsif.Diagnostic
+	for _, result := range payload.Results {
+		diagnostics = append(diagnostics, lsif.Diagnostic{
+			Severity:       result.Severity,
+			Code:           string(result.Code),
+			Message:        result.Message,
+			Source:         result.Source,
+			StartLine:      result.Range.Start.Line,
+			StartCharacter: result.Range.Start.Character,
+			EndLine:        result.Range.End.Line,
+			EndCharacter:   result.Range.End.Character,
+		})
+	}
+
+	return lsif.DiagnosticResult{Result: diagnostics}, nil
+}
+
+type StringOrInt string
+
+func (id *StringOrInt) UnmarshalJSON(raw []byte) error {
+	if raw[0] == '"' {
+		var v string
+		if err := unmarshaller.Unmarshal(raw, &v); err != nil {
+			return err
+		}
+
+		*id = StringOrInt(v)
+		return nil
+	}
+
+	var v int64
+	if err := unmarshaller.Unmarshal(raw, &v); err != nil {
+		return err
+	}
+
+	*id = StringOrInt(strconv.FormatInt(v, 10))
+	return nil
 }

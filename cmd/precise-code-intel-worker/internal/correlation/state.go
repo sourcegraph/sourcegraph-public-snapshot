@@ -17,6 +17,7 @@ type State struct {
 	HoverData              map[string]string
 	MonikerData            map[string]lsif.Moniker
 	PackageInformationData map[string]lsif.PackageInformation
+	Diagnostics            map[string]lsif.DiagnosticResult
 	NextData               map[string]string            // maps vertices related via next edges
 	ImportedMonikers       datastructures.IDSet         // moniker ids that have kind "import"
 	ExportedMonikers       datastructures.IDSet         // moniker ids that have kind "export"
@@ -35,6 +36,7 @@ func newState() *State {
 		HoverData:              map[string]string{},
 		MonikerData:            map[string]lsif.Moniker{},
 		PackageInformationData: map[string]lsif.PackageInformation{},
+		Diagnostics:            map[string]lsif.DiagnosticResult{},
 		NextData:               map[string]string{},
 		ImportedMonikers:       datastructures.IDSet{},
 		ExportedMonikers:       datastructures.IDSet{},

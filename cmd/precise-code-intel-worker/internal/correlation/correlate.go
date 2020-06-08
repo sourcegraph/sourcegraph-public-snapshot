@@ -111,6 +111,7 @@ var vertexHandlers = map[string]func(state *wrappedState, element lsif.Element) 
 	"hoverResult":        correlateHoverResult,
 	"moniker":            correlateMoniker,
 	"packageInformation": correlatePackageInformation,
+	"diagnosticResult":   correlateDiagnosticResult,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -139,6 +140,7 @@ var edgeHandlers = map[string]func(state *wrappedState, id string, edge lsif.Edg
 	"moniker":                 correlateMonikerEdge,
 	"nextMoniker":             correlateNextMonikerEdge,
 	"packageInformation":      correlatePackageInformationEdge,
+	"textDocument/diagnostic": correlateDiagnosticEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -259,6 +261,16 @@ func correlatePackageInformation(state *wrappedState, element lsif.Element) erro
 	}
 
 	state.PackageInformationData[element.ID] = payload
+	return nil
+}
+
+func correlateDiagnosticResult(state *wrappedState, element lsif.Element) error {
+	payload, ok := element.Payload.(lsif.DiagnosticResult)
+	if !ok {
+		return ErrUnexpectedPayload
+	}
+
+	state.Diagnostics[element.ID] = payload
 	return nil
 }
 
@@ -428,5 +440,19 @@ func correlatePackageInformationEdge(state *wrappedState, id string, edge lsif.E
 		state.ExportedMonikers.Add(edge.OutV)
 	}
 
+	return nil
+}
+
+func correlateDiagnosticEdge(state *wrappedState, id string, edge lsif.Edge) error {
+	document, ok := state.DocumentData[edge.OutV]
+	if !ok {
+		return malformedDump(id, edge.OutV, "document")
+	}
+
+	if _, ok := state.Diagnostics[edge.InV]; !ok {
+		return malformedDump(id, edge.InV, "diagnosticResult")
+	}
+
+	document.Diagnostics.Add(edge.InV)
 	return nil
 }

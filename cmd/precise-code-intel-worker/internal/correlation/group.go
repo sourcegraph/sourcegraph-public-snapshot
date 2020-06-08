@@ -79,6 +79,7 @@ func serializeDocument(state *State, doc lsif.Document) types.DocumentData {
 		HoverResults:       map[types.ID]string{},
 		Monikers:           map[types.ID]types.MonikerData{},
 		PackageInformation: map[types.ID]types.PackageInformationData{},
+		Diagnostics:        []types.DiagnosticData{},
 	}
 
 	for rangeID := range doc.Contains {
@@ -122,6 +123,21 @@ func serializeDocument(state *State, doc lsif.Document) types.DocumentData {
 					Version: packageInformation.Version,
 				}
 			}
+		}
+	}
+
+	for diagnosticID := range doc.Diagnostics {
+		for _, diagnostic := range state.Diagnostics[diagnosticID].Result {
+			document.Diagnostics = append(document.Diagnostics, types.DiagnosticData{
+				Severity:       diagnostic.Severity,
+				Code:           diagnostic.Code,
+				Message:        diagnostic.Message,
+				Source:         diagnostic.Source,
+				StartLine:      diagnostic.StartLine,
+				StartCharacter: diagnostic.StartCharacter,
+				EndLine:        diagnostic.EndLine,
+				EndCharacter:   diagnostic.EndCharacter,
+			})
 		}
 	}
 
