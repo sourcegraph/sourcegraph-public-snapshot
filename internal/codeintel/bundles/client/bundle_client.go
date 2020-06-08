@@ -111,9 +111,9 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 }
 
 // Diagnostics retrieves the diagnostics for the documents that have the given path prefix.
-func (c *bundleClientImpl) Diagnostics(ctx context.Context, path string) (diagnostics []Diagnostic, err error) {
+func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string) (diagnostics []Diagnostic, err error) {
 	args := map[string]interface{}{
-		"path": path,
+		"prefix": prefix,
 	}
 
 	err = c.request(ctx, "diagnostics", args, &diagnostics)

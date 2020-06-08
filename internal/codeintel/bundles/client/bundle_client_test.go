@@ -175,7 +175,7 @@ func TestHoverNull(t *testing.T) {
 func TestDiagnostics(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/diagnostics", map[string]string{
-			"path": "internal/",
+			"prefix": "internal/",
 		})
 
 		_, _ = w.Write([]byte(`[
