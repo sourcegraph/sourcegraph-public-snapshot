@@ -1,4 +1,3 @@
-// import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import css from 'tagged-template-noop'
@@ -9,7 +8,6 @@ import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
 const cssVars = css`
     :root {
         --dropdown-color-border: #cad2e2;
-        --primary: blue;
     }
 `
 
@@ -26,6 +24,5 @@ add('InfoDropdown', () => (
     <InfoDropdown
         title="Type"
         markdown="Search code (file contents), diffs (added/changed/removed lines in commits), commit messages, or symbols."
-        // alwaysShow={true}
     />
 ))
