@@ -446,9 +446,9 @@ func (db *ObservedDB) ResetStalled(ctx context.Context, now time.Time) (ids []in
 }
 
 // GetDumpIDs calls into the inner DB and registers the observed results.
-func (db *ObservedDB) GetDumpIDs(ctx context.Context) (_ []int, err error) {
+func (db *ObservedDB) GetDumpIDs(ctx context.Context) (ids []int, err error) {
 	ctx, endObservation := db.getDumpIDsOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
 	return db.db.GetDumpIDs(ctx)
 }
 
@@ -537,9 +537,9 @@ func (db *ObservedDB) UpdateCommits(ctx context.Context, repositoryID int, commi
 }
 
 // IndexableRepositories calls into the inner DB and registers the observed results.
-func (db *ObservedDB) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (_ []IndexableRepository, err error) {
+func (db *ObservedDB) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (repos []IndexableRepository, err error) {
 	ctx, endObservation := db.indexableRepositoriesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(repos)), observation.Args{}) }()
 	return db.db.IndexableRepositories(ctx, opts)
 }
 
@@ -600,16 +600,16 @@ func (db *ObservedDB) DequeueIndex(ctx context.Context) (_ Index, _ DB, _ bool, 
 }
 
 // ResetStalledIndexes calls into the inner DB and registers the observed results.
-func (db *ObservedDB) ResetStalledIndexes(ctx context.Context, now time.Time) (_ []int, err error) {
+func (db *ObservedDB) ResetStalledIndexes(ctx context.Context, now time.Time) (ids []int, err error) {
 	ctx, endObservation := db.resetStalledIndexesOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(ids)), observation.Args{}) }()
 	return db.db.ResetStalledIndexes(ctx, now)
 }
 
 // RepoUsageStatistics calls into the inner DB and registers the observed results.
-func (db *ObservedDB) RepoUsageStatistics(ctx context.Context) (_ []RepoUsageStatistics, err error) {
+func (db *ObservedDB) RepoUsageStatistics(ctx context.Context) (stats []RepoUsageStatistics, err error) {
 	ctx, endObservation := db.repoUsageStatisticsOperation.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(float64(len(stats)), observation.Args{}) }()
 	return db.db.RepoUsageStatistics(ctx)
 }
 
