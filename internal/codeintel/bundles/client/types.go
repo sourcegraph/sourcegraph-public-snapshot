@@ -2,7 +2,7 @@ package client
 
 // Location is an LSP-like location scoped to a dump.
 type Location struct {
-	DumpID int    `json:"dumpId"`
+	DumpID int
 	Path   string `json:"path"`
 	Range  Range  `json:"range"`
 }
@@ -24,7 +24,7 @@ type MonikerData struct {
 	Kind                 string `json:"kind"`
 	Scheme               string `json:"scheme"`
 	Identifier           string `json:"identifier"`
-	PackageInformationID string `json:"packageInformationID"`
+	PackageInformationID string `json:"packageInformationId"`
 }
 
 // PackageInformationData describes a package within a package manager system.

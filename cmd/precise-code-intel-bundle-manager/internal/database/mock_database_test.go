@@ -4,7 +4,7 @@ package database
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	client "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"sync"
 )
 
@@ -49,7 +49,7 @@ func NewMockDatabase() *MockDatabase {
 			},
 		},
 		DefinitionsFunc: &DatabaseDefinitionsFunc{
-			defaultHook: func(context.Context, string, int, int) ([]Location, error) {
+			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
 				return nil, nil
 			},
 		},
@@ -59,27 +59,27 @@ func NewMockDatabase() *MockDatabase {
 			},
 		},
 		HoverFunc: &DatabaseHoverFunc{
-			defaultHook: func(context.Context, string, int, int) (string, Range, bool, error) {
-				return "", Range{}, false, nil
+			defaultHook: func(context.Context, string, int, int) (string, client.Range, bool, error) {
+				return "", client.Range{}, false, nil
 			},
 		},
 		MonikerResultsFunc: &DatabaseMonikerResultsFunc{
-			defaultHook: func(context.Context, string, string, string, int, int) ([]Location, int, error) {
+			defaultHook: func(context.Context, string, string, string, int, int) ([]client.Location, int, error) {
 				return nil, 0, nil
 			},
 		},
 		MonikersByPositionFunc: &DatabaseMonikersByPositionFunc{
-			defaultHook: func(context.Context, string, int, int) ([][]types.MonikerData, error) {
+			defaultHook: func(context.Context, string, int, int) ([][]client.MonikerData, error) {
 				return nil, nil
 			},
 		},
 		PackageInformationFunc: &DatabasePackageInformationFunc{
-			defaultHook: func(context.Context, string, types.ID) (types.PackageInformationData, bool, error) {
-				return types.PackageInformationData{}, false, nil
+			defaultHook: func(context.Context, string, string) (client.PackageInformationData, bool, error) {
+				return client.PackageInformationData{}, false, nil
 			},
 		},
 		ReferencesFunc: &DatabaseReferencesFunc{
-			defaultHook: func(context.Context, string, int, int) ([]Location, error) {
+			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
 				return nil, nil
 			},
 		},
@@ -219,15 +219,15 @@ func (c DatabaseCloseFuncCall) Results() []interface{} {
 // DatabaseDefinitionsFunc describes the behavior when the Definitions
 // method of the parent MockDatabase instance is invoked.
 type DatabaseDefinitionsFunc struct {
-	defaultHook func(context.Context, string, int, int) ([]Location, error)
-	hooks       []func(context.Context, string, int, int) ([]Location, error)
+	defaultHook func(context.Context, string, int, int) ([]client.Location, error)
+	hooks       []func(context.Context, string, int, int) ([]client.Location, error)
 	history     []DatabaseDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // Definitions delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDatabase) Definitions(v0 context.Context, v1 string, v2 int, v3 int) ([]Location, error) {
+func (m *MockDatabase) Definitions(v0 context.Context, v1 string, v2 int, v3 int) ([]client.Location, error) {
 	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2, v3)
 	m.DefinitionsFunc.appendCall(DatabaseDefinitionsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -236,7 +236,7 @@ func (m *MockDatabase) Definitions(v0 context.Context, v1 string, v2 int, v3 int
 // SetDefaultHook sets function that is called when the Definitions method
 // of the parent MockDatabase instance is invoked and the hook queue is
 // empty.
-func (f *DatabaseDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]Location, error)) {
+func (f *DatabaseDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.Location, error)) {
 	f.defaultHook = hook
 }
 
@@ -244,7 +244,7 @@ func (f *DatabaseDefinitionsFunc) SetDefaultHook(hook func(context.Context, stri
 // Definitions method of the parent MockDatabase instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DatabaseDefinitionsFunc) PushHook(hook func(context.Context, string, int, int) ([]Location, error)) {
+func (f *DatabaseDefinitionsFunc) PushHook(hook func(context.Context, string, int, int) ([]client.Location, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -252,21 +252,21 @@ func (f *DatabaseDefinitionsFunc) PushHook(hook func(context.Context, string, in
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabaseDefinitionsFunc) SetDefaultReturn(r0 []Location, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseDefinitionsFunc) SetDefaultReturn(r0 []client.Location, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.Location, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabaseDefinitionsFunc) PushReturn(r0 []Location, r1 error) {
-	f.PushHook(func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseDefinitionsFunc) PushReturn(r0 []client.Location, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.Location, error) {
 		return r0, r1
 	})
 }
 
-func (f *DatabaseDefinitionsFunc) nextHook() func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseDefinitionsFunc) nextHook() func(context.Context, string, int, int) ([]client.Location, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -313,7 +313,7 @@ type DatabaseDefinitionsFuncCall struct {
 	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []Location
+	Result0 []client.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -442,15 +442,15 @@ func (c DatabaseExistsFuncCall) Results() []interface{} {
 // DatabaseHoverFunc describes the behavior when the Hover method of the
 // parent MockDatabase instance is invoked.
 type DatabaseHoverFunc struct {
-	defaultHook func(context.Context, string, int, int) (string, Range, bool, error)
-	hooks       []func(context.Context, string, int, int) (string, Range, bool, error)
+	defaultHook func(context.Context, string, int, int) (string, client.Range, bool, error)
+	hooks       []func(context.Context, string, int, int) (string, client.Range, bool, error)
 	history     []DatabaseHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // Hover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDatabase) Hover(v0 context.Context, v1 string, v2 int, v3 int) (string, Range, bool, error) {
+func (m *MockDatabase) Hover(v0 context.Context, v1 string, v2 int, v3 int) (string, client.Range, bool, error) {
 	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2, v3)
 	m.HoverFunc.appendCall(DatabaseHoverFuncCall{v0, v1, v2, v3, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -458,7 +458,7 @@ func (m *MockDatabase) Hover(v0 context.Context, v1 string, v2 int, v3 int) (str
 
 // SetDefaultHook sets function that is called when the Hover method of the
 // parent MockDatabase instance is invoked and the hook queue is empty.
-func (f *DatabaseHoverFunc) SetDefaultHook(hook func(context.Context, string, int, int) (string, Range, bool, error)) {
+func (f *DatabaseHoverFunc) SetDefaultHook(hook func(context.Context, string, int, int) (string, client.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -466,7 +466,7 @@ func (f *DatabaseHoverFunc) SetDefaultHook(hook func(context.Context, string, in
 // Hover method of the parent MockDatabase instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DatabaseHoverFunc) PushHook(hook func(context.Context, string, int, int) (string, Range, bool, error)) {
+func (f *DatabaseHoverFunc) PushHook(hook func(context.Context, string, int, int) (string, client.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -474,21 +474,21 @@ func (f *DatabaseHoverFunc) PushHook(hook func(context.Context, string, int, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabaseHoverFunc) SetDefaultReturn(r0 string, r1 Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int) (string, Range, bool, error) {
+func (f *DatabaseHoverFunc) SetDefaultReturn(r0 string, r1 client.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) (string, client.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabaseHoverFunc) PushReturn(r0 string, r1 Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, string, int, int) (string, Range, bool, error) {
+func (f *DatabaseHoverFunc) PushReturn(r0 string, r1 client.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, string, int, int) (string, client.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *DatabaseHoverFunc) nextHook() func(context.Context, string, int, int) (string, Range, bool, error) {
+func (f *DatabaseHoverFunc) nextHook() func(context.Context, string, int, int) (string, client.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -538,7 +538,7 @@ type DatabaseHoverFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 Range
+	Result1 client.Range
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 bool
@@ -562,15 +562,15 @@ func (c DatabaseHoverFuncCall) Results() []interface{} {
 // DatabaseMonikerResultsFunc describes the behavior when the MonikerResults
 // method of the parent MockDatabase instance is invoked.
 type DatabaseMonikerResultsFunc struct {
-	defaultHook func(context.Context, string, string, string, int, int) ([]Location, int, error)
-	hooks       []func(context.Context, string, string, string, int, int) ([]Location, int, error)
+	defaultHook func(context.Context, string, string, string, int, int) ([]client.Location, int, error)
+	hooks       []func(context.Context, string, string, string, int, int) ([]client.Location, int, error)
 	history     []DatabaseMonikerResultsFuncCall
 	mutex       sync.Mutex
 }
 
 // MonikerResults delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDatabase) MonikerResults(v0 context.Context, v1 string, v2 string, v3 string, v4 int, v5 int) ([]Location, int, error) {
+func (m *MockDatabase) MonikerResults(v0 context.Context, v1 string, v2 string, v3 string, v4 int, v5 int) ([]client.Location, int, error) {
 	r0, r1, r2 := m.MonikerResultsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
 	m.MonikerResultsFunc.appendCall(DatabaseMonikerResultsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
@@ -579,7 +579,7 @@ func (m *MockDatabase) MonikerResults(v0 context.Context, v1 string, v2 string, 
 // SetDefaultHook sets function that is called when the MonikerResults
 // method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *DatabaseMonikerResultsFunc) SetDefaultHook(hook func(context.Context, string, string, string, int, int) ([]Location, int, error)) {
+func (f *DatabaseMonikerResultsFunc) SetDefaultHook(hook func(context.Context, string, string, string, int, int) ([]client.Location, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -587,7 +587,7 @@ func (f *DatabaseMonikerResultsFunc) SetDefaultHook(hook func(context.Context, s
 // MonikerResults method of the parent MockDatabase instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *DatabaseMonikerResultsFunc) PushHook(hook func(context.Context, string, string, string, int, int) ([]Location, int, error)) {
+func (f *DatabaseMonikerResultsFunc) PushHook(hook func(context.Context, string, string, string, int, int) ([]client.Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -595,21 +595,21 @@ func (f *DatabaseMonikerResultsFunc) PushHook(hook func(context.Context, string,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabaseMonikerResultsFunc) SetDefaultReturn(r0 []Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, int, int) ([]Location, int, error) {
+func (f *DatabaseMonikerResultsFunc) SetDefaultReturn(r0 []client.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string, string, int, int) ([]client.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabaseMonikerResultsFunc) PushReturn(r0 []Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, string, string, int, int) ([]Location, int, error) {
+func (f *DatabaseMonikerResultsFunc) PushReturn(r0 []client.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, string, string, int, int) ([]client.Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DatabaseMonikerResultsFunc) nextHook() func(context.Context, string, string, string, int, int) ([]Location, int, error) {
+func (f *DatabaseMonikerResultsFunc) nextHook() func(context.Context, string, string, string, int, int) ([]client.Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -662,7 +662,7 @@ type DatabaseMonikerResultsFuncCall struct {
 	Arg5 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []Location
+	Result0 []client.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -686,15 +686,15 @@ func (c DatabaseMonikerResultsFuncCall) Results() []interface{} {
 // DatabaseMonikersByPositionFunc describes the behavior when the
 // MonikersByPosition method of the parent MockDatabase instance is invoked.
 type DatabaseMonikersByPositionFunc struct {
-	defaultHook func(context.Context, string, int, int) ([][]types.MonikerData, error)
-	hooks       []func(context.Context, string, int, int) ([][]types.MonikerData, error)
+	defaultHook func(context.Context, string, int, int) ([][]client.MonikerData, error)
+	hooks       []func(context.Context, string, int, int) ([][]client.MonikerData, error)
 	history     []DatabaseMonikersByPositionFuncCall
 	mutex       sync.Mutex
 }
 
 // MonikersByPosition delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDatabase) MonikersByPosition(v0 context.Context, v1 string, v2 int, v3 int) ([][]types.MonikerData, error) {
+func (m *MockDatabase) MonikersByPosition(v0 context.Context, v1 string, v2 int, v3 int) ([][]client.MonikerData, error) {
 	r0, r1 := m.MonikersByPositionFunc.nextHook()(v0, v1, v2, v3)
 	m.MonikersByPositionFunc.appendCall(DatabaseMonikersByPositionFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -703,7 +703,7 @@ func (m *MockDatabase) MonikersByPosition(v0 context.Context, v1 string, v2 int,
 // SetDefaultHook sets function that is called when the MonikersByPosition
 // method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *DatabaseMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([][]types.MonikerData, error)) {
+func (f *DatabaseMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([][]client.MonikerData, error)) {
 	f.defaultHook = hook
 }
 
@@ -711,7 +711,7 @@ func (f *DatabaseMonikersByPositionFunc) SetDefaultHook(hook func(context.Contex
 // MonikersByPosition method of the parent MockDatabase instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *DatabaseMonikersByPositionFunc) PushHook(hook func(context.Context, string, int, int) ([][]types.MonikerData, error)) {
+func (f *DatabaseMonikersByPositionFunc) PushHook(hook func(context.Context, string, int, int) ([][]client.MonikerData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -719,21 +719,21 @@ func (f *DatabaseMonikersByPositionFunc) PushHook(hook func(context.Context, str
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabaseMonikersByPositionFunc) SetDefaultReturn(r0 [][]types.MonikerData, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int) ([][]types.MonikerData, error) {
+func (f *DatabaseMonikersByPositionFunc) SetDefaultReturn(r0 [][]client.MonikerData, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([][]client.MonikerData, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabaseMonikersByPositionFunc) PushReturn(r0 [][]types.MonikerData, r1 error) {
-	f.PushHook(func(context.Context, string, int, int) ([][]types.MonikerData, error) {
+func (f *DatabaseMonikersByPositionFunc) PushReturn(r0 [][]client.MonikerData, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([][]client.MonikerData, error) {
 		return r0, r1
 	})
 }
 
-func (f *DatabaseMonikersByPositionFunc) nextHook() func(context.Context, string, int, int) ([][]types.MonikerData, error) {
+func (f *DatabaseMonikersByPositionFunc) nextHook() func(context.Context, string, int, int) ([][]client.MonikerData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -780,7 +780,7 @@ type DatabaseMonikersByPositionFuncCall struct {
 	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 [][]types.MonikerData
+	Result0 [][]client.MonikerData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -801,15 +801,15 @@ func (c DatabaseMonikersByPositionFuncCall) Results() []interface{} {
 // DatabasePackageInformationFunc describes the behavior when the
 // PackageInformation method of the parent MockDatabase instance is invoked.
 type DatabasePackageInformationFunc struct {
-	defaultHook func(context.Context, string, types.ID) (types.PackageInformationData, bool, error)
-	hooks       []func(context.Context, string, types.ID) (types.PackageInformationData, bool, error)
+	defaultHook func(context.Context, string, string) (client.PackageInformationData, bool, error)
+	hooks       []func(context.Context, string, string) (client.PackageInformationData, bool, error)
 	history     []DatabasePackageInformationFuncCall
 	mutex       sync.Mutex
 }
 
 // PackageInformation delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDatabase) PackageInformation(v0 context.Context, v1 string, v2 types.ID) (types.PackageInformationData, bool, error) {
+func (m *MockDatabase) PackageInformation(v0 context.Context, v1 string, v2 string) (client.PackageInformationData, bool, error) {
 	r0, r1, r2 := m.PackageInformationFunc.nextHook()(v0, v1, v2)
 	m.PackageInformationFunc.appendCall(DatabasePackageInformationFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -818,7 +818,7 @@ func (m *MockDatabase) PackageInformation(v0 context.Context, v1 string, v2 type
 // SetDefaultHook sets function that is called when the PackageInformation
 // method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *DatabasePackageInformationFunc) SetDefaultHook(hook func(context.Context, string, types.ID) (types.PackageInformationData, bool, error)) {
+func (f *DatabasePackageInformationFunc) SetDefaultHook(hook func(context.Context, string, string) (client.PackageInformationData, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -826,7 +826,7 @@ func (f *DatabasePackageInformationFunc) SetDefaultHook(hook func(context.Contex
 // PackageInformation method of the parent MockDatabase instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *DatabasePackageInformationFunc) PushHook(hook func(context.Context, string, types.ID) (types.PackageInformationData, bool, error)) {
+func (f *DatabasePackageInformationFunc) PushHook(hook func(context.Context, string, string) (client.PackageInformationData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -834,21 +834,21 @@ func (f *DatabasePackageInformationFunc) PushHook(hook func(context.Context, str
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabasePackageInformationFunc) SetDefaultReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, types.ID) (types.PackageInformationData, bool, error) {
+func (f *DatabasePackageInformationFunc) SetDefaultReturn(r0 client.PackageInformationData, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (client.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabasePackageInformationFunc) PushReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, string, types.ID) (types.PackageInformationData, bool, error) {
+func (f *DatabasePackageInformationFunc) PushReturn(r0 client.PackageInformationData, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string) (client.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DatabasePackageInformationFunc) nextHook() func(context.Context, string, types.ID) (types.PackageInformationData, bool, error) {
+func (f *DatabasePackageInformationFunc) nextHook() func(context.Context, string, string) (client.PackageInformationData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -889,10 +889,10 @@ type DatabasePackageInformationFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 types.ID
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 types.PackageInformationData
+	Result0 client.PackageInformationData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -916,15 +916,15 @@ func (c DatabasePackageInformationFuncCall) Results() []interface{} {
 // DatabaseReferencesFunc describes the behavior when the References method
 // of the parent MockDatabase instance is invoked.
 type DatabaseReferencesFunc struct {
-	defaultHook func(context.Context, string, int, int) ([]Location, error)
-	hooks       []func(context.Context, string, int, int) ([]Location, error)
+	defaultHook func(context.Context, string, int, int) ([]client.Location, error)
+	hooks       []func(context.Context, string, int, int) ([]client.Location, error)
 	history     []DatabaseReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDatabase) References(v0 context.Context, v1 string, v2 int, v3 int) ([]Location, error) {
+func (m *MockDatabase) References(v0 context.Context, v1 string, v2 int, v3 int) ([]client.Location, error) {
 	r0, r1 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3)
 	m.ReferencesFunc.appendCall(DatabaseReferencesFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -932,7 +932,7 @@ func (m *MockDatabase) References(v0 context.Context, v1 string, v2 int, v3 int)
 
 // SetDefaultHook sets function that is called when the References method of
 // the parent MockDatabase instance is invoked and the hook queue is empty.
-func (f *DatabaseReferencesFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]Location, error)) {
+func (f *DatabaseReferencesFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.Location, error)) {
 	f.defaultHook = hook
 }
 
@@ -940,7 +940,7 @@ func (f *DatabaseReferencesFunc) SetDefaultHook(hook func(context.Context, strin
 // References method of the parent MockDatabase instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DatabaseReferencesFunc) PushHook(hook func(context.Context, string, int, int) ([]Location, error)) {
+func (f *DatabaseReferencesFunc) PushHook(hook func(context.Context, string, int, int) ([]client.Location, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -948,21 +948,21 @@ func (f *DatabaseReferencesFunc) PushHook(hook func(context.Context, string, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DatabaseReferencesFunc) SetDefaultReturn(r0 []Location, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseReferencesFunc) SetDefaultReturn(r0 []client.Location, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.Location, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DatabaseReferencesFunc) PushReturn(r0 []Location, r1 error) {
-	f.PushHook(func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseReferencesFunc) PushReturn(r0 []client.Location, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.Location, error) {
 		return r0, r1
 	})
 }
 
-func (f *DatabaseReferencesFunc) nextHook() func(context.Context, string, int, int) ([]Location, error) {
+func (f *DatabaseReferencesFunc) nextHook() func(context.Context, string, int, int) ([]client.Location, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1009,7 +1009,7 @@ type DatabaseReferencesFuncCall struct {
 	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []Location
+	Result0 []client.Location
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

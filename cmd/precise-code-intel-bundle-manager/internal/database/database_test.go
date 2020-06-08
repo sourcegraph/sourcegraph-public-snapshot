@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	sqlitereader "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
@@ -47,7 +47,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	if actual, err := db.Definitions(context.Background(), "cmd/lsif-go/main.go", 110, 22); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []Location{
+		expected := []client.Location{
 			{
 				Path:  "internal/index/indexer.go",
 				Range: newRange(20, 1, 20, 6),
@@ -74,7 +74,7 @@ func TestDatabaseReferences(t *testing.T) {
 	if actual, err := db.References(context.Background(), "protocol/writer.go", 85, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := []Location{
+		expected := []client.Location{
 			{
 				Path:  "internal/index/indexer.go",
 				Range: newRange(529, 22, 529, 31),
@@ -127,13 +127,13 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	if actual, err := db.MonikersByPosition(context.Background(), "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := [][]types.MonikerData{
+		expected := [][]client.MonikerData{
 			{
 				{
 					Kind:                 "export",
 					Scheme:               "gomod",
 					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-					PackageInformationID: types.ID("213"),
+					PackageInformationID: "213",
 				},
 			},
 		}
@@ -145,7 +145,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 }
 
 func TestDatabaseMonikerResults(t *testing.T) {
-	edgeLocations := []Location{
+	edgeLocations := []client.Location{
 		{
 			Path:  "protocol/protocol.go",
 			Range: newRange(600, 1, 600, 5),
@@ -188,7 +188,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		},
 	}
 
-	markdownLocations := []Location{
+	markdownLocations := []client.Location{
 		{
 			Path:  "internal/index/helper.go",
 			Range: newRange(78, 6, 78, 16),
@@ -201,7 +201,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		identifier         string
 		skip               int
 		take               int
-		expectedLocations  []Location
+		expectedLocations  []client.Location
 		expectedTotalCount int
 	}{
 		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 100, edgeLocations, 10},
@@ -227,12 +227,12 @@ func TestDatabaseMonikerResults(t *testing.T) {
 
 func TestDatabasePackageInformation(t *testing.T) {
 	db := openTestDatabase(t)
-	if actual, exists, err := db.PackageInformation(context.Background(), "protocol/protocol.go", types.ID("213")); err != nil {
+	if actual, exists, err := db.PackageInformation(context.Background(), "protocol/protocol.go", "213"); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
 	} else {
-		expected := types.PackageInformationData{
+		expected := client.PackageInformationData{
 			Name:    "github.com/sourcegraph/lsif-go",
 			Version: "v0.0.0-ad3507cbeb18",
 		}
