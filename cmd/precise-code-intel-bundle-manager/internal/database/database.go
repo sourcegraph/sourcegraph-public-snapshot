@@ -7,6 +7,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -21,26 +22,26 @@ type Database interface {
 	Exists(ctx context.Context, path string) (bool, error)
 
 	// Definitions returns the set of locations defining the symbol at the given position.
-	Definitions(ctx context.Context, path string, line, character int) ([]Location, error)
+	Definitions(ctx context.Context, path string, line, character int) ([]client.Location, error)
 
 	// References returns the set of locations referencing the symbol at the given position.
-	References(ctx context.Context, path string, line, character int) ([]Location, error)
+	References(ctx context.Context, path string, line, character int) ([]client.Location, error)
 
 	// Hover returns the hover text of the symbol at the given position.
-	Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error)
+	Hover(ctx context.Context, path string, line, character int) (string, client.Range, bool, error)
 
 	// MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 	// ranges contain the position, then this method will return multiple sets of monikers. Each slice
 	// of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 	// the range attached to earlier monikers enclose the range attached to later monikers.
-	MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error)
+	MonikersByPosition(ctx context.Context, path string, line, character int) ([][]client.MonikerData, error)
 
 	// MonikerResults returns the locations that define or reference the given moniker. This method
 	// also returns the size of the complete result set to aid in pagination (along with skip and take).
-	MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error)
+	MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]client.Location, int, error)
 
 	// PackageInformation looks up package information data by identifier.
-	PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
+	PackageInformation(ctx context.Context, path string, packageInformationID string) (client.PackageInformationData, bool, error)
 }
 
 type databaseImpl struct {
@@ -51,36 +52,21 @@ type databaseImpl struct {
 
 var _ Database = &databaseImpl{}
 
-type Location struct {
-	Path  string `json:"path"`
-	Range Range  `json:"range"`
-}
-
-type Range struct {
-	Start Position `json:"start"`
-	End   Position `json:"end"`
-}
-
-type Position struct {
-	Line      int `json:"line"`
-	Character int `json:"character"`
-}
-
-func newRange(startLine, startCharacter, endLine, endCharacter int) Range {
-	return Range{
-		Start: Position{
+func newRange(startLine, startCharacter, endLine, endCharacter int) client.Range {
+	return client.Range{
+		Start: client.Position{
 			Line:      startLine,
 			Character: startCharacter,
 		},
-		End: Position{
+		End: client.Position{
 			Line:      endLine,
 			Character: endCharacter,
 		},
 	}
 }
 
-// documentPathRangeID denotes a range qualified by its containing document.
-type documentPathRangeID struct {
+// DocumentPathRangeID denotes a range qualified by its containing document.
+type DocumentPathRangeID struct {
 	Path    string
 	RangeID types.ID
 }
@@ -122,7 +108,7 @@ func (db *databaseImpl) Exists(ctx context.Context, path string) (bool, error) {
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (db *databaseImpl) Definitions(ctx context.Context, path string, line, character int) ([]Location, error) {
+func (db *databaseImpl) Definitions(ctx context.Context, path string, line, character int) ([]client.Location, error) {
 	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
@@ -146,17 +132,17 @@ func (db *databaseImpl) Definitions(ctx context.Context, path string, line, char
 		return locations, nil
 	}
 
-	return []Location{}, nil
+	return []client.Location{}, nil
 }
 
 // References returns the set of locations referencing the symbol at the given position.
-func (db *databaseImpl) References(ctx context.Context, path string, line, character int) ([]Location, error) {
+func (db *databaseImpl) References(ctx context.Context, path string, line, character int) ([]client.Location, error) {
 	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
-	var allLocations []Location
+	var allLocations []client.Location
 	for _, r := range ranges {
 		if r.ReferenceResultID == "" {
 			continue
@@ -179,10 +165,10 @@ func (db *databaseImpl) References(ctx context.Context, path string, line, chara
 }
 
 // Hover returns the hover text of the symbol at the given position.
-func (db *databaseImpl) Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error) {
+func (db *databaseImpl) Hover(ctx context.Context, path string, line, character int) (string, client.Range, bool, error) {
 	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
-		return "", Range{}, false, pkgerrors.Wrap(err, "db.getRangeByPosition")
+		return "", client.Range{}, false, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
 	for _, r := range ranges {
@@ -192,7 +178,7 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 
 		text, exists := documentData.HoverResults[r.HoverResultID]
 		if !exists {
-			return "", Range{}, false, ErrMalformedBundle{
+			return "", client.Range{}, false, ErrMalformedBundle{
 				Filename: db.filename,
 				Name:     "hoverResult",
 				Key:      string(r.HoverResultID),
@@ -203,22 +189,22 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 		return text, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter), true, nil
 	}
 
-	return "", Range{}, false, nil
+	return "", client.Range{}, false, nil
 }
 
 // MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error) {
+func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, line, character int) ([][]client.MonikerData, error) {
 	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, pkgerrors.Wrap(err, "db.getRangeByPosition")
 	}
 
-	var monikerData [][]types.MonikerData
+	var monikerData [][]client.MonikerData
 	for _, r := range ranges {
-		var batch []types.MonikerData
+		var batch []client.MonikerData
 		for _, monikerID := range r.MonikerIDs {
 			moniker, exists := documentData.Monikers[monikerID]
 			if !exists {
@@ -230,7 +216,12 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 				}
 			}
 
-			batch = append(batch, moniker)
+			batch = append(batch, client.MonikerData{
+				Kind:                 moniker.Kind,
+				Scheme:               moniker.Scheme,
+				Identifier:           moniker.Identifier,
+				PackageInformationID: string(moniker.PackageInformationID),
+			})
 		}
 
 		monikerData = append(monikerData, batch)
@@ -241,7 +232,7 @@ func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, lin
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
+func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []client.Location, _ int, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "getResultChunkByResultID")
 	span.SetTag("filename", db.filename)
 	span.SetTag("tableName", tableName)
@@ -255,7 +246,6 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 		span.Finish()
 	}()
 
-	// TODO(efritz) - gross
 	var rows []types.Location
 	var totalCount int
 	if tableName == "definitions" {
@@ -272,9 +262,9 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 		return nil, 0, err
 	}
 
-	var locations []Location
+	var locations []client.Location
 	for _, row := range rows {
-		locations = append(locations, Location{
+		locations = append(locations, client.Location{
 			Path:  row.URI,
 			Range: newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 		})
@@ -284,18 +274,24 @@ func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, i
 }
 
 // PackageInformation looks up package information data by identifier.
-func (db *databaseImpl) PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
+func (db *databaseImpl) PackageInformation(ctx context.Context, path string, packageInformationID string) (client.PackageInformationData, bool, error) {
 	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
-		return types.PackageInformationData{}, false, pkgerrors.Wrap(err, "db.getDocumentData")
+		return client.PackageInformationData{}, false, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
-
 	if !exists {
-		return types.PackageInformationData{}, false, nil
+		return client.PackageInformationData{}, false, nil
 	}
 
-	packageInformationData, exists := documentData.PackageInformation[packageInformationID]
-	return packageInformationData, exists, nil
+	packageInformationData, exists := documentData.PackageInformation[types.ID(packageInformationID)]
+	if exists {
+		return client.PackageInformationData{
+			Name:    packageInformationData.Name,
+			Version: packageInformationData.Version,
+		}, true, nil
+	}
+
+	return client.PackageInformationData{}, false, nil
 }
 
 // getDocumentData fetches and unmarshals the document data or the given path. This method caches
@@ -326,7 +322,6 @@ func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, lin
 	if err != nil {
 		return types.DocumentData{}, nil, false, pkgerrors.Wrap(err, "db.getDocumentData")
 	}
-
 	if !exists {
 		return types.DocumentData{}, nil, false, nil
 	}
@@ -336,12 +331,11 @@ func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, lin
 
 // getResultByID fetches and unmarshals a definition or reference result by identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]documentPathRangeID, error) {
+func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]DocumentPathRangeID, error) {
 	resultChunkData, exists, err := db.getResultChunkByResultID(ctx, id)
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "db.getResultChunkByResultID")
 	}
-
 	if !exists {
 		return nil, ErrMalformedBundle{
 			Filename: db.filename,
@@ -360,7 +354,7 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]docum
 		}
 	}
 
-	var resultData []documentPathRangeID
+	var resultData []DocumentPathRangeID
 	for _, documentIDRangeID := range documentIDRangeIDs {
 		path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]
 		if !ok {
@@ -372,7 +366,7 @@ func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]docum
 			}
 		}
 
-		resultData = append(resultData, documentPathRangeID{
+		resultData = append(resultData, DocumentPathRangeID{
 			Path:    path,
 			RangeID: documentIDRangeID.RangeID,
 		})
@@ -404,7 +398,7 @@ func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.I
 
 // convertRangesToLocations converts pairs of document paths and range identifiers
 // to a list of locations.
-func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData []documentPathRangeID) ([]Location, error) {
+func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData []DocumentPathRangeID) ([]client.Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.
@@ -420,7 +414,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 	}
 	sort.Strings(paths)
 
-	var locations []Location
+	var locations []client.Location
 	for _, path := range paths {
 		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
@@ -446,7 +440,7 @@ func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData
 				}
 			}
 
-			locations = append(locations, Location{
+			locations = append(locations, client.Location{
 				Path:  path,
 				Range: newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			})

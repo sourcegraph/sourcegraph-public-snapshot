@@ -14,7 +14,7 @@ type CodeIntelAPI interface {
 	// FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
 	// queries for the given file. These dump IDs should be subsequently passed to invocations of
 	// Definitions, References, and Hover.
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error)
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]db.Dump, error)
 
 	// Definitions returns the list of source locations that define the symbol at the given position.
 	// This may include remote definitions if the remote repository is also indexed.

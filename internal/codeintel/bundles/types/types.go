@@ -15,6 +15,7 @@ type DocumentData struct {
 	HoverResults       map[ID]string // hover text normalized to markdown string
 	Monikers           map[ID]MonikerData
 	PackageInformation map[ID]PackageInformationData
+	Diagnostics        []DiagnosticData
 }
 
 // RangeData represents a range vertex within an index. It contains the same relevant
@@ -47,6 +48,19 @@ type PackageInformationData struct {
 
 	// Version of the package.
 	Version string
+}
+
+// DiagnosticData carries diagnostic information attached to a range within its
+// containing document.
+type DiagnosticData struct {
+	Severity       int
+	Code           string
+	Message        string
+	Source         string
+	StartLine      int // 0-indexed, inclusive
+	StartCharacter int // 0-indexed, inclusive
+	EndLine        int // 0-indexed, inclusive
+	EndCharacter   int // 0-indexed, inclusive
 }
 
 // ResultChunkData represents a row of the resultChunk table. Each row is a subset

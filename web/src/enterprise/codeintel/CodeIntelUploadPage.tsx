@@ -1,19 +1,19 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { catchError, takeWhile, concatMap } from 'rxjs/operators'
-import { ErrorAlert } from '../../../components/alerts'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
+import { ErrorAlert } from '../../components/alerts'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifUpload, deleteLsifUpload } from './backend'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../../../components/PageTitle'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps, Redirect } from 'react-router'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { Timestamp } from '../../components/time/Timestamp'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
@@ -21,7 +21,7 @@ import * as H from 'history'
 const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -37,7 +37,7 @@ function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): b
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
+export const CodeIntelUploadPage: FunctionComponent<Props> = ({
     repo,
     scheduler,
     match: {
@@ -45,7 +45,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
     },
     history,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsLsifUpload'))
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -53,7 +53,12 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
         useMemo(
             () =>
                 timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
-                    concatMap(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)]))),
+                    concatMap(() =>
+                        fetchLsifUpload({ id }).pipe(
+                            catchError((error): [ErrorLike] => [asError(error)]),
+                            repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
+                        )
+                    ),
                     takeWhile(shouldReload, true)
                 ),
             [id, scheduler]
@@ -90,7 +95,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="LSIF uploads - Admin" />
+            <PageTitle title="Code intelligence - uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError ? (
@@ -148,7 +153,7 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                                             {uploadOrError.projectRoot.commit.repository.name}
                                         </Link>
                                     ) : (
-                                        repo.name
+                                        repo?.name || 'unknown'
                                     )}
                                 </td>
                             </tr>

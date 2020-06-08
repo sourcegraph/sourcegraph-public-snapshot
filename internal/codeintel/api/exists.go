@@ -13,14 +13,14 @@ import (
 // FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
 // queries for the given file. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
-func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
+func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) ([]db.Dump, error) {
 	// See if we know about this commit. If not, we need to update our commits table
 	// and the visibility of the dumps in this repository.
 	if err := api.updateCommitsAndVisibility(ctx, repositoryID, commit); err != nil {
 		return nil, err
 	}
 
-	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file)
+	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file, indexer)
 	if err != nil {
 		return nil, errors.Wrap(err, "db.FindClosestDumps")
 	}

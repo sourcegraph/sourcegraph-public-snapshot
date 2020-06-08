@@ -14,8 +14,13 @@ var NewCodeIntelResolver func() CodeIntelResolver
 
 type CodeIntelResolver interface {
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error)
+	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
 
@@ -27,7 +32,11 @@ func (defaultCodeIntelResolver) LSIFUploadByID(ctx context.Context, id graphql.I
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+func (defaultCodeIntelResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
@@ -35,13 +44,40 @@ func (defaultCodeIntelResolver) DeleteLSIFUpload(ctx context.Context, id graphql
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (defaultCodeIntelResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (LSIFIndexResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
 func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (r *schemaResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFUploads(ctx, args)
+}
+
+func (r *schemaResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return r.CodeIntelResolver.LSIFIndexes(ctx, args)
+}
+
 func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	// We need to override the embedded method here as it takes slightly different arguments
 	return r.CodeIntelResolver.DeleteLSIFUpload(ctx, args.ID)
+}
+
+func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	return r.CodeIntelResolver.DeleteLSIFIndex(ctx, args.ID)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -83,6 +119,41 @@ type LSIFUploadConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type LSIFIndexesQueryArgs struct {
+	graphqlutil.ConnectionArgs
+	Query *string
+	State *string
+	After *string
+}
+
+type LSIFRepositoryIndexesQueryArgs struct {
+	*LSIFIndexesQueryArgs
+	RepositoryID graphql.ID
+}
+
+type LSIFIndexResolver interface {
+	ID() graphql.ID
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	InputCommit() string
+	State() string
+	QueuedAt() DateTime
+	StartedAt() *DateTime
+	FinishedAt() *DateTime
+	Failure() LSIFIndexFailureReasonResolver
+	PlaceInQueue() *int32
+}
+
+type LSIFIndexFailureReasonResolver interface {
+	Summary() string
+	Stacktrace() string
+}
+
+type LSIFIndexConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type LSIFQueryResolver interface {
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
@@ -93,6 +164,7 @@ type LSIFQueryArgs struct {
 	Repository *RepositoryResolver
 	Commit     api.CommitID
 	Path       string
+	Indexer    string
 	UploadID   int64
 }
 

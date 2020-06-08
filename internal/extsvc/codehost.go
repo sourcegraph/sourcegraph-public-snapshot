@@ -16,10 +16,10 @@ type CodeHost struct {
 // Known public code hosts and their URLs
 var (
 	GitHubDotComURL = mustParseURL("https://github.com")
-	GitHubDotCom    = NewCodeHost(GitHubDotComURL, "github")
+	GitHubDotCom    = NewCodeHost(GitHubDotComURL, TypeGitHub)
 
 	GitLabDotComURL = mustParseURL("https://gitlab.com")
-	GitLabDotCom    = NewCodeHost(GitLabDotComURL, "gitlab")
+	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,

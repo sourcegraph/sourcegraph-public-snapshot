@@ -669,7 +669,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 						ext := api.ExternalRepoSpec{
 							ID:          repo.PHID,
-							ServiceType: "phabricator",
+							ServiceType: extsvc.TypePhabricator,
 							ServiceID:   "https://secure.phabricator.com",
 						}
 
@@ -760,20 +760,10 @@ func TestSources_ListRepos(t *testing.T) {
 func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
 	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
 	rec := newRecorder(t, cassete, update(name))
-	mws = append(mws, githubProxyRedirectMiddleware, gitserverRedirectMiddleware)
+	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
-}
-
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
 }
 
 func gitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
@@ -809,7 +799,7 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 
 		// Phabricator requests include a token in the form and body.
 		ua := i.Request.Headers.Get("User-Agent")
-		if strings.Contains(strings.ToLower(ua), "phabricator") {
+		if strings.Contains(strings.ToLower(ua), extsvc.TypePhabricator) {
 			i.Request.Body = ""
 			i.Request.Form = nil
 		}

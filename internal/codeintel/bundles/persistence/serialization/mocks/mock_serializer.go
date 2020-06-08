@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// MockSerializer is a mock impelementation of the Serializer interface
-// (from the package
+// MockSerializer is a mock implementation of the Serializer interface (from
+// the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization)
 // used for unit testing.
 type MockSerializer struct {

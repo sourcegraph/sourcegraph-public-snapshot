@@ -103,7 +103,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	}
 }
 
-func TestGetUploadsByRepo(t *testing.T) {
+func TestGetUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -160,7 +160,14 @@ func TestGetUploadsByRepo(t *testing.T) {
 					hi = len(testCase.expectedIDs)
 				}
 
-				uploads, totalCount, err := db.GetUploadsByRepo(context.Background(), 50, testCase.state, testCase.term, testCase.visibleAtTip, 3, lo)
+				uploads, totalCount, err := db.GetUploads(context.Background(), GetUploadsOptions{
+					RepositoryID: 50,
+					State:        testCase.state,
+					Term:         testCase.term,
+					VisibleAtTip: testCase.visibleAtTip,
+					Limit:        3,
+					Offset:       lo,
+				})
 				if err != nil {
 					t.Fatalf("unexpected error getting uploads for repo: %s", err)
 				}

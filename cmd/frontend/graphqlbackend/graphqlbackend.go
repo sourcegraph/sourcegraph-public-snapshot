@@ -496,6 +496,11 @@ func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
+	n, ok := r.Node.(LSIFIndexResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
 	n, ok := r.Node.(*versionContextResolver)
 	return n, ok
@@ -586,6 +591,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return siteByGQLID(ctx, id)
 	case "LSIFUpload":
 		return r.LSIFUploadByID(ctx, id)
+	case "LSIFIndex":
+		return r.LSIFIndexByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

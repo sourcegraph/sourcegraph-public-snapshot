@@ -20,6 +20,23 @@ func TestReadMetaV5(t *testing.T) {
 	}
 }
 
+func TestPathsWithPrefixV5(t *testing.T) {
+	paths, err := testReader(t, v5TestFile).PathsWithPrefix(context.Background(), "internal/")
+	if err != nil {
+		t.Fatalf("unexpected error fetching paths with prefix: %s", err)
+	}
+
+	expectedPaths := []string{
+		"internal/gomod/module.go",
+		"internal/index/helper.go",
+		"internal/index/indexer.go",
+		"internal/index/types.go",
+	}
+	if diff := cmp.Diff(expectedPaths, paths); diff != "" {
+		t.Errorf("unexpected paths (-want +got):\n%s", diff)
+	}
+}
+
 func TestReadDocumentV5(t *testing.T) {
 	data, exists, err := testReader(t, v5TestFile).ReadDocument(context.Background(), "protocol/writer.go")
 	if err != nil {
@@ -28,12 +45,6 @@ func TestReadDocumentV5(t *testing.T) {
 	if !exists {
 		t.Errorf("expected document to exist")
 	}
-
-	// for k, v := range data.Ranges {
-	// 	if v.HoverResultID == types.ID("3463") {
-	// 		fmt.Printf("%s -> %v\n", k, v)
-	// 	}
-	// }
 
 	expectedRange := types.RangeData{
 		StartLine:          140,

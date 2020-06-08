@@ -1,19 +1,19 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
-} from '../../../components/FilteredConnection'
-import { Link } from '../../../../../shared/src/components/Link'
-import { PageTitle } from '../../../components/PageTitle'
+} from '../../components/FilteredConnection'
+import { Link } from '../../../../shared/src/components/Link'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
-import { Timestamp } from '../../../components/time/Timestamp'
+import { Timestamp } from '../../components/time/Timestamp'
 import { deleteLsifUpload, fetchLsifUploads } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 
@@ -77,7 +77,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
                     <span className="ml-2">
                         -
                         <span className="ml-2">
-                            <Link to={`./code-intelligence/lsif-uploads/${node.id}`}>
+                            <Link to={`./uploads/${node.id}`}>
                                 {node.state === GQL.LSIFUploadState.UPLOADING ? (
                                     <span>Uploading</span>
                                 ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
@@ -113,14 +113,14 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 }
 
 /**
- * The repository settings code intelligence page.
+ * The repository settings code intel uploads page.
  */
-export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ repo, ...props }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelligence'), [])
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {
@@ -149,17 +149,24 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
     const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo.id, ...args }),
-        [repo.id]
+        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
+        [repo?.id]
     )
 
     return (
         <div className="repo-settings-code-intelligence-page">
-            <PageTitle title="Code intelligence" />
-            <h2>Code intelligence</h2>
+            <PageTitle title="Code intelligence - uploads" />
+            <h2>Code intelligence - precise code intel uploads</h2>
             <p>
                 Enable precise code intelligence by{' '}
-                <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
+                <a
+                    href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    uploading LSIF data
+                </a>
+                .
             </p>
 
             <p>

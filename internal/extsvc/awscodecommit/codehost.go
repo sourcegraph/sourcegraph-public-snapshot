@@ -3,19 +3,15 @@ package awscodecommit
 import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
-
-// ServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
-// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
-// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
-const ServiceType = "awscodecommit"
 
 // ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
 // CodeCommit repository.
 func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
 	return api.ExternalRepoSpec{
 		ID:          repo.ID,
-		ServiceType: ServiceType,
+		ServiceType: extsvc.TypeAWSCodeCommit,
 		ServiceID:   serviceID,
 	}
 }

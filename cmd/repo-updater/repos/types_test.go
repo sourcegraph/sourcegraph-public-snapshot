@@ -166,14 +166,14 @@ func TestExternalService_Exclude(t *testing.T) {
 			Name: "git-host.mycorp.com/org/foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1",
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
 		},
 		{
 			Name: "git-host.mycorp.com/org/baz",
 			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 				ServiceID:   "https://git-host.mycorp.com/",
 			},
 		},

@@ -71,7 +71,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
 		clientURL:         op.BaseURL,
-		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
+		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		cache:             op.MockCache,
 		cacheTTL:          op.CacheTTL,
 		minBatchThreshold: op.MinBatchThreshold,

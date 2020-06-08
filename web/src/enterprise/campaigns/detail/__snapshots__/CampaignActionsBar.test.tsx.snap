@@ -54,7 +54,6 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          changesetsCount={0}
           disabled={false}
           disabledTooltip="Cannot close while campaign is being created"
           message={
@@ -72,7 +71,6 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={0}
         disabled={false}
         disabledTooltip="Cannot delete while campaign is being created"
         message={
@@ -135,7 +133,6 @@ exports[`CampaignActionsBar closed 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={0}
         disabled={false}
         disabledTooltip="Cannot delete while campaign is being created"
         message={
@@ -270,7 +267,6 @@ exports[`CampaignActionsBar editable 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          changesetsCount={0}
           disabled={false}
           disabledTooltip="Cannot close while campaign is being created"
           message={
@@ -288,7 +284,6 @@ exports[`CampaignActionsBar editable 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={0}
         disabled={false}
         disabledTooltip="Cannot delete while campaign is being created"
         message={
@@ -364,7 +359,6 @@ exports[`CampaignActionsBar mode: closing 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          changesetsCount={0}
           disabled={true}
           disabledTooltip="Cannot close while campaign is being created"
           message={
@@ -382,7 +376,6 @@ exports[`CampaignActionsBar mode: closing 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={0}
         disabled={true}
         disabledTooltip="Cannot delete while campaign is being created"
         message={
@@ -458,7 +451,6 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          changesetsCount={0}
           disabled={true}
           disabledTooltip="Cannot close while campaign is being created"
           message={
@@ -476,7 +468,6 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={0}
         disabled={true}
         disabledTooltip="Cannot delete while campaign is being created"
         message={
@@ -795,7 +786,6 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
         <CloseDeleteCampaignPrompt
           buttonClassName="btn-secondary mr-1"
           buttonText="Close"
-          changesetsCount={1}
           disabled={false}
           disabledTooltip="Cannot close while campaign is being created"
           message={
@@ -813,7 +803,6 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
       <CloseDeleteCampaignPrompt
         buttonClassName="btn-danger"
         buttonText="Delete"
-        changesetsCount={1}
         disabled={false}
         disabledTooltip="Cannot delete while campaign is being created"
         message={

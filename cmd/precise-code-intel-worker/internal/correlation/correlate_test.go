@@ -25,8 +25,16 @@ func TestCorrelate(t *testing.T) {
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root",
 		DocumentData: map[string]lsif.Document{
-			"02": {URI: "foo.go", Contains: datastructures.IDSet{"04": {}, "05": {}, "06": {}}},
-			"03": {URI: "bar.go", Contains: datastructures.IDSet{"07": {}, "08": {}, "09": {}}},
+			"02": {
+				URI:         "foo.go",
+				Contains:    datastructures.IDSet{"04": {}, "05": {}, "06": {}},
+				Diagnostics: datastructures.IDSet{"49": {}},
+			},
+			"03": {
+				URI:         "bar.go",
+				Contains:    datastructures.IDSet{"07": {}, "08": {}, "09": {}},
+				Diagnostics: datastructures.IDSet{},
+			},
 		},
 		RangeData: map[string]lsif.Range{
 			"04": {
@@ -111,6 +119,22 @@ func TestCorrelate(t *testing.T) {
 			"22": {Name: "pkg A", Version: "v0.1.0"},
 			"23": {Name: "pkg B", Version: "v1.2.3"},
 		},
+		Diagnostics: map[string]lsif.DiagnosticResult{
+			"49": {
+				Result: []lsif.Diagnostic{
+					{
+						Severity:       1,
+						Code:           "2322",
+						Message:        "Type '10' is not assignable to type 'string'.",
+						Source:         "eslint",
+						StartLine:      1,
+						StartCharacter: 5,
+						EndLine:        1,
+						EndCharacter:   6,
+					},
+				},
+			},
+		},
 		NextData: map[string]string{
 			"09": "10",
 			"10": "11",
@@ -141,7 +165,11 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root/",
 		DocumentData: map[string]lsif.Document{
-			"02": {URI: "foo.go", Contains: datastructures.IDSet{}},
+			"02": {
+				URI:         "foo.go",
+				Contains:    datastructures.IDSet{},
+				Diagnostics: datastructures.IDSet{},
+			},
 		},
 		RangeData:              map[string]lsif.Range{},
 		ResultSetData:          map[string]lsif.ResultSet{},
@@ -150,6 +178,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		HoverData:              map[string]string{},
 		MonikerData:            map[string]lsif.Moniker{},
 		PackageInformationData: map[string]lsif.PackageInformation{},
+		Diagnostics:            map[string]lsif.DiagnosticResult{},
 		NextData:               map[string]string{},
 		ImportedMonikers:       datastructures.IDSet{},
 		ExportedMonikers:       datastructures.IDSet{},
@@ -177,7 +206,11 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///__w/sourcegraph/sourcegraph/shared/",
 		DocumentData: map[string]lsif.Document{
-			"02": {URI: "../node_modules/@types/history/index.d.ts", Contains: datastructures.IDSet{}},
+			"02": {
+				URI:         "../node_modules/@types/history/index.d.ts",
+				Contains:    datastructures.IDSet{},
+				Diagnostics: datastructures.IDSet{},
+			},
 		},
 		RangeData:              map[string]lsif.Range{},
 		ResultSetData:          map[string]lsif.ResultSet{},
@@ -186,6 +219,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		HoverData:              map[string]string{},
 		MonikerData:            map[string]lsif.Moniker{},
 		PackageInformationData: map[string]lsif.PackageInformation{},
+		Diagnostics:            map[string]lsif.DiagnosticResult{},
 		NextData:               map[string]string{},
 		ImportedMonikers:       datastructures.IDSet{},
 		ExportedMonikers:       datastructures.IDSet{},

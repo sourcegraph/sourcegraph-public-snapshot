@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -97,7 +97,7 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 }
 
 // Definitions calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []Location, err error) {
+func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []client.Location, err error) {
 	ctx, endObservation := db.definitionsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -111,7 +111,7 @@ func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, 
 }
 
 // References calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []Location, err error) {
+func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []client.Location, err error) {
 	ctx, endObservation := db.referencesOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -125,7 +125,7 @@ func (db *ObservedDatabase) References(ctx context.Context, path string, line, c
 }
 
 // Hover calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ Range, _ bool, err error) {
+func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, character int) (_ string, _ client.Range, _ bool, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -139,7 +139,7 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 }
 
 // MonikersByPosition calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]types.MonikerData, err error) {
+func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]client.MonikerData, err error) {
 	ctx, endObservation := db.monikersByPositionOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -161,7 +161,7 @@ func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string,
 }
 
 // MonikerResults calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
+func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []client.Location, _ int, err error) {
 	ctx, endObservation := db.monikerResultsOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -175,7 +175,7 @@ func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, schem
 }
 
 // PackageInformation calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (_ types.PackageInformationData, _ bool, err error) {
+func (db *ObservedDatabase) PackageInformation(ctx context.Context, path string, packageInformationID string) (_ client.PackageInformationData, _ bool, err error) {
 	ctx, endObservation := db.packageInformationOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),

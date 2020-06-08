@@ -247,7 +247,7 @@ type ChangesetResolver interface {
 
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	NextSyncAt() *DateTime
+	NextSyncAt(ctx context.Context) (*DateTime, error)
 	State() campaigns.ChangesetState
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)
 
