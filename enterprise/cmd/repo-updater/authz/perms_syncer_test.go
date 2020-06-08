@@ -190,6 +190,51 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
+		s := NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
+		s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
+		s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
+		return s
+	}
+
+	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
+		calledSetRepoPermissions := false
+		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			calledSetRepoPermissions = true
+			return nil
+		}
+		defer func() {
+			edb.Mocks.Perms = edb.MockPerms{}
+		}()
+
+		reposStore := &mockReposStore{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+				return []*repos.Repo{
+					{
+						ID:      1,
+						Private: true,
+						ExternalRepo: api.ExternalRepoSpec{
+							ServiceID: "https://gitlab.com/",
+						},
+					},
+				}, nil
+			},
+		}
+		s := newPermsSyncer(reposStore)
+
+		err := s.syncRepoPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !calledSetRepoPermissions {
+			t.Fatal("!calledSetRepoPermissions")
+		}
+	})
+
 	p := &mockProvider{
 		serviceType: gitlab.ServiceType,
 		serviceID:   "https://gitlab.com/",
@@ -242,13 +287,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			}, nil
 		},
 	}
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
-	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
-	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
+	s := newPermsSyncer(reposStore)
 
 	tests := []struct {
 		name     string
