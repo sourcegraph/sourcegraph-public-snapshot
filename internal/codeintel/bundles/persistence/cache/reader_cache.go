@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"container/list"
 	"context"
 	"errors"
 	"sync"
@@ -11,19 +10,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
 )
 
-// ErrReaderInitializationDeadlineExceeded occurs when a new reader takes too long to initialize.
-var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization deadline exceeded")
-
-// Cache is an LRU cache of reader instances by key. This implementation ensures that there is only one
+// Cache is a map of active reader instances by key. This implementation ensures that there is only one
 // handle open to a given reader, and that the initialization of the reader (which may run migrations)
-// is only attempted once at a time.
+// is only attempted once at a time. Readers which are idle for longer than a configured duration are
+// closed in the background.
 type Cache struct {
-	size   int
 	opener ReaderOpener
 
-	m         sync.Mutex
-	entries   map[string]*list.Element // keys to evict list nodes
-	evictList *list.List               // LRU ordering of cache entries
+	m       sync.Mutex
+	entries map[string]*cacheEntry
+}
+
+// cacheEntry wraps a reader which may still be initializing.
+type cacheEntry struct {
+	reader         persistence.Reader
+	err            error
+	init           chan struct{}  // marks init completion
+	draining       chan struct{}  // marks intent to close
+	accessedInTick bool           // marks used since last eviction
+	refCount       sync.WaitGroup // acts as concurrent use gauge
+	closeOnce      sync.Once      // guards closing the entry
 }
 
 // ReaderOpener initializes a new reader for the given key.
@@ -33,36 +39,49 @@ type ReaderOpener func(key string) (persistence.Reader, error)
 // locks the given reader argument so that it is not closed while in use.
 type Handler func(reader persistence.Reader) error
 
-// New initializes a new cache with the given capacity and reader opener.
-func New(size int, opener ReaderOpener) *Cache {
-	return &Cache{
-		size:      size,
-		opener:    opener,
-		entries:   map[string]*list.Element{},
-		evictList: list.New(),
+// ErrReaderInitializationDeadlineExceeded occurs when a new reader takes too long to initialize.
+var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization deadline exceeded")
+
+// NewReaderCache initializes a new reader cache with the given max reader idle time and reader opener.
+func NewReaderCache(maxReaderIdleTime time.Duration, opener ReaderOpener) *Cache {
+	return newReaderCache(time.NewTicker(maxReaderIdleTime).C, opener)
+}
+
+// newReaderCache initializes a new reader cache with the given ticker and reader opener.
+func newReaderCache(ch <-chan time.Time, opener ReaderOpener) *Cache {
+	cache := &Cache{
+		opener:  opener,
+		entries: map[string]*cacheEntry{},
 	}
+
+	go func() {
+		for range ch {
+			cache.evict()
+		}
+	}()
+
+	return cache
 }
 
 // WithReader calls the given function with a reader argument. If the reader has not yet initialized and
 // does not do so before context deadline, an error is returned. The reader initialization is not canceled
 // due to a context deadline here and will continue to run in the background until completion.
 func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
-	entry, ok := c.getOrCreateActiveEntry(ctx, key)
-	if !ok {
-		return ErrReaderInitializationDeadlineExceeded
-	}
-	defer entry.refCount.Done()
+	if entry, ok := c.getOrCreateActiveEntry(ctx, key); ok {
+		defer entry.refCount.Done()
 
-	select {
-	case <-entry.init:
-		if entry.err != nil {
-			return entry.err
+		select {
+		case <-entry.init:
+			if entry.err != nil {
+				return entry.err
+			}
+			return fn(entry.reader)
+
+		case <-ctx.Done():
 		}
-		return fn(entry.reader)
-
-	case <-ctx.Done():
-		return ErrReaderInitializationDeadlineExceeded
 	}
+
+	return ErrReaderInitializationDeadlineExceeded
 }
 
 const (
@@ -104,162 +123,88 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	if entry, exists, draining := c.getEntry(key); exists {
-		return entry, draining
-	}
-
-	return c.createEntry(key), false
-}
-
-// getEntry attempts to return an existing entry for the given key. This function returns boolen flags
-// indicating whether an entry exists, and whether or not that entry is currently draining.
-//
-// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
-func (c *Cache) getEntry(key string) (_ *cacheEntry, exists, draining bool) {
-	element, ok := c.entries[key]
+	entry, ok := c.entries[key]
 	if !ok {
-		return nil, false, false
+		entry = c.makeEntry(key)
+		c.entries[key] = entry
 	}
 
-	entry := element.Value.(*cacheEntry)
-
-	// Update recency data
-	c.evictList.MoveToFront(element)
-
-	// Mark as in-use.
-	//
-	// NOTE: 🔐 This refCount is decreased after the handler function completes in the calling
-	// function so that we do not try to close a reader that's currently active in some other
-	// goroutine. If the entry is currently draining (the condition below), we also need to
-	// decrease the use count immediately as the calling function will not attempt to invoke
-	// the handler function at all.
+	// Mark as in-use
 	entry.refCount.Add(1)
+	entry.accessedInTick = true
 
 	select {
 	case <-entry.draining:
+		// Caller won't invoke handler, so we decrease our use count immediately
 		entry.refCount.Done()
-		return nil, true, true
+		return nil, true
 	default:
 	}
 
-	return entry, true, false
+	return entry, false
 }
 
-// createEntry creates a new cache entry for the given key.
-//
-// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
-func (c *Cache) createEntry(key string) *cacheEntry {
-	entry := newCacheEntry(key)
+// makeEntry creates a new empty cache entry. This will be
+func (c *Cache) makeEntry(key string) *cacheEntry {
+	entry := &cacheEntry{
+		init:     make(chan struct{}),
+		draining: make(chan struct{}),
+	}
 
-	// Update recency data and make it accessible by key to future calls
-	element := c.evictList.PushFront(entry)
-	c.entries[key] = element
-
-	// Mark as in-use.
-	//
-	// NOTE: 🔐 This refCount is decreased after the handler function completes in the calling
-	// function so that we do not try to close a reader that's currently active in some other
-	// goroutine.
-	entry.refCount.Add(1)
-
-	// Perform the open procedure in a goroutine. The close of the init channel will signal
-	// all consumers of the cache that the entry's underlying reader is now ready for use.
-	// This allows us to have several consumers concurrently waiting on the same cache entry
-	// to initialize.
-	//
-	// Previous implementation attempts of this cache did not guarantee this property:
-	//   (1) holding a lock during initialization stops independent readers for initializing
-	//       concurrently, which can severely decrease request throughput
-	//   (2) not synchronizing during initialization can allow the same reader to be
-	//       initialized multiple times as there is no "pending" entry in the cache for the
-	//       second request to the same key to wait on.
 	go func() {
 		// Mark as initialized
 		defer close(entry.init)
 
-		entry.reader, entry.err = c.opener(key)
-		if entry.err != nil {
+		if entry.reader, entry.err = c.opener(key); entry.err != nil {
 			// Do not hold on to cache entries that failed to initialize. In the case of a
 			// transient error (e.g., a missing bundle file that is later uploaded), we do
 			// not want a poison cache value occupying that key until a process restart.
-			c.remove(entry)
+			c.m.Lock()
+			delete(c.entries, key)
+			c.m.Unlock()
 		}
 	}()
-
-	// We just created a new entry so we may now be over capcity. Remove as many entries
-	// as necessary to get us back under our maximum size. This may call remove on an entry
-	// that is already draining, but is safe to do as that function is idempotent and is
-	// guaranteed to remove the underlying entry at some point in the future.
-	c.evict(len(c.entries) - c.size)
 
 	return entry
 }
 
-// evict attempts to remove n elements from the back of the list.
-//
-// 🔐 NOTE: This function assumes that the cache's mutex is held by the caller.
-func (c *Cache) evict(n int) {
-	for element := c.evictList.Back(); element != nil; element = element.Prev() {
-		if n <= 0 {
-			return
+// evict iterates through all entries and determines those which have not been accessed since the
+// last eviction pass. These entries are marked for removal which will occur once initialization
+// finishes and any active readers have detached. After this pass, the accessed flag is false for
+// all entries.
+func (c *Cache) evict() {
+	c.m.Lock()
+	defer c.m.Unlock()
+
+	for key, entry := range c.entries {
+		if !entry.accessedInTick {
+			c.remove(key, entry)
 		}
 
-		n--
-		c.remove(element.Value.(*cacheEntry))
+		entry.accessedInTick = false
 	}
 }
 
-// remove marks the entry as draining so that future readers will not attempt to hold it,
-// then waits for all current readers to drain. The entry is then removed from the cache
-// mapping. This function is safe to call on the same entry multiple times.
-func (c *Cache) remove(entry *cacheEntry) {
+// remove marks a cache entry as draining so that future readers are blocked. Once the cache entry
+// has initialized and all active readers have detached, the underlying reader is closed and the
+// entry is removed from the cache map.
+func (c *Cache) remove(key string, entry *cacheEntry) {
 	entry.closeOnce.Do(func() {
 		go func() {
-			entry.close()
+			close(entry.draining) // Reject future readers
+			<-entry.init          // Wait until initialized
+			entry.refCount.Wait() // Wait until there are no more readers
+
+			if entry.reader != nil {
+				// Release resources
+				if err := entry.reader.Close(); err != nil {
+					log15.Error("Failed to close reader", "key", key, "err", err)
+				}
+			}
 
 			c.m.Lock()
-			defer c.m.Unlock()
-
-			element := c.entries[entry.key]
-			c.evictList.Remove(element)
-			delete(c.entries, entry.key)
+			delete(c.entries, key)
+			c.m.Unlock()
 		}()
 	})
-}
-
-// cacheEntry wraps a reader which may still be initializing.
-type cacheEntry struct {
-	key       string
-	reader    persistence.Reader
-	err       error
-	init      chan struct{}  // marks init completion
-	draining  chan struct{}  // marks intent to close
-	refCount  sync.WaitGroup // acts as concurrent use gauge
-	closeOnce sync.Once
-}
-
-func newCacheEntry(key string) *cacheEntry {
-	return &cacheEntry{
-		key:      key,
-		init:     make(chan struct{}),
-		draining: make(chan struct{}),
-	}
-}
-
-// close marks the entry as draining then blocks until initialized and until all readers
-// have finished. If the reader was initialized successfully, it is closed and all underlying
-// resources are released.
-func (e *cacheEntry) close() {
-	close(e.draining) // Reject future readers
-	<-e.init          // Wait until initialized
-	e.refCount.Wait() // Wait until there are no more readers
-
-	if e.reader == nil {
-		return
-	}
-
-	// Release resources
-	if err := e.reader.Close(); err != nil {
-		log15.Error("Failed to close reader", "key", e.key, "err", err)
-	}
 }
