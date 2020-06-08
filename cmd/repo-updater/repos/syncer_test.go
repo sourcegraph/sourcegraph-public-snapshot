@@ -471,14 +471,18 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			},
 			func() testCase {
 				var update interface{}
-				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
+				typ, ok := extsvc.ParseServiceType(tc.repo.ExternalRepo.ServiceType)
+				if !ok {
+					panic(fmt.Sprintf("test must be extended with new external service kind: %q", strings.ToLower(tc.repo.ExternalRepo.ServiceType)))
+				}
+				switch typ {
 				case extsvc.TypeGitHub:
 					update = &github.Repository{IsArchived: true}
 				case extsvc.TypeGitLab:
 					update = &gitlab.Project{Archived: true}
-				case "bitbucketserver":
+				case extsvc.TypeBitbucketServer:
 					update = &bitbucketserver.Repo{Public: true}
-				case "bitbucketcloud":
+				case extsvc.TypeBitbucketCloud:
 					update = &bitbucketcloud.Repo{IsPrivate: true}
 				case extsvc.TypeAWSCodeCommit:
 					update = &awscodecommit.Repository{Description: "new description"}
