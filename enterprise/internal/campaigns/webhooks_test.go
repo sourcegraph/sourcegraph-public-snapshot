@@ -19,13 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -45,7 +43,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
 
-		cf, save := newGithubClientFactory(t, "github-webhooks")
+		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
 
 		secret := "secret"
@@ -195,7 +193,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		truncateTables(t, db, "changeset_jobs", "changeset_events", "changesets")
 
-		cf, save := newGithubClientFactory(t, "bitbucket-webhooks")
+		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
 
 		secret := "secret"
@@ -428,37 +426,4 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
-}
-
-func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
-
-	return hc, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
 }

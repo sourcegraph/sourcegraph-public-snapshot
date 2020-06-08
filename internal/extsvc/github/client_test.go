@@ -7,20 +7,16 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -444,45 +440,18 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 func newClient(t testing.TB, name string) (*Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-	rec, err := httptestutil.NewRecorder(cassete, update(name), func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
-
-	hc, err := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cli := NewClient(
-		uri,
-		os.Getenv("GITHUB_TOKEN"),
-		hc,
-	)
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
 	}
-}
 
-func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
-	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
+	cli := NewClient(uri, os.Getenv("GITHUB_TOKEN"), doer)
+
+	return cli, save
 }

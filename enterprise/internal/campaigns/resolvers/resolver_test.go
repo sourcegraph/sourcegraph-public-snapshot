@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -46,7 +47,7 @@ func TestCampaigns(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	rcache.SetupForTest(t)
 
-	cf, save := newGithubClientFactory(t, "test-campaigns")
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-campaigns")
 	defer save()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -618,7 +619,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	rcache.SetupForTest(t)
 
-	cf, save := newGithubClientFactory(t, "test-changeset-counts-over-time")
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
