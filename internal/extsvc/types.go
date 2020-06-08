@@ -116,6 +116,37 @@ const (
 	TypeOther = "other"
 )
 
+var (
+	// Precompute these for use in ParseServiceType below since the constants are mixed case
+	bbsLower = strings.ToLower(TypeBitbucketServer)
+	bbcLower = strings.ToLower(TypeBitbucketCloud)
+)
+
+// ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
+// It returns ("", false) if no match was found.
+func ParseServiceType(s string) (string, bool) {
+	switch strings.ToLower(s) {
+	case TypeAWSCodeCommit:
+		return TypeAWSCodeCommit, true
+	case bbsLower:
+		return TypeBitbucketServer, true
+	case bbcLower:
+		return TypeBitbucketCloud, true
+	case TypeGitHub:
+		return TypeGitHub, true
+	case TypeGitLab:
+		return TypeGitLab, true
+	case TypeGitolite:
+		return TypeGitolite, true
+	case TypePhabricator:
+		return TypePhabricator, true
+	case TypeOther:
+		return TypeOther, true
+	default:
+		return "", false
+	}
+}
+
 // AccountID is a descriptive type for the external identifier of an external account on the
 // code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL ID
 // (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.

@@ -670,7 +670,8 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		ExternalRepo: r.ExternalRepo,
 	}
 
-	switch strings.ToLower(r.ExternalRepo.ServiceType) {
+	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	switch typ {
 	case extsvc.TypeGitHub:
 		ghrepo := r.Metadata.(*github.Repository)
 		info.Links = &protocol.RepoLinks{
@@ -687,7 +688,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
 			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
 		}
-	case "bitbucketserver":
+	case extsvc.TypeBitbucketServer:
 		repo := r.Metadata.(*bitbucketserver.Repo)
 		if len(repo.Links.Self) == 0 {
 			break
