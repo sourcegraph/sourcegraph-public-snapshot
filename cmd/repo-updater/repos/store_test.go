@@ -112,7 +112,7 @@ func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
 					},
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "bar",
-						ServiceType: "gitlab",
+						ServiceType: extsvc.TypeGitLab,
 						ServiceID:   "http://gitlab.com",
 					},
 				},
@@ -455,12 +455,12 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 		t.Helper()
 
 		kinds := []string{
-			"github",
-			"gitlab",
-			"bitbucketserver",
-			"awscodecommit",
-			"other",
-			"gitolite",
+			extsvc.KindGitHub,
+			extsvc.KindGitLab,
+			extsvc.KindBitbucketServer,
+			extsvc.KindAWSCodeCommit,
+			extsvc.KindOther,
+			extsvc.KindGitolite,
 		}
 
 		github := repos.Repo{
@@ -491,7 +491,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
-				ServiceType: "gitlab",
+				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "http://gitlab.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -531,7 +531,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-				ServiceType: "awscodecommit",
+				ServiceType: extsvc.TypeAWSCodeCommit,
 				ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -549,7 +549,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "git-host.com/org/foo",
 				ServiceID:   "https://git-host.com/",
-				ServiceType: "other",
+				ServiceType: extsvc.TypeOther,
 			},
 			Sources: map[string]*repos.SourceInfo{
 				"extsvc:5": {
@@ -565,7 +565,7 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			CreatedAt: now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "bar",
-				ServiceType: "gitolite",
+				ServiceType: extsvc.TypeGitolite,
 				ServiceID:   "git@gitolite.mycorp.com",
 			},
 			Sources: map[string]*repos.SourceInfo{
@@ -790,7 +790,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		},
 		Metadata: new(gitlab.Project),
 		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: "gitlab",
+			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 			ID:          "123",
 		},
@@ -816,7 +816,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		Name: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: "awscodecommit",
+			ServiceType: extsvc.TypeAWSCodeCommit,
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -833,7 +833,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
-			ServiceType: "other",
+			ServiceType: extsvc.TypeOther,
 		},
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:4": {
@@ -848,7 +848,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		CreatedAt: now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
-			ServiceType: "gitolite",
+			ServiceType: extsvc.TypeGitolite,
 			ServiceID:   "git@gitolite.mycorp.com",
 		},
 		Sources: map[string]*repos.SourceInfo{
@@ -870,12 +870,12 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	kinds := []string{
-		"github",
-		"gitlab",
-		"bitbucketserver",
-		"awscodecommit",
-		"other",
-		"gitolite",
+		extsvc.KindGitHub,
+		extsvc.KindGitLab,
+		extsvc.KindBitbucketServer,
+		extsvc.KindAWSCodeCommit,
+		extsvc.KindOther,
+		extsvc.KindGitolite,
 	}
 
 	type testCase struct {
@@ -959,7 +959,7 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		stored: repositories,
 		args: func(repos.Repos) repos.StoreListReposArgs {
 			return repos.StoreListReposArgs{
-				Kinds: []string{"github", "gitlab"},
+				Kinds: []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			}
 		},
 		repos: repos.Assert.ReposEqual(&github, &gitlab),

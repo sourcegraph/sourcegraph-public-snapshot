@@ -2,6 +2,9 @@ package httptestutil
 
 import (
 	"net/http"
+	"path/filepath"
+	"strings"
+	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
@@ -46,5 +49,33 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 		c.Transport = rec
 
 		return nil
+	}
+}
+
+// NewGitHubRecorderFactory returns a *http.Factory that rewrites HTTP requests to
+// github-proxy to github.com and records all HTTP requests in "testdata/vcr/{name}"
+// with {name} being the name that's passed in.
+// If update is true, the HTTP requests are recorded, otherwise they're
+// replayed from the recorded cassete.
+func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
+	t.Helper()
+
+	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+
+	rec, err := NewRecorder(cassete, update, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
+
+	hc := httpcli.NewFactory(mw, NewRecorderOpt(rec))
+
+	return hc, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
 	}
 }

@@ -118,7 +118,12 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 
-	reader, err := NewReader(context.Background(), filename)
+	cache, err := NewCache(1)
+	if err != nil {
+		t.Fatalf("unexpected error creating cache: %s", err)
+	}
+
+	reader, err := NewReader(context.Background(), filename, cache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}

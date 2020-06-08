@@ -21,6 +21,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dnaeon/go-vcr v1.0.1
+	github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c
 	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/ericchiang/k8s v1.2.0
@@ -111,7 +112,7 @@ require (
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
-	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0 // indirect
+	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sirupsen/logrus v1.5.0 // indirect
@@ -127,7 +128,6 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.11.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
@@ -157,7 +157,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200511113954-b56036a3b745
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200607063352-a20174182c81
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

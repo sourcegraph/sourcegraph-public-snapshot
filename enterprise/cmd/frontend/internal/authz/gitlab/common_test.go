@@ -385,7 +385,7 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 		authData = &oauth2.Token{AccessToken: oauthTok}
 	}
 
-	if serviceType == gitlab.ServiceType {
+	if serviceType == extsvc.TypeGitLab {
 		gitlabAcctID, err := strconv.Atoi(accountID)
 		if err != nil {
 			t.Fatalf("Could not convert accountID to number: %s", err)

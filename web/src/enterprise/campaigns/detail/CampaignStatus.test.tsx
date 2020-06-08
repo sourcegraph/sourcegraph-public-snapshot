@@ -6,6 +6,7 @@ import { createMemoryHistory } from 'history'
 
 const PROPS = {
     afterRetry: () => undefined,
+    afterPublish: () => undefined,
     history: createMemoryHistory(),
 }
 
@@ -21,101 +22,102 @@ const CAMPAIGN: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister'> &
 }
 
 describe('CampaignStatus', () => {
-    for (const viewerCanAdminister of [true, false]) {
-        const campaign = { ...CAMPAIGN, viewerCanAdminister }
-        describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
-            test('closed campaign', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={{
-                                ...campaign,
-                                closedAt: '2020-01-01',
-                                viewerCanAdminister,
-                                status: {
-                                    completedCount: 1,
-                                    pendingCount: 0,
-                                    errors: [],
-                                    state: GQL.BackgroundProcessState.COMPLETED,
-                                },
-                            }}
-                        />
-                    )
-                ).toMatchSnapshot())
+    for (const hasUnpublishedPatches of [true, false]) {
+        for (const viewerCanAdminister of [true, false]) {
+            const campaign = { ...CAMPAIGN, viewerCanAdminister, hasUnpublishedPatches }
+            describe(`viewerCanAdminister: ${String(viewerCanAdminister)}`, () => {
+                test('closed campaign', () =>
+                    expect(
+                        createRenderer().render(
+                            <CampaignStatus
+                                {...PROPS}
+                                campaign={{
+                                    ...campaign,
+                                    closedAt: '2020-01-01',
+                                    status: {
+                                        completedCount: 1,
+                                        pendingCount: 0,
+                                        errors: [],
+                                        state: GQL.BackgroundProcessState.COMPLETED,
+                                    },
+                                }}
+                            />
+                        )
+                    ).toMatchSnapshot())
 
-            test('drafted campaign', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={{
-                                ...campaign,
-                                status: {
-                                    completedCount: 1,
-                                    pendingCount: 0,
-                                    errors: [],
-                                    state: GQL.BackgroundProcessState.COMPLETED,
-                                },
-                            }}
-                        />
-                    )
-                ).toMatchSnapshot())
+                test('drafted campaign', () =>
+                    expect(
+                        createRenderer().render(
+                            <CampaignStatus
+                                {...PROPS}
+                                campaign={{
+                                    ...campaign,
+                                    status: {
+                                        completedCount: 1,
+                                        pendingCount: 0,
+                                        errors: [],
+                                        state: GQL.BackgroundProcessState.COMPLETED,
+                                    },
+                                }}
+                            />
+                        )
+                    ).toMatchSnapshot())
 
-            test('drafted campaign, some published', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={{
-                                ...campaign,
-                                changesets: { totalCount: 1 },
-                                status: {
-                                    completedCount: 1,
-                                    pendingCount: 0,
-                                    errors: [],
-                                    state: GQL.BackgroundProcessState.COMPLETED,
-                                },
-                            }}
-                        />
-                    )
-                ).toMatchSnapshot())
+                test('drafted campaign, some published', () =>
+                    expect(
+                        createRenderer().render(
+                            <CampaignStatus
+                                {...PROPS}
+                                campaign={{
+                                    ...campaign,
+                                    changesets: { totalCount: 1 },
+                                    status: {
+                                        completedCount: 1,
+                                        pendingCount: 0,
+                                        errors: [],
+                                        state: GQL.BackgroundProcessState.COMPLETED,
+                                    },
+                                }}
+                            />
+                        )
+                    ).toMatchSnapshot())
 
-            test('campaign processing', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={{
-                                ...campaign,
-                                status: {
-                                    completedCount: 3,
-                                    pendingCount: 3,
-                                    errors: ['a', 'b'],
-                                    state: GQL.BackgroundProcessState.PROCESSING,
-                                },
-                            }}
-                        />
-                    )
-                ).toMatchSnapshot())
+                test('campaign processing', () =>
+                    expect(
+                        createRenderer().render(
+                            <CampaignStatus
+                                {...PROPS}
+                                campaign={{
+                                    ...campaign,
+                                    status: {
+                                        completedCount: 3,
+                                        pendingCount: 3,
+                                        errors: ['a', 'b'],
+                                        state: GQL.BackgroundProcessState.PROCESSING,
+                                    },
+                                }}
+                            />
+                        )
+                    ).toMatchSnapshot())
 
-            test('campaign errored', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={{
-                                ...campaign,
-                                status: {
-                                    completedCount: 3,
-                                    pendingCount: 0,
-                                    errors: ['a', 'b'],
-                                    state: GQL.BackgroundProcessState.ERRORED,
-                                },
-                            }}
-                        />
-                    )
-                ).toMatchSnapshot())
-        })
+                test('campaign errored', () =>
+                    expect(
+                        createRenderer().render(
+                            <CampaignStatus
+                                {...PROPS}
+                                campaign={{
+                                    ...campaign,
+                                    status: {
+                                        completedCount: 3,
+                                        pendingCount: 0,
+                                        errors: ['a', 'b'],
+                                        state: GQL.BackgroundProcessState.ERRORED,
+                                    },
+                                }}
+                            />
+                        )
+                    ).toMatchSnapshot())
+            })
+        }
     }
 })

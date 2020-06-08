@@ -6,15 +6,13 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -69,9 +67,9 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 	lowerRepo := strings.ToLower(string(repo))
 	var hasToken func(context.Context) (bool, error)
 	switch {
-	case serviceType == github.ServiceType && strings.HasPrefix(lowerRepo, "github.com/"):
+	case serviceType == extsvc.TypeGitHub && strings.HasPrefix(lowerRepo, "github.com/"):
 		hasToken = hasGitHubDotComToken
-	case serviceType == gitlab.ServiceType && strings.HasPrefix(lowerRepo, "gitlab.com/"):
+	case serviceType == extsvc.TypeGitLab && strings.HasPrefix(lowerRepo, "gitlab.com/"):
 		hasToken = hasGitLabDotComToken
 	default:
 		return nil, nil

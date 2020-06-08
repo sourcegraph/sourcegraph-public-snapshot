@@ -182,9 +182,9 @@ func (r *campaignResolver) HasUnpublishedPatches(ctx context.Context) (bool, err
 	}
 
 	unpublishedCount, err := r.store.CountPatches(ctx, ee.CountPatchesOpts{
-		PatchSetID:                        r.Campaign.PatchSetID,
-		OnlyWithoutChangesetJobInCampaign: r.Campaign.ID,
-		OnlyWithDiff:                      true,
+		PatchSetID:              r.Campaign.PatchSetID,
+		OnlyWithoutChangesetJob: r.Campaign.ID,
+		OnlyWithDiff:            true,
 	})
 	if err != nil {
 		return false, errors.Wrap(err, "getting unpublished patches count")

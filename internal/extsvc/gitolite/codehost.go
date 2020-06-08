@@ -1,13 +1,14 @@
 package gitolite
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
-
-const ServiceType = "gitolite"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+)
 
 func ExternalRepoSpec(repo *Repo, serviceID string) api.ExternalRepoSpec {
 	return api.ExternalRepoSpec{
 		ID:          repo.Name,
-		ServiceType: ServiceType,
+		ServiceType: extsvc.TypeGitolite,
 		ServiceID:   serviceID,
 	}
 }
@@ -19,7 +20,7 @@ func ServiceID(gitoliteHost string) string {
 // CloneURL returns the clone URL of the external repository. The external repo spec must be of type
 // "gitolite"; otherwise, this will return an empty string.
 func CloneURL(externalRepoSpec api.ExternalRepoSpec) string {
-	if externalRepoSpec.ServiceType != ServiceType {
+	if externalRepoSpec.ServiceType != extsvc.TypeGitolite {
 		return ""
 	}
 	host := externalRepoSpec.ServiceID
