@@ -12,15 +12,9 @@ func TestSearch_VisibilityFilter(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		found := false
-		for _, r := range results {
-			if r.Name == "github.com/sourcegraph/e2e-test-private-repository" {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Fatal("private repository not found")
+		missing := results.Exists("github.com/sourcegraph/e2e-test-private-repository")
+		if len(missing) > 0 {
+			t.Fatalf("private repository not found: %v", missing)
 		}
 	})
 }
