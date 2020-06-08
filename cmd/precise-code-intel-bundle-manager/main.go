@@ -33,14 +33,14 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir                  = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		readerCacheMaxIdleDuration = mustParseInterval(rawReaderCacheMaxIdleDuration, "PRECISE_CODE_INTEL_READER_CACHE_MAX_IDLE_DURATION")
-		readerDataCacheSize        = mustParseInt(rawReaderDataCacheSize, "PRECISE_CODE_INTEL_READER_DATA_CACHE_CAPACITY")
-		desiredPercentFree         = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval            = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge               = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
-		maxUploadPartAge           = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
-		maxDatabasePartAge         = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
+		bundleDir           = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		readerCacheTTL      = mustParseInterval(rawReaderCacheTTL, "PRECISE_CODE_INTEL_READER_CACHE_TIME_TO_LIVE")
+		readerDataCacheSize = mustParseInt(rawReaderDataCacheSize, "PRECISE_CODE_INTEL_READER_DATA_CACHE_CAPACITY")
+		desiredPercentFree  = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval     = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge        = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		maxUploadPartAge    = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
+		maxDatabasePartAge  = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
 
 	observationContext := &observation.Context{
@@ -57,7 +57,7 @@ func main() {
 		log.Fatalf("failed to migrate paths: %s", err)
 	}
 
-	readerCache, err := sqlitereader.NewReaderCache(readerCacheMaxIdleDuration, readerDataCacheSize)
+	readerCache, err := sqlitereader.NewReaderCache(readerCacheTTL, readerDataCacheSize)
 	if err != nil {
 		log.Fatalf("failed to initialize reader cache: %s", err)
 	}

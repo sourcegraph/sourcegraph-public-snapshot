@@ -42,9 +42,9 @@ type Handler func(reader persistence.Reader) error
 // ErrReaderInitializationDeadlineExceeded occurs when a new reader takes too long to initialize.
 var ErrReaderInitializationDeadlineExceeded = errors.New("reader initialization deadline exceeded")
 
-// NewReaderCache initializes a new reader cache with the given max reader idle time and reader opener.
-func NewReaderCache(maxReaderIdleTime time.Duration, opener ReaderOpener) *Cache {
-	return newReaderCache(time.NewTicker(maxReaderIdleTime).C, opener)
+// NewReaderCache initializes a new reader cache with the given TTL and reader opener.
+func NewReaderCache(ttl time.Duration, opener ReaderOpener) *Cache {
+	return newReaderCache(time.NewTicker(ttl).C, opener)
 }
 
 // newReaderCache initializes a new reader cache with the given ticker and reader opener.

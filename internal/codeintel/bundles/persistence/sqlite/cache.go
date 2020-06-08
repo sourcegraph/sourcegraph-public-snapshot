@@ -14,14 +14,14 @@ import (
 // ErrUnknownDatabase occurs when a request for an unknown database is made.
 var ErrUnknownDatabase = errors.New("unknown database")
 
-// NewReaderCache initializes a new reader cache with the given max idle duration and data cache capacity.
-func NewReaderCache(maxIdleDuration time.Duration, dataCacheSize int) (*cache.Cache, error) {
+// NewReaderCache initializes a new reader cache with the given TTL and data cache capacity.
+func NewReaderCache(ttl time.Duration, dataCacheSize int) (*cache.Cache, error) {
 	readerDataCache, err := cache.NewDataCache(dataCacheSize)
 	if err != nil {
 		return nil, err
 	}
 
-	cache := cache.NewReaderCache(maxIdleDuration, func(filename string) (persistence.Reader, error) {
+	cache := cache.NewReaderCache(ttl, func(filename string) (persistence.Reader, error) {
 		// Ensure database exists prior to opening
 		if exists, err := util.PathExists(filename); err != nil {
 			return nil, err
