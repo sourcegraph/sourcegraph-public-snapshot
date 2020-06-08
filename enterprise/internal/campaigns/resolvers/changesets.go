@@ -48,7 +48,11 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
-		nextSyncAt := r.scheduledSyncs[c.ID]
+		nextSyncAt, ok := r.scheduledSyncs[c.ID]
+		var preloadedNextSyncAt *time.Time
+		if ok {
+			preloadedNextSyncAt = &nextSyncAt
+		}
 
 		repo, ok := reposByID[c.RepoID]
 		if !ok {
@@ -59,7 +63,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 				store:               r.store,
 				httpFactory:         r.httpFactory,
 				Changeset:           c,
-				preloadedNextSyncAt: &nextSyncAt,
+				preloadedNextSyncAt: preloadedNextSyncAt,
 			})
 			continue
 		}
