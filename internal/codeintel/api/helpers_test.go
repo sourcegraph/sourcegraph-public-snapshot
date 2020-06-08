@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -212,15 +213,24 @@ func setMockBundleClientReferences(t *testing.T, mockBundleClient *bundlemocks.M
 func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
 	mockBundleClient.HoverFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) (string, bundles.Range, bool, error) {
 		if path != expectedPath {
-			t.Errorf("unexpected path Hover. want=%s have=%s", expectedPath, path)
+			t.Errorf("unexpected path for Hover. want=%s have=%s", expectedPath, path)
 		}
 		if line != expectedLine {
-			t.Errorf("unexpected line Hover. want=%d have=%d", expectedLine, line)
+			t.Errorf("unexpected line for Hover. want=%d have=%d", expectedLine, line)
 		}
 		if character != expectedCharacter {
-			t.Errorf("unexpected character Hover. want=%d have=%d", expectedCharacter, character)
+			t.Errorf("unexpected character for Hover. want=%d have=%d", expectedCharacter, character)
 		}
 		return text, r, exists, nil
+	})
+}
+
+func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, diagnostics []client.Diagnostic) {
+	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string) ([]client.Diagnostic, error) {
+		if prefix != expectedPrefix {
+			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
+		}
+		return diagnostics, nil
 	})
 }
 
