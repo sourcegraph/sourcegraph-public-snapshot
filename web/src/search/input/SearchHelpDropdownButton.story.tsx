@@ -1,17 +1,17 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import css from 'tagged-template-noop'
-import { InfoDropdown } from './InfoDropdown'
 import webStyles from '../../SourcegraphWebApp.scss'
 import bootstrapStyles from 'bootstrap/scss/bootstrap.scss'
+import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 const cssVars = css`
     :root {
-        --dropdown-color-border: #cad2e2;
+        --body-color: #2b3750;
     }
 `
 
-const { add } = storiesOf('InfoDropdown', module).addDecorator(story => (
+const { add } = storiesOf('SearchHelpDropdown', module).addDecorator(story => (
     <>
         <style>{bootstrapStyles}</style>
         <style>{webStyles}</style>
@@ -20,10 +20,4 @@ const { add } = storiesOf('InfoDropdown', module).addDecorator(story => (
     </>
 ))
 
-add('InfoDropdown', () => (
-    <InfoDropdown
-        title="Type"
-        markdown="Search code (file contents), diffs (added/changed/removed lines in commits), commit messages, or symbols."
-        left={true}
-    />
-))
+add('SearchHelpDropdown', () => <SearchHelpDropdownButton />)

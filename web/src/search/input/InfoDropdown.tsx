@@ -10,7 +10,10 @@ interface Props {
     title: string
     markdown: string
     examples?: QueryFieldExamples[]
-    alwaysShow?: boolean
+    /**
+     * Whether to display dropdown on the left. Used for testing.
+     */
+    left?: boolean
 }
 
 export const InfoDropdown: React.FunctionComponent<Props> = props => (
@@ -22,14 +25,15 @@ export const InfoDropdown: React.FunctionComponent<Props> = props => (
                 </MenuButton>
                 <MenuPopover
                     className={classNames('info-dropdown', 'dropdown', {
-                        'd-flex': isExpanded || props.alwaysShow,
-                        show: isExpanded || props.alwaysShow,
+                        'd-flex': isExpanded,
+                        show: isExpanded,
                     })}
                     portal={false}
                 >
                     <div
-                        className={classNames('info-dropdown__item dropdown-menu dropdown-menu-right', {
-                            show: isExpanded || props.alwaysShow,
+                        className={classNames('info-dropdown__item dropdown-menu', {
+                            show: isExpanded,
+                            'dropdown-menu-right': !props.left,
                         })}
                     >
                         <div className="dropdown-header">
@@ -58,11 +62,11 @@ export const InfoDropdown: React.FunctionComponent<Props> = props => (
                             </>
                         )}
                         <ul className="list-unstyled mb-2">
-                            {props.examples?.map((ex: QueryFieldExamples) => (
-                                <div key={ex.value}>
+                            {props.examples?.map((example: QueryFieldExamples) => (
+                                <div key={example.value}>
                                     <div className="p-2">
-                                        <span className="text-muted small">{ex.description}: </span>
-                                        <code>{ex.value}</code>
+                                        <span className="text-muted small">{example.description}: </span>
+                                        <code>{example.value}</code>
                                     </div>
                                 </div>
                             ))}
