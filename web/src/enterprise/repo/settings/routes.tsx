@@ -1,12 +1,12 @@
 import * as React from 'react'
-import { RepoSettingsCodeIntelIndexesPage } from './RepoSettingsCodeIntelIndexesPage'
-import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
-import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
-import { RepoSettingsCodeIntelUploadPage } from './RepoSettingsCodeIntelUploadPage'
-import { RepoSettingsCodeIntelIndexPage } from './RepoSettingsCodeIntelIndexPage'
 import { RepoSettingsPermissionsPage } from './RepoSettingsPermissionsPage'
-import { RepoSettingsCodeIntelUploadsPage } from './RepoSettingsCodeIntelUploadsPage'
+import { CodeIntelIndexesPage } from '../../codeintel/CodeIntelIndexesPage'
+import { CodeIntelIndexPage } from '../../codeintel/CodeIntelIndexPage'
+import { CodeIntelUploadPage } from '../../codeintel/CodeIntelUploadPage'
+import { CodeIntelUploadsPage } from '../../codeintel/CodeIntelUploadsPage'
 import { Redirect, RouteComponentProps } from 'react-router'
+import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
+import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
 
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
@@ -19,7 +19,22 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
     {
         path: '/code-intelligence/uploads',
         exact: true,
-        render: props => <RepoSettingsCodeIntelUploadsPage {...props} />,
+        render: props => <CodeIntelUploadsPage {...props} />,
+    },
+    {
+        path: '/code-intelligence/uploads/:id',
+        exact: true,
+        render: props => <CodeIntelUploadPage {...props} />,
+    },
+    {
+        path: '/code-intelligence/indexes',
+        exact: true,
+        render: props => <CodeIntelIndexesPage {...props} />,
+    },
+    {
+        path: '/code-intelligence/indexes/:id',
+        exact: true,
+        render: props => <CodeIntelIndexPage {...props} />,
     },
     {
         path: '/code-intelligence/lsif-uploads/:id',
@@ -29,20 +44,5 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
                 params: { id },
             },
         }: RouteComponentProps<{ id: string }>) => <Redirect to={`../uploads/${id}`} />,
-    },
-    {
-        path: '/code-intelligence/uploads/:id',
-        exact: true,
-        render: props => <RepoSettingsCodeIntelUploadPage {...props} />,
-    },
-    {
-        path: '/code-intelligence/indexes',
-        exact: true,
-        render: props => <RepoSettingsCodeIntelIndexesPage {...props} />,
-    },
-    {
-        path: '/code-intelligence/indexes/:id',
-        exact: true,
-        render: props => <RepoSettingsCodeIntelIndexPage {...props} />,
     },
 ]

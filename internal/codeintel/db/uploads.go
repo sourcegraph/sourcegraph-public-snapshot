@@ -159,8 +159,17 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 	`, id)))
 }
 
-// GetUploadsByRepo returns a list of uploads for a particular repo and the total count of records matching the given conditions.
-func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) (_ []Upload, _ int, err error) {
+type GetUploadsOptions struct {
+	RepositoryID int
+	State        string
+	Term         string
+	VisibleAtTip bool
+	Limit        int
+	Offset       int
+}
+
+// GetUploads returns a list of uploads and the total count of records matching the given conditions.
+func (db *dbImpl) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
 	tx, started, err := db.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -169,17 +178,23 @@ func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state,
 		defer func() { err = tx.Done(err) }()
 	}
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("u.repository_id = %s", repositoryID),
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
-	if term != "" {
-		conds = append(conds, makeSearchCondition(term))
+	if opts.Term != "" {
+		conds = append(conds, makeSearchCondition(opts.Term))
 	}
-	if state != "" {
-		conds = append(conds, sqlf.Sprintf("u.state = %s", state))
+	if opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
 	}
-	if visibleAtTip {
+	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("u.visible_at_tip = true"))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	count, _, err := scanFirstInt(tx.query(
@@ -217,7 +232,7 @@ func (db *dbImpl) GetUploadsByRepo(ctx context.Context, repositoryID int, state,
 			) s
 			ON u.id = s.id
 			WHERE %s ORDER BY uploaded_at DESC LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), limit, offset),
+		`, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset),
 	))
 	if err != nil {
 		return nil, 0, err

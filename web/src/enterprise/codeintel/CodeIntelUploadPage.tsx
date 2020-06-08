@@ -1,19 +1,19 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ClockOutlineIcon from 'mdi-react/ClockOutlineIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
-import { ErrorAlert } from '../../../components/alerts'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { ErrorAlert } from '../../components/alerts'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifUpload, deleteLsifUpload } from './backend'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../../../components/PageTitle'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps, Redirect } from 'react-router'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { Timestamp } from '../../components/time/Timestamp'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 import * as H from 'history'
@@ -21,7 +21,7 @@ import * as H from 'history'
 const REFRESH_INTERVAL_MS = 5000
 
 interface Props extends RouteComponentProps<{ id: string }> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -37,7 +37,7 @@ function shouldReload(upload: GQL.ILSIFUpload | ErrorLike | null | undefined): b
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const RepoSettingsCodeIntelUploadPage: FunctionComponent<Props> = ({
+export const CodeIntelUploadPage: FunctionComponent<Props> = ({
     repo,
     scheduler,
     match: {
@@ -45,7 +45,7 @@ export const RepoSettingsCodeIntelUploadPage: FunctionComponent<Props> = ({
     },
     history,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelUpload'))
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUpload'))
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
@@ -153,7 +153,7 @@ export const RepoSettingsCodeIntelUploadPage: FunctionComponent<Props> = ({
                                             {uploadOrError.projectRoot.commit.repository.name}
                                         </Link>
                                     ) : (
-                                        repo.name
+                                        repo?.name || 'unknown'
                                     )}
                                 </td>
                             </tr>

@@ -93,8 +93,16 @@ func (db *dbImpl) GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 	`, id)))
 }
 
-// GetIndexesByRepo returns a list of indexes for a particular repo and the total count of records matching the given conditions.
-func (db *dbImpl) GetIndexesByRepo(ctx context.Context, repositoryID int, state, term string, limit, offset int) (_ []Index, _ int, err error) {
+type GetIndexesOptions struct {
+	RepositoryID int
+	State        string
+	Term         string
+	Limit        int
+	Offset       int
+}
+
+// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
+func (db *dbImpl) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
 	tx, started, err := db.transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -103,14 +111,20 @@ func (db *dbImpl) GetIndexesByRepo(ctx context.Context, repositoryID int, state,
 		defer func() { err = tx.Done(err) }()
 	}
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("u.repository_id = %s", repositoryID),
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
-	if term != "" {
-		conds = append(conds, makeIndexSearchCondition(term))
+	if opts.Term != "" {
+		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
-	if state != "" {
-		conds = append(conds, sqlf.Sprintf("u.state = %s", state))
+	if opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	count, _, err := scanFirstInt(tx.query(
@@ -143,7 +157,7 @@ func (db *dbImpl) GetIndexesByRepo(ctx context.Context, repositoryID int, state,
 			) s
 			ON u.id = s.id
 			WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), limit, offset),
+		`, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset),
 	))
 	if err != nil {
 		return nil, 0, err

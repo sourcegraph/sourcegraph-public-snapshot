@@ -79,12 +79,16 @@ func (r *lsifIndexConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 
 func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]db.Index, *graphqlbackend.RepositoryResolver, *int, string, error) {
 	r.once.Do(func() {
-		r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
-		if r.err != nil {
-			return
+		var id int
+		if r.opt.RepositoryID != "" {
+			r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+			if r.err != nil {
+				return
+			}
+
+			id = int(r.repositoryResolver.Type().ID)
 		}
 
-		id := int(r.repositoryResolver.Type().ID)
 		query := ""
 		if r.opt.Query != nil {
 			query = *r.opt.Query
@@ -105,14 +109,13 @@ func (r *lsifIndexConnectionResolver) compute(ctx context.Context) ([]db.Index, 
 			offset, _ = strconv.Atoi(*r.opt.NextURL)
 		}
 
-		indexes, totalCount, err := r.db.GetIndexesByRepo(
-			ctx,
-			id,
-			state,
-			query,
-			limit,
-			offset,
-		)
+		indexes, totalCount, err := r.db.GetIndexes(ctx, db.GetIndexesOptions{
+			RepositoryID: id,
+			State:        state,
+			Term:         query,
+			Limit:        limit,
+			Offset:       offset,
+		})
 		if err != nil {
 			r.err = err
 			return

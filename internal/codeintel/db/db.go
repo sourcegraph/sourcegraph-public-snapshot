@@ -45,8 +45,8 @@ type DB interface {
 	// GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 	GetUploadByID(ctx context.Context, id int) (Upload, bool, error)
 
-	// GetUploadsByRepo returns a list of uploads for a particular repo and the total count of records matching the given conditions.
-	GetUploadsByRepo(ctx context.Context, repositoryID int, state, term string, visibleAtTip bool, limit, offset int) ([]Upload, int, error)
+	// GetUploads returns a list of uploads and the total count of records matching the given conditions.
+	GetUploads(ctx context.Context, opts GetUploadsOptions) ([]Upload, int, error)
 
 	// QueueSize returns the number of uploads in the queued state.
 	QueueSize(ctx context.Context) (int, error)
@@ -140,8 +140,8 @@ type DB interface {
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 
-	// GetIndexesByRepo returns a list of indexes for a particular repo and the total count of records matching the given conditions.
-	GetIndexesByRepo(ctx context.Context, repositoryID int, state, term string, limit, offset int) ([]Index, int, error)
+	// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
+	GetIndexes(ctx context.Context, opts GetIndexesOptions) ([]Index, int, error)
 
 	// IndexQueueSize returns the number of indexes in the queued state.
 	IndexQueueSize(ctx context.Context) (int, error)

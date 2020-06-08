@@ -50,9 +50,9 @@ type MockDB struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *DBGetIndexByIDFunc
-	// GetIndexesByRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method GetIndexesByRepo.
-	GetIndexesByRepoFunc *DBGetIndexesByRepoFunc
+	// GetIndexesFunc is an instance of a mock function object controlling
+	// the behavior of the method GetIndexes.
+	GetIndexesFunc *DBGetIndexesFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *DBGetPackageFunc
@@ -62,9 +62,9 @@ type MockDB struct {
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *DBGetUploadByIDFunc
-	// GetUploadsByRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadsByRepo.
-	GetUploadsByRepoFunc *DBGetUploadsByRepoFunc
+	// GetUploadsFunc is an instance of a mock function object controlling
+	// the behavior of the method GetUploads.
+	GetUploadsFunc *DBGetUploadsFunc
 	// HasCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method HasCommit.
 	HasCommitFunc *DBHasCommitFunc
@@ -211,8 +211,8 @@ func NewMockDB() *MockDB {
 				return db.Index{}, false, nil
 			},
 		},
-		GetIndexesByRepoFunc: &DBGetIndexesByRepoFunc{
-			defaultHook: func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+		GetIndexesFunc: &DBGetIndexesFunc{
+			defaultHook: func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -231,8 +231,8 @@ func NewMockDB() *MockDB {
 				return db.Upload{}, false, nil
 			},
 		},
-		GetUploadsByRepoFunc: &DBGetUploadsByRepoFunc{
-			defaultHook: func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error) {
+		GetUploadsFunc: &DBGetUploadsFunc{
+			defaultHook: func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -409,8 +409,8 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		GetIndexByIDFunc: &DBGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
 		},
-		GetIndexesByRepoFunc: &DBGetIndexesByRepoFunc{
-			defaultHook: i.GetIndexesByRepo,
+		GetIndexesFunc: &DBGetIndexesFunc{
+			defaultHook: i.GetIndexes,
 		},
 		GetPackageFunc: &DBGetPackageFunc{
 			defaultHook: i.GetPackage,
@@ -421,8 +421,8 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		GetUploadByIDFunc: &DBGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
 		},
-		GetUploadsByRepoFunc: &DBGetUploadsByRepoFunc{
-			defaultHook: i.GetUploadsByRepo,
+		GetUploadsFunc: &DBGetUploadsFunc{
+			defaultHook: i.GetUploads,
 		},
 		HasCommitFunc: &DBHasCommitFunc{
 			defaultHook: i.HasCommit,
@@ -1824,35 +1824,34 @@ func (c DBGetIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// DBGetIndexesByRepoFunc describes the behavior when the GetIndexesByRepo
-// method of the parent MockDB instance is invoked.
-type DBGetIndexesByRepoFunc struct {
-	defaultHook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)
-	hooks       []func(context.Context, int, string, string, int, int) ([]db.Index, int, error)
-	history     []DBGetIndexesByRepoFuncCall
+// DBGetIndexesFunc describes the behavior when the GetIndexes method of the
+// parent MockDB instance is invoked.
+type DBGetIndexesFunc struct {
+	defaultHook func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error)
+	hooks       []func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error)
+	history     []DBGetIndexesFuncCall
 	mutex       sync.Mutex
 }
 
-// GetIndexesByRepo delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDB) GetIndexesByRepo(v0 context.Context, v1 int, v2 string, v3 string, v4 int, v5 int) ([]db.Index, int, error) {
-	r0, r1, r2 := m.GetIndexesByRepoFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.GetIndexesByRepoFunc.appendCall(DBGetIndexesByRepoFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+// GetIndexes delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GetIndexes(v0 context.Context, v1 db.GetIndexesOptions) ([]db.Index, int, error) {
+	r0, r1, r2 := m.GetIndexesFunc.nextHook()(v0, v1)
+	m.GetIndexesFunc.appendCall(DBGetIndexesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the GetIndexesByRepo
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
-func (f *DBGetIndexesByRepoFunc) SetDefaultHook(hook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)) {
+// SetDefaultHook sets function that is called when the GetIndexes method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGetIndexesFunc) SetDefaultHook(hook func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexesByRepo method of the parent MockDB instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBGetIndexesByRepoFunc) PushHook(hook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)) {
+// GetIndexes method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGetIndexesFunc) PushHook(hook func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1860,21 +1859,21 @@ func (f *DBGetIndexesByRepoFunc) PushHook(hook func(context.Context, int, string
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBGetIndexesByRepoFunc) SetDefaultReturn(r0 []db.Index, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+func (f *DBGetIndexesFunc) SetDefaultReturn(r0 []db.Index, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBGetIndexesByRepoFunc) PushReturn(r0 []db.Index, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+func (f *DBGetIndexesFunc) PushReturn(r0 []db.Index, r1 int, r2 error) {
+	f.PushHook(func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBGetIndexesByRepoFunc) nextHook() func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+func (f *DBGetIndexesFunc) nextHook() func(context.Context, db.GetIndexesOptions) ([]db.Index, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1887,44 +1886,32 @@ func (f *DBGetIndexesByRepoFunc) nextHook() func(context.Context, int, string, s
 	return hook
 }
 
-func (f *DBGetIndexesByRepoFunc) appendCall(r0 DBGetIndexesByRepoFuncCall) {
+func (f *DBGetIndexesFunc) appendCall(r0 DBGetIndexesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBGetIndexesByRepoFuncCall objects
-// describing the invocations of this function.
-func (f *DBGetIndexesByRepoFunc) History() []DBGetIndexesByRepoFuncCall {
+// History returns a sequence of DBGetIndexesFuncCall objects describing the
+// invocations of this function.
+func (f *DBGetIndexesFunc) History() []DBGetIndexesFuncCall {
 	f.mutex.Lock()
-	history := make([]DBGetIndexesByRepoFuncCall, len(f.history))
+	history := make([]DBGetIndexesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBGetIndexesByRepoFuncCall is an object that describes an invocation of
-// method GetIndexesByRepo on an instance of MockDB.
-type DBGetIndexesByRepoFuncCall struct {
+// DBGetIndexesFuncCall is an object that describes an invocation of method
+// GetIndexes on an instance of MockDB.
+type DBGetIndexesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
+	Arg1 db.GetIndexesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []db.Index
@@ -1938,13 +1925,13 @@ type DBGetIndexesByRepoFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBGetIndexesByRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+func (c DBGetIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBGetIndexesByRepoFuncCall) Results() []interface{} {
+func (c DBGetIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -2284,35 +2271,34 @@ func (c DBGetUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// DBGetUploadsByRepoFunc describes the behavior when the GetUploadsByRepo
-// method of the parent MockDB instance is invoked.
-type DBGetUploadsByRepoFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error)
-	hooks       []func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error)
-	history     []DBGetUploadsByRepoFuncCall
+// DBGetUploadsFunc describes the behavior when the GetUploads method of the
+// parent MockDB instance is invoked.
+type DBGetUploadsFunc struct {
+	defaultHook func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error)
+	hooks       []func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error)
+	history     []DBGetUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// GetUploadsByRepo delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDB) GetUploadsByRepo(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 int, v6 int) ([]db.Upload, int, error) {
-	r0, r1, r2 := m.GetUploadsByRepoFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.GetUploadsByRepoFunc.appendCall(DBGetUploadsByRepoFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+// GetUploads delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GetUploads(v0 context.Context, v1 db.GetUploadsOptions) ([]db.Upload, int, error) {
+	r0, r1, r2 := m.GetUploadsFunc.nextHook()(v0, v1)
+	m.GetUploadsFunc.appendCall(DBGetUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the GetUploadsByRepo
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
-func (f *DBGetUploadsByRepoFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error)) {
+// SetDefaultHook sets function that is called when the GetUploads method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGetUploadsFunc) SetDefaultHook(hook func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadsByRepo method of the parent MockDB instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBGetUploadsByRepoFunc) PushHook(hook func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error)) {
+// GetUploads method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGetUploadsFunc) PushHook(hook func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2320,21 +2306,21 @@ func (f *DBGetUploadsByRepoFunc) PushHook(hook func(context.Context, int, string
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBGetUploadsByRepoFunc) SetDefaultReturn(r0 []db.Upload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error) {
+func (f *DBGetUploadsFunc) SetDefaultReturn(r0 []db.Upload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBGetUploadsByRepoFunc) PushReturn(r0 []db.Upload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error) {
+func (f *DBGetUploadsFunc) PushReturn(r0 []db.Upload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBGetUploadsByRepoFunc) nextHook() func(context.Context, int, string, string, bool, int, int) ([]db.Upload, int, error) {
+func (f *DBGetUploadsFunc) nextHook() func(context.Context, db.GetUploadsOptions) ([]db.Upload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2347,47 +2333,32 @@ func (f *DBGetUploadsByRepoFunc) nextHook() func(context.Context, int, string, s
 	return hook
 }
 
-func (f *DBGetUploadsByRepoFunc) appendCall(r0 DBGetUploadsByRepoFuncCall) {
+func (f *DBGetUploadsFunc) appendCall(r0 DBGetUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBGetUploadsByRepoFuncCall objects
-// describing the invocations of this function.
-func (f *DBGetUploadsByRepoFunc) History() []DBGetUploadsByRepoFuncCall {
+// History returns a sequence of DBGetUploadsFuncCall objects describing the
+// invocations of this function.
+func (f *DBGetUploadsFunc) History() []DBGetUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]DBGetUploadsByRepoFuncCall, len(f.history))
+	history := make([]DBGetUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBGetUploadsByRepoFuncCall is an object that describes an invocation of
-// method GetUploadsByRepo on an instance of MockDB.
-type DBGetUploadsByRepoFuncCall struct {
+// DBGetUploadsFuncCall is an object that describes an invocation of method
+// GetUploads on an instance of MockDB.
+type DBGetUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 int
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 int
+	Arg1 db.GetUploadsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []db.Upload
@@ -2401,13 +2372,13 @@ type DBGetUploadsByRepoFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBGetUploadsByRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+func (c DBGetUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBGetUploadsByRepoFuncCall) Results() []interface{} {
+func (c DBGetUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

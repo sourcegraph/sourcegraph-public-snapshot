@@ -1,42 +1,45 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useState, useMemo } from 'react'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
-} from '../../../components/FilteredConnection'
-import { Link } from '../../../../../shared/src/components/Link'
-import { PageTitle } from '../../../components/PageTitle'
+} from '../../components/FilteredConnection'
+import { Link } from '../../../../shared/src/components/Link'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { deleteLsifIndex, fetchLsifIndexes } from './backend'
+import { Timestamp } from '../../components/time/Timestamp'
+import { deleteLsifUpload, fetchLsifUploads } from './backend'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorAlert } from '../../components/alerts'
 import { Subject } from 'rxjs'
 import * as H from 'history'
 
-export interface LsifIndexNodeProps {
-    node: GQL.ILSIFIndex
+export interface LsifUploadNodeProps {
+    node: GQL.ILSIFUpload
     onDelete: () => void
     history: H.History
 }
 
-const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, history }) => {
+const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node, onDelete, history }) => {
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
 
-    const deleteIndex = async (): Promise<void> => {
-        const description = `commit ${node.inputCommit.slice(0, 7)}`
+    const deleteUpload = async (): Promise<void> => {
+        let description = `commit ${node.inputCommit.slice(0, 7)}`
+        if (node.inputRoot) {
+            description += ` rooted at ${node.inputRoot}`
+        }
 
-        if (!window.confirm(`Delete index for commit ${description}?`)) {
+        if (!window.confirm(`Delete upload for commit ${description}?`)) {
             return
         }
 
         setDeletionOrError('loading')
 
         try {
-            await deleteLsifIndex({ id: node.id }).toPromise()
+            await deleteLsifUpload({ id: node.id }).toPromise()
             onDelete()
         } catch (error) {
             setDeletionOrError(error)
@@ -44,13 +47,13 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
     }
 
     return deletionOrError && isErrorLike(deletionOrError) ? (
-        <ErrorAlert prefix="Error deleting LSIF index" error={deletionOrError} history={history} />
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
         <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
             <div className="lsif-data__meta">
                 <div className="lsif-data__meta-root">
-                    Index for commit
-                    <code className="ml-1 mr-1 e2e-index-commit">
+                    Upload for commit
+                    <code className="ml-1 mr-1 e2e-upload-commit">
                         {node.projectRoot ? (
                             <Link to={node.projectRoot.commit.url}>
                                 <code>{node.projectRoot.commit.abbreviatedOID}</code>
@@ -59,25 +62,29 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
                             node.inputCommit.slice(0, 7)
                         )}
                     </code>
+                    indexed by
+                    <span className="ml-1 mr-1">{node.inputIndexer}</span>
                     rooted at
-                    <span className="ml-1 e2e-index-root">
+                    <span className="ml-1 e2e-upload-root">
                         {node.projectRoot ? (
                             <Link to={node.projectRoot.url}>
                                 <strong>{node.projectRoot.path || '/'}</strong>
                             </Link>
                         ) : (
-                            '/'
+                            node.inputRoot || '/'
                         )}
                     </span>
                     <span className="ml-2">
                         -
                         <span className="ml-2">
-                            <Link to={`./indexes/${node.id}`}>
-                                {node.state === GQL.LSIFIndexState.PROCESSING ? (
+                            <Link to={`./uploads/${node.id}`}>
+                                {node.state === GQL.LSIFUploadState.UPLOADING ? (
+                                    <span>Uploading</span>
+                                ) : node.state === GQL.LSIFUploadState.PROCESSING ? (
                                     <span>Processing</span>
-                                ) : node.state === GQL.LSIFIndexState.COMPLETED ? (
+                                ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
                                     <span className="text-success">Processed</span>
-                                ) : node.state === GQL.LSIFIndexState.ERRORED ? (
+                                ) : node.state === GQL.LSIFUploadState.ERRORED ? (
                                     <span className="text-danger">Failed to process</span>
                                 ) : (
                                     <span>Waiting to process (#{node.placeInQueue} in line)</span>
@@ -89,14 +96,14 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
             </div>
 
             <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedAt || node.startedAt || node.queuedAt} />
+                <Timestamp noAbout={true} date={node.finishedAt || node.startedAt || node.uploadedAt} />
 
                 <button
                     type="button"
                     className="btn btn-sm btn-danger lsif-data__meta-delete"
-                    onClick={deleteIndex}
+                    onClick={deleteUpload}
                     disabled={deletionOrError === 'loading'}
-                    data-tooltip="Delete index"
+                    data-tooltip="Delete upload"
                 >
                     <DeleteIcon className="icon-inline" />
                 </button>
@@ -106,60 +113,52 @@ const LsifIndexNode: FunctionComponent<LsifIndexNodeProps> = ({ node, onDelete, 
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
+    repo?: GQL.IRepository
 }
 
 /**
- * The repository settings code intelligence page.
+ * The repository settings code intel uploads page.
  */
-export const RepoSettingsCodeIntelIndexesPage: FunctionComponent<Props> = ({ repo, ...props }) => {
-    useEffect(() => eventLogger.logViewEvent('RepoSettingsCodeIntelIndexes'), [])
+export const CodeIntelUploadsPage: FunctionComponent<Props> = ({ repo, ...props }) => {
+    useEffect(() => eventLogger.logViewEvent('CodeIntelUploads'), [])
 
     const filters: FilteredConnectionFilter[] = [
         {
             label: 'Only current',
             id: 'current',
-            tooltip: 'Show current indexes only',
+            tooltip: 'Show current uploads only',
             args: { isLatestForRepo: true },
         },
         {
             label: 'Only completed',
             id: 'completed',
-            tooltip: 'Show completed indexes only',
-            args: { state: GQL.LSIFIndexState.COMPLETED },
+            tooltip: 'Show completed uploads only',
+            args: { state: GQL.LSIFUploadState.COMPLETED },
         },
         {
             label: 'All',
             id: 'all',
-            tooltip: 'Show all indexes',
+            tooltip: 'Show all uploads',
             args: {},
         },
     ]
 
-    // This observable emits values after successful deletion of an index and
+    // This observable emits values after successful deletion of an upload and
     // forces the filter connection to refresh.
     const onDeleteSubject = useMemo(() => new Subject<void>(), [])
     const onDeleteCallback = useMemo(() => onDeleteSubject.next.bind(onDeleteSubject), [onDeleteSubject])
 
-    const queryIndexes = useCallback(
-        (args: FilteredConnectionQueryArgs) => fetchLsifIndexes({ repository: repo.id, ...args }),
-        [repo.id]
+    const queryUploads = useCallback(
+        (args: FilteredConnectionQueryArgs) => fetchLsifUploads({ repository: repo?.id, ...args }),
+        [repo?.id]
     )
 
     return (
         <div className="repo-settings-code-intelligence-page">
-            <PageTitle title="Code intelligence - auto-indexing" />
-            <h2>Code intelligence - auto-indexing</h2>
+            <PageTitle title="Code intelligence - uploads" />
+            <h2>Code intelligence - precise code intel uploads</h2>
             <p>
-                Popular Go repositories will be indexed automatically via{' '}
-                <a href="https://github.com/sourcegraph/lsif-go" target="_blank" rel="noreferrer noopener">
-                    lsif-go
-                </a>{' '}
-                on{' '}
-                <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
-                    Sourcegraph.com
-                </a>
-                . Enable precise code intelligence for non-Go code by{' '}
+                Enable precise code intelligence by{' '}
                 <a
                     href="https://docs.sourcegraph.com/user/code_intelligence/lsif"
                     target="_blank"
@@ -170,12 +169,18 @@ export const RepoSettingsCodeIntelIndexesPage: FunctionComponent<Props> = ({ rep
                 .
             </p>
 
-            <FilteredConnection<GQL.ILSIFIndex, Omit<LsifIndexNodeProps, 'node'>>
+            <p>
+                Current uploads provide code intelligence for the latest commit on the default branch and are used in
+                cross-repository <em>Find References</em> requests. Non-current uploads may still provide code
+                intelligence for historic and branch commits.
+            </p>
+
+            <FilteredConnection<GQL.ILSIFUpload, Omit<LsifUploadNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
-                noun="index"
-                pluralNoun="indexes"
-                queryConnection={queryIndexes}
-                nodeComponent={LsifIndexNode}
+                noun="upload"
+                pluralNoun="uploads"
+                queryConnection={queryUploads}
+                nodeComponent={LsifUploadNode}
                 nodeComponentProps={{ onDelete: onDeleteCallback, history: props.history }}
                 updates={onDeleteSubject}
                 history={props.history}

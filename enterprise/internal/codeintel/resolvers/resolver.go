@@ -44,15 +44,13 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 	return &lsifUploadResolver{lsifUpload: upload}, nil
 }
 
-// LSIFUploads resolves the LSIF uploads in a given state.
-//
-// This method implements cursor-based forward pagination. The `after` parameter
-// should be an `endCursor` value from a previous request. This value is the rel="next"
-// URL in the Link header of the LSIF API server response. This URL includes all of the
-// query variables required to fetch the subsequent page of results. This state is not
-// dependent on the limit, so we can overwrite this value if the user has changed its
-// value since making the last request.
-func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRepositoryUploadsQueryArgs) (graphqlbackend.LSIFUploadConnectionResolver, error) {
+func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFUploadsQueryArgs) (graphqlbackend.LSIFUploadConnectionResolver, error) {
+	return r.LSIFUploadsByRepo(ctx, &graphqlbackend.LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: args,
+	})
+}
+
+func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *graphqlbackend.LSIFRepositoryUploadsQueryArgs) (graphqlbackend.LSIFUploadConnectionResolver, error) {
 	opt := LSIFUploadsListOptions{
 		RepositoryID:    args.RepositoryID,
 		Query:           args.Query,
@@ -113,8 +111,13 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return &lsifIndexResolver{lsifIndex: index}, nil
 }
 
-// LSIFIndexes resolves the LSIF indexes in a given state.
-func (r *Resolver) LSIFIndexes(ctx context.Context, args *graphqlbackend.LSIFRepositoryIndexesQueryArgs) (graphqlbackend.LSIFIndexConnectionResolver, error) {
+func (r *Resolver) LSIFIndexes(ctx context.Context, args *graphqlbackend.LSIFIndexesQueryArgs) (graphqlbackend.LSIFIndexConnectionResolver, error) {
+	return r.LSIFIndexesByRepo(ctx, &graphqlbackend.LSIFRepositoryIndexesQueryArgs{
+		LSIFIndexesQueryArgs: args,
+	})
+}
+
+func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *graphqlbackend.LSIFRepositoryIndexesQueryArgs) (graphqlbackend.LSIFIndexConnectionResolver, error) {
 	opt := LSIFIndexesListOptions{
 		RepositoryID: args.RepositoryID,
 		Query:        args.Query,
