@@ -28,7 +28,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 05 Jun 2020 08:33:41 GMT
+      - Mon, 08 Jun 2020 02:39:07 GMT
       Etag:
       - W/"1875c98197830a53e3c5425d7920d302"
       Referrer-Policy:
@@ -52,7 +52,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
         github.machine-man-preview; format=json
       X-Github-Request-Id:
-      - 8AC5:7019:926D6:1B8DC4:5EDA0364
+      - B80B:3850:3A1F8F:9BDCF0:5EDDA4CB
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, read:packages,
@@ -60,9 +60,9 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4995"
+      - "4999"
       X-Ratelimit-Reset:
-      - "1591349381"
+      - "1591587547"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
