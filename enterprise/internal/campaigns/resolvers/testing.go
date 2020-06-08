@@ -16,7 +16,6 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -151,24 +150,6 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	}
 
 	return timestamp
-}
-
-var testUser = db.NewUser{
-	Email:                "test@sourcegraph.com",
-	Username:             "test",
-	DisplayName:          "Test",
-	Password:             "test",
-	EmailIsVerified:      true,
-	FailIfNotInitialUser: false,
-}
-
-func createTestUser(ctx context.Context, t *testing.T) *types.User {
-	t.Helper()
-	user, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return user
 }
 
 func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {

@@ -628,7 +628,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	cf, save := newGithubClientFactory(t, "test-changeset-counts-over-time")
 	defer save()
 
-	u := createTestUser(ctx, t)
+	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
@@ -666,8 +666,8 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	campaign := &campaigns.Campaign{
 		Name:            "Test campaign",
 		Description:     "Testing changeset counts",
-		AuthorID:        u.ID,
-		NamespaceUserID: u.ID,
+		AuthorID:        userID,
+		NamespaceUserID: userID,
 	}
 
 	err = store.CreateCampaign(ctx, campaign)
@@ -801,8 +801,8 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	user := createTestUser(ctx, t)
-	act := actor.FromUser(user.ID)
+	userID := insertTestUser(t, dbconn.Global, "create-patch-set", false)
+	act := actor.FromUser(userID)
 	ctx = actor.WithActor(ctx, act)
 
 	t.Run("invalid patch", func(t *testing.T) {
@@ -947,8 +947,8 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	user := createTestUser(ctx, t)
-	act := actor.FromUser(user.ID)
+	userID := insertTestUser(t, dbconn.Global, "create-patch-set", true)
+	act := actor.FromUser(userID)
 	ctx = actor.WithActor(ctx, act)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -1020,7 +1020,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	input := map[string]interface{}{
 		"input": map[string]interface{}{
-			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
+			"namespace":   string(graphqlbackend.MarshalUserID(userID)),
 			"name":        "Campaign with PatchSet",
 			"description": "This campaign has a patchset",
 			"patchSet":    patchSetID,
