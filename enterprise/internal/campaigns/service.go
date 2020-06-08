@@ -610,7 +610,7 @@ func (s *Service) EnqueueChangesetJobs(ctx context.Context, campaignID int64) (_
 
 	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	existingJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
