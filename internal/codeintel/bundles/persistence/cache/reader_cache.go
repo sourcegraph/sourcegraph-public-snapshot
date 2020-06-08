@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -24,13 +25,18 @@ type Cache struct {
 
 // cacheEntry wraps a reader which may still be initializing.
 type cacheEntry struct {
-	reader     persistence.Reader
-	err        error
-	init       chan struct{}  // signals init completion
-	drained    chan struct{}  // signals complete removal from cache
-	refCount   sync.WaitGroup // acts as concurrent use gauge
-	removeOnce sync.Once      // guards entry remove procedure
-	expiry     time.Time      // when the entry can be removed from the cache
+	reader          persistence.Reader
+	err             error
+	init            chan struct{} // signals init completion
+	drained         chan struct{} // signals complete removal from cache
+	removeOnce      sync.Once     // guards entry remove procedure
+	refCount        uint32        // number of active readers
+	refCountChanged *sync.Cond    // broadcast when refCount decreases
+
+	// expiry denotes the time when the entry can be removed from the cache.
+	//
+	// 🔐 - the cache mutex must be held when reading or modifying this value.
+	expiry time.Time
 
 	// draining marks the intent to close this entry. No additional readers
 	// of this entry should be allowed after this value is set to true.
@@ -77,10 +83,14 @@ func newReaderCache(ttl time.Duration, ch <-chan time.Time, opener ReaderOpener)
 func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 	if entry, ok := c.getOrCreateActiveEntry(ctx, key); ok {
 		defer func() {
-			// No longer in-use
-			entry.refCount.Done()
-			// Update expiry
-			entry.expiry = time.Now().UTC().Add(c.ttl)
+			// Decrement refcount
+			if atomic.AddUint32(&entry.refCount, ^uint32(0)) == 0 {
+				// Wake routines waiting for this value to go to zero
+				entry.refCountChanged.Broadcast()
+
+				// No more readers, update expiry
+				entry.expiry = time.Now().UTC().Add(c.ttl)
+			}
 		}()
 
 		select {
@@ -132,10 +142,8 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 	}
 
 	if !entry.draining {
-		// Mark as in-use
-		entry.refCount.Add(1)
-
-		// Disable expiry while held
+		// Mark as in-use and disable expiry while held
+		atomic.AddUint32(&entry.refCount, 1)
 		entry.expiry = time.Time{}
 	}
 
@@ -145,8 +153,9 @@ func (c *Cache) getOrCreateRawEntry(key string) (*cacheEntry, bool) {
 // makeEntry creates a new empty cache entry. This will be
 func (c *Cache) makeEntry(key string) *cacheEntry {
 	entry := &cacheEntry{
-		init:    make(chan struct{}),
-		drained: make(chan struct{}),
+		init:            make(chan struct{}),
+		drained:         make(chan struct{}),
+		refCountChanged: sync.NewCond(&sync.Mutex{}),
 	}
 
 	go func() {
@@ -200,7 +209,9 @@ func (c *Cache) remove(key string, entry *cacheEntry) {
 			<-entry.init
 
 			// Wait until there are no more readers
-			entry.refCount.Wait()
+			for atomic.LoadUint32(&entry.refCount) != 0 {
+				entry.refCountChanged.Wait()
+			}
 
 			if entry.reader != nil {
 				// Release resources
