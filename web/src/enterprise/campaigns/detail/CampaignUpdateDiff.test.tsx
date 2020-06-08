@@ -111,7 +111,7 @@ describe('CampaignUpdateDiff', () => {
             changesets: ChangesetInputArray
             changesetPatches: PatchInput[]
             patches: PatchInput[]
-            want: { added: number; changed: number; unmodified: number; deleted: number; hasNotUpdated: boolean }
+            want: { added: number; changed: number; unmodified: number; deleted: number; containsHidden: boolean }
         }): void => {
             const diff = calculateChangesetDiff(
                 changesets as IExternalChangeset[],
@@ -122,7 +122,7 @@ describe('CampaignUpdateDiff', () => {
             expect(diff.changed.length).toBe(want.changed)
             expect(diff.unmodified.length).toBe(want.unmodified)
             expect(diff.deleted.length).toBe(want.deleted)
-            expect(diff.hasNotUpdated).toBe(want.hasNotUpdated)
+            expect(diff.containsHidden).toBe(want.containsHidden)
         }
         test('patch no longer relevant', () => {
             testChangesetDiff({
@@ -136,7 +136,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 0,
                     deleted: 1,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -152,7 +152,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 1,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -168,7 +168,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 1,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -184,7 +184,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 1,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -198,7 +198,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 1,
                     deleted: 0,
-                    hasNotUpdated: true,
+                    containsHidden: true,
                 },
             })
         })
@@ -217,7 +217,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 1,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -234,7 +234,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 1,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: true,
+                    containsHidden: true,
                 },
             })
         })
@@ -248,7 +248,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 1,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -263,7 +263,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: true,
+                    containsHidden: true,
                 },
             })
         })
@@ -277,7 +277,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: false,
+                    containsHidden: false,
                 },
             })
         })
@@ -292,7 +292,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: true,
+                    containsHidden: true,
                 },
             })
         })
@@ -306,7 +306,7 @@ describe('CampaignUpdateDiff', () => {
                     changed: 0,
                     unmodified: 0,
                     deleted: 0,
-                    hasNotUpdated: true,
+                    containsHidden: true,
                 },
             })
         })

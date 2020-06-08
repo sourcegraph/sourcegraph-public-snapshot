@@ -55,7 +55,7 @@ export interface CampaignDiff {
      */
     unmodified: GQL.Changeset[]
     deleted: GQL.IExternalChangeset[]
-    hasNotUpdated: boolean
+    containsHidden: boolean
 }
 
 export function calculateChangesetDiff(
@@ -67,25 +67,23 @@ export function calculateChangesetDiff(
     const changed: GQL.IPatch[] = []
     const unmodified: GQL.Changeset[] = []
     const deleted: GQL.IExternalChangeset[] = []
-    let hasNotUpdated = false
 
-    const visibleChangesets: GQL.IExternalChangeset[] = []
-
-    for (const changeset of changesets) {
-        if (changeset.__typename === 'HiddenExternalChangeset') {
-            unmodified.push(changeset)
-            hasNotUpdated = true
-        } else {
-            visibleChangesets.push(changeset)
-        }
-    }
     const visibleCampaignPatches = campaignPatches.filter(
         (campaignPatch): campaignPatch is GQL.IPatch => campaignPatch.__typename !== 'HiddenPatch'
     )
     const visiblePatches = patches.filter((patch): patch is GQL.IPatch => patch.__typename !== 'HiddenPatch')
 
-    if (visiblePatches.length + visibleCampaignPatches.length < patches.length + campaignPatches.length) {
-        hasNotUpdated = true
+    let containsHidden =
+        visiblePatches.length !== patches.length || visibleCampaignPatches.length !== campaignPatches.length
+
+    const visibleChangesets: GQL.IExternalChangeset[] = []
+    for (const changeset of changesets) {
+        if (changeset.__typename === 'HiddenExternalChangeset') {
+            unmodified.push(changeset)
+            containsHidden = true
+        } else {
+            visibleChangesets.push(changeset)
+        }
     }
 
     const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
@@ -128,7 +126,7 @@ export function calculateChangesetDiff(
         changed,
         unmodified,
         deleted,
-        hasNotUpdated,
+        containsHidden,
     }
 }
 
@@ -168,7 +166,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
         )
     }
     const [changesets, campaignPatches, patches] = queriedChangesets
-    const { added, changed, unmodified, deleted, hasNotUpdated } = calculateChangesetDiff(
+    const { added, changed, unmodified, deleted, containsHidden } = calculateChangesetDiff(
         changesets.nodes,
         campaignPatches.nodes,
         patches.nodes
@@ -178,7 +176,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     return (
         <div className={className}>
             <h3 className="mt-4 mb-2">Preview of changes</h3>
-            {hasNotUpdated && (
+            {containsHidden && (
                 <div className="alert-alert-warning">
                     The update contains repositories that you don't have permission to. Those will <strong>not</strong>{' '}
                     be updated.
