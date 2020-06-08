@@ -21,6 +21,7 @@ coverage:
           - go
     patch:
       default:
+        only_pulls: true
         target: 5%
 comment:
   require_changes: yes
