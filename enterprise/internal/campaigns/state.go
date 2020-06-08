@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -79,7 +80,7 @@ func ComputeReviewState(c *cmpgn.Changeset, history []changesetStatesAtTime) (cm
 
 	// GitHub only stores the ReviewState in events, we can't look at the
 	// Changeset.
-	if c.ExternalServiceType == github.ServiceType {
+	if c.ExternalServiceType == extsvc.TypeGitHub {
 		return newestDataPoint.reviewState, nil
 	}
 

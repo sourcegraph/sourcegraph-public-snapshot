@@ -297,7 +297,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				name: "not a code host of the account",
 				acct: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
+						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
 					},
@@ -387,7 +387,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				repo: &extsvc.Repository{
 					URI: "github.com/user/repo",
 					ExternalRepoSpec: api.ExternalRepoSpec{
-						ServiceType: "github",
+						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 					},
 				},

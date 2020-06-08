@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,12 +14,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -252,8 +255,14 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	provider := s.providers()[repo.ExternalRepo.ServiceID]
 	if provider == nil {
-		// We have no authz provider configured for this repository.
-		return nil
+		// We have no authz provider configured for this private repository.
+		// However, we need to upsert the dummy record in order to prevent
+		// scheduler keep scheduling this repository.
+		return errors.Wrap(s.permsStore.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  int32(repoID),
+			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+			UserIDs: roaring.NewBitmap(),
+		}), "set repository permissions")
 	}
 
 	if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
@@ -264,6 +273,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	})
+
+	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
+	// when the owner of the token only has READ access. However, we don't want to fail entirely
+	// so the scheduler won't keep trying to fetch permissions of this same repository.
+	if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == http.StatusNotFound {
+		log15.Debug("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err)
+		err = nil
+	}
+
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {
@@ -335,7 +353,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
-	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name)
+	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name, "count", len(extAccountIDs))
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -424,7 +425,7 @@ func TestComputeChangesetState(t *testing.T) {
 
 func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campaigns.Changeset {
 	return &campaigns.Changeset{
-		ExternalServiceType: bitbucketserver.ServiceType,
+		ExternalServiceType: extsvc.TypeBitbucketServer,
 		UpdatedAt:           updatedAt,
 		Metadata: &bitbucketserver.PullRequest{
 			State: state,
@@ -444,7 +445,7 @@ func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *campai
 
 func githubChangeset(updatedAt time.Time, state string) *campaigns.Changeset {
 	return &campaigns.Changeset{
-		ExternalServiceType: github.ServiceType,
+		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
 	}

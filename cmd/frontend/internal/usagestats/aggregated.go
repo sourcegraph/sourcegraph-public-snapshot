@@ -200,3 +200,59 @@ func insertSearchEventStatistics(event types.AggregatedEvent, statistics *types.
 	day.UserCount = &event.UniquesDay
 	day.EventLatencies = makeLatencies(event.LatenciesDay)
 }
+
+func newCodeIntelEventCategory() *types.CodeIntelEventCategoryStatistics {
+	return &types.CodeIntelEventCategoryStatistics{
+		LSIF:   codeIntelEventStatistics(),
+		LSP:    codeIntelEventStatistics(),
+		Search: codeIntelEventStatistics(),
+	}
+}
+
+func codeIntelEventStatistics() *types.CodeIntelEventStatistics {
+	return &types.CodeIntelEventStatistics{EventLatencies: &types.CodeIntelEventLatencies{}}
+}
+
+func newSearchEventPeriod() *types.SearchUsagePeriod {
+	return &types.SearchUsagePeriod{
+		Literal:            newSearchEventStatistics(),
+		Regexp:             newSearchEventStatistics(),
+		Structural:         newSearchEventStatistics(),
+		File:               newSearchEventStatistics(),
+		Repo:               newSearchEventStatistics(),
+		Diff:               newSearchEventStatistics(),
+		Commit:             newSearchEventStatistics(),
+		Symbol:             newSearchEventStatistics(),
+		Case:               newSearchCountStatistics(),
+		Committer:          newSearchCountStatistics(),
+		Lang:               newSearchCountStatistics(),
+		Fork:               newSearchCountStatistics(),
+		Archived:           newSearchCountStatistics(),
+		Count:              newSearchCountStatistics(),
+		Timeout:            newSearchCountStatistics(),
+		Content:            newSearchCountStatistics(),
+		Before:             newSearchCountStatistics(),
+		After:              newSearchCountStatistics(),
+		Author:             newSearchCountStatistics(),
+		Message:            newSearchCountStatistics(),
+		Index:              newSearchCountStatistics(),
+		Repogroup:          newSearchCountStatistics(),
+		Repohasfile:        newSearchCountStatistics(),
+		Repohascommitafter: newSearchCountStatistics(),
+		PatternType:        newSearchCountStatistics(),
+		Type:               newSearchCountStatistics(),
+		SearchModes:        newSearchModeUsageStatistics(),
+	}
+}
+
+func newSearchEventStatistics() *types.SearchEventStatistics {
+	return &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}}
+}
+
+func newSearchCountStatistics() *types.SearchCountStatistics {
+	return &types.SearchCountStatistics{}
+}
+
+func newSearchModeUsageStatistics() *types.SearchModeUsageStatistics {
+	return &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}}
+}

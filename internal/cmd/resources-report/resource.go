@@ -73,8 +73,10 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 	}
 
 	// populate google sheet with data
+	var reportPage string
 	if *opts.sheetID != "" {
-		if err := updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
+		var err error
+		if reportPage, err = updateSheet(ctx, *opts.sheetID, filteredResources, highlighted); err != nil {
 			return fmt.Errorf("sheets: %w", err)
 		}
 	}
@@ -82,7 +84,7 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 	// generate message to deliver
 	if *opts.slackWebhook != "" {
 		buttons := []slackBlock{
-			newSlackButtonSheet(*opts.sheetID),
+			newSlackButtonSheet(*opts.sheetID, reportPage),
 			newSlackButtonDocs(),
 		}
 		if *opts.runID != "" {

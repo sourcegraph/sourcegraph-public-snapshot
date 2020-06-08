@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// MockWriter is a mock impelementation of the Writer interface (from the
+// MockWriter is a mock implementation of the Writer interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence)
 // used for unit testing.

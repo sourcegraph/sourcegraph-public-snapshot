@@ -4,13 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	sheets "google.golang.org/api/sheets/v4"
 )
 
+var reportSheetHeaders = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
+
 func toSheetValues(resources Resources) [][]interface{} {
 	values := make([][]interface{}, len(resources)+1)
-	values[0] = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
+	values[0] = reportSheetHeaders
 	for i, resource := range resources {
 		var meta string
 		metaBytes, err := json.Marshal(resource.Meta)
@@ -30,44 +34,39 @@ func toSheetValues(resources Resources) [][]interface{} {
 	return values
 }
 
-const defaultPage = "GeneratedReport"
-
-func updateSheet(ctx context.Context, sheetID string, resources Resources, highlighted int) error {
+func updateSheet(ctx context.Context, sheetID string, resources Resources, highlighted int) (string, error) {
 	client, err := sheets.NewService(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to init client: %w", err)
+		return "", fmt.Errorf("failed to init client: %w", err)
 	}
 
-	_, err = client.Spreadsheets.Values.Clear(sheetID, defaultPage, &sheets.ClearValuesRequest{}).
-		Context(ctx).Do()
-	if err != nil {
-		return fmt.Errorf("failed to reset report: %w", err)
-	}
-
-	_, err = client.Spreadsheets.Values.Append(sheetID, defaultPage, &sheets.ValueRange{
-		Values: toSheetValues(resources),
-	}).ValueInputOption("RAW").Context(ctx).Do()
-	if err != nil {
-		return fmt.Errorf("failed to update report: %w", err)
-	}
+	reportTime := time.Now()
+	newPageID := reportTime.Unix()
+	newPage := fmt.Sprintf("Report-%s", reportTime.UTC().Format(time.RFC3339))
 
 	_, err = client.Spreadsheets.BatchUpdate(sheetID, &sheets.BatchUpdateSpreadsheetRequest{
 		Requests: []*sheets.Request{
-			// fix header: https://developers.google.com/sheets/api/samples/formatting#format_a_header_row
-			{UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
+			// generate new sheet for this report
+			{AddSheet: &sheets.AddSheetRequest{
 				Properties: &sheets.SheetProperties{
-					SheetId:        0,
-					GridProperties: &sheets.GridProperties{FrozenRowCount: 1},
+					SheetId: newPageID,
+					Title:   newPage,
+					Index:   1,
+					// fix header: https://developers.google.com/sheets/api/samples/formatting#format_a_header_row
+					GridProperties: &sheets.GridProperties{
+						FrozenRowCount:          1,
+						ColumnGroupControlAfter: true,
+					},
 				},
-				Fields: "gridProperties.frozenRowCount",
 			}},
 
-			// highlight most recent entries
+			// highlight cells for most recent entries
 			{RepeatCell: &sheets.RepeatCellRequest{
 				Range: &sheets.GridRange{
-					SheetId:       0,
-					StartRowIndex: 1,
-					EndRowIndex:   int64(highlighted) + 1,
+					SheetId:        newPageID,
+					StartRowIndex:  1,
+					EndRowIndex:    int64(highlighted) + 1,
+					EndColumnIndex: int64(len(reportSheetHeaders)),
 				},
 				Cell: &sheets.CellData{
 					UserEnteredFormat: &sheets.CellFormat{
@@ -76,25 +75,19 @@ func updateSheet(ctx context.Context, sheetID string, resources Resources, highl
 				},
 				Fields: "userEnteredFormat.textFormat.bold",
 			}},
-
-			// set extra entries to not-bold
-			{RepeatCell: &sheets.RepeatCellRequest{
-				Range: &sheets.GridRange{
-					SheetId:       0,
-					StartRowIndex: int64(highlighted) + 1,
-				},
-				Cell: &sheets.CellData{
-					UserEnteredFormat: &sheets.CellFormat{
-						TextFormat: &sheets.TextFormat{Bold: false},
-					},
-				},
-				Fields: "userEnteredFormat.textFormat.bold",
-			}},
 		},
 	}).Context(ctx).Do()
 	if err != nil {
-		return fmt.Errorf("failed to format report: %w", err)
+		return "", fmt.Errorf("failed to format report: %w", err)
 	}
 
-	return nil
+	// append report to new sheet
+	_, err = client.Spreadsheets.Values.Update(sheetID, fmt.Sprintf("'%s'!A:Z", newPage), &sheets.ValueRange{
+		Values: toSheetValues(resources),
+	}).ValueInputOption("RAW").Context(ctx).Do()
+	if err != nil {
+		return "", fmt.Errorf("failed to update report: %w", err)
+	}
+
+	return strconv.Itoa(int(newPageID)), nil
 }

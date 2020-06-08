@@ -2,6 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -10,12 +13,186 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+func TestPatchSetResolver(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
+
+	// For testing purposes they all share the same rev, across repos
+	testingRev := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
+
+	mockBackendCommits(t, testingRev)
+
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{Name: args.Repo},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+
+	var rs []*repos.Repo
+	for i := 0; i < 3; i++ {
+		repo := newGitHubTestRepo(fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i), i)
+		err := reposStore.UpsertRepos(ctx, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rs = append(rs, repo)
+	}
+
+	store := ee.NewStore(dbconn.Global)
+
+	userID := insertTestUser(t, dbconn.Global, "patch-set-resolver", true)
+	patchSet := &campaigns.PatchSet{UserID: userID}
+	err := store.CreatePatchSet(ctx, patchSet)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var (
+		testDiffStatAdded   int32 = 0
+		testDiffStatDeleted int32 = 0
+		testDiffStatChanged int32 = 2
+	)
+
+	var patches []*campaigns.Patch
+	for _, repo := range rs {
+		patch := &campaigns.Patch{
+			PatchSetID:      patchSet.ID,
+			RepoID:          repo.ID,
+			Rev:             testingRev,
+			BaseRef:         "master",
+			Diff:            testDiff,
+			DiffStatAdded:   &testDiffStatAdded,
+			DiffStatDeleted: &testDiffStatDeleted,
+			DiffStatChanged: &testDiffStatChanged,
+		}
+
+		err := store.CreatePatch(ctx, patch)
+		if err != nil {
+			t.Fatal(err)
+		}
+		patches = append(patches, patch)
+	}
+
+	sr := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var response struct{ Node apitest.PatchSet }
+	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+        query {
+          node(id: %q) {
+            ... on PatchSet {
+              id
+              diffStat {
+                added
+                deleted
+                changed
+              }
+              patches(first: %d) {
+                nodes {
+				  ... on HiddenPatch {
+				    id
+				  }
+				  ... on Patch {
+                    repository {
+                      name
+                    }
+                    diff {
+                      fileDiffs(first: %d, after: %s) {
+                        rawDiff
+                        diffStat {
+                          added
+                          deleted
+                          changed
+                        }
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
+                        nodes {
+                          oldPath
+                          newPath
+                          hunks {
+                            body
+                            section
+                            newRange { startLine, lines }
+                            oldRange { startLine, lines }
+                            oldNoNewlineAt
+                          }
+                          stat {
+                            added
+                            deleted
+                            changed
+                          }
+                          oldFile {
+                            name
+                            externalURLs {
+                              serviceType
+                              url
+                            }
+                          }
+                        }
+                      }
+                    }
+				  }
+                }
+              }
+            }
+          }
+        }
+		`, marshalPatchSetID(patchSet.ID), len(patches), 10000, "null"))
+
+	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
+		t.Fatalf("have %d patches, want %d", have, want)
+	}
+
+	// Each patch has testDiff as diff, each with 2 lines changed
+	if have, want := response.Node.DiffStat.Changed, int32(len(patches)*2); have != want {
+		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
+	}
+
+	for i, patch := range response.Node.Patches.Nodes {
+		if have, want := patch.Repository.Name, rs[i].Name; have != want {
+			t.Fatalf("wrong Repository Name %q. want=%q", have, want)
+		}
+
+		if have, want := patch.Diff.FileDiffs.RawDiff, testDiff; have != want {
+			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
+		}
+
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, int32(2); have != want {
+			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
+		}
+
+		haveFileDiffs := patch.Diff.FileDiffs
+		if !reflect.DeepEqual(haveFileDiffs, testDiffGraphQL) {
+			t.Fatal(cmp.Diff(haveFileDiffs, testDiffGraphQL))
+		}
+	}
+}
 
 func TestPatchSetsFileDiffs(t *testing.T) {
 	ctx := context.Background()
@@ -98,33 +275,18 @@ index 9bd8209..d2acfa9 100644
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
-	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
+	wantBaseRef := "refs/heads/master"
+	wantHeadRevision := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
+	mockBackendCommits(t, api.CommitID(wantBaseRef), wantHeadRevision)
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}
-
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if rev != wantBaseRevision && rev != wantHeadRevision {
-			t.Fatalf("ResolveRev received wrong rev: %q", rev)
-		}
-		return api.CommitID(rev), nil
-	}
-	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*git.Commit, error) {
-		if string(id) != wantBaseRevision && string(id) != wantHeadRevision {
-			t.Fatalf("GetCommit received wrong ID: %s", id)
-		}
-		return &git.Commit{ID: id}, nil
-	}
-	defer func() { backend.Mocks.Repos.GetCommit = nil }()
 
 	patch := &patchResolver{
 		store: ee.NewStoreWithClock(dbconn.Global, clock),
 		patch: &campaigns.Patch{
 			RepoID:  repo.ID,
 			Rev:     api.CommitID(wantHeadRevision),
-			BaseRef: wantBaseRevision,
+			BaseRef: wantBaseRef,
 			Diff:    testDiff,
 		},
 		preloadedRepo: repo,

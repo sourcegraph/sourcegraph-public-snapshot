@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -41,7 +41,7 @@ func TestCountGoImporters(t *testing.T) {
 		return &types.Repo{
 			Name: repoName,
 			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: github.ServiceType,
+				ServiceType: extsvc.TypeGitHub,
 			},
 		}, nil
 	}

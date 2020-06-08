@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -134,7 +135,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITLAB",
+				Kind: extsvc.KindGitLab,
 				Config: marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
 				}),
@@ -167,7 +168,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := ExternalService{ID: 1, Kind: "GITLAB"}
+	svc := ExternalService{ID: 1, Kind: extsvc.KindGitLab}
 
 	tests := []struct {
 		name   string

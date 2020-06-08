@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// MockPrometheusQuerier is a mock impelementation of the PrometheusQuerier
+// MockPrometheusQuerier is a mock implementation of the PrometheusQuerier
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/prometheusutil) used for unit
 // testing.

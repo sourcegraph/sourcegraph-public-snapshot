@@ -96,10 +96,10 @@ describe('CampaignDetails', () => {
                     author: { username: 'alice' } as GQL.IUser,
                     patchSet: { id: 'p' },
                     changesets: { totalCount: 2 },
-                    openChangesets: { totalCount: 0 },
                     patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
+                    hasUnpublishedPatches: false,
                     branch: 'awesome-branch',
                     status: {
                         completedCount: 3,

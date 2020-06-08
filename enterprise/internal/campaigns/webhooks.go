@@ -30,7 +30,7 @@ type Webhook struct {
 	Now   func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
-	// Example values: bitbucketserver.ServiceType, github.ServiceType
+	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
 	ServiceType string
 }
 
@@ -192,7 +192,7 @@ type BitbucketServerWebhook struct {
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
+	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -242,7 +242,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 	// it's ok for this to be have linear complexity.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return a 401 to the client.
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
 	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -384,7 +384,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
 			ServiceID:   externalServiceID,
-			ServiceType: "github",
+			ServiceType: extsvc.TypeGitHub,
 		}
 
 		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
@@ -778,7 +778,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 
 func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, repos, now, bitbucketserver.ServiceType},
+		Webhook:     &Webhook{store, repos, now, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
@@ -834,7 +834,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		}
 	}
 
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindBitbucketServer}}
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
