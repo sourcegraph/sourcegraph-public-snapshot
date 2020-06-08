@@ -113,7 +113,7 @@
 /cmd/frontend/graphqlbackend/access_token.go @beyang @unknwon
 /internal/actor/ @beyang @unknwon
 
-# Core Services
+# Cloud
 /cmd/frontend/authz/ @sourcegraph/cloud
 /cmd/frontend/db/ @sourcegraph/cloud
 /cmd/frontend/globals/ @sourcegraph/cloud @slimsag
@@ -137,6 +137,10 @@
 /internal/vcs/ @sourcegraph/cloud
 /migrations/ @sourcegraph/cloud
 /schema/ @sourcegraph/cloud
+
+# Backend e2e tests
+/dev/e2e/ @unknwon
+/internal/e2eutil/ @unknwon
 
 # Campaigns
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
