@@ -43,12 +43,14 @@ type ObservedDB struct {
 	indexableRepositoriesOperation     *observation.Operation
 	updateIndexableRepositoryOperation *observation.Operation
 	getIndexByIDOperation              *observation.Operation
+	getIndexesByRepoOperation          *observation.Operation
 	indexQueueSizeOperation            *observation.Operation
 	isQueuedOperation                  *observation.Operation
 	insertIndexOperation               *observation.Operation
 	markIndexCompleteOperation         *observation.Operation
 	markIndexErroredOperation          *observation.Operation
 	dequeueIndexOperation              *observation.Operation
+	deleteIndexByIdOperation           *observation.Operation
 	resetStalledIndexesOperation       *observation.Operation
 	repoUsageStatisticsOperation       *observation.Operation
 	repoNameOperation                  *observation.Operation
@@ -222,6 +224,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 			MetricLabels: []string{"get_index_by_id"},
 			Metrics:      metrics,
 		}),
+		getIndexesByRepoOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.GetIndexesByRepo",
+			MetricLabels: []string{"get_indexes_by_repo"},
+			Metrics:      metrics,
+		}),
 		indexQueueSizeOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.IndexQueueSize",
 			MetricLabels: []string{"index_queue_size"},
@@ -250,6 +257,11 @@ func NewObserved(db DB, observationContext *observation.Context) DB {
 		dequeueIndexOperation: observationContext.Operation(observation.Op{
 			Name:         "DB.DequeueIndex",
 			MetricLabels: []string{"dequeue_index"},
+			Metrics:      metrics,
+		}),
+		deleteIndexByIdOperation: observationContext.Operation(observation.Op{
+			Name:         "DB.DeleteIndexByID",
+			MetricLabels: []string{"delete_index_by_id"},
 			Metrics:      metrics,
 		}),
 		resetStalledIndexesOperation: observationContext.Operation(observation.Op{
@@ -309,12 +321,14 @@ func (db *ObservedDB) wrap(other DB) DB {
 		indexableRepositoriesOperation:     db.indexableRepositoriesOperation,
 		updateIndexableRepositoryOperation: db.updateIndexableRepositoryOperation,
 		getIndexByIDOperation:              db.getIndexByIDOperation,
+		getIndexesByRepoOperation:          db.getIndexesByRepoOperation,
 		indexQueueSizeOperation:            db.indexQueueSizeOperation,
 		isQueuedOperation:                  db.isQueuedOperation,
 		insertIndexOperation:               db.insertIndexOperation,
 		markIndexCompleteOperation:         db.markIndexCompleteOperation,
 		markIndexErroredOperation:          db.markIndexErroredOperation,
 		dequeueIndexOperation:              db.dequeueIndexOperation,
+		deleteIndexByIdOperation:           db.deleteIndexByIdOperation,
 		resetStalledIndexesOperation:       db.resetStalledIndexesOperation,
 		repoUsageStatisticsOperation:       db.repoUsageStatisticsOperation,
 		repoNameOperation:                  db.repoNameOperation,
@@ -557,6 +571,13 @@ func (db *ObservedDB) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool
 	return db.db.GetIndexByID(ctx, id)
 }
 
+// GetIndexesByRepo calls into the inner DB and registers the observed results.
+func (db *ObservedDB) GetIndexesByRepo(ctx context.Context, repositoryID int, state, term string, limit, offset int) (_ []Index, _ int, err error) {
+	ctx, endObservation := db.getIndexesByRepoOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.GetIndexesByRepo(ctx, repositoryID, state, term, limit, offset)
+}
+
 // IndexableRepositories calls into the inner DB and registers the observed results.
 func (db *ObservedDB) IndexQueueSize(ctx context.Context) (_ int, err error) {
 	ctx, endObservation := db.indexQueueSizeOperation.With(ctx, &err, observation.Args{})
@@ -597,6 +618,13 @@ func (db *ObservedDB) DequeueIndex(ctx context.Context) (_ Index, _ DB, _ bool, 
 	ctx, endObservation := db.dequeueIndexOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 	return db.db.DequeueIndex(ctx)
+}
+
+// DeleteIndexByID calls into the inner DB and registers the observed results.
+func (db *ObservedDB) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, endObservation := db.deleteIndexByIdOperation.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+	return db.db.DeleteIndexByID(ctx, id)
 }
 
 // ResetStalledIndexes calls into the inner DB and registers the observed results.

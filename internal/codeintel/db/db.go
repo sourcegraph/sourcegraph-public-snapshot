@@ -140,6 +140,9 @@ type DB interface {
 	// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 	GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 
+	// GetIndexesByRepo returns a list of indexes for a particular repo and the total count of records matching the given conditions.
+	GetIndexesByRepo(ctx context.Context, repositoryID int, state, term string, limit, offset int) ([]Index, int, error)
+
 	// IndexQueueSize returns the number of indexes in the queued state.
 	IndexQueueSize(ctx context.Context) (int, error)
 
@@ -160,6 +163,9 @@ type DB interface {
 	// closed. If there is no such unlocked index, a zero-value index and nil DB will be returned along with a
 	// false valued flag. This method must not be called from within a transaction.
 	DequeueIndex(ctx context.Context) (Index, DB, bool, error)
+
+	// DeleteIndexByID deletes an index by its identifier.
+	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 
 	// ResetStalledIndexes moves all unlocked indexes processing for more than `StalledIndexMaxAge` back to the
 	// queued state. This method returns a list of updated index identifiers.

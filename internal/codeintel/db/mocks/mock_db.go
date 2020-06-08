@@ -17,6 +17,9 @@ type MockDB struct {
 	// AddUploadPartFunc is an instance of a mock function object
 	// controlling the behavior of the method AddUploadPart.
 	AddUploadPartFunc *DBAddUploadPartFunc
+	// DeleteIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteIndexByID.
+	DeleteIndexByIDFunc *DBDeleteIndexByIDFunc
 	// DeleteOldestDumpFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldestDump.
 	DeleteOldestDumpFunc *DBDeleteOldestDumpFunc
@@ -47,6 +50,9 @@ type MockDB struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *DBGetIndexByIDFunc
+	// GetIndexesByRepoFunc is an instance of a mock function object
+	// controlling the behavior of the method GetIndexesByRepo.
+	GetIndexesByRepoFunc *DBGetIndexesByRepoFunc
 	// GetPackageFunc is an instance of a mock function object controlling
 	// the behavior of the method GetPackage.
 	GetPackageFunc *DBGetPackageFunc
@@ -150,6 +156,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		DeleteIndexByIDFunc: &DBDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				return false, nil
+			},
+		},
 		DeleteOldestDumpFunc: &DBDeleteOldestDumpFunc{
 			defaultHook: func(context.Context) (int, bool, error) {
 				return 0, false, nil
@@ -198,6 +209,11 @@ func NewMockDB() *MockDB {
 		GetIndexByIDFunc: &DBGetIndexByIDFunc{
 			defaultHook: func(context.Context, int) (db.Index, bool, error) {
 				return db.Index{}, false, nil
+			},
+		},
+		GetIndexesByRepoFunc: &DBGetIndexesByRepoFunc{
+			defaultHook: func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+				return nil, 0, nil
 			},
 		},
 		GetPackageFunc: &DBGetPackageFunc{
@@ -360,6 +376,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		AddUploadPartFunc: &DBAddUploadPartFunc{
 			defaultHook: i.AddUploadPart,
 		},
+		DeleteIndexByIDFunc: &DBDeleteIndexByIDFunc{
+			defaultHook: i.DeleteIndexByID,
+		},
 		DeleteOldestDumpFunc: &DBDeleteOldestDumpFunc{
 			defaultHook: i.DeleteOldestDump,
 		},
@@ -389,6 +408,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		GetIndexByIDFunc: &DBGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
+		},
+		GetIndexesByRepoFunc: &DBGetIndexesByRepoFunc{
+			defaultHook: i.GetIndexesByRepo,
 		},
 		GetPackageFunc: &DBGetPackageFunc{
 			defaultHook: i.GetPackage,
@@ -589,6 +611,115 @@ func (c DBAddUploadPartFuncCall) Args() []interface{} {
 // invocation.
 func (c DBAddUploadPartFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// DBDeleteIndexByIDFunc describes the behavior when the DeleteIndexByID
+// method of the parent MockDB instance is invoked.
+type DBDeleteIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []DBDeleteIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) DeleteIndexByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.DeleteIndexByIDFunc.nextHook()(v0, v1)
+	m.DeleteIndexByIDFunc.appendCall(DBDeleteIndexByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteIndexByID
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBDeleteIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteIndexByID method of the parent MockDB instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBDeleteIndexByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBDeleteIndexByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBDeleteIndexByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBDeleteIndexByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBDeleteIndexByIDFunc) appendCall(r0 DBDeleteIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBDeleteIndexByIDFuncCall objects
+// describing the invocations of this function.
+func (f *DBDeleteIndexByIDFunc) History() []DBDeleteIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBDeleteIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBDeleteIndexByIDFuncCall is an object that describes an invocation of
+// method DeleteIndexByID on an instance of MockDB.
+type DBDeleteIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBDeleteIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBDeleteIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBDeleteOldestDumpFunc describes the behavior when the DeleteOldestDump
@@ -1690,6 +1821,130 @@ func (c DBGetIndexByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBGetIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBGetIndexesByRepoFunc describes the behavior when the GetIndexesByRepo
+// method of the parent MockDB instance is invoked.
+type DBGetIndexesByRepoFunc struct {
+	defaultHook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)
+	hooks       []func(context.Context, int, string, string, int, int) ([]db.Index, int, error)
+	history     []DBGetIndexesByRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexesByRepo delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) GetIndexesByRepo(v0 context.Context, v1 int, v2 string, v3 string, v4 int, v5 int) ([]db.Index, int, error) {
+	r0, r1, r2 := m.GetIndexesByRepoFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.GetIndexesByRepoFunc.appendCall(DBGetIndexesByRepoFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetIndexesByRepo
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBGetIndexesByRepoFunc) SetDefaultHook(hook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexesByRepo method of the parent MockDB instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBGetIndexesByRepoFunc) PushHook(hook func(context.Context, int, string, string, int, int) ([]db.Index, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGetIndexesByRepoFunc) SetDefaultReturn(r0 []db.Index, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGetIndexesByRepoFunc) PushReturn(r0 []db.Index, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBGetIndexesByRepoFunc) nextHook() func(context.Context, int, string, string, int, int) ([]db.Index, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGetIndexesByRepoFunc) appendCall(r0 DBGetIndexesByRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGetIndexesByRepoFuncCall objects
+// describing the invocations of this function.
+func (f *DBGetIndexesByRepoFunc) History() []DBGetIndexesByRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGetIndexesByRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGetIndexesByRepoFuncCall is an object that describes an invocation of
+// method GetIndexesByRepo on an instance of MockDB.
+type DBGetIndexesByRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []db.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGetIndexesByRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGetIndexesByRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

@@ -93,6 +93,81 @@ func (db *dbImpl) GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 	`, id)))
 }
 
+// GetIndexesByRepo returns a list of indexes for a particular repo and the total count of records matching the given conditions.
+func (db *dbImpl) GetIndexesByRepo(ctx context.Context, repositoryID int, state, term string, limit, offset int) (_ []Index, _ int, err error) {
+	tx, started, err := db.transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	if started {
+		defer func() { err = tx.Done(err) }()
+	}
+
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("u.repository_id = %s", repositoryID),
+	}
+	if term != "" {
+		conds = append(conds, makeIndexSearchCondition(term))
+	}
+	if state != "" {
+		conds = append(conds, sqlf.Sprintf("u.state = %s", state))
+	}
+
+	count, _, err := scanFirstInt(tx.query(
+		ctx,
+		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes u WHERE %s`, sqlf.Join(conds, " AND ")),
+	))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	indexes, err := scanIndexes(tx.query(
+		ctx,
+		sqlf.Sprintf(`
+			SELECT
+				u.id,
+				u.commit,
+				u.queued_at,
+				u.state,
+				u.failure_summary,
+				u.failure_stacktrace,
+				u.started_at,
+				u.finished_at,
+				u.repository_id,
+				s.rank
+			FROM lsif_indexes u
+			LEFT JOIN (
+				SELECT r.id, RANK() OVER (ORDER BY r.queued_at) as rank
+				FROM lsif_indexes r
+				WHERE r.state = 'queued'
+			) s
+			ON u.id = s.id
+			WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
+		`, sqlf.Join(conds, " AND "), limit, offset),
+	))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return indexes, count, nil
+}
+
+// makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
+func makeIndexSearchCondition(term string) *sqlf.Query {
+	searchableColumns := []string{
+		"commit",
+		"failure_summary",
+		"failure_stacktrace",
+	}
+
+	var termConds []*sqlf.Query
+	for _, column := range searchableColumns {
+		termConds = append(termConds, sqlf.Sprintf("u."+column+" LIKE %s", "%"+term+"%"))
+	}
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
+}
+
 // IndexQueueSize returns the number of indexes in the queued state.
 func (db *dbImpl) IndexQueueSize(ctx context.Context) (int, error) {
 	count, _, err := scanFirstInt(db.query(
@@ -175,6 +250,27 @@ func (db *dbImpl) DequeueIndex(ctx context.Context) (Index, DB, bool, error) {
 	}
 
 	return index.(Index), tx, true, nil
+}
+
+// DeleteIndexByID deletes an index by its identifier.
+func (db *dbImpl) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
+	tx, started, err := db.transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	if started {
+		defer func() { err = tx.Done(err) }()
+	}
+
+	_, exists, err := scanFirstInt(tx.query(
+		ctx,
+		sqlf.Sprintf(`
+			DELETE FROM lsif_indexes
+			WHERE id = %s
+			RETURNING repository_id
+		`, id),
+	))
+	return exists, err
 }
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an

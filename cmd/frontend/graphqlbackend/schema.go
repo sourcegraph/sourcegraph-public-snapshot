@@ -396,6 +396,12 @@ type Mutation {
     # Deletes an LSIF upload.
     deleteLSIFUpload(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF index.
+    deleteLSIFIndex(id: ID!): EmptyResponse
+
     # Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     # operation overwrites the previous permissions for the repository.
     setRepositoryPermissionsForUsers(
@@ -1834,6 +1840,31 @@ type Repository implements Node & GenericSearchResultInterface {
         # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFUploadConnection!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifIndexes(
+        # TODO(efritz) - update
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFIndexState
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFIndexConnection!
 
     # A list of authorized users to access this repository with the given permission.
     # This API currently only returns permissions from the Sourcegraph provider, i.e.
@@ -4050,6 +4081,72 @@ type LSIFUploadConnection {
     nodes: [LSIFUpload!]!
 
     # The total number of uploads in this result set.
+    totalCount: Int
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state an LSIF index can be in.
+enum LSIFIndexState {
+    # This index is being processed.
+    PROCESSING
+
+    # This index failed to be processed.
+    ERRORED
+
+    # This index was processed successfully.
+    COMPLETED
+
+    # This index is queued to be processed later.
+    QUEUED
+}
+
+# Metadata and status about an LSIF index.
+type LSIFIndex implements Node {
+    # The ID.
+    id: ID!
+
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree
+
+    # The original 40-character commit commit supplied at index time.
+    inputCommit: String!
+
+    # The index's current state.
+    state: LSIFIndexState!
+
+    # The time the index was queued.
+    queuedAt: DateTime!
+
+    # The time the index was processed.
+    startedAt: DateTime
+
+    # The time the index compelted or errored.
+    finishedAt: DateTime
+
+    # Metadata about an index's failure (not set if state is not ERRORED).
+    failure: LSIFIndexFailureReason
+
+    # The rank of this index in the queue. The value of this field is null if the index has been processed.
+    placeInQueue: Int
+}
+
+# Metadata about a LSIF index failure.
+type LSIFIndexFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace of the failure.
+    stacktrace: String!
+}
+
+# A list of LSIF indexes.
+type LSIFIndexConnection {
+    # A list of LSIF indexes.
+    nodes: [LSIFIndex!]!
+
+    # The total number of indexes in this result set.
     totalCount: Int
 
     # Pagination information.

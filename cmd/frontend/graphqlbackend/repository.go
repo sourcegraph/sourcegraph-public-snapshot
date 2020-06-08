@@ -304,6 +304,13 @@ func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQ
 	})
 }
 
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexes(ctx, &LSIFRepositoryIndexesQueryArgs{
+		LSIFIndexesQueryArgs: args,
+		RepositoryID:         r.ID(),
+	})
+}
+
 type AuthorizedUserArgs struct {
 	RepositoryID graphql.ID
 	Permission   string

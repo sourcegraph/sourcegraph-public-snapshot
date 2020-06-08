@@ -44,31 +44,6 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 	return &lsifUploadResolver{lsifUpload: upload}, nil
 }
 
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may delete LSIF data for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = r.db.DeleteUploadByID(ctx, int(uploadID), func(repositoryID int) (string, error) {
-		tipCommit, err := gitserver.Head(ctx, r.db, repositoryID)
-		if err != nil {
-			return "", errors.Wrap(err, "gitserver.Head")
-		}
-		return tipCommit, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
-}
-
 // LSIFUploads resolves the LSIF uploads in a given state.
 //
 // This method implements cursor-based forward pagination. The `after` parameter
@@ -97,6 +72,85 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 	}
 
 	return &lsifUploadConnectionResolver{db: r.db, opt: opt}, nil
+}
+
+func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may delete LSIF data for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	uploadID, err := unmarshalLSIFUploadGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.db.DeleteUploadByID(ctx, int(uploadID), func(repositoryID int) (string, error) {
+		tipCommit, err := gitserver.Head(ctx, r.db, repositoryID)
+		if err != nil {
+			return "", errors.Wrap(err, "gitserver.Head")
+		}
+		return tipCommit, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFIndexResolver, error) {
+	indexID, err := unmarshalLSIFIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	index, exists, err := r.db.GetIndexByID(ctx, int(indexID))
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	return &lsifIndexResolver{lsifIndex: index}, nil
+}
+
+// LSIFIndexes resolves the LSIF indexes in a given state.
+func (r *Resolver) LSIFIndexes(ctx context.Context, args *graphqlbackend.LSIFRepositoryIndexesQueryArgs) (graphqlbackend.LSIFIndexConnectionResolver, error) {
+	opt := LSIFIndexesListOptions{
+		RepositoryID: args.RepositoryID,
+		Query:        args.Query,
+		State:        args.State,
+	}
+	if args.First != nil {
+		opt.Limit = args.First
+	}
+	if args.After != nil {
+		decoded, err := base64.StdEncoding.DecodeString(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		nextURL := string(decoded)
+		opt.NextURL = &nextURL
+	}
+
+	return &lsifIndexConnectionResolver{db: r.db, opt: opt}, nil
+}
+
+func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may delete LSIF data for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	indexID, err := unmarshalLSIFIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := r.db.DeleteIndexByID(ctx, int(indexID)); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
