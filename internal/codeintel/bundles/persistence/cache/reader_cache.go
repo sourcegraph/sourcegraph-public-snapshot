@@ -85,26 +85,26 @@ func (c *Cache) WithReader(ctx context.Context, key string, fn Handler) error {
 }
 
 const (
-	MinBackoff           = time.Millisecond * 1
-	MaxBackoff           = time.Millisecond * 250
-	BackoffIncreaseRatio = 1.5
-	MaxAttempts          = 100
+	minBackoff           = time.Millisecond * 1
+	maxBackoff           = time.Millisecond * 250
+	backoffIncreaseRatio = 1.5
+	maxAttempts          = 100
 )
 
 // getOrCreateActiveEntry gets or creates a cache entry for the given key. If there exists an entry for
 // the key, but that entry is marked as draining, we retry following an exponential backoff algorithm.
 func (c *Cache) getOrCreateActiveEntry(ctx context.Context, key string) (*cacheEntry, bool) {
-	backoff := MinBackoff
+	backoff := minBackoff
 
-	for attempts := MaxAttempts; attempts > 0; attempts-- {
+	for attempts := maxAttempts; attempts > 0; attempts-- {
 		if entry, draining := c.getOrCreateRawEntry(key); !draining {
 			return entry, true
 		}
 
 		select {
 		case <-time.After(backoff):
-			if backoff = time.Duration(float64(backoff) * BackoffIncreaseRatio); backoff > MaxBackoff {
-				backoff = MaxBackoff
+			if backoff = time.Duration(float64(backoff) * backoffIncreaseRatio); backoff > maxBackoff {
+				backoff = maxBackoff
 			}
 			continue
 
