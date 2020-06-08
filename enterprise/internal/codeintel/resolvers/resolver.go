@@ -157,7 +157,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*graphql
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path)
+	dumps, err := r.codeIntelAPI.FindClosestDumps(ctx, int(args.Repository.Type().ID), string(args.Commit), args.Path, args.Indexer)
 	if err != nil {
 		return nil, err
 	}

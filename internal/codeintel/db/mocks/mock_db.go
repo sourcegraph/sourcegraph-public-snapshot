@@ -192,7 +192,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		FindClosestDumpsFunc: &DBFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string) ([]db.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, string) ([]db.Dump, error) {
 				return nil, nil
 			},
 		},
@@ -1385,24 +1385,24 @@ func (c DBDoneFuncCall) Results() []interface{} {
 // DBFindClosestDumpsFunc describes the behavior when the FindClosestDumps
 // method of the parent MockDB instance is invoked.
 type DBFindClosestDumpsFunc struct {
-	defaultHook func(context.Context, int, string, string) ([]db.Dump, error)
-	hooks       []func(context.Context, int, string, string) ([]db.Dump, error)
+	defaultHook func(context.Context, int, string, string, string) ([]db.Dump, error)
+	hooks       []func(context.Context, int, string, string, string) ([]db.Dump, error)
 	history     []DBFindClosestDumpsFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumps delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDB) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string) ([]db.Dump, error) {
-	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3)
-	m.FindClosestDumpsFunc.appendCall(DBFindClosestDumpsFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockDB) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 string) ([]db.Dump, error) {
+	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.FindClosestDumpsFunc.appendCall(DBFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the FindClosestDumps
 // method of the parent MockDB instance is invoked and the hook queue is
 // empty.
-func (f *DBFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string) ([]db.Dump, error)) {
+func (f *DBFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string) ([]db.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -1410,7 +1410,7 @@ func (f *DBFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, 
 // FindClosestDumps method of the parent MockDB instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string) ([]db.Dump, error)) {
+func (f *DBFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, string) ([]db.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1419,7 +1419,7 @@ func (f *DBFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBFindClosestDumpsFunc) SetDefaultReturn(r0 []db.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) ([]db.Dump, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, string) ([]db.Dump, error) {
 		return r0, r1
 	})
 }
@@ -1427,12 +1427,12 @@ func (f *DBFindClosestDumpsFunc) SetDefaultReturn(r0 []db.Dump, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBFindClosestDumpsFunc) PushReturn(r0 []db.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string) ([]db.Dump, error) {
+	f.PushHook(func(context.Context, int, string, string, string) ([]db.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string) ([]db.Dump, error) {
+func (f *DBFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, string) ([]db.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1477,6 +1477,9 @@ type DBFindClosestDumpsFuncCall struct {
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []db.Dump
@@ -1488,7 +1491,7 @@ type DBFindClosestDumpsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBFindClosestDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

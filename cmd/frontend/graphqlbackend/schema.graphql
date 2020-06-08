@@ -2885,7 +2885,7 @@ type GitBlob implements TreeEntry & File2 {
     # CHANGELOG during this time.
     # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     # intelligence queries for this path-at-revision, this resolves to null.
-    lsif: LSIFQueryResolver
+    lsif(indexer: String): LSIFQueryResolver
 }
 
 # A wrapper object around LSIF query methods for a particular path-at-revision. When this node is

@@ -75,8 +75,8 @@ func setMockDBGetPackage(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, e
 	})
 }
 
-func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile string, dumps []db.Dump) {
-	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
+func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile, expectedIndexer string, dumps []db.Dump) {
+	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file, indexer string) ([]db.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -85,6 +85,9 @@ func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRep
 		}
 		if file != expectedFile {
 			t.Errorf("unexpected file for FindClosestDumps. want=%s have=%s", expectedFile, file)
+		}
+		if indexer != expectedIndexer {
+			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
 		}
 		return dumps, nil
 	})

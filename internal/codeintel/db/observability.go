@@ -474,10 +474,10 @@ func (db *ObservedDB) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, 
 }
 
 // FindClosestDumps calls into the inner DB and registers the observed results.
-func (db *ObservedDB) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (dumps []Dump, err error) {
+func (db *ObservedDB) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (dumps []Dump, err error) {
 	ctx, endObservation := db.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
-	return db.db.FindClosestDumps(ctx, repositoryID, commit, file)
+	return db.db.FindClosestDumps(ctx, repositoryID, commit, file, indexer)
 }
 
 // DeleteOldestDump calls into the inner DB and registers the observed results.
