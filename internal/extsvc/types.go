@@ -69,6 +69,9 @@ func (s *Accounts) TracingFields() []otlog.Field {
 }
 
 const (
+	// The constants below represent the different kinds of external service we support and should be used
+	// in preference to the Type values below.
+
 	KindAWSCodeCommit   = "AWSCODECOMMIT"
 	KindBitbucketServer = "BITBUCKETSERVER"
 	KindBitbucketCloud  = "BITBUCKETCLOUD"
@@ -80,6 +83,8 @@ const (
 )
 
 const (
+	// The constants below represent the values used for the external_service_type column of the repo table.
+
 	// TypeAWSCodeCommit is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
 	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
 	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
