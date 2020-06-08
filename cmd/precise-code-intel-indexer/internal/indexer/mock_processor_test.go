@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// MockProcessor is a mock impelementation of the Processor interface (from
+// MockProcessor is a mock implementation of the Processor interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-indexer/internal/indexer)
 // used for unit testing.
