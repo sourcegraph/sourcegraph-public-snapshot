@@ -10,7 +10,7 @@ import (
 
 var (
 	rawBundleDir                  = env.Get("PRECISE_CODE_INTEL_BUNDLE_DIR", "/lsif-storage", "Root dir containing uploads and converted bundles.")
-	rawReaderCacheMaxIdleDuration = env.Get("PRECISE_CODE_INTEL_READER_CACHE_MAX_IDLE_DURATION", "1m", "The maximum time a bundle reader can remain open and unused.")
+	rawReaderCacheMaxIdleDuration = env.Get("PRECISE_CODE_INTEL_READER_CACHE_MAX_IDLE_DURATION", "1m", "The time-to-live for entries of the reader cache.")
 	rawReaderDataCacheSize        = env.Get("PRECISE_CODE_INTEL_READER_DATA_CACHE_CAPACITY", "10000", "Maximum capacity of the reader data cache.")
 	rawDesiredPercentFree         = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	rawJanitorInterval            = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
