@@ -147,7 +147,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	if err != nil {
 		return nil, false, nil, err
 	}
-	println(fmt.Sprintf("getting resp took %s", time.Since(t0)))
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
 		return nil, false, nil, errNoResultsInTimeout
 	}
@@ -194,9 +193,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	matches := make([]*FileMatchResolver, len(resp.Files))
 	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
-	totalLines := 0
-	totalLoopCount := 0
-	totalLoopTime := time.Now()
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -211,20 +207,13 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
 			if !l.FileName {
-				totalLines++
 				if len(l.LineFragments) > maxLineFragmentMatches {
 					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
 				}
 				offsets := make([][2]int32, len(l.LineFragments))
-				// alreadyScanned := 0
-				// scanIdx := 0
 				for k, m := range l.LineFragments {
-					totalLoopCount++
-					// offset := alreadyScanned + utf8.RuneCount(l.Line[scanIdx:m.LineOffset])
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-					// alreadyScanned = offset + length
-					// scanIdx = m.LineOffset + m.MatchLength
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &GitCommitResolver{
@@ -270,9 +259,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			CommitID:     repoRev.IndexedHEADCommit(),
 		}
 	}
-	println(totalLines)
-	println(totalLoopCount)
-	fmt.Printf("looping took %s\n", time.Since(totalLoopTime))
 
 	return matches, limitHit, reposLimitHit, nil
 }
