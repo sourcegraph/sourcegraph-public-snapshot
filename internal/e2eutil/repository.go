@@ -60,6 +60,8 @@ query Repositories($first: Int) {
 
 var errContinueRetry = errors.New("continue retry")
 
+// retry retries the given function until reached timeout. The function should
+// return errContinueRetry to indicate another retry.
 func retry(timeout time.Duration, fn func() error) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

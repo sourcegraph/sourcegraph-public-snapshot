@@ -65,9 +65,9 @@ func TestMain(m *testing.M) {
 			Token string   `json:"token"`
 			Repos []string `json:"repos"`
 		}{
-			"http://github.com",
-			*githubToken,
-			[]string{
+			URL:   "http://github.com",
+			Token: *githubToken,
+			Repos: []string{
 				"sourcegraph/java-langserver",
 				"gorilla/mux",
 				"gorilla/securecookie",

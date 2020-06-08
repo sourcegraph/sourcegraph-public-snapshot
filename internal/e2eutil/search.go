@@ -10,7 +10,7 @@ type SearchRepositoryResult struct {
 
 type SearchRepositoryResults []*SearchRepositoryResult
 
-// Exists returns the list of missing ones from given names that do not exist
+// Exists returns the list of missing repositories from given names that do not exist
 // in search results. If all of given names are found, it returns empty list.
 func (rs SearchRepositoryResults) Exists(names ...string) []string {
 	set := make(map[string]struct{}, len(names))
