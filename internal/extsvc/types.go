@@ -116,16 +116,21 @@ const (
 	TypeOther = "other"
 )
 
+var (
+	// Precompute these for use in ParseServiceType below since the constants are mixed case
+	bbsLower = strings.ToLower(TypeBitbucketServer)
+	bbcLower = strings.ToLower(TypeBitbucketCloud)
+)
+
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceType(s string) (string, bool) {
-	// Note the special cases for Bitbucket because the constants need to be mixed case
 	switch strings.ToLower(s) {
 	case TypeAWSCodeCommit:
 		return TypeAWSCodeCommit, true
-	case strings.ToLower(TypeBitbucketServer):
+	case bbsLower:
 		return TypeBitbucketServer, true
-	case strings.ToLower(TypeBitbucketCloud):
+	case bbcLower:
 		return TypeBitbucketCloud, true
 	case TypeGitHub:
 		return TypeGitHub, true
