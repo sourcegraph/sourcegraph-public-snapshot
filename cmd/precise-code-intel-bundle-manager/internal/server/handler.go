@@ -200,7 +200,7 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 // GET /dbs/{id:[0-9]+}/diagnostics
 func (s *Server) handleDiagnostics(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		diagnostics, err := db.Diagnostics(ctx, getQuery(r, "path"))
+		diagnostics, err := db.Diagnostics(ctx, getQuery(r, "prefix"))
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "db.Diagnostics")
 		}
