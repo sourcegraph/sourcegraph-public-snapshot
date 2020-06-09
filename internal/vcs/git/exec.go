@@ -105,12 +105,12 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 }
 
 var (
-	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling ExecSafe.
-	gitCmdWhitelist = map[string][]string{
-		"log":    append([]string{}, gitCommonWhitelist...),
-		"show":   append([]string{}, gitCommonWhitelist...),
+	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling ExecSafe.
+	gitCmdAllowlist = map[string][]string{
+		"log":    append([]string{}, gitCommonAllowlist...),
+		"show":   append([]string{}, gitCommonAllowlist...),
 		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonWhitelist...),
+		"diff":   append([]string{}, gitCommonAllowlist...),
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch": {"-r", "-a", "--contains"},
 
@@ -121,7 +121,7 @@ var (
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
-	gitCommonWhitelist = []string{
+	gitCommonAllowlist = []string{
 		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
@@ -151,11 +151,11 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 // isAllowedGitCmd checks if the cmd and arguments are allowed.
 func isAllowedGitCmd(args []string) bool {
 	// check if the supplied command is a allowed cmd
-	if len(gitCmdWhitelist) == 0 {
+	if len(gitCmdAllowlist) == 0 {
 		return false
 	}
 	cmd := args[0]
-	whiteListedArgs, ok := gitCmdWhitelist[cmd]
+	whiteListedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
 		// Command not allowed
 		return false
