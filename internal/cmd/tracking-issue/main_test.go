@@ -32,7 +32,7 @@ func TestIntegration(t *testing.T) {
 
 	loadTrackingIssueFixtures(t, "sourcegraph", ti)
 
-	got := ti.Workloads().Markdown(ti.LabelWhitelist)
+	got := ti.Workloads().Markdown(ti.LabelAllowlist)
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }
@@ -93,5 +93,5 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 		t.Fatal(err)
 	}
 
-	issue.FillLabelWhitelist()
+	issue.FillLabelAllowlist()
 }

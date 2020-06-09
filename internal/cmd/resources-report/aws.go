@@ -125,7 +125,7 @@ var awsResources = map[string]AWSResourceFetchFunc{
 	},
 }
 
-func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tagsWhitelist map[string]string) ([]Resource, error) {
+func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tagsAllowlist map[string]string) ([]Resource, error) {
 	logger := log.New(os.Stdout, "aws: ", log.LstdFlags|log.Lmsgprefix)
 	if verbose {
 		logger.Printf("collecting resources since %s", since)
@@ -181,9 +181,9 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tag
 			if ok {
 				resource := r
 				// allowlist resource if configured - all AWS tags should be converted to maps
-				if tagsWhitelist != nil {
+				if tagsAllowlist != nil {
 					if tags, ok := resource.Meta["tags"].(map[string]string); ok {
-						if hasKeyValue(tags, tagsWhitelist) {
+						if hasKeyValue(tags, tagsAllowlist) {
 							resource.Allowed = true
 						}
 					}

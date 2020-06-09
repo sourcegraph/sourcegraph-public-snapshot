@@ -24,7 +24,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return mockSearchRepositories(args)
 	}
 
-	fieldWhitelist := map[string]struct{}{
+	fieldAllowlist := map[string]struct{}{
 		query.FieldRepo:               {},
 		query.FieldRepoGroup:          {},
 		query.FieldType:               {},
@@ -43,7 +43,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
 	for field := range args.Query.Fields() {
-		if _, ok := fieldWhitelist[field]; !ok {
+		if _, ok := fieldAllowlist[field]; !ok {
 			return nil, nil, nil
 		}
 	}
