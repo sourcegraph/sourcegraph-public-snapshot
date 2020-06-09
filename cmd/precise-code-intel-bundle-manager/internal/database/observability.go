@@ -17,6 +17,7 @@ type ObservedDatabase struct {
 	definitionsOperation        *observation.Operation
 	referencesOperation         *observation.Operation
 	hoverOperation              *observation.Operation
+	diagnosticsOperation        *observation.Operation
 	monikersByPositionOperation *observation.Operation
 	monikerResultsOperation     *observation.Operation
 	packageInformationOperation *observation.Operation
@@ -61,6 +62,11 @@ func NewObserved(database Database, filename string, observationContext *observa
 		hoverOperation: observationContext.Operation(observation.Op{
 			Name:         "Database.Hover",
 			MetricLabels: []string{"hover"},
+			Metrics:      metrics,
+		}),
+		diagnosticsOperation: observationContext.Operation(observation.Op{
+			Name:         "Database.Diagnostics",
+			MetricLabels: []string{"diagnostics"},
 			Metrics:      metrics,
 		}),
 		monikersByPositionOperation: observationContext.Operation(observation.Op{
@@ -136,6 +142,18 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 	})
 	defer endObservation(1, observation.Args{})
 	return db.database.Hover(ctx, path, line, character)
+}
+
+// Diagnostics calls into the inner Database and registers the observed results.
+func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string) (diagnostics []client.Diagnostic, err error) {
+	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("filename", db.filename),
+			log.String("prefix", prefix),
+		},
+	})
+	defer func() { endObservation(float64(len(diagnostics)), observation.Args{}) }()
+	return db.database.Diagnostics(ctx, prefix)
 }
 
 // MonikersByPosition calls into the inner Database and registers the observed results.

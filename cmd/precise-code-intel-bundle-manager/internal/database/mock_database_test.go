@@ -19,6 +19,9 @@ type MockDatabase struct {
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
 	DefinitionsFunc *DatabaseDefinitionsFunc
+	// DiagnosticsFunc is an instance of a mock function object controlling
+	// the behavior of the method Diagnostics.
+	DiagnosticsFunc *DatabaseDiagnosticsFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *DatabaseExistsFunc
@@ -50,6 +53,11 @@ func NewMockDatabase() *MockDatabase {
 		},
 		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: func(context.Context, string, int, int) ([]client.Location, error) {
+				return nil, nil
+			},
+		},
+		DiagnosticsFunc: &DatabaseDiagnosticsFunc{
+			defaultHook: func(context.Context, string) ([]client.Diagnostic, error) {
 				return nil, nil
 			},
 		},
@@ -95,6 +103,9 @@ func NewMockDatabaseFrom(i Database) *MockDatabase {
 		},
 		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: i.Definitions,
+		},
+		DiagnosticsFunc: &DatabaseDiagnosticsFunc{
+			defaultHook: i.Diagnostics,
 		},
 		ExistsFunc: &DatabaseExistsFunc{
 			defaultHook: i.Exists,
@@ -328,6 +339,115 @@ func (c DatabaseDefinitionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DatabaseDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DatabaseDiagnosticsFunc describes the behavior when the Diagnostics
+// method of the parent MockDatabase instance is invoked.
+type DatabaseDiagnosticsFunc struct {
+	defaultHook func(context.Context, string) ([]client.Diagnostic, error)
+	hooks       []func(context.Context, string) ([]client.Diagnostic, error)
+	history     []DatabaseDiagnosticsFuncCall
+	mutex       sync.Mutex
+}
+
+// Diagnostics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDatabase) Diagnostics(v0 context.Context, v1 string) ([]client.Diagnostic, error) {
+	r0, r1 := m.DiagnosticsFunc.nextHook()(v0, v1)
+	m.DiagnosticsFunc.appendCall(DatabaseDiagnosticsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Diagnostics method
+// of the parent MockDatabase instance is invoked and the hook queue is
+// empty.
+func (f *DatabaseDiagnosticsFunc) SetDefaultHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Diagnostics method of the parent MockDatabase instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DatabaseDiagnosticsFunc) PushHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DatabaseDiagnosticsFunc) SetDefaultReturn(r0 []client.Diagnostic, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]client.Diagnostic, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DatabaseDiagnosticsFunc) PushReturn(r0 []client.Diagnostic, r1 error) {
+	f.PushHook(func(context.Context, string) ([]client.Diagnostic, error) {
+		return r0, r1
+	})
+}
+
+func (f *DatabaseDiagnosticsFunc) nextHook() func(context.Context, string) ([]client.Diagnostic, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DatabaseDiagnosticsFunc) appendCall(r0 DatabaseDiagnosticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DatabaseDiagnosticsFuncCall objects
+// describing the invocations of this function.
+func (f *DatabaseDiagnosticsFunc) History() []DatabaseDiagnosticsFuncCall {
+	f.mutex.Lock()
+	history := make([]DatabaseDiagnosticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DatabaseDiagnosticsFuncCall is an object that describes an invocation of
+// method Diagnostics on an instance of MockDatabase.
+type DatabaseDiagnosticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []client.Diagnostic
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DatabaseDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DatabaseDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

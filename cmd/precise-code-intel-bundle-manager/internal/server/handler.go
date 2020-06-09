@@ -39,6 +39,7 @@ func (s *Server) handler() http.Handler {
 	mux.Path("/dbs/{id:[0-9]+}/definitions").Methods("GET").HandlerFunc(s.handleDefinitions)
 	mux.Path("/dbs/{id:[0-9]+}/references").Methods("GET").HandlerFunc(s.handleReferences)
 	mux.Path("/dbs/{id:[0-9]+}/hover").Methods("GET").HandlerFunc(s.handleHover)
+	mux.Path("/dbs/{id:[0-9]+}/diagnostics").Methods("GET").HandlerFunc(s.handleDiagnostics)
 	mux.Path("/dbs/{id:[0-9]+}/monikersByPosition").Methods("GET").HandlerFunc(s.handleMonikersByPosition)
 	mux.Path("/dbs/{id:[0-9]+}/monikerResults").Methods("GET").HandlerFunc(s.handleMonikerResults)
 	mux.Path("/dbs/{id:[0-9]+}/packageInformation").Methods("GET").HandlerFunc(s.handlePackageInformation)
@@ -193,6 +194,18 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return map[string]interface{}{"text": text, "range": hoverRange}, nil
+	})
+}
+
+// GET /dbs/{id:[0-9]+}/diagnostics
+func (s *Server) handleDiagnostics(w http.ResponseWriter, r *http.Request) {
+	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+		diagnostics, err := db.Diagnostics(ctx, getQuery(r, "prefix"))
+		if err != nil {
+			return nil, pkgerrors.Wrap(err, "db.Diagnostics")
+		}
+
+		return diagnostics, err
 	})
 }
 

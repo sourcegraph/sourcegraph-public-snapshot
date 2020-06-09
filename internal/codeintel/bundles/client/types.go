@@ -32,3 +32,17 @@ type PackageInformationData struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
+
+// Diagnostic describes diagnostic information attached to a range within its
+// containing document.
+type Diagnostic struct {
+	Path           string `json:"path"`
+	Severity       int    `json:"severity"`
+	Code           string `json:"code"`
+	Message        string `json:"message"`
+	Source         string `json:"source"`
+	StartLine      int    `json:"startLine"`
+	StartCharacter int    `json:"startCharacter"`
+	EndLine        int    `json:"endLine"`
+	EndCharacter   int    `json:"endCharacter"`
+}
