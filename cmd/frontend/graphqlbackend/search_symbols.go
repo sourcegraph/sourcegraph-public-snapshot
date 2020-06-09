@@ -291,11 +291,15 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
+	repoResolvers := make(RepositoryResolverCache)
 	for _, symbol := range symbols {
+		if repoResolvers[repoRevs.Repo.Name] == nil {
+			repoResolvers[repoRevs.Repo.Name] = &RepositoryResolver{repo: repoRevs.Repo}
+		}
 		commit := &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: repoRevs.Repo},
-			oid:      GitObjectID(commitID),
-			inputRev: &inputRev,
+			repoResolver: repoResolvers[repoRevs.Repo.Name],
+			oid:          GitObjectID(commitID),
+			inputRev:     &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
 		symbolRes := &searchSymbolResult{
@@ -308,11 +312,14 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
+			if repoResolvers[symbolRes.commit.repoResolver.repo.Name] == nil {
+				repoResolvers[symbolRes.commit.repoResolver.repo.Name] = &RepositoryResolver{repo: symbolRes.commit.repoResolver.repo}
+			}
 			fileMatch := &FileMatchResolver{
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				Repo:    symbolRes.commit.repo.repo,
+				Repo:    repoResolvers[symbolRes.commit.repoResolver.repo.Name],
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				CommitID: api.CommitID(symbolRes.commit.oid),
@@ -327,7 +334,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.repo.URL())
+	uri := "git:/" + string(symbolResult.commit.repoResolver.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
