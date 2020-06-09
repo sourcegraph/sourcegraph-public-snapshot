@@ -61,10 +61,10 @@ func NewObserved(codeIntelAPI CodeIntelAPI, observationContext *observation.Cont
 }
 
 // FindClosestDumps calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file, indexer string) (dumps []db.Dump, err error) {
+func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (dumps []db.Dump, err error) {
 	ctx, endObservation := api.findClosestDumpsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(dumps)), observation.Args{}) }()
-	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, file, indexer)
+	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, path, exactPath, indexer)
 }
 
 // Definitions calls into the inner CodeIntelAPI and registers the observed results.
