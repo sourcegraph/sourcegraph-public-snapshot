@@ -129,12 +129,7 @@ func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, 
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, r)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.postPayload(ctx, url, r)
 }
 
 // SendUploadPart transfers a partial LSIF upload to the bundle manager to be stored on disk.
@@ -144,12 +139,7 @@ func (c *bundleManagerClientImpl) SendUploadPart(ctx context.Context, bundleID, 
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, r)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.postPayload(ctx, url, r)
 }
 
 // StitchParts instructs the bundle manager to collapse multipart uploads into a single file.
@@ -285,6 +275,11 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path
 
 // sendPart sends a portion of the database to the bundle manager.
 func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, filename string, index int) (err error) {
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, index), nil)
+	if err != nil {
+		return err
+	}
+
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -295,18 +290,7 @@ func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, fi
 		}
 	}()
 
-	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d/%d", bundleID, index), nil)
-	if err != nil {
-		return err
-	}
-
-	body, err := c.do(ctx, "POST", url, codeintelutils.Gzip(f))
-	if err != nil {
-		return err
-	}
-	defer body.Close()
-
-	return nil
+	return c.postPayload(ctx, url, codeintelutils.Gzip(f))
 }
 
 // Exists determines if a file exists on disk for all the supplied identifiers.
@@ -349,6 +333,16 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	defer body.Close()
 
 	return json.NewDecoder(body).Decode(&target)
+}
+
+func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
+	// TODO - retries here
+	body, err := c.do(ctx, "POST", url, r)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
 }
 
 func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
