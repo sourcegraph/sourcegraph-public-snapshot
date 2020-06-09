@@ -5,7 +5,7 @@
     "EditorConfig.editorconfig",
     "esbenp.prettier-vscode",
     "prisma.vscode-graphql",
-    "ms-vscode.Go",
+    "golang.go",
     "exiasr.hadolint",
     "bierner.markdown-mermaid",
     "ecmel.vscode-html-css",
@@ -14,5 +14,5 @@
     "foxundermoon.shell-format",
     "timonwong.shellcheck",
   ],
-  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint", "ms-vscode.Go"],
 }
