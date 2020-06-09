@@ -1645,7 +1645,7 @@ var deletePatchSetQueryFmtstr = `
 DELETE FROM patch_sets WHERE id = %s
 `
 
-const PatchSetTTL = 1 * time.Hour
+const PatchSetTTL = 7 * 24 * time.Hour
 
 // DeleteExpiredPatchSets deletes PatchSets that have not been attached to a Campaign within PatchSetTTL.
 func (s *Store) DeleteExpiredPatchSets(ctx context.Context) error {
