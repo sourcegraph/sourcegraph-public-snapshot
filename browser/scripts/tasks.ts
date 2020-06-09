@@ -128,7 +128,8 @@ function writeManifest(
   }
 
   if (browser === 'firefox') {
-    manifest.permissions!.push('<all_urls>') delete manifest.storage
+    manifest.permissions!.push('<all_urls>');
+    delete manifest.storage
   }
 
   delete manifest.$schema
