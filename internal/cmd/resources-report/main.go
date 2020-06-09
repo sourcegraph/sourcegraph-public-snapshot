@@ -33,8 +33,8 @@ type options struct {
 
 func main() {
 	help := flag.Bool("help", false, "Show help text")
-	gcpWhitelistLabelsStr := flag.String("gcp.whitelist", "", "GCP labels to whitelist (comma-separated key:value pairs)")
-	awsWhitelistTagsStr := flag.String("aws.whitelist", "", "AWS tags to whitelist (comma-separated key:value pairs)")
+	gcpWhitelistLabelsStr := flag.String("gcp.allowlist", "", "GCP labels to allowlist (comma-separated key:value pairs)")
+	awsWhitelistTagsStr := flag.String("aws.allowlist", "", "AWS tags to allowlist (comma-separated key:value pairs)")
 	opts := options{
 		slackWebhook:    flag.String("slack.webhook", os.Getenv("SLACK_WEBHOOK"), "Slack webhook to post updates to"),
 		sheetID:         flag.String("sheet.id", os.Getenv("SHEET_ID"), "Slack webhook to post updates to"),

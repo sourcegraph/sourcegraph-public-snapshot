@@ -24,7 +24,7 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-// ExecSafe executes a Git subcommand iff it is allowed according to a whitelist.
+// ExecSafe executes a Git subcommand iff it is allowed according to a allowlist.
 //
 // An error is only returned when there is a failure unrelated to the actual command being
 // executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
@@ -41,8 +41,8 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !isWhitelistedGitCmd(params) {
-		return nil, nil, 0, fmt.Errorf("command failed: %q is not a whitelisted git command", params)
+	if !isAllowedGitCmd(params) {
+		return nil, nil, 0, fmt.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", params...)
@@ -66,8 +66,8 @@ func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.Rea
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !isWhitelistedGitCmd(args) {
-		return nil, fmt.Errorf("command failed: %v is not a whitelisted git command", args)
+	if !isAllowedGitCmd(args) {
+		return nil, fmt.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
@@ -120,7 +120,7 @@ var (
 		"symbolic-ref": {"--short"},
 	}
 
-	// `git log`, `git show`, `git diff`, etc., share a large common set of whitelisted args.
+	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
 	gitCommonWhitelist = []string{
 		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
@@ -136,11 +136,11 @@ var (
 	}
 )
 
-// isWhitelistedGitArg checks if the arg is whitelisted.
-func isWhitelistedGitArg(whitelistedArgs []string, arg string) bool {
-	// Split the arg at the first equal sign and check the LHS against the whitelist args.
+// isAllowedGitArg checks if the arg is allowed.
+func isAllowedGitArg(allowedArgs []string, arg string) bool {
+	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
-	for _, whiteListedArg := range whitelistedArgs {
+	for _, whiteListedArg := range allowedArgs {
 		if splitArg == whiteListedArg {
 			return true
 		}
@@ -148,16 +148,16 @@ func isWhitelistedGitArg(whitelistedArgs []string, arg string) bool {
 	return false
 }
 
-// isWhitelistedGitCmd checks if the cmd and arguments are whitelisted.
-func isWhitelistedGitCmd(args []string) bool {
-	// check if the supplied command is a whitelisted cmd
+// isAllowedGitCmd checks if the cmd and arguments are allowed.
+func isAllowedGitCmd(args []string) bool {
+	// check if the supplied command is a allowed cmd
 	if len(gitCmdWhitelist) == 0 {
 		return false
 	}
 	cmd := args[0]
 	whiteListedArgs, ok := gitCmdWhitelist[cmd]
 	if !ok {
-		// Command not whitelisted
+		// Command not allowed
 		return false
 	}
 	for _, arg := range args[1:] {
@@ -171,7 +171,7 @@ func isWhitelistedGitCmd(args []string) bool {
 				continue // this arg is OK
 			}
 
-			if !isWhitelistedGitArg(whiteListedArgs, arg) {
+			if !isAllowedGitArg(whiteListedArgs, arg) {
 				return false
 			}
 		}

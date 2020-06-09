@@ -415,8 +415,8 @@ func (issue *Issue) Markdown(labelWhitelist []string) string {
 func (issue *Issue) RenderedLabels(labelWhitelist []string) string {
 	var b strings.Builder
 	for _, label := range issue.Labels {
-		for _, whitelistedLabel := range labelWhitelist {
-			if whitelistedLabel == label {
+		for _, allowedLabel := range labelWhitelist {
+			if allowedLabel == label {
 				b.WriteString(fmt.Sprintf("`%s` ", label))
 				break
 			}

@@ -667,7 +667,7 @@ func (p *parser) ParsePattern() Pattern {
 
 // ParseParameter returns a leaf node corresponding to the syntax
 // (-?)field:<string> where : matches the first encountered colon, and field
-// must match ^[a-zA-Z]+ and be whitelisted by allFields. Field may optionally
+// must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	field, advance := ScanField(p.buf[p.pos:])
