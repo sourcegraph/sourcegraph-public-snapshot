@@ -294,6 +294,8 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 	// skip over very long malformed lines. It is set to 10 * 64K.
 	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 
+	repoResolver := &RepositoryResolver{repo: repoRevs.Repo}
+
 	for scanner.Scan() {
 		var raw *rawCodemodResult
 		b := scanner.Bytes()
@@ -313,7 +315,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 		}
 		results = append(results, codemodResultResolver{
 			commit: &GitCommitResolver{
-				repoResolver: &RepositoryResolver{repo: repoRevs.Repo},
+				repoResolver: repoResolver,
 				inputRev:     &repoRevs.Revs[0].RevSpec,
 				oid:          GitObjectID(commit),
 			},
