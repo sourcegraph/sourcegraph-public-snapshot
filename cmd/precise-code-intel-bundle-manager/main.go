@@ -42,12 +42,6 @@ func main() {
 		maxDatabasePartAge  = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
 
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
 	readerCache, err := sqlitereader.NewReaderCache(readerDataCacheSize)
 	if err != nil {
 		log.Fatalf("failed to initialize reader cache: %s", err)
@@ -63,6 +57,12 @@ func main() {
 
 	if err := readers.Migrate(bundleDir, readerCache); err != nil {
 		log.Fatalf("failed to migrate readers: %s", err)
+	}
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
