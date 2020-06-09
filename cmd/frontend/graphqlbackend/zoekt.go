@@ -192,7 +192,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	}
 
 	matches := make([]*FileMatchResolver, len(resp.Files))
-	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
+	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {

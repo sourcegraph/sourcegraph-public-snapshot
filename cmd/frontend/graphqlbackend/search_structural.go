@@ -225,7 +225,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 
 	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
-	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
+	repoResolvers := make(RepositoryResolverCache)
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {

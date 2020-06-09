@@ -291,7 +291,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 	fileMatchesByURI := make(map[string]*FileMatchResolver)
 	fileMatches := make([]*FileMatchResolver, 0)
-	repoResolvers := make(map[api.RepoName]*RepositoryResolver)
+	repoResolvers := make(RepositoryResolverCache)
 	for _, symbol := range symbols {
 		if repoResolvers[repoRevs.Repo.Name] == nil {
 			repoResolvers[repoRevs.Repo.Name] = &RepositoryResolver{repo: repoRevs.Repo}

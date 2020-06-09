@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+type RepositoryResolverCache map[api.RepoName]*RepositoryResolver
+
 type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
