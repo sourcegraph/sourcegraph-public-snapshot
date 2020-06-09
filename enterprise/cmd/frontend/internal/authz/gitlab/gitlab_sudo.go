@@ -109,6 +109,10 @@ func (p *SudoProvider) Validate() (problems []string) {
 	return problems
 }
 
+func (p *SudoProvider) URN() string {
+	return extsvc.URN(extsvc.KindGitLab, 0)
+}
+
 func (p *SudoProvider) ServiceID() string {
 	return p.codeHost.ServiceID
 }

@@ -369,6 +369,10 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current [
 	return nil, nil
 }
 
+func (p *Provider) URN() string {
+	return p.urn
+}
+
 func (p *Provider) ServiceID() string {
 	return p.codeHost.ServiceID
 }

@@ -64,6 +64,10 @@ func (p *Provider) Validate() []string {
 	return nil
 }
 
+func (p *Provider) URN() string {
+	return extsvc.URN(extsvc.KindBitbucketServer, 0)
+}
+
 // ServiceID returns the absolute URL that identifies the Bitbucket Server instance
 // this provider is configured with.
 func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }

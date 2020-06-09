@@ -87,6 +87,10 @@ func (p *OAuthProvider) Validate() (problems []string) {
 	return nil
 }
 
+func (p *OAuthProvider) URN() string {
+	return extsvc.URN(extsvc.KindGitLab, 0)
+}
+
 func (p *OAuthProvider) ServiceID() string {
 	return p.codeHost.ServiceID
 }
