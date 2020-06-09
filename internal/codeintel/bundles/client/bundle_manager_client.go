@@ -263,7 +263,7 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path
 	}()
 
 	for i, file := range files {
-		if err := c.sendPartWithRetry(ctx, bundleID, file, i); err != nil {
+		if err := c.sendPart(ctx, bundleID, file, i); err != nil {
 			return err
 		}
 	}
@@ -281,11 +281,6 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path
 	}
 	body.Close()
 	return nil
-}
-
-func (c *bundleManagerClientImpl) sendPartWithRetry(ctx context.Context, bundleID int, filename string, index int) (err error) {
-	// TODO
-	return c.sendPart(ctx, bundleID, filename, index)
 }
 
 // sendPart sends a portion of the database to the bundle manager.
