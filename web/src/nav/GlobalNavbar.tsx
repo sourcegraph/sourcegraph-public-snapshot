@@ -70,7 +70,7 @@ interface Props
 
     splitSearchModes: boolean
     interactiveSearchMode: boolean
-    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    toggleSearchMode: () => void
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
 

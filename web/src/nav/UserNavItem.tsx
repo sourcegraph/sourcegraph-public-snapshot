@@ -8,7 +8,6 @@ import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
 import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
-import { Menu, MenuButton, MenuList, MenuLink, MenuItem, MenuPopover } from '@reach/menu-button'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
@@ -45,131 +44,108 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-nav-item">
-                <Menu>
-                    <MenuButton>
-                        {this.props.authenticatedUser.avatarURL ? (
-                            <UserAvatar user={this.props.authenticatedUser} size={48} className="icon-inline" />
-                        ) : (
-                            <strong>{this.props.authenticatedUser.username}</strong>
-                        )}
-                    </MenuButton>
-                    <MenuList tabIndex={0} className="user-nav-item">
-                        <MenuItem onSelect={() => {}} tabIndex={-1} className="dropdown-item">
-                            Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
-                        </MenuItem>
-                        <MenuLink
-                            onSelect={() => {}}
-                            as={Link}
-                            to={this.props.authenticatedUser.settingsURL!}
-                            tabIndex={0}
-                            className="dropdown-item"
-                        >
-                            Settings
-                        </MenuLink>
-                        <MenuLink onSelect={() => {}} as={Link} to="/extensions" tabIndex={0} className="dropdown-item">
-                            Extensions
-                        </MenuLink>
-                        <MenuLink
-                            onSelect={() => {}}
-                            as={Link}
-                            to={`/users/${this.props.authenticatedUser.username}/searches`}
-                            tabIndex={0}
-                            className="dropdown-item"
-                        >
-                            Saved searches
-                        </MenuLink>
-                        {/* <MenuItem> */}
-                        <div className="px-2 py-1">
-                            <div className="d-flex align-items-center">
-                                <div className="mr-2">Theme</div>
-                                <MenuItem
-                                    onSelect={e => {
-                                        // e.preventDefault()
-                                    }}
-                                >
-                                    <select
-                                        className="custom-select custom-select-sm e2e-theme-toggle"
-                                        onChange={this.onThemeChange}
-                                        value={this.props.themePreference}
-                                    >
-                                        <option value={ThemePreference.Light}>Light</option>
-                                        <option value={ThemePreference.Dark}>Dark</option>
-                                        <option value={ThemePreference.System}>System</option>
-                                    </select>
-                                </MenuItem>
-                            </div>
-                            {this.props.themePreference === ThemePreference.System && !this.supportsSystemTheme && (
-                                <div className="text-wrap">
-                                    <small>
-                                        <a
-                                            href="https://caniuse.com/#feat=prefers-color-scheme"
-                                            className="text-warning"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            Your browser does not support the system theme.
-                                        </a>
-                                    </small>
-                                </div>
-                            )}
-                            {this.props.keyboardShortcutForSwitchTheme &&
-                                this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
-                                    <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
-                                ))}
+            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="py-0">
+                <DropdownToggle
+                    caret={true}
+                    className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
+                    nav={true}
+                >
+                    {this.props.authenticatedUser.avatarURL ? (
+                        <UserAvatar user={this.props.authenticatedUser} size={48} className="icon-inline" />
+                    ) : (
+                        <strong>{this.props.authenticatedUser.username}</strong>
+                    )}
+                </DropdownToggle>
+                <DropdownMenu right={true} className="user-nav-item__dropdown-menu">
+                    <DropdownItem header={true} className="py-1">
+                        Signed in as <strong>@{this.props.authenticatedUser.username}</strong>
+                    </DropdownItem>
+                    <DropdownItem divider={true} />
+                    <Link to={this.props.authenticatedUser.settingsURL!} className="dropdown-item">
+                        Settings
+                    </Link>
+                    <Link to="/extensions" className="dropdown-item">
+                        Extensions
+                    </Link>
+                    <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
+                        Saved searches
+                    </Link>
+                    <DropdownItem divider={true} />
+                    <div className="px-2 py-1">
+                        <div className="d-flex align-items-center">
+                            <div className="mr-2">Theme</div>
+                            <select
+                                className="custom-select custom-select-sm e2e-theme-toggle"
+                                onChange={this.onThemeChange}
+                                value={this.props.themePreference}
+                            >
+                                <option value={ThemePreference.Light}>Light</option>
+                                <option value={ThemePreference.Dark}>Dark</option>
+                                <option value={ThemePreference.System}>System</option>
+                            </select>
                         </div>
-                        {this.props.authenticatedUser.organizations.nodes.length > 0 && (
-                            <>
-                                <hr />
-                                <MenuItem onSelect={() => {}}>Organizations</MenuItem>
-                                {this.props.authenticatedUser.organizations.nodes.map(org => (
-                                    <MenuLink
-                                        as={Link}
-                                        key={org.id}
-                                        to={org.settingsURL || org.url}
-                                        className="dropdown-item"
+                        {this.props.themePreference === ThemePreference.System && !this.supportsSystemTheme && (
+                            <div className="text-wrap">
+                                <small>
+                                    <a
+                                        href="https://caniuse.com/#feat=prefers-color-scheme"
+                                        className="text-warning"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                     >
-                                        {org.displayName || org.name}
-                                    </MenuLink>
-                                ))}
-                            </>
+                                        Your browser does not support the system theme.
+                                    </a>
+                                </small>
+                            </div>
                         )}
-                        {this.props.authenticatedUser.siteAdmin && (
-                            <MenuLink as={Link} to="/site-admin" className="dropdown-item">
-                                Site admin
-                            </MenuLink>
-                        )}
-                        {this.props.showDotComMarketing ? (
-                            // eslint-disable-next-line react/jsx-no-target-blank
-                            <MenuLink href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
-                                Help
-                            </MenuLink>
-                        ) : (
-                            <MenuLink as={Link} to="/help" className="dropdown-item">
-                                Help
-                            </MenuLink>
-                        )}
-                        {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
-                            <MenuLink href="/-/sign-out" className="dropdown-item">
-                                Sign out
-                            </MenuLink>
-                        )}
-                        {this.props.showDotComMarketing && (
-                            <>
-                                <hr />
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <MenuLink
-                                    href="https://about.sourcegraph.com"
-                                    target="_blank"
-                                    className="dropdown-item"
-                                >
-                                    About Sourcegraph
-                                </MenuLink>
-                            </>
-                        )}
-                    </MenuList>
-                </Menu>
-            </div>
+                        {this.props.keyboardShortcutForSwitchTheme &&
+                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, index) => (
+                                <Shortcut key={index} {...keybinding} onMatch={this.onThemeCycle} />
+                            ))}
+                    </div>
+                    {this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                        <>
+                            <DropdownItem divider={true} />
+                            <DropdownItem header={true}>Organizations</DropdownItem>
+                            {this.props.authenticatedUser.organizations.nodes.map(org => (
+                                <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
+                                    {org.displayName || org.name}
+                                </Link>
+                            ))}
+                        </>
+                    )}
+                    <DropdownItem divider={true} />
+                    {this.props.authenticatedUser.siteAdmin && (
+                        <Link to="/site-admin" className="dropdown-item">
+                            Site admin
+                        </Link>
+                    )}
+                    {this.props.showDotComMarketing ? (
+                        // eslint-disable-next-line react/jsx-no-target-blank
+                        <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
+                            Help
+                        </a>
+                    ) : (
+                        <Link to="/help" className="dropdown-item">
+                            Help
+                        </Link>
+                    )}
+                    {this.props.authenticatedUser.session && this.props.authenticatedUser.session.canSignOut && (
+                        <a href="/-/sign-out" className="dropdown-item">
+                            Sign out
+                        </a>
+                    )}
+                    {this.props.showDotComMarketing && (
+                        <>
+                            <DropdownItem divider={true} />
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
+                                About Sourcegraph
+                            </a>
+                        </>
+                    )}
+                </DropdownMenu>
+            </ButtonDropdown>
         )
     }
 
