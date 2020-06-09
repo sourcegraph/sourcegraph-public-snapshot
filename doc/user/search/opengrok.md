@@ -65,7 +65,7 @@ Both Sourcegraph and OpenGrok allow users to add keywords for scoping searches. 
 | Search symbol references | `def:pattern` | Available through hover tooltips and `Find references` panels on code pages |
 | Search for repository names | Not supported | `pattern type:repo` |
 | Search for file names | `file:pattern` | `pattern type:repo` |
-| Search commit messages | `hist:pattern` | `pattern type:path` |
+| Search commit messages | `hist:pattern` | `pattern type:commit` |
 | Search code changes (diff search) | Not supported | `pattern type:diff` |
 | Scope searches to a language | `pattern type:c` | `pattern lang:c` |
 | Case sensitivity | Not supported | `case:yes` or `case:no` |
@@ -81,5 +81,4 @@ To see an exhaustive list of Sourcegraph's search keywords, see the [search quer
 **Negating search keywords**
 
 Sourcegraph allows users to negate any search keyword by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files.
-
 
