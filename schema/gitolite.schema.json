@@ -44,9 +44,11 @@
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{
-          "required": ["name"]
-        }],
+        "anyOf": [
+          {
+            "required": ["name"]
+          }
+        ],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
@@ -56,9 +58,11 @@
         }
       },
       "examples": [
-        [{
-          "name": "myrepo"
-        }]
+        [
+          {
+            "name": "myrepo"
+          }
+        ]
       ]
     },
     "phabricatorMetadataCommand": {
