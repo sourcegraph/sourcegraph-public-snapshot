@@ -252,26 +252,29 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 		return errors.Wrap(err, "read response body")
 	}
 
-	// Try and see unmarshalling to errors
-	var errResp struct {
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-	err = jsoniter.Unmarshal(body, &errResp)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal response body to errors")
-	}
-	if len(errResp.Errors) > 0 {
-		var errs *multierror.Error
-		for _, err := range errResp.Errors {
-			errs = multierror.Append(errs, errors.New(err.Message))
+	// Quick check if the response is a JSON
+	if len(body) > 0 && body[0] == '{' {
+		// Try and see unmarshalling to errors
+		var errResp struct {
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
 		}
-		return errs
+		err = jsoniter.Unmarshal(body, &errResp)
+		if err != nil {
+			return errors.Wrap(err, "unmarshal response body to errors")
+		}
+		if len(errResp.Errors) > 0 {
+			var errs *multierror.Error
+			for _, err := range errResp.Errors {
+				errs = multierror.Append(errs, errors.New(err.Message))
+			}
+			return errs
+		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(string(body))
+		return errors.Errorf("%d: %s", resp.StatusCode, string(body))
 	}
 
 	if target == nil {
