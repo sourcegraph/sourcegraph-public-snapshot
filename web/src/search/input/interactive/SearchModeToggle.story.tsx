@@ -1,10 +1,10 @@
 import { SearchModeToggle } from './SearchModeToggle'
 import * as React from 'react'
 import webStyles from '../../../SourcegraphWebApp.scss'
-// import toggleStyles from './SearchModeToggle.scss'
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import css from 'tagged-template-noop'
+import { MemoryRouter } from 'react-router'
 
 const cssVars = css`
     :root {
@@ -20,5 +20,7 @@ const { add } = storiesOf('web/SearchModeToggle', module).addDecorator(story => 
 ))
 
 add('SearchModeToggle', () => (
-    <SearchModeToggle interactiveSearchMode={boolean('Enabled', true)} toggleSearchMode={() => {}} />
+    <MemoryRouter>
+        <SearchModeToggle interactiveSearchMode={boolean('Enabled', true)} toggleSearchMode={() => {}} />
+    </MemoryRouter>
 ))
