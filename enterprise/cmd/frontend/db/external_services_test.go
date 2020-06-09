@@ -221,6 +221,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "bad blocklist regex",
 			config: `{"blocklist": "]["}`,
 			assert: includes("blocklist: Does not match format 'regex'"),
+		},
 		{
 			kind:   extsvc.KindGitolite,
 			desc:   "phabricator without url nor callsignCommand",
