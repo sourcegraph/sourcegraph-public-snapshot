@@ -26,6 +26,7 @@ func retryWithClock(ctx context.Context, clock glock.Clock, f Retryable) (err er
 	backoff := minBackoff
 
 	for attempts := maxAttempts; attempts > 0; attempts-- {
+		// TODO - should match err against isConnectionError?
 		if err = f(ctx); err == nil {
 			return nil
 		}
