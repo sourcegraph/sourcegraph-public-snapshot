@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -50,18 +51,18 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}
-	// Look up all repositories
-	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+
 	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
 		repoIDs[i] = api.RepoID(patch.RepoID)
 	}
-	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	// 🚨 SECURITY: We use db.Repos.GetByIDs to check for which the user has access.
+	repos, err := db.Repos.GetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
-	reposByID := make(map[api.RepoID]*repos.Repo, len(patches))
-	for _, repo := range allRepos {
+	reposByID := make(map[api.RepoID]*types.Repo, len(patches))
+	for _, repo := range repos {
 		reposByID[repo.ID] = repo
 	}
 
@@ -78,9 +79,9 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*camp
 	}
 
 	for _, patch := range patches {
-		repo := reposByID[patch.RepoID]
-		if repo == nil {
-			return nil, fmt.Errorf("repository ID %d not found", patch.RepoID)
+		repo, ok := reposByID[patch.RepoID]
+		if !ok {
+			return nil, &db.RepoNotFoundErr{ID: patch.RepoID}
 		}
 		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
 			continue
