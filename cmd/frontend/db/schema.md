@@ -391,7 +391,7 @@ Check constraints:
  dump_id | integer | not null
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
-    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+    "lsif_packages_scheme_name_version" btree (scheme, name, version)
 Foreign-key constraints:
     "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
