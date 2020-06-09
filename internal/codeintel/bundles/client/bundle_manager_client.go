@@ -7,12 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/efritz/glock"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
@@ -97,6 +99,7 @@ type bundleManagerClientImpl struct {
 	bundleManagerURL    string
 	userAgent           string
 	maxPayloadSizeBytes int
+	clock               glock.Clock
 	ioCopy              func(io.Writer, io.Reader) (int64, error)
 }
 
@@ -110,6 +113,7 @@ func New(bundleManagerURL string) BundleManagerClient {
 		bundleManagerURL:    bundleManagerURL,
 		userAgent:           filepath.Base(os.Args[0]),
 		maxPayloadSizeBytes: 100 * 1000 * 1000, // 100Mb
+		clock:               glock.NewRealClock(),
 		ioCopy:              io.Copy,
 	}
 }
@@ -149,12 +153,7 @@ func (c *bundleManagerClientImpl) StitchParts(ctx context.Context, bundleID int)
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "POST", url, nil)
 }
 
 // DeleteUpload removes the upload file with the given identifier from disk.
@@ -164,12 +163,7 @@ func (c *bundleManagerClientImpl) DeleteUpload(ctx context.Context, bundleID int
 		return err
 	}
 
-	body, err := c.do(ctx, "DELETE", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "DELETE", url, nil)
 }
 
 // GetUpload retrieves a reader containing the content of a raw, uncompressed LSIF upload
@@ -228,7 +222,7 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int) (
 // getUploadChunk retrieves a raw LSIF upload from the bundle manager starting from the offset as
 // indicated by seek. The number of bytes written to the given writer is returned, along with any
 // error.
-func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (n int64, err error) {
+func (c *bundleManagerClientImpl) getUploadChunk(ctx context.Context, w io.Writer, url *url.URL, seek int64) (int64, error) {
 	q := url.Query()
 	q.Set("seek", fmt.Sprintf("%d", seek))
 	url.RawQuery = q.Encode()
@@ -265,12 +259,7 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, path
 		return err
 	}
 
-	body, err := c.do(ctx, "POST", url, nil)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
+	return c.doAndDrop(ctx, "POST", url, nil)
 }
 
 // sendPart sends a portion of the database to the bundle manager.
@@ -294,7 +283,7 @@ func (c *bundleManagerClientImpl) sendPart(ctx context.Context, bundleID int, fi
 }
 
 // Exists determines if a file exists on disk for all the supplied identifiers.
-func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, err error) {
+func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (target map[int]bool, _ error) {
 	var bundleIDStrings []string
 	for _, bundleID := range bundleIDs {
 		bundleIDStrings = append(bundleIDStrings, fmt.Sprintf("%d", bundleID))
@@ -307,26 +296,91 @@ func (c *bundleManagerClientImpl) Exists(ctx context.Context, bundleIDs []int) (
 		return nil, err
 	}
 
-	body, err := c.do(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer body.Close()
-
-	if err := json.NewDecoder(body).Decode(&target); err != nil {
-		return nil, err
-	}
-
-	return target, nil
+	err = c.doAndDecode(ctx, "GET", url, nil, &target)
+	return target, err
 }
 
-func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) (err error) {
+func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error {
 	url, err := makeBundleURL(c.bundleManagerURL, bundleID, op, qs)
 	if err != nil {
 		return err
 	}
 
-	body, err := c.do(ctx, "GET", url, nil)
+	return c.doAndDecode(ctx, "GET", url, nil, &target)
+}
+
+// postPayload makes a POST request to the bundle manager with the given reader as the request body. If a
+// transient network error occurs, the request will be re-attempted.
+//
+// The retries are attempted here for simplicity in outer layers. If an upload or upload part fails to
+// make it to the bundle manager from the frontend, then the src-cli client would need to be responsible
+// for distinguishing which errors are retryable. Similarly, if a database part fails to make it to the
+// bundle manager from the worker, then the worker needs to distinguish the same errors.
+//
+// In order to be able to replay the reader (which is not necessarily seek-able), we tee all writes to a
+// request into a scratch file on disk, which is removed once the function returns. On failure, we re-read
+// the content of the file before continuing to consume the original reader.
+func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempDir)
+
+	var files []*os.File
+	defer func() {
+		for _, file := range files {
+			_ = file.Close()
+		}
+	}()
+
+	return retry(ctx, c.clock, func(ctx context.Context) error {
+		file, err := ioutil.TempFile(tempDir, "")
+		if err != nil {
+			return err
+		}
+		// Ensure we close file handle on exit
+		files = append(files, file)
+
+		// Write everything we read from r into a scratch file
+		tee := io.TeeReader(r, file)
+
+		if err := c.doAndDrop(ctx, "POST", url, tee); err != nil {
+			// Flush all pending writes to the file
+			if err := file.Sync(); err != nil {
+				return err
+			}
+
+			// Reset file so we can read from the beginning
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				return err
+			}
+
+			// Replace the original reader with a multi reader that will be used on any
+			// subsequent request attempt. This new reader will first read from the file
+			// anything that was already consumed. Once the file has been read to completion,
+			// the remaining data in the original reader will be read.
+			r = io.MultiReader(file, r)
+			return err
+		}
+
+		return nil
+	})
+}
+
+// doAndDrop performs an HTTP request to the bundle manager and ignores the body contents.
+func (c *bundleManagerClientImpl) doAndDrop(ctx context.Context, method string, url *url.URL, payload io.Reader) error {
+	body, err := c.do(ctx, method, url, payload)
+	if err != nil {
+		return err
+	}
+	body.Close()
+	return nil
+}
+
+// doAndDecode performs an HTTP request to the bundle manager and decodes the body into target.
+func (c *bundleManagerClientImpl) doAndDecode(ctx context.Context, method string, url *url.URL, payload io.Reader, target interface{}) error {
+	body, err := c.do(ctx, method, url, payload)
 	if err != nil {
 		return err
 	}
@@ -335,16 +389,7 @@ func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int,
 	return json.NewDecoder(body).Decode(&target)
 }
 
-func (c *bundleManagerClientImpl) postPayload(ctx context.Context, url *url.URL, r io.Reader) error {
-	// TODO - retries here
-	body, err := c.do(ctx, "POST", url, r)
-	if err != nil {
-		return err
-	}
-	body.Close()
-	return nil
-}
-
+// do performs an HTTP request to the bundle manager and returns the body content as a reader.
 func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "BundleManagerClient.do")
 	defer func() {

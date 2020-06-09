@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -10,8 +11,13 @@ import (
 )
 
 func TestRetry(t *testing.T) {
+	errs := []error{
+		fmt.Errorf("err1: read: connection reset by peer"),
+		fmt.Errorf("err2: read: connection reset by peer"),
+		fmt.Errorf("err3: read: connection reset by peer"),
+	}
+
 	calls := 0
-	errs := []error{fmt.Errorf("err1"), fmt.Errorf("err2"), fmt.Errorf("err3")}
 	retryable := func(ctx context.Context) error {
 		calls++
 
@@ -32,7 +38,7 @@ func TestRetry(t *testing.T) {
 		clock.BlockingAdvance(time.Duration(float64(minBackoff) * backoffIncreaseRatio * backoffIncreaseRatio))
 	}()
 
-	if err := retryWithClock(context.Background(), clock, retryable); err != nil {
+	if err := retry(context.Background(), clock, retryable); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -41,12 +47,47 @@ func TestRetry(t *testing.T) {
 	}
 }
 
-func TestRetryFailure(t *testing.T) {
+func TestRetryNonRetryableError(t *testing.T) {
 	expectedErr := fmt.Errorf("oops")
 	retryable := func(ctx context.Context) error {
 		return expectedErr
 	}
 
+	clock := glock.NewMockClock()
+
+	if err := retry(context.Background(), clock, retryable); err != expectedErr {
+		t.Fatalf("unexpected error. want=%q have=%q", expectedErr, err)
+	}
+}
+
+func TestRetryMaxAttempts(t *testing.T) {
+	expectedErr := errors.New("read: connection reset by peer")
+	retryable := func(ctx context.Context) error {
+		return expectedErr
+	}
+
+	if err := retry(context.Background(), advancingClock(), retryable); err != expectedErr {
+		t.Fatalf("unexpected error. want=%q have=%q", expectedErr, err)
+	}
+}
+
+func TestRetryContextCanceled(t *testing.T) {
+	expectedErr := errors.New("read: connection reset by peer")
+	retryable := func(ctx context.Context) error {
+		return expectedErr
+	}
+
+	clock := glock.NewMockClock()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if err := retry(ctx, clock, retryable); err != expectedErr {
+		t.Fatalf("unexpected error. want=%q have=%q", expectedErr, err)
+	}
+}
+
+// advancingClock returns a mock clock that advances by maxBackoff in a loop.
+func advancingClock() glock.Clock {
 	clock := glock.NewMockClock()
 
 	go func() {
@@ -55,23 +96,5 @@ func TestRetryFailure(t *testing.T) {
 		}
 	}()
 
-	if err := retryWithClock(context.Background(), clock, retryable); err != expectedErr {
-		t.Fatalf("unexpected error. want=%q have=%q", expectedErr, err)
-	}
-}
-
-func TestRetryContextCanceled(t *testing.T) {
-	expectedErr := fmt.Errorf("oops")
-	retryable := func(ctx context.Context) error {
-		return expectedErr
-	}
-
-	clock := glock.NewMockClock()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	if err := retryWithClock(ctx, clock, retryable); err != expectedErr {
-		t.Fatalf("unexpected error. want=%q have=%q", expectedErr, err)
-	}
+	return clock
 }
