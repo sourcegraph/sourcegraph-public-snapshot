@@ -1426,7 +1426,7 @@ func quickSymbolicRefHead(dir GitDir) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if h := string(head); isAbsoluteRevision(h) {
+	if isAbsoluteRevision(string(head)) {
 		return "", errors.New("ref HEAD is not a symbolic ref")
 	}
 
