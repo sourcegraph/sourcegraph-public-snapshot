@@ -613,8 +613,10 @@ type GitLabRateLimit struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	// Blacklist description: Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
+	// Blacklist description: This is DEPRECATED and will be removed in 3.19. Use 'blocklist' instead.
 	Blacklist string `json:"blacklist,omitempty"`
+	// Blocklist description: Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
+	Blocklist string `json:"blocklist,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({"name": "foo"}).
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).

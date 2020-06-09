@@ -32,6 +32,11 @@ const GitoliteSchemaJSON = `{
       "examples": ["git@gitolite.example.com", "ssh://git@gitolite.example.com:2222/"]
     },
     "blacklist": {
+      "description": "This is DEPRECATED and will be removed in 3.19. Use 'blocklist' instead.",
+      "type": "string",
+      "format": "regex"
+    },
+    "blocklist": {
       "description": "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
       "type": "string",
       "format": "regex"
@@ -44,7 +49,9 @@ const GitoliteSchemaJSON = `{
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }],
+        "anyOf": [{
+          "required": ["name"]
+        }],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
@@ -53,7 +60,11 @@ const GitoliteSchemaJSON = `{
           }
         }
       },
-      "examples": [[{ "name": "myrepo" }]]
+      "examples": [
+        [{
+          "name": "myrepo"
+        }]
+      ]
     },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",

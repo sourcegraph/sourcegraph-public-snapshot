@@ -2,10 +2,11 @@ package repos
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -27,7 +28,7 @@ type GitoliteSource struct {
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
 	cli       *gitserver.Client
-	blacklist *regexp.Regexp
+	blocklist *regexp.Regexp
 	exclude   excludeFunc
 }
 
@@ -48,9 +49,15 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 		return nil, err
 	}
 
-	var blacklist *regexp.Regexp
+	var blocklist *regexp.Regexp
+	// c.Blacklist is deprecated and will be removed in 3.19. If c.Blocklist is set, it takes precedence.
 	if c.Blacklist != "" {
-		if blacklist, err = regexp.Compile(c.Blacklist); err != nil {
+		if blocklist, err = regexp.Compile(c.Blacklist); err != nil {
+			return nil, err
+		}
+	}
+	if c.Blocklist != "" {
+		if blocklist, err = regexp.Compile(c.Blocklist); err != nil {
 			return nil, err
 		}
 	}
@@ -68,7 +75,7 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 		svc:       svc,
 		conn:      &c,
 		cli:       gitserver.NewClient(hc),
-		blacklist: blacklist,
+		blocklist: blocklist,
 		exclude:   exclude,
 	}, nil
 }
@@ -98,7 +105,7 @@ func (s GitoliteSource) ExternalServices() ExternalServices {
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
 	return s.exclude(gr.Name) ||
 		strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
-		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
+		(s.blocklist != nil && s.blocklist.MatchString(r.Name))
 }
 
 func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *Repo {
