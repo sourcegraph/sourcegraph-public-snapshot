@@ -148,11 +148,12 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 }
 
 // providers returns a list of authz.Provider configured in the external services.
-// Keys are ServiceID, e.g. "https://gitlab.com/".
+// Keys are URN or ServiceID, e.g. "extsvc:github:1", "https://github.com/".
 func (s *PermsSyncer) providers() map[string]authz.Provider {
 	_, ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
+		providers[p.URN()] = p
 		providers[p.ServiceID()] = p
 	}
 	return providers
@@ -253,7 +254,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	provider := s.providers()[repo.ExternalRepo.ServiceID]
+	// Loop over repository's sources and see if matching any authz provider's URN.
+	var provider authz.Provider
+	providers := s.providers()
+	for urn := range repo.Sources {
+		p, ok := providers[urn]
+		if ok {
+			provider = p
+			break
+		}
+	}
+
 	if provider == nil {
 		// We have no authz provider configured for this private repository.
 		// However, we need to upsert the dummy record in order to prevent
