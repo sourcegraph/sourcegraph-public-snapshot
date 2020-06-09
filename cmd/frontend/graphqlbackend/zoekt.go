@@ -201,6 +201,9 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 			limitHit = true
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		if repoResolvers[repoRev.Repo.Name] == nil {
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+		}
 		inputRev := repoRev.RevSpecs()[0]
 		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
@@ -218,7 +221,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &GitCommitResolver{
-							repoResolver: &RepositoryResolver{repo: repoRev.Repo},
+							repoResolver: repoResolvers[repoRev.Repo.Name],
 							oid:          GitObjectID(file.Version),
 							inputRev:     &inputRev,
 						}
@@ -247,9 +250,6 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 					})
 				}
 			}
-		}
-		if repoResolvers[repoRev.Repo.Name] == nil {
-			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
 		}
 		matches[i] = &FileMatchResolver{
 			JPath:        file.FileName,
