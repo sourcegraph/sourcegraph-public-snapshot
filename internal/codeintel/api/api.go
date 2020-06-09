@@ -28,7 +28,7 @@ type CodeIntelAPI interface {
 	Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error)
 
 	// Diagnostics returns the diagnostics for documents with the given path prefix.
-	Diagnostics(ctx context.Context, prefix string, uploadID int) ([]bundles.Diagnostic, error)
+	Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]ResolvedDiagnostic, int, error)
 }
 
 type codeIntelAPI struct {

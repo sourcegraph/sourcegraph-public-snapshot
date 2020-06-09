@@ -89,8 +89,8 @@ func (api *ObservedCodeIntelAPI) Hover(ctx context.Context, file string, line, c
 }
 
 // Diagnostics calls into the inner CodeIntelAPI and registers the observed results.
-func (api *ObservedCodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID int) (diagnostics []bundles.Diagnostic, err error) {
+func (api *ObservedCodeIntelAPI) Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) (diagnostics []ResolvedDiagnostic, _ int, err error) {
 	ctx, endObservation := api.diagnosticsOperation.With(ctx, &err, observation.Args{})
 	defer func() { endObservation(float64(len(diagnostics)), observation.Args{}) }()
-	return api.codeIntelAPI.Diagnostics(ctx, prefix, uploadID)
+	return api.codeIntelAPI.Diagnostics(ctx, prefix, uploadID, limit, offset)
 }

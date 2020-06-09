@@ -33,9 +33,10 @@ type PackageInformationData struct {
 	Version string `json:"version"`
 }
 
-// Diagnostic describes diagnostic information attached to a range within its
-// containing document.
+// Diagnostic describes diagnostic information attached to a location within a
+// particular dump.
 type Diagnostic struct {
+	DumpID         int
 	Path           string `json:"path"`
 	Severity       int    `json:"severity"`
 	Code           string `json:"code"`

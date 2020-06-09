@@ -25,6 +25,7 @@ import (
 )
 
 const DefaultMonikerResultPageSize = 100
+const DefaultDiagnosticResultPageSize = 100
 
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
@@ -200,12 +201,22 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 // GET /dbs/{id:[0-9]+}/diagnostics
 func (s *Server) handleDiagnostics(w http.ResponseWriter, r *http.Request) {
 	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
-		diagnostics, err := db.Diagnostics(ctx, getQuery(r, "prefix"))
+		skip := getQueryInt(r, "skip")
+		if skip < 0 {
+			return nil, errors.New("illegal skip supplied")
+		}
+
+		take := getQueryIntDefault(r, "take", DefaultDiagnosticResultPageSize)
+		if take <= 0 {
+			return nil, errors.New("illegal take supplied")
+		}
+
+		diagnostics, count, err := db.Diagnostics(ctx, getQuery(r, "prefix"), skip, take)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "db.Diagnostics")
 		}
 
-		return diagnostics, err
+		return map[string]interface{}{"diagnostics": diagnostics, "count": count}, nil
 	})
 }
 
