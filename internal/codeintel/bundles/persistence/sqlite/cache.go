@@ -13,7 +13,8 @@ import (
 // ErrUnknownDatabase occurs when a request for an unknown database is made.
 var ErrUnknownDatabase = errors.New("unknown database")
 
-// TODO(efritz) - document
+// NewReaderCache creates a new reader cache. All readers share the same data cache with the
+// given maximum capacity.
 func NewReaderCache(dataCacheSize int) (cache.ReaderCache, error) {
 	readerDataCache, err := cache.NewDataCache(dataCacheSize)
 	if err != nil {
