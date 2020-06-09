@@ -1346,6 +1346,22 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantModified:      repoNames{"repo-0"},
 		},
 		{
+			name:             "no new patch set but name update, missing repo permissions",
+			updateName:       true,
+			oldPatches:       repoNames{"repo-0", "repo-1"},
+			missingRepoPerms: repoNames{"repo-1"},
+			wantModified:     repoNames{"repo-0"},
+			wantUnmodified:   repoNames{"repo-1"},
+		},
+		{
+			name:              "no new patch set but description update, missing repo permissions",
+			updateDescription: true,
+			oldPatches:        repoNames{"repo-0", "repo-1"},
+			missingRepoPerms:  repoNames{"repo-1"},
+			wantModified:      repoNames{"repo-0"},
+			wantUnmodified:    repoNames{"repo-1"},
+		},
+		{
 			name:           "1 modified diff",
 			updatePatchSet: true,
 			oldPatches:     repoNames{"repo-0"},
