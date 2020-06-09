@@ -49,7 +49,11 @@ func checkLicensesIfNeeded(client slackClient) {
 	lastCheckDate, err := redis.String(c.Do("GETSET", lastLicenseExpirationCheckKey, today))
 	if err == redis.ErrNil {
 		// If the redis key hasn't been set yet, do so and leave lastCheckDate as nil
-		c.Do("SET", lastLicenseExpirationCheckKey, today)
+		_, setErr := c.Do("SET", lastLicenseExpirationCheckKey, today)
+		if setErr != nil {
+			log15.Error("startCheckForUpcomingLicenseExpirations: error SET last license expiration check date", "error", err)
+			return
+		}
 	} else if err != nil {
 		log15.Error("startCheckForUpcomingLicenseExpirations: error GETSET last license expiration check date", "error", err)
 		return
