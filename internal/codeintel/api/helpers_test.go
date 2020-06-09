@@ -225,12 +225,18 @@ func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBu
 	})
 }
 
-func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, diagnostics []client.Diagnostic) {
-	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string) ([]client.Diagnostic, error) {
+func setMockBundleClientDiagnostics(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPrefix string, expectedSkip, expectedTake int, diagnostics []client.Diagnostic, totalCount int) {
+	mockBundleClient.DiagnosticsFunc.SetDefaultHook(func(ctx context.Context, prefix string, skip, take int) ([]client.Diagnostic, int, error) {
 		if prefix != expectedPrefix {
 			t.Errorf("unexpected prefix for Diagnostics. want=%s have=%s", expectedPrefix, prefix)
 		}
-		return diagnostics, nil
+		if skip != expectedSkip {
+			t.Errorf("unexpected skip for Diagnostics. want=%d have=%d", expectedSkip, skip)
+		}
+		if take != expectedTake {
+			t.Errorf("unexpected take for Diagnostics. want=%d have=%d", expectedTake, take)
+		}
+		return diagnostics, totalCount, nil
 	})
 }
 

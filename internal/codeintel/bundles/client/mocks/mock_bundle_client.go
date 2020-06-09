@@ -52,8 +52,8 @@ func NewMockBundleClient() *MockBundleClient {
 			},
 		},
 		DiagnosticsFunc: &BundleClientDiagnosticsFunc{
-			defaultHook: func(context.Context, string) ([]client.Diagnostic, error) {
-				return nil, nil
+			defaultHook: func(context.Context, string, int, int) ([]client.Diagnostic, int, error) {
+				return nil, 0, nil
 			},
 		},
 		ExistsFunc: &BundleClientExistsFunc{
@@ -247,24 +247,24 @@ func (c BundleClientDefinitionsFuncCall) Results() []interface{} {
 // BundleClientDiagnosticsFunc describes the behavior when the Diagnostics
 // method of the parent MockBundleClient instance is invoked.
 type BundleClientDiagnosticsFunc struct {
-	defaultHook func(context.Context, string) ([]client.Diagnostic, error)
-	hooks       []func(context.Context, string) ([]client.Diagnostic, error)
+	defaultHook func(context.Context, string, int, int) ([]client.Diagnostic, int, error)
+	hooks       []func(context.Context, string, int, int) ([]client.Diagnostic, int, error)
 	history     []BundleClientDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
 // Diagnostics delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleClient) Diagnostics(v0 context.Context, v1 string) ([]client.Diagnostic, error) {
-	r0, r1 := m.DiagnosticsFunc.nextHook()(v0, v1)
-	m.DiagnosticsFunc.appendCall(BundleClientDiagnosticsFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockBundleClient) Diagnostics(v0 context.Context, v1 string, v2 int, v3 int) ([]client.Diagnostic, int, error) {
+	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1, v2, v3)
+	m.DiagnosticsFunc.appendCall(BundleClientDiagnosticsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Diagnostics method
 // of the parent MockBundleClient instance is invoked and the hook queue is
 // empty.
-func (f *BundleClientDiagnosticsFunc) SetDefaultHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+func (f *BundleClientDiagnosticsFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]client.Diagnostic, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -272,7 +272,7 @@ func (f *BundleClientDiagnosticsFunc) SetDefaultHook(hook func(context.Context, 
 // Diagnostics method of the parent MockBundleClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *BundleClientDiagnosticsFunc) PushHook(hook func(context.Context, string) ([]client.Diagnostic, error)) {
+func (f *BundleClientDiagnosticsFunc) PushHook(hook func(context.Context, string, int, int) ([]client.Diagnostic, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -280,21 +280,21 @@ func (f *BundleClientDiagnosticsFunc) PushHook(hook func(context.Context, string
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleClientDiagnosticsFunc) SetDefaultReturn(r0 []client.Diagnostic, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]client.Diagnostic, error) {
-		return r0, r1
+func (f *BundleClientDiagnosticsFunc) SetDefaultReturn(r0 []client.Diagnostic, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]client.Diagnostic, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleClientDiagnosticsFunc) PushReturn(r0 []client.Diagnostic, r1 error) {
-	f.PushHook(func(context.Context, string) ([]client.Diagnostic, error) {
-		return r0, r1
+func (f *BundleClientDiagnosticsFunc) PushReturn(r0 []client.Diagnostic, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]client.Diagnostic, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *BundleClientDiagnosticsFunc) nextHook() func(context.Context, string) ([]client.Diagnostic, error) {
+func (f *BundleClientDiagnosticsFunc) nextHook() func(context.Context, string, int, int) ([]client.Diagnostic, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -333,24 +333,33 @@ type BundleClientDiagnosticsFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []client.Diagnostic
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BundleClientDiagnosticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BundleClientDiagnosticsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // BundleClientExistsFunc describes the behavior when the Exists method of

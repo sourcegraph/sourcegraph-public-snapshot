@@ -176,24 +176,30 @@ func TestDiagnostics(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/diagnostics", map[string]string{
 			"prefix": "internal/",
+			"skip":   "1",
+			"take":   "3",
 		})
 
-		_, _ = w.Write([]byte(`[
-			{"path": "internal/foo.go", "severity": 1, "code": "c1", "message": "m1", "source": "s1", "startLine": 11, "startCharacter": 12, "endLine": 13, "endCharacter": 14},
-			{"path": "internal/bar.go", "severity": 2, "code": "c2", "message": "m2", "source": "s2", "startLine": 21, "startCharacter": 22, "endLine": 23, "endCharacter": 24},
-			{"path": "internal/baz.go", "severity": 3, "code": "c3", "message": "m3", "source": "s3", "startLine": 31, "startCharacter": 32, "endLine": 33, "endCharacter": 34}
-		]`))
+		_, _ = w.Write([]byte(`{
+			"count": 5,
+			"diagnostics": [
+				{"path": "internal/foo.go", "severity": 1, "code": "c1", "message": "m1", "source": "s1", "startLine": 11, "startCharacter": 12, "endLine": 13, "endCharacter": 14},
+				{"path": "internal/bar.go", "severity": 2, "code": "c2", "message": "m2", "source": "s2", "startLine": 21, "startCharacter": 22, "endLine": 23, "endCharacter": 24},
+				{"path": "internal/baz.go", "severity": 3, "code": "c3", "message": "m3", "source": "s3", "startLine": 31, "startCharacter": 32, "endLine": 33, "endCharacter": 34}
+			]
+		}`))
 	}))
 	defer ts.Close()
 
 	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
-	diagnostics, err := client.Diagnostics(context.Background(), "internal/")
+	diagnostics, totalCount, err := client.Diagnostics(context.Background(), "internal/", 1, 3)
 	if err != nil {
 		t.Fatalf("unexpected error querying diagnostics: %s", err)
 	}
 
 	expectedDiagnostics := []Diagnostic{
 		{
+			DumpID:         42,
 			Path:           "internal/foo.go",
 			Severity:       1,
 			Code:           "c1",
@@ -205,6 +211,7 @@ func TestDiagnostics(t *testing.T) {
 			EndCharacter:   14,
 		},
 		{
+			DumpID:         42,
 			Path:           "internal/bar.go",
 			Severity:       2,
 			Code:           "c2",
@@ -216,6 +223,7 @@ func TestDiagnostics(t *testing.T) {
 			EndCharacter:   24,
 		},
 		{
+			DumpID:         42,
 			Path:           "internal/baz.go",
 			Severity:       3,
 			Code:           "c3",
@@ -229,6 +237,10 @@ func TestDiagnostics(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedDiagnostics, diagnostics); diff != "" {
 		t.Errorf("unexpected moniker data (-want +got):\n%s", diff)
+	}
+
+	if totalCount != 5 {
+		t.Errorf("unexpected total count. want=%d have=%d", 5, totalCount)
 	}
 }
 

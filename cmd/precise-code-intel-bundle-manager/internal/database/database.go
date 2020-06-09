@@ -30,8 +30,9 @@ type Database interface {
 	// Hover returns the hover text of the symbol at the given position.
 	Hover(ctx context.Context, path string, line, character int) (string, client.Range, bool, error)
 
-	// Diagnostics returns the diagnostics for the documents that have the given path prefix.
-	Diagnostics(ctx context.Context, prefix string) ([]client.Diagnostic, error)
+	// Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
+	// also returns the size of the complete result set to aid in pagination (along with skip and take).
+	Diagnostics(ctx context.Context, prefix string, skip, take int) ([]client.Diagnostic, int, error)
 
 	// MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 	// ranges contain the position, then this method will return multiple sets of monikers. Each slice
@@ -195,39 +196,50 @@ func (db *databaseImpl) Hover(ctx context.Context, path string, line, character 
 	return "", client.Range{}, false, nil
 }
 
-// Diagnostics returns the diagnostics for the documents that have the given path prefix.
-func (db *databaseImpl) Diagnostics(ctx context.Context, prefix string) ([]client.Diagnostic, error) {
+// Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
+// also returns the size of the complete result set to aid in pagination (along with skip and take).
+func (db *databaseImpl) Diagnostics(ctx context.Context, prefix string, skip, take int) ([]client.Diagnostic, int, error) {
 	paths, err := db.getPathsWithPrefix(ctx, prefix)
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "db.getPathsWithPrefix")
+		return nil, 0, pkgerrors.Wrap(err, "db.getPathsWithPrefix")
 	}
 
+	// TODO(efritz) - we may need to store the diagnostic count outside of the
+	// document so that we can efficiently skip over results that we've already
+	// encountered.
+
+	totalCount := 0
 	var diagnostics []client.Diagnostic
 	for _, path := range paths {
 		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
-			return nil, pkgerrors.Wrap(err, "db.getDocumentData")
+			return nil, 0, pkgerrors.Wrap(err, "db.getDocumentData")
 		}
 		if !exists {
-			return nil, nil
+			return nil, 0, nil
 		}
 
+		totalCount += len(documentData.Diagnostics)
+
 		for _, diagnostic := range documentData.Diagnostics {
-			diagnostics = append(diagnostics, client.Diagnostic{
-				Path:           path,
-				Severity:       diagnostic.Severity,
-				Code:           diagnostic.Code,
-				Message:        diagnostic.Message,
-				Source:         diagnostic.Source,
-				StartLine:      diagnostic.StartLine,
-				StartCharacter: diagnostic.StartCharacter,
-				EndLine:        diagnostic.EndLine,
-				EndCharacter:   diagnostic.EndCharacter,
-			})
+			skip--
+			if skip < 0 && len(diagnostics) < take {
+				diagnostics = append(diagnostics, client.Diagnostic{
+					Path:           path,
+					Severity:       diagnostic.Severity,
+					Code:           diagnostic.Code,
+					Message:        diagnostic.Message,
+					Source:         diagnostic.Source,
+					StartLine:      diagnostic.StartLine,
+					StartCharacter: diagnostic.StartCharacter,
+					EndLine:        diagnostic.EndLine,
+					EndCharacter:   diagnostic.EndCharacter,
+				})
+			}
 		}
 	}
 
-	return diagnostics, nil
+	return diagnostics, totalCount, nil
 }
 
 // MonikersByPosition returns all monikers attached ranges containing the given position. If multiple

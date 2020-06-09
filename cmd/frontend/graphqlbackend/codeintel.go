@@ -21,7 +21,7 @@ type CodeIntelResolver interface {
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
+	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 }
 
 var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
@@ -60,7 +60,7 @@ func (defaultCodeIntelResolver) DeleteLSIFIndex(ctx context.Context, id graphql.
 	return nil, codeIntelOnlyInEnterprise
 }
 
-func (defaultCodeIntelResolver) LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error) {
+func (defaultCodeIntelResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
 
@@ -154,16 +154,25 @@ type LSIFIndexConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type LSIFQueryResolver interface {
+type GitTreeLSIFDataResolver interface {
+	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+}
+
+type GitBlobLSIFDataResolver interface {
+	GitTreeLSIFDataResolver
+	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
+	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
+
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 }
 
-type LSIFQueryArgs struct {
+type GitBlobLSIFDataArgs struct {
 	Repository *RepositoryResolver
 	Commit     api.CommitID
 	Path       string
+	ExactPath  bool
 	Indexer    string
 	UploadID   int64
 }
@@ -179,6 +188,10 @@ type LSIFPagedQueryPositionArgs struct {
 	After *string
 }
 
+type LSIFDiagnosticsArgs struct {
+	graphqlutil.ConnectionArgs
+}
+
 type LocationConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LocationResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
@@ -187,4 +200,18 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() MarkdownResolver
 	Range() RangeResolver
+}
+
+type DiagnosticConnectionResolver interface {
+	Nodes(ctx context.Context) ([]DiagnosticResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type DiagnosticResolver interface {
+	Location(ctx context.Context) (LocationResolver, error)
+	Severity(ctx context.Context) (*string, error)
+	Code(ctx context.Context) (*string, error)
+	Source(ctx context.Context) (*string, error)
+	Message(ctx context.Context) (*string, error)
 }

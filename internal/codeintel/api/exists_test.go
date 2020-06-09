@@ -58,7 +58,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	})
 
 	api := testAPI(mockDB, mockBundleManagerClient, mockGitserverClient)
-	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", "idx")
+	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest database: %s", err)
 	}
@@ -106,7 +106,7 @@ func TestFindClosestSkipsGitserverIfCommitIsKnown(t *testing.T) {
 	setMockBundleClientExists(t, mockBundleClient, "main.go", true)
 
 	api := New(mockDB, mockBundleManagerClient, mockGitserverClient)
-	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go", "idx")
+	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest database: %s", err)
 	}

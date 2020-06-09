@@ -145,7 +145,7 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 }
 
 // Diagnostics calls into the inner Database and registers the observed results.
-func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string) (diagnostics []client.Diagnostic, err error) {
+func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []client.Diagnostic, _ int, err error) {
 	ctx, endObservation := db.hoverOperation.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("filename", db.filename),
@@ -153,7 +153,7 @@ func (db *ObservedDatabase) Diagnostics(ctx context.Context, prefix string) (dia
 		},
 	})
 	defer func() { endObservation(float64(len(diagnostics)), observation.Args{}) }()
-	return db.database.Diagnostics(ctx, prefix)
+	return db.database.Diagnostics(ctx, prefix, skip, take)
 }
 
 // MonikersByPosition calls into the inner Database and registers the observed results.
