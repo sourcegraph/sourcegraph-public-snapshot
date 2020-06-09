@@ -44,7 +44,7 @@ Oracle OpenGrok doesn't index most single-character strings (such as for special
 
 Sourcegraph indexes all characters, and can search for strings of any length. Using the default [literal search mode](queries.md#Literal-search--default-), any search (including those with special characters like `foo.bar`, `try {`, `i++`, `i-=1`, `foo->bar`, and more), will all be searchable without special handling. Using [regexp mode](queries.md#regexp-search) would require escaping special charactes.
 
-The only exceptions are colon characters, which are by default used for specifying a search keyword on Sourcegraph (see below). Any search containing colons can be done using the `content:"pattern"` keyword to explicitly mark it as the search string.
+The only exceptions are colon characters, which are by default used for specifying a search keyword on Sourcegraph (see below). Any search containing colons can be done using, for example, `content:"foo::bar"` keyword to explicitly mark it as the search string.
 
 ### Boolean operators
 
@@ -81,4 +81,3 @@ To see an exhaustive list of Sourcegraph's search keywords, see the [search quer
 **Negating search keywords**
 
 Sourcegraph allows users to negate any search keyword by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files.
-
