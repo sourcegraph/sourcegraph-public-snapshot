@@ -673,7 +673,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			return
 		}
 	}
-	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
+	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
@@ -1417,6 +1417,8 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	return true
 }
 
+const headFileRefPrefix = "ref: "
+
 // quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
 // It just reads the .git/HEAD file from the bare git repository directory.
 func quickSymbolicRefHead(dir GitDir) (string, error) {
@@ -1431,10 +1433,10 @@ func quickSymbolicRefHead(dir GitDir) (string, error) {
 	}
 
 	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !bytes.HasPrefix(head, []byte("ref: ")) {
+	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
 		return "", errors.New("unrecognized HEAD file format")
 	}
-	headRef := bytes.TrimPrefix(head, []byte("ref: "))
+	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
 	return string(headRef), nil
 }
 
@@ -1452,11 +1454,11 @@ func quickRevParseHead(dir GitDir) (string, error) {
 	}
 
 	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
-	if !bytes.HasPrefix(head, []byte("ref: ")) {
+	if !bytes.HasPrefix(head, []byte(headFileRefPrefix)) {
 		return "", errors.New("unrecognized HEAD file format")
 	}
 	// Look for the file in refs/heads. If it exists, it contains the commit hash.
-	headRef := bytes.TrimPrefix(head, []byte("ref: "))
+	headRef := bytes.TrimPrefix(head, []byte(headFileRefPrefix))
 	if bytes.HasPrefix(headRef, []byte("../")) || bytes.Contains(headRef, []byte("/../")) || bytes.HasSuffix(headRef, []byte("/..")) {
 		// 🚨 SECURITY: prevent leakage of file contents outside repo dir
 		return "", fmt.Errorf("invalid ref format: %s", headRef)
