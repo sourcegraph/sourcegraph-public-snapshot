@@ -66,17 +66,10 @@ func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Accoun
 	return nil, nil
 }
 
-func (p *mockProvider) ServiceType() string {
-	return p.serviceType
-}
-
-func (p *mockProvider) ServiceID() string {
-	return p.serviceID
-}
-
-func (*mockProvider) Validate() []string {
-	return nil
-}
+func (p *mockProvider) ServiceType() string { return p.serviceType }
+func (p *mockProvider) ServiceID() string   { return p.serviceID }
+func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, 0) }
+func (*mockProvider) Validate() []string    { return nil }
 
 func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, error) {
 	return p.fetchUserPerms(ctx, acct)
@@ -133,9 +126,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			return fmt.Errorf("UserID: want 1 but got %d", p.UserID)
 		}
 
-		expIDs := []uint32{1}
-		if diff := cmp.Diff(expIDs, p.IDs.ToArray()); diff != "" {
-			return fmt.Errorf("IDs: %v", diff)
+		wantIDs := []uint32{1}
+		if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			return fmt.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -218,6 +211,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: "https://gitlab.com/",
 						},
+						Sources: map[string]*repos.SourceInfo{
+							extsvc.URN(extsvc.TypeGitLab, 0): {},
+						},
 					},
 				}, nil
 			},
@@ -252,20 +248,20 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
 		}
 
-		expUserIDs := []uint32{1}
-		if diff := cmp.Diff(expUserIDs, p.UserIDs.ToArray()); diff != "" {
-			return fmt.Errorf("UserIDs: %v", diff)
+		wantUserIDs := []uint32{1}
+		if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
+			return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
 	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
-		expAccounts := &extsvc.Accounts{
+		wantAccounts := &extsvc.Accounts{
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 			AccountIDs:  []string{"pending_user"},
 		}
-		if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-			return fmt.Errorf("accounts: %v", diff)
+		if diff := cmp.Diff(wantAccounts, accounts); diff != "" {
+			return fmt.Errorf("accounts mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
@@ -281,6 +277,9 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 					Private: true,
 					ExternalRepo: api.ExternalRepoSpec{
 						ServiceID: p.ServiceID(),
+					},
+					Sources: map[string]*repos.SourceInfo{
+						p.URN(): {},
 					},
 				},
 			}, nil

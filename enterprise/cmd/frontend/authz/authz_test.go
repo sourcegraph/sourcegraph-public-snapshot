@@ -42,6 +42,10 @@ func (m gitlabAuthzProviderParams) ServiceType() string {
 	return extsvc.TypeGitLab
 }
 
+func (m gitlabAuthzProviderParams) URN() string {
+	panic("should never be called")
+}
+
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
@@ -560,11 +564,11 @@ func asJSON(t *testing.T, v interface{}) string {
 
 type fakeStore struct {
 	gitlabs          []*schema.GitLabConnection
-	githubs          []*schema.GitHubConnection
+	githubs          []*types.GitHubConnection
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
+func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
 	return s.githubs, nil
 }
 
