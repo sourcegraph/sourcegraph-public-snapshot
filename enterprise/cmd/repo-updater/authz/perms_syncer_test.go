@@ -51,6 +51,7 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 }
 
 type mockProvider struct {
+	id          int64
 	serviceType string
 	serviceID   string
 
@@ -68,7 +69,7 @@ func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Accoun
 
 func (p *mockProvider) ServiceType() string { return p.serviceType }
 func (p *mockProvider) ServiceID() string   { return p.serviceID }
-func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, 0) }
+func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
 func (*mockProvider) Validate() []string    { return nil }
 
 func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, error) {
@@ -227,6 +228,77 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		if !calledSetRepoPermissions {
 			t.Fatal("!calledSetRepoPermissions")
+		}
+	})
+
+	t.Run("identify authz provider by URN", func(t *testing.T) {
+		// Even though both p1 and p2 are pointing to the same code host,
+		// but p2 should not be used because it is not responsible for listing
+		// test repository.
+		p1 := &mockProvider{
+			id:          1,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+				return []extsvc.AccountID{"user"}, nil
+			},
+		}
+		p2 := &mockProvider{
+			id:          2,
+			serviceType: extsvc.TypeGitLab,
+			serviceID:   "https://gitlab.com/",
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+				return nil, errors.New("not supposed to be called")
+			},
+		}
+		authz.SetProviders(false, []authz.Provider{p1, p2})
+		defer authz.SetProviders(true, nil)
+
+		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
+			return &edb.PermsStore{}, nil
+		}
+		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
+			return map[string]int32{"user": 1}, nil
+		}
+		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			if p.RepoID != 1 {
+				return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
+			}
+
+			wantUserIDs := []uint32{1}
+			if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
+				return fmt.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
+			}
+			return nil
+		}
+		edb.Mocks.Perms.SetRepoPendingPermissions = func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error {
+			return nil
+		}
+		defer func() {
+			edb.Mocks.Perms = edb.MockPerms{}
+		}()
+
+		reposStore := &mockReposStore{
+			listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+				return []*repos.Repo{
+					{
+						ID:      1,
+						Private: true,
+						ExternalRepo: api.ExternalRepoSpec{
+							ServiceID: p1.ServiceID(),
+						},
+						Sources: map[string]*repos.SourceInfo{
+							p1.URN(): {},
+						},
+					},
+				}, nil
+			},
+		}
+		s := newPermsSyncer(reposStore)
+
+		err := s.syncRepoPerms(context.Background(), 1, false)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 
