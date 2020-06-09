@@ -204,7 +204,7 @@ func (db *databaseImpl) Diagnostics(ctx context.Context, prefix string) ([]clien
 
 	var diagnostics []client.Diagnostic
 	for _, path := range paths {
-		documentData, exists, err := db.getDocumentData(ctx, prefix)
+		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
 			return nil, pkgerrors.Wrap(err, "db.getDocumentData")
 		}
