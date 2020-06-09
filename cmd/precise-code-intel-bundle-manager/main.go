@@ -8,9 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/readers"
@@ -35,14 +33,13 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir          = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
-		databaseCacheSize  = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
-		readerCacheSize    = mustParseInt(rawReaderCacheSize, "PRECISE_CODE_INTEL_READER_CACHE_CAPACITY")
-		desiredPercentFree = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
-		janitorInterval    = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
-		maxUploadAge       = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
-		maxUploadPartAge   = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
-		maxDatabasePartAge = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
+		bundleDir           = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		readerDataCacheSize = mustParseInt(rawReaderDataCacheSize, "PRECISE_CODE_INTEL_CONNECTION_DATA_CACHE_CAPACITY")
+		desiredPercentFree  = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval     = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUploadAge        = mustParseInterval(rawMaxUploadAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_AGE")
+		maxUploadPartAge    = mustParseInterval(rawMaxUploadPartAge, "PRECISE_CODE_INTEL_MAX_UPLOAD_PART_AGE")
+		maxDatabasePartAge  = mustParseInterval(rawMaxDatabasePartAge, "PRECISE_CODE_INTEL_MAX_DATABASE_PART_AGE")
 	)
 
 	observationContext := &observation.Context{
@@ -51,7 +48,10 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	databaseCache, readerCache := prepCaches(observationContext.Registerer, databaseCacheSize, readerCacheSize)
+	readerCache, err := sqlitereader.NewReaderCache(readerDataCacheSize)
+	if err != nil {
+		log.Fatalf("failed to initialize reader cache: %s", err)
+	}
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
 		log.Fatalf("failed to prepare directories: %s", err)
@@ -68,7 +68,7 @@ func main() {
 	db := db.NewObserved(mustInitializeDatabase(), observationContext)
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	server := server.New(bundleDir, databaseCache, readerCache, observationContext)
+	server := server.New(bundleDir, readerCache, observationContext)
 	janitorMetrics := janitor.NewJanitorMetrics(prometheus.DefaultRegisterer)
 	janitor := janitor.New(db, bundleDir, desiredPercentFree, janitorInterval, maxUploadAge, maxUploadPartAge, maxDatabasePartAge, janitorMetrics)
 
@@ -89,20 +89,6 @@ func main() {
 
 	server.Stop()
 	janitor.Stop()
-}
-
-func prepCaches(r prometheus.Registerer, databaseCacheSize, readerCacheSize int) (*database.DatabaseCache, sqlitereader.Cache) {
-	databaseCache, _, err := database.NewDatabaseCache(int64(databaseCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize database cache"))
-	}
-
-	readerCache, err := sqlitereader.NewCache(int64(readerCacheSize))
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to initialize reader cache"))
-	}
-
-	return databaseCache, readerCache
 }
 
 func mustInitializeDatabase() db.DB {

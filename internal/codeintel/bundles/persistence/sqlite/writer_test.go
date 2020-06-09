@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
@@ -118,7 +119,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("unexpected error closing writer: %s", err)
 	}
 
-	cache, err := NewCache(1)
+	cache, err := cache.NewDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}

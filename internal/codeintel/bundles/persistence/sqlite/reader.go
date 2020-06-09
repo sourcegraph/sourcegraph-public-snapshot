@@ -9,7 +9,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	pkgerrors "github.com/pkg/errors"
-	persistence "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/cache"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization"
 	gobserializer "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/serialization/gob"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/persistence/sqlite/migrate"
@@ -22,7 +23,7 @@ var ErrNoMetadata = errors.New("no rows in meta table")
 
 type sqliteReader struct {
 	filename   string
-	cache      Cache
+	cache      cache.DataCache
 	store      *store.Store
 	closer     func() error
 	serializer serialization.Serializer
@@ -30,7 +31,7 @@ type sqliteReader struct {
 
 var _ persistence.Reader = &sqliteReader{}
 
-func NewReader(ctx context.Context, filename string, cache Cache) (_ persistence.Reader, err error) {
+func NewReader(ctx context.Context, filename string, cache cache.DataCache) (_ persistence.Reader, err error) {
 	store, closer, err := store.Open(filename)
 	if err != nil {
 		return nil, err
