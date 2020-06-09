@@ -26,6 +26,9 @@ type CodeIntelAPI interface {
 
 	// Hover returns the hover text and range for the symbol at the given position.
 	Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error)
+
+	// Diagnostics returns the diagnostics for documents with the given path prefix.
+	Diagnostics(ctx context.Context, prefix string, uploadID int) ([]bundles.Diagnostic, error)
 }
 
 type codeIntelAPI struct {
