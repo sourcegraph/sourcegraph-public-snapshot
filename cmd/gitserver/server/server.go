@@ -673,6 +673,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			return
 		}
 	}
+	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
+	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
+	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
+	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
+		if resolved, err := quickSymbolicRefHead(dir); err == nil {
+			_, _ = w.Write([]byte(resolved))
+			w.Header().Set("X-Exec-Error", "")
+			w.Header().Set("X-Exec-Exit-Status", "0")
+			w.Header().Set("X-Exec-Stderr", "")
+			return
+		}
+	}
 
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
@@ -1403,6 +1415,27 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	// Revision not found, update before returning.
 	_ = s.doRepoUpdate(ctx, repo, url)
 	return true
+}
+
+// quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
+// It just reads the .git/HEAD file from the bare git repository directory.
+func quickSymbolicRefHead(dir GitDir) (string, error) {
+	// See if HEAD contains a commit hash and fail if so.
+	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	if err != nil {
+		return "", err
+	}
+	head = bytes.TrimSpace(head)
+	if h := string(head); isAbsoluteRevision(h) {
+		return "", errors.New("ref HEAD is not a symbolic ref")
+	}
+
+	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
+	if !bytes.HasPrefix(head, []byte("ref: ")) {
+		return "", errors.New("unrecognized HEAD file format")
+	}
+	headRef := bytes.TrimPrefix(head, []byte("ref: "))
+	return string(headRef), nil
 }
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
