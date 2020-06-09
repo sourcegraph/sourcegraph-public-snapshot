@@ -932,8 +932,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 			return campaign, nil, err
 		}
 
-		opts := ResetChangesetJobsOpts{CampaignID: campaign.ID, OnlyFailed: false}
-		return campaign, nil, tx.ResetChangesetJobs(ctx, opts)
+		return campaign, nil, resetAccessibleChangesetJobs(ctx, tx, campaign)
 	}
 
 	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPatchSetID, updateAttributes)
@@ -1015,6 +1014,41 @@ type repoGroup struct {
 	patch        *campaigns.Patch
 	newPatch     *campaigns.Patch
 	changeset    *campaigns.Changeset
+}
+
+func resetAccessibleChangesetJobs(ctx context.Context, tx *Store, campaign *campaigns.Campaign) error {
+	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:   campaign.PatchSetID,
+		Limit:        -1,
+		OnlyWithDiff: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "listing patches")
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(patches))
+	for _, p := range patches {
+		repoIDs = append(repoIDs, p.RepoID)
+	}
+
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return err
+	}
+
+	var resetPatchIDs []int64
+	for _, p := range patches {
+		if _, ok := accessibleRepoIDs[p.RepoID]; !ok {
+			continue
+		}
+
+		resetPatchIDs = append(resetPatchIDs, p.ID)
+	}
+
+	return tx.ResetChangesetJobs(ctx, ResetChangesetJobsOpts{
+		CampaignID: campaign.ID,
+		PatchIDs:   resetPatchIDs,
+	})
 }
 
 func computeCampaignUpdateDiff(
