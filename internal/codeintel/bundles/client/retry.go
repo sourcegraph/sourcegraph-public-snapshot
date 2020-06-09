@@ -12,7 +12,7 @@ const (
 	minBackoff           = time.Second * 1
 	maxBackoff           = time.Second * 5
 	backoffIncreaseRatio = 1.5
-	maxAttempts          = 5
+	maxAttempts          = 20
 )
 
 // Retryable denotes an idempotent function that can be re-invoked on certain classes
