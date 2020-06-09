@@ -22,8 +22,7 @@ type BundleClient interface {
 	// Hover retrieves the hover text for the symbol under the given location.
 	Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error)
 
-	// Diagnostics retrieves the diagnostics for the documents that have the given path prefix and a total count of
-	// such diagnostics.
+	// Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
 	Diagnostics(ctx context.Context, prefix string, skip, take int) ([]Diagnostic, int, error)
 
 	// MonikersByPosition retrieves a list of monikers attached to the symbol under the given location. There may
@@ -111,8 +110,7 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 	return payload.Text, payload.Range, true, nil
 }
 
-// Diagnostics retrieves the diagnostics for the documents that have the given path prefix and a total count of
-// such diagnostics.
+// Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
 func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []Diagnostic, count int, err error) {
 	args := map[string]interface{}{
 		"prefix": prefix,
