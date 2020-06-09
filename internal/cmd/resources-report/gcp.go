@@ -187,11 +187,11 @@ func collectGCPResources(ctx context.Context, since time.Time, verbose bool, lab
 		case r, ok := <-results:
 			if ok {
 				resource := r
-				// whitelist resource if configured - all GCP labels are maps
+				// allowlist resource if configured - all GCP labels are maps
 				if labelsWhitelist != nil {
 					if labels, ok := resource.Meta["labels"].(map[string]string); ok {
 						if hasKeyValue(labels, labelsWhitelist) {
-							resource.Whitelisted = true
+							resource.Allowed = true
 						}
 					}
 				}

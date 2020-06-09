@@ -180,11 +180,11 @@ func collectAWSResources(ctx context.Context, since time.Time, verbose bool, tag
 		case r, ok := <-results:
 			if ok {
 				resource := r
-				// whitelist resource if configured - all AWS tags should be converted to maps
+				// allowlist resource if configured - all AWS tags should be converted to maps
 				if tagsWhitelist != nil {
 					if tags, ok := resource.Meta["tags"].(map[string]string); ok {
 						if hasKeyValue(tags, tagsWhitelist) {
-							resource.Whitelisted = true
+							resource.Allowed = true
 						}
 					}
 				}
