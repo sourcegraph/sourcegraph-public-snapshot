@@ -1298,6 +1298,9 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		// individually published
 		individuallyPublished repoNames
 
+		// Repositories for which the actor doesn't have repository permissions
+		missingRepoPerms repoNames
+
 		// Mapping of repository names to state of changesets after creating the campaign.
 		// Default state is ChangesetStateOpen
 		changesetStates map[string]campaigns.ChangesetState
@@ -1456,6 +1459,43 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantUnmodified: repoNames{"repo-0"},
 			wantCreated:    repoNames{"repo-1"},
 		},
+		{
+			name:           "1 modified but missing permissions",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			missingRepoPerms: repoNames{"repo-0"},
+			wantUnmodified:   repoNames{"repo-0"},
+		},
+		{
+			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset, all missing repo permissions",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			missingRepoPerms: repoNames{"repo-0", "repo-1", "repo-2", "repo-3"},
+			wantUnmodified:   repoNames{"repo-0", "repo-1", "repo-2"},
+			// For repo-3 no ChangesetJob should be created
+		},
+		{
+			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset, subset missing repo permissions",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0"},
+				{repo: "repo-1", modifiedDiff: true},
+				{repo: "repo-3"},
+			},
+			missingRepoPerms: repoNames{"repo-0", "repo-1"},
+			wantUnmodified:   repoNames{"repo-0", "repo-1"},
+			wantDetached:     repoNames{"repo-2"},
+			wantCreated:      repoNames{"repo-3"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1579,6 +1619,23 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 
 				patchesByID[j.ID] = j
 			}
+
+			// Filter out the repositories
+			toFilter := map[string]struct{}{}
+			for _, repoName := range tt.missingRepoPerms {
+				toFilter[repoName] = struct{}{}
+			}
+			db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+				var filtered []*types.Repo
+				for _, r := range repos {
+					if _, ok := toFilter[string(r.Name)]; ok {
+						continue
+					}
+					filtered = append(filtered, r)
+				}
+				return filtered, nil
+			}
+			defer func() { db.MockAuthzFilter = nil }()
 
 			// Update the Campaign
 			args := UpdateCampaignArgs{Campaign: campaign.ID}

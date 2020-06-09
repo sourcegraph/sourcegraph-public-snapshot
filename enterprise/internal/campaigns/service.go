@@ -1075,10 +1075,32 @@ func computeCampaignUpdateDiff(
 		return nil, err
 	}
 
+	// repoIDs is a unique list of repositories involved in this update
+	// operation. We use it to query which repositories the user has access to.
+	repoIDs := make([]api.RepoID, 0, len(byRepoID))
+	for repoID := range byRepoID {
+		repoIDs = append(repoIDs, repoID)
+	}
+	for _, p := range newPatches {
+		if _, ok := byRepoID[p.RepoID]; !ok {
+			repoIDs = append(repoIDs, p.RepoID)
+		}
+	}
+	// 🚨 SECURITY: Check which repositories the user has access to. If the
+	// user doesn't have access, don't create/delete/update anything.
+	accessibleRepoIDs, err := accessibleRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, j := range newPatches {
 		if group, ok := byRepoID[j.RepoID]; ok {
 			group.newPatch = j
 		} else {
+			if _, ok := accessibleRepoIDs[j.RepoID]; !ok {
+				continue
+			}
+
 			// If we have new Patches that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
 			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
@@ -1088,7 +1110,11 @@ func computeCampaignUpdateDiff(
 		}
 	}
 
-	for _, group := range byRepoID {
+	for repoID, group := range byRepoID {
+		if _, ok := accessibleRepoIDs[repoID]; !ok {
+			continue
+		}
+
 		// Either we _don't_ have a matching _new_ Patch, then we delete
 		// the ChangesetJob and detach & close Changeset.
 		if group.newPatch == nil {
