@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -210,14 +211,14 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	// Ideally these could be done in parallel, but the table is small
 	// and I don't think real world perf is going to be bad.
 	// It is also unclear to me if deterministic order is important here (it seems like it might be),
-	// so if this is parallalized in the future, consider whether order is important.
+	// so if this is parallelized in the future, consider whether order is important.
 
 	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
 	if err != nil {
 		return "", err
 	}
 	for _, c := range githubs {
-		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
+		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c.GitHubConnection})
 	}
 
 	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)

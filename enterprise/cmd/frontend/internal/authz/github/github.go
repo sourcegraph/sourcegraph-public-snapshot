@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,17 +20,19 @@ import (
 
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
+	urn      string
 	client   client
 	codeHost *extsvc.CodeHost
 	cacheTTL time.Duration
 	cache    cache
 }
 
-func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
+func NewProvider(urn string, githubURL *url.URL, baseToken string, cacheTTL time.Duration, mockCache cache) *Provider {
 	apiURL, _ := github.APIRoot(githubURL)
 	client := &clientAdapter{Client: github.NewClient(apiURL, baseToken, nil)}
 
 	p := &Provider{
+		urn:      urn,
 		codeHost: extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub),
 		client:   client,
 		cache:    mockCache,

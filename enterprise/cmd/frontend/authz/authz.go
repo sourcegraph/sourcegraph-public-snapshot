@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
@@ -140,7 +141,7 @@ func Init(d dbutil.DB, clock func() time.Time) {
 
 type ExternalServicesStore interface {
 	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
-	ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error)
+	ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error)
 	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
 }
 
