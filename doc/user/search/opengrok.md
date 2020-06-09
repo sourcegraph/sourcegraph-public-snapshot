@@ -80,4 +80,6 @@ To see an exhaustive list of Sourcegraph's search keywords, see the [search quer
 
 **Negating search keywords**
 
-Sourcegraph allows users to negate any search keyword by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files.
+Oracle OpenGrok allows users to negate any search keyword, or to negate file results that contain a given search pattern, by appending a `-` character to the start of the term.
+
+Sourcegraph also allows users to negate search keywords by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files. Sourcegraph cannot currently exclude files based on text that they don't contain, but this will be available using [operators](queries.md#operators) soon.
