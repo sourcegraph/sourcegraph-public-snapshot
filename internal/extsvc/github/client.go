@@ -316,10 +316,7 @@ func estimateGraphQLCost(query string) (int, error) {
 
 	var totalCost int
 	for _, def := range doc.Definitions {
-		cost, err := calcDefinitionCost(def)
-		if err != nil {
-			return 0, errors.Wrap(err, "calculating cost")
-		}
+		cost := calcDefinitionCost(def)
 		totalCost += cost
 	}
 
@@ -338,7 +335,7 @@ type limitDepth struct {
 	depth int
 }
 
-func calcDefinitionCost(def ast.Node) (int, error) {
+func calcDefinitionCost(def ast.Node) int {
 	var cost int
 	limitStack := make([]limitDepth, 0)
 
@@ -389,7 +386,7 @@ func calcDefinitionCost(def ast.Node) (int, error) {
 
 	_ = visitor.Visit(def, v, nil)
 
-	return cost, nil
+	return cost
 }
 
 func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
