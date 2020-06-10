@@ -112,14 +112,12 @@ func InitDB() error {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
+func Main(enterpriseSetupHook func()) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if dbconn.Global == nil {
-		if err := InitDB(); err != nil {
-			log.Fatalf("ERROR: %v", err)
-		}
+	if err := InitDB(); err != nil {
+		log.Fatalf("ERROR: %v", err)
 	}
 
 	if err := handleConfigOverrides(); err != nil {
@@ -132,6 +130,9 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+
+	// Run enterprise setup hook
+	enterpriseSetupHook()
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -225,7 +226,7 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
+	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GithubWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler)
 	if err != nil {
 		return err
 	}

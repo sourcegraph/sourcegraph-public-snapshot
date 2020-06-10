@@ -11,7 +11,7 @@ var defaultHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	_, _ = w.Write([]byte("codeintel upload is only available in enterprise"))
 })
 
-// NewCodeIntelUploadHandler is re-assigned by the enterprise frontend
+// NewCodeIntelUploadHandler is re-assigned by the enterprise frontend.
 var NewCodeIntelUploadHandler CodeIntelUploadHandlerFactory = func(_ bool) http.Handler {
 	return defaultHandler
 }
