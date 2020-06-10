@@ -1129,12 +1129,18 @@ func computeCampaignUpdateDiff(
 	}
 
 	for _, j := range newPatches {
+		// If the user is missing permissions for any if the new patches, we
+		// return an error instead of skipping patches, so we don't end up with
+		// an unfixable state (i.e. unpublished patch + changeset for same
+		// repo).
+		if _, ok := accessibleRepoIDs[j.RepoID]; !ok {
+			return nil, &db.RepoNotFoundErr{ID: j.RepoID}
+
+		}
+
 		if group, ok := byRepoID[j.RepoID]; ok {
 			group.newPatch = j
 		} else {
-			if _, ok := accessibleRepoIDs[j.RepoID]; !ok {
-				continue
-			}
 
 			// If we have new Patches that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
@@ -1146,6 +1152,8 @@ func computeCampaignUpdateDiff(
 	}
 
 	for repoID, group := range byRepoID {
+		// If the user is lacking permissions for this repository we don't
+		// delete/update the changeset.
 		if _, ok := accessibleRepoIDs[repoID]; !ok {
 			continue
 		}
