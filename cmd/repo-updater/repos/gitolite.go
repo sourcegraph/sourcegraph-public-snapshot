@@ -2,10 +2,11 @@ package repos
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -58,6 +59,7 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
+		eb.Pattern(r.Pattern)
 	}
 	exclude, err := eb.Build()
 	if err != nil {
