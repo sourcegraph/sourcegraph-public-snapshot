@@ -2324,6 +2324,7 @@ type Position {
     character: Int!
 }
 
+# A list of diagnostics.
 type DiagnosticConnection {
     # A list of diagnostics.
     nodes: [Diagnostic!]!
