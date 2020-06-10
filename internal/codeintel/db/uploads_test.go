@@ -66,11 +66,12 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	db := testDB()
 
 	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(+time.Minute * 5)
+	t2 := t1.Add(+time.Minute * 6)
 	t3 := t1.Add(+time.Minute * 3)
 	t4 := t1.Add(+time.Minute * 1)
 	t5 := t1.Add(+time.Minute * 4)
 	t6 := t1.Add(+time.Minute * 2)
+	t7 := t1.Add(+time.Minute * 5)
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, UploadedAt: t1, State: "queued"},
@@ -79,12 +80,13 @@ func TestGetQueuedUploadRank(t *testing.T) {
 		Upload{ID: 4, UploadedAt: t4, State: "queued"},
 		Upload{ID: 5, UploadedAt: t5, State: "queued"},
 		Upload{ID: 6, UploadedAt: t6, State: "processing"},
+		Upload{ID: 7, UploadedAt: t1, State: "queued", ProcessAfter: &t7},
 	)
 
 	if upload, _, _ := db.GetUploadByID(context.Background(), 1); upload.Rank == nil || *upload.Rank != 1 {
 		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{upload.Rank})
 	}
-	if upload, _, _ := db.GetUploadByID(context.Background(), 2); upload.Rank == nil || *upload.Rank != 5 {
+	if upload, _, _ := db.GetUploadByID(context.Background(), 2); upload.Rank == nil || *upload.Rank != 6 {
 		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{upload.Rank})
 	}
 	if upload, _, _ := db.GetUploadByID(context.Background(), 3); upload.Rank == nil || *upload.Rank != 3 {
@@ -100,6 +102,11 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	// Only considers queued uploads to determine rank
 	if upload, _, _ := db.GetUploadByID(context.Background(), 6); upload.Rank != nil {
 		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{upload.Rank})
+	}
+
+	// Process after takes priority over upload time
+	if upload, _, _ := db.GetUploadByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
+		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
 }
 
@@ -604,6 +611,47 @@ func TestDequeueSkipsLocked(t *testing.T) {
 	}
 }
 
+func TestDequeueSkipsDelayed(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := testDB()
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t2.Add(time.Minute)
+	insertUploads(
+		t,
+		dbconn.Global,
+		Upload{ID: 1, State: "queued", UploadedAt: t1, ProcessAfter: &t2},
+		Upload{ID: 2, State: "processing", UploadedAt: t2},
+		Upload{ID: 3, State: "queued", UploadedAt: t3},
+	)
+
+	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx1.Rollback() }()
+
+	upload, tx2, ok, err := db.Dequeue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing upload: %s", err)
+	}
+	if !ok {
+		t.Fatalf("expected something to be dequeueable")
+	}
+	defer func() { _ = tx2.Done(nil) }()
+
+	if upload.ID != 3 {
+		t.Errorf("unexpected upload id. want=%d have=%d", 3, upload.ID)
+	}
+	if upload.State != "processing" {
+		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
+	}
+}
+
 func TestDequeueEmpty(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -618,6 +666,32 @@ func TestDequeueEmpty(t *testing.T) {
 	if ok {
 		_ = tx.Done(nil)
 		t.Fatalf("unexpected dequeue")
+	}
+}
+
+func TestRequeue(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	db := &dbImpl{db: dbconn.Global}
+
+	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "processing"})
+
+	after := time.Now().UTC().Add(time.Hour)
+
+	if err := db.Requeue(context.Background(), 1, after); err != nil {
+		t.Fatalf("unexpected error requeueing index: %s", err)
+	}
+
+	if upload, exists, err := db.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "queued" {
+		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
+	} else if upload.ProcessAfter == nil || *upload.ProcessAfter != after {
+		t.Errorf("unexpected process after. want=%s have=%s", after, upload.State)
 	}
 }
 

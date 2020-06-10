@@ -17,7 +17,7 @@ func (r printableRank) String() string {
 	if r.value == nil {
 		return "nil"
 	}
-	return fmt.Sprintf("%d", r.value)
+	return fmt.Sprintf("%d", *r.value)
 }
 
 // makeCommit formats an integer as a 40-character git commit hash.
@@ -66,11 +66,12 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				failure_stacktrace,
 				started_at,
 				finished_at,
+				process_after,
 				repository_id,
 				indexer,
 				num_parts,
 				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -82,6 +83,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.FailureStacktrace,
 			upload.StartedAt,
 			upload.FinishedAt,
+			upload.ProcessAfter,
 			upload.RepositoryID,
 			upload.Indexer,
 			upload.NumParts,
@@ -117,8 +119,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				failure_stacktrace,
 				started_at,
 				finished_at,
+				process_after,
 				repository_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -128,6 +131,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.FailureStacktrace,
 			index.StartedAt,
 			index.FinishedAt,
+			index.ProcessAfter,
 			index.RepositoryID,
 		)
 
