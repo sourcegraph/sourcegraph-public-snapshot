@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
