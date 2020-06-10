@@ -215,6 +215,11 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 	return resp.Data.CurrentUser.ID, nil
 }
 
+// AuthenticatedUserID returns the GraphQL node ID of current authenticated user.
+func (c *Client) AuthenticatedUserID() string {
+	return c.userID
+}
+
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
 // the returned JSON response.
