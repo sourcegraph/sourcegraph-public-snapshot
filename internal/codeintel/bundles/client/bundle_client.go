@@ -22,8 +22,8 @@ type BundleClient interface {
 	// Hover retrieves the hover text for the symbol under the given location.
 	Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error)
 
-	// Diagnostics retrieves the diagnostics for the documents that have the given path prefix.
-	Diagnostics(ctx context.Context, prefix string) ([]Diagnostic, error)
+	// Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
+	Diagnostics(ctx context.Context, prefix string, skip, take int) ([]Diagnostic, int, error)
 
 	// MonikersByPosition retrieves a list of monikers attached to the symbol under the given location. There may
 	// be multiple ranges enclosing this point. The returned monikers are partitioned such that inner ranges occur
@@ -110,14 +110,28 @@ func (c *bundleClientImpl) Hover(ctx context.Context, path string, line, charact
 	return payload.Text, payload.Range, true, nil
 }
 
-// Diagnostics retrieves the diagnostics for the documents that have the given path prefix.
-func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string) (diagnostics []Diagnostic, err error) {
+// Diagnostics retrieves the diagnostics and total count of diagnostics for the documents that have the given path prefix.
+func (c *bundleClientImpl) Diagnostics(ctx context.Context, prefix string, skip, take int) (diagnostics []Diagnostic, count int, err error) {
 	args := map[string]interface{}{
 		"prefix": prefix,
 	}
+	if skip != 0 {
+		args["skip"] = skip
+	}
+	if take != 0 {
+		args["take"] = take
+	}
 
-	err = c.request(ctx, "diagnostics", args, &diagnostics)
-	return diagnostics, err
+	target := struct {
+		Diagnostics []Diagnostic `json:"diagnostics"`
+		Count       int          `json:"count"`
+	}{}
+
+	err = c.request(ctx, "diagnostics", args, &target)
+	diagnostics = target.Diagnostics
+	count = target.Count
+	c.addBundleIDToDiagnostics(diagnostics)
+	return diagnostics, count, err
 }
 
 // MonikersByPosition retrieves a list of monikers attached to the symbol under the given location. There may
@@ -178,5 +192,11 @@ func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[stri
 func (c *bundleClientImpl) addBundleIDToLocations(locations []Location) {
 	for i := range locations {
 		locations[i].DumpID = c.bundleID
+	}
+}
+
+func (c *bundleClientImpl) addBundleIDToDiagnostics(diagnostics []Diagnostic) {
+	for i := range diagnostics {
+		diagnostics[i].DumpID = c.bundleID
 	}
 }
