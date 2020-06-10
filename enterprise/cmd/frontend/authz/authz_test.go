@@ -564,18 +564,30 @@ func asJSON(t *testing.T, v interface{}) string {
 
 type fakeStore struct {
 	gitlabs          []*schema.GitLabConnection
-	githubs          []*types.GitHubConnection
+	githubs          []*schema.GitHubConnection
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
 func (s fakeStore) ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error) {
-	return s.githubs, nil
+	conns := make([]*types.GitHubConnection, 0, len(s.githubs))
+	for _, github := range s.githubs {
+		conns = append(conns, &types.GitHubConnection{GitHubConnection: github})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
-	return s.gitlabs, nil
+func (s fakeStore) ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error) {
+	conns := make([]*types.GitLabConnection, 0, len(s.gitlabs))
+	for _, gitlab := range s.gitlabs {
+		conns = append(conns, &types.GitLabConnection{GitLabConnection: gitlab})
+	}
+	return conns, nil
 }
 
-func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
-	return s.bitbucketServers, nil
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error) {
+	conns := make([]*types.BitbucketServerConnection, 0, len(s.bitbucketServers))
+	for _, bbs := range s.bitbucketServers {
+		conns = append(conns, &types.BitbucketServerConnection{BitbucketServerConnection: bbs})
+	}
+	return conns, nil
 }

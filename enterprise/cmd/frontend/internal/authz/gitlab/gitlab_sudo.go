@@ -35,6 +35,7 @@ type SudoProvider struct {
 	// is set per client and defines which user to impersonate.
 	sudoToken string
 
+	urn               string
 	clientProvider    *gitlab.ClientProvider
 	clientURL         *url.URL
 	codeHost          *extsvc.CodeHost
@@ -48,6 +49,9 @@ type SudoProvider struct {
 var _ authz.Provider = (*SudoProvider)(nil)
 
 type SudoProviderOp struct {
+	// The unique resource identifier of the external service where the provider is defined.
+	URN string
+
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
 
@@ -81,6 +85,7 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	p := &SudoProvider{
 		sudoToken: op.SudoToken,
 
+		urn:               op.URN,
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
@@ -110,7 +115,7 @@ func (p *SudoProvider) Validate() (problems []string) {
 }
 
 func (p *SudoProvider) URN() string {
-	return extsvc.URN(extsvc.KindGitLab, 0)
+	return p.urn
 }
 
 func (p *SudoProvider) ServiceID() string {

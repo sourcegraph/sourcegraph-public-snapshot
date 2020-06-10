@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -23,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Init(d dbutil.DB, clock func() time.Time) {
@@ -140,9 +140,9 @@ func Init(d dbutil.DB, clock func() time.Time) {
 }
 
 type ExternalServicesStore interface {
-	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
+	ListGitLabConnections(context.Context) ([]*types.GitLabConnection, error)
 	ListGitHubConnections(context.Context) ([]*types.GitHubConnection, error)
-	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
+	ListBitbucketServerConnections(context.Context) ([]*types.BitbucketServerConnection, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.

@@ -226,7 +226,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitlabs {
-		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
+		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c.GitLabConnection})
 	}
 
 	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
@@ -234,7 +234,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range bitbuckets {
-		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
+		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c.BitbucketServerConnection})
 	}
 
 	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
@@ -242,7 +242,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range awscodecommits {
-		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
+		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c.AWSCodeCommitConnection})
 	}
 
 	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
@@ -250,7 +250,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		return "", err
 	}
 	for _, c := range gitolites {
-		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c})
+		repoSources = append(repoSources, reposource.Gitolite{GitoliteConnection: c.GitoliteConnection})
 	}
 
 	// Fallback for github.com
