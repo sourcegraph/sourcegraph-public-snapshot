@@ -49,10 +49,6 @@ func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.G
 	return resolvePath(ctx, api.RepoID(r.lsifUpload.RepositoryID), r.lsifUpload.Commit, r.lsifUpload.Root)
 }
 
-func (r *lsifUploadResolver) Failure() graphqlbackend.LSIFUploadFailureReasonResolver {
-	if r.lsifUpload.FailureSummary == nil {
-		return nil
-	}
-
-	return &lsifUploadFailureReasonResolver{r.lsifUpload}
+func (r *lsifUploadResolver) Failure() *string {
+	return r.lsifUpload.FailureMessage
 }

@@ -4177,8 +4177,8 @@ type LSIFUpload implements Node {
     # The time the upload compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about an upload's failure (not set if state is not ERRORED).
-    failure: LSIFUploadFailureReason
+    # The processing error message (not set if state is not ERRORED).
+    failure: String
 
     # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
     # queries will return symbols from remote repositories only when this property is true. This property
@@ -4188,15 +4188,6 @@ type LSIFUpload implements Node {
 
     # The rank of this upload in the queue. The value of this field is null if the upload has been processed.
     placeInQueue: Int
-}
-
-# Metadata about a LSIF upload failure.
-type LSIFUploadFailureReason {
-    # A summary of the failure.
-    summary: String!
-
-    # The stacktrace of the failure.
-    stacktrace: String!
 }
 
 # A list of LSIF uploads.
@@ -4249,20 +4240,11 @@ type LSIFIndex implements Node {
     # The time the index compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about an index's failure (not set if state is not ERRORED).
-    failure: LSIFIndexFailureReason
+    # The processing error message (not set if state is not ERRORED).
+    failure: String
 
     # The rank of this index in the queue. The value of this field is null if the index has been processed.
     placeInQueue: Int
-}
-
-# Metadata about a LSIF index failure.
-type LSIFIndexFailureReason {
-    # A summary of the failure.
-    summary: String!
-
-    # The stacktrace of the failure.
-    stacktrace: String!
 }
 
 # A list of LSIF indexes.

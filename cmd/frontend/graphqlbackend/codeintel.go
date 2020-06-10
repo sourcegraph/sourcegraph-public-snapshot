@@ -102,14 +102,9 @@ type LSIFUploadResolver interface {
 	UploadedAt() DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() LSIFUploadFailureReasonResolver
+	Failure() *string
 	IsLatestForRepo() bool
 	PlaceInQueue() *int32
-}
-
-type LSIFUploadFailureReasonResolver interface {
-	Summary() string
-	Stacktrace() string
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -138,13 +133,8 @@ type LSIFIndexResolver interface {
 	QueuedAt() DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	Failure() LSIFIndexFailureReasonResolver
+	Failure() *string
 	PlaceInQueue() *int32
-}
-
-type LSIFIndexFailureReasonResolver interface {
-	Summary() string
-	Stacktrace() string
 }
 
 type LSIFIndexConnectionResolver interface {

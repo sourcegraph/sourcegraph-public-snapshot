@@ -62,6 +62,8 @@
 // 1528395679_change_error_index_on_changeset_jobs.up.sql (146B)
 // 1528395680_lsif_packages_index.down.sql (154B)
 // 1528395680_lsif_packages_index.up.sql (147B)
+// 1528395681_lsif_remove_failure_stacktrace.down.sql (467B)
+// 1528395681_lsif_remove_failure_stacktrace.up.sql (454B)
 
 package migrations
 
@@ -1370,6 +1372,46 @@ func _1528395680_lsif_packages_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395681_lsif_remove_failure_stacktraceDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\xdd\x4a\x33\x31\x10\x86\xcf\x73\x15\x73\x56\xf8\xf8\xda\x1b\x58\x3c\x48\xb7\xa3\x16\xf6\x47\xd2\x68\x0f\x97\x90\x9d\x6d\x83\xc9\xee\x92\x49\x6c\xbd\x7b\x91\x22\x62\x05\x41\x0f\x87\xe1\x79\x9f\x99\x77\x8d\x77\xdb\xa6\x10\x62\xa3\xda\x07\x78\xda\xe2\x1e\x3c\xbb\xa1\xeb\x73\x98\xb9\x10\x42\x56\x1a\x15\x68\xb9\xae\xf0\xb2\xc8\xb3\x9f\x4c\xcf\x20\x37\x1b\x28\xdb\xea\xb1\x6e\x60\x30\xce\xe7\x48\x1d\x27\x63\x9f\x53\x34\x96\x20\xd1\x39\x15\xdf\x61\x37\xf6\x74\xa6\x3f\xc2\x1f\x66\x85\x8d\xac\xf1\x9a\x0f\xc4\x6c\x0e\x04\xba\xfd\x8c\xcc\x21\x98\xf8\xfa\xc3\x1d\xbf\x8f\x12\xcb\x25\x28\xb2\x91\x4c\x22\x78\x71\x74\x82\x93\x4b\x47\x98\xa2\x3b\xb8\xd1\x78\xb0\x93\xcf\x61\x64\x51\x2a\x94\x1a\xaf\x0b\x05\xb9\x83\x1d\x56\x58\x6a\xc8\xab\x7f\xff\x21\xaf\x06\x37\x3a\x3e\x52\xdf\x99\x04\x86\x61\x8e\x93\x25\xe6\xcb\x7c\xab\xda\xfa\xeb\xeb\x19\xf6\xf7\xa8\x10\x38\xbd\xeb\x6f\x60\x61\xa7\x30\x7b\x4a\xd4\x2f\x0a\x21\xca\xb6\xae\xb7\xba\x10\x6f\x01\x00\x00\xff\xff\x2d\x00\x16\x21\xd3\x01\x00\x00")
+
+func _1528395681_lsif_remove_failure_stacktraceDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395681_lsif_remove_failure_stacktraceDownSql,
+		"1528395681_lsif_remove_failure_stacktrace.down.sql",
+	)
+}
+
+func _1528395681_lsif_remove_failure_stacktraceDownSql() (*asset, error) {
+	bytes, err := _1528395681_lsif_remove_failure_stacktraceDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395681_lsif_remove_failure_stacktrace.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc4, 0xc4, 0xf2, 0x7f, 0x7f, 0x9c, 0x50, 0x86, 0xfe, 0x8b, 0xd5, 0x25, 0x8d, 0x14, 0xee, 0xc0, 0x7c, 0x74, 0xfa, 0xee, 0xcd, 0x75, 0xac, 0x3b, 0x24, 0xab, 0x93, 0x97, 0x78, 0x3d, 0xfd, 0xb7}}
+	return a, nil
+}
+
+var __1528395681_lsif_remove_failure_stacktraceUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x90\xcd\x4a\xc4\x30\x10\x80\xef\x79\x8a\xb9\x2d\x88\xbb\x2f\x50\x3c\x74\xeb\xa8\x85\xfe\x48\x36\xba\xc7\x12\xd2\xa9\x1b\x4c\xda\x92\x49\xac\xbe\xbd\xe8\xa2\xa0\x0b\x82\x7b\x9c\x9f\x6f\xbe\x99\xd9\xe2\x6d\xd9\x64\x42\x5c\xcb\xf6\x1e\x1e\x4b\xdc\x83\x63\x3b\x74\x7d\xf2\x33\x67\x42\xe4\x95\x42\x09\x2a\xdf\x56\x78\x2c\xa4\xd9\x4d\xba\x67\xf8\xec\x2f\xda\xea\xa1\x6e\x60\xd0\xd6\xa5\x40\x1d\x47\x6d\x9e\x63\xd0\x86\xb2\x53\xd0\x8e\x3d\xbd\xd2\x19\xe0\x97\x51\x62\x93\xd7\x78\x82\x26\xef\x75\x78\x03\xd5\x7e\xa7\x3c\x31\xeb\xa7\xbf\x76\xf8\xff\x28\xb1\x5e\x83\x24\x13\x48\x47\x82\x17\x4b\x0b\x2c\x36\x1e\x60\xa4\x05\xcc\xe4\x92\x1f\x59\x14\x12\x73\x85\xbf\x7f\x08\xf9\x0e\x76\x58\x61\xa1\x20\x6d\x2e\x2e\x21\x6d\x06\x3b\x5a\x3e\x50\xdf\xe9\x08\x9a\x61\x0e\x93\x21\xe6\x63\x7c\x23\xdb\xfa\xe7\xd5\x09\xf6\x77\x28\x11\x38\x7e\x98\xaf\x60\x65\x26\x3f\x3b\x8a\xd4\xaf\x32\x21\x8a\xb6\xae\x4b\x95\x89\xf7\x00\x00\x00\xff\xff\xfe\xa8\x95\x19\xc6\x01\x00\x00")
+
+func _1528395681_lsif_remove_failure_stacktraceUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395681_lsif_remove_failure_stacktraceUpSql,
+		"1528395681_lsif_remove_failure_stacktrace.up.sql",
+	)
+}
+
+func _1528395681_lsif_remove_failure_stacktraceUpSql() (*asset, error) {
+	bytes, err := _1528395681_lsif_remove_failure_stacktraceUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395681_lsif_remove_failure_stacktrace.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xce, 0xc0, 0xff, 0x65, 0x16, 0x8f, 0xd8, 0x1a, 0xc, 0xee, 0xdb, 0xf, 0x44, 0x77, 0x8c, 0xdf, 0xbc, 0x61, 0x26, 0xa0, 0xc2, 0xab, 0x82, 0x3d, 0xc, 0x53, 0x9d, 0xa3, 0x7d, 0x2d, 0x7e, 0x3f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1523,6 +1565,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  _1528395679_change_error_index_on_changeset_jobsUpSql,
 	"1528395680_lsif_packages_index.down.sql":                                 _1528395680_lsif_packages_indexDownSql,
 	"1528395680_lsif_packages_index.up.sql":                                   _1528395680_lsif_packages_indexUpSql,
+	"1528395681_lsif_remove_failure_stacktrace.down.sql":                      _1528395681_lsif_remove_failure_stacktraceDownSql,
+	"1528395681_lsif_remove_failure_stacktrace.up.sql":                        _1528395681_lsif_remove_failure_stacktraceUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -1631,6 +1675,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395679_change_error_index_on_changeset_jobs.up.sql":                  {_1528395679_change_error_index_on_changeset_jobsUpSql, map[string]*bintree{}},
 	"1528395680_lsif_packages_index.down.sql":                                 {_1528395680_lsif_packages_indexDownSql, map[string]*bintree{}},
 	"1528395680_lsif_packages_index.up.sql":                                   {_1528395680_lsif_packages_indexUpSql, map[string]*bintree{}},
+	"1528395681_lsif_remove_failure_stacktrace.down.sql":                      {_1528395681_lsif_remove_failure_stacktraceDownSql, map[string]*bintree{}},
+	"1528395681_lsif_remove_failure_stacktrace.up.sql":                        {_1528395681_lsif_remove_failure_stacktraceUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

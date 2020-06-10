@@ -28,16 +28,15 @@ func TestGetIndexByID(t *testing.T) {
 	queuedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := queuedAt.Add(time.Minute)
 	expected := Index{
-		ID:                1,
-		Commit:            makeCommit(1),
-		QueuedAt:          queuedAt,
-		State:             "processing",
-		FailureSummary:    nil,
-		FailureStacktrace: nil,
-		StartedAt:         &startedAt,
-		FinishedAt:        nil,
-		RepositoryID:      123,
-		Rank:              nil,
+		ID:             1,
+		Commit:         makeCommit(1),
+		QueuedAt:       queuedAt,
+		State:          "processing",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     nil,
+		RepositoryID:   123,
+		Rank:           nil,
 	}
 
 	insertIndexes(t, dbconn.Global, expected)
@@ -113,11 +112,11 @@ func TestGetIndexes(t *testing.T) {
 	t8 := t1.Add(-time.Minute * 7)
 	t9 := t1.Add(-time.Minute * 8)
 	t10 := t1.Add(-time.Minute * 9)
-	failureSummary := "unlucky 333"
+	failureMessage := "unlucky 333"
 
 	insertIndexes(t, dbconn.Global,
 		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued"},
-		Index{ID: 2, QueuedAt: t2, State: "errored", FailureSummary: &failureSummary},
+		Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
 		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued"},
 		Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51},
 		Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing"},
@@ -136,7 +135,7 @@ func TestGetIndexes(t *testing.T) {
 		{expectedIDs: []int{1, 2, 3, 5, 6, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
 		{term: "003", expectedIDs: []int{1, 3, 5}},    // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}}, // searches commits and failure summary
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}}, // searches commits and failure message
 	}
 
 	for _, testCase := range testCases {
@@ -261,16 +260,15 @@ func TestInsertIndex(t *testing.T) {
 
 	rank := 1
 	expected := Index{
-		ID:                id,
-		Commit:            makeCommit(1),
-		QueuedAt:          time.Time{},
-		State:             "queued",
-		FailureSummary:    nil,
-		FailureStacktrace: nil,
-		StartedAt:         nil,
-		FinishedAt:        nil,
-		RepositoryID:      50,
-		Rank:              &rank,
+		ID:             id,
+		Commit:         makeCommit(1),
+		QueuedAt:       time.Time{},
+		State:          "queued",
+		FailureMessage: nil,
+		StartedAt:      nil,
+		FinishedAt:     nil,
+		RepositoryID:   50,
+		Rank:           &rank,
 	}
 
 	if index, exists, err := db.GetIndexByID(context.Background(), id); err != nil {
@@ -318,7 +316,7 @@ func TestMarkIndexErrored(t *testing.T) {
 
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
-	if err := db.MarkIndexErrored(context.Background(), 1, "oops", ""); err != nil {
+	if err := db.MarkIndexErrored(context.Background(), 1, "oops"); err != nil {
 		t.Fatalf("unexpected error marking index as complete: %s", err)
 	}
 
@@ -405,7 +403,7 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
 	}
 
-	if err := tx.MarkIndexErrored(context.Background(), index.ID, "test summary", "test stacktrace"); err != nil {
+	if err := tx.MarkIndexErrored(context.Background(), index.ID, "test message"); err != nil {
 		t.Fatalf("unexpected error marking index complete: %s", err)
 	}
 	_ = tx.Done(nil)
@@ -416,16 +414,10 @@ func TestDequeueIndexProcessError(t *testing.T) {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_summary: %s", err)
-	} else if summary != "test summary" {
-		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
-	}
-
-	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
-	} else if stacktrace != "test stacktrace" {
-		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
+	if message, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_indexes WHERE id = 1")); err != nil {
+		t.Errorf("unexpected error getting failure_message: %s", err)
+	} else if message != "test message" {
+		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)
 	}
 }
 

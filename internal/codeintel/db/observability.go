@@ -423,10 +423,10 @@ func (db *ObservedDB) MarkComplete(ctx context.Context, id int) (err error) {
 }
 
 // MarkErrored calls into the inner DB and registers the observed results.
-func (db *ObservedDB) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+func (db *ObservedDB) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	ctx, endObservation := db.markErroredOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.MarkErrored(ctx, id, failureSummary, failureStacktrace)
+	return db.db.MarkErrored(ctx, id, failureMessage)
 }
 
 // Dequeue calls into the inner DB and registers the observed results.
@@ -607,10 +607,10 @@ func (db *ObservedDB) MarkIndexComplete(ctx context.Context, id int) (err error)
 }
 
 // MarkIndexErrored calls into the inner DB and registers the observed results.
-func (db *ObservedDB) MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+func (db *ObservedDB) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	ctx, endObservation := db.markIndexErroredOperation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-	return db.db.MarkIndexErrored(ctx, id, failureSummary, failureStacktrace)
+	return db.db.MarkIndexErrored(ctx, id, failureMessage)
 }
 
 // DequeueIndex calls into the inner DB and registers the observed results.

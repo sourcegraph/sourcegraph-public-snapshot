@@ -11,16 +11,15 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	QueuedAt          time.Time  `json:"queuedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	RepositoryID      int        `json:"repositoryId"`
-	Rank              *int       `json:"placeInQueue"`
+	ID             int        `json:"id"`
+	Commit         string     `json:"commit"`
+	QueuedAt       time.Time  `json:"queuedAt"`
+	State          string     `json:"state"`
+	FailureMessage *string    `json:"failureMessage"`
+	StartedAt      *time.Time `json:"startedAt"`
+	FinishedAt     *time.Time `json:"finishedAt"`
+	RepositoryID   int        `json:"repositoryId"`
+	Rank           *int       `json:"placeInQueue"`
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*dbImpl.query`.
@@ -38,8 +37,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Commit,
 			&index.QueuedAt,
 			&index.State,
-			&index.FailureSummary,
-			&index.FailureStacktrace,
+			&index.FailureMessage,
 			&index.StartedAt,
 			&index.FinishedAt,
 			&index.RepositoryID,
@@ -76,8 +74,7 @@ func (db *dbImpl) GetIndexByID(ctx context.Context, id int) (Index, bool, error)
 			u.commit,
 			u.queued_at,
 			u.state,
-			u.failure_summary,
-			u.failure_stacktrace,
+			u.failure_message,
 			u.started_at,
 			u.finished_at,
 			u.repository_id,
@@ -143,8 +140,7 @@ func (db *dbImpl) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []I
 				u.commit,
 				u.queued_at,
 				u.state,
-				u.failure_summary,
-				u.failure_stacktrace,
+				u.failure_message,
 				u.started_at,
 				u.finished_at,
 				u.repository_id,
@@ -170,8 +166,7 @@ func (db *dbImpl) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []I
 func makeIndexSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
 		"commit",
-		"failure_summary",
-		"failure_stacktrace",
+		"failure_message",
 	}
 
 	var termConds []*sqlf.Query
@@ -232,12 +227,12 @@ func (db *dbImpl) MarkIndexComplete(ctx context.Context, id int) (err error) {
 }
 
 // MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-func (db *dbImpl) MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+func (db *dbImpl) MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_indexes
-		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
+		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
 		WHERE id = %s
-	`, failureSummary, failureStacktrace, id))
+	`, failureMessage, id))
 }
 
 var indexColumnsWithNullRank = []*sqlf.Query{
@@ -245,8 +240,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("commit"),
 	sqlf.Sprintf("queued_at"),
 	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_summary"),
-	sqlf.Sprintf("failure_stacktrace"),
+	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("repository_id"),

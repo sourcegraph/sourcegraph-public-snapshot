@@ -11,18 +11,17 @@ import (
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps view) and stores
 // only processed records.
 type Dump struct {
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	RepositoryID      int        `json:"repositoryId"`
-	Indexer           string     `json:"indexer"`
+	ID             int        `json:"id"`
+	Commit         string     `json:"commit"`
+	Root           string     `json:"root"`
+	VisibleAtTip   bool       `json:"visibleAtTip"`
+	UploadedAt     time.Time  `json:"uploadedAt"`
+	State          string     `json:"state"`
+	FailureMessage *string    `json:"failureMessage"`
+	StartedAt      *time.Time `json:"startedAt"`
+	FinishedAt     *time.Time `json:"finishedAt"`
+	RepositoryID   int        `json:"repositoryId"`
+	Indexer        string     `json:"indexer"`
 }
 
 // scanDumps scans a slice of dumps from the return value of `*dbImpl.query`.
@@ -42,8 +41,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.VisibleAtTip,
 			&dump.UploadedAt,
 			&dump.State,
-			&dump.FailureSummary,
-			&dump.FailureStacktrace,
+			&dump.FailureMessage,
 			&dump.StartedAt,
 			&dump.FinishedAt,
 			&dump.RepositoryID,
@@ -82,8 +80,7 @@ func (db *dbImpl) GetDumpByID(ctx context.Context, id int) (Dump, bool, error) {
 			d.visible_at_tip,
 			d.uploaded_at,
 			d.state,
-			d.failure_summary,
-			d.failure_stacktrace,
+			d.failure_message,
 			d.started_at,
 			d.finished_at,
 			d.repository_id,
@@ -130,8 +127,7 @@ func (db *dbImpl) FindClosestDumps(ctx context.Context, repositoryID int, commit
 				d.visible_at_tip,
 				d.uploaded_at,
 				d.state,
-				d.failure_summary,
-				d.failure_stacktrace,
+				d.failure_message,
 				d.started_at,
 				d.finished_at,
 				d.repository_id,

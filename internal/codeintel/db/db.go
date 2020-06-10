@@ -65,7 +65,7 @@ type DB interface {
 	MarkComplete(ctx context.Context, id int) error
 
 	// MarkErrored updates the state of the upload to errored and updates the failure summary data.
-	MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) error
+	MarkErrored(ctx context.Context, id int, failureMessage string) error
 
 	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
 	// upload is returned along with a DB instance which wraps the transaction. This transaction must be closed.
@@ -156,7 +156,7 @@ type DB interface {
 	MarkIndexComplete(ctx context.Context, id int) (err error)
 
 	// MarkIndexErrored updates the state of the index to errored and updates the failure summary data.
-	MarkIndexErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error)
+	MarkIndexErrored(ctx context.Context, id int, failureMessage string) (err error)
 
 	// DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 	// the index is returned along with a DB instance which wraps the transaction. This transaction must be

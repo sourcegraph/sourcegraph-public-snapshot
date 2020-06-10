@@ -110,7 +110,7 @@ func (i *Indexer) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 			"err", processErr,
 		)
 
-		if markErr := tx.MarkIndexErrored(ctx, index.ID, processErr.Error(), ""); markErr != nil {
+		if markErr := tx.MarkIndexErrored(ctx, index.ID, processErr.Error()); markErr != nil {
 			return true, errors.Wrap(markErr, "db.MarkIndexErrored")
 		}
 	}
