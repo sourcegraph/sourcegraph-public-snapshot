@@ -35,6 +35,9 @@ export EXTSVC_CONFIG_ALLOW_EDITS=true
 SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
 export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
+export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
+export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
+
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/internal"
 export ENTERPRISE_COMMANDS="frontend repo-updater precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-worker"
 export ENTERPRISE=1

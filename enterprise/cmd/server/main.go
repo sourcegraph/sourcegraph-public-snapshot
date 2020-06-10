@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
@@ -25,6 +26,11 @@ func main() {
 		map[string]string{"Name": "precise-code-intel-bundle-manager", "Host": "127.0.0.1:6087"},
 		map[string]string{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
 	)
+
+	shared.AdditionalDefaultEnv = map[string]string{
+		"PRECISE_CODE_INTEL_BUNDLE_DIR":         filepath.Join(shared.DataDir, "lsif-storage"),
+		"PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL": "http://127.0.0.1:3187",
+	}
 
 	shared.Main()
 }
