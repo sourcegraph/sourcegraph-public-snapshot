@@ -25,17 +25,17 @@ type NewCodeIntelUploadHandler func(internal bool) http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GithubWebhook:             makeHandler("github webhook"),
-		BitbucketServerWebhook:    makeHandler("bitbucket server webhook"),
-		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeHandler("code intel upload") },
+		GithubWebhook:             makeNotFoundHandler("github webhook"),
+		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
+		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		CampaignsResolver:         graphqlbackend.DefaultCampaignsResolver,
 		CodeIntelResolver:         graphqlbackend.DefaultCodeIntelResolver,
 	}
 }
 
-// makeHandler returns an HTTP handler that respond 404 for all requests.
-func makeHandler(handlerName string) http.Handler {
+// makeNotFoundHandler returns an HTTP handler that respond 404 for all requests.
+func makeNotFoundHandler(handlerName string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(fmt.Sprintf("%s is only available in enterprise", handlerName)))
