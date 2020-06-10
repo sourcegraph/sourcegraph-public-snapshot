@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
 type locationConnectionResolver struct {
@@ -64,20 +65,24 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 // A non-nil error means the connection resolver was unable to load the diff between
 // the requested commit and location's commit.
 func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location codeintelapi.ResolvedLocation) (string, lsp.Range, error) {
-	if api.RepoID(location.Dump.RepositoryID) != r.repo.ID {
-		return location.Dump.Commit, convertRange(location.Range), nil
+	return adjustLocation(ctx, location.Dump.RepositoryID, location.Dump.Commit, location.Path, location.Range, r.repo, r.commit)
+}
+
+func adjustLocation(ctx context.Context, locationRepositoryID int, locationCommit, locationPath string, locationRange bundles.Range, repo *types.Repo, commit api.CommitID) (string, lsp.Range, error) {
+	if api.RepoID(locationRepositoryID) != repo.ID {
+		return locationCommit, convertRange(locationRange), nil
 	}
 
-	adjuster, err := newPositionAdjuster(ctx, r.repo, location.Dump.Commit, string(r.commit), location.Path)
+	adjuster, err := newPositionAdjuster(ctx, repo, locationCommit, string(commit), locationPath)
 	if err != nil {
 		return "", lsp.Range{}, err
 	}
 
-	if adjustedRange, ok := adjuster.adjustRange(convertRange(location.Range)); ok {
-		return string(r.commit), adjustedRange, nil
+	if adjustedRange, ok := adjuster.adjustRange(convertRange(locationRange)); ok {
+		return string(commit), adjustedRange, nil
 	}
 
 	// Couldn't adjust range, return original result which is precise but
 	// jump the user to another into another commit context on navigation.
-	return location.Dump.Commit, convertRange(location.Range), nil
+	return locationCommit, convertRange(locationRange), nil
 }
