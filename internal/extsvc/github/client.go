@@ -69,8 +69,8 @@ type Client struct {
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
 
-	// RateLimit is the API rate limit monitor.
-	RateLimit *ratelimit.Monitor
+	// RateLimitMonitor is the API rate limit monitor.
+	RateLimitMonitor *ratelimit.Monitor
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -142,12 +142,12 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 	})
 
 	return &Client{
-		apiURL:       apiURL,
-		githubDotCom: urlIsGitHubDotCom(apiURL),
-		token:        token,
-		httpClient:   cli,
-		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    newRepoCache(apiURL, token),
+		apiURL:           apiURL,
+		githubDotCom:     urlIsGitHubDotCom(apiURL),
+		token:            token,
+		httpClient:       cli,
+		RateLimitMonitor: &ratelimit.Monitor{HeaderPrefix: "X-"},
+		repoCache:        newRepoCache(apiURL, token),
 	}
 }
 
@@ -184,7 +184,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	defer resp.Body.Close()
-	c.RateLimit.Update(resp.Header)
+	c.RateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
