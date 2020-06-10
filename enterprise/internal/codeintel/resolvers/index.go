@@ -6,8 +6,8 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type lsifIndexResolver struct {
@@ -46,10 +46,6 @@ func (r *lsifIndexResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.Gi
 	return resolvePath(ctx, api.RepoID(r.lsifIndex.RepositoryID), r.lsifIndex.Commit, "")
 }
 
-func (r *lsifIndexResolver) Failure() graphqlbackend.LSIFIndexFailureReasonResolver {
-	if r.lsifIndex.FailureSummary == nil {
-		return nil
-	}
-
-	return &lsifIndexFailureReasonResolver{r.lsifIndex}
+func (r *lsifIndexResolver) Failure() *string {
+	return r.lsifIndex.FailureMessage
 }
