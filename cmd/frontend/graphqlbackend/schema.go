@@ -2700,8 +2700,8 @@ interface TreeEntry {
     # CHANGELOG during this time.
     # LSIF data for this tree entry.
     lsif(
-        # An optional filter for the name of the indexer that produced the upload data.
-        indexer: String
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
     ): TreeEntryLSIFData
 }
 
@@ -2777,8 +2777,8 @@ type GitTree implements TreeEntry {
     # CHANGELOG during this time.
     # LSIF data for this tree entry.
     lsif(
-        # An optional filter for the name of the indexer that produced the upload data.
-        indexer: String
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
     ): TreeEntryLSIFData
 }
 
@@ -2936,8 +2936,8 @@ type GitBlob implements TreeEntry & File2 {
     # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     # intelligence queries for this path-at-revision, this resolves to null.
     lsif(
-        # An optional filter for the name of the indexer that produced the upload data.
-        indexer: String
+        # An optional filter for the name of the tool that produced the upload data.
+        toolName: String
     ): GitBlobLSIFData
 }
 

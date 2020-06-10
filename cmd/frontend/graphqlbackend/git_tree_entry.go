@@ -291,12 +291,12 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ Indexer *string }) (GitBlobLSIFDataResolver, error) {
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (GitBlobLSIFDataResolver, error) {
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 
-	var indexer string
-	if args.Indexer != nil {
-		indexer = *args.Indexer
+	var toolName string
+	if args.ToolName != nil {
+		toolName = *args.ToolName
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
@@ -304,7 +304,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ Indexer *
 		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
 		ExactPath:  !r.stat.IsDir(),
-		Indexer:    indexer,
+		ToolName:   toolName,
 	})
 }
 
