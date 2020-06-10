@@ -116,10 +116,8 @@ func Main(enterpriseSetupHook func()) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if dbconn.Global == nil {
-		if err := InitDB(); err != nil {
-			log.Fatalf("ERROR: %v", err)
-		}
+	if err := InitDB(); err != nil {
+		log.Fatalf("ERROR: %v", err)
 	}
 
 	if err := handleConfigOverrides(); err != nil {
