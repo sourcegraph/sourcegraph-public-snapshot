@@ -73,6 +73,8 @@ var msResolutionClock = func() time.Time {
 }
 
 func initLicensing() {
+	// TODO(efritz) - de-globalize assignments in this function
+
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	db.Users.PreCreateUser = licensing.NewPreCreateUserHook(&usersStore{})
