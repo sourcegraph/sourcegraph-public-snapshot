@@ -7,14 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/opentracing/opentracing-go/ext"
 	pkgerrors "github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/codeintelutils"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
@@ -51,10 +49,6 @@ func (s *Server) handler() http.Handler {
 
 // GET /uploads/{id:[0-9]+}
 func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
-	totalTransfers.Inc()
-	numConcurrentTransfers.Inc()
-	defer func() { numConcurrentTransfers.Dec() }()
-
 	file, err := os.Open(paths.UploadFilename(s.bundleDir, idFromRequest(r)))
 	if err != nil {
 		http.Error(w, "Upload not found.", http.StatusNotFound)
@@ -73,10 +67,7 @@ func (s *Server) handleGetUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if n, err := io.Copy(limitTransferRate(w), file); err != nil {
-		if isConnectionError(err) {
-			log15.Error("Failure to transfer upload from bundle from manager", "n", n)
-		}
+	if _, err := io.Copy(limitTransferRate(w), file); err != nil {
 		log15.Error("Failed to write payload to client", "err", err)
 	}
 }
@@ -281,12 +272,6 @@ func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request
 // doUpload writes the HTTP request body to the path determined by the given
 // makeFilename function.
 func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename func(bundleDir string, id int64) string) bool {
-	totalTransfers.Inc()
-	numConcurrentTransfers.Inc()
-	defer func() {
-		numConcurrentTransfers.Dec()
-	}()
-
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log15.Error("Failed to open target file", "err", err)
@@ -415,37 +400,4 @@ func (s *Server) wrapDatabase(innerDatabase database.Database, filename string) 
 // prevent the disruption of other in-flight requests, we cap the transfer rate of w to 1Gbps.
 func limitTransferRate(w io.Writer) io.Writer {
 	return flowrate.NewWriter(w, 1000*1000*1000)
-}
-
-//
-// Temporary network debugging code
-
-var totalTransfers = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_bundle_manager_transfers",
-	Help: "The total number transfers in-flight to/from the bundle manager.",
-})
-
-var numConcurrentTransfers = prometheus.NewGauge(prometheus.GaugeOpts{
-	Name: "src_bundle_manager_concurrent_transfers",
-	Help: "The total number concurrent transfers in-flight to/from the bundle manager.",
-})
-
-var connectionErrors = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "src_bundle_manager_connection_reset_by_peer_write",
-	Help: "The total number connection reset by peer errors (server) when trying to transfer upload payloads.",
-})
-
-func init() {
-	prometheus.MustRegister(totalTransfers)
-	prometheus.MustRegister(numConcurrentTransfers)
-	prometheus.MustRegister(connectionErrors)
-}
-
-func isConnectionError(err error) bool {
-	if err != nil && strings.Contains(err.Error(), "write: connection reset by peer") {
-		connectionErrors.Inc()
-		return true
-	}
-
-	return false
 }
