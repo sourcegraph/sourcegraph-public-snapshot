@@ -62,8 +62,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				visible_at_tip,
 				uploaded_at,
 				state,
-				failure_summary,
-				failure_stacktrace,
+				failure_message,
 				started_at,
 				finished_at,
 				process_after,
@@ -71,7 +70,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 				indexer,
 				num_parts,
 				uploaded_parts
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -79,8 +78,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 			upload.VisibleAtTip,
 			upload.UploadedAt,
 			upload.State,
-			upload.FailureSummary,
-			upload.FailureStacktrace,
+			upload.FailureMessage,
 			upload.StartedAt,
 			upload.FinishedAt,
 			upload.ProcessAfter,
@@ -115,20 +113,18 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				commit,
 				queued_at,
 				state,
-				failure_summary,
-				failure_stacktrace,
+				failure_message,
 				started_at,
 				finished_at,
 				process_after,
 				repository_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
 			index.QueuedAt,
 			index.State,
-			index.FailureSummary,
-			index.FailureStacktrace,
+			index.FailureMessage,
 			index.StartedAt,
 			index.FinishedAt,
 			index.ProcessAfter,

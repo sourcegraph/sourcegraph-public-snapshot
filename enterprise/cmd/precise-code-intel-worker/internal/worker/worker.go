@@ -92,7 +92,7 @@ func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
 		// TODO(efritz) - distinguish between correlation and system errors
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", processErr)
 
-		if markErr := tx.MarkErrored(ctx, upload.ID, processErr.Error(), ""); markErr != nil {
+		if markErr := tx.MarkErrored(ctx, upload.ID, processErr.Error()); markErr != nil {
 			return true, errors.Wrap(markErr, "db.MarkErrored")
 		}
 	}

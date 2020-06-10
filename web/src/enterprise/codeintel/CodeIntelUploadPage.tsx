@@ -132,7 +132,7 @@ export const CodeIntelUploadPage: FunctionComponent<Props> = ({
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" />{' '}
                             <span className="e2e-upload-state">Upload failed to complete:</span>{' '}
-                            <code>{uploadOrError.failure && uploadOrError.failure.summary}</code>
+                            <code>{uploadOrError.failure}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
