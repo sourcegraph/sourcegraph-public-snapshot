@@ -155,6 +155,8 @@ const queryRepositoryContributors = memoizeObservable(
         `${args.repo}:${String(args.first)}:${String(args.revisionRange)}:${String(args.after)}:${String(args.path)}`
 )
 
+const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
+
 interface Props
     extends RepositoryStatsAreaPageProps,
         RouteComponentProps<{}>,
@@ -205,7 +207,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
 
         // Whether the user has entered new option values that differ from what's in the URL query and has not yet
         // submitted the form.
-        const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
         const stateDiffers =
             !equalOrEmpty(this.state.revisionRange, revisionRange) ||
             !equalOrEmpty(this.state.after, after) ||

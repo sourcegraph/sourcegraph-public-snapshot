@@ -86,8 +86,8 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                 ])
             }
         }
-    } catch (err) {
-        settingsGroup.error = asError(err)
+    } catch (error) {
+        settingsGroup.error = asError(error)
     }
     if (settingsGroup.error || settingsGroup.rows.length > 0) {
         groups.push(settingsGroup)
@@ -135,8 +135,8 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                 ])
             }
         }
-    } catch (err) {
-        actionsGroup.error = asError(err)
+    } catch (error) {
+        actionsGroup.error = asError(error)
     }
     if (actionsGroup.error || actionsGroup.rows.length > 0) {
         groups.push(actionsGroup)

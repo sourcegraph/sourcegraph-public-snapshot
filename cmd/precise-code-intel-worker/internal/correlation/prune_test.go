@@ -24,7 +24,7 @@ func TestPrune(t *testing.T) {
 	}
 
 	state := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go"},
 			"d02": {URI: "bar.go"},
 			"d03": {URI: "sub/baz.go"},
@@ -46,7 +46,7 @@ func TestPrune(t *testing.T) {
 	}
 
 	expectedState := &State{
-		DocumentData: map[string]lsif.DocumentData{
+		DocumentData: map[string]lsif.Document{
 			"d01": {URI: "foo.go"},
 			"d02": {URI: "bar.go"},
 			"d03": {URI: "sub/baz.go"},

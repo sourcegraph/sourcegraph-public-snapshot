@@ -6,8 +6,8 @@ import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
 import { Stats } from 'webpack'
-import extensionInfo from '../src/extension/manifest.spec.json'
-import schema from '../src/extension/schema.json'
+import extensionInfo from '../src/browser-extension/manifest.spec.json'
+import schema from '../src/browser-extension/schema.json'
 
 /**
  * If true, add <all_urls> to the permissions in the manifest.
@@ -43,8 +43,8 @@ export function copyAssets(): void {
     const dir = 'build/dist'
     shelljs.rm('-rf', dir)
     shelljs.mkdir('-p', dir)
-    shelljs.cp('-R', 'src/extension/assets/*', dir)
-    shelljs.cp('-R', 'src/extension/views/*', dir)
+    shelljs.cp('-R', 'assets/*', dir)
+    shelljs.cp('-R', 'src/browser-extension/pages/*', dir)
     signale.success('Assets copied')
 }
 
@@ -68,7 +68,7 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
-    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/integration')
+    shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     // Copy to the ui/assets directory so that these files can be served by the webapp.
     shelljs.mkdir('-p', '../ui/assets/extension')
     shelljs.cp('-r', 'build/integration/*', '../ui/assets/extension')

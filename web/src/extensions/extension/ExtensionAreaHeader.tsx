@@ -35,7 +35,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
         if (manifest?.icon) {
             iconURL = new URL(manifest.icon)
         }
-    } catch (e) {
+    } catch {
         // noop
     }
 

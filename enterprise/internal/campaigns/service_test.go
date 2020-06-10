@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -23,6 +24,191 @@ import (
 
 func init() {
 	dbtesting.DBNameSuffix = "campaignsenterpriserdb"
+}
+
+func TestServicePermissionLevels(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+
+	store := NewStore(dbconn.Global)
+	svc := NewService(store, nil)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatalf("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatalf("user cannot be site admin")
+	}
+
+	otherUser := createTestUser(ctx, t)
+	if otherUser.SiteAdmin {
+		t.Fatalf("user cannot be site admin")
+	}
+
+	var rs []*repos.Repo
+	for i := 0; i < 4; i++ {
+		rs = append(rs, testRepo(i, github.ServiceType))
+	}
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	err := reposStore.UpsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, []*campaigns.Patch, []*campaigns.ChangesetJob, *campaigns.Changeset) {
+		patchSet := &campaigns.PatchSet{UserID: author}
+		if err = s.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patches := make([]*campaigns.Patch, 0, len(rs))
+		for _, repo := range rs {
+			patch := testPatch(patchSet.ID, repo.ID, now)
+			if err := s.CreatePatch(ctx, patch); err != nil {
+				t.Fatal(err)
+			}
+			patches = append(patches, patch)
+		}
+
+		campaign := testCampaign(author, patchSet.ID)
+		if err = s.CreateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		changesetJobs := make([]*campaigns.ChangesetJob, 0, len(patches))
+		for _, p := range patches {
+			job := &campaigns.ChangesetJob{CampaignID: campaign.ID, PatchID: p.ID}
+			if err = s.CreateChangesetJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+			changesetJobs = append(changesetJobs, job)
+		}
+
+		changeset := testChangeset(patches[0].RepoID, changesetJobs[0].CampaignID, changesetJobs[0].ID, campaigns.ChangesetStateOpen)
+		if err = s.CreateChangesets(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+		if err := s.UpdateCampaign(ctx, campaign); err != nil {
+			t.Fatal(err)
+		}
+
+		return campaign, patches, changesetJobs, changeset
+	}
+
+	assertAuthError := func(t *testing.T, err error) {
+		t.Helper()
+
+		if err == nil {
+			t.Fatalf("expected error. got none")
+		}
+		if err != nil {
+			if _, ok := err.(*backend.InsufficientAuthorizationError); !ok {
+				t.Fatalf("wrong error: %s (%T)", err, err)
+			}
+		}
+	}
+
+	assertNoAuthError := func(t *testing.T, err error) {
+		t.Helper()
+
+		// Ignore other errors, we only want to check whether it's an auth error
+		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {
+			t.Fatalf("got auth error")
+		}
+	}
+
+	tests := []struct {
+		name           string
+		campaignAuthor int32
+		currentUser    int32
+		assertFunc     func(t *testing.T, err error)
+	}{
+		{
+			name:           "unauthorized user",
+			campaignAuthor: user.ID,
+			currentUser:    otherUser.ID,
+			assertFunc:     assertAuthError,
+		},
+		{
+			name:           "campaign author",
+			campaignAuthor: user.ID,
+			currentUser:    user.ID,
+			assertFunc:     assertNoAuthError,
+		},
+
+		{
+			name:           "site-admin",
+			campaignAuthor: user.ID,
+			currentUser:    admin.ID,
+			assertFunc:     assertNoAuthError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			campaign, patches, _, changeset := createTestData(t, store, svc, tc.campaignAuthor)
+			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
+			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+
+			t.Run("PublishCampaign", func(t *testing.T) {
+				_, err = svc.PublishCampaign(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("RetryPublishCampaign", func(t *testing.T) {
+				_, err = svc.RetryPublishCampaign(currentUserCtx, campaign.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("EnqueueChangesetJobForPatch", func(t *testing.T) {
+				for _, p := range patches {
+					err = svc.EnqueueChangesetJobForPatch(currentUserCtx, p.ID)
+					tc.assertFunc(t, err)
+				}
+			})
+
+			t.Run("UpdateCampaign", func(t *testing.T) {
+				newName := "newName"
+				_, _, err = svc.UpdateCampaign(currentUserCtx, UpdateCampaignArgs{
+					Campaign: campaign.ID,
+					Name:     &newName,
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("EnqueueChangesetSync", func(t *testing.T) {
+				err = svc.EnqueueChangesetSync(currentUserCtx, changeset.ID)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("AddChangesetsToCampaign", func(t *testing.T) {
+				_, err = svc.AddChangesetsToCampaign(currentUserCtx, campaign.ID, []int64{99999})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("CloseCampaign", func(t *testing.T) {
+				_, err = svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("DeleteCampaign", func(t *testing.T) {
+				err = svc.DeleteCampaign(currentUserCtx, campaign.ID, false)
+				tc.assertFunc(t, err)
+			})
+		})
+	}
 }
 
 func TestService(t *testing.T) {
@@ -152,6 +338,110 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("DeleteCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := testPatch(patchSet.ID, rs[0].ID, now)
+		if err := store.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		// This creates processing ChangesetJobs.
+		if err = svc.CreateCampaign(ctx, campaign, false); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != ErrDeleteProcessingCampaign {
+			t.Fatalf("DeleteCampaign returned unexpected error: %s", err)
+		}
+
+		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(jobs) != 1 {
+			t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
+		}
+
+		for _, j := range jobs {
+			j.Error = "failed"
+			j.FinishedAt = clock()
+			if err := store.UpdateChangesetJob(ctx, j); err != nil {
+				t.Fatalf("updating changeset job failed: %s\n", err)
+			}
+		}
+
+		// Now it should work, since the jobs failed to execute and campaign is
+		// no longer processing.
+		if err := svc.DeleteCampaign(ctx, campaign.ID, true); err != nil {
+			t.Fatalf("campaign not deleted: %s", err)
+		}
+	})
+
+	t.Run("CloseCampaign", func(t *testing.T) {
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		if err = store.CreatePatchSet(ctx, patchSet); err != nil {
+			t.Fatal(err)
+		}
+
+		patch := testPatch(patchSet.ID, rs[0].ID, now)
+		if err := store.CreatePatch(ctx, patch); err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := testCampaign(user.ID, patchSet.ID)
+
+		svc := NewServiceWithClock(store, cf, clock)
+		// This creates processing ChangesetJobs.
+		if err = svc.CreateCampaign(ctx, campaign, false); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err = svc.CloseCampaign(ctx, campaign.ID, true); err != ErrCloseProcessingCampaign {
+			t.Fatalf("CloseCampaign returned unexpected error: %s", err)
+		}
+
+		jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(jobs) != 1 {
+			t.Fatalf("wrong number of changeset jobs: %d", len(jobs))
+		}
+
+		for _, j := range jobs {
+			j.Error = "failed"
+			j.FinishedAt = clock()
+			if err := store.UpdateChangesetJob(ctx, j); err != nil {
+				t.Fatalf("updating changeset job failed: %s\n", err)
+			}
+		}
+
+		// Now it should work, since the jobs failed to execute and campaign is
+		// no longer processing.
+		campaign, err = svc.CloseCampaign(ctx, campaign.ID, true)
+		if err != nil {
+			t.Fatalf("campaign not closed: %s", err)
+		}
+		if campaign.ClosedAt.IsZero() {
+			t.Fatalf("campaign ClosedAt is zero")
+		}
+	})
+
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
@@ -221,7 +511,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateChangesetJobForPatch", func(t *testing.T) {
+	t.Run("EnqueueChangesetJobForPatch", func(t *testing.T) {
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
@@ -241,7 +531,7 @@ func TestService(t *testing.T) {
 		}
 
 		svc := NewServiceWithClock(store, cf, clock)
-		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
+		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -255,7 +545,7 @@ func TestService(t *testing.T) {
 		}
 
 		// Try to create again, check that it's the same one
-		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
+		err = svc.EnqueueChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -269,6 +559,42 @@ func TestService(t *testing.T) {
 
 		if haveJob2.ID != haveJob.ID {
 			t.Errorf("wrong changesetJob: %d. want=%d", haveJob2.ID, haveJob.ID)
+		}
+
+		// Error out the changeset job and verify that
+		// EnqueueChangesetJobForPatch updates the job to force a retry.
+		haveJob.Error = "ruh roh"
+		haveJob.StartedAt = time.Now()
+		haveJob.FinishedAt = time.Now()
+		if err := store.UpdateChangesetJob(ctx, haveJob); err != nil {
+			t.Fatal(err)
+		}
+		// Sanity check: did this result in the job being considered
+		// unsuccessfully completed?
+		if !haveJob.UnsuccessfullyCompleted() {
+			t.Error("tried to error out the changesetJob and failed")
+		}
+		if err := svc.EnqueueChangesetJobForPatch(ctx, patch.ID); err != nil {
+			t.Fatal(err)
+		}
+		haveJob3, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID: campaign.ID,
+			PatchID:    patch.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if haveJob3.ID != haveJob.ID {
+			t.Errorf("wrong changesetJob: %d. want=%d", haveJob3.ID, haveJob.ID)
+		}
+		if haveJob3.Error != "" {
+			t.Errorf("unexpected changesetJob Error value: %s. want=%s", haveJob3.Error, "")
+		}
+		if !haveJob3.StartedAt.IsZero() {
+			t.Errorf("unexpected changesetJob StartedAt value: %v. want=%v", haveJob3.StartedAt, time.Time{})
+		}
+		if !haveJob3.FinishedAt.IsZero() {
+			t.Errorf("unexpected changesetJob FinishedAt value: %v. want=%v", haveJob3.FinishedAt, time.Time{})
 		}
 	})
 
@@ -451,7 +777,6 @@ func TestService(t *testing.T) {
 			t.Fatal("no error even though another campaign has same patch set")
 		}
 	})
-
 }
 
 type repoNames []string
@@ -794,7 +1119,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 						if j.RepoID == repo.ID {
 							toPublish[j.ID] = j
 
-							err = svc.CreateChangesetJobForPatch(ctx, j.ID)
+							err = svc.EnqueueChangesetJobForPatch(ctx, j.ID)
 							if err != nil {
 								t.Fatalf("Failed to individually created ChangesetJob: %s", err)
 							}

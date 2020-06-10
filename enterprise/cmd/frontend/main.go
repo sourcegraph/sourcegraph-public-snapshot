@@ -9,6 +9,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -30,14 +31,12 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/proxy"
-	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
+	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	codeintelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	codeintelapi "github.com/sourcegraph/sourcegraph/internal/codeintel/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	codeinteldb "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/enqueuer"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
-	lsifserverclient "github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -109,8 +108,6 @@ func main() {
 		bitbucketWebhookName,
 	)
 
-	go bitbucketServerWebhook.SyncWebhooks(ctx, 1*time.Minute)
-
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
 
@@ -178,15 +175,17 @@ func initCodeIntel() {
 	db := codeinteldb.NewObserved(codeinteldb.NewWithHandle(dbconn.Global), observationContext)
 	bundleManagerClient := bundles.New(bundleManagerURL)
 	api := codeintelapi.NewObserved(codeintelapi.New(db, bundleManagerClient, codeintelgitserver.DefaultClient), observationContext)
-	client := lsifserverclient.New(db, bundleManagerClient, api)
-	enqueuer := enqueuer.NewEnqueuer(db, bundleManagerClient)
 
 	graphqlbackend.NewCodeIntelResolver = func() graphqlbackend.CodeIntelResolver {
-		return codeIntelResolvers.NewResolver(client)
+		return codeintelResolvers.NewResolver(
+			db,
+			bundleManagerClient,
+			api,
+		)
 	}
 
-	httpapi.NewLSIFServerProxy = func() (*httpapi.LSIFServerProxy, error) {
-		return proxy.NewProxy(enqueuer, client)
+	httpapi.NewCodeIntelUploadHandler = func() http.Handler {
+		return codeintelhttpapi.NewUploadHandler(db, bundleManagerClient)
 	}
 }
 

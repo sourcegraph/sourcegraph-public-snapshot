@@ -62,10 +62,10 @@ export class TestResourceManager {
 
             try {
                 await resource.destroy()
-            } catch (err) {
+            } catch (error) {
                 console.error(
                     `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${
-                        asError(err).message
+                        asError(error).message
                     }`
                 )
                 continue

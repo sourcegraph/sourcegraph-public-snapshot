@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -92,9 +92,6 @@ func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Sou
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
 }
-
-// sourceTimeout is the default timeout to use on Source.ListRepos
-const sourceTimeout = 30 * time.Minute
 
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.

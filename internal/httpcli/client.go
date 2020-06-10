@@ -65,6 +65,7 @@ func NewExternalHTTPClientFactory() *Factory {
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
+		NewTimeoutOpt(60*time.Second),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
@@ -256,6 +257,14 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 
 		tr.IdleConnTimeout = timeout
 
+		return nil
+	}
+}
+
+// NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
+func NewTimeoutOpt(timeout time.Duration) Opt {
+	return func(cli *http.Client) error {
+		cli.Timeout = timeout
 		return nil
 	}
 }

@@ -9,14 +9,14 @@ import (
 type State struct {
 	LSIFVersion            string
 	ProjectRoot            string
-	DocumentData           map[string]lsif.DocumentData
-	RangeData              map[string]lsif.RangeData
-	ResultSetData          map[string]lsif.ResultSetData
+	DocumentData           map[string]lsif.Document
+	RangeData              map[string]lsif.Range
+	ResultSetData          map[string]lsif.ResultSet
 	DefinitionData         map[string]datastructures.DefaultIDSetMap
 	ReferenceData          map[string]datastructures.DefaultIDSetMap
 	HoverData              map[string]string
-	MonikerData            map[string]lsif.MonikerData
-	PackageInformationData map[string]lsif.PackageInformationData
+	MonikerData            map[string]lsif.Moniker
+	PackageInformationData map[string]lsif.PackageInformation
 	NextData               map[string]string            // maps vertices related via next edges
 	ImportedMonikers       datastructures.IDSet         // moniker ids that have kind "import"
 	ExportedMonikers       datastructures.IDSet         // moniker ids that have kind "export"
@@ -27,14 +27,14 @@ type State struct {
 // newState create a new State with zero-valued map fields.
 func newState() *State {
 	return &State{
-		DocumentData:           map[string]lsif.DocumentData{},
-		RangeData:              map[string]lsif.RangeData{},
-		ResultSetData:          map[string]lsif.ResultSetData{},
+		DocumentData:           map[string]lsif.Document{},
+		RangeData:              map[string]lsif.Range{},
+		ResultSetData:          map[string]lsif.ResultSet{},
 		DefinitionData:         map[string]datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[string]datastructures.DefaultIDSetMap{},
 		HoverData:              map[string]string{},
-		MonikerData:            map[string]lsif.MonikerData{},
-		PackageInformationData: map[string]lsif.PackageInformationData{},
+		MonikerData:            map[string]lsif.Moniker{},
+		PackageInformationData: map[string]lsif.PackageInformation{},
 		NextData:               map[string]string{},
 		ImportedMonikers:       datastructures.IDSet{},
 		ExportedMonikers:       datastructures.IDSet{},

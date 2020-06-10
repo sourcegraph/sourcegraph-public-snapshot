@@ -152,7 +152,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 }
 
-func Test_ErrorToAlertStructuralSearch(t *testing.T) {
+func TestErrorToAlertStructuralSearch(t *testing.T) {
 	cases := []struct {
 		name           string
 		errors         []error

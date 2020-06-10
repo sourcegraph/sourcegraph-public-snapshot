@@ -21,12 +21,11 @@ func (j *Janitor) freeSpace() error {
 	diskSizeBytes := fs.Blocks * uint64(fs.Bsize)
 	freeBytes := fs.Bavail * uint64(fs.Bsize)
 	desiredFreeBytes := uint64(float64(diskSizeBytes) * float64(j.desiredPercentFree) / 100.0)
-
-	if freeBytes < desiredFreeBytes {
-		return j.evictBundles(uint64(desiredFreeBytes - freeBytes))
+	if freeBytes >= desiredFreeBytes {
+		return nil
 	}
 
-	return nil
+	return j.evictBundles(desiredFreeBytes - freeBytes)
 }
 
 // evictBundles removes completed upload recors from the database and then deletes the
@@ -77,7 +76,9 @@ func (j *Janitor) evictBundle() (uint64, bool, error) {
 	}
 
 	if err := os.Remove(path); err != nil {
-		return 0, false, err
+		j.metrics.Errors.Inc()
+		log15.Error("Failed to remove file", "path", path, "err", err)
+		return 0, true, nil
 	}
 
 	log15.Debug("Removed evicted bundle file", "id", id, "path", path)

@@ -9,6 +9,10 @@ import (
 // ErrMissingMetaData occurs when no metadata vertex is present or not the first lne in the upload.
 var ErrMissingMetaData = errors.New("no metadata defined")
 
+// ErrUnexpectedPayload occurs when the reader does not deserialize the payload of an element
+// as expected by the correlation process. This signifies a programming error.
+var ErrUnexpectedPayload = errors.New("unexpected payload for element")
+
 // ErrMalformedDump is an error that occurs when the correlator find an identifier
 // that does not point to the correct element (if it points to any element at all).
 type ErrMalformedDump struct {

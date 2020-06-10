@@ -296,7 +296,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public componentDidUpdate(): void {
-        const lowestIndex = Array.from(this.state.visibleItems).reduce((low, index) => Math.min(index, low), Infinity)
+        const lowestIndex = [...this.state.visibleItems].reduce((low, index) => Math.min(index, low), Infinity)
 
         this.firstVisibleItems.next(lowestIndex)
 
@@ -544,7 +544,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
+        const checkpoint = parseInt(this.props.location.hash.slice(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {

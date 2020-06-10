@@ -20,13 +20,27 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Repository search within a version context will link to the revision in the version context. [#10860](https://github.com/sourcegraph/sourcegraph/pull/10860)
+- Background permissions syncing becomes the default method to sync permissions from code hosts. Please [read our documentation for things to keep in mind before upgrading](https://docs.sourcegraph.com/admin/repo/permissions#background-permissions-syncing). [#10972](https://github.com/sourcegraph/sourcegraph/pull/10972)
+- The styling of the hover overlay was overhauled to never have badges or the close button overlap content while also always indicating whether the overlay is currently pinned. The styling on code hosts was also improved. [#10956](https://github.com/sourcegraph/sourcegraph/pull/10956)
 
 ### Fixed
 
 - Dynamic repo search filters on branches which contain special characters are correctly escaped now. [#10810](https://github.com/sourcegraph/sourcegraph/pull/10810)
 - Forks and archived repositories at a specific commit are searched without the need to specify "fork:yes" or "archived:yes" in the query. [#10864](https://github.com/sourcegraph/sourcegraph/pull/10864)
+- The git history for binary files is now correctly shown. [#11034](https://github.com/sourcegraph/sourcegraph/pull/11034)
+- Links to AWS Code Commit repositories have been fixed after the URL schema has been changed. [#11019](https://github.com/sourcegraph/sourcegraph/pull/11019)
 
 ### Removed
+
+- Automatic syncing of Campaign webhooks for Bitbucket Server. [#10962](https://github.com/sourcegraph/sourcegraph/pull/10962)
+
+## 3.16.1
+
+### Fixed
+
+- Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
+- Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
+- Sourcegraph is now built with Go 1.14.3, fixing issues running Sourcegraph onUbuntu 19 and 20. [#10447](https://github.com/sourcegraph/sourcegraph/issues/10447)
 
 ## 3.16.0
 
@@ -68,6 +82,13 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The deprecated feature discussions has been removed. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
+
+## 3.15.2
+
+### Fixed
+
+- Fix repo not found error for patches [#11021](https://github.com/sourcegraph/sourcegraph/pull/11021).
+- Show expired license screen [#10951](https://github.com/sourcegraph/sourcegraph/pull/10951).
 
 ## 3.15.1
 

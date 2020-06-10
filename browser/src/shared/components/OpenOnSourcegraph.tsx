@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from './Button'
+import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
 import classNames from 'classnames'
 
 interface Props extends SourcegraphIconButtonProps {

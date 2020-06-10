@@ -207,6 +207,12 @@ Since the syncing of permissions happens in the background, there are a few thin
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
+### Complete sync vs incremental sync
+
+A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
+
+An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository permissions. This will become the primary
@@ -251,13 +257,17 @@ Next, set the list of users allowed to view the repository:
 
 ```graphql
 mutation {
-  setRepositoryPermissionsForUsers(repository: "<repo ID>", bindIDs: ["user@example.com"]) {
+  setRepositoryPermissionsForUsers(
+    repository: "<repo ID>", 
+    userPermissions: [
+      { bindID: "user@example.com" }
+    ]) {
     alwaysNil
   }
 }
 ```
 
-Now, only the users specified in the `bindIDs` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
+Now, only the users specified in the `userPermissions` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
 
 You can call `setRepositoryPermissionsForUsers` repeatedly to set permissions for each repository, and whenever you want to change the list of authorized users.
 
