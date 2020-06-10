@@ -278,7 +278,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		MarkErroredFunc: &DBMarkErroredFunc{
-			defaultHook: func(context.Context, int, string, string) error {
+			defaultHook: func(context.Context, int, string) error {
 				return nil
 			},
 		},
@@ -288,7 +288,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		MarkIndexErroredFunc: &DBMarkIndexErroredFunc{
-			defaultHook: func(context.Context, int, string, string) error {
+			defaultHook: func(context.Context, int, string) error {
 				return nil
 			},
 		},
@@ -3168,23 +3168,23 @@ func (c DBMarkCompleteFuncCall) Results() []interface{} {
 // DBMarkErroredFunc describes the behavior when the MarkErrored method of
 // the parent MockDB instance is invoked.
 type DBMarkErroredFunc struct {
-	defaultHook func(context.Context, int, string, string) error
-	hooks       []func(context.Context, int, string, string) error
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
 	history     []DBMarkErroredFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkErrored delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) MarkErrored(v0 context.Context, v1 int, v2 string, v3 string) error {
-	r0 := m.MarkErroredFunc.nextHook()(v0, v1, v2, v3)
-	m.MarkErroredFunc.appendCall(DBMarkErroredFuncCall{v0, v1, v2, v3, r0})
+func (m *MockDB) MarkErrored(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.MarkErroredFunc.nextHook()(v0, v1, v2)
+	m.MarkErroredFunc.appendCall(DBMarkErroredFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the MarkErrored method
 // of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBMarkErroredFunc) SetDefaultHook(hook func(context.Context, int, string, string) error) {
+func (f *DBMarkErroredFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -3192,7 +3192,7 @@ func (f *DBMarkErroredFunc) SetDefaultHook(hook func(context.Context, int, strin
 // MarkErrored method of the parent MockDB instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBMarkErroredFunc) PushHook(hook func(context.Context, int, string, string) error) {
+func (f *DBMarkErroredFunc) PushHook(hook func(context.Context, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3201,7 +3201,7 @@ func (f *DBMarkErroredFunc) PushHook(hook func(context.Context, int, string, str
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBMarkErroredFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) error {
+	f.SetDefaultHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
@@ -3209,12 +3209,12 @@ func (f *DBMarkErroredFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBMarkErroredFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string, string) error {
+	f.PushHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
 
-func (f *DBMarkErroredFunc) nextHook() func(context.Context, int, string, string) error {
+func (f *DBMarkErroredFunc) nextHook() func(context.Context, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3256,9 +3256,6 @@ type DBMarkErroredFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -3267,7 +3264,7 @@ type DBMarkErroredFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBMarkErroredFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -3385,24 +3382,24 @@ func (c DBMarkIndexCompleteFuncCall) Results() []interface{} {
 // DBMarkIndexErroredFunc describes the behavior when the MarkIndexErrored
 // method of the parent MockDB instance is invoked.
 type DBMarkIndexErroredFunc struct {
-	defaultHook func(context.Context, int, string, string) error
-	hooks       []func(context.Context, int, string, string) error
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
 	history     []DBMarkIndexErroredFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkIndexErrored delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDB) MarkIndexErrored(v0 context.Context, v1 int, v2 string, v3 string) error {
-	r0 := m.MarkIndexErroredFunc.nextHook()(v0, v1, v2, v3)
-	m.MarkIndexErroredFunc.appendCall(DBMarkIndexErroredFuncCall{v0, v1, v2, v3, r0})
+func (m *MockDB) MarkIndexErrored(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.MarkIndexErroredFunc.nextHook()(v0, v1, v2)
+	m.MarkIndexErroredFunc.appendCall(DBMarkIndexErroredFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the MarkIndexErrored
 // method of the parent MockDB instance is invoked and the hook queue is
 // empty.
-func (f *DBMarkIndexErroredFunc) SetDefaultHook(hook func(context.Context, int, string, string) error) {
+func (f *DBMarkIndexErroredFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -3410,7 +3407,7 @@ func (f *DBMarkIndexErroredFunc) SetDefaultHook(hook func(context.Context, int, 
 // MarkIndexErrored method of the parent MockDB instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBMarkIndexErroredFunc) PushHook(hook func(context.Context, int, string, string) error) {
+func (f *DBMarkIndexErroredFunc) PushHook(hook func(context.Context, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3419,7 +3416,7 @@ func (f *DBMarkIndexErroredFunc) PushHook(hook func(context.Context, int, string
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBMarkIndexErroredFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) error {
+	f.SetDefaultHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
@@ -3427,12 +3424,12 @@ func (f *DBMarkIndexErroredFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBMarkIndexErroredFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string, string) error {
+	f.PushHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
 
-func (f *DBMarkIndexErroredFunc) nextHook() func(context.Context, int, string, string) error {
+func (f *DBMarkIndexErroredFunc) nextHook() func(context.Context, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3474,9 +3471,6 @@ type DBMarkIndexErroredFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -3485,7 +3479,7 @@ type DBMarkIndexErroredFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBMarkIndexErroredFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

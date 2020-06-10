@@ -13,22 +13,21 @@ import (
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureSummary    *string    `json:"failureSummary"`
-	FailureStacktrace *string    `json:"failureStacktrace"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	RepositoryID      int        `json:"repositoryId"`
-	Indexer           string     `json:"indexer"`
-	NumParts          int        `json:"numParts"`
-	UploadedParts     []int      `json:"uploadedParts"`
-	Rank              *int       `json:"placeInQueue"`
+	ID             int        `json:"id"`
+	Commit         string     `json:"commit"`
+	Root           string     `json:"root"`
+	VisibleAtTip   bool       `json:"visibleAtTip"`
+	UploadedAt     time.Time  `json:"uploadedAt"`
+	State          string     `json:"state"`
+	FailureMessage *string    `json:"failureMessage"`
+	StartedAt      *time.Time `json:"startedAt"`
+	FinishedAt     *time.Time `json:"finishedAt"`
+	ProcessAfter   *time.Time `json:"processAfter"`
+	RepositoryID   int        `json:"repositoryId"`
+	Indexer        string     `json:"indexer"`
+	NumParts       int        `json:"numParts"`
+	UploadedParts  []int      `json:"uploadedParts"`
+	Rank           *int       `json:"placeInQueue"`
 }
 
 // scanUploads scans a slice of uploads from the return value of `*dbImpl.query`.
@@ -49,8 +48,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.VisibleAtTip,
 			&upload.UploadedAt,
 			&upload.State,
-			&upload.FailureSummary,
-			&upload.FailureStacktrace,
+			&upload.FailureMessage,
 			&upload.StartedAt,
 			&upload.FinishedAt,
 			&upload.ProcessAfter,
@@ -141,8 +139,7 @@ func (db *dbImpl) GetUploadByID(ctx context.Context, id int) (Upload, bool, erro
 			u.visible_at_tip,
 			u.uploaded_at,
 			u.state,
-			u.failure_summary,
-			u.failure_stacktrace,
+			u.failure_message,
 			u.started_at,
 			u.finished_at,
 			u.process_after,
@@ -218,8 +215,7 @@ func (db *dbImpl) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []U
 				u.visible_at_tip,
 				u.uploaded_at,
 				u.state,
-				u.failure_summary,
-				u.failure_stacktrace,
+				u.failure_message,
 				u.started_at,
 				u.finished_at,
 				u.process_after,
@@ -251,8 +247,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 		"commit",
 		"root",
 		"indexer",
-		"failure_summary",
-		"failure_stacktrace",
+		"failure_message",
 	}
 
 	var termConds []*sqlf.Query
@@ -327,12 +322,12 @@ func (db *dbImpl) MarkComplete(ctx context.Context, id int) (err error) {
 }
 
 // MarkErrored updates the state of the upload to errored and updates the failure summary data.
-func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureSummary, failureStacktrace string) (err error) {
+func (db *dbImpl) MarkErrored(ctx context.Context, id int, failureMessage string) (err error) {
 	return db.queryForEffect(ctx, sqlf.Sprintf(`
 		UPDATE lsif_uploads
-		SET state = 'errored', finished_at = clock_timestamp(), failure_summary = %s, failure_stacktrace = %s
+		SET state = 'errored', finished_at = clock_timestamp(), failure_message = %s
 		WHERE id = %s
-	`, failureSummary, failureStacktrace, id))
+	`, failureMessage, id))
 }
 
 var uploadColumnsWithNullRank = []*sqlf.Query{
@@ -342,8 +337,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("visible_at_tip"),
 	sqlf.Sprintf("uploaded_at"),
 	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_summary"),
-	sqlf.Sprintf("failure_stacktrace"),
+	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
 	sqlf.Sprintf("finished_at"),
 	sqlf.Sprintf("process_after"),

@@ -30,21 +30,20 @@ func TestGetUploadByID(t *testing.T) {
 	uploadedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := uploadedAt.Add(time.Minute)
 	expected := Upload{
-		ID:                1,
-		Commit:            makeCommit(1),
-		Root:              "sub/",
-		VisibleAtTip:      true,
-		UploadedAt:        uploadedAt,
-		State:             "processing",
-		FailureSummary:    nil,
-		FailureStacktrace: nil,
-		StartedAt:         &startedAt,
-		FinishedAt:        nil,
-		RepositoryID:      123,
-		Indexer:           "lsif-go",
-		NumParts:          1,
-		UploadedParts:     []int{},
-		Rank:              nil,
+		ID:             1,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   true,
+		UploadedAt:     uploadedAt,
+		State:          "processing",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     nil,
+		RepositoryID:   123,
+		Indexer:        "lsif-go",
+		NumParts:       1,
+		UploadedParts:  []int{},
+		Rank:           nil,
 	}
 
 	insertUploads(t, dbconn.Global, expected)
@@ -127,11 +126,11 @@ func TestGetUploads(t *testing.T) {
 	t8 := t1.Add(-time.Minute * 7)
 	t9 := t1.Add(-time.Minute * 8)
 	t10 := t1.Add(-time.Minute * 9)
-	failureSummary := "unlucky 333"
+	failureMessage := "unlucky 333"
 
 	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		Upload{ID: 2, UploadedAt: t2, VisibleAtTip: true, State: "errored", FailureSummary: &failureSummary, Indexer: "lsif-tsc"},
+		Upload{ID: 2, UploadedAt: t2, VisibleAtTip: true, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
 		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51},
 		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", VisibleAtTip: true, State: "processing", Indexer: "lsif-tsc"},
@@ -152,7 +151,7 @@ func TestGetUploads(t *testing.T) {
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
 		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10}}, // searches root
 		{term: "003", expectedIDs: []int{1, 3, 5}},           // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},        // searches commits and failure summary
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},        // searches commits and failure message
 		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10}},    // searches indexer
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 	}
@@ -244,20 +243,19 @@ func TestInsertUploadUploading(t *testing.T) {
 	}
 
 	expected := Upload{
-		ID:                id,
-		Commit:            makeCommit(1),
-		Root:              "sub/",
-		VisibleAtTip:      false,
-		UploadedAt:        time.Time{},
-		State:             "uploading",
-		FailureSummary:    nil,
-		FailureStacktrace: nil,
-		StartedAt:         nil,
-		FinishedAt:        nil,
-		RepositoryID:      50,
-		Indexer:           "lsif-go",
-		NumParts:          3,
-		UploadedParts:     []int{},
+		ID:             id,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   false,
+		UploadedAt:     time.Time{},
+		State:          "uploading",
+		FailureMessage: nil,
+		StartedAt:      nil,
+		FinishedAt:     nil,
+		RepositoryID:   50,
+		Indexer:        "lsif-go",
+		NumParts:       3,
+		UploadedParts:  []int{},
 	}
 
 	if upload, exists, err := db.GetUploadByID(context.Background(), id); err != nil {
@@ -296,21 +294,20 @@ func TestInsertUploadQueued(t *testing.T) {
 
 	rank := 1
 	expected := Upload{
-		ID:                id,
-		Commit:            makeCommit(1),
-		Root:              "sub/",
-		VisibleAtTip:      false,
-		UploadedAt:        time.Time{},
-		State:             "queued",
-		FailureSummary:    nil,
-		FailureStacktrace: nil,
-		StartedAt:         nil,
-		FinishedAt:        nil,
-		RepositoryID:      50,
-		Indexer:           "lsif-go",
-		NumParts:          1,
-		UploadedParts:     []int{0},
-		Rank:              &rank,
+		ID:             id,
+		Commit:         makeCommit(1),
+		Root:           "sub/",
+		VisibleAtTip:   false,
+		UploadedAt:     time.Time{},
+		State:          "queued",
+		FailureMessage: nil,
+		StartedAt:      nil,
+		FinishedAt:     nil,
+		RepositoryID:   50,
+		Indexer:        "lsif-go",
+		NumParts:       1,
+		UploadedParts:  []int{0},
+		Rank:           &rank,
 	}
 
 	if upload, exists, err := db.GetUploadByID(context.Background(), id); err != nil {
@@ -406,7 +403,7 @@ func TestMarkErrored(t *testing.T) {
 
 	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
 
-	if err := db.MarkErrored(context.Background(), 1, "oops", ""); err != nil {
+	if err := db.MarkErrored(context.Background(), 1, "oops"); err != nil {
 		t.Fatalf("unexpected error marking upload as errored: %s", err)
 	}
 
@@ -493,7 +490,7 @@ func TestDequeueConversionError(t *testing.T) {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
 	}
 
-	if err := tx.MarkErrored(context.Background(), upload.ID, "test summary", "test stacktrace"); err != nil {
+	if err := tx.MarkErrored(context.Background(), upload.ID, "test message"); err != nil {
 		t.Fatalf("unexpected error marking upload complete: %s", err)
 	}
 	_ = tx.Done(nil)
@@ -504,16 +501,10 @@ func TestDequeueConversionError(t *testing.T) {
 		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
 	}
 
-	if summary, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_summary FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_summary: %s", err)
-	} else if summary != "test summary" {
-		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "test summary", summary)
-	}
-
-	if stacktrace, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_stacktrace FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_stacktrace: %s", err)
-	} else if stacktrace != "test stacktrace" {
-		t.Errorf("unexpected failure stacktrace outside of txn. want=%s have=%s", "test stacktrace", stacktrace)
+	if message, _, err := scanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_uploads WHERE id = 1")); err != nil {
+		t.Errorf("unexpected error getting failure_message: %s", err)
+	} else if message != "test message" {
+		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)
 	}
 }
 
@@ -561,7 +552,7 @@ func TestDequeueWithSavepointRollback(t *testing.T) {
 	if indexerName, _, err := scanFirstString(dbconn.Global.Query("SELECT indexer FROM lsif_uploads WHERE id = 1")); err != nil {
 		t.Errorf("unexpected error getting indexer: %s", err)
 	} else if indexerName != "lsif-go" {
-		t.Errorf("unexpected failure summary outside of txn. want=%s have=%s", "lsif-go", indexerName)
+		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "lsif-go", indexerName)
 	}
 }
 
