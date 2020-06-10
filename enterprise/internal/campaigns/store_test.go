@@ -2231,7 +2231,7 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: true,
 		},
 		{
@@ -2241,12 +2241,12 @@ func testStorePatchSetsDeleteExpired(t *testing.T, ctx context.Context, s *Store
 		},
 		{
 			hasCampaign: true,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 			wantDeleted: false,
 		},
 		{
 			hasCampaign: false,
-			createdAt:   clock.now().Add(-500 * time.Minute),
+			createdAt:   clock.now().Add(-8 * 24 * time.Hour),
 
 			patchesAttachedToOtherCampaign: true,
 			patches: []*cmpgn.Patch{

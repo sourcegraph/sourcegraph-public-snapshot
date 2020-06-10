@@ -300,7 +300,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 		}
 
 		// We do not search the content of large files unless they are
-		// whitelisted.
+		// allowed.
 		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
 			continue
 		}

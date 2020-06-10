@@ -15,6 +15,7 @@ import (
 )
 
 func init() {
+	// TODO(efritz) - de-globalize assignments in this function
 	graphqlbackend.ProductLicenseByID = func(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
 		return productLicenseByID(ctx, id)
 	}

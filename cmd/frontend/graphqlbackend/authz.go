@@ -7,9 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewAuthzResolver will be set by enterprise
-var NewAuthzResolver func() AuthzResolver
-
 type AuthzResolver interface {
 	// Mutations
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
@@ -28,9 +25,9 @@ type AuthzResolver interface {
 
 var authzInEnterprise = errors.New("authorization mutations and queries are only available in enterprise")
 
-var _ AuthzResolver = (*defaultAuthzResolver)(nil)
-
 type defaultAuthzResolver struct{}
+
+var DefaultAuthzResolver AuthzResolver = defaultAuthzResolver{}
 
 func (defaultAuthzResolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error) {
 	return nil, authzInEnterprise

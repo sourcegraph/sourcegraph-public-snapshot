@@ -1,5 +1,7 @@
 # Migrating from Oracle OpenGrok to Sourcegraph for code search
 
+> NOTE: This guide helps Sourcegraph admins migrate from deploying Oracle OpenGrok to Sourcegraph. See our [Oracle OpenGrok end user migration guide](../../../user/search/opengrok.md) to learn how to switch from OpenGrok's search syntax to Sourcegraph's.
+
 You can migrate from Oracle's [OpenGrok](https://oracle.github.io/opengrok/) to [Sourcegraph](https://about.sourcegraph.com) for code search by following the steps in this document.
 
 - [Background](opengrok.md#background)

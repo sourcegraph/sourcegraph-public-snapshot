@@ -151,7 +151,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &types.Repo{ID: 1},
+					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
 				},
 			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
 
@@ -223,7 +223,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					Repo:         &types.Repo{ID: 1},
+					Repo:         &RepositoryResolver{repo: &types.Repo{ID: 1}},
 				},
 			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
 		}
@@ -444,28 +444,28 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	fileMatch := &FileMatchResolver{
 		JPath: "/testFile.md",
-		Repo:  repo,
+		Repo:  repoMatch,
 	}
 
 	tsFileMatch := &FileMatchResolver{
 		JPath: "/testFile.ts",
-		Repo:  repo,
+		Repo:  repoMatch,
 	}
 
 	tsxFileMatch := &FileMatchResolver{
 		JPath: "/testFile.tsx",
-		Repo:  repo,
+		Repo:  repoMatch,
 	}
 
 	ignoreListFileMatch := &FileMatchResolver{
 		JPath: "/.gitignore",
-		Repo:  repo,
+		Repo:  repoMatch,
 	}
 
 	rev := "develop3.0"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
-		Repo:     repo,
+		Repo:     repoMatch,
 		InputRev: &rev,
 	}
 
@@ -677,7 +677,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// Repo match vs file match in same repo
 		a: &FileMatchResolver{
-			Repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
 
 			JPath: "a",
 		},
@@ -688,12 +688,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// Same repo, different files
 		a: &FileMatchResolver{
-			Repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
 
 			JPath: "a",
 		},
 		b: &FileMatchResolver{
-			Repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
 
 			JPath: "b",
 		},
@@ -701,12 +701,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// different repo, same file name
 		a: &FileMatchResolver{
-			Repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &RepositoryResolver{repo: &types.Repo{Name: "a"}},
 
 			JPath: "a",
 		},
 		b: &FileMatchResolver{
-			Repo: &types.Repo{Name: api.RepoName("b")},
+			Repo: &RepositoryResolver{repo: &types.Repo{Name: "b"}},
 
 			JPath: "a",
 		},

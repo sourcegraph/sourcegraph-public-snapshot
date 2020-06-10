@@ -504,12 +504,18 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
 	p.pos += advance
+
+	var labels labels
+	if !ContainsRegexpMetasyntax(string(p.buf[start:end])) {
+		labels = Literal | HeuristicParensAsPatterns
+	}
+
 	if len(pieces) == 1 {
-		return Pattern{Value: pieces[0], Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}}, true
+		return Pattern{Value: pieces[0], Annotation: Annotation{Labels: labels}}, true
 	}
 	patterns := []Node{}
 	for _, piece := range pieces {
-		patterns = append(patterns, Pattern{Value: piece, Annotation: Annotation{Labels: Literal | HeuristicParensAsPatterns}})
+		patterns = append(patterns, Pattern{Value: piece, Annotation: Annotation{labels}})
 	}
 	return Operator{Kind: Concat, Operands: patterns}, true
 }
@@ -661,7 +667,7 @@ func (p *parser) ParsePattern() Pattern {
 
 // ParseParameter returns a leaf node corresponding to the syntax
 // (-?)field:<string> where : matches the first encountered colon, and field
-// must match ^[a-zA-Z]+ and be whitelisted by allFields. Field may optionally
+// must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
 // be preceded by '-' which means the parameter is negated.
 func (p *parser) ParseParameter() (Parameter, bool, error) {
 	field, advance := ScanField(p.buf[p.pos:])

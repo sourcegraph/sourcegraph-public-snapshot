@@ -36,14 +36,14 @@ func TestClient_ListRepositoryCollaborators(t *testing.T) {
 			repo:  "private-org-repo-1",
 			wantUsers: []*Collaborator{
 				{
-					ID:         "MDQ6VXNlcjM5MDk4MDA4", // sourcegraph-dogfood-user as outside collaborator
-					DatabaseID: 39098008,
-				}, {
 					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
 					DatabaseID: 63290851,
 				}, {
 					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as organization member
 					DatabaseID: 66464773,
+				}, {
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
+					DatabaseID: 66464926,
 				},
 			},
 		},
