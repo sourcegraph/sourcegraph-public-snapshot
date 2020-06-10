@@ -1,10 +1,11 @@
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 
 import java.io.*;
 import java.util.Properties;
 
 public class Util {
-    public static String VERSION = "v1.1.2";
+    public static String VERSION = "v1.2.0";
 
     // gitRemoteURL returns the remote URL for the given remote name.
     // e.g. "origin" -> "git@github.com:foo/bar"
@@ -43,6 +44,20 @@ public class Util {
         return exec("git rev-parse --abbrev-ref HEAD", repoDir).trim();
     }
 
+    // verify that provided branch exists on remote
+    public static boolean isRemoteBranch(String branch, String repoDir) throws IOException {
+        return exec("git show-branch remotes/origin/" + branch, repoDir).length() > 0;
+    }
+
+    public static String sourcegraphURL(Project project) {
+        String url = Config.getInstance(project).getUrl();
+        if (url == null || url.length() == 0) {
+            Properties props = readProps();
+            url = props.getProperty("url", "https://sourcegraph.com/");
+        }
+        return url.endsWith("/") ? url : url + "/";
+    }
+
     // readProps tries to read the $HOME/sourcegraph-jetbrains.properties file.
     private static Properties readProps() {
         Properties props = new Properties();
@@ -66,15 +81,6 @@ public class Util {
         return props;
     }
 
-    public static String sourcegraphURL() {
-        Properties props = readProps();
-        String url = props.getProperty("url", "https://sourcegraph.com");
-        if (!url.endsWith("/")) {
-            return url + "/";
-        }
-        return url;
-    }
-
     // repoInfo returns the Sourcegraph repository URI, and the file path
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
@@ -91,6 +97,11 @@ public class Util {
             fileRel = fileName.substring(repoRoot.length()+1);
             remoteURL = configuredGitRemoteURL(repoRoot);
             branch = gitBranch(repoRoot);
+
+            // If on a branch that does not exist on the remote, use "master" instead.
+            if (!isRemoteBranch(branch, repoRoot)) {
+                branch = "master";
+            }
         } catch (Exception err) {
             Logger.getInstance(Util.class).info(err);
             err.printStackTrace();

@@ -16,9 +16,9 @@ import java.awt.Desktop;
 import java.net.URI;
 import java.net.URLEncoder;
 
-public class Search extends SearchActionBase {
+public class SearchRepository extends SearchActionBase {
     @Override
     public void actionPerformed(AnActionEvent e) {
-        super.actionPerformedMode(e, "search");
+        super.actionPerformedMode(e, "search.repository");
     }
 }

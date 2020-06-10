@@ -1,20 +1,34 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.1.2</version>
+  <version>1.2.0</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[
       Sourcegraph for JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)<br>
+      <ul>
+        <li>Search snippets of code on Sourcegraph.</li>
+        <li>Copy and share a link to code on Sourcegraph.</li>
+        <li>Quickly go from files in your editor to Sourcegraph.</li>
+      </ul>
     ]]></description>
 
   <change-notes><![CDATA[
     <ul>
-    <li>v1.1.2 - Minor bug fixes around searching.
+      <li>v1.2.0 - Copy link to file, search in repository, per-repository configuration, bug fixes & more
+       <ul>
+          <li>The search menu entry is now no longer present when no text has been selected.</li>
+          <li>When on a branch that does not exist remotely, `master` will now be used instead.</li>
+          <li>Menu entries (Open file, etc.) are now under a Sourcegraph sub-menu.</li>
+          <li>Added a "Copy link to file" action (alt+c / opt+c).</li>
+          <li>Added a "Search in repository" action  (alt+r / opt+r).</li>
+          <li>It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.</li>
+          <li>Special thanks: @oliviernotteghem for contributing the new features in this release!</li>
+        </ul>
+      </li>
+      <li>v1.1.2 - Minor bug fixes around searching.
         <ul>
           <li>Fixed an error that occurred when trying to search with no selection.</li>
-        </ul>
-        <ul>
           <li>The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor choice of just the first git remote.</li>
         </ul>
       </li>
@@ -45,18 +59,29 @@
   <depends>com.intellij.modules.lang</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-    <!-- Add your extensions here -->
+    <projectService serviceInterface="Config" serviceImplementation="Config"/>
   </extensions>
 
   <actions>
-    <action id="sourcegraph.open" class="Open" text="Sourcegraph: Open" description="Open selection in Sourcegraph">
-      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+    <action id="sourcegraph.open" class="Open" text="Open file" description="Open selection in Sourcegraph">
       <keyboard-shortcut first-keystroke="alt A" keymap="$default"/>
     </action>
-    <action id="sourcegraph.search" class="Search" text="Sourcegraph: Search" description="Search selection on Sourcegraph">
-      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+    <action id="sourcegraph.search" class="Search" text="Search selection" description="Search selection on Sourcegraph">
       <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
     </action>
+    <action id="sourcegraph.searchRepository" class="SearchRepository" text="Search in repository" description="Search selection in repository on Sourcegraph">
+      <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
+    </action>
+    <action id="sourcegraph.copy" class="Copy" text="Copy link to file" description="Copy link to Sourcegraph">
+      <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
+    </action>
+    <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
+      <reference ref="sourcegraph.search"/>
+      <reference ref="sourcegraph.searchRepository"/>
+      <reference ref="sourcegraph.open"/>
+      <reference ref="sourcegraph.copy"/>
+      <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+    </group>
   </actions>
 
 </idea-plugin>
