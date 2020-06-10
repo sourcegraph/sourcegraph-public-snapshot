@@ -11,8 +11,8 @@ import (
 
 // MockReferencePager is a mock implementation of the ReferencePager
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db) used
+// for unit testing.
 type MockReferencePager struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.

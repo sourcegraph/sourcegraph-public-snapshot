@@ -11,8 +11,8 @@ import (
 )
 
 // MockDB is a mock implementation of the DB interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db) used for unit
-// testing.
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/db) used
+// for unit testing.
 type MockDB struct {
 	// AddUploadPartFunc is an instance of a mock function object
 	// controlling the behavior of the method AddUploadPart.
