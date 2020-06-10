@@ -17,13 +17,14 @@ Oracle OpenGrok provides wildcard support for searches. For example, to find all
 
 Sourcegraph, [provides full regular expression search](queries.md#regexp-search), with support for the [RE2 syntax](https://golang.org/s/re2syntax). The same search above would take the form `foo.*` (or in this case, just `foo`, since Sourcegraph automatically supports partial matches). Much more powerful regexp expressions are available.
 
-(Note that Sourcegraph also provides a [literal search mode](queries.md#Literal-search--default-) by default, in which there's no need to escape special characters. This simplifies searches such a `foo(`, which would result in an error in regexp mode.)
+(Note that Sourcegraph also provides a [literal search mode](queries.md#Literal-search-default) by default, in which there's no need to escape special characters. This simplifies searches such as `foo(`, which would result in an error in regexp mode.)
 
 ### Selecting repositories and branches
 
 Oracle OpenGrok provides a multi-select dropdown box to allow users to select which repositories to include in a search. This scope is stored across sessions, until the user changes it.
 
 Sourcegraph provides a search keyword (`repo:`) that supports regexp and partial matches for selecting repositories. As examples: 
+
 - To search for the string "pattern" in all repositories in the github.com/org org, search for `pattern repo:github.com/org`. 
 - To search in a distinct list of repositories, you can use a `|` character as a regexp OR operator: `pattern repo:github.com/org/repository1|github.com/org/repository2`.
   - Note this query could be simplified further using more advanced regexp matching if the two repos share part of their names, such as: `pattern repo:github.com/org/repository(1|2)`.
@@ -42,9 +43,9 @@ Sourcegraph also provides the ability to search on multiple Git revisions in a s
 
 Oracle OpenGrok doesn't index most single-character strings (such as for special characters like `{`, `}`, `[`, `]`, `+`, `-`, and more), and non-alpha-numeric characters generally.
 
-Sourcegraph indexes all characters, and can search for strings of any length. Using the default [literal search mode](queries.md#Literal-search--default-), any search (including those with special characters like `foo.bar`, `try {`, `i++`, `i-=1`, `foo->bar`, and more), will all be searchable without special handling. Using [regexp mode](queries.md#regexp-search) would require escaping special charactes.
+Sourcegraph indexes all characters, and can search for strings of any length. Using the default [literal search mode](queries.md#Literal-search-default), any search (including those with special characters like `foo.bar`, `try {`, `i++`, `i-=1`, `foo->bar`, and more), will all be searchable without special handling. Using [regexp mode](queries.md#regexp-search) would require escaping special charactes.
 
-The only exceptions are colon characters, which are by default used for specifying a search keyword on Sourcegraph (see below). Any search containing colons can be done using, for example, `content:"foo::bar"` keyword to explicitly mark it as the search string.
+The only exceptions are colon characters, which are by default used for specifying a [search keyword](#search-keywords) on Sourcegraph. Any search containing colons can be done using the `content:` keyword (for example, `content:"foo::bar"`) to explicitly mark it as the search string.
 
 ### Boolean operators
 
@@ -74,9 +75,9 @@ Both Sourcegraph and OpenGrok allow users to add keywords for scoping searches. 
 | Scope searches to repositories that contain a file | Not supported | `pattern repohasfile:foo` |
 | Scope searches to recently updated repositories | Not supported | `pattern repohascommitafter:"3 months"` or `pattern repohascommitafter:"june 25 2017"` |
 
-Sourcegraph also provides keywords to [scope commit message and diff searches](queries.md#keywords--diff-and-commit-searches-only-) to specific authors or timeframes in which a change was made.
+Sourcegraph also provides keywords to [scope commit message and diff searches](queries.md#keywords-diff-and-commit-searches-only) to specific authors or timeframes in which a change was made.
 
-To see an exhaustive list of Sourcegraph's search keywords, see the [search query syntax](queries.md#keywords--all-searches-) page.
+To see an exhaustive list of Sourcegraph's search keywords, see the [search query syntax](queries.md#keywords-all-searches) page.
 
 **Negating search keywords**
 
