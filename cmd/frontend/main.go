@@ -14,5 +14,5 @@ func main() {
 	// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
 	authz.SetProviders(true, []authz.Provider{})
 
-	shared.Main(nil, nil)
+	shared.Main(func() {})
 }
