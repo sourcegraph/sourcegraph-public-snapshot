@@ -170,6 +170,7 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	if globalUpdateStatus == nil || updatecheck.IsPending() || !globalUpdateStatus.HasUpdate() || globalUpdateStatus.Err != nil {
 		return nil
 	}
+	// ensure the user has opted in to receiving notifications for minor updates and there is one available
 	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
 		return nil
 	}
