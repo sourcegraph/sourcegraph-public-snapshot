@@ -112,18 +112,3 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
         )
     }
 }
-
-function isMinorUpdateAvailable(currentVersion: string, updateVersion: string): boolean {
-    const parsedCurrentVersion = semverParse(currentVersion, { loose: false })
-    const parsedUpdateVersion = semverParse(updateVersion, { loose: false })
-    // If either current or update versions aren't semvers (e.g., a user is on a date-based build version, or "dev"),
-    // always return true and allow any alerts to be shown. This has the effect of simply deferring to the response
-    // from Sourcegraph.com about whether an update alert is needed.
-    if (parsedCurrentVersion === null || parsedUpdateVersion === null) {
-        return true
-    }
-    return (
-        parsedCurrentVersion.major !== parsedUpdateVersion.major ||
-        parsedCurrentVersion.minor !== parsedUpdateVersion.minor
-    )
-}
