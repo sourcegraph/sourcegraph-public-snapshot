@@ -1,6 +1,5 @@
 BEGIN;
 
-
 DROP VIEW lsif_dumps;
 
 ALTER TABLE lsif_uploads ADD COLUMN process_after timestamp with time zone;

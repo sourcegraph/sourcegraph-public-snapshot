@@ -1,6 +1,5 @@
 BEGIN;
 
-
 DROP VIEW lsif_dumps;
 
 ALTER TABLE lsif_uploads DROP COLUMN process_after;
